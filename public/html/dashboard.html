@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard — Storyboard AI</title>
+  <link rel="stylesheet" href="../css/style.css"/>
+  <link rel="stylesheet" href="../css/dashboard.css"/>
+</head>
+<body>
+
+  <div class="gradient-bg" style="opacity:0.5;">
+    <div class="gradient-blob-yellow"></div>
+  </div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar card">
+    <a href="../index.html" class="brand-logo sidebar-brand">STORY<br/><span>BOARD AI</span></a>
+
+    <nav class="sidebar-nav">
+      <a href="./dashboard.html" class="sidebar-link active">
+        <span class="sidebar-icon">⊞</span> Dashboard
+      </a>
+      <a href="./generate.html" class="sidebar-link">
+        <span class="sidebar-icon">✦</span> 生成分鏡
+      </a>
+      <a href="#" class="sidebar-link">
+        <span class="sidebar-icon">◫</span> 我的專案
+      </a>
+      <a href="#" class="sidebar-link">
+        <span class="sidebar-icon">⊙</span> 爆點模板庫
+      </a>
+      <a href="#" class="sidebar-link">
+        <span class="sidebar-icon">↗</span> 數據分析
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="plan-badge-sidebar">
+        <span>🎓 初階方案</span>
+        <a href="#">升級</a>
+      </div>
+      <div class="sidebar-user">
+        <div class="avatar">黃</div>
+        <div class="user-info">
+          <p class="user-name">黃晟銘</p>
+          <p class="user-email">aaaa@bbbb.edu.tw</p>
+        </div>
+        <a href="../html/login.html" class="logout-btn">↩</a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+
+    <!-- Header -->
+    <header class="content-header">
+      <div>
+        <h1 class="welcome-title">早安，黃晟銘 👋</h1>
+        <p class="welcome-sub">你今天想創作什麼分鏡？</p>
+      </div>
+      <div class="header-actions">
+        <a href="./generate.html" class="btn btn-primary">
+          <span>✦</span> 新建分鏡
+        </a>
+      </div>
+    </header>
+
+    <!-- Quick Start -->
+    <section class="quick-start anim-fadeInUp">
+      <div class="quick-card card" onclick="window.location.href='generate.html'">
+        <div class="quick-icon" style="background:linear-gradient(135deg,var(--lavender-light),var(--peach-light))">✦</div>
+        <div>
+          <h3>快速生成分鏡</h3>
+          <p>輸入故事，三步驟完成</p>
+        </div>
+        <span class="quick-arrow">→</span>
+      </div>
+      <div class="quick-card card">
+        <div class="quick-icon" style="background:linear-gradient(135deg,var(--peach-light),var(--yellow-warm))">⊙</div>
+        <div>
+          <h3>瀏覽爆點模板</h3>
+          <p>熱門短影音架構參考</p>
+        </div>
+        <span class="quick-arrow">→</span>
+      </div>
+      <div class="quick-card card">
+        <div class="quick-icon" style="background:linear-gradient(135deg,#d4f0e0,#98d4b0)">↗</div>
+        <div>
+          <h3>帳號數據分析</h3>
+          <p>AI 解析你的流量客群</p>
+        </div>
+        <span class="quick-arrow">→</span>
+      </div>
+    </section>
+
+    <!-- Stats Row -->
+    <section class="stats-row anim-fadeInUp anim-delay-1">
+      <div class="stat-card card">
+        <p class="stat-card-label">本月生成數</p>
+        <p class="stat-card-num">3 <span>/ 5</span></p>
+        <div class="stat-progress"><div class="stat-bar" style="width:60%"></div></div>
+        <p class="stat-hint">初階方案每月 5 組</p>
+      </div>
+      <div class="stat-card card">
+        <p class="stat-card-label">我的專案</p>
+        <p class="stat-card-num">7</p>
+        <p class="stat-hint">包含草稿與已完成</p>
+      </div>
+      <div class="stat-card card">
+        <p class="stat-card-label">分鏡張數</p>
+        <p class="stat-card-num">42</p>
+        <p class="stat-hint">累積生成分鏡草稿</p>
+      </div>
+      <div class="stat-card card">
+        <p class="stat-card-label">節省時間</p>
+        <p class="stat-card-num">6.5<span>hrs</span></p>
+        <p class="stat-hint">相較傳統手繪流程</p>
+      </div>
+    </section>
+
+    <!-- Recent Projects -->
+    <section class="recent-section anim-fadeInUp anim-delay-2">
+      <div class="section-row-header">
+        <h2>近期專案</h2>
+        <a href="#" class="view-all">查看全部 →</a>
+      </div>
+      <div class="projects-grid">
+        <div class="project-card card" onclick="window.location.href='generate.html'">
+          <div class="project-thumb" style="background:linear-gradient(135deg,#1a1a2e,#2d2d4e)">
+            <span>🎬</span>
+          </div>
+          <div class="project-info">
+            <h3>蘋果牛奶廣告</h3>
+            <div class="project-meta">
+              <span class="tag-pill" style="font-size:0.75rem; padding:3px 10px;">電影風格</span>
+              <span class="tag-pill" style="font-size:0.75rem; padding:3px 10px;">1:1</span>
+            </div>
+            <p class="project-date">2025年1月3日</p>
+          </div>
+          <div class="project-status done">已完成</div>
+        </div>
+
+        <div class="project-card card">
+          <div class="project-thumb" style="background:linear-gradient(135deg,#4a1a4a,#8a3a8a)">
+            <span>🌸</span>
+          </div>
+          <div class="project-info">
+            <h3>春季服飾短影音</h3>
+            <div class="project-meta">
+              <span class="tag-pill" style="font-size:0.75rem; padding:3px 10px;">預設風格</span>
+              <span class="tag-pill" style="font-size:0.75rem; padding:3px 10px;">9:16</span>
+            </div>
+            <p class="project-date">2024年12月28日</p>
+          </div>
+          <div class="project-status draft">草稿</div>
+        </div>
+
+        <div class="project-card card">
+          <div class="project-thumb" style="background:linear-gradient(135deg,#1a3a2a,#3a6a4a)">
+            <span>🌿</span>
+          </div>
+          <div class="project-info">
+            <h3>有機農場品牌影片</h3>
+            <div class="project-meta">
+              <span class="tag-pill" style="font-size:0.75rem; padding:3px 10px;">日系風格</span>
+              <span class="tag-pill" style="font-size:0.75rem; padding:3px 10px;">16:9</span>
+            </div>
+            <p class="project-date">2024年12月20日</p>
+          </div>
+          <div class="project-status done">已完成</div>
+        </div>
+
+        <!-- New Project Card -->
+        <div class="project-card project-new card" onclick="window.location.href='generate.html'">
+          <div class="new-icon">+</div>
+          <p>新建專案</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Hot Templates Preview -->
+    <section class="templates-section anim-fadeInUp anim-delay-3">
+      <div class="section-row-header">
+        <h2>熱門爆點模板</h2>
+        <a href="#" class="view-all">查看全部 →</a>
+      </div>
+      <div class="templates-row">
+        <div class="template-chip card">
+          <span class="template-emoji">🔥</span>
+          <span class="template-name">前三秒 HOOK 式</span>
+          <span class="template-count">1.2k 使用</span>
+        </div>
+        <div class="template-chip card">
+          <span class="template-emoji">😮</span>
+          <span class="template-name">懸疑揭露式</span>
+          <span class="template-count">890 使用</span>
+        </div>
+        <div class="template-chip card">
+          <span class="template-emoji">✨</span>
+          <span class="template-name">Before &amp; After</span>
+          <span class="template-count">756 使用</span>
+        </div>
+        <div class="template-chip card">
+          <span class="template-emoji">🎭</span>
+          <span class="template-name">情緒衝突式</span>
+          <span class="template-count">634 使用</span>
+        </div>
+        <div class="template-chip card">
+          <span class="template-emoji">📖</span>
+          <span class="template-name">故事敘述式</span>
+          <span class="template-count">521 使用</span>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="../js/dashboard.js"></script>
+</body>
+</html>

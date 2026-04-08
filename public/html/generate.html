@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>生成分鏡 — Storyboard AI</title>
+  <link rel="stylesheet" href="../css/style.css"/>
+  <link rel="stylesheet" href="../css/generate.css"/>
+</head>
+<body>
+
+  <div class="gradient-bg">
+    <div class="gradient-blob-yellow"></div>
+  </div>
+
+  <!-- Top Nav (matching screenshots) -->
+  <nav class="gen-nav">
+    <a href="../html/dashboard.html" class="brand-logo gen-brand">STORYBOARD <span>AI</span></a>
+    <a href="../html/dashboard.html" class="btn btn-ghost btn-sm">← Dashboard</a>
+  </nav>
+
+  <!-- ===== STEP 0: SPLASH ===== -->
+  <div class="gen-screen active" id="screen-splash">
+    <div class="splash-content">
+      <h1 class="splash-title">STORYBOARD <span>AI</span></h1>
+      <button class="btn btn-gradient btn-lg" onclick="goToStep(1)">Get started</button>
+    </div>
+  </div>
+
+  <!-- ===== STEP 1: Story Input ===== -->
+  <div class="gen-screen" id="screen-step1">
+    <div class="step-layout">
+      <div class="step-left">
+        <span class="step-label">STEP 1</span>
+        <p class="step-subtitle">請在下方描述故事/場景</p>
+      </div>
+      <div class="step-right step1-right">
+        <div class="story-input-wrap card">
+          <textarea
+            id="story-input"
+            class="story-textarea"
+            placeholder="描述你的故事、廣告或短影音場景…&#10;例如：蘋果牛奶廣告、旅遊短影音、品牌形象影片"
+            rows="4"
+          ></textarea>
+          <div class="story-input-footer">
+            <span class="char-count" id="char-count">0 / 500</span>
+            <button class="btn btn-primary story-submit" onclick="submitStory()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="suggestions-row">
+          <button class="suggestion-chip" onclick="fillSuggestion(this)">蘋果牛奶廣告</button>
+          <button class="suggestion-chip" onclick="fillSuggestion(this)">旅遊短影音</button>
+          <button class="suggestion-chip" onclick="fillSuggestion(this)">運動服品牌</button>
+          <button class="suggestion-chip" onclick="fillSuggestion(this)">美食餐廳介紹</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== STEP 2: Style Selection ===== -->
+  <div class="gen-screen" id="screen-step2">
+    <div class="step-layout">
+      <div class="step-left">
+        <a class="back-link" onclick="goToStep(1)">‹ Back</a>
+        <span class="step-label">STEP 2</span>
+        <p class="step-subtitle">請選擇想要的風格</p>
+      </div>
+      <div class="step-right">
+        <div class="style-carousel-wrap card">
+          <div class="style-carousel" id="style-carousel">
+            <!-- Styles rendered by JS -->
+          </div>
+          <p class="style-name-display" id="style-name-display">預設風格</p>
+        </div>
+        <div class="carousel-nav">
+          <button class="btn btn-ghost btn-sm carousel-btn" onclick="prevStyle()">▲ Previous</button>
+          <button class="btn btn-ghost btn-sm carousel-btn" onclick="nextStyle()">Next ▼</button>
+        </div>
+        <button class="btn btn-primary btn-block" onclick="goToStep(3)" style="border-radius:var(--radius-xl);padding:16px;">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== STEP 3: Aspect Ratio ===== -->
+  <div class="gen-screen" id="screen-step3">
+    <div class="step-layout">
+      <div class="step-left">
+        <a class="back-link" onclick="goToStep(2)">‹ Back</a>
+        <span class="step-label">STEP 3</span>
+        <p class="step-subtitle">請選擇畫面比例</p>
+      </div>
+      <div class="step-right">
+        <div class="ratio-wrap card">
+          <div class="ratio-preview" id="ratio-preview">
+            <div class="ratio-frame" id="ratio-frame">
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="white" opacity="0.5"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+            </div>
+            <button class="rotate-btn" onclick="rotateRatio()">Rotate</button>
+          </div>
+          <div class="ratio-chips" id="ratio-chips">
+            <button class="ratio-chip" onclick="selectRatio('3:2', this)">3:2</button>
+            <button class="ratio-chip active" onclick="selectRatio('1:1', this)">1:1</button>
+            <button class="ratio-chip" onclick="selectRatio('16:9', this)">16:9</button>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-block" onclick="openConfirmModal()" style="border-radius:var(--radius-xl);padding:16px;margin-top:16px;">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== GENERATING (Loading) ===== -->
+  <div class="gen-screen" id="screen-generating">
+    <div class="generating-content">
+      <div class="gen-spinner">
+        <div class="spinner-ring"></div>
+        <div class="spinner-ring r2"></div>
+        <div class="spinner-ring r3"></div>
+      </div>
+      <h2 class="gen-loading-title">Storyboard AI 生成中…</h2>
+      <p class="gen-loading-sub">分析故事結構，規劃分鏡草稿</p>
+      <div class="gen-progress-bar"><div class="gen-progress-fill" id="gen-progress"></div></div>
+    </div>
+  </div>
+
+  <!-- ===== RESULT ===== -->
+  <div class="gen-screen" id="screen-result">
+    <div class="result-header">
+      <div>
+        <h2 class="result-title">分鏡草稿已生成 ✦</h2>
+        <p class="result-sub" id="result-story-label">蘋果牛奶廣告 · 電影風格 · 1:1</p>
+      </div>
+      <div class="result-actions">
+        <button class="btn btn-outline btn-sm" onclick="downloadPDF()">↓ 下載 PDF</button>
+        <button class="btn btn-primary btn-sm" onclick="resetAll()">+ 新建分鏡</button>
+      </div>
+    </div>
+    <div class="storyboard-grid" id="storyboard-grid">
+      <!-- Storyboard frames rendered by JS -->
+    </div>
+  </div>
+
+  <!-- ===== Confirm Modal ===== -->
+  <div class="modal-overlay" id="confirm-modal">
+    <div class="modal-card">
+      <h2 class="modal-title">確認生成嗎？</h2>
+
+      <div class="modal-detail">
+        <p class="modal-detail-label">您輸入的故事為：</p>
+        <div class="modal-value tag-pill" id="modal-story">蘋果牛奶廣告</div>
+      </div>
+      <div class="modal-detail">
+        <p class="modal-detail-label">您選擇的風格為：</p>
+        <div class="modal-value tag-pill" id="modal-style">電影風格</div>
+      </div>
+      <div class="modal-detail">
+        <p class="modal-detail-label">您選擇的比例為：</p>
+        <div class="modal-value tag-pill" id="modal-ratio">1:1</div>
+      </div>
+
+      <p class="modal-note">確認後 StoryboardAI 將為您生成至少 1 個畫面的分鏡草稿</p>
+
+      <div class="modal-btns">
+        <button class="btn btn-ghost" style="flex:1" onclick="closeConfirmModal()">Cancel</button>
+        <button class="btn btn-primary" style="flex:1; border-radius:var(--radius-xl);" onclick="startGenerate()">Generate!</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/generate.js"></script>
+</body>
+</html>

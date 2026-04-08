@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>登入 / 註冊 — Storyboard AI</title>
+    <link rel="stylesheet" href="../css/style.css" />
+    <link rel="stylesheet" href="../css/auth.css" />
+</head>
+
+<body>
+
+    <div class="gradient-bg">
+        <div class="gradient-blob-yellow"></div>
+    </div>
+
+    <!-- Brand -->
+    <a href="../index.html" class="auth-brand brand-logo">STORYBOARD <span>AI</span></a>
+
+    <div class="auth-container">
+
+        <!-- Tabs -->
+        <div class="auth-tabs">
+            <button class="auth-tab active" id="tab-login" onclick="switchTab('login')">登入</button>
+            <button class="auth-tab" id="tab-register" onclick="switchTab('register')">免費註冊</button>
+        </div>
+
+        <!-- Login Form -->
+        <div class="auth-panel card anim-fadeInUp" id="panel-login">
+            <div class="auth-header">
+                <h2>歡迎回來</h2>
+                <p>登入你的 Storyboard AI 帳號</p>
+            </div>
+
+            <div class="social-btns">
+                <button class="btn social-btn" onclick="handleSocialLogin('Google')">
+                    <svg width="18" height="18" viewBox="0 0 24 24">
+                        <path fill="#4285F4"
+                            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                        <path fill="#34A853"
+                            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                        <path fill="#FBBC05"
+                            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                        <path fill="#EA4335"
+                            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                    </svg>
+                    使用 Google 繼續
+                </button>
+            </div>
+
+            <div class="divider"><span>或使用電子信箱</span></div>
+
+            <div class="form-group">
+                <label class="form-label">電子信箱</label>
+                <input type="email" class="input-field input-field-rect" placeholder="your@email.com"
+                    id="login-email" />
+            </div>
+            <div class="form-group">
+                <label class="form-label">
+                    密碼
+                    <a href="#" class="form-forgot">忘記密碼？</a>
+                </label>
+                <div class="input-with-icon">
+                    <input type="password" class="input-field input-field-rect" placeholder="••••••••"
+                        id="login-password" />
+                    <button class="input-icon-btn" onclick="togglePwd('login-password', this)">👁</button>
+                </div>
+            </div>
+
+            <button class="btn btn-primary btn-block" onclick="handleLogin()"
+                style="margin-top:8px; border-radius:var(--radius-sm); padding:14px;">
+                登入
+            </button>
+
+            <p class="auth-switch">還沒有帳號？<a onclick="switchTab('register')" style="cursor:pointer;">免費註冊</a></p>
+        </div>
+
+        <!-- Register Form -->
+        <div class="auth-panel card" id="panel-register" style="display:none;">
+            <div class="auth-header">
+                <h2>建立帳號</h2>
+                <p>免費開始使用 Storyboard AI</p>
+            </div>
+
+            <div class="social-btns">
+                <button class="btn social-btn" onclick="handleSocialLogin('Google')">
+                    <svg width="18" height="18" viewBox="0 0 24 24">
+                        <path fill="#4285F4"
+                            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                        <path fill="#34A853"
+                            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                        <path fill="#FBBC05"
+                            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                        <path fill="#EA4335"
+                            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                    </svg>
+                    使用 Google 繼續
+                </button>
+            </div>
+
+            <div class="divider"><span>或使用電子信箱</span></div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">姓名</label>
+                    <input type="text" class="input-field input-field-rect" placeholder="你的名字" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">用戶名稱</label>
+                    <input type="text" class="input-field input-field-rect" placeholder="@username" />
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">電子信箱</label>
+                <input type="email" class="input-field input-field-rect" placeholder="your@email.com" />
+            </div>
+            <div class="form-group">
+                <label class="form-label">密碼</label>
+                <div class="input-with-icon">
+                    <input type="password" class="input-field input-field-rect" placeholder="至少 8 個字元"
+                        id="reg-password" />
+                    <button class="input-icon-btn" onclick="togglePwd('reg-password', this)">👁</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">我的身分</label>
+                <div class="role-chips">
+                    <label class="role-chip"><input type="radio" name="role" value="student" /><span>🎓
+                            學生</span></label>
+                    <label class="role-chip"><input type="radio" name="role" value="creator" checked /><span>🎬
+                            創作者</span></label>
+                    <label class="role-chip"><input type="radio" name="role" value="studio" /><span>🏢
+                            工作室</span></label>
+                </div>
+            </div>
+
+            <button class="btn btn-primary btn-block" onclick="handleRegister()"
+                style="margin-top:8px; border-radius:var(--radius-sm); padding:14px;">
+                建立帳號 →
+            </button>
+            <p class="terms-note">點擊即代表你同意我們的<a href="#">服務條款</a>與<a href="#">隱私政策</a></p>
+            <p class="auth-switch">已有帳號？<a onclick="switchTab('login')" style="cursor:pointer;">登入</a></p>
+        </div>
+
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script src="../js/auth.js"></script>
+</body>
+
+</html>
