@@ -51,7 +51,9 @@ const upload = multer({
     limits: { fileSize: 100 * 1024 * 1024 } // 限制 100MB
 });
 
-
+app.get('/api/get-config', (req, res) => {
+    res.json({ apiKey: process.env.GEMINI_API_KEY });
+});
 
 app.post('/api/ask-gemini', async (req, res) => {
 

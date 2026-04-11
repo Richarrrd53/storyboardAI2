@@ -5,8 +5,8 @@ async function uploadAndAnalyze() {
 
     try {
         // --- 步驟 1: 前端上傳 ---
-        // 注意：正式上線建議 API Key 由後端保護，這裡先示範邏輯
-        const apiKey = process.env.GEMINI_API_KEY;
+        const configRes = await fetch('/api/get-config');
+        const { apiKey } = await configRes.json();
         
         // 建立 Form Data 上傳至 Google File API
         const metadata = {
