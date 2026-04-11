@@ -6,33 +6,27 @@ const { marked } = import('marked');
 const multer = require('multer');
 require('dotenv').config();
 const { GoogleGenAI } = require("@google/genai");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { GoogleAIFileManager } = require("@google/generative-ai/server");
 const readline = require('node:readline');
+require('dotenv').config();
+
 
 const app = express();
 const port = 3000;
 const hostname = '127.0.0.1';
 
 
-let apiKey = '';
-if (process.env.NODE_ENV !== 'production') {
-    const rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout
-    });
-    rl.question('What is your GEMINI_API_KEY? ', (key) => {
-        apiKey = key;
-        rl.close();
-    });
+const apiKey = process.env.GEMINI_API_KEY;
+
+if (!apiKey) {
+    console.error("❌ 錯誤：找不到 GEMINI_API_KEY。");
+    console.log("本機測試：請確認 .env 檔案中有設定 GEMINI_API_KEY");
+    console.log("Vercel：請在 Environment Variables 中設定 GEMINI_API_KEY");
 }
-else {
-    apiKey = process.env.GEMINI_API_KEY;
-}
-// if (!apiKey) {
-//     console.error("FATAL: GEMINI_API_KEY 環境變數未設定。請設定 Vercel 環境變數並重試。");
-// }
 
 const genAI = new GoogleGenAI({ apiKey: apiKey });
+const genAIVideo = new GoogleGenerativeAI(apiKey);
 const fileManager = new GoogleAIFileManager(apiKey);
 
 
@@ -142,7 +136,7 @@ app.post('/api/analyze-video', upload.single('video'), async (req, res) => {
         }
 
         // 3. 進行分析 - 建議使用目前穩定的模型名稱
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); 
+        const model = genAIVideo.getGenerativeModel({ model: "gemini-3-flash-preview" }); 
         const prompt = "你是一個專業的短影音企劃。請觀看影片並分析：1. 【前三秒 Hook】：這支影片開頭如何吸引人？ 2. 【鏡頭語言】：畫面構圖與運鏡方式。";
 
         const result = await model.generateContent([
