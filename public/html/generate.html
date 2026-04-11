@@ -132,6 +132,34 @@
         </div>
     </div>
 
+    <!-- ===== Confirm Modal ===== -->
+    <div class="modal-overlay" id="confirm-modal">
+        <div class="modal-card">
+        <h2 class="modal-title">確認生成嗎？</h2>
+
+        <div class="modal-detail">
+            <p class="modal-detail-label">您輸入的故事為：</p>
+            <div class="modal-value tag-pill" id="modal-story">蘋果牛奶廣告</div>
+        </div>
+        <div class="modal-detail">
+            <p class="modal-detail-label">您選擇的風格為：</p>
+            <div class="modal-value tag-pill" id="modal-style">電影風格</div>
+        </div>
+        <div class="modal-detail">
+            <p class="modal-detail-label">您選擇的比例為：</p>
+            <div class="modal-value tag-pill" id="modal-ratio">1:1</div>
+        </div>
+
+        <p class="modal-note">確認後 StoryboardAI 將為您生成至少 1 個畫面的分鏡草稿</p>
+
+        <div class="modal-btns">
+            <button class="btn btn-ghost" style="flex:1" onclick="closeConfirmModal()">Cancel</button>
+            <button class="btn btn-primary" style="flex:1; border-radius:var(--radius-xl);" onclick="startGenerate()">Generate!</button>
+        </div>
+        </div>
+    </div>
+
+
     <!-- GENERATING (Loading) - 匹配專業五步流 -->
     <div class="gen-screen" id="screen-generating">
         <div class="generating-content">
