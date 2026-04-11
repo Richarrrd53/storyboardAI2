@@ -301,10 +301,6 @@ async function startGenerate() {
             if(imgRes.image !== undefined) {
                 generatedImgs.push(imgRes.image);
             }
-            // loadingTitle.innerText = `繪製中 ${i+1}/${generatedPrompts.length}...`;
-            // // 使用 Pollinations 作為生圖引擎
-            // const imgUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(generatedPrompts[i] + ", " + styleDetail)}?width=1280&height=720&nologo=true`;
-            // generatedImgs.push(imgUrl);
         }
 
         renderFilmStrip();
@@ -333,11 +329,6 @@ function renderFilmStrip() {
     const container = document.getElementById('storyboard-grid');
     container.innerHTML = `
         <div class="film-strip-container" style="display: flex;">
-            <div class="film-strip-controls">
-                <button class="film-strip-button" id="playButton">預覽</button>
-                <button class="film-strip-button" id="exportButton">匯出</button>
-                <button class="film-strip-button" id="continueButton">接龍</button>
-            </div>
             <div id="filmStrip" class="film-strip"></div>
         </div>
     `;
