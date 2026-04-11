@@ -8,7 +8,6 @@ require('dotenv').config();
 const { GoogleGenAI } = require("@google/genai");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { GoogleAIFileManager } = require("@google/generative-ai/server");
-const { VertexAI } = require('@google-cloud/vertexai');
 require('dotenv').config();
 
 const app = express();
@@ -16,10 +15,6 @@ const app = express();
 
 const apiKey = process.env.GEMINI_API_KEY;
 
-const vertexAI = new VertexAI({
-    project: 'evident-healer-459006-r0', 
-    location: 'zh-TW' // 或是你設定的區域
-});
 
 if (!apiKey) {
     console.error("❌ 錯誤：找不到 GEMINI_API_KEY。");
