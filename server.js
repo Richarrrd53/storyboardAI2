@@ -2,7 +2,7 @@ const express = require('express');
 const path = require('path');
 const bodyParser = require('body-parser');
 const fs = require("fs");
-const { marked } = import('marked');
+
 const multer = require('multer');
 require('dotenv').config();
 const { GoogleGenAI } = require("@google/genai");
@@ -141,7 +141,7 @@ app.post('/api/analyze-video', upload.single('video'), async (req, res) => {
         if (file.state === "FAILED") {
             throw new Error("Gemini 影片處理失敗");
         }
-
+        const { marked } = await import('marked');
         // 3. 進行分析 - 建議使用目前穩定的模型名稱
         const model = genAIVideo.getGenerativeModel({ model: "gemini-3-flash-preview" }); 
         const prompt = "你是一個專業的短影音企劃。請觀看影片並分析：1. 【前三秒 Hook】：這支影片開頭如何吸引人？ 2. 【鏡頭語言】：畫面構圖與運鏡方式。";
