@@ -319,7 +319,7 @@ async function askGemini(question, type) {
     const res = await fetch('/api/ask-gemini', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question, type })
+        body: JSON.stringify({ question})
     });
     const data = await res.json();
     if (data.usage && typeof updateTokenUsage === 'function') {
