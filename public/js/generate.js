@@ -225,9 +225,11 @@ function openConfirmModal() {
 
     const modal = document.getElementById('confirm-modal');
     modal.classList.add('active');
+    modal.style.transition = 'all 0.5s cubic-bezier(0.33, 1.53, 0.69, .99)';
 }
 function closeConfirmModal() {
     document.getElementById('confirm-modal').classList.remove('active');
+    document.getElementById('confirm-modal').style.transition = 'all 0.5s cubic-bezier(.31,.01,.66,-0.59)';
 }
 
 // Click outside to close
@@ -275,7 +277,7 @@ async function startGenerate() {
         const fullScript = scriptRes.response;
         progressBar.style.width = "20%";
 
-        loadingTitle.innerText = "提取分鏡細節 (2/5)...";
+        loadingTitle.innerText = "正在提取分鏡細節 (2/5)...";
         const titlesRes = await askGemini(fullScript + "\n提取畫面標題，格式: 1. XXX", 'extraction');
         generatedStoryTitles = parseNumberedList(titlesRes.response);
         
@@ -283,7 +285,7 @@ async function startGenerate() {
         generatedStoryCams = parseNumberedList(camsRes.response);
         progressBar.style.width = "50%";
 
-        loadingTitle.innerText = "優化視覺連貫性 (4/5)...";
+        loadingTitle.innerText = "正在優化視覺連貫性 (3/5)...";
         const styleDetail = styleDescriptions[state.style] || "";
         const promptOptimizeReq = `${fullScript}\n優化 Prompt，比例 ${state.ratio}，風格 ${styleDetail}。格式: 1. XXX`;
         const promptsRes = await askGemini(promptOptimizeReq, 'optimization');
@@ -291,7 +293,7 @@ async function startGenerate() {
         progressBar.style.width = "80%";
 
         // 5. 並行生成所有圖片
-        loadingTitle.innerText = "正在同步繪製所有分鏡 (5/5)...";
+        loadingTitle.innerText = "正在同步繪製所有分鏡 (4/5)...";
         
         const imageTasks = generatedPrompts.map(prompt => 
             askGemini(prompt + ", " + styleDetail, 'generation')
