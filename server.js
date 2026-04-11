@@ -23,12 +23,15 @@ const genAI = new GoogleGenerativeAI({ apiKey: apiKey });
 const fileManager = new GoogleAIFileManager({ apiKey: apiKey });
 
 
-app.use(express.static(path.join(__dirname, 'public')));
+const publicPath = path.join(process.cwd(), 'public');
+app.use(express.static(publicPath));
 app.use(express.json({ limit: '50mb' }));
 app.use(bodyParser.json());
 
+
+
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'main.html'));
+    res.sendFile(path.join(publicPath, 'main.html'));
 });
 
 app.post('/api/ask-gemini', async (req, res) => {
@@ -91,5 +94,9 @@ app.post('/api/analyze-video', upload.single('video'), async (req, res) => {
     }
 });
 
-const PORT = 3000;
-app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+if (process.env.NODE_ENV !== 'production') {
+    const PORT = 3000;
+    app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+}
+
+module.exports = app;
