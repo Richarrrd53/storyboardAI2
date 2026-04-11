@@ -149,8 +149,8 @@ app.post('/api/analyze-video', upload.single('video'), async (req, res) => {
             { text: prompt },
         ]);
         
-        const htmlContent = renderer.parse(rawText);
         const rawText = result.response.text();// 使用 marked 將 Markdown 轉換為 HTML
+        const htmlContent = renderer.parse(rawText);
         // 4. 清理：先刪除本地檔案，避免占用 Vercel /tmp 空間
         if (fs.existsSync(req.file.path)) {
             fs.unlinkSync(req.file.path);
