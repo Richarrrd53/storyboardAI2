@@ -37,7 +37,7 @@ app.get('/', (req, res) => {
 app.post('/api/ask-gemini', async (req, res) => {
     const { question } = req.body;
     try {
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
         const result = await model.generateContent(question);
         const response = await result.response;
         
@@ -75,7 +75,7 @@ app.post('/api/analyze-video', upload.single('video'), async (req, res) => {
         }
 
         // 3. 進行分析
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
         const prompt = "你是一個專業的短影音企劃。請觀看影片並分析：1. 【前三秒 Hook】：這支影片開頭如何吸引人？ 2. 【鏡頭語言】：畫面構圖與運鏡方式。";
         
         const result = await model.generateContent([
