@@ -1,5 +1,5 @@
 async function uploadAndAnalyze() {
-    const fileInput = document.getElementById('video-upload');
+    const fileInput = document.getElementById('video-file');
     const file = fileInput.files[0];
     const statusText = document.getElementById('status-text'); // 假設你有個顯示狀態的元件
     

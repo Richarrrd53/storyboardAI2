@@ -1,42 +1,47 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
-  <meta charset="UTF-8"/>
-  <title>影片分析 — Storyboard AI</title>
-  <link rel="stylesheet" href="../css/style.css"/>
-  <link rel="stylesheet" href="../css/generate.css"/> <!-- 複用部分樣式 -->
+    <meta charset="UTF-8" />
+    <title>影片分析 — Storyboard AI</title>
+    <link rel="stylesheet" href="../css/style.css" />
+    <link rel="stylesheet" href="../css/generate.css" /> <!-- 複用部分樣式 -->
 </head>
+
 <body>
-  <nav class="gen-nav">
-    <a href="./dashboard.html" class="brand-logo gen-brand">STORYBOARD <span>AI</span></a>
-    <!-- 同樣加入 Token Widget -->
-    <div class="token-widget card" style="padding: 5px 15px; display: flex; align-items: center; gap: 12px; border-radius: 50px;">
-        <span style="font-size: 0.75rem;">Token: <span id="token-count">0</span></span>
-        <div id="token-bar-fill" style="width: 30px; height: 4px; background: var(--purple);"></div>
-    </div>
-  </nav>
+    <nav class="gen-nav">
+        <a href="./dashboard.html" class="brand-logo gen-brand">STORYBOARD <span>AI</span></a>
+        <!-- 同樣加入 Token Widget -->
+        <div class="token-widget card"
+            style="padding: 5px 15px; display: flex; align-items: center; gap: 12px; border-radius: 50px;">
+            <span style="font-size: 0.75rem;">Token: <span id="token-count">0</span></span>
+            <div id="token-bar-fill" style="width: 30px; height: 4px; background: var(--purple);"></div>
+        </div>
+    </nav>
 
-  <main style="max-width: 800px; margin: 120px auto; padding: 0 20px;">
-    <div class="card" style="padding: 40px; text-align: center;">
-      <h1 style="margin-bottom: 10px;">📈 影片爆點分析</h1>
-      <p style="color: var(--text-light); margin-bottom: 30px;">上傳熱門短影音，AI 自動拆解 Hook 與鏡頭語言</p>
-      
-      <div style="border: 2px dashed #ddd; padding: 40px; border-radius: 20px; margin-bottom: 20px;">
-        <input type="file" id="video-file" accept="video/*" style="margin-bottom: 20px;"><br>
-        <small>建議 15 秒以內短片 (MP4, MOV)</small>
-      </div>
+    <main style="max-width: 800px; margin: 120px auto; padding: 0 20px;">
+        <div class="card" style="padding: 40px; text-align: center;">
+            <h1 style="margin-bottom: 10px;">📈 影片爆點分析</h1>
+            <p style="color: var(--text-light); margin-bottom: 30px;">上傳熱門短影音，AI 自動拆解 Hook 與鏡頭語言</p>
 
-      <button id="analyze-btn" class="btn btn-primary btn-lg" onclick="uploadAndAnalyze()">🚀 開始 AI 審片</button>
-    </div>
+            <div style="border: 2px dashed #ddd; padding: 40px; border-radius: 20px; margin-bottom: 20px;">
+                <input type="file" id="video-file" accept="video/*" style="margin-bottom: 20px;"><br>
+                <small>建議 15 秒以內短片 (MP4, MOV)</small>
+            </div>
 
-    <!-- 分析結果區 -->
-    <div id="analysis-result" class="card" style="display: none; margin-top: 30px; padding: 30px; line-height: 1.8;">
-      <h3 style="color: var(--purple); margin-bottom: 15px;">🔍 AI 分析報告</h3>
-      <div id="analysis-text" style="text-align: left;"></div>
-    </div>
-  </main>
+            <button id="analyze-btn" class="btn btn-primary btn-lg" onclick="uploadAndAnalyze()">🚀 開始 AI 審片</button>
+        </div>
 
-  <script src="../js/token-manager.js"></script>
+        <!-- 分析結果區 -->
+        <div id="analysis-result" class="card"
+            style="display: none; margin-top: 30px; padding: 30px; line-height: 1.8;">
+            <h3 style="color: var(--purple); margin-bottom: 15px;">🔍 AI 分析報告</h3>
+            <div id="analysis-text" style="text-align: left;"></div>
+        </div>
+    </main>
+
+    <script src="../js/token-manager.js"></script>
     <script src="../js/upload.js"></script>
 </body>
+
 </html>
