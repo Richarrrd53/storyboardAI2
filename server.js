@@ -115,68 +115,45 @@ app.post('/api/ask-gemini', async (req, res) => {
 });
 
 
-app.post('/api/analyze-video', upload.single('video'), async (req, res) => {
+app.post('/api/analyze-video-uri', async (req, res) => {
     try {
-        if (!req.file) return res.status(400).send('未上傳影片');
-
-        // 檢查 API Key 是否已初始化 (針對你 readline 的邏輯)
-        if (!apiKey) {
-            return res.status(500).json({ error: "伺服器 API Key 尚未設定" });
-        }
+        const { fileUri, mimeType } = req.body;
 
         // 1. 上傳到 Gemini File API
-        const uploadResponse = await fileManager.uploadFile(req.file.path, {
-            mimeType: req.file.mimetype,
-            displayName: req.file.originalname,
-        });
+        // const uploadResponse = await fileManager.uploadFile(req.file.path, {
+        //     mimeType: req.file.mimetype,
+        //     displayName: req.file.originalname,
+        // });
 
-        // 2. 等待影片處理完成
-        let file = await fileManager.getFile(uploadResponse.file.name);
-        while (file.state === "PROCESSING") {
-            process.stdout.write("."); // 讓後端 log 知道還在動
-            await new Promise((resolve) => setTimeout(resolve, 3000));
-            file = await fileManager.getFile(uploadResponse.file.name);
-        }
+        // // 2. 等待影片處理完成
+        // let file = await fileManager.getFile(uploadResponse.file.name);
+        // while (file.state === "PROCESSING") {
+        //     process.stdout.write("."); // 讓後端 log 知道還在動
+        //     await new Promise((resolve) => setTimeout(resolve, 3000));
+        //     file = await fileManager.getFile(uploadResponse.file.name);
+        // }
 
-        if (file.state === "FAILED") {
-            throw new Error("Gemini 影片處理失敗");
-        }
+        // if (file.state === "FAILED") {
+        //     throw new Error("Gemini 影片處理失敗");
+        // }
         const { marked } = await import('marked');
         // 3. 進行分析 - 建議使用目前穩定的模型名稱
-        const model = genAIVideo.getGenerativeModel({ model: "gemini-3-flash-preview" }); 
+        const model = genAIVideo.getGenerativeModel({ model: "gemini-1.5-flash" });
         const prompt = "你是一個專業的短影音企劃。請觀看影片並分析：1. 【前三秒 Hook】：這支影片開頭如何吸引人？ 2. 【鏡頭語言】：畫面構圖與運鏡方式。";
 
         const result = await model.generateContent([
-            {
-                fileData: {
-                    mimeType: file.mimeType,
-                    fileUri: file.uri,
-                },
-            },
+            { fileData: { mimeType: mimeType, fileUri: fileUri } },
             { text: prompt },
         ]);
-        
-        const rawText = result.response.text();// 使用 marked 將 Markdown 轉換為 HTML
-        const htmlContent = marked.parse(rawText);
-        // 4. 清理：先刪除本地檔案，避免占用 Vercel /tmp 空間
-        if (fs.existsSync(req.file.path)) {
-            fs.unlinkSync(req.file.path);
-        }
-        
-        // 刪除 Gemini 雲端檔案 (選用，節省雲端空間)
-        await fileManager.deleteFile(file.name);
 
-        res.json({ 
-            analysis: htmlContent, 
-            raw_text: rawText // 保留一份純文字備用
-        });
+        const rawText = result.response.text();
+        const htmlContent = marked.parse(rawText); // 套用 Marked 格式化
+
+        res.json({ analysis: htmlContent });
 
     } catch (error) {
-        console.error('Video Analysis Error:', error);
-        res.status(500).json({ 
-            error: "影片分析失敗", 
-            details: error.message 
-        });
+        console.error(error);
+        res.status(500).json({ error: "分析失敗" });
     }
 });
 

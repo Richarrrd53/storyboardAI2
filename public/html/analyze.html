@@ -26,7 +26,7 @@
         <small>建議 15 秒以內短片 (MP4, MOV)</small>
       </div>
 
-      <button id="analyze-btn" class="btn btn-primary btn-lg" onclick="startAnalysis()">🚀 開始 AI 審片</button>
+      <button id="analyze-btn" class="btn btn-primary btn-lg" onclick="uploadAndAnalyze()">🚀 開始 AI 審片</button>
     </div>
 
     <!-- 分析結果區 -->
@@ -37,42 +37,6 @@
   </main>
 
   <script src="../js/token-manager.js"></script>
-  <script>
-    async function startAnalysis() {
-        const fileInput = document.getElementById('video-file');
-        const btn = document.getElementById('analyze-btn');
-        const resultArea = document.getElementById('analysis-result');
-        const textArea = document.getElementById('analysis-text');
-
-        if (!fileInput.files[0]) return alert("請先選擇影片檔案");
-
-        btn.innerText = "🧠 AI 引擎分析中...";
-        btn.disabled = true;
-
-        const formData = new FormData();
-        formData.append('video', fileInput.files[0]);
-
-        try {
-            // 注意：此處需對應 server.js 的 /api/analyze-video 路由
-            const res = await fetch('/api/analyze-video', {
-                method: 'POST',
-                body: formData
-            });
-            const data = await res.json();
-
-            if (data.analysis) {
-                resultArea.style.display = 'block';
-                textArea.innerHTML = data.analysis.replace(/\n/g, '<br>');
-                // 更新 Token
-                if (data.usage) updateTokenUsage(data.usage.totalTokens);
-            }
-        } catch (e) {
-            alert("分析失敗，請確認伺服器連線");
-        } finally {
-            btn.innerText = "🚀 開始 AI 審片";
-            btn.disabled = false;
-        }
-    }
-  </script>
+    <script src="../js/upload.js"></script>
 </body>
 </html>
