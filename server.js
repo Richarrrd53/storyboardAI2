@@ -27,12 +27,19 @@ const genAIVideo = new GoogleGenerativeAI(apiKey);
 const fileManager = new GoogleAIFileManager(apiKey);
 
 
-const publicPath = path.join(__dirname, 'public');
+const publicPath = path.join(process.cwd(), 'public');
 app.use(express.static(publicPath));
 
+// 2. 修改路由回傳檔案的路徑
 app.get('/', (req, res) => {
-    // 確保路徑指向正確的 public 資料夾
-    res.sendFile(path.join(publicPath, 'main.html'));
+    // 確保路徑指向根目錄下的 public/main.html
+    const filePath = path.join(process.cwd(), 'public', 'main.html');
+    res.sendFile(filePath, (err) => {
+        if (err) {
+            console.error("發送檔案失敗:", err);
+            res.status(500).send("無法讀取主頁面，請檢查路徑設定。");
+        }
+    });
 });
 app.use(express.static(publicPath));
 app.use(express.json({ limit: '100mb' }));
