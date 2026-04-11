@@ -68,7 +68,7 @@
                 // --- 關鍵：檢查 HTTP 狀態碼 ---
                 if (res.status === 413) {
                     // 這裡就是攔截 Vercel 4.5MB 限制的地方
-                    alert(`檔案過大 (約 ${fileSizeMB.toFixed(2)}MB)\n\n由於 Vercel 平台的限制，檔案不能超過 4.5MB。\n建議使用本地端開啟。`);
+                    alert(`檔案過大 (約 ${fileSizeMB.toFixed(2)}MB)<br>由於 Vercel 平台的限制，檔案不能超過 4.5MB。<br>建議使用本地端開啟。`);
                     return; // 結束執行
                 }
 
