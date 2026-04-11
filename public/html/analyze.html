@@ -1,0 +1,32 @@
+<!-- analyze.html 部分代碼 -->
+<section class="card" style="padding: 40px; max-width: 800px; margin: 40px auto;">
+    <h2>📈 影片爆點分析 (AI 審片)</h2>
+    <input type="file" id="video-upload" accept="video/*" class="input-field" style="margin: 20px 0;">
+    <button class="btn btn-primary" onclick="analyzeVideo()">開始分析</button>
+    
+    <div id="analysis-result" style="margin-top: 30px; line-height: 1.8; display: none;" class="card">
+        <!-- AI 結果將顯示在此 -->
+    </div>
+</section>
+
+<script>
+async function analyzeVideo() {
+    const fileInput = document.getElementById('video-upload');
+    const resultDiv = document.getElementById('analysis-result');
+    if (!fileInput.files[0]) return alert("請選擇影片");
+
+    const formData = new FormData();
+    formData.append('video', fileInput.files[0]);
+
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = "AI 正在解析影片中，請稍候...";
+
+    const response = await fetch('/api/analyze-video', {
+        method: 'POST',
+        body: formData
+    });
+
+    const data = await response.json();
+    resultDiv.innerHTML = `<div style="padding:20px;">${data.analysis.replace(/\n/g, '<br>')}</div>`;
+}
+</script>
