@@ -2,7 +2,7 @@ const express = require('express');
 const path = require('path');
 const bodyParser = require('body-parser');
 const fs = require("fs");
-const { marked } = require('marked');
+const { marked } = import('marked');
 const multer = require('multer');
 require('dotenv').config();
 const { GoogleGenAI } = require("@google/genai");
