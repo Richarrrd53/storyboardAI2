@@ -225,11 +225,11 @@ function openConfirmModal() {
 
     const modal = document.getElementById('confirm-modal');
     modal.classList.add('active');
-    modal.style.transition = 'all 0.5s cubic-bezier(0.33, 1.53, 0.69, .99)';
+    modal.children[0].style.transition = 'all 0.5s cubic-bezier(0.33, 1.53, 0.69, .99)';
 }
 function closeConfirmModal() {
     document.getElementById('confirm-modal').classList.remove('active');
-    document.getElementById('confirm-modal').style.transition = 'all 0.5s cubic-bezier(.31,.01,.66,-0.59)';
+    document.getElementById('confirm-modal').children[0].style.transition = 'all 0.5s cubic-bezier(.31,.01,.66,-0.59)';
 }
 
 // Click outside to close
