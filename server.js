@@ -37,7 +37,10 @@ app.get('/', (req, res) => {
 app.post('/api/ask-gemini', async (req, res) => {
     const { question } = req.body;
     try {
-        const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+        const modelName = (type === 'planning' || type === 'optimization') 
+                          ? "gemini-3.-flash-img-preview" 
+                          : "gemini-3.1-flash-image-preview";
+        const model = genAI.getGenerativeModel({ model: modelName });
         const result = await model.generateContent(question);
         const response = await result.response;
         
@@ -73,7 +76,7 @@ app.post('/api/analyze-video', upload.single('video'), async (req, res) => {
             await new Promise((resolve) => setTimeout(resolve, 2000));
             file = await fileManager.getFile(uploadResponse.file.name);
         }
-
+        
         // 3. 進行分析
         const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
         const prompt = "你是一個專業的短影音企劃。請觀看影片並分析：1. 【前三秒 Hook】：這支影片開頭如何吸引人？ 2. 【鏡頭語言】：畫面構圖與運鏡方式。";

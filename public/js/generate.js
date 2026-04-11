@@ -254,59 +254,55 @@ function getScriptPrompt() {
     重要：請不要使用 Markdown 格式，只需要純文字。`;
 }
 
+let generatedImgs = [];
+let generatedStoryTitles = [];
+let generatedStoryCams = [];
+let generatedPrompts = [];
+
 
 // ── Generate ──
 async function startGenerate() {
     closeConfirmModal();
     showScreen('screen-generating');
-    
     const loadingTitle = document.getElementById('loading-title');
     const progressBar = document.getElementById('gen-progress');
-    
+
+    // 清空歷史資料
+    generatedImgs = []; generatedStoryTitles = []; generatedStoryCams = []; generatedPrompts = [];
+
     try {
-        // 階段 1：腦暴腳本 & 鏡位
-        loadingTitle.innerText = "正在規劃專業腳本 (1/5)...";
-        const scriptResponse = await askGemini(getScriptPrompt());
-        const fullScript = scriptResponse.response;
+        // 1. 腳本規劃 (使用 Pro)
+        loadingTitle.innerText = "正在規劃連貫腳本 (1/5)...";
+        const scriptRes = await askGemini(getScriptPrompt(), 'planning');
+        const fullScript = scriptRes.response;
         progressBar.style.width = "20%";
 
-        // 階段 2：提取畫面標題
-        loadingTitle.innerText = "提取分鏡標題 (2/5)...";
-        const titlesResponse = await askGemini(fullScript + "\n幫我將這些文字整理成只有畫面的部分，範例為：1. (描述) 2. (描述)...");
-        const titles = parseNumberedList(titlesResponse.response);
-        progressBar.style.width = "40%";
+        // 2. & 3. 提取標題與鏡位 (使用 Flash)
+        loadingTitle.innerText = "提取分鏡細節 (2/5)...";
+        const titlesRes = await askGemini(fullScript + "\n提取畫面標題，格式: 1. XXX", 'extraction');
+        generatedStoryTitles = parseNumberedList(titlesRes.response);
+        
+        const camsRes = await askGemini(fullScript + "\n提取鏡頭語言，格式: 1. XXX", 'extraction');
+        generatedStoryCams = parseNumberedList(camsRes.response);
+        progressBar.style.width = "50%";
 
-        // 階段 3：提取鏡位描述
-        loadingTitle.innerText = "設計鏡頭語言 (3/5)...";
-        const camsResponse = await askGemini(fullScript + "\n幫我將這些文字整理成只有鏡頭的部分，範例為：1. (描述) 2. (描述)...");
-        const cams = parseNumberedList(camsResponse.response);
-        progressBar.style.width = "60%";
-
-        // 階段 4：優化生圖 Prompt (加入強化的風格描述)
-        loadingTitle.innerText = "優化 AI 生圖提示詞 (4/5)...";
+        // 4. Prompt 優化 (使用 Pro)
+        loadingTitle.innerText = "優化視覺連貫性 (4/5)...";
         const styleDetail = styleDescriptions[state.style] || "";
-        const promptOptimizeReq = `${fullScript}\n優化各個 prompt，比例為 ${state.ratio}，風格為 ${styleDetail}。要求：至少150字，ABSOLUTELY NO TEXT。格式：1. (Prompt) 2. (Prompt)...`;
-        const promptsResponse = await askGemini(promptOptimizeReq);
-        const prompts = parseNumberedList(promptsResponse.response);
+        const promptOptimizeReq = `${fullScript}\n優化 Prompt，比例 ${state.ratio}，風格 ${styleDetail}。格式: 1. XXX`;
+        const promptsRes = await askGemini(promptOptimizeReq, 'optimization');
+        generatedPrompts = parseNumberedList(promptsRes.response);
         progressBar.style.width = "80%";
 
-        // 階段 5：逐一生成圖片
-        loadingTitle.innerText = "AI 正在繪製分鏡圖 (5/5)...";
-        const finalScenes = [];
-        for(let i=0; i < prompts.length; i++) {
-            loadingTitle.innerText = `正在繪製第 ${i+1}/${prompts.length} 張圖...`;
-            // 這裡使用 Pollinations 或您指定的生圖接口
-            const imgUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompts[i] + ", " + styleDetail)}?width=1280&height=720&nologo=true`;
-            
-            finalScenes.push({
-                title: titles[i] || "未命名畫面",
-                cam: cams[i] || "一般鏡位",
-                img: imgUrl,
-                prompt: prompts[i]
-            });
+        // 5. 逐一生成圖片
+        for(let i=0; i < generatedPrompts.length; i++) {
+            loadingTitle.innerText = `繪製中 ${i+1}/${generatedPrompts.length}...`;
+            // 使用 Pollinations 作為生圖引擎
+            const imgUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(generatedPrompts[i] + ", " + styleDetail)}?width=1280&height=720&nologo=true`;
+            generatedImgs.push(imgUrl);
         }
 
-        renderProfessionalResult(finalScenes);
+        renderFilmStrip();
     } catch (e) {
         alert("生成失敗: " + e.message);
         goToStep(1);
@@ -314,20 +310,90 @@ async function startGenerate() {
 }
 
 // 輔助函式：呼叫後端 API
-async function askGemini(question) {
+async function askGemini(question, type) {
     const res = await fetch('/api/ask-gemini', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question })
+        body: JSON.stringify({ question, type })
     });
     const data = await res.json();
-
-    // 每一小步完成，都立即更新全局 Token 顯示
     if (data.usage && typeof updateTokenUsage === 'function') {
-        updateTokenUsage(data.usage.totalTokens);
+        updateTokenUsage(data.usage.totalTokenCount);
     }
-
     return data;
+}
+
+function renderFilmStrip() {
+    showScreen('screen-result');
+    const container = document.getElementById('storyboard-grid');
+    container.innerHTML = `
+        <div class="film-strip-container" style="display: flex;">
+            <div class="film-strip-controls">
+                <button class="film-strip-button" id="playButton">預覽</button>
+                <button class="film-strip-button" id="exportButton">匯出</button>
+                <button class="film-strip-button" id="continueButton">接龍</button>
+            </div>
+            <div id="filmStrip" class="film-strip"></div>
+        </div>
+    `;
+
+    const filmStrip = document.getElementById('filmStrip');
+    const ratioKey = state.ratio.replace(':', '-');
+
+    generatedImgs.forEach((imgSrc, i) => {
+        const frame = document.createElement('div');
+        frame.className = `film-frame ratio-${ratioKey}`;
+        frame.innerHTML = `
+            <div class="frame-image-container">
+                <div class="frame-number">#${i + 1}</div>
+                <img src="${imgSrc}" class="frame-image">
+                <div class="frame-overlay">
+                    <div class="frame-content">
+                        <div class="frame-title">${generatedStoryTitles[i] || '畫面'}</div>
+                        <div class="frame-description">${generatedStoryCams[i] || '鏡頭'}</div>
+                        <div class="frame-actions">
+                            <button class="frame-button" onclick="alert('${generatedPrompts[i]}')">Prompt</button>
+                            <button class="frame-button">重新生成</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        filmStrip.appendChild(frame);
+    });
+
+    // 計算膠卷齒輪邊框寬度
+    const totalWidth = (generatedImgs.length * 350); // 粗略估算
+    filmStrip.style.setProperty('--film-strip-edge-width', `${totalWidth}px`);
+
+    // 綁定拖拽滾動
+    initDragScroll(filmStrip);
+}
+
+function initDragScroll(el) {
+    let isDown = false;
+    let startX;
+    let scrollLeft;
+
+    el.addEventListener('mousedown', (e) => {
+        isDown = true;
+        el.style.cursor = 'grabbing';
+        startX = e.pageX - el.offsetLeft;
+        scrollLeft = el.scrollLeft;
+    });
+    el.addEventListener('mouseleave', () => { isDown = false; el.style.cursor = 'grab'; });
+    el.addEventListener('mouseup', () => { isDown = false; el.style.cursor = 'grab'; });
+    el.addEventListener('mousemove', (e) => {
+        if (!isDown) return;
+        e.preventDefault();
+        const x = e.pageX - el.offsetLeft;
+        const walk = (x - startX) * 2;
+        el.scrollLeft = scrollLeft - walk;
+    });
+    el.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        el.scrollLeft += e.deltaY;
+    });
 }
 
 // 輔助函式：解析 1. 2. 3. 列表

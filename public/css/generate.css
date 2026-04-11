@@ -475,3 +475,70 @@ body {
   .storyboard-grid { grid-template-columns: repeat(2, 1fr); }
   .result-header { flex-direction: column; gap: 16px; }
 }
+
+
+/* 膠卷齒輪孔動畫感 */
+.film-strip {
+    position: relative;
+    display: flex;
+    overflow-x: auto;
+    padding: 40px 0;
+    gap: 10px;
+    width: 100%;
+    scrollbar-width: none;
+    cursor: grab;
+    background: #111;
+}
+
+#filmStrip::before,
+#filmStrip::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 25px;
+    width: var(--film-strip-edge-width, 2000px);
+    background-image: repeating-linear-gradient(
+        to right,
+        transparent,
+        transparent 20px,
+        #333 20px,
+        #333 40px
+    );
+    z-index: 5;
+}
+
+#filmStrip::before { top: 5px; }
+#filmStrip::after { bottom: 5px; }
+
+.film-frame {
+    flex: 0 0 auto;
+    background: #000;
+    padding: 10px;
+    border-left: 2px solid #222;
+    border-right: 2px solid #222;
+    transition: transform 0.3s;
+}
+
+.film-frame:hover {
+    transform: scale(1.02);
+    z-index: 10;
+}
+
+.frame-image-container {
+    position: relative;
+    height: 350px;
+    background: #222;
+    display: flex;
+    justify-content: center;
+}
+
+.frame-overlay {
+    background: linear-gradient(transparent, rgba(0,0,0,0.9));
+    opacity: 0;
+    transition: 0.3s;
+}
+
+.frame-image-container:hover .frame-overlay {
+    opacity: 1;
+}
