@@ -1,4 +1,4 @@
-function alert(message, options = { btnText: "確定", duration: 2500 }) {
+function alert(message, options = { btnText: "確定", duration: 15000 }) {
     return new Promise((resolve) => {
         const bg = document.createElement("div");
         bg.id = "notifyWindowBG";
@@ -7,7 +7,10 @@ function alert(message, options = { btnText: "確定", duration: 2500 }) {
         windowEl.id = "notifyWindow";
 
         const title = document.createElement("h1");
-        title.textContent = message;
+        title.innerHTML = "出現錯誤了！";
+
+        const messageEl = document.createElement("p");
+        messageEl.innerHTML = message;
 
         const btnContainer = document.createElement("div");
         btnContainer.id = "notifyBtnContainer";
@@ -18,6 +21,7 @@ function alert(message, options = { btnText: "確定", duration: 2500 }) {
 
         btnContainer.appendChild(confirmBtn);
         windowEl.appendChild(title);
+        windowEl.appendChild(messageEl);
         windowEl.appendChild(btnContainer);
         bg.appendChild(windowEl);
         document.body.appendChild(bg);
@@ -27,7 +31,7 @@ function alert(message, options = { btnText: "確定", duration: 2500 }) {
             bg.style.backdropFilter = "blur(0px)";
             windowEl.style.transition = "all 0.5s cubic-bezier(.31,.01,.66,-0.59)";
             windowEl.style.scale = "0";
-            windowEl.style.transform = "translate(0, -200px)";
+            windowEl.style.transform = "translate(0, -400px)";
             windowEl.style.filter = "blur(20px)";
             windowEl.style.opacity = "0";
 
@@ -47,9 +51,5 @@ function alert(message, options = { btnText: "確定", duration: 2500 }) {
         }, 10);
 
         confirmBtn.onclick = closeAlert;
-
-        if (options.duration > 0) {
-            setTimeout(closeAlert, options.duration);
-        }
     });
 }
