@@ -1,19 +1,16 @@
 async function uploadAndAnalyze() {
     const fileInput = document.getElementById('video-file');
     const file = fileInput.files[0];
-    const statusText = document.getElementById('status-text'); // 假設你有個顯示狀態的元件
     
     if (!file) return alert("請先選擇檔案！");
 
     try {
-        statusText.innerText = "正在取得授權...";
         
         // 1. 取得 API Key
         const configRes = await fetch('/api/get-config');
         const { apiKey } = await configRes.json();
 
         // 2. 第一步：取得 Resumable 上傳網址
-        statusText.innerText = "正在建立上傳通道...";
         const initRes = await fetch(`https://generativelanguage.googleapis.com/upload/v1beta/files?key=${apiKey}`, {
             method: "POST",
             headers: {
@@ -29,7 +26,6 @@ async function uploadAndAnalyze() {
         const uploadUrl = initRes.headers.get("X-Goog-Upload-URL");
 
         // 3. 第二步：正式上傳影片
-        statusText.innerText = "影片上傳中，請稍候...";
         const finalRes = await fetch(uploadUrl, {
             method: "POST",
             headers: {
@@ -43,11 +39,9 @@ async function uploadAndAnalyze() {
         const fileName = uploadData.file.name; // 格式會是 "files/xxxx"
 
         // 4. 第三步：開始輪詢 (Polling)，確認 Google 處理好了沒
-        statusText.innerText = "Google 正在處理影片特徵...";
         const fileUri = await pollFileStatus(fileName, apiKey);
 
         // 5. 第四步：通知你的 Vercel 後端進行 AI 分析
-        statusText.innerText = "🧠 AI 正在解析爆點與鏡頭語言...";
         const analyzeRes = await fetch('/api/analyze-video-uri', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -61,7 +55,6 @@ async function uploadAndAnalyze() {
 
         // 6. 最後：把結果漂亮的顯示出來
         if (result.analysis) {
-            statusText.innerText = "分析完成！";
             document.getElementById('analysis-result').innerHTML = result.analysis;
         } else {
             throw new Error(result.error || "分析結果空白");
@@ -69,7 +62,6 @@ async function uploadAndAnalyze() {
 
     } catch (err) {
         console.error(err);
-        statusText.innerText = "❌ 發生錯誤：" + err.message;
     }
 }
 
