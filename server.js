@@ -2,7 +2,7 @@ const express = require('express');
 const path = require('path');
 const bodyParser = require('body-parser');
 const fs = require("fs");
-const { marked } = import('marked');
+const { Marked } = require('marked');
 const multer = require('multer');
 require('dotenv').config();
 const { GoogleGenAI } = require("@google/genai");
@@ -10,7 +10,7 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { GoogleAIFileManager } = require("@google/generative-ai/server");
 const readline = require('node:readline');
 require('dotenv').config();
-
+const renderer = new Marked();
 
 const app = express();
 const port = 3000;
@@ -148,7 +148,9 @@ app.post('/api/analyze-video', upload.single('video'), async (req, res) => {
             },
             { text: prompt },
         ]);
-
+        
+        const htmlContent = renderer.parse(rawText);
+        const rawText = result.response.text();// 使用 marked 將 Markdown 轉換為 HTML
         // 4. 清理：先刪除本地檔案，避免占用 Vercel /tmp 空間
         if (fs.existsSync(req.file.path)) {
             fs.unlinkSync(req.file.path);
@@ -157,7 +159,10 @@ app.post('/api/analyze-video', upload.single('video'), async (req, res) => {
         // 刪除 Gemini 雲端檔案 (選用，節省雲端空間)
         await fileManager.deleteFile(file.name);
 
-        res.json({ analysis: result.response.text() });
+        res.json({ 
+            analysis: htmlContent, 
+            raw_text: rawText // 保留一份純文字備用
+        });
 
     } catch (error) {
         console.error('Video Analysis Error:', error);
