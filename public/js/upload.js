@@ -1,59 +1,90 @@
 async function uploadAndAnalyze() {
+    const fileInput = document.getElementById('video-upload');
+    const file = fileInput.files[0];
+    const statusText = document.getElementById('status-text'); // 假設你有個顯示狀態的元件
     
+    if (!file) return alert("請先選擇檔案！");
 
     try {
-        // --- 步驟 1: 前端上傳 ---
+        statusText.innerText = "正在取得授權...";
+        
+        // 1. 取得 API Key
         const configRes = await fetch('/api/get-config');
         const { apiKey } = await configRes.json();
-        
-        const fileInput = document.getElementById('video-file');
-        const file = fileInput.files[0];
-        if (!file) return alert("請選擇影片");
-        
-        // 建立 Form Data 上傳至 Google File API
-        const metadata = {
-            file: { displayName: file.name }
-        };
-        
-        const formData = new FormData();
-        // 關鍵 1：Metadata 必須轉成 Blob 並指定內容類型為 application/json
-        formData.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
-        
-        // 關鍵 2：直接 append 檔案物件，不要包在額外的 Blob 裡
-        formData.append("file", file);
 
-        const uploadRes = await fetch(`https://generativelanguage.googleapis.com/upload/v1beta/files?key=${apiKey}`, {
+        // 2. 第一步：取得 Resumable 上傳網址
+        statusText.innerText = "正在建立上傳通道...";
+        const initRes = await fetch(`https://generativelanguage.googleapis.com/upload/v1beta/files?key=${apiKey}`, {
             method: "POST",
-            body: formData
+            headers: {
+                "X-Goog-Upload-Protocol": "resumable",
+                "X-Goog-Upload-Command": "start",
+                "X-Goog-Upload-Header-Content-Length": file.size,
+                "X-Goog-Upload-Header-Content-Type": file.type,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ file: { displayName: file.name } })
         });
-        if (!uploadRes.ok) {
-            const errorData = await uploadRes.json();
-            throw new Error(errorData.error.message || "上傳失敗");
+
+        const uploadUrl = initRes.headers.get("X-Goog-Upload-URL");
+
+        // 3. 第二步：正式上傳影片
+        statusText.innerText = "影片上傳中，請稍候...";
+        const finalRes = await fetch(uploadUrl, {
+            method: "POST",
+            headers: {
+                "X-Goog-Upload-Offset": "0",
+                "X-Goog-Upload-Command": "upload, finalize"
+            },
+            body: file 
+        });
+
+        const uploadData = await finalRes.json();
+        const fileName = uploadData.file.name; // 格式會是 "files/xxxx"
+
+        // 4. 第三步：開始輪詢 (Polling)，確認 Google 處理好了沒
+        statusText.innerText = "Google 正在處理影片特徵...";
+        const fileUri = await pollFileStatus(fileName, apiKey);
+
+        // 5. 第四步：通知你的 Vercel 後端進行 AI 分析
+        statusText.innerText = "🧠 AI 正在解析爆點與鏡頭語言...";
+        const analyzeRes = await fetch('/api/analyze-video-uri', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                fileUri: fileUri, 
+                mimeType: file.type 
+            })
+        });
+
+        const result = await analyzeRes.json();
+
+        // 6. 最後：把結果漂亮的顯示出來
+        if (result.analysis) {
+            statusText.innerText = "分析完成！";
+            document.getElementById('analysis-result').innerHTML = result.analysis;
+        } else {
+            throw new Error(result.error || "分析結果空白");
         }
-        const uploadData = await uploadRes.json();
-        const fileUri = uploadData.file.uri;
-        const fileName = uploadData.file.name;
-        await checkFileStatus(fileName, apiKey, fileUri, file.type);
+
     } catch (err) {
         console.error(err);
-        alert("分析失敗，請稍後再試");
+        statusText.innerText = "❌ 發生錯誤：" + err.message;
     }
 }
 
-async function checkFileStatus(fileName, apiKey, fileUri, mimeType) {
-    let state = "PROCESSING";
-    while (state === "PROCESSING") {
-        console.log("正在處理影片...");
-        await new Promise(r => setTimeout(r, 3000)); // 等 3 秒
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/${fileName}?key=${apiKey}`);
-        const data = await res.json();
-        state = data.state;
-    }
+// 輪詢函式保持不變，它是 uploadAndAnalyze 的好幫手
+async function pollFileStatus(fileName, apiKey) {
+    while (true) {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/${fileName}?key=${apiKey}`);
+        const fileInfo = await response.json();
 
-    if (state === "ACTIVE") {
-        // 呼叫你的 Vercel 後端 API
-        sendToBackend(fileUri, mimeType);
-    } else {
-        alert("影片處理失敗，請重試");
+        if (fileInfo.state === "ACTIVE") {
+            return fileInfo.uri; 
+        } else if (fileInfo.state === "FAILED") {
+            throw new Error("Google 影片處理失敗");
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 3000));
     }
 }
