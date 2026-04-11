@@ -8,13 +8,10 @@ require('dotenv').config();
 const { GoogleGenAI } = require("@google/genai");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { GoogleAIFileManager } = require("@google/generative-ai/server");
-const readline = require('node:readline');
 require('dotenv').config();
 const renderer = new Marked();
 
 const app = express();
-const port = 3000;
-const hostname = '127.0.0.1';
 
 
 const apiKey = process.env.GEMINI_API_KEY;
