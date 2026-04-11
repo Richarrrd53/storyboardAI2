@@ -5,7 +5,7 @@ const fs = require("fs");
 const { marked } = import('marked');
 const multer = require('multer');
 require('dotenv').config();
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { GoogleGenAI } = require("@google/genai");
 const { GoogleAIFileManager } = require("@google/generative-ai/server");
 
 const app = express();
@@ -19,8 +19,8 @@ if (!apiKey) {
     console.error("FATAL: GEMINI_API_KEY 環境變數未設定。請設定 Vercel 環境變數並重試。");
 }
 
-const genAI = new GoogleGenerativeAI({ apiKey: apiKey });
-const fileManager = new GoogleAIFileManager({ apiKey: apiKey });
+const genAI = new GoogleGenAI({ apiKey: apiKey });
+const fileManager = new GoogleAIFileManager(apiKey);
 
 
 const publicPath = path.join(process.cwd(), 'public');
