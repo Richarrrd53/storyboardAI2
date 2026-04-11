@@ -91,15 +91,16 @@ app.post('/api/ask-gemini', async (req, res) => {
                 }
             }
         }
+        const usage = response.usageMetadata;
 
         // 回傳 base64 圖片資料，取代原本的檔案路徑
         res.json({ 
                 response: responseText,
                 image: imgs, 
                 usage: {
-                promptTokens: usage.promptTokenCount,
-                candidatesTokens: usage.candidatesTokenCount,
-                totalTokens: usage.totalTokenCount
+                    promptTokens: usage.promptTokenCount,
+                    candidatesTokens: usage.candidatesTokenCount,
+                    totalTokens: usage.totalTokenCount
             } });
         
     } catch (error) {
