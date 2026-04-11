@@ -296,10 +296,15 @@ async function startGenerate() {
 
         // 5. 逐一生成圖片
         for(let i=0; i < generatedPrompts.length; i++) {
-            loadingTitle.innerText = `繪製中 ${i+1}/${generatedPrompts.length}...`;
-            // 使用 Pollinations 作為生圖引擎
-            const imgUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(generatedPrompts[i] + ", " + styleDetail)}?width=1280&height=720&nologo=true`;
-            generatedImgs.push(imgUrl);
+
+            const imgRes = await askGemini(generatedPrompts[i] + ", " + styleDetail, 'generation');
+            if(imgRes.image !== undefined) {
+                generatedImgs.push(imgRes.image);
+            }
+            // loadingTitle.innerText = `繪製中 ${i+1}/${generatedPrompts.length}...`;
+            // // 使用 Pollinations 作為生圖引擎
+            // const imgUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(generatedPrompts[i] + ", " + styleDetail)}?width=1280&height=720&nologo=true`;
+            // generatedImgs.push(imgUrl);
         }
 
         renderFilmStrip();
