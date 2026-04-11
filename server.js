@@ -27,7 +27,13 @@ const genAIVideo = new GoogleGenerativeAI(apiKey);
 const fileManager = new GoogleAIFileManager(apiKey);
 
 
-const publicPath = path.join(process.cwd(), 'public');
+const publicPath = path.join(__dirname, 'public');
+app.use(express.static(publicPath));
+
+app.get('/', (req, res) => {
+    // 確保路徑指向正確的 public 資料夾
+    res.sendFile(path.join(publicPath, 'main.html'));
+});
 app.use(express.static(publicPath));
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ limit: '100mb', extended: true })); // 增加 URL 編碼限制
@@ -39,9 +45,6 @@ const upload = multer({
 });
 
 
-app.get('/', (req, res) => {
-    res.sendFile(path.join(publicPath, 'main.html'));
-});
 
 app.post('/api/ask-gemini', async (req, res) => {
 
