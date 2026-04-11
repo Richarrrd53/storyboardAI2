@@ -67,7 +67,12 @@
                 if (data.usage) updateTokenUsage(data.usage.totalTokens);
             }
         } catch (e) {
-            alert("分析失敗，請確認伺服器連線");
+            if(e.error.code == 413) {
+                alert("檔案過大，請透過本地端運行後重試，或確保檔案大小在限制內");
+            }
+            else{
+                alert("分析失敗，請稍後再試");
+            }
         } finally {
             btn.innerText = "🚀 開始 AI 審片";
             btn.disabled = false;
