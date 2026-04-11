@@ -267,17 +267,14 @@ async function startGenerate() {
     const loadingTitle = document.getElementById('loading-title');
     const progressBar = document.getElementById('gen-progress');
 
-    // 清空歷史資料
     generatedImgs = []; generatedStoryTitles = []; generatedStoryCams = []; generatedPrompts = [];
 
     try {
-        // 1. 腳本規劃 (使用 Pro)
         loadingTitle.innerText = "正在規劃連貫腳本 (1/5)...";
         const scriptRes = await askGemini(getScriptPrompt(), 'planning');
         const fullScript = scriptRes.response;
         progressBar.style.width = "20%";
 
-        // 2. & 3. 提取標題與鏡位 (使用 Flash)
         loadingTitle.innerText = "提取分鏡細節 (2/5)...";
         const titlesRes = await askGemini(fullScript + "\n提取畫面標題，格式: 1. XXX", 'extraction');
         generatedStoryTitles = parseNumberedList(titlesRes.response);
@@ -286,7 +283,6 @@ async function startGenerate() {
         generatedStoryCams = parseNumberedList(camsRes.response);
         progressBar.style.width = "50%";
 
-        // 4. Prompt 優化 (使用 Pro)
         loadingTitle.innerText = "優化視覺連貫性 (4/5)...";
         const styleDetail = styleDescriptions[state.style] || "";
         const promptOptimizeReq = `${fullScript}\n優化 Prompt，比例 ${state.ratio}，風格 ${styleDetail}。格式: 1. XXX`;
@@ -294,17 +290,24 @@ async function startGenerate() {
         generatedPrompts = parseNumberedList(promptsRes.response);
         progressBar.style.width = "80%";
 
-        // 5. 逐一生成圖片
-        for(let i=0; i < generatedPrompts.length; i++) {
+        // 5. 並行生成所有圖片
+        loadingTitle.innerText = "正在同步繪製所有分鏡 (5/5)...";
+        
+        const imageTasks = generatedPrompts.map(prompt => 
+            askGemini(prompt + ", " + styleDetail, 'generation')
+        );
 
-            const imgRes = await askGemini(generatedPrompts[i] + ", " + styleDetail, 'generation');
-            if(imgRes.image !== undefined) {
-                generatedImgs.push(imgRes.image);
-            }
-        }
+        const results = await Promise.all(imageTasks);
+
+        generatedImgs = results
+            .filter(res => res && res.image !== undefined)
+            .map(res => res.image);
 
         renderFilmStrip();
+        progressBar.style.width = "100%";
+        
     } catch (e) {
+        console.error(e);
         alert("生成失敗: " + e.message);
         goToStep(1);
     }
