@@ -1,7 +1,38 @@
 import gsap from "https://cdn.skypack.dev/gsap";
 import ScrollTrigger from "https://cdn.skypack.dev/gsap/ScrollTrigger";
+import ScrollToPlugin from "https://cdn.skypack.dev/gsap/ScrollToPlugin";
 
-gsap.registerPlugin(ScrollTrigger);
+gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
+
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        const href = this.getAttribute('href');
+        
+        const target = document.querySelector(href);
+        if (target) {
+            e.preventDefault();
+
+            const targetPos = target.getBoundingClientRect().top + window.pageYOffset;
+            const startPos = window.pageYOffset;
+            const distance = Math.abs(targetPos - startPos);
+            
+            const speed = 1080; 
+            let dynamicDuration = distance / speed;
+
+            dynamicDuration = Math.max(0.5, Math.min(dynamicDuration, 3));
+
+            gsap.to(window, {
+                duration: dynamicDuration,
+                scrollTo: {
+                    y: target,
+                    autoKill: true,
+                    offsetY: 81
+                },
+                ease: "expo.out"
+            });
+        }
+    });
+});
 
 document.addEventListener("DOMContentLoaded", function() {
 
