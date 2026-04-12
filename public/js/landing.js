@@ -1,4 +1,5 @@
 
+
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
         const href = this.getAttribute('href');
@@ -30,13 +31,10 @@ const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
         if (entry.isIntersecting) {
             if (entry.target.id == "intro_video"){
-                entry.target.play()
+
+                entry.target.currentTime = 0;
+                entry.target.play();
             }
-            entry.target.style.animation = 'popIn 0.6s cubic-bezier(.4,0,.2,1) both';
-            setTimeout(() => {
-                entry.target.style.animation = '';
-                entry.target.style.opacity = 1;
-            }, 600);
         }
     });
 },
@@ -133,23 +131,58 @@ function setBG() {
     const bgDot3 = document.getElementById("bgDot3");
     const bgDot4 = document.getElementById("bgDot4");
     const bgDot5 = document.getElementById("bgDot5");
-    bgDot1.style.left = "200px";
+
+    const previewCard1 = document.getElementById("preview-card-1");
+    const previewCard2 = document.getElementById("preview-card-2");
+    const previewCard3 = document.getElementById("preview-card-3");
+    const previewCard4 = document.getElementById("preview-card-4");
+    const previewCard5 = document.getElementById("preview-card-5");
+
+    bgDot1.style.left = "400px";
     bgDot1.style.top = "-60px";
     bgDot1.style.scale = '1';
 
-    bgDot2.style.left = "570px";
+    bgDot2.style.left = "770px";
     bgDot2.style.top = "220px";
     bgDot2.style.scale = '1';
 
-    bgDot3.style.left = "280px";
+    bgDot3.style.left = "480px";
     bgDot3.style.top = "360px";
     bgDot3.style.scale = '1';
 
-    bgDot4.style.left = "400px";
+    bgDot4.style.left = "600px";
     bgDot4.style.top = "290px";
     bgDot4.style.scale = '1';
 
     bgDot5.style.left = "-120px";
     bgDot5.style.top = "800px";
     bgDot5.style.scale = '1';
+
+    previewCard1.style.top = "320px";
+    previewCard1.style.right = "5%";
+
+    previewCard2.style.top = "220px";
+    previewCard2.style.left = "15%";
+    
+    previewCard3.style.top = "180px";
+    previewCard3.style.right = "30%";
+
+    previewCard4.style.bottom = "120px";
+    previewCard4.style.left = "20%";
+
+    previewCard5.style.bottom = "180px";
+    previewCard5.style.right = "25%";
+
+    setTimeout(() => {
+        bgDot1.style.transition = "all 0s cubic-bezier(.4,0,.2,1)";
+        bgDot2.style.transition = "all 0s cubic-bezier(.4,0,.2,1)";
+        bgDot3.style.transition = "all 0s cubic-bezier(.4,0,.2,1)";
+        bgDot4.style.transition = "all 0s cubic-bezier(.4,0,.2,1)";
+        bgDot5.style.transition = "all 0s cubic-bezier(.4,0,.2,1)";
+        previewCard1.style.transition = "all 0s cubic-bezier(.4,0,.2,1)";
+        previewCard2.style.transition = "all 0s cubic-bezier(.4,0,.2,1)";
+        previewCard3.style.transition = "all 0s cubic-bezier(.4,0,.2,1)";
+        previewCard4.style.transition = "all 0s cubic-bezier(.4,0,.2,1)";
+        previewCard5.style.transition = "all 0s cubic-bezier(.4,0,.2,1)";
+    }, 500);
 }

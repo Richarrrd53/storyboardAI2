@@ -38,6 +38,7 @@
 html {
     font-size: 16px;
     scroll-behavior: smooth;
+    scrollbar-width: none;
 }
 
 body {
@@ -46,6 +47,7 @@ body {
     min-height: 100vh;
     overflow-x: hidden;
     background: var(--off-white);
+    scrollbar-width: none;
 }
 
 #BG{

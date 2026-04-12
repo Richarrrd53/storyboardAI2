@@ -24,4 +24,5 @@ body {
     left: 0;
     top: 0;
     transition: all 0.5s cubic-bezier(.4,0,.2,1);
+    scrollbar-width: none;
 }
