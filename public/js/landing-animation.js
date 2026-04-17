@@ -433,7 +433,7 @@ document.addEventListener('scroll', function() {
             scrollTrigger: {
                 trigger: "body",
                 start: "+3240px",
-                end: "+=300px",
+                end: "+=500px",
                 scrub: true,
             }
         });
@@ -448,7 +448,7 @@ document.addEventListener('scroll', function() {
             scrollTrigger: {
                 trigger: "body",
                 start: "+3240px",
-                end: "+=300px",
+                end: "+=500px",
                 scrub: true,
             }
         });
@@ -595,7 +595,7 @@ document.addEventListener('scroll', function() {
             scrollTrigger: {
                 trigger: "body",
                 start: "+5400px",
-                end: "+=300px",
+                end: "+=500px",
                 scrub: true,
             }
         });
@@ -606,7 +606,7 @@ document.addEventListener('scroll', function() {
             scrollTrigger: {
                 trigger: "body",
                 start: "+5400px",
-                end: "+=300px",
+                end: "+=500px",
                 scrub: true,
             }
         });
@@ -617,7 +617,7 @@ document.addEventListener('scroll', function() {
             scrollTrigger: {
                 trigger: "body",
                 start: "+5400px",
-                end: "+=300px",
+                end: "+=500px",
                 scrub: true,
             }
         });
@@ -634,7 +634,7 @@ document.addEventListener('scroll', function() {
             scrollTrigger: {
                 trigger: "body",
                 start: "+5940px",
-                end: "+=300px",
+                end: "+=500px",
                 scrub: true,            
             }
         });
@@ -645,7 +645,7 @@ document.addEventListener('scroll', function() {
             scrollTrigger: {
                 trigger: "body",
                 start: "+5940px",
-                end: "+=300px",
+                end: "+=500px",
                 scrub: true,
             }
         });
@@ -656,7 +656,7 @@ document.addEventListener('scroll', function() {
             scrollTrigger: {
                 trigger: "body",
                 start: "+5940px",
-                end: "+=300px",
+                end: "+=500px",
                 scrub: true,
             }
         });
@@ -675,7 +675,7 @@ document.addEventListener('scroll', function() {
             scrollTrigger: {
                 trigger: "body",
                 start: "+5940px",
-                end: "+=300px",
+                end: "+=500px",
                 scrub: true,
             }
         });
@@ -694,7 +694,7 @@ document.addEventListener('scroll', function() {
             scrollTrigger: {
                 trigger: "body",
                 start: "+5940px",
-                end: "+=300px",
+                end: "+=500px",
                 scrub: true,
             }
         });
@@ -713,7 +713,7 @@ document.addEventListener('scroll', function() {
             scrollTrigger: {
                 trigger: "body",
                 start: "+5940px",
-                end: "+=300px",
+                end: "+=500px",
                 scrub: true,
             }
         });
@@ -732,7 +732,7 @@ document.addEventListener('scroll', function() {
             scrollTrigger: {
                 trigger: "body",
                 start: "+5940px",
-                end: "+=300px",
+                end: "+=500px",
                 scrub: true,
             }
         });
@@ -751,7 +751,7 @@ document.addEventListener('scroll', function() {
             scrollTrigger: {
                 trigger: "body",
                 start: "+5940px",
-                end: "+=300px",
+                end: "+=500px",
                 scrub: true,
             }
         });
@@ -766,7 +766,7 @@ document.addEventListener('scroll', function() {
             scrollTrigger: {
                 trigger: "body",
                 start: "+5940px",
-                end: "+=300px",
+                end: "+=500px",
                 scrub: true,
             }
         });
@@ -783,7 +783,7 @@ document.addEventListener('scroll', function() {
             scrollTrigger: {
                 trigger: "body",
                 start: "+6480px",
-                end: "+=300px",
+                end: "+=500px",
                 scrub: true,
             }
         });
@@ -796,7 +796,7 @@ document.addEventListener('scroll', function() {
             scrollTrigger: {
                 trigger: "body",
                 start: "+6480px",
-                end: "+=300px",
+                end: "+=500px",
                 scrub: true,
             }
         });
@@ -809,7 +809,7 @@ document.addEventListener('scroll', function() {
             scrollTrigger: {
                 trigger: "body",
                 start: "+6480px",
-                end: "+=300px",
+                end: "+=500px",
                 scrub: true,
             }
         });
@@ -829,7 +829,7 @@ document.addEventListener('scroll', function() {
             scrollTrigger: {
                 trigger: "body",
                 start: "+6480px",
-                end: "+=300px",
+                end: "+=500px",
                 scrub: true,
             }
         });
@@ -846,7 +846,7 @@ document.addEventListener('scroll', function() {
             scrollTrigger: {
                 trigger: "body",
                 start: "+6480px",
-                end: "+=300px",
+                end: "+=500px",
                 scrub: true,
             }
         });
@@ -865,7 +865,7 @@ document.addEventListener('scroll', function() {
             scrollTrigger: {
                 trigger: "body",
                 start: "+6480px",
-                end: "+=300px",
+                end: "+=500px",
                 scrub: true,
             }
         });
@@ -884,7 +884,7 @@ document.addEventListener('scroll', function() {
             scrollTrigger: {
                 trigger: "body",
                 start: "+6480px",
-                end: "+=300px",
+                end: "+=500px",
                 scrub: true,
             }
         });
@@ -903,7 +903,7 @@ document.addEventListener('scroll', function() {
             scrollTrigger: {
                 trigger: "body",
                 start: "+6480px",
-                end: "+=300px",
+                end: "+=500px",
                 scrub: true,
             }
         });
@@ -914,7 +914,7 @@ document.addEventListener('scroll', function() {
             scrollTrigger: {
                 trigger: "body",
                 start: "+6480px",
-                end: "+=300px",
+                end: "+=500px",
                 scrub: true,
             }
         });
