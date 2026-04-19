@@ -11,194 +11,175 @@
 
 <body>
 
-    <div class="gradient-bg">
-        <div class="gradient-blob-yellow"></div>
+    <!-- Dynamic BG -->
+    <div id="BG">
+        <div class="bgDots" id="bgDot1"
+            style="width:700px;height:700px;left:-150px;top:-150px;filter:blur(140px);opacity:0.4;"></div>
+        <div class="bgDots" id="bgDot2"
+            style="width:600px;height:600px;right:-100px;top:0;filter:blur(130px);opacity:0.3;"></div>
+        <div class="bgDots" id="bgDot4"
+            style="width:500px;height:500px;left:25%;bottom:-80px;filter:blur(120px);opacity:0.25;"></div>
+        <div id="bgMask"></div>
     </div>
 
-    <!-- Top Nav 包含 Token 追蹤器 -->
+    <!-- Nav -->
     <nav class="gen-nav">
-        <div style="display: flex; align-items: center; gap: 20px;">
+        <div style="display:flex;align-items:center;gap:20px;">
             <a href="../html/dashboard.html" class="brand-logo gen-brand">STORYBOARD <span>AI</span></a>
-            <!-- Token Widget -->
-            <div class="token-widget card"
-                style="padding: 5px 15px; display: flex; align-items: center; gap: 12px; border-radius: 50px;">
-                <div style="font-size: 0.75rem; font-weight: 700;">
-                    <span style="color: var(--purple);">已用:</span> <span id="token-count">0</span>
-                </div>
-                <div class="progress-bg"
-                    style="width: 60px; height: 5px; background: rgba(0,0,0,0.05); border-radius: 10px;">
+            <!-- <div class="token-widget card"
+                style="padding:5px 15px;display:flex;align-items:center;gap:12px;border-radius:50px;">
+                <div style="font-size:0.75rem;font-weight:700;"><span style="color:var(--purple);">已用:</span> <span
+                        id="token-count">0</span></div>
+                <div style="width:60px;height:5px;background:rgba(0,0,0,0.05);border-radius:10px;">
                     <div id="token-bar-fill"
-                        style="width: 0%; height: 100%; background: var(--purple); transition: 0.3s;"></div>
+                        style="width:0%;height:100%;background:var(--purple);transition:0.3s;border-radius:10px;"></div>
                 </div>
-                <div style="font-size: 0.75rem; font-weight: 700; color: #888;">
-                    剩餘: <span id="token-remain">1,000,000</span>
+                <div style="font-size:0.75rem;font-weight:700;color:#888;">剩餘: <span id="token-remain">1,000,000</span>
                 </div>
-            </div>
+            </div> -->
         </div>
         <a href="../html/dashboard.html" class="btn btn-ghost btn-sm">← Dashboard</a>
     </nav>
 
-    <!-- ===== STEP 0: SPLASH ===== -->
-    <div class="gen-screen active" id="screen-splash">
-        <div class="splash-content">
+    <!-- ══════════════════════════════════
+       PHASE 0 — SPLASH
+  ══════════════════════════════════ -->
+    <div class="phase active" id="phase-splash">
+        <div class="splash-wrap">
             <h1 class="splash-title">STORYBOARD <span>AI</span></h1>
-            <button class="btn btn-gradient btn-lg" onclick="goToStep(1)">Get started</button>
+            <p class="splash-sub">把一個想法，變成可以拍的分鏡</p>
+            <button class="btn btn-gradient btn-lg splash-cta" onclick="enterCompose()">開始創作</button>
         </div>
     </div>
 
-    <!-- ===== STEP 1: Story Input ===== -->
-    <div class="gen-screen" id="screen-step1">
-        <div class="step-layout">
-            <div class="step-left">
-                <span class="step-label">STEP 1</span>
-                <p class="step-subtitle">請在下方描述故事/場景</p>
+    <!-- ══════════════════════════════════
+       PHASE 1 — COMPOSE (expand box)
+  ══════════════════════════════════ -->
+    <div class="phase" id="phase-compose">
+
+        <!-- The expanding input card -->
+        <div class="compose-card card" id="compose-card">
+
+            <!-- ① Story input area -->
+            <div class="compose-input-area" id="compose-input-area">
+                <textarea id="story-input" class="compose-textarea" placeholder="描述你的故事、廣告或短影音場景…" rows="3"
+                    oninput="onStoryInput()"></textarea>
+                <button class="compose-send-btn" id="compose-send" onclick="submitStory()" disabled>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                    </svg>
+                </button>
             </div>
-            <div class="step-right step1-right">
-                <div class="story-input-wrap card">
-                    <textarea id="story-input" class="story-textarea"
-                        placeholder="描述你的故事、廣告或短影音場景…&#10;例如：蘋果牛奶廣告、旅遊短影音、品牌形象影片" rows="4"></textarea>
-                    <div class="story-input-footer">
-                        <span class="char-count" id="char-count">0 / 500</span>
-                        <button class="btn btn-primary story-submit" onclick="submitStory()">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M2 21l21-9L2 3v7l15 2-15 2v7z" />
-                            </svg>
+
+            <!-- ② Options panel — slides down after submit -->
+            <div class="compose-options" id="compose-options">
+
+                <div class="options-header">
+                    <div class="options-story-echo" id="options-echo">
+                        <!-- Echo of what user typed, truncated -->
+                    </div>
+                    <p class="options-hint">需要調整設定嗎？選好後直接生成 ✦</p>
+                </div>
+
+                <!-- Style row -->
+                <div class="options-section">
+                    <p class="options-label">風格</p>
+                    <div class="style-chips-row" id="style-chips-row">
+                        <!-- Rendered by JS -->
+                    </div>
+                </div>
+
+                <!-- Ratio row -->
+                <div class="options-section">
+                    <p class="options-label">畫面比例</p>
+                    <div class="ratio-chips-row" id="ratio-chips-row">
+                        <button class="opt-chip ratio-chip" data-ratio="16:9" onclick="selectRatioOpt(this)">
+                            <span class="ratio-icon ratio-icon-16-9"></span>16:9
+                        </button>
+                        <button class="opt-chip ratio-chip active" data-ratio="1:1" onclick="selectRatioOpt(this)">
+                            <span class="ratio-icon ratio-icon-1-1"></span>1:1
+                        </button>
+                        <button class="opt-chip ratio-chip" data-ratio="9:16" onclick="selectRatioOpt(this)">
+                            <span class="ratio-icon ratio-icon-9-16"></span>9:16
+                        </button>
+                        <button class="opt-chip ratio-chip" data-ratio="3:2" onclick="selectRatioOpt(this)">
+                            <span class="ratio-icon ratio-icon-3-2"></span>3:2
                         </button>
                     </div>
                 </div>
-                <div class="suggestions-row">
-                    <button class="suggestion-chip" onclick="fillSuggestion(this)">蘋果牛奶廣告</button>
-                    <button class="suggestion-chip" onclick="fillSuggestion(this)">旅遊短影音</button>
-                    <button class="suggestion-chip" onclick="fillSuggestion(this)">運動服品牌</button>
-                    <button class="suggestion-chip" onclick="fillSuggestion(this)">美食餐廳介紹</button>
+
+                <!-- Generate CTA -->
+                <div class="options-cta-row">
+                    <button class="btn btn-ghost options-back-btn" onclick="resetCompose()">
+                        ← 重新輸入
+                    </button>
+                    <button class="btn btn-primary options-gen-btn" onclick="startGenerate()">
+                        ✦ 立即生成
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Suggestion chips (shown before submit) -->
+        <div class="suggestion-row" id="suggestion-row">
+            <button class="sugg-chip" onclick="fillSugg(this)">蘋果牛奶廣告</button>
+            <button class="sugg-chip" onclick="fillSugg(this)">旅遊短影音</button>
+            <button class="sugg-chip" onclick="fillSugg(this)">運動服品牌</button>
+            <button class="sugg-chip" onclick="fillSugg(this)">美食餐廳介紹</button>
+            <button class="sugg-chip" onclick="fillSugg(this)">科技產品發表</button>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════
+       PHASE 2 — GENERATING
+  ══════════════════════════════════ -->
+    <div class="phase" id="phase-generating">
+        <div class="generating-wrap">
+            <!-- Pulsing card preview -->
+            <div class="gen-preview-card card" id="gen-preview-card">
+                <div class="gen-spinner-rings">
+                    <div class="spin-ring sr1"></div>
+                    <div class="spin-ring sr2"></div>
+                    <div class="spin-ring sr3"></div>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- ===== STEP 2: Style Selection ===== -->
-    <div class="gen-screen" id="screen-step2">
-        <div class="step-layout">
-            <div class="step-left">
-                <a class="back-link" onclick="goToStep(1)">‹ Back</a>
-                <span class="step-label">STEP 2</span>
-                <p class="step-subtitle">請選擇想要的風格</p>
-            </div>
-            <div class="step-right">
-                <div class="style-carousel-wrap card">
-                    <div class="style-carousel" id="style-carousel">
-                        <!-- Styles rendered by JS -->
-                    </div>
-                    <p class="style-name-display" id="style-name-display">預設風格</p>
+            <div class="gen-text-area">
+                <h2 class="gen-loading-title" id="loading-title">正在規劃腳本結構…</h2>
+                <p class="gen-loading-sub" id="loading-sub">分析故事語意，拆解場景節奏</p>
+                <div class="gen-progress-track">
+                    <div class="gen-progress-fill" id="gen-progress"></div>
                 </div>
-                <div class="carousel-nav">
-                    <button class="btn btn-ghost btn-sm carousel-btn" onclick="prevStyle()">▲ Previous</button>
-                    <button class="btn btn-ghost btn-sm carousel-btn" onclick="nextStyle()">Next ▼</button>
-                </div>
-                <button class="btn btn-primary btn-block" onclick="goToStep(3)"
-                    style="border-radius:var(--radius-xl);padding:16px;">Confirm</button>
+                <span class="gen-progress-pct" id="gen-progress-text">0%</span>
             </div>
         </div>
     </div>
 
-    <!-- ===== STEP 3: Aspect Ratio ===== -->
-    <div class="gen-screen" id="screen-step3">
-        <div class="step-layout">
-            <div class="step-left">
-                <a class="back-link" onclick="goToStep(2)">‹ Back</a>
-                <span class="step-label">STEP 3</span>
-                <p class="step-subtitle">請選擇畫面比例</p>
-            </div>
-            <div class="step-right">
-                <div class="ratio-wrap card">
-                    <div class="ratio-preview" id="ratio-preview">
-                        <div class="ratio-frame" id="ratio-frame">
-                            <svg width="36" height="36" viewBox="0 0 24 24" fill="white" opacity="0.5">
-                                <path
-                                    d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
-                            </svg>
-                        </div>
-                        <button class="rotate-btn" onclick="rotateRatio()">Rotate</button>
-                    </div>
-                    <div class="ratio-chips" id="ratio-chips">
-                        <button class="ratio-chip" onclick="selectRatio('3:2', this)">3:2</button>
-                        <button class="ratio-chip active" onclick="selectRatio('1:1', this)">1:1</button>
-                        <button class="ratio-chip" onclick="selectRatio('16:9', this)">16:9</button>
-                    </div>
-                </div>
-                <button class="btn btn-primary btn-block" onclick="openConfirmModal()"
-                    style="border-radius:var(--radius-xl);padding:16px;margin-top:16px;">Confirm</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== Confirm Modal ===== -->
-    <div class="modal-overlay" id="confirm-modal">
-        <div class="modal-card">
-        <h2 class="modal-title">確認生成嗎？</h2>
-
-        <div class="modal-detail">
-            <p class="modal-detail-label">您輸入的故事為：</p>
-            <div class="modal-value tag-pill" id="modal-story">蘋果牛奶廣告</div>
-        </div>
-        <div class="modal-detail">
-            <p class="modal-detail-label">您選擇的風格為：</p>
-            <div class="modal-value tag-pill" id="modal-style">電影風格</div>
-        </div>
-        <div class="modal-detail">
-            <p class="modal-detail-label">您選擇的比例為：</p>
-            <div class="modal-value tag-pill" id="modal-ratio">1:1</div>
-        </div>
-
-        <p class="modal-note">確認後 StoryboardAI 將為您生成至少 1 個畫面的分鏡草稿</p>
-
-        <div class="modal-btns">
-            <button class="btn btn-ghost" style="flex:1" onclick="closeConfirmModal()">Cancel</button>
-            <button class="btn btn-primary" style="flex:1; border-radius:var(--radius-xl);" onclick="startGenerate()">Generate!</button>
-        </div>
-        </div>
-    </div>
-
-
-    <!-- GENERATING (Loading) - 匹配專業五步流 -->
-    <div class="gen-screen" id="screen-generating">
-        <div class="generating-content">
-            <div class="gen-spinner">
-                <div class="spinner-ring"></div>
-                <div class="spinner-ring r2"></div>
-            </div>
-            <!-- 匹配 generate.js 的 ID -->
-            <h2 class="gen-loading-title" id="loading-title">正在規劃專業腳本 (1/5)...</h2>
-            <p class="gen-loading-sub">分析故事結構，規劃分鏡草稿</p>
-            <div class="gen-progress-bar">
-                <!-- 匹配 generate.js 的 ID -->
-                <div class="gen-progress-fill" id="gen-progress" style="width: 0%;"></div>
-            </div>
-            <span class="gen-progress-text" id="gen-progress-text">0%</span>
-        </div>
-    </div>
-
-    <!-- RESULT - 膠捲格式 -->
-    <div class="gen-screen" id="screen-result">
-        <div class="result-header">
-            <div>
-                <h2 class="result-title">分鏡草稿已生成 ✦</h2>
+    <!-- ══════════════════════════════════
+       PHASE 3 — RESULT
+  ══════════════════════════════════ -->
+    <div class="phase" id="phase-result">
+        <div class="result-topbar">
+            <div class="result-info">
+                <h2 class="result-title">分鏡草稿 ✦</h2>
+                <p class="result-meta" id="result-meta">—</p>
             </div>
             <div class="result-actions">
                 <button class="btn btn-outline btn-sm" onclick="alert('PDF 匯出功能開發中')">↓ 下載 PDF</button>
-                <button class="btn btn-primary btn-sm" onclick="location.reload()">+ 新建分鏡</button>
+                <button class="btn btn-primary btn-sm" onclick="resetAll()">+ 新建分鏡</button>
             </div>
         </div>
-        <!-- 匹配 renderProfessionalResult 的 ID -->
-        <div id="storyboard-grid" style="width: 100%;"></div>
-            <!-- 由 JS 動態渲染專業分鏡卡片 -->
-        </div>
+        <!-- Film strip or grid rendered here -->
+        <div id="storyboard-grid" style="width:100%;"></div>
     </div>
 
-    <!-- 引用腳本 -->
+    <!-- ══════════════════════════════════
+       SCRIPTS
+  ══════════════════════════════════ -->
     <script src="../js/token-manager.js"></script>
     <script src="../js/generate.js"></script>
     <script src="../js/sys.js"></script>
+
 </body>
 
 </html>
