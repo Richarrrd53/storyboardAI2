@@ -51,6 +51,11 @@ document.querySelectorAll('.feature-card, .step-item, .pricing-card, .section-ey
 
 const BG = document.getElementById("BG");
 
+window.addEventListener('resize', () => {
+    BG.style.width = window.innerWidth + "px";
+    BG.style.height = window.innerHeight + "px";
+});
+
 document.addEventListener('DOMContentLoaded', () => {
     BG.style.width = window.innerWidth + "px";
     BG.style.height = window.innerHeight + "px";

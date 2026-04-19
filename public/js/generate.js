@@ -4,7 +4,7 @@
 // ── State ──
 const state = {
     story: '',
-    style: '電影風格',
+    style: '預設風格',
     styleIndex: 1,
     ratio: '1:1',
     rotated: false
@@ -189,11 +189,20 @@ function nextStyle() {
 
 // ── Step 3: Ratio ──
 const ratioClassMap = {
+    '橫向3:2': 'r-3-2',
     '3:2': 'r-3-2',
+    '直向2:3': 'r-2-3',
     '1:1': 'r-1-1',
+    '橫向16:9': 'r-16-9',
     '16:9': 'r-16-9',
-    '9:16': 'r-9-16'
+    '直向9:16': 'r-9-16'
 };
+
+const ratioMap = {
+    '3:2': '橫向3:2',
+    '1:1': '1:1',
+    '16:9': '橫向16:9'
+}
 
 function updateRatioFrame() {
     const frame = document.getElementById('ratio-frame');
@@ -210,7 +219,7 @@ function selectRatio(ratio, btn) {
 }
 
 function rotateRatio() {
-    const rotateMap = { '3:2': '2:3', '2:3': '3:2', '16:9': '9:16', '9:16': '16:9', '1:1': '1:1' };
+    const rotateMap = { '3:2': '直向2:3', '2:3': '橫向3:2', '16:9': '直向9:16', '9:16': '橫向16:9', '1:1': '1:1' };
     const rotateClassMap = { '3:2': 'r-3-2', '2:3': 'r-9-16', '16:9': 'r-16-9', '9:16': 'r-3-2', '1:1': 'r-1-1' };
     const newRatio = rotateMap[state.ratio] || state.ratio;
     state.ratio = newRatio;
@@ -247,13 +256,29 @@ const styleDescriptions = {
 };
 
 function getScriptPrompt() {
-    return `假設你是一個專業的影像工作者，幫我整理「${state.story}」的文字分鏡。
-    要求：
-    1. 故事具備連貫性。
-    2. 加上鏡頭語言（近景、遠景、仰角等）。
-    3. 添加光影描述。
-    4. 比例為 ${state.ratio}。
-    重要：請不要使用 Markdown 格式，只需要純文字。`;
+    return `假設你是一個專業的影像工作者，擅長創作影像分鏡。您具備細緻的觀察與分析能力，能夠解析短影音中的各項元素、捕捉該短影音背後的行銷手段，並將相關分鏡透過文字呈現。
+    任務目標
+    根據使用者提供的故事描述或參考圖，整理一份短影音的文字分鏡稿，此文字分鏡稿故事須具備連貫性，詳細描寫鏡頭語言（進警、遠景、仰角、大光圈等）與光影描述。
+    
+    短影音故事描述為：
+    ${state.story}
+    
+    分鏡稿規範：
+    一、分鏡故事摘要：
+    將每一個分鏡所表達的意象或故事摘要成一至三句話。同時保持連貫性與邏輯暢通。
+
+    二、風格與標註：
+    畫風：採用${state.style}(${styleDescriptions[state.style]})，主體清晰，光影關係合理。
+    鏡頭語言：採用${state.ratio}比例，搭配個分鏡所需的鏡頭語言。
+
+    三：產出格式：
+    將所有分鏡輸出為以下格式：
+    1. 分鏡編號：將每個分鏡依照編號排序
+    2. 分鏡故事：將整理好的故事內容對應至各個分鏡中
+    3. 分鏡圖示Prompt：將該分鏡之故事轉換為生圖提示詞(英文)，方便生成對應圖片以解釋該分鏡。須注意故事練慣性與主體一致性。
+    4. 鏡頭語言：標示出該分鏡需要的鏡頭語言。
+
+    重要：請不要使用 Markdown 格式，只需要純文字，並依照產出格式產出內容，不要生成圖片。`;
 }
 
 let generatedImgs = [];
@@ -261,6 +286,28 @@ let generatedStoryTitles = [];
 let generatedStoryCams = [];
 let generatedPrompts = [];
 
+function extractPrompt(req, type){
+    return`${req}
+
+
+    將上述文字中各個分鏡的"${type}"提取出來，並依照其"分鏡編號"排序，嚴格按照以下輸出格式回覆：
+    1. XXXXX
+    2. OOOOO
+    重要：請不要使用 Markdown 格式，只需要純文字，只輸出提取出的結果即可，不需要前言與總結。
+    `
+}
+
+function optimizePrompt(req){
+    return`${req}
+
+
+    優化上述文字中告個分鏡的"分鏡圖示Prompt"，嚴格依照"${state.ratio}"比例(嚴格注意方向為直向或橫向)與"${state.style}"(${styleDescriptions[state.style]})，同時須具備劇情連貫性與主體一致性。
+    並將每個Prompt提取出來，並依照其"分鏡編號"排序，嚴格按照以下輸出格式回覆：
+    1. XXXXX
+    2. OOOOO
+    重要：請不要使用 Markdown 格式，只需要純文字，並依照產出格式產出內容，不要生成圖片，只輸出提取出的Prompt即可，並附上分鏡編號(分鏡編號僅用數字表示，正確格式：1. XXX 2. XXX，錯誤格式：分鏡編號01：XXX 分鏡編號02：XXX)，不需要前言與總結。
+    `
+}
 
 // ── Generate ──
 async function startGenerate() {
@@ -268,64 +315,87 @@ async function startGenerate() {
     showScreen('screen-generating');
     const loadingTitle = document.getElementById('loading-title');
     const progressBar = document.getElementById('gen-progress');
+    const progressBarText = document.getElementById('gen-progress-text');
 
     generatedImgs = []; generatedStoryTitles = []; generatedStoryCams = []; generatedPrompts = [];
 
     try {
         loadingTitle.innerText = "正在規劃連貫腳本 (1/5)...";
-        const scriptRes = await askGemini(getScriptPrompt(), 'planning');
+        const scriptRes = await askGemini(getScriptPrompt(), 'story');
         const fullScript = scriptRes.response;
-        progressBar.style.width = "20%";
+        progressBar.style.width = "10%";
+        progressBarText.innerText = "10%";
 
         loadingTitle.innerText = "正在提取分鏡細節 (2/5)...";
-        const titlesRes = await askGemini(fullScript + "\n提取畫面標題，格式: 1. XXX", 'extraction');
+        const titlesRes = await askGemini(extractPrompt(fullScript, '分鏡故事'), 'flash');
         generatedStoryTitles = parseNumberedList(titlesRes.response);
+        progressBarText.innerText = "25%";
+        progressBar.style.width = "25%";
         
-        const camsRes = await askGemini(fullScript + "\n提取鏡頭語言，格式: 1. XXX", 'extraction');
+        const camsRes = await askGemini(extractPrompt(fullScript, '鏡頭語言'), 'flash');
         generatedStoryCams = parseNumberedList(camsRes.response);
-        progressBar.style.width = "50%";
+        progressBarText.innerText = "40%";
+        progressBar.style.width = "40%";
 
         loadingTitle.innerText = "正在優化視覺連貫性 (3/5)...";
         const styleDetail = styleDescriptions[state.style] || "";
-        const promptOptimizeReq = `${fullScript}\n優化 Prompt，比例 ${state.ratio}，風格 ${styleDetail}。格式: 1. XXX`;
-        const promptsRes = await askGemini(promptOptimizeReq, 'optimization');
+        const promptsRes = await askGemini(optimizePrompt(fullScript), 'flash');
         generatedPrompts = parseNumberedList(promptsRes.response);
-        progressBar.style.width = "80%";
+        progressBarText.innerText = "50%";
+        progressBar.style.width = "50%";
 
-        // 5. 並行生成所有圖片
         loadingTitle.innerText = "正在同步繪製所有分鏡 (4/5)...";
         
-        const imageTasks = generatedPrompts.map(prompt => 
-            askGemini(prompt + ", " + styleDetail, 'generation')
-        );
+        let completedCount = 0;
+        const totalSteps = generatedPrompts.length;
+        const baseProgress = 50; 
+        const remainingProgress = 50; 
+
+        const imageTasks = generatedPrompts.map(async (prompt) => {
+            try {
+                const res = await askGemini(prompt + ", " + styleDetail, 'image');
+                return res;
+            } finally {
+                completedCount++;
+                const currentProgress = baseProgress + (completedCount / totalSteps) * remainingProgress;
+                progressBarText.innerText = `${Math.floor(currentProgress)}%`;
+                progressBar.style.width = `${currentProgress}%`;
+            }
+        });
 
         const results = await Promise.all(imageTasks);
 
         generatedImgs = results
             .filter(res => res && res.image !== undefined)
-            .map(res => res.image);
+            .map(res => res.image[0]);
 
         renderFilmStrip();
         progressBar.style.width = "100%";
         
     } catch (e) {
         console.error(e);
-        alert("生成失敗: " + e.message);
-        goToStep(1);
+        progressBar.style.width = '0%';
+        alert("生成失敗：" + e.message);
+        setTimeout(() => goToStep(1), 1500);
     }
 }
 
 // 輔助函式：呼叫後端 API
 async function askGemini(question, type) {
+    const abortController = new AbortController();
+    const timeout = setTimeout(() => {
+        abortController.abort()
+    }, 6000);
     const res = await fetch('/api/ask-gemini', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question})
+        body: JSON.stringify({ question, type })
     });
     const data = await res.json();
     if (data.usage && typeof updateTokenUsage === 'function') {
         updateTokenUsage(data.usage.totalTokenCount);
     }
+    clearTimeout(timeout);
     return data;
 }
 
@@ -339,7 +409,8 @@ function renderFilmStrip() {
     `;
 
     const filmStrip = document.getElementById('filmStrip');
-    const ratioKey = state.ratio.replace(':', '-');
+    const flimRatioClassMap = { '橫向16:9': '16-9', '16:9': '16-9', '直向9:16': '9-16', '9:16': '9-16', '橫向3:2': '3-2', '3:2': '3-2', '直向2:3': '2-3', '2:3': '2-3', '1:1': '1-1'}
+    const ratioKey = flimRatioClassMap[state.ratio]
 
     generatedImgs.forEach((imgSrc, i) => {
         const frame = document.createElement('div');
@@ -362,9 +433,9 @@ function renderFilmStrip() {
         `;
         filmStrip.appendChild(frame);
     });
-
+    const flimWidthMap = {'16-9': 1066, '9-16': 337.5, '3-2': 900, '2-3': 400, '1-1': 600}
     // 計算膠卷齒輪邊框寬度
-    const totalWidth = (generatedImgs.length * 350); // 粗略估算
+    const totalWidth = (generatedImgs.length * (flimWidthMap[ratioKey] + 20)); // 粗略估算
     filmStrip.style.setProperty('--film-strip-edge-width', `${totalWidth}px`);
 
     // 綁定拖拽滾動
@@ -404,68 +475,6 @@ function parseNumberedList(text) {
                .map(line => line.replace(/^\d+\.\s*/, '').trim());
 }
 
-function renderProfessionalResult(scenes) {
-    const grid = document.getElementById('storyboard-grid');
-    grid.innerHTML = '';
-    
-    // 設置比例 CSS
-    const ratioClass = state.ratio.replace(':', '-');
-
-    scenes.forEach((scene, i) => {
-        const card = document.createElement('div');
-        card.className = `sb-frame ratio-${ratioClass}`;
-        card.innerHTML = `
-            <div class="sb-visual" style="background-image: url('${scene.img}'); background-size: cover;">
-                <span class="sb-scene-label">#${i + 1}</span>
-                <div class="sb-overlay">
-                    <div class="sb-content">
-                        <h4>${scene.title}</h4>
-                        <p>${scene.cam}</p>
-                        <button onclick="alert('${scene.prompt.replace(/'/g, "\\'")}')" class="btn-sm">查看提示詞</button>
-                    </div>
-                </div>
-            </div>
-        `;
-        grid.appendChild(card);
-    });
-
-    showScreen('screen-result');
-}
-
-
-
-function showResult() {
-    // Update subtitle
-    document.getElementById('result-story-label').textContent =
-        `${state.story} · ${state.style} · ${state.ratio}`;
-
-    // Build storyboard grid
-    const grid = document.getElementById('storyboard-grid');
-    grid.innerHTML = '';
-    storyboardTemplates.forEach((frame, i) => {
-        const card = document.createElement('div');
-        card.className = 'sb-frame';
-        card.style.animationDelay = (i * 0.07) + 's';
-        card.innerHTML = `
-      <div class="sb-visual" style="background:${frame.bg}">
-        <span class="sb-scene-label">SCENE ${String(i + 1).padStart(2, '0')}</span>
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="white" opacity="0.3">
-          <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
-        </svg>
-      </div>
-      <div class="sb-info">
-        <p class="sb-scene-num">Scene ${String(i + 1).padStart(2, '0')} · ${frame.label}</p>
-        <p class="sb-desc">${frame.desc}</p>
-        <div class="sb-tags">
-          ${frame.tags.map(t => `<span class="sb-tag">${t}</span>`).join('')}
-        </div>
-      </div>
-    `;
-        grid.appendChild(card);
-    });
-
-    showScreen('screen-result');
-}
 
 function resetAll() {
     state.story = '';

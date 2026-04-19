@@ -1,6 +1,5 @@
 const express = require('express');
 const path = require('path');
-const bodyParser = require('body-parser');
 const fs = require("fs");
 
 const multer = require('multer');
@@ -8,8 +7,6 @@ require('dotenv').config();
 const { GoogleGenAI } = require("@google/genai");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { GoogleAIFileManager } = require("@google/generative-ai/server");
-require('dotenv').config();
-
 const app = express();
 
 
@@ -27,8 +24,6 @@ const genAIVideo = new GoogleGenerativeAI(apiKey);
 const fileManager = new GoogleAIFileManager(apiKey);
 
 
-const publicPath = path.join(process.cwd(), 'public');
-app.use(express.static(publicPath));
 
 // 2. 修改路由回傳檔案的路徑
 app.get('/', (req, res) => {
@@ -41,10 +36,10 @@ app.get('/', (req, res) => {
         }
     });
 });
+const publicPath = path.join(process.cwd(), 'public');
 app.use(express.static(publicPath));
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ limit: '100mb', extended: true })); // 增加 URL 編碼限制
-app.use(bodyParser.json());
 
 const upload = multer({ 
     dest: '/tmp/',
@@ -56,23 +51,35 @@ const upload = multer({
 app.post('/api/ask-gemini', async (req, res) => {
 
 
-    const question = req.body.question;
+    const { question, type} = req.body;
+    const modelConfigs = {
+        'flash': {
+            model: 'gemini-2.5-flash-lite',
+            config: { responseModalities: ['Text'] }
+        },
+        'image': {
+            model: "gemini-3.1-flash-image-preview",
+            config: { responseModalities: ['Text', 'Image'] }
+        },
+        'story': {
+            model: "gemini-3-flash-preview",
+            config: { responseModalities: ['Text'] }
+        }
+    }
+
+    const selectedConfig = modelConfigs[type] || modelConfigs['flash'];
+    
     try {
         const contents = [{ text: question }];
 
-        // 模型名稱建議檢查或更新，這裡暫時保留您的設定。
         const response = await genAI.models.generateContent({
-            model: "gemini-3-pro-image-preview",
+            model: selectedConfig.model,
             contents: contents,
-            config: {
-                responseModalities: ['Text', 'Image']
-            },
+            config: selectedConfig.config,
         });
-
         let responseText = "";
         let imgs = [];
 
-        // 檢查 candidates 是否存在且非空
         const candidate = response.candidates && response.candidates.length > 0 ? response.candidates[0] : null;
 
         if (candidate && candidate.content && candidate.content.parts) {
@@ -81,15 +88,6 @@ app.post('/api/ask-gemini', async (req, res) => {
                     responseText += part.text;
                 } else if (part.inlineData) {
                     const imageData = part.inlineData.data;
-                    const buffer = Buffer.from(imageData, 'base64');
-                    // 注意：在 Vercel Serverless 環境中，您無法直接寫入檔案系統 (fs.writeFileSync)。
-                    // 如果需要圖片，您必須將圖片 Base64 編碼後直接傳回前端，
-                    // 或將圖片上傳到外部儲存服務（如 AWS S3 或 Google Cloud Storage）。
-                    // **以下寫入檔案的邏輯在 Vercel 伺服器上會失敗。**
-                    
-                    // 為了讓應用程式在 Vercel 上工作，我將修改邏輯：直接將 Base64 資料傳回給前端。
-                    // 前端將需要處理這個 Base64 字串以顯示圖片。
-                    
                     const mimeType = part.inlineData.mimeType || 'image/png';
                     const base64Image = `data:${mimeType};base64,${imageData}`;
                     imgs.push(base64Image);
@@ -98,15 +96,15 @@ app.post('/api/ask-gemini', async (req, res) => {
         }
         const usage = response.usageMetadata;
 
-        // 回傳 base64 圖片資料，取代原本的檔案路徑
         res.json({ 
-                response: responseText,
-                image: imgs, 
-                usage: {
-                    promptTokens: usage.promptTokenCount,
-                    candidatesTokens: usage.candidatesTokenCount,
-                    totalTokens: usage.totalTokenCount
-            } });
+            response: responseText,
+            image: imgs, 
+            usage: {
+                promptTokens: usage.promptTokenCount,
+                candidatesTokens: usage.candidatesTokenCount,
+                totalTokens: usage.totalTokenCount
+            } 
+        });
         
     } catch (error) {
         console.error('Error:', error);

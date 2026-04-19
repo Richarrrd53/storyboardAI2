@@ -263,6 +263,11 @@ body {
     height: 140px;
 }
 
+.ratio-frame.r-2-3 {
+    width: 120px;
+    height: 180px;
+}
+
 .ratio-frame.r-16-9 {
     width: 240px;
     height: 135px;
@@ -381,10 +386,11 @@ body {
 
 .gen-progress-bar {
     width: 280px;
-    height: 4px;
+    height: 8px;
     background: rgba(0, 0, 0, 0.08);
     border-radius: 100px;
     overflow: hidden;
+    transition: all 0.5s cubic-bezier(.4,0,.2,1);
 }
 
 .gen-progress-fill {
@@ -392,7 +398,14 @@ body {
     background: linear-gradient(90deg, var(--purple-light), var(--peach));
     border-radius: 100px;
     width: 0%;
-    transition: width 0.3s ease;
+    transition: all 0.5s cubic-bezier(.4,0,.2,1);
+}
+
+.gen-progress-text{
+    width: auto;
+    font-size: 14px;
+    color: #7a7a7a;
+    width: 50px;
 }
 
 /* --- Result Screen --- */
@@ -593,7 +606,6 @@ body {
 .film-strip-container {
     margin-top: 30px;
     width: 100%;
-    max-height: calc(100vh - 100px);
     padding: 20px 0;
     background-color: #1a1a1a;
     border-radius: 30px;
@@ -653,7 +665,6 @@ body {
     /* 增加上下內邊距以容納邊框 */
     align-items: flex-start;
     /* 確保頂部對齊 */
-    gap: 10px;
     width: 100%;
     scrollbar-width: none;
 }
@@ -690,7 +701,6 @@ body {
     flex: 0 0 auto;
     margin: 0 10px;
     background-color: #000;
-    padding: 30px 10px 10px;
     border-left: 1px solid #333;
     border-right: 1px solid #333;
     position: relative;
@@ -699,27 +709,27 @@ body {
 
 /* 根據選擇的比例設定不同的寬度類 */
 .film-frame.ratio-3-2 {
-    width: 450px;
+    width: 900px;
     /* 3:2 橫向比例 */
 }
 
 .film-frame.ratio-1-1 {
-    width: 300px;
+    width: 600px;
     /* 1:1 比例 */
 }
 
 .film-frame.ratio-16-9 {
-    width: 533px;
+    width: 1066px;
     /* 16:9 橫向比例 */
 }
 
 .film-frame.ratio-2-3 {
-    width: 200px;
+    width: 400px;
     /* 2:3 縱向比例 */
 }
 
 .film-frame.ratio-9-16 {
-    width: 168.75px;
+    width: 337.5px;
     /* 9:16 縱向比例 */
 }
 
@@ -739,7 +749,7 @@ body {
     position: relative;
     overflow: hidden;
     border-radius: 4px;
-    height: 300px;
+    height: 600px;
     /* 固定容器高度 */
     display: flex;
     justify-content: center;
