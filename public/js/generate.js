@@ -238,6 +238,10 @@ function resetCompose() {
     document.getElementById('story-input').classList.remove('locked');
 }
 
+let isHorizon = false;
+isHorizon = (window.innerWidth < window.innerHeight) ? true : false;
+
+
 function resetAll() {
     state.story = '';
     state.styleIndex = 0;
@@ -254,7 +258,7 @@ function resetAll() {
     resetCompose();
     onStoryInput();
     // 退回最開始的 Splash 頁面
-    showPhase('phase-splash');
+    showPhase('phase-compose');
 }
 
 // ── 7. Result Rendering ──
@@ -301,46 +305,125 @@ function renderFilmStrip() {
         filmStrip.appendChild(frame);
     });
 
-    const totalWidth = (generatedImgs.length * (frameWidth + 20)) + 100; 
-    filmStrip.style.setProperty('--film-strip-edge-width', `${totalWidth}px`);
+    const totalWidth = (generatedImgs.length * (frameWidth + 16));
+    const totalHeight = (generatedImgs.length * (600 + 16));
+    const totalHeightMobile = (generatedImgs.length * (getHeightFromRatio(window.innerWidth - 150, ratioKey) + 16));
+    if (isHorizon){
+        wrapper.classList.add('mobile');
+        wrapper.style.setProperty('--film-strip-edge-width', `${window.innerWidth - 40}px`);
+        wrapper.style.setProperty('--film-strip-edge-height', `${totalHeightMobile}px`);
+    }
+    else{
+        wrapper.classList.remove('mobile');
+        wrapper.style.setProperty('--film-strip-edge-width', `${totalWidth}px`);
+    }
 
     initDragScroll(wrapper);
 }
 
+window.addEventListener('resize',() => {
+    const flimRatioClassMap = { 
+        '16:9': '16-9', '9:16': '9-16', '3:2': '3-2', '2:3': '2-3', '1:1': '1-1',
+        '橫向16:9': '16-9', '直向9:16': '9-16', '橫向3:2': '3-2', '直向2:3': '2-3'
+    };
+    const ratioKey = flimRatioClassMap[state.ratio] || '1-1';
+    const flimWidthMap = { '16-9': 1066, '9-16': 337.5, '3-2': 900, '2-3': 400, '1-1': 600 };
+    const frameWidth = flimWidthMap[ratioKey] || 600;
+    const totalWidth = (generatedImgs.length * (frameWidth + 16));
+    const totalHeight = (generatedImgs.length * (600 + 16));
+    const totalHeightMobile = (generatedImgs.length * (getHeightFromRatio(window.innerWidth - 150, ratioKey) + 16));
+    const wrapper = document.getElementById('filmStripWrapper');
+    isHorizon = (window.innerWidth < window.innerHeight) ? true : false;
+    if (isHorizon){
+        wrapper.classList.add('mobile');
+        wrapper.style.setProperty('--film-strip-edge-width', `${window.innerWidth - 40}px`);
+        wrapper.style.setProperty('--film-strip-edge-height', `${totalHeightMobile}px`);
+    }
+    else{
+        wrapper.classList.remove('mobile');
+        wrapper.style.setProperty('--film-strip-edge-width', `${totalWidth}px`);
+    }
+});
+
+function getHeightFromRatio(height, ratio){
+    const w = parseInt(ratio.split('-')[0])
+    const h = parseInt(ratio.split('-')[1])
+    return height / w * h
+}
+
 function initDragScroll(el) {
     let isDown = false;
-    let startX;
-    let scrollLeft;
+    let startX, startY;
+    let scrollLeft, scrollTop;
 
-    el.addEventListener('mousedown', (e) => {
+    const getPos = (e) => {
+        const touch = e.touches ? e.touches[0] : e;
+        return { x: touch.pageX, y: touch.pageY };
+    };
+
+    const start = (e) => {
+        const isVertical = el.classList.contains('mobile');
         isDown = true;
         el.style.cursor = 'grabbing';
-        startX = e.pageX - el.offsetLeft;
-        scrollLeft = el.scrollLeft;
-    });
+        el.style.scrollBehavior = 'auto';
+        
+        const pos = getPos(e);
+        if (isVertical) {
+            startY = pos.y - el.offsetTop;
+            scrollTop = el.scrollTop;
+        } else {
+            startX = pos.x - el.offsetLeft;
+            scrollLeft = el.scrollLeft;
+        }
+    };
 
-    el.addEventListener('mouseleave', () => {
+    const end = () => {
         isDown = false;
         el.style.cursor = 'grab';
-    });
+    };
 
-    el.addEventListener('mouseup', () => {
-        isDown = false;
-        el.style.cursor = 'grab';
-    });
+    const move = (e) => {
+        if (!isDown) return;
+        const isVertical = el.classList.contains('mobile');
+        const pos = getPos(e);
+
+        if (isVertical) {
+            const y = pos.y - el.offsetTop;
+            const walk = (y - startY) * 2;
+            el.scrollTop = scrollTop - walk;
+        } else {
+            const x = pos.x - el.offsetLeft;
+            const walk = (x - startX) * 2;
+            el.scrollLeft = scrollLeft - walk;
+        }
+    };
+
+    el.addEventListener('mousedown', start);
+    el.addEventListener('touchstart', start, { passive: true });
+
+    el.addEventListener('mouseleave', end);
+    el.addEventListener('mouseup', end);
+    el.addEventListener('touchend', end);
 
     el.addEventListener('mousemove', (e) => {
-        if (!isDown) return;
-        e.preventDefault();
-        const x = e.pageX - el.offsetLeft;
-        const walk = (x - startX) * 2;
-        el.scrollLeft = scrollLeft - walk;
+        if (isDown) e.preventDefault();
+        move(e);
     });
 
+    el.addEventListener('touchmove', (e) => {
+        move(e);
+    }, { passive: true });
+
     el.addEventListener('wheel', (e) => {
+        const isVertical = el.classList.contains('mobile');
         if (e.deltaY !== 0) {
             e.preventDefault();
-            el.scrollLeft += e.deltaY;
+            el.style.scrollBehavior = 'smooth';
+            if (isVertical) {
+                el.scrollTop += e.deltaY;
+            } else {
+                el.scrollLeft += e.deltaY;
+            }
         }
     }, { passive: false });
 }
@@ -382,3 +465,4 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+resetAll()
