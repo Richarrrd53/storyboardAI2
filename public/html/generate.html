@@ -62,23 +62,25 @@
 
             <!-- ① Story input area -->
             <div class="compose-input-area" id="compose-input-area">
-                <textarea id="story-input" class="compose-textarea" placeholder="描述你的故事、廣告或短影音場景…" rows="3"
+                <textarea id="story-input"  class="compose-textarea" placeholder="描述你的故事、廣告或短影音場景…" rows="3"
                     oninput="onStoryInput()"></textarea>
                 <button class="compose-send-btn" id="compose-send" onclick="submitStory()" disabled>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
                     </svg>
                 </button>
+                <p class="story-advanced-title">進階設定</p>
             </div>
 
             <!-- ② Options panel — slides down after submit -->
             <div class="compose-options" id="compose-options">
 
                 <div class="options-header">
+                    <p class="options-hint">需要調整進階設定嗎？選好後直接生成 ✦</p>
+                    <span class="options-label">故事描述</span>
                     <div class="options-story-echo" id="options-echo">
                         <!-- Echo of what user typed, truncated -->
                     </div>
-                    <p class="options-hint">需要調整設定嗎？選好後直接生成 ✦</p>
                 </div>
 
                 <!-- Style row -->
@@ -93,17 +95,20 @@
                 <div class="options-section">
                     <p class="options-label">畫面比例</p>
                     <div class="ratio-chips-row" id="ratio-chips-row">
-                        <button class="opt-chip ratio-chip" data-ratio="橫向16:9" onclick="selectRatioOpt(this)">
+                        <button class="opt-chip ratio-chip active" data-ratio="橫向16:9" onclick="selectRatioOpt(this)">
                             <span class="ratio-icon ratio-icon-16-9"></span>16:9
-                        </button>
-                        <button class="opt-chip ratio-chip active" data-ratio="1:1" onclick="selectRatioOpt(this)">
-                            <span class="ratio-icon ratio-icon-1-1"></span>1:1
                         </button>
                         <button class="opt-chip ratio-chip" data-ratio="直向9:16" onclick="selectRatioOpt(this)">
                             <span class="ratio-icon ratio-icon-9-16"></span>9:16
                         </button>
+                        <button class="opt-chip ratio-chip" data-ratio="1:1" onclick="selectRatioOpt(this)">
+                            <span class="ratio-icon ratio-icon-1-1"></span>1:1
+                        </button>
                         <button class="opt-chip ratio-chip" data-ratio="橫向3:2" onclick="selectRatioOpt(this)">
                             <span class="ratio-icon ratio-icon-3-2"></span>3:2
+                        </button>
+                        <button class="opt-chip ratio-chip" data-ratio="直向2:3" onclick="selectRatioOpt(this)">
+                            <span class="ratio-icon ratio-icon-2-3"></span>2:3
                         </button>
                     </div>
                 </div>

@@ -12,19 +12,21 @@ const state = {
 
 // ── 2. Data Sets ──
 const STYLES = [
-    { name: '預設風格', dot: '#7fba7a', desc: '自然清新', prompt: "" },
-    { name: '電影風格', dot: '#2a2a3a', desc: '戲劇光影', prompt: "cinematic, dramatic lighting, film grain, widescreen, lens flare, professional color grading" },
-    { name: '日系動漫', dot: '#ffc5e8', desc: '清新可愛', prompt: "cartoon style, vibrant colors, 2D animation look, clean lines" },
-    { name: 'Cyberpunk', dot: '#6200ea', desc: '霓虹未來', prompt: "neon lights, futuristic, cyberpunk aesthetic, high contrast" },
-    { name: '美式寫實', dot: '#c49a2a', desc: '溫暖金調', prompt: "photorealistic, hyperdetailed, natural lighting, realistic textures, professional photography" },
-    { name: '水彩插畫', dot: '#b8d4ff', desc: '柔和藝術', prompt: "watercolor style, soft edges, artistic, hand-drawn look" }
+    { name: '預設風格', dot: '#7fba7a', desc: '自然清新', prompt: "natural lighting, high resolution, clean composition, soft focus background" },
+    { name: '電影風格', dot: '#2a2a3a', desc: '戲劇光影', prompt: "anamorphic lens, cinematic lighting, 8k resolution, deep shadows, professional color grading, film noir vibes" },
+    { name: '二次元風格', dot: '#ffc5e8', desc: '熱門手遊感', prompt: "mihoyo style, genshin impact aesthetic, cel-shaded, vibrant anime colors, expressive lighting, high-quality 3D render look" },
+    { name: 'Cyberpunk風格', dot: '#6200ea', desc: '霓虹未來', prompt: "neon palette, high contrast, futuristic street, rain-slicked pavement, volumetric fog, cyberpunk 2077 aesthetic" },
+    { name: '美式寫實風格', dot: '#c49a2a', desc: '溫暖金調', prompt: "professional photography, golden hour, sun-drenched, shallow depth of field, sharp details, Kodak Portra 400 look" },
+    { name: '90s 復古風格', dot: '#f44336', desc: '懷舊膠卷', prompt: "90s VHS aesthetic, vintage film grain, light leaks, chromatic aberration, retro colors, nostalgic atmosphere" },
+    { name: '水彩插畫風格', dot: '#b8d4ff', desc: '柔和藝術', prompt: "delicate watercolor painting, ink wash, dreamy atmosphere, paper texture, hand-drawn illustration" },
+    { name: '極簡室內風格', dot: '#eceff1', desc: '侘寂高級感', prompt: "minimalist aesthetic, soft natural light, Wabi-sabi style, high-end interior design photography, neutral tones" }
 ];
 
 const LOADING_STEPS = [
     { title: '正在規劃腳本結構…(1/5)', sub: '分析故事語意，拆解場景節奏', pct: 0 },
     { title: '正在提取分鏡細節…(2/5)', sub: '識別人物、場景與情感節點', pct: 10 },
     { title: '正在優化視覺連貫性…(3/5)', sub: '配對構圖與運鏡建議', pct: 20 },
-    { title: '正在同步繪製分鏡…(4/5)', sub: '渲染畫面，組合成完整腳本', pct: 50 },
+    { title: '正在同步繪製分鏡…(4/5)', sub: '渲染畫面，組合成完整分鏡', pct: 50 },
     { title: '最終檢查與優化…(5/5)', sub: '確保節奏連貫，HOOK 設計到位', pct: 100 },
 ];
 
@@ -77,15 +79,19 @@ function getScriptPrompt() {
     3. 分鏡圖示Prompt：將該分鏡之故事轉換為生圖提示詞(英文)，方便生成對應圖片以解釋該分鏡。須注意故事練慣性與主體一致性。
     4. 鏡頭語言：標示出該分鏡需要的鏡頭語言。
 
-    重要：請不要使用 Markdown 格式，只需要純文字，並依照產出格式產出內容，不要生成圖片。`;
+    重要：絕對禁止使用任何 Markdown 標籤，包括代碼塊符號、粗體或斜體。輸出的第一個字必須是數字 1，並依照產出格式產出內容，不要生成圖片。`;
 }
 
 function extractPrompt(req, type) {
     return `${req}
     
-    將上述文字中各個分鏡的"${type}"提取出來，並依照其"分鏡編號"排序，嚴格按照以下輸出格式回覆：
-    1. XXXXX
-    2. OOOOO
+    將上述文字中各個分鏡的"${type}"提取出來，並依照其"分鏡編號"排序，我將使用line.match(/^\d+\./)來解析你的回覆，因此，請嚴格按照以下輸出格式回覆：
+    1. 每行必須以 數字. 開頭（例如：1. 內容）。
+    2. 數字前方「絕對不能」有空白、Markdown 符號或 # 字號。
+    3. 禁止輸出任何除了列表以外的文字。
+    範例為：
+    1. XXXXXX
+    2. XXXXXX
     重要：請不要使用 Markdown 格式，只需要純文字，只輸出提取出的結果即可，不需要前言與總結。`;
 }
 
@@ -95,10 +101,14 @@ function optimizePrompt(req) {
     return `${req}
     
     優化上述文字中告個分鏡的"分鏡圖示Prompt"，嚴格依照"${state.ratio}"比例(嚴格注意方向為直向或橫向)與"${styleName}"(${styleDetail})，同時須具備劇情連貫性與主體一致性。
-    並將每個Prompt提取出來，並依照其"分鏡編號"排序，嚴格按照以下輸出格式回覆：
-    1. XXXXX
-    2. OOOOO
-    重要：請不要使用 Markdown 格式，只需要純文字，並依照產出格式產出內容，不要生成圖片，只輸出提取出的Prompt即可，並附上分鏡編號(分鏡編號僅用數字表示，正確格式：1. XXX 2. XXX，錯誤格式：分鏡編號01：XXX 分鏡編號02：XXX)，不需要前言與總結。`;
+    並將每個Prompt提取出來，並依照其"分鏡編號"排序，我將使用line.match(/^\d+\./)來解析你的回覆，因此，請嚴格按照以下輸出格式回覆：
+    1. 每行必須以 數字. 開頭（例如：1. 內容）。
+    2. 數字前方「絕對不能」有空白、Markdown 符號或 # 字號。
+    3. 禁止輸出任何除了列表以外的文字。
+    範例為：
+    1. XXXXXX
+    2. XXXXXX
+    重要：請不要使用 Markdown 格式，只需要純文字，並依照產出格式產出內容，不要生成圖片，只輸出提取出的Prompt即可，並附上分鏡編號(分鏡編號僅用數字表示，正確格式：1. XXX 2. XXX，錯誤格式：分鏡編號01：XXX 分鏡編號02：XXX or Prompt 01:XXX Prompt 02:XXX)，不需要前言與總結。`;
 }
 
 // ── 5. Core Pipeline (API 串接) ──
@@ -139,7 +149,7 @@ async function startGenerate() {
         const styleDetail = STYLES[state.styleIndex].prompt;
         let completedCount = 0;
         const totalSteps = generatedPrompts.length;
-        subEl.innerText = `渲染畫面，組合成完整腳本 (${completedCount+1}/${totalSteps})`
+        subEl.innerText = `渲染畫面，組合成完整分鏡 (${completedCount+1}/${totalSteps})`
 
         const imageTasks = generatedPrompts.map(async (prompt) => {
             try {
@@ -149,7 +159,7 @@ async function startGenerate() {
                 completedCount++;
                 const progress = 50 + (completedCount / totalSteps) * 45;
                 barEl.style.width = `${progress}%`;
-                subEl.innerText = `渲染畫面，組合成完整腳本 (${completedCount+1}/${totalSteps})`
+                subEl.innerText = `渲染畫面，組合成完整分鏡 (${completedCount+1}/${totalSteps})`
                 pctEl.innerText = `${Math.floor(progress)}%`;
             }
         });
@@ -205,6 +215,7 @@ function submitStory() {
     document.getElementById('story-input').classList.add('locked');
     document.getElementById('compose-card').classList.add('expanded');
     document.getElementById('compose-options').classList.add('open');
+    document.getElementById('compose-input-area').classList.add('hidden');
     document.getElementById('suggestion-row').classList.add('hidden');
     buildStyleChips();
 }
@@ -235,6 +246,7 @@ function resetCompose() {
     document.getElementById('compose-card').classList.remove('expanded');
     document.getElementById('compose-options').classList.remove('open');
     document.getElementById('suggestion-row').classList.remove('hidden');
+    document.getElementById('compose-input-area').classList.remove('hidden');
     document.getElementById('story-input').classList.remove('locked');
 }
 
@@ -420,9 +432,9 @@ function initDragScroll(el) {
             e.preventDefault();
             el.style.scrollBehavior = 'smooth';
             if (isVertical) {
-                el.scrollTop += e.deltaY;
+                el.scrollTop += 5 * e.deltaY;
             } else {
-                el.scrollLeft += e.deltaY;
+                el.scrollLeft += 5 * e.deltaY;
             }
         }
     }, { passive: false });
@@ -441,8 +453,9 @@ async function askGemini(question, type) {
 function parseNumberedList(text) {
     if (!text) return [];
     return text.split('\n')
-               .filter(line => line.match(/^\d+\./))
-               .map(line => line.replace(/^\d+\.\s*/, '').trim());
+        .map(line => line.trim()) // 1. 先去首尾空白，解決 AI 縮排問題
+        .filter(line => line.match(/^\d+[\.\:]/)) // 2. 容許數字後接 . 或 : (預防萬一)
+        .map(line => line.replace(/^\d+[\.\:]\s*/, '').trim()); // 3. 去除標號並清理
 }
 
 function onGenerateDone() {
