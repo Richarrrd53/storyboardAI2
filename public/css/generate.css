@@ -653,7 +653,6 @@ body {
     width: var(--film-strip-edge-width, 100%);
     background-image: repeating-linear-gradient(to right, transparent, transparent 15px, #fff 15px, #fff 30px);
     z-index: 1;
-    transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 #filmStrip::before {
