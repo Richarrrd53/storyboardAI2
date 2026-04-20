@@ -1,7 +1,8 @@
 /* ============================================
    STORYBOARD AI — Integrated Version (v1 + v2)
    ============================================ */
-
+const storyInput = document.getElementById("story-input");
+const inputArea = document.getElementById("compose-input-area");
 // ── 1. State ──
 const state = {
     story: '',
@@ -218,6 +219,7 @@ function submitStory() {
     document.getElementById('compose-input-area').classList.add('hidden');
     document.getElementById('suggestion-row').classList.add('hidden');
     buildStyleChips();
+    resetHeight();
 }
 
 function buildStyleChips() {
@@ -248,6 +250,7 @@ function resetCompose() {
     document.getElementById('suggestion-row').classList.remove('hidden');
     document.getElementById('compose-input-area').classList.remove('hidden');
     document.getElementById('story-input').classList.remove('locked');
+    adjustHeight();
 }
 
 let isHorizon = false;
@@ -271,6 +274,7 @@ function resetAll() {
     onStoryInput();
     // 退回最開始的 Splash 頁面
     showPhase('phase-compose');
+    storyInput.style.height = "79px";
 }
 
 // ── 7. Result Rendering ──
@@ -474,8 +478,32 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.key === 'Enter' && !e.shiftKey && !ta.classList.contains('locked')) {
                 e.preventDefault();
                 submitStory();
+                ta.blur();
             }
         });
     }
 });
 resetAll()
+
+
+storyInput.addEventListener("input", () => {
+    resetHeight();
+    adjustHeight();
+});
+
+function adjustHeight(){
+    if(storyInput.style.height <= storyInput.scrollHeight){
+        storyInput.style.height = "79px";
+        inputArea.style.height = "119px";
+    }
+    else{
+        storyInput.style.height = "auto";
+        storyInput.style.height = Math.min(storyInput.scrollHeight, 686) + "px";
+        inputArea.style.height = Math.min(storyInput.scrollHeight + 40, 726) + "px";
+    }
+}
+
+function resetHeight(){
+    storyInput.style.height = "79px";
+    inputArea.style.height = "79px";
+}

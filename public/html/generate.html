@@ -7,6 +7,7 @@
     <title>生成分鏡 — Storyboard AI</title>
     <link rel="stylesheet" href="../css/style.css" />
     <link rel="stylesheet" href="../css/generate.css" />
+    <link rel="stylesheet" href="../css/math-curve-loader.css" />
 </head>
 
 <body>
@@ -62,12 +63,18 @@
 
             <!-- ① Story input area -->
             <div class="compose-input-area" id="compose-input-area">
-                <textarea id="story-input"  class="compose-textarea" placeholder="描述你的故事、廣告或短影音場景…" rows="3"
+                <textarea id="story-input" class="compose-textarea" placeholder="描述你的故事、廣告或短影音場景…" rows="3"
                     oninput="onStoryInput()"></textarea>
                 <button class="compose-send-btn" id="compose-send" onclick="submitStory()" disabled>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-                    </svg>
+                    <div class="state state--sent">
+                            <div class="icon">
+                                <svg width="1.5em" height="1.5em" viewBox="0 0 24 24" fill="none">
+                                    <path
+                                        d="M14.2199 21.63C13.0399 21.63 11.3699 20.8 10.0499 16.83L9.32988 14.67L7.16988 13.95C3.20988 12.63 2.37988 10.96 2.37988 9.78001C2.37988 8.61001 3.20988 6.93001 7.16988 5.60001L15.6599 2.77001C17.7799 2.06001 19.5499 2.27001 20.6399 3.35001C21.7299 4.43001 21.9399 6.21001 21.2299 8.33001L18.3999 16.82C17.0699 20.8 15.3999 21.63 14.2199 21.63Z"
+                                        fill="currentColor"></path>
+                                </svg>
+                            </div>
+                        </div>
                 </button>
                 <p class="story-advanced-title">進階設定</p>
             </div>
@@ -143,11 +150,12 @@
         <div class="generating-wrap">
             <!-- Pulsing card preview -->
             <div class="gen-preview-card card" id="gen-preview-card">
-                <div class="gen-spinner-rings">
-                    <div class="spin-ring sr1"></div>
-                    <div class="spin-ring sr2"></div>
-                    <div class="spin-ring sr3"></div>
-                </div>
+                <svg class="loader" viewBox="0 0 100 100" fill="none" aria-hidden="true">
+                    <g id="group">
+                        <path id="path" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                            opacity="0.1"></path>
+                    </g>
+                </svg>
             </div>
             <div class="gen-text-area">
                 <h2 class="gen-loading-title" id="loading-title">正在規劃腳本結構…</h2>
@@ -181,6 +189,7 @@
     <!-- ══════════════════════════════════
        SCRIPTS
   ══════════════════════════════════ -->
+    <script src="../js/math-curve-loader.js"></script>
     <script src="../js/token-manager.js"></script>
     <script src="../js/generate.js"></script>
     <script src="../js/sys.js"></script>
