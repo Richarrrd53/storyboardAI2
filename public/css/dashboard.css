@@ -311,6 +311,7 @@ body {
     -webkit-text-fill-color: transparent;
     background-clip: text;
     margin-bottom: 28px;
+    width: fit-content;
 }
 
 /* ── IDEA BOX (main input) ── */
