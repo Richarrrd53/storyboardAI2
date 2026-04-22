@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分鏡 JSON 調試器 — Storyboard AI</title>
+    <link rel="stylesheet" href="../css/generate.css">
+    <style>
+        :root {
+            --purple: #8b5cf6;
+            --purple-light: #a78bfa;
+            --bg: #f8f5ff;
+            --text-dark: #2e2e2e;
+            --font-body: sans-serif;
+        }
+
+        body {
+            background: var(--bg);
+            font-family: var(--font-body);
+            padding: 60px 40px;
+            margin: 0;
+            color: var(--text-dark);
+            min-height: 100vh;
+        }
+
+        *::selection {
+            background-color: rgba(139, 92, 246, 0.2);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.88);
+            border-radius: 28px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(123, 94, 167, 0.08);
+            border: 1.5px solid rgba(200, 184, 232, 0.3);
+            transition: all 0.5s cubic-bezier(.4, 0, .2, 1);
+        }
+
+        .header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        h2 {
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: 800;
+        }
+
+        .action-group {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .toggle-wrapper {
+            display: none;
+            background: rgba(200, 184, 232, 0.2);
+            padding: 4px;
+            border-radius: 100px;
+            border: 1.5px solid rgba(200, 184, 232, 0.3);
+        }
+
+        .toggle-btn {
+            background: transparent;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 100px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+            opacity: 0.6;
+        }
+
+        .toggle-btn.active {
+            background: white;
+            color: var(--purple);
+            opacity: 1;
+            box-shadow: 0 4px 12px rgba(123, 94, 167, 0.15);
+        }
+
+        input[type=file] {
+            display: none;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #7B5EA7, #A07CC5);
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 100px;
+            cursor: pointer;
+            transition: all 0.35s cubic-bezier(.34, 1.56, .64, 1);
+            font-weight: 700;
+            font-size: 0.95rem;
+            box-shadow: 0 8px 24px rgba(123, 94, 167, 0.2);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn:hover {
+            transform: scale(1.04);
+            box-shadow: 0 12px 36px rgba(123, 94, 167, 0.3);
+        }
+
+        #view-container {
+            position: relative;
+        }
+
+        .view-section {
+            display: none;
+            animation: fadeIn 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .view-section.active {
+            display: block;
+        }
+
+        .frame-item {
+            display: flex;
+            gap: 24px;
+            margin-bottom: 30px;
+            padding: 24px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 20px;
+            border: 1px solid rgba(200, 184, 232, 0.2);
+            animation: slideUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+        }
+
+        .frame-img {
+            width: 240px;
+            height: fit-content;
+            border-radius: 12px;
+            object-fit: cover;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .frame-content {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .frame-header {
+            font-weight: 800;
+            color: var(--purple);
+            font-size: 1.1rem;
+        }
+
+        input[type=text], textarea {
+            border: 1.5px solid rgba(200, 184, 232, 0.35);
+            background: transparent;
+            border-radius: 12px;
+            padding: 12px 16px;
+            width: 100%;
+            outline: none;
+            transition: all 0.3s cubic-bezier(.4, 0, .2, 1);
+            font-family: var(--font-body);
+            font-size: 0.95rem;
+            color: var(--text-dark);
+            box-sizing: border-box;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        input[type=text]:focus, textarea:focus {
+            border-color: var(--purple-light);
+            box-shadow: 0 0 0 4px rgba(123, 94, 167, 0.1);
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .film-strip-container {
+            width: 100%;
+            margin: 0 auto;
+            padding: 25px 10px;
+            background: #1a1a1a;
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: grab;
+            transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .film-strip-container:active {
+            cursor: grabbing;
+        }
+
+        .film-strip {
+            position: relative;
+            display: flex;
+            overflow-x: auto;
+            padding: 30px 0;
+            align-items: flex-start;
+            scrollbar-width: none;
+            width: max-content;
+        }
+
+        .film-strip::-webkit-scrollbar {
+            display: none;
+        }
+
+        .film-frame {
+            flex: 0 0 auto;
+            margin: 0 8px;
+            background: #000;
+            border: 1px solid #333;
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .film-frame.ratio-16-9 { width: 1066px; }
+        .film-frame.ratio-9-16 { width: 337.5px; }
+        .film-frame.ratio-3-2 { width: 900px; }
+        .film-frame.ratio-2-3 { width: 400px; }
+        .film-frame.ratio-1-1 { width: 600px; }
+
+        .frame-image-container {
+            position: relative;
+            overflow: hidden;
+            border-radius: 8px;
+            height: 600px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #111;
+        }
+
+        .frame-number {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: #fff;
+            font-weight: 700;
+            font-size: 14px;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            padding: 3px 10px;
+            border-radius: 4px;
+            z-index: 2;
+        }
+
+        .frame-image {
+            height: 100%;
+            width: auto;
+            max-width: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        .frame-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0.0) 100%);
+            height: 100%;
+            padding: 20px 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .frame-image-container:hover .frame-overlay {
+            opacity: 1;
+        }
+
+        .frame-title-overlay {
+            color: #fff;
+            font-size: 1.1rem;
+            margin-bottom: 6px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            z-index: 2;
+        }
+
+        .frame-desc-overlay {
+            color: #eee;
+            font-size: 0.9rem;
+            margin-bottom: 12px;
+            z-index: 2;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.98); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="header-actions">
+                <h2>分鏡資料調試 ✦</h2>
+                
+                <div class="toggle-wrapper" id="mode-toggle">
+                    <button class="toggle-btn active" data-target="editor-view">手稿模式</button>
+                    <button class="toggle-btn" data-target="filmstrip-view">膠捲模式</button>
+                </div>
+
+                <div class="action-group">
+                    <label class="btn" for="json-upload" style="background: rgba(200, 184, 232, 0.4); color: var(--purple); box-shadow: none;">上傳 JSON</label>
+                    <input type="file" id="json-upload" accept=".json">
+                    <button class="btn" id="save-btn" style="display:none; background: linear-gradient(135deg, #818cf8, #8b5cf6);">儲存修改</button>
+                </div>
+            </div>
+            
+            <div id="metadata-container" style="margin-bottom: 30px; font-weight: 600; color: #666;"></div>
+            
+            <div id="view-container">
+                <div id="editor-view" class="view-section active"></div>
+                <div id="filmstrip-view" class="view-section">
+                    <div id="filmStripWrapper" class="film-strip-container">
+                        <div id="filmStrip" class="film-strip"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentData = null;
+
+        document.getElementById('json-upload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    currentData = JSON.parse(evt.target.result);
+                    document.getElementById('save-btn').style.display = 'inline-flex';
+                    document.getElementById('mode-toggle').style.display = 'flex';
+                    renderMetadata();
+                    renderEditor();
+                } catch (err) {
+                    alert("JSON 解析失敗！");
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        document.querySelectorAll('.toggle-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+
+                document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
+                const targetId = e.target.getAttribute('data-target');
+                document.getElementById(targetId).classList.add('active');
+
+                if (targetId === 'filmstrip-view') {
+                    renderFilmstrip();
+                }
+            });
+        });
+
+        function renderMetadata() {
+            const metaContainer = document.getElementById('metadata-container');
+            metaContainer.innerHTML = `
+                設定風格: <span style="color:var(--purple);">${currentData.metadata.style}</span> | 
+                畫面比例: <span style="color:var(--purple);">${currentData.metadata.ratio}</span>
+            `;
+        }
+
+        function renderEditor() {
+            const container = document.getElementById('editor-view');
+            container.innerHTML = '';
+
+            currentData.frames.forEach((frame, idx) => {
+                const row = document.createElement('div');
+                row.className = 'frame-item';
+                row.style.animationDelay = `${idx * 0.05}s`;
+                
+                row.innerHTML = `
+                    <img src="${frame.image}" class="frame-img">
+                    <div class="frame-content">
+                        <div class="frame-header">Frame #${frame.id}</div>
+                        <input type="text" value="${frame.title}" data-idx="${idx}" data-field="title" placeholder="分鏡標題">
+                        <input type="text" value="${frame.camera}" data-idx="${idx}" data-field="camera" placeholder="鏡頭語言">
+                        <textarea data-idx="${idx}" data-field="prompt" placeholder="生圖 Prompt">${frame.prompt}</textarea>
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+
+            container.querySelectorAll('input, textarea').forEach(el => {
+                el.addEventListener('input', (e) => {
+                    const idx = e.target.dataset.idx;
+                    const field = e.target.dataset.field;
+                    currentData.frames[idx][field] = e.target.value;
+                });
+            });
+        }
+
+        function renderFilmstrip() {
+            const filmStrip = document.getElementById('filmStrip');
+            filmStrip.innerHTML = '';
+
+            const flimRatioClassMap = { 
+                '16:9': '16-9', '9:16': '9-16', '3:2': '3-2', '2:3': '2-3', '1:1': '1-1',
+                '橫向16:9': '16-9', '直向9:16': '9-16', '橫向3:2': '3-2', '直向2:3': '2-3'
+            };
+            const ratioKey = flimRatioClassMap[currentData.metadata.ratio] || '1-1';
+
+            currentData.frames.forEach(frame => {
+                const el = document.createElement('div');
+                el.className = `film-frame ratio-${ratioKey}`;
+                el.innerHTML = `
+                    <div class="frame-image-container">
+                        <div class="frame-number">#${frame.id}</div>
+                        <img src="${frame.image}" class="frame-image">
+                        <div class="frame-overlay">
+                            <div class="frame-title-overlay">${frame.title || '無標題'}</div>
+                            <div class="frame-desc-overlay">${frame.camera || '無鏡頭描述'}</div>
+                        </div>
+                    </div>
+                `;
+                filmStrip.appendChild(el);
+            });
+
+            initDragScroll(document.getElementById('filmStripWrapper'));
+        }
+
+        function initDragScroll(el) {
+            let isDown = false;
+            let startX, scrollLeft;
+
+            const start = (e) => {
+                isDown = true;
+                el.style.cursor = 'grabbing';
+                const touch = e.touches ? e.touches[0] : e;
+                startX = touch.pageX - el.offsetLeft;
+                scrollLeft = el.scrollLeft;
+            };
+
+            const end = () => {
+                isDown = false;
+                el.style.cursor = 'grab';
+            };
+
+            const move = (e) => {
+                if (!isDown) return;
+                e.preventDefault();
+                const touch = e.touches ? e.touches[0] : e;
+                const x = touch.pageX - el.offsetLeft;
+                const walk = (x - startX) * 2;
+                el.scrollLeft = scrollLeft - walk;
+            };
+
+            el.removeEventListener('mousedown', start);
+            el.removeEventListener('mouseleave', end);
+            el.removeEventListener('mouseup', end);
+            el.removeEventListener('mousemove', move);
+
+            el.addEventListener('mousedown', start);
+            el.addEventListener('mouseleave', end);
+            el.addEventListener('mouseup', end);
+            el.addEventListener('mousemove', move);
+        }
+
+        document.getElementById('save-btn').addEventListener('click', () => {
+            currentData.metadata.exportTime = new Date().toISOString();
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentData, null, 4));
+            const anchor = document.createElement('a');
+            anchor.href = dataStr;
+            anchor.download = `Storyboard_Edited_${new Date().getTime()}.json`;
+            document.body.appendChild(anchor);
+            anchor.click();
+            document.body.removeChild(anchor);
+        });
+
+        window.addEventListener('resize',() => {
+            const flimRatioClassMap = { 
+                '16:9': '16-9', '9:16': '9-16', '3:2': '3-2', '2:3': '2-3', '1:1': '1-1',
+                '橫向16:9': '16-9', '直向9:16': '9-16', '橫向3:2': '3-2', '直向2:3': '2-3'
+            };
+            const ratioKey = flimRatioClassMap[currentData.metadata.ratio] || '1-1';
+            const flimWidthMap = { '16-9': 1066, '9-16': 337.5, '3-2': 900, '2-3': 400, '1-1': 600 };
+            const frameWidth = flimWidthMap[ratioKey] || 600;
+            const totalWidth = (currentData.frames.length * (frameWidth + 16));
+            const totalHeight = (currentData.frames.length * (600 + 16));
+            const totalHeightMobile = (currentData.frames.length * (getHeightFromRatio(window.innerWidth - 240, ratioKey) + 16));
+            const wrapper = document.getElementById('filmStripWrapper');
+            isHorizon = (window.innerWidth < window.innerHeight) ? true : false;
+            if (isHorizon){
+                wrapper.classList.add('mobile');
+                wrapper.style.setProperty('--film-strip-edge-width', `${window.innerWidth - 240}px`);
+                wrapper.style.setProperty('--film-strip-edge-height', `${totalHeightMobile}px`);
+            }
+            else{
+                wrapper.classList.remove('mobile');
+                wrapper.style.setProperty('--film-strip-edge-width', `${totalWidth}px`);
+            }
+        });
+
+        function getHeightFromRatio(height, ratio){
+            const w = parseInt(ratio.split('-')[0])
+            const h = parseInt(ratio.split('-')[1])
+            return height / w * h
+        }
+    </script>
+</body>
+
+</html>

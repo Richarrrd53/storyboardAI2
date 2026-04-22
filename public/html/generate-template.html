@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>生成分鏡 (模板版) — Storyboard AI</title>
+    <link rel="stylesheet" href="../css/math-curve-loader.css">
+    <link rel="stylesheet" href="../css/generate-template.css" />
+</head>
+<body>
+
+<!-- Dynamic BG -->
+<div id="BG">
+    <div class="bgDots" id="bgDot1" style="width:700px;height:700px;left:-150px;top:-150px;filter:blur(140px);opacity:0.4;"></div>
+    <div class="bgDots" id="bgDot2" style="width:600px;height:600px;right:-100px;top:0;filter:blur(130px);opacity:0.3;"></div>
+    <div class="bgDots" id="bgDot4" style="width:500px;height:500px;left:25%;bottom:-80px;filter:blur(120px);opacity:0.25;"></div>
+    <div id="bgMask"></div>
+</div>
+
+<!-- Nav -->
+<nav class="gen-nav">
+    <div style="display:flex;align-items:center;gap:20px;">
+        <a href="#" class="brand-logo gen-brand">STORYBOARD <span>AI</span></a>
+    </div>
+    <a href="#" class="btn btn-ghost btn-sm">← Dashboard</a>
+</nav>
+
+<!-- ══════════════════════════════════
+   PHASE 1 — COMPOSE
+══════════════════════════════════ -->
+<div class="phase active" id="phase-compose">
+    <div class="compose-card card" id="compose-card">
+        <!-- Story input area -->
+        <div class="compose-input-area" id="compose-input-area">
+            <textarea id="story-input" class="compose-textarea" placeholder="描述你的故事、廣告或短影音場景…" rows="3" oninput="onStoryInput()"></textarea>
+            <button class="compose-send-btn" id="compose-send" onclick="submitStory()" disabled>
+                <div class="state state--sent">
+                    <div class="icon">
+                        <svg width="1.5em" height="1.5em" viewBox="0 0 24 24" fill="none">
+                            <path d="M14.2199 21.63C13.0399 21.63 11.3699 20.8 10.0499 16.83L9.32988 14.67L7.16988 13.95C3.20988 12.63 2.37988 10.96 2.37988 9.78001C2.37988 8.61001 3.20988 6.93001 7.16988 5.60001L15.6599 2.77001C17.7799 2.06001 19.5499 2.27001 20.6399 3.35001C21.7299 4.43001 21.9399 6.21001 21.2299 8.33001L18.3999 16.82C17.0699 20.8 15.3999 21.63 14.2199 21.63Z" fill="currentColor"></path>
+                        </svg>
+                    </div>
+                </div>
+            </button>
+            <p class="story-advanced-title">進階設定</p>
+        </div>
+
+        <!-- Options panel -->
+        <div class="compose-options" id="compose-options">
+            <div class="options-header">
+                <p class="options-hint">選擇模板，讓 AI 自動套用結構與提示詞 ✦</p>
+                <span class="options-label">故事描述</span>
+                <div class="options-story-echo" id="options-echo"></div>
+            </div>
+
+            <!-- Style row -->
+            <div class="options-section">
+                <p class="options-label">風格</p>
+                <div class="style-chips-row" id="style-chips-row"></div>
+            </div>
+
+            <!-- Ratio row -->
+            <div class="options-section">
+                <p class="options-label">畫面比例</p>
+                <div class="ratio-chips-row" id="ratio-chips-row">
+                    <button class="opt-chip ratio-chip active" data-ratio="橫向16:9" onclick="selectRatioOpt(this)">
+                        <span class="ratio-icon ratio-icon-16-9"></span>16:9
+                    </button>
+                    <button class="opt-chip ratio-chip" data-ratio="直向9:16" onclick="selectRatioOpt(this)">
+                        <span class="ratio-icon ratio-icon-9-16"></span>9:16
+                    </button>
+                    <button class="opt-chip ratio-chip" data-ratio="1:1" onclick="selectRatioOpt(this)">
+                        <span class="ratio-icon ratio-icon-1-1"></span>1:1
+                    </button>
+                    <button class="opt-chip ratio-chip" data-ratio="橫向3:2" onclick="selectRatioOpt(this)">
+                        <span class="ratio-icon ratio-icon-3-2"></span>3:2
+                    </button>
+                    <button class="opt-chip ratio-chip" data-ratio="直向2:3" onclick="selectRatioOpt(this)">
+                        <span class="ratio-icon ratio-icon-2-3"></span>2:3
+                    </button>
+                </div>
+            </div>
+
+            <!-- Generate CTA -->
+            <div class="options-cta-row">
+                <button class="btn btn-ghost options-back-btn" onclick="resetCompose()">← 重新輸入</button>
+                <button class="btn btn-primary options-gen-btn" id="options-gen-btn" onclick="proceedToTemplate()">
+                    ✦ 選擇模板
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Suggestion chips -->
+    <div class="suggestion-row" id="suggestion-row">
+        <button class="sugg-chip" onclick="fillSugg(this)">蘋果牛奶廣告</button>
+        <button class="sugg-chip" onclick="fillSugg(this)">旅遊短影音</button>
+        <button class="sugg-chip" onclick="fillSugg(this)">運動服品牌</button>
+        <button class="sugg-chip" onclick="fillSugg(this)">美食餐廳介紹</button>
+        <button class="sugg-chip" onclick="fillSugg(this)">科技產品發表</button>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════
+   PHASE 1.5 — TEMPLATE SELECT
+══════════════════════════════════ -->
+<div class="phase" id="phase-template">
+    <div class="template-phase-wrap">
+        <div class="template-phase-header">
+            <div>
+                <h2 class="template-phase-title">選擇模板 <span>✦</span></h2>
+                <p class="template-phase-sub">AI 已根據你的故事推薦最匹配的模板</p>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="backToCompose()">← 返回</button>
+        </div>
+
+        <!-- AI recommendation banner -->
+        <div class="ai-recommend-banner" id="ai-recommend-banner">
+            <div class="ai-rec-icon">✦</div>
+            <div>
+                <p class="ai-rec-title">AI 推薦</p>
+                <p class="ai-rec-desc" id="ai-rec-desc">正在分析你的故事…</p>
+            </div>
+            <div class="ai-rec-loading" id="ai-rec-loading">
+                <div class="mini-spinner"></div>
+            </div>
+        </div>
+
+        <!-- Template grid -->
+        <div class="template-grid" id="template-grid">
+            <!-- rendered by JS -->
+        </div>
+
+        <!-- Template preview drawer -->
+        <div class="template-preview-drawer" id="template-preview-drawer">
+            <div class="preview-drawer-inner">
+                <div class="preview-drawer-header">
+                    <h3 class="preview-drawer-title" id="preview-title">模板名稱</h3>
+                    <button class="preview-drawer-close" onclick="closePreview()">✕</button>
+                </div>
+                <div class="preview-drawer-body" id="preview-body">
+                    <!-- rendered by JS -->
+                </div>
+                <div class="preview-drawer-footer">
+                    <button class="btn btn-ghost btn-sm" onclick="closePreview()">取消</button>
+                    <button class="btn btn-primary" id="preview-apply-btn" onclick="applyTemplateAndGenerate()">
+                        ✦ 套用並生成
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════
+   PHASE 2 — GENERATING
+══════════════════════════════════ -->
+<div class="phase" id="phase-generating">
+    <div class="generating-wrap">
+        <div class="gen-preview-card card" id="gen-preview-card">
+            <svg class="loader" viewBox="0 0 100 100" fill="none" aria-hidden="true">
+                <g id="group">
+                    <path id="path" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" opacity="0.1"></path>
+                </g>
+            </svg>
+        </div>
+        <div class="gen-text-area">
+            <h2 class="gen-loading-title" id="loading-title">正在套用模板結構…</h2>
+            <p class="gen-loading-sub" id="loading-sub">解析故事變數，對應分鏡模板</p>
+            <div class="gen-progress-track">
+                <div class="gen-progress-fill" id="gen-progress"></div>
+            </div>
+            <span class="gen-progress-pct" id="gen-progress-text">0%</span>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════
+   PHASE 3 — RESULT
+══════════════════════════════════ -->
+<div class="phase" id="phase-result">
+    <div class="result-topbar">
+        <div class="result-info">
+            <h2 class="result-title">分鏡草稿 ✦</h2>
+            <p class="result-meta" id="result-meta">—</p>
+        </div>
+        <div class="result-actions">
+            <button class="btn btn-outline btn-sm" onclick="exportStoryboardJson()">↓ 匯出 JSON</button>
+            <button class="btn btn-primary btn-sm" onclick="resetAll()">+ 新建分鏡</button>
+        </div>
+    </div>
+    <!-- Template badge -->
+    <div class="result-template-badge" id="result-template-badge" style="display:none;">
+        <span class="badge-label">模板</span>
+        <span class="badge-name" id="badge-template-name">—</span>
+        <span class="badge-sep">·</span>
+        <span class="badge-vars" id="badge-vars">—</span>
+    </div>
+    <div id="storyboard-grid" style="width:100%;"></div>
+</div>
+
+<script src="../js/generate-template.js"></script>
+<script src="../js/math-curve-loader.js"></script>
+</body>
+</html>

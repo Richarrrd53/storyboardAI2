@@ -30,7 +30,7 @@ window.addEventListener('scroll', () => {
 const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
         if (entry.isIntersecting) {
-            if (entry.target.id == "intro_video"){
+            if (entry.target.id == "intro_video") {
 
                 entry.target.currentTime = 0;
                 entry.target.play();
@@ -168,7 +168,7 @@ function setBG() {
 
     previewCard2.style.top = "220px";
     previewCard2.style.left = "15%";
-    
+
     previewCard3.style.top = "180px";
     previewCard3.style.right = "30%";
 
@@ -191,3 +191,7 @@ function setBG() {
         previewCard5.style.transition = "all 0s cubic-bezier(.4,0,.2,1)";
     }, 500);
 }
+
+
+
+

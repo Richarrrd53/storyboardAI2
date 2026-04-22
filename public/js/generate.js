@@ -507,3 +507,35 @@ function resetHeight(){
     storyInput.style.height = "79px";
     inputArea.style.height = "79px";
 }
+
+function exportStoryboardJson() {
+    if (generatedImgs.length === 0) {
+        alert("目前沒有可匯出的分鏡資料！");
+        return;
+    }
+
+    const styleName = STYLES[state.styleIndex].name;
+    const exportData = {
+        metadata: {
+            originalStory: state.story,
+            style: styleName,
+            ratio: state.ratio,
+            exportTime: new Date().toISOString()
+        },
+        frames: generatedImgs.map((img, i) => ({
+            id: i + 1,
+            title: generatedStoryTitles[i] || '',
+            camera: generatedStoryCams[i] || '',
+            prompt: generatedPrompts[i] || '',
+            image: img || ''
+        }))
+    };
+
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 4));
+    const anchor = document.createElement('a');
+    anchor.href = dataStr;
+    anchor.download = `Storyboard_${new Date().getTime()}.json`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+}
