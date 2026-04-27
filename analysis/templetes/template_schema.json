@@ -1,0 +1,90 @@
+{
+    "id": "string (影片唯一識別碼)",
+    "name": "string (影片標題)",
+    "category": "hook | story | product | emotion | twist (影片核心類型)",
+    "tags": [
+        "string (標籤，例如：#美食, #開箱, #教學)"
+    ],
+    "description": "string (影片簡短描述)",
+    "narrative": {
+        "type": "story | situational | dialogue | montage (敘事手法)",
+        "structure": "string (起承轉合的具體結構)",
+        "tone": "humor | emotional | suspense | casual (整體語調)",
+        "summary": "string (內容大綱)"
+    },
+    "hook": {
+        "type": "curiosity | shock | humor | conflict (鉤子類型)",
+        "position": "start | middle | end (鉤子出現位置)",
+        "description": "string (鉤子內容描述)"
+    },
+    "marketing": {
+        "isImplicit": "boolean (是否包含隱性行銷)",
+        "exposureType": "none | logo | product | environment | prop (品牌/產品暴露形式)",
+        "brandRole": "none | passive | active (品牌在片中的角色)",
+        "integrationMethod": "none | background | dialogue | plot | twist (置入手法)",
+        "revealTiming": "none | early | middle | late (揭露時機)",
+        "persuasionStyle": "none | direct | subtle | emotional (說服風格)",
+        "targetEmotion": [
+            "trust",
+            "curiosity",
+            "desire",
+            "relatability (目標情緒)"
+        ]
+    },
+    "structure": [
+        {
+            "shot": "number (分鏡序號)",
+            "duration": "string (秒數，例如 1s)",
+            "camera": "close-up | wide | tracking | handheld | static (鏡頭語言)",
+            "angle": "eye-level | low-angle | high-angle (拍攝角度)",
+            "action": "string (畫面動作描述)",
+            "emotion": "string (畫面傳遞的情緒)",
+            "purpose": "string (該分鏡的設計目的)"
+        }
+    ],
+    "visualFlow": {
+        "pace": "fast | medium | slow (剪輯節奏)",
+        "rhythmPattern": "string (節奏規律描述)",
+        "transitionStyle": "cut | fade | whip | match-cut (轉場風格)"
+    },
+    "promptTemplate": {
+        "base": "string (通用影像生成提示詞基調)",
+        "perShot": [
+            "string (各分鏡對應的提示詞模板)"
+        ]
+    },
+    "variables": [
+        "character",
+        "scene",
+        "emotion",
+        "style",
+        "product (可供替換的變數定義)"
+    ],
+    "controls": {
+        "pace": ["fast", "medium", "slow"],
+        "cameraIntensity": ["low", "medium", "high"],
+        "emotionIntensity": ["low", "medium", "high"]
+    },
+    "useCase": "string (建議應用場景)",
+    "platform": [
+        "tiktok",
+        "reels",
+        "shorts (適用的平台)"
+    ],
+    "shotsCount": "number (總分鏡數)",
+    "source": {
+        "videoId": "string (原始影片連結/ID)",
+        "title": "string (原始標題)",
+        "channel": "string (頻道名稱)",
+        "views": "number (觀看數預估)"
+    },
+    "analysis": {
+        "whyItWorks": "string (成功要素分析)",
+        "targetAudience": "string (目標受眾描繪)",
+        "replicableElements": [
+            "string (可被複製的爆款元素)"
+        ]
+    },
+    "confidence": "number (分析信心指數 0.0 - 1.0)",
+    "version": "2.0"
+}
