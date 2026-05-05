@@ -54,12 +54,13 @@ def get_trending_shorts():
     try:
         request = youtube.search().list(
             part="snippet",
-            q="搞笑|推薦|短影音|開箱|團購|廣告|省錢|搞笑|美食|旅遊|生活",
+            # q="搞笑|推薦|短影音|開箱|團購|廣告|省錢|搞笑|美食|旅遊|生活",
+            channelId="UCqcHKBuByu3UrwSGbSxpXDQ",
             type="video",
             videoDuration="short", # 4分鐘以下
             maxResults=50,
             regionCode="TW",
-            order="relevance"
+            order="date"
         )
         search_response = request.execute()
         items = search_response.get('items', [])
