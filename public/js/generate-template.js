@@ -3,70 +3,19 @@
    Pipeline: story → 選/推薦模板 → 套用模板 → optimizePrompt → image
    ============================================ */
 
+
 // ── 1. Embedded Templates (2.json) ──
-const TEMPLATES = [
-    {
-        "id": "GiZBQzIH6zA",
-        "name": "在新竹吃一天要花多少錢",
-        "category": "story",
-        "tags": ["#美食","#新竹美食","#開箱","#在地人推薦","#Vlog"],
-        "description": "跟著在地人挑戰在城市吃一整天，從在地名店到手工甜點，並揭曉總花費。",
-        "narrative": {
-            "type": "montage",
-            "structure": "起：花費懸念與社群互動截圖；承：連續開箱在地名店；轉：高節奏展示美食斷面與進食特寫；合：結尾總結並引導互動。",
-            "tone": "casual",
-            "summary": "透過快節奏剪輯開箱在地小吃，結合價格透明化與真實食評，帶動觀眾對在地美食的興趣。"
-        },
-        "hook": {
-            "type": "curiosity",
-            "position": "start",
-            "description": "標題直切痛點「在XX吃一天要花多少錢」，搭配社群留言截圖建立真實感。"
-        },
-        "marketing": {
-            "isImplicit": true, "exposureType": "product", "brandRole": "active",
-            "integrationMethod": "plot", "revealTiming": "early",
-            "persuasionStyle": "subtle",
-            "targetEmotion": ["trust","curiosity","desire","relatability"]
-        },
-        "structure": [
-            { "shot": 1, "duration": "4s", "camera": "static", "angle": "eye-level", "action": "主角在街道背景下展示推薦清單截圖", "emotion": "excited", "purpose": "建立主題懸念與可信度" },
-            { "shot": 2, "duration": "2s", "camera": "close-up", "angle": "high-angle", "action": "廚師在碗中鋪滿主食食材與淋醬", "emotion": "anticipation", "purpose": "感官刺激與產品展示" },
-            { "shot": 3, "duration": "5s", "camera": "static", "angle": "eye-level", "action": "主角大口吃招牌料理，露出滿足神情", "emotion": "satisfied", "purpose": "引發食慾共鳴" },
-            { "shot": 4, "duration": "3s", "camera": "tracking", "angle": "low-angle", "action": "主角走向下一家店招牌並指著招牌", "emotion": "energetic", "purpose": "場景轉場與店家引導" },
-            { "shot": 5, "duration": "5s", "camera": "close-up", "angle": "eye-level", "action": "大火翻炒特色料理與食材夾起特寫", "emotion": "hungry", "purpose": "強調食物新鮮度與鍋氣" },
-            { "shot": 6, "duration": "7s", "camera": "close-up", "angle": "eye-level", "action": "切開脆皮食物發出清脆聲響與斷面展示", "emotion": "shock", "purpose": "ASMR聽覺爆點與質地展示" },
-            { "shot": 7, "duration": "8s", "camera": "close-up", "angle": "eye-level", "action": "咬開食物展示飽滿內餡細節", "emotion": "curiosity", "purpose": "產品細節解構" },
-            { "shot": 8, "duration": "12s", "camera": "handheld", "angle": "high-angle", "action": "甜點製作過程與主角咬開展示綿密感", "emotion": "satisfied", "purpose": "結尾甜點療癒與口感強調" }
-        ],
-        "visualFlow": { "pace": "fast", "rhythmPattern": "每3-5秒切換一個店家，食物特寫與吃播畫面1:1交叉。", "transitionStyle": "cut" },
-        "promptTemplate": {
-            "base": "High-quality lifestyle vlog, cinematic lighting, 4k resolution, {style} style.",
-            "perShot": [
-                "{character} stands in {scene} with {emotion} expression, digital UI overlay on screen showing food list.",
-                "Close-up of {product} being prepared in {scene}, steam rising, {style} style.",
-                "{character} is eating {product} in {scene} with {emotion} expression, satisfying look.",
-                "Tracking shot of {character} walking toward a neon sign in {scene}, {style} style.",
-                "Close-up of stir-frying {product} in a busy {scene}, high heat, motion blur.",
-                "Macro shot of slicing {product} showing crispy texture and cross-section, {style} style.",
-                "Extreme close-up of {product} being bitten into, revealing detailed ingredients in {scene}.",
-                "Handheld shot of {character} enjoying {product} dessert in {scene} with {emotion} expression."
-            ]
-        },
-        "variables": ["character","scene","emotion","style","product"],
-        "controls": { "pace": ["fast"], "cameraIntensity": ["medium"], "emotionIntensity": ["high"] },
-        "useCase": "美食旅遊宣傳、在地店家合輯、CP值挑戰系列",
-        "platform": ["tiktok","reels","shorts"],
-        "shotsCount": 8,
-        "source": { "videoId": "GiZBQzIH6zA", "title": "在新竹吃一天要花多少錢", "channel": "智明", "views": 50000 },
-        "analysis": {
-            "whyItWorks": "利用具體的金錢懸念作為鉤子，結合高品質的食物特寫（斷面、ASMR聲），加上在地人的真實人設降低廣告感。",
-            "targetAudience": "喜愛尋找台灣在地美食、學生、小資旅遊族群。",
-            "replicableElements": ["螢幕標註即時價格","大口進食的特寫畫面","美食切開的清脆聲響","社群留言截圖作為內容來源"]
-        },
-        "confidence": 0.95,
-        "version": "2.0"
+let TEMPLATES = [];
+async function fetchAllData() {
+    try {
+        const response = await fetch('/api/json-data');
+        const data = await response.json();
+
+        TEMPLATES = data;
+    } catch (error) {
+        console.error('取得資料時發生錯誤:', error);
     }
-];
+}
 
 // ── 2. State ──
 const state = {
@@ -80,22 +29,22 @@ const state = {
 
 // ── 3. Data Sets ──
 const STYLES = [
-    { name: '預設風格',      dot: '#7fba7a', desc: '自然清新',   prompt: "natural lighting, high resolution, clean composition, soft focus background" },
-    { name: '電影風格',      dot: '#2a2a3a', desc: '戲劇光影',   prompt: "anamorphic lens, cinematic lighting, 8k resolution, deep shadows, professional color grading" },
-    { name: '二次元風格',    dot: '#ffc5e8', desc: '熱門手遊感', prompt: "anime style, cel-shaded, vibrant colors, expressive lighting, high-quality illustration" },
-    { name: 'Cyberpunk風格', dot: '#6200ea', desc: '霓虹未來',   prompt: "neon palette, high contrast, futuristic street, volumetric fog, cyberpunk aesthetic" },
-    { name: '美式寫實風格',  dot: '#c49a2a', desc: '溫暖金調',   prompt: "professional photography, golden hour, shallow depth of field, Kodak Portra 400 look" },
-    { name: '90s 復古風格',  dot: '#f44336', desc: '懷舊膠卷',   prompt: "VHS aesthetic, vintage film grain, light leaks, chromatic aberration, retro colors" },
-    { name: '水彩插畫風格',  dot: '#b8d4ff', desc: '柔和藝術',   prompt: "delicate watercolor painting, ink wash, dreamy atmosphere, paper texture, hand-drawn" },
-    { name: '極簡室內風格',  dot: '#eceff1', desc: '侘寂高級感', prompt: "minimalist aesthetic, soft natural light, Wabi-sabi style, neutral tones" }
+    { name: '預設風格', dot: '#7fba7a', desc: '自然清新', prompt: "natural lighting, high resolution, clean composition, soft focus background" },
+    { name: '電影風格', dot: '#2a2a3a', desc: '戲劇光影', prompt: "anamorphic lens, cinematic lighting, 8k resolution, deep shadows, professional color grading" },
+    { name: '二次元風格', dot: '#ffc5e8', desc: '熱門手遊感', prompt: "anime style, cel-shaded, vibrant colors, expressive lighting, high-quality illustration" },
+    { name: 'Cyberpunk風格', dot: '#6200ea', desc: '霓虹未來', prompt: "neon palette, high contrast, futuristic street, volumetric fog, cyberpunk aesthetic" },
+    { name: '美式寫實風格', dot: '#c49a2a', desc: '溫暖金調', prompt: "professional photography, golden hour, shallow depth of field, Kodak Portra 400 look" },
+    { name: '90s 復古風格', dot: '#f44336', desc: '懷舊膠卷', prompt: "VHS aesthetic, vintage film grain, light leaks, chromatic aberration, retro colors" },
+    { name: '水彩插畫風格', dot: '#b8d4ff', desc: '柔和藝術', prompt: "delicate watercolor painting, ink wash, dreamy atmosphere, paper texture, hand-drawn" },
+    { name: '極簡室內風格', dot: '#eceff1', desc: '侘寂高級感', prompt: "minimalist aesthetic, soft natural light, Wabi-sabi style, neutral tones" }
 ];
 
 const LOADING_STEPS = [
-    { title: '正在套用模板結構…(1/5)',   sub: '解析故事變數，對應分鏡模板',        pct: 0 },
-    { title: '正在填入變數…(2/5)',        sub: '將故事元素代入 perShot 模板',       pct: 15 },
-    { title: '正在優化提示詞…(3/5)',      sub: '針對風格與比例強化每個分鏡提示詞', pct: 30 },
-    { title: '正在同步繪製分鏡…(4/5)',    sub: '渲染畫面，組合成完整分鏡',         pct: 50 },
-    { title: '最終檢查與優化…(5/5)',      sub: '確保節奏連貫，HOOK 設計到位',      pct: 100 }
+    { title: '正在套用模板結構…(1/5)', sub: '解析故事變數，對應分鏡模板', pct: 0 },
+    { title: '正在填入變數…(2/5)', sub: '將故事元素代入 perShot 模板', pct: 15 },
+    { title: '正在優化提示詞…(3/5)', sub: '針對風格與比例強化每個分鏡提示詞', pct: 30 },
+    { title: '正在同步繪製分鏡…(4/5)', sub: '渲染畫面，組合成完整分鏡', pct: 50 },
+    { title: '最終檢查與優化…(5/5)', sub: '確保節奏連貫，HOOK 設計到位', pct: 100 }
 ];
 
 // ── 4. Phase management ──
@@ -107,7 +56,7 @@ function showPhase(id) {
 
 // ── 5. Compose ──
 const storyInput = document.getElementById('story-input');
-const inputArea  = document.getElementById('compose-input-area');
+const inputArea = document.getElementById('compose-input-area');
 
 function onStoryInput() {
     const val = storyInput.value.trim();
@@ -186,12 +135,13 @@ function resetHeight() {
 async function proceedToTemplate() {
     showPhase('phase-template');
     renderTemplateGrid();
-    await aiRecommendTemplate();
+    // await aiRecommendTemplate();
 }
 
 function renderTemplateGrid() {
     const grid = document.getElementById('template-grid');
     grid.innerHTML = '';
+    console.log(TEMPLATES)
     TEMPLATES.forEach(tpl => {
         const card = document.createElement('div');
         card.className = 'template-card';
@@ -200,7 +150,7 @@ function renderTemplateGrid() {
             <span class="tc-category">${tpl.category}</span>
             <h3 class="tc-name">${tpl.name}</h3>
             <p class="tc-desc">${tpl.description}</p>
-            <div class="tc-tags">${tpl.tags.slice(0,4).map(t=>`<span class="tc-tag">${t}</span>`).join('')}</div>
+            <div class="tc-tags">${tpl.tags.slice(0, 4).map(t => `<span class="tc-tag">${t}</span>`).join('')}</div>
             <div class="tc-meta">
                 <span class="tc-meta-item"><span class="tc-meta-dot"></span>${tpl.narrative.tone}</span>
                 <span class="tc-meta-item"><span class="tc-meta-dot"></span>${tpl.visualFlow.pace} 節奏</span>
@@ -303,14 +253,14 @@ function buildPreviewHTML(tpl) {
         <!-- Tags -->
         <div>
             <p class="pv-section-title">標籤</p>
-            <div class="pv-tags">${tpl.tags.map(t=>`<span class="pv-tag">${t}</span>`).join('')}</div>
+            <div class="pv-tags">${tpl.tags.map(t => `<span class="pv-tag">${t}</span>`).join('')}</div>
         </div>
 
         <!-- Variables -->
         <div>
             <p class="pv-section-title">可替換變數 — AI 將自動從故事中提取並填入</p>
             <div class="pv-variables">
-                ${tpl.variables.map(v=>`<span class="pv-var"><span class="pv-var-icon">◆</span>{${v}}</span>`).join('')}
+                ${tpl.variables.map(v => `<span class="pv-var"><span class="pv-var-icon">◆</span>{${v}}</span>`).join('')}
             </div>
         </div>
 
@@ -353,7 +303,7 @@ function buildPreviewHTML(tpl) {
         <div>
             <p class="pv-section-title">可複製爆款元素</p>
             <div class="pv-variables">
-                ${tpl.analysis.replicableElements.map(e=>`<span class="pv-var"><span class="pv-var-icon">✦</span>${e}</span>`).join('')}
+                ${tpl.analysis.replicableElements.map(e => `<span class="pv-var"><span class="pv-var-icon">✦</span>${e}</span>`).join('')}
             </div>
         </div>
     `;
@@ -379,18 +329,18 @@ async function startTemplateGenerate() {
     showPhase('phase-generating');
 
     const titleEl = document.getElementById('loading-title');
-    const subEl   = document.getElementById('loading-sub');
-    const barEl   = document.getElementById('gen-progress');
-    const pctEl   = document.getElementById('gen-progress-text');
+    const subEl = document.getElementById('loading-sub');
+    const barEl = document.getElementById('gen-progress');
+    const pctEl = document.getElementById('gen-progress-text');
 
     generatedImgs = []; generatedStoryTitles = []; generatedStoryCams = []; generatedPrompts = [];
 
     function updateUI(idx) {
         const s = LOADING_STEPS[idx];
         if (titleEl) titleEl.textContent = s.title;
-        if (subEl)   subEl.textContent   = s.sub;
-        if (barEl)   barEl.style.width   = s.pct + '%';
-        if (pctEl)   pctEl.textContent   = s.pct + '%';
+        if (subEl) subEl.textContent = s.sub;
+        if (barEl) barEl.style.width = s.pct + '%';
+        if (pctEl) pctEl.textContent = s.pct + '%';
     }
 
     try {
@@ -404,13 +354,13 @@ async function startTemplateGenerate() {
         updateUI(1);
         const rawPrompts = tpl.promptTemplate.perShot.map(template => fillVariables(template, resolvedVars));
         generatedStoryTitles = tpl.structure.map(s => s.action);
-        generatedStoryCams   = tpl.structure.map(s => `${s.camera} · ${s.angle}`);
+        generatedStoryCams = tpl.structure.map(s => `${s.camera} · ${s.angle}`);
 
         // ── Step 3: Optimize prompts ──
         updateUI(2);
         const styleDetail = STYLES[state.styleIndex].prompt;
-        const styleName   = STYLES[state.styleIndex].name;
-        const basePrompt  = fillVariables(tpl.promptTemplate.base, { ...resolvedVars, style: styleDetail });
+        const styleName = STYLES[state.styleIndex].name;
+        const basePrompt = fillVariables(tpl.promptTemplate.base, { ...resolvedVars, style: styleDetail });
 
         const optimizeReq = `以下是${rawPrompts.length}個分鏡的提示詞，請針對「${styleName}」風格（${styleDetail}）與「${state.ratio}」比例（注意畫面方向為直向或橫向）進行優化，同時保持角色與場景的連貫性。
 基底風格：${basePrompt}
@@ -574,7 +524,7 @@ function renderFilmStrip() {
     for (let i = 0; i < count; i++) {
         const img = generatedImgs[i];
         const title = generatedStoryTitles[i] || `分鏡 ${i + 1}`;
-        const cam   = generatedStoryCams[i] || '';
+        const cam = generatedStoryCams[i] || '';
 
         const frame = document.createElement('div');
         frame.className = `film-frame ratio-${ratioKey}`;
@@ -582,9 +532,9 @@ function renderFilmStrip() {
             <div class="frame-number">#${String(i + 1).padStart(2, '0')}</div>
             <div class="frame-image-container ${img ? '' : 'failed-image'}">
                 ${img
-                    ? `<img class="frame-image" src="${img}" alt="分鏡 ${i + 1}" />`
-                    : `<div class="error-message">⚠ 圖片生成失敗</div>`
-                }
+                ? `<img class="frame-image" src="${img}" alt="分鏡 ${i + 1}" />`
+                : `<div class="error-message">⚠ 圖片生成失敗</div>`
+            }
                 <div class="frame-overlay">
                     <div class="frame-content">
                         <div class="frame-title">${title}</div>
@@ -601,14 +551,14 @@ function renderFilmStrip() {
         filmStrip.appendChild(frame);
     }
 
-    const totalWidth  = count * (frameWidth + 16);
+    const totalWidth = count * (frameWidth + 16);
     const totalHeight = count * (600 + 16);
-    const edgeWidth   = window.innerWidth - 40;
+    const edgeWidth = window.innerWidth - 40;
     const mobileFrameH = getHeightFromRatio(edgeWidth - 110, ratioKey);
     const totalHeightMobile = count * (mobileFrameH + 16);
 
     if (isHorizon) {
-        wrapper.style.setProperty('--film-strip-edge-width',  `${edgeWidth}px`);
+        wrapper.style.setProperty('--film-strip-edge-width', `${edgeWidth}px`);
         wrapper.style.setProperty('--film-strip-edge-height', `${totalHeightMobile}px`);
     } else {
         wrapper.style.setProperty('--film-strip-edge-width', `${totalWidth}px`);
@@ -634,16 +584,16 @@ function initDragScroll(el) {
         isDown = true; el.style.cursor = 'grabbing'; el.style.scrollBehavior = 'auto';
         const pos = getPos(e);
         const isV = el.classList.contains('mobile');
-        if (isV) { startY = pos.y - el.offsetTop; scrollTop  = el.scrollTop; }
-        else     { startX = pos.x - el.offsetLeft; scrollLeft = el.scrollLeft; }
+        if (isV) { startY = pos.y - el.offsetTop; scrollTop = el.scrollTop; }
+        else { startX = pos.x - el.offsetLeft; scrollLeft = el.scrollLeft; }
     };
-    const end  = () => { isDown = false; el.style.cursor = 'grab'; };
+    const end = () => { isDown = false; el.style.cursor = 'grab'; };
     const move = e => {
         if (!isDown) return;
         const isV = el.classList.contains('mobile');
         const pos = getPos(e);
-        if (isV) { el.scrollTop  = scrollTop  - (pos.y - el.offsetTop  - startY) * 2; }
-        else     { el.scrollLeft = scrollLeft - (pos.x - el.offsetLeft - startX) * 2; }
+        if (isV) { el.scrollTop = scrollTop - (pos.y - el.offsetTop - startY) * 2; }
+        else { el.scrollLeft = scrollLeft - (pos.x - el.offsetLeft - startX) * 2; }
     };
     el.addEventListener('mousedown', start);
     el.addEventListener('touchstart', start, { passive: true });
@@ -656,8 +606,8 @@ function initDragScroll(el) {
         if (e.deltaY !== 0) {
             e.preventDefault();
             el.style.scrollBehavior = 'smooth';
-            if (el.classList.contains('mobile')) el.scrollTop  += 5 * e.deltaY;
-            else                                 el.scrollLeft += 5 * e.deltaY;
+            if (el.classList.contains('mobile')) el.scrollTop += 5 * e.deltaY;
+            else el.scrollLeft += 5 * e.deltaY;
         }
     }, { passive: false });
 }
@@ -674,7 +624,7 @@ window.addEventListener('resize', () => {
     const totalHeightMobile = count * (mobileFrameH + 16);
     if (isHorizon) {
         wrapper.classList.add('mobile');
-        wrapper.style.setProperty('--film-strip-edge-width',  `${edgeWidth}px`);
+        wrapper.style.setProperty('--film-strip-edge-width', `${edgeWidth}px`);
         wrapper.style.setProperty('--film-strip-edge-height', `${totalHeightMobile}px`);
     } else {
         wrapper.classList.remove('mobile');

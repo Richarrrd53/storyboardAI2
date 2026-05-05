@@ -127,7 +127,10 @@ async function startGenerate() {
     const barEl = document.getElementById('gen-progress');
     const pctEl = document.getElementById('gen-progress-text');
 
-    generatedImgs = []; generatedStoryTitles = []; generatedStoryCams = []; generatedPrompts = [];
+    generatedImgs = []; 
+    generatedStoryTitles = []; 
+    generatedStoryCams = []; 
+    generatedPrompts = [];
 
     try {
         updateLoadingUI(0);
@@ -150,23 +153,30 @@ async function startGenerate() {
         const styleDetail = STYLES[state.styleIndex].prompt;
         let completedCount = 0;
         const totalSteps = generatedPrompts.length;
-        subEl.innerText = `渲染畫面，組合成完整分鏡 (${completedCount+1}/${totalSteps})`
 
-        const imageTasks = generatedPrompts.map(async (prompt) => {
+        for (const prompt of generatedPrompts) {
             try {
+                subEl.innerText = `渲染畫面，組合成完整分鏡 (${completedCount + 1}/${totalSteps})`;
+                
                 const res = await askGemini(prompt + ", " + styleDetail, 'image');
-                return res;
-            } finally {
+                
+                if (res && res.image !== undefined) {
+                    generatedImgs.push(res.image[0]);
+                }
+
                 completedCount++;
                 const progress = 50 + (completedCount / totalSteps) * 45;
                 barEl.style.width = `${progress}%`;
-                subEl.innerText = `渲染畫面，組合成完整分鏡 (${completedCount+1}/${totalSteps})`
                 pctEl.innerText = `${Math.floor(progress)}%`;
-            }
-        });
 
-        const results = await Promise.all(imageTasks);
-        generatedImgs = results.filter(res => res && res.image !== undefined).map(res => res.image[0]);
+                if (completedCount < totalSteps) {
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+                }
+            } catch (err) {
+                console.error("單張圖片生成失敗:", err);
+                generatedImgs.push(null); 
+            }
+        }
 
         updateLoadingUI(4);
         setTimeout(() => {
