@@ -5,17 +5,515 @@
 
 
 // ── 1. Embedded Templates (2.json) ──
-let TEMPLATES = [];
-async function fetchAllData() {
-    try {
-        const response = await fetch('/api/json-data');
-        const data = await response.json();
-
-        TEMPLATES = data;
-    } catch (error) {
-        console.error('取得資料時發生錯誤:', error);
+let TEMPLATES = [
+    {
+        "id": "PeanutSprout_Hero_Short_01",
+        "name": "地底的白象牙：這群大學生竟然在種這個？",
+        "category": "product",
+        "tags": [
+            "#大學生創業",
+            "#花生芽",
+            "#健康飲食",
+            "#開箱",
+            "#創意行銷"
+        ],
+        "description": "3秒抓住視覺的長壽芽體驗短片，展示從居家培育到清脆入口的感官驚喜。",
+        "narrative": {
+            "type": "montage",
+            "structure": "起（視覺誘惑鉤子）、承（居家種植快剪）、轉（驚喜味覺反饋）、合（品牌揭露）",
+            "tone": "energetic",
+            "summary": "以極致特寫的花生芽破土鏡頭開場，快速穿插大學生在居家空間手忙腳亂又認真的種植紀錄，最後以清脆的試吃聲與驚艷表情收尾。"
+        },
+        "hook": {
+            "type": "curiosity",
+            "position": "start",
+            "description": "「這是花生還是外星生物？」搭配花生芽如象牙般潔白肥碩的破土慢動作與重低音效。"
+        },
+        "marketing": {
+            "isImplicit": false,
+            "exposureType": "product",
+            "brandRole": "active",
+            "integrationMethod": "plot",
+            "revealTiming": "late",
+            "persuasionStyle": "subtle",
+            "targetEmotion": [
+                "curiosity",
+                "amazement",
+                "trust"
+            ]
+        },
+        "structure": [
+            {
+                "shot": 1,
+                "duration": "3s",
+                "camera": "extreme-close-up",
+                "angle": "eye-level",
+                "action": "潔白肥碩的花生芽緩緩從土中鑽出，在微距鏡頭下展現出如玉石般的剔透質感與水分。",
+                "emotion": "amazement",
+                "purpose": "利用罕見的微距畫面作為 Hook，建立強烈的視覺好奇心。"
+            },
+            {
+                "shot": 2,
+                "duration": "2s",
+                "camera": "close-up",
+                "angle": "high-angle",
+                "action": "大學生手指笨拙但細心地撥開培育盤，選出一顆長勢完美的「長壽芽」。",
+                "emotion": "hopeful",
+                "purpose": "展示產品原材料的純淨與大學生親自參與的真實感。"
+            },
+            {
+                "shot": 3,
+                "duration": "2s",
+                "camera": "tracking",
+                "angle": "eye-level",
+                "action": "鏡頭快速滑過居家客廳，展現大學生拿著噴霧器、量尺記錄數據的忙碌與趣味碰撞。",
+                "emotion": "excited",
+                "purpose": "建立「呆萌大學生」的人設，增加畫面動能與創業溫度。"
+            },
+            {
+                "shot": 4,
+                "duration": "2s",
+                "camera": "close-up",
+                "angle": "low-angle",
+                "action": "採收後的鮮甜花生芽在水中快速洗淨，細節處水珠四濺，質感晶瑩。",
+                "emotion": "fascinated",
+                "purpose": "展示產品最終新鮮型態，營造潔淨、可信賴的印象。"
+            },
+            {
+                "shot": 5,
+                "duration": "3s",
+                "camera": "close-up",
+                "angle": "eye-level",
+                "action": "大學生咬下一口花生芽，發出清脆的「咔嚓」聲，眼神從懷疑瞬間轉為閃閃發光的驚喜。",
+                "emotion": "delight",
+                "purpose": "透過真實的聲音與表情反饋，建立產品「好吃的驚奇感」。"
+            },
+            {
+                "shot": 6,
+                "duration": "3s",
+                "camera": "static",
+                "angle": "eye-level",
+                "action": "畫面定格在大學生與花生芽的合影，側邊浮現品牌標誌與「追蹤看更多呆萌創業」文字。",
+                "emotion": "peaceful",
+                "purpose": "品牌收尾，強化受眾追蹤與轉化動力。",
+                "brand_info": "行銷主題團隊合作 - 花生芽計畫"
+            }
+        ],
+        "visualFlow": {
+            "pace": "fast",
+            "rhythmPattern": "快-慢-快 的變速處理，開場微距 Hook 慢動作，中段居家種植快剪，收尾驚喜表情停留。",
+            "transitionStyle": "match-cut"
+        },
+        "promptTemplate": {
+            "base": "Modern lifestyle photography style, natural window lighting, high contrast, sharp focus, 8k resolution, cinematic color grading.",
+            "perShot": [
+                "Extreme macro shot of a plump white {product} emerging from dark soil, water droplets glittering, cinematic soft lighting.",
+                "Close-up of {student}'s hands picking fresh {product} from a planting tray in a bright {scene}.",
+                "Dynamic tracking shot of {student} in a messy but cozy {scene}, holding a mist sprayer, motion blur.",
+                "Detailed macro shot of fresh {product} being rinsed with water, droplets flying, {style} details.",
+                "{student} taking a big bite of crunchy {product} with a shocked and {emotion} expression in the {scene}.",
+                "Static layout of {product} with the team logo, students laughing in the background of a sunny {scene}."
+            ]
+        },
+        "variables": [
+            "student",
+            "scene",
+            "emotion",
+            "style",
+            "product"
+        ],
+        "controls": {
+            "pace": [
+                "fast",
+                "medium",
+                "slow"
+            ],
+            "cameraIntensity": [
+                "medium",
+                "high"
+            ],
+            "emotionIntensity": [
+                "high"
+            ]
+        },
+        "useCase": "農業創業故事、居家種植開箱、健康食材推廣短影音。",
+        "platform": [
+            "instagram",
+            "reels",
+            "tiktok"
+        ],
+        "shotsCount": 6,
+        "analysis": {
+            "whyItWorks": "利用「花生芽」罕見的潔白外觀引發獵奇心理，再透過「呆萌大學生」的創業反差建立情感連結，最後以具體的清脆聲響完成轉化。",
+            "targetAudience": "喜愛觀察大學生生活、注重健康飲食、追求生活新奇感的 18-35 歲受眾。",
+            "replicableElements": [
+                "微距視覺 Hook",
+                "反差感的人設呈現",
+                "感官刺激（脆度音效）"
+            ]
+        },
+        "confidence": 0.98,
+        "version": "1.0"
     }
+    ,
+    {
+    "id": "67IVz-jBGmE_Short",
+    "name": "魚池紅寶石：隱藏在山城裡的味覺奇蹟",
+    "category": "product",
+    "tags": [
+        "#美食",
+        "#南投",
+        "#紅茶",
+        "#開箱",
+        "#旅遊"
+    ],
+    "description": "3秒抓住感官的紅茶體驗短片，展示從採摘到品茗的極致感官誘惑。",
+    "narrative": {
+        "type": "montage",
+        "structure": "起（視覺誘惑鉤子）、承（製茶工序快剪）、轉（驚喜味覺反饋）、合（品牌揭露）",
+        "tone": "emotional",
+        "summary": "以高品質的茶湯流動鏡頭作為開場，快速穿插茶園採摘與製茶機具動態，最後以主持人驚艷的表情連結品牌與產品。"
+    },
+    "hook": {
+        "type": "curiosity",
+        "position": "start",
+        "description": "「這真的不是紅寶石嗎？」搭配茶湯如寶石般透亮的倒水慢動作與清脆聲響。"
+    },
+    "marketing": {
+        "isImplicit": false,
+        "exposureType": "product",
+        "brandRole": "active",
+        "integrationMethod": "plot",
+        "revealTiming": "late",
+        "persuasionStyle": "subtle",
+        "targetEmotion": [
+            "curiosity",
+            "desire",
+            "trust"
+        ]
+    },
+    "structure": [
+        {
+            "shot": 1,
+            "duration": "3s",
+            "camera": "close-up",
+            "angle": "eye-level",
+            "action": "琥珀色的紅茶液體緩緩注入玻璃杯，呈現如寶石般的光澤與流動感。",
+            "emotion": "amazement",
+            "purpose": "利用感官衝擊作為 Hook，建立視覺渴望。"
+        },
+        {
+            "shot": 2,
+            "duration": "2s",
+            "camera": "close-up",
+            "angle": "low-angle",
+            "action": "指尖輕柔採下帶著紅色的「一心二葉」茶菁。",
+            "emotion": "hopeful",
+            "purpose": "展示產品原材料的高品質與獨特性。"
+        },
+        {
+            "shot": 3,
+            "duration": "2s",
+            "camera": "tracking",
+            "angle": "eye-level",
+            "action": "鏡頭快速滑過製茶工廠，展現茶葉在揉捻機中轉動的動態節奏。",
+            "emotion": "excited",
+            "purpose": "增加畫面動能，體現職人工藝過程。"
+        },
+        {
+            "shot": 4,
+            "duration": "2s",
+            "camera": "close-up",
+            "angle": "high-angle",
+            "action": "乾茶葉在簸箕中散開，細節紋理清晰可見。",
+            "emotion": "fascinated",
+            "purpose": "展示產品最終型態與專業質感。"
+        },
+        {
+            "shot": 5,
+            "duration": "3s",
+            "camera": "close-up",
+            "angle": "eye-level",
+            "action": "主持人喝下一口茶，眼神閃爍並驚訝地看向鏡頭。",
+            "emotion": "delight",
+            "purpose": "以人物情緒反饋建立產品可信度與吸引力。"
+        },
+        {
+            "shot": 6,
+            "duration": "3s",
+            "camera": "static",
+            "angle": "eye-level",
+            "action": "畫面定格在品牌標誌與產品包裝，搭配茶園背景。",
+            "emotion": "peaceful",
+            "purpose": "品牌收尾，強化目標受眾的購買欲與記憶。"
+        }
+    ],
+    "visualFlow": {
+        "pace": "fast",
+        "rhythmPattern": "快-慢-快 的變速處理，開場慢動作 Hook，中段工序快剪，收尾穩定情緒。",
+        "transitionStyle": "match-cut"
+    },
+    "promptTemplate": {
+        "base": "Professional food photography style, natural soft lighting, high saturation, sharp focus, 4k resolution.",
+        "perShot": [
+            "Extremely close-up shot of golden amber {product} liquid being poured into a transparent glass, glittering under {style} lighting.",
+            "Close-up of {character}'s fingers picking fresh {product} tea leaves in the lush green {scene}, {style} photography.",
+            "Dynamic tracking shot of {product} inside a rotating machine in a professional {scene}, high motion blur.",
+            "Detailed macro shot of dried {product} leaves on a wooden tray in {scene} with {style} details.",
+            "{character} tasting a cup of {product} with a {emotion} expression in the quiet {scene}.",
+            "Static product layout of {product} with the brand logo in front of a misty {scene}, {style} cinematic style."
+        ]
+    },
+    "variables": [
+        "character",
+        "scene",
+        "emotion",
+        "style",
+        "product"
+    ],
+    "controls": {
+        "pace": [
+            "fast",
+            "medium",
+            "slow"
+        ],
+        "cameraIntensity": [
+            "low",
+            "medium",
+            "high"
+        ],
+        "emotionIntensity": [
+            "low",
+            "medium",
+            "high"
+        ]
+    },
+    "useCase": "茶飲品牌推廣、南投深度旅遊開箱、在地職人故事短影音。",
+    "platform": [
+        "tiktok",
+        "reels",
+        "shorts"
+    ],
+    "shotsCount": 6,
+    "source": {
+        "videoId": "67IVz-jBGmE",
+        "title": "《山城觀察局》 EP3 | 採茶姑娘出發！從一片葉開始｜📍HUGOSUM和菓森林紅茶莊園",
+        "channel": "山城觀察局",
+        "views": 437
+    },
+    "analysis": {
+        "whyItWorks": "利用極致的微距畫面勾起食慾與好奇心，並將繁瑣的製茶過程節奏化，最後透過強烈的情緒反應完成轉化。",
+        "targetAudience": "喜愛茶文化、注重生活美學、計畫南投旅遊的 20-45 歲受眾。",
+        "replicableElements": [
+            "感官極限勾子",
+            "製茶工序動態蒙太奇",
+            "真實反應的情緒價值"
+        ]
+    },
+    "confidence": 0.95,
+    "version": "2.0"
 }
+    ,
+    {
+        "id": "Ybzls4DtR0",
+        "name": "好無聊的休假 - 雅方國際 茱莉",
+        "category": "product",
+        "tags": [
+            "#Vlog",
+            "#生活感",
+            "#產品植入",
+            "#義美",
+            "#日常",
+            "#開箱"
+        ],
+        "description": "以假日賴床為開端，透過第一人稱 Vlog 形式巧妙植入多款食品，展現產品在家庭日常中的應用場景。",
+        "narrative": {
+            "type": "montage",
+            "structure": "賴床共鳴(起) -> 居家餵食(承) -> 賣場巡視(轉) -> 社群互動(合)",
+            "tone": "casual",
+            "summary": "描述現代女性輕鬆的假日生活，將早餐準備、外出採購與粉絲互動串聯成流暢的宣傳敘事。"
+        },
+        "hook": {
+            "type": "curiosity",
+            "position": "start",
+            "description": "展示 9:00 賴床的特寫畫面，利用假日鬆弛感引發受眾生活共鳴。"
+        },
+        "marketing": {
+            "isImplicit": false,
+            "exposureType": "product",
+            "brandRole": "active",
+            "integrationMethod": "plot",
+            "revealTiming": "early",
+            "persuasionStyle": "subtle",
+            "targetEmotion": [
+                "relatability",
+                "curiosity",
+                "desire"
+            ]
+        },
+        "structure": [
+            {
+                "shot": 1,
+                "duration": "5s",
+                "camera": "close-up",
+                "angle": "eye-level",
+                "action": "主角在床上賴床並對鏡頭自述",
+                "emotion": "relaxed",
+                "purpose": "建立人物人設與生活化鉤子"
+            },
+            {
+                "shot": 2,
+                "duration": "2s",
+                "camera": "wide",
+                "angle": "eye-level",
+                "action": "主角走出房門開啟一天",
+                "emotion": "casual",
+                "purpose": "空間轉換，推動敘事時間軸"
+            },
+            {
+                "shot": 3,
+                "duration": "5s",
+                "camera": "handheld",
+                "angle": "low-angle",
+                "action": "與小孩互動並展示即將微波的產品包裝",
+                "emotion": "warm",
+                "purpose": "第一階段產品展示，連結家庭育兒場景"
+            },
+            {
+                "shot": 4,
+                "duration": "1s",
+                "camera": "static",
+                "angle": "eye-level",
+                "action": "展示微波爐運作過程",
+                "emotion": "neutral",
+                "purpose": "展示產品便利性"
+            },
+            {
+                "shot": 5,
+                "duration": "3s",
+                "camera": "close-up",
+                "angle": "eye-level",
+                "action": "在車內自拍講述下午行程",
+                "emotion": "active",
+                "purpose": "地點場景轉換"
+            },
+            {
+                "shot": 6,
+                "duration": "13s",
+                "camera": "tracking",
+                "angle": "eye-level",
+                "action": "在賣場冰櫃前手持並介紹多款產品",
+                "emotion": "professional",
+                "purpose": "核心行銷環節，深入解析產品特點"
+            },
+            {
+                "shot": 7,
+                "duration": "6s",
+                "camera": "close-up",
+                "angle": "eye-level",
+                "action": "在樓梯或酒櫃前分享心情",
+                "emotion": "casual",
+                "purpose": "維持Vlog生活節奏，避免過度廣告感"
+            },
+            {
+                "shot": 8,
+                "duration": "7s",
+                "camera": "medium",
+                "angle": "eye-level",
+                "action": "沙發上使用搞怪濾鏡看手機",
+                "emotion": "humor",
+                "purpose": "製造情緒記憶點，強化趣味性"
+            },
+            {
+                "shot": 9,
+                "duration": "8s",
+                "camera": "medium",
+                "angle": "eye-level",
+                "action": "展示手機網友訊息並呼籲互動",
+                "emotion": "relatability",
+                "purpose": "Call-to-action，建立社群連結"
+            }
+        ],
+        "visualFlow": {
+            "pace": "fast",
+            "rhythmPattern": "每2-5秒切換一次鏡頭，配合字卡標記時間點",
+            "transitionStyle": "cut"
+        },
+        "promptTemplate": {
+            "base": "Cinematic vlog style, soft interior lighting, natural skin tones, high definition.",
+            "perShot": [
+                "{character} is sleeping in bed in {scene} with {emotion} expression, {style} style.",
+                "{character} walking out of a door into a hallway in {scene} with {emotion} expression, {style} style.",
+                "{character} interacts with a child in {scene} holding {product}, {emotion} expression, {style} style.",
+                "Close-up of {product} being prepared in {scene}, {style} style.",
+                "{character} talking to camera inside a car in {scene}, {emotion} expression, {style} style.",
+                "{character} holding {product} in a supermarket {scene}, {emotion} expression, {style} style.",
+                "{character} standing in a stylish {scene}, {emotion} expression, {style} style.",
+                "{character} sitting on a sofa in {scene} with a funny facial filter, {emotion} expression, {style} style.",
+                "{character} looking at a smartphone screen in {scene}, {emotion} expression, {style} style."
+            ]
+        },
+        "variables": [
+            "character",
+            "scene",
+            "emotion",
+            "style",
+            "product"
+        ],
+        "controls": {
+            "pace": [
+                "fast",
+                "medium",
+                "slow"
+            ],
+            "cameraIntensity": [
+                "low",
+                "medium",
+                "high"
+            ],
+            "emotionIntensity": [
+                "low",
+                "medium",
+                "high"
+            ]
+        },
+        "useCase": "品牌生活化行銷、產品開箱、日常紀錄型短片",
+        "platform": [
+            "tiktok",
+            "reels",
+            "shorts"
+        ],
+        "shotsCount": 9,
+        "source": {
+            "videoId": "_Ybzls4DtR0",
+            "title": "好無聊的休假 - 雅方國際 茱莉",
+            "channel": "雅方國際",
+            "views": 0
+        },
+        "analysis": {
+            "whyItWorks": "利用 Vlog 的真實感降低廣告抵觸，並透過小孩、賣場等具體場景增加產品可信度與應用聯想。",
+            "targetAudience": "追求生活品質的女性、家庭主婦、年輕上班族",
+            "replicableElements": [
+                "時間標籤導引",
+                "生活共鳴鉤子",
+                "高頻快節奏剪輯",
+                "趣味濾鏡互動"
+            ]
+        },
+        "confidence": 0.95,
+        "version": "2.0"
+    }
+];
+// async function fetchAllData() {
+//     try {
+//         const response = await fetch('/api/json-data');
+//         const data = await response.json();
+
+//         TEMPLATES = data;
+//     } catch (error) {
+//         console.error('取得資料時發生錯誤:', error);
+//     }
+// }
 
 // ── 2. State ──
 const state = {
@@ -387,22 +885,29 @@ ${rawPrompts.map((p, i) => `${i + 1}. ${p}`).join('\n')}
         updateUI(3);
         let completedCount = 0;
         const totalSteps = generatedPrompts.length;
-        subEl.innerText = `渲染畫面，組合成完整分鏡 (1/${totalSteps})`;
-
-        const imageTasks = generatedPrompts.map(async (prompt) => {
+        for (const prompt of generatedPrompts) {
             try {
-                return await askGemini(prompt + ', ' + styleDetail, 'image');
-            } finally {
+                subEl.innerText = `渲染畫面，組合成完整分鏡 (${completedCount + 1}/${totalSteps})`;
+                
+                const res = await askGemini(prompt + ", " + styleDetail, 'image');
+                
+                if (res && res.image !== undefined) {
+                    generatedImgs.push(res.image[0]);
+                }
+
                 completedCount++;
                 const progress = 50 + (completedCount / totalSteps) * 45;
-                if (barEl) barEl.style.width = `${progress}%`;
-                if (pctEl) pctEl.textContent = `${Math.floor(progress)}%`;
-                if (subEl) subEl.innerText = `渲染畫面，組合成完整分鏡 (${completedCount}/${totalSteps})`;
-            }
-        });
+                barEl.style.width = `${progress}%`;
+                pctEl.innerText = `${Math.floor(progress)}%`;
 
-        const results = await Promise.all(imageTasks);
-        generatedImgs = results.filter(r => r && r.image !== undefined).map(r => r.image[0]);
+                if (completedCount < totalSteps) {
+                    await new Promise(resolve => setTimeout(resolve, 30000));
+                }
+            } catch (err) {
+                console.error("單張圖片生成失敗:", err);
+                generatedImgs.push("../icon/error.jpg"); 
+            }
+        }
 
         // ── Step 5: Render ──
         updateUI(4);

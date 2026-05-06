@@ -170,11 +170,11 @@ async function startGenerate() {
                 pctEl.innerText = `${Math.floor(progress)}%`;
 
                 if (completedCount < totalSteps) {
-                    await new Promise(resolve => setTimeout(resolve, 1500));
+                    await new Promise(resolve => setTimeout(resolve, 30000));
                 }
             } catch (err) {
                 console.error("單張圖片生成失敗:", err);
-                generatedImgs.push(null); 
+                generatedImgs.push("../icon/error.jpg"); 
             }
         }
 
