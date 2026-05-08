@@ -4,6 +4,24 @@ const fs = require("fs");
 
 const multer = require('multer');
 require('dotenv').config();
+
+if(process.env.GOOGLE_ACCOUNT_BASE64) {
+    try{
+        const credentialsJson = Buffer.from(process.env.GOOGLE_ACCOUNT_BASE64, 'base64').toString('utf-8');
+        const keyPath = path.join('/tmp', 'gcp-key.json');
+        fs.writeFileSync(keyPath, credentialsJson);
+        process.env.GOOGLE_APPLICATION_CREDENTIALS = keyPath;
+        console.log("✅ 成功從環境變數載入金鑰，並寫入臨時檔案。");
+    }
+    catch (error) {
+        console.error("❌ 從環境變數載入金鑰失敗：", error.message);
+    }
+}
+else{
+    console.log("⚠️ 未偵測到 GCP_SERVICE_ACCOUNT_BASE64，將使用本地 ADC 憑證 (如果有的話)。");
+}
+
+
 const { GoogleGenAI } = require('@google/genai');
 
 const app = express();
