@@ -8,6 +8,9 @@
     <link rel="stylesheet" href="../css/style.css" />
     <link rel="stylesheet" href="../css/generate.css" />
     <link rel="stylesheet" href="../css/math-curve-loader.css" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500&family=DM+Mono:wght@400&display=swap"
+        rel="stylesheet">
 </head>
 
 <body>
@@ -27,75 +30,54 @@
     <nav class="gen-nav">
         <div style="display:flex;align-items:center;gap:20px;">
             <a href="../html/dashboard.html" class="brand-logo gen-brand">STORYBOARD <span>AI</span></a>
-            <!-- <div class="token-widget card"
-                style="padding:5px 15px;display:flex;align-items:center;gap:12px;border-radius:50px;">
-                <div style="font-size:0.75rem;font-weight:700;"><span style="color:var(--purple);">已用:</span> <span
-                        id="token-count">0</span></div>
-                <div style="width:60px;height:5px;background:rgba(0,0,0,0.05);border-radius:10px;">
-                    <div id="token-bar-fill"
-                        style="width:0%;height:100%;background:var(--purple);transition:0.3s;border-radius:10px;"></div>
-                </div>
-                <div style="font-size:0.75rem;font-weight:700;color:#888;">剩餘: <span id="token-remain">1,000,000</span>
-                </div>
-            </div> -->
         </div>
         <a href="../html/dashboard.html" class="btn btn-ghost btn-sm">← Dashboard</a>
     </nav>
 
     <!-- ══════════════════════════════════
-       PHASE 0 — SPLASH
-  ══════════════════════════════════ -->
-    <!-- <div class="phase active" id="phase-splash">
-        <div class="splash-wrap">
-            <h1 class="splash-title">STORYBOARD <span>AI</span></h1>
-            <p class="splash-sub">把一個想法，變成可以拍的分鏡</p>
-            <button class="btn btn-gradient btn-lg splash-cta" onclick="enterCompose()">開始創作</button>
-        </div>
-    </div> -->
+       PHASE 1 — COMPOSE
+    ══════════════════════════════════ -->
+    <div class="phase active" id="phase-compose">
 
-    <!-- ══════════════════════════════════
-       PHASE 1 — COMPOSE (expand box)
-  ══════════════════════════════════ -->
-    <div class="phase" id="phase-compose">
-
-        <!-- The expanding input card -->
         <div class="compose-card card" id="compose-card">
 
             <!-- ① Story input area -->
             <div class="compose-input-area" id="compose-input-area">
-                <textarea id="story-input" class="compose-textarea" placeholder="描述你的故事、廣告或短影音場景…" rows="3"
+                <textarea id="story-input" class="compose-textarea" placeholder="告訴我你的想法吧，一句話也沒關係 ✦" rows="3"
                     oninput="onStoryInput()"></textarea>
                 <button class="compose-send-btn" id="compose-send" onclick="submitStory()" disabled>
                     <div class="state state--sent">
-                            <div class="icon">
-                                <svg width="1.5em" height="1.5em" viewBox="0 0 24 24" fill="none">
-                                    <path
-                                        d="M14.2199 21.63C13.0399 21.63 11.3699 20.8 10.0499 16.83L9.32988 14.67L7.16988 13.95C3.20988 12.63 2.37988 10.96 2.37988 9.78001C2.37988 8.61001 3.20988 6.93001 7.16988 5.60001L15.6599 2.77001C17.7799 2.06001 19.5499 2.27001 20.6399 3.35001C21.7299 4.43001 21.9399 6.21001 21.2299 8.33001L18.3999 16.82C17.0699 20.8 15.3999 21.63 14.2199 21.63Z"
-                                        fill="currentColor"></path>
-                                </svg>
-                            </div>
+                        <div class="icon">
+                            <svg width="1.5em" height="1.5em" viewBox="0 0 24 24" fill="none">
+                                <path
+                                    d="M14.2199 21.63C13.0399 21.63 11.3699 20.8 10.0499 16.83L9.32988 14.67L7.16988 13.95C3.20988 12.63 2.37988 10.96 2.37988 9.78001C2.37988 8.61001 3.20988 6.93001 7.16988 5.60001L15.6599 2.77001C17.7799 2.06001 19.5499 2.27001 20.6399 3.35001C21.7299 4.43001 21.9399 6.21001 21.2299 8.33001L18.3999 16.82C17.0699 20.8 15.3999 21.63 14.2199 21.63Z"
+                                    fill="currentColor"></path>
+                            </svg>
                         </div>
+                    </div>
                 </button>
                 <p class="story-advanced-title">進階設定</p>
             </div>
 
-            <!-- ② Options panel — slides down after submit -->
+            <!-- ② Options panel -->
             <div class="compose-options" id="compose-options">
 
                 <div class="options-header">
-                    <p class="options-hint">需要調整進階設定嗎？選好後直接生成 ✦</p>
-                    <span class="options-label">故事描述</span>
-                    <div class="options-story-echo" id="options-echo">
-                        <!-- Echo of what user typed, truncated -->
+                    <div class="ai-response-line" id="ai-response-line">
+                        <span class="ai-response-dot">✦</span>
+                        <span class="ai-response-text" id="ai-response-text"></span>
+                        <span class="ai-response-cursor" id="ai-response-cursor">|</span>
                     </div>
+                    <p class="options-hint" id="options-hint">有需要幫你調整風格嗎？</p>
+                    <span class="options-label" id="options-story-label">故事描述</span>
+                    <div class="options-story-echo" id="options-echo"></div>
                 </div>
 
                 <!-- Style row -->
-                <div class="options-section">
-                    <p class="options-label">風格</p>
-                    <div class="style-chips-row" id="style-chips-row">
-                        <!-- Rendered by JS -->
-                    </div>
+                <div class="options-section" id="style-section">
+                    <p class="options-label">風格 <span class="ai-rec-tag" id="style-rec-tag" style="display:none;">AI 推薦</span></p>
+                    <div class="style-chips-row" id="style-chips-row"></div>
+                    <button class="style-show-all-btn" id="style-show-all-btn" onclick="showAllStyles()" style="display:none;">查看全部風格 ↓</button>
                 </div>
 
                 <!-- Ratio row -->
@@ -125,15 +107,20 @@
                     <button class="btn btn-ghost options-back-btn" onclick="resetCompose()">
                         ← 重新輸入
                     </button>
-                    <button class="btn btn-primary options-gen-btn" onclick="startGenerate()">
-                        ✦ 立即生成
-                    </button>
+                    <div style="display:flex;gap:10px;align-items:center;">
+                        <button class="btn btn-ghost options-skip-btn" onclick="startGenerate()">
+                            不使用模板繼續 →
+                        </button>
+                        <button class="btn btn-primary options-gen-btn" onclick="proceedToTemplate()">
+                            ✦ 選擇模板
+                        </button>
+                    </div>
                 </div>
 
             </div>
         </div>
 
-        <!-- Suggestion chips (shown before submit) -->
+        <!-- Suggestion chips -->
         <div class="suggestion-row" id="suggestion-row">
             <button class="sugg-chip" onclick="fillSugg(this)">蘋果牛奶廣告</button>
             <button class="sugg-chip" onclick="fillSugg(this)">旅遊短影音</button>
@@ -144,11 +131,65 @@
     </div>
 
     <!-- ══════════════════════════════════
+       PHASE 1.5 — TEMPLATE SELECT
+    ══════════════════════════════════ -->
+    <div class="phase" id="phase-template">
+        <div class="template-phase-wrap">
+            <div class="template-phase-header">
+                <div>
+                    <h2 class="template-phase-title">選擇模板 <span>✦</span></h2>
+                    <p class="template-phase-sub">AI 已根據你的故事推薦最匹配的模板</p>
+                </div>
+                <button class="btn btn-ghost btn-sm" onclick="backToCompose()">← 返回</button>
+            </div>
+
+            <!-- AI recommendation banner -->
+            <div class="ai-recommend-banner" id="ai-recommend-banner">
+                <div class="ai-rec-icon">✦</div>
+                <div>
+                    <p class="ai-rec-title">AI 推薦</p>
+                    <p class="ai-rec-desc" id="ai-rec-desc">正在分析你的故事…</p>
+                </div>
+                <div class="ai-rec-loading" id="ai-rec-loading">
+                    <div class="mini-spinner"></div>
+                </div>
+            </div>
+
+            <!-- Template grid -->
+            <div class="template-grid" id="template-grid"></div>
+
+            <!-- Template apply footer -->
+            <div class="template-apply-footer" id="template-apply-footer">
+                <span class="taf-hint" id="taf-hint">請選擇一個模板</span>
+                <button class="btn btn-primary" id="taf-apply-btn" onclick="applyTemplateAndGenerate()" disabled>
+                    ✦ 套用並生成
+                </button>
+            </div>
+
+            <!-- Template preview drawer -->
+            <div class="template-preview-drawer" id="template-preview-drawer">
+                <div class="preview-drawer-inner">
+                    <div class="preview-drawer-header">
+                        <h3 class="preview-drawer-title" id="preview-title">模板名稱</h3>
+                        <button class="preview-drawer-close" onclick="closePreview()">✕</button>
+                    </div>
+                    <div class="preview-drawer-body" id="preview-body"></div>
+                    <div class="preview-drawer-footer">
+                        <button class="btn btn-ghost btn-sm" onclick="closePreview()">取消</button>
+                        <button class="btn btn-primary" id="preview-apply-btn" onclick="applyTemplateAndGenerate()">
+                            ✦ 套用並生成
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════
        PHASE 2 — GENERATING
-  ══════════════════════════════════ -->
+    ══════════════════════════════════ -->
     <div class="phase" id="phase-generating">
         <div class="generating-wrap">
-            <!-- Pulsing card preview -->
             <div class="gen-preview-card card" id="gen-preview-card">
                 <svg class="loader" viewBox="0 0 100 100" fill="none" aria-hidden="true">
                     <g id="group">
@@ -170,7 +211,7 @@
 
     <!-- ══════════════════════════════════
        PHASE 3 — RESULT
-  ══════════════════════════════════ -->
+    ══════════════════════════════════ -->
     <div class="phase" id="phase-result">
         <div class="result-topbar">
             <div class="result-info">
@@ -182,13 +223,19 @@
                 <button class="btn btn-primary btn-sm" onclick="resetAll()">+ 新建分鏡</button>
             </div>
         </div>
-        <!-- Film strip or grid rendered here -->
+        <!-- Template badge (only shown when template used) -->
+        <div class="result-template-badge" id="result-template-badge" style="display:none;">
+            <span class="badge-label">模板</span>
+            <span class="badge-name" id="badge-template-name">—</span>
+            <span class="badge-sep">·</span>
+            <span class="badge-vars" id="badge-vars">—</span>
+        </div>
         <div id="storyboard-grid" style="width:100%;"></div>
     </div>
 
     <!-- ══════════════════════════════════
        SCRIPTS
-  ══════════════════════════════════ -->
+    ══════════════════════════════════ -->
     <script src="../js/math-curve-loader.js"></script>
     <script src="../js/token-manager.js"></script>
     <script src="../js/generate.js"></script>

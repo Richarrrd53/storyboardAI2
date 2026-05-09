@@ -28,7 +28,7 @@ const app = express();
 
 
 const googleCLoudProjectId = process.env.GOOGLE_CLOUD_PROJECT_ID;
-const location = "us-central1";
+const location = "global";
 
 if (!googleCLoudProjectId) {
     console.error("❌ 錯誤：找不到 GOOGLE_CLOUD_PROJECT_ID。");
@@ -76,11 +76,11 @@ app.post('/api/ask-gemini', async (req, res) => {
             config: { responseModalities: ['Text'] }
         },
         'image': {
-            model: "gemini-2.5-flash-image",
+            model: "gemini-3.1-flash-image-preview",
             config: { responseModalities: ['Text', 'Image'] }
         },
         'story': {
-            model: "gemini-2.5-flash",
+            model: "gemini-3-flash-preview",
             config: { responseModalities: ['Text'] }
         }
     }
