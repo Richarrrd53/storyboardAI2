@@ -153,20 +153,61 @@ const STYLES = [
 ];
 
 const LOADING_STEPS_FREE = [
-    { title: '正在規劃腳本結構…(1/5)',   sub: '分析故事語意，拆解場景節奏',       pct: 0   },
-    { title: '正在提取分鏡細節…(2/5)',   sub: '識別人物、場景與情感節點',         pct: 10  },
-    { title: '正在優化視覺連貫性…(3/5)', sub: '配對構圖與運鏡建議',               pct: 20  },
-    { title: '正在同步繪製分鏡…(4/5)',   sub: '渲染畫面，組合成完整分鏡',         pct: 50  },
-    { title: '最終檢查與優化…(5/5)',     sub: '確保節奏連貫，HOOK 設計到位',      pct: 100 },
+    { pct: 0,   messages: ['正在讀懂你的故事…', '拆解場景節奏中…', '思考故事結構…'] },
+    { pct: 10,  messages: ['找出最有張力的畫面…', '識別情緒節點…', '挖掘視覺細節…'] },
+    { pct: 20,  messages: ['幫你設計鏡頭順序…', '想像每個轉場的感覺…', '調整構圖節奏…'] },
+    { pct: 50,  messages: ['渲染第 {n} 張畫面…', '快好了，稍等一下 ✦', '正在上色…'] },
+    { pct: 100, messages: ['檢查節奏有沒有問題…', '收尾中…', '快完成了 ✦'] },
 ];
 
 const LOADING_STEPS_TPL = [
-    { title: '正在套用模板結構…(1/5)',   sub: '解析故事變數，對應分鏡模板',       pct: 0   },
-    { title: '正在填入變數…(2/5)',       sub: '將故事元素代入 perShot 模板',      pct: 15  },
-    { title: '正在優化提示詞…(3/5)',     sub: '針對風格與比例強化每個分鏡提示詞', pct: 30  },
-    { title: '正在同步繪製分鏡…(4/5)',   sub: '渲染畫面，組合成完整分鏡',         pct: 50  },
-    { title: '最終檢查與優化…(5/5)',     sub: '確保節奏連貫，HOOK 設計到位',      pct: 100 },
+    { pct: 0,   messages: ['套用模板結構中…', '解析故事變數…', '對應分鏡模板…'] },
+    { pct: 15,  messages: ['把故事填進模板…', '代入場景與角色…', '整理關鍵元素…'] },
+    { pct: 30,  messages: ['優化每個分鏡提示詞…', '調整風格語氣…', '細修畫面描述…'] },
+    { pct: 50,  messages: ['渲染第 {n} 張畫面…', '快好了，稍等一下 ✦', '正在上色…'] },
+    { pct: 100, messages: ['確保節奏連貫…', 'HOOK 設計到位…', '快完成了 ✦'] },
 ];
+
+let _loadingTickerTimer = null;
+let _loadingTickerIdx   = 0;
+
+function startLoadingTicker(stepMessages, completedCount) {
+    stopLoadingTicker();
+    const titleEl = document.getElementById('loading-title');
+    _loadingTickerIdx = 0;
+
+    const tick = () => {
+        const raw = stepMessages[_loadingTickerIdx % stepMessages.length];
+        const msg = raw.replace('{n}', completedCount + 1);
+        if (titleEl) titleEl.textContent = msg;
+        _loadingTickerIdx++;
+        _loadingTickerTimer = setTimeout(tick, 2600 + Math.random() * 800);
+    };
+    tick();
+}
+
+function stopLoadingTicker() {
+    if (_loadingTickerTimer) { clearTimeout(_loadingTickerTimer); _loadingTickerTimer = null; }
+}
+
+function updateLoadingUI(stepIdx, steps, completedCount = 0) {
+    const s     = steps[stepIdx];
+    const subEl = document.getElementById('loading-sub');
+    const barEl = document.getElementById('gen-progress');
+    const pctEl = document.getElementById('gen-progress-text');
+    if (barEl) barEl.style.width = s.pct + '%';
+    if (pctEl) pctEl.textContent = s.pct + '%';
+    // sub stays fixed per stage; title rotates
+    const subMessages = {
+        0: '分析故事語意，拆解場景節奏',
+        1: '識別人物、場景與情感節點',
+        2: '配對構圖與運鏡建議',
+        3: '渲染畫面，組合成完整分鏡',
+        4: '確保節奏連貫，HOOK 設計到位',
+    };
+    if (subEl) subEl.textContent = subMessages[stepIdx] || '';
+    startLoadingTicker(s.messages, completedCount);
+}
 
 // ── 4. Phase Management ──
 function showPhase(id) {
@@ -198,35 +239,142 @@ function fillSugg(btn) {
     storyInput.focus();
 }
 
-function submitStory() {
-    const story = storyInput.value.trim();
-    if (!story) return;
-    state.story = story;
+// ── AI typewriter response ──
+const AI_RESPONSE_TEMPLATES = [
+    story => `收到！幫你規劃一支關於「${story}」的分鏡 ✦`,
+    story => `了解，「${story}」，我來幫你把它變成畫面 ✦`,
+    story => `好主意！讓我為「${story}」設計分鏡結構 ✦`,
+];
 
-    document.getElementById('options-echo').textContent = story.length > 40 ? story.slice(0, 40) + '…' : story;
-    storyInput.classList.add('locked');
-    document.getElementById('compose-card').classList.add('expanded');
-    document.getElementById('compose-options').classList.add('open');
-    document.getElementById('compose-input-area').classList.add('hidden');
-    document.getElementById('suggestion-row').classList.add('hidden');
-    buildStyleChips();
-    resetHeight();
+function getAiResponseText(story) {
+    const short = story.length > 20 ? story.slice(0, 20) + '…' : story;
+    const idx   = Math.floor(Math.random() * AI_RESPONSE_TEMPLATES.length);
+    return AI_RESPONSE_TEMPLATES[idx](short);
 }
 
+function typewriterEffect(el, text, cursorEl, onDone) {
+    let i = 0;
+    el.textContent = '';
+    if (cursorEl) cursorEl.style.opacity = '1';
+    const tick = () => {
+        if (i < text.length) {
+            el.textContent += text[i++];
+            setTimeout(tick, 28 + Math.random() * 18);
+        } else {
+            // blink cursor then fade
+            setTimeout(() => {
+                if (cursorEl) cursorEl.style.opacity = '0';
+                if (onDone) onDone();
+            }, 500);
+        }
+    };
+    tick();
+}
+
+// ── Keyword → style mapping ──
+const STYLE_KEYWORD_MAP = [
+    { keywords: ['食物','餐廳','美食','咖啡','飲料','甜點','料理','吃'], styles: [0, 4] },  // 預設 / 美式寫實
+    { keywords: ['旅遊','旅行','風景','自然','戶外','山','海','森林'], styles: [0, 6] },     // 預設 / 水彩插畫
+    { keywords: ['科技','未來','AI','機器人','賽博','電子','數位'], styles: [3, 1] },         // Cyberpunk / 電影
+    { keywords: ['遊戲','動漫','角色','二次元','動畫','漫畫'], styles: [2] },                 // 二次元
+    { keywords: ['懷舊','復古','老','vintage','經典','老舊'], styles: [5] },                 // 90s 復古
+    { keywords: ['品牌','商業','極簡','高端','奢華','精品','設計'], styles: [7, 4] },         // 極簡 / 美式寫實
+    { keywords: ['運動','健身','跑步','瑜珈','球','競技'], styles: [1, 4] },                 // 電影 / 美式寫實
+    { keywords: ['廣告','行銷','產品','開箱','推廣'], styles: [4, 0] },                      // 美式寫實 / 預設
+];
+
+function detectRecommendedStyles(story) {
+    const lower = story.toLowerCase();
+    for (const rule of STYLE_KEYWORD_MAP) {
+        if (rule.keywords.some(kw => lower.includes(kw))) {
+            return rule.styles; // [primary, secondary?]
+        }
+    }
+    return [0]; // 預設風格 fallback
+}
+
+let _allStylesVisible = false;
+
 function buildStyleChips() {
-    const row = document.getElementById('style-chips-row');
+    const row        = document.getElementById('style-chips-row');
+    const showAllBtn = document.getElementById('style-show-all-btn');
+    const recTag     = document.getElementById('style-rec-tag');
     if (row.childElementCount > 0) return;
+
+    const recIndices = detectRecommendedStyles(state.story);
+    state.styleIndex = recIndices[0]; // auto-select the primary recommendation
+
     STYLES.forEach((s, i) => {
         const btn = document.createElement('button');
+        const isRec = recIndices.includes(i);
         btn.className = 'opt-chip style-chip' + (i === state.styleIndex ? ' active' : '');
-        btn.innerHTML = `<span class="style-chip-dot" style="background:${s.dot}"></span>${s.name}`;
+        btn.dataset.styleIndex = i;
+        btn.innerHTML = `<span class="style-chip-dot" style="background:${s.dot}"></span>${s.name}${isRec && i === recIndices[0] ? ' <span class="chip-rec-badge">推薦</span>' : ''}`;
         btn.onclick = () => {
             state.styleIndex = i;
             document.querySelectorAll('.style-chip').forEach(c => c.classList.remove('active'));
             btn.classList.add('active');
         };
+        // Hide non-recommended chips initially
+        if (!isRec) btn.style.display = 'none';
         row.appendChild(btn);
     });
+
+    // Show "查看全部" button if there are hidden chips
+    if (recIndices.length < STYLES.length) {
+        showAllBtn.style.display = 'inline-flex';
+        recTag.style.display     = 'inline';
+    }
+    _allStylesVisible = false;
+}
+
+function showAllStyles() {
+    _allStylesVisible = true;
+    document.querySelectorAll('.style-chip').forEach(btn => { btn.style.display = 'inline-flex'; });
+    const showAllBtn = document.getElementById('style-show-all-btn');
+    if (showAllBtn) showAllBtn.style.display = 'none';
+}
+
+function submitStory() {
+    const story = storyInput.value.trim();
+    if (!story) return;
+    state.story = story;
+
+    const echoEl       = document.getElementById('options-echo');
+    const hintEl       = document.getElementById('options-hint');
+    const labelEl      = document.getElementById('options-story-label');
+    const responseText = document.getElementById('ai-response-text');
+    const responseLine = document.getElementById('ai-response-line');
+    const cursorEl     = document.getElementById('ai-response-cursor');
+
+    echoEl.textContent  = story.length > 40 ? story.slice(0, 40) + '…' : story;
+    echoEl.style.opacity  = '0';
+    hintEl.style.opacity  = '0';
+    labelEl.style.opacity = '0';
+
+    storyInput.classList.add('locked');
+    document.getElementById('compose-card').classList.add('expanded');
+    document.getElementById('compose-options').classList.add('open');
+    document.getElementById('compose-input-area').classList.add('hidden');
+    document.getElementById('suggestion-row').classList.add('hidden');
+    resetHeight();
+
+    // Typewriter AI response, then fade in the rest
+    const aiText = getAiResponseText(story);
+    setTimeout(() => {
+        typewriterEffect(responseText, aiText, cursorEl, () => {
+            // Fade in hint + echo + label
+            hintEl.style.transition  = 'opacity 0.5s';
+            labelEl.style.transition = 'opacity 0.5s';
+            echoEl.style.transition  = 'opacity 0.5s';
+            setTimeout(() => {
+                hintEl.style.opacity  = '1';
+                labelEl.style.opacity = '1';
+                echoEl.style.opacity  = '1';
+                buildStyleChips();
+            }, 200);
+        });
+    }, 320); // slight delay after panel opens
 }
 
 function selectRatioOpt(btn) {
@@ -268,8 +416,25 @@ function resetAll() {
     document.getElementById('suggestion-row').classList.remove('hidden');
     document.getElementById('style-chips-row').innerHTML = '';
     document.querySelectorAll('.ratio-chip').forEach((c, i) => c.classList.toggle('active', i === 0));
-    // document.getElementById('result-template-badge').style.display = 'none';
-    // document.getElementById('storyboard-grid').innerHTML = '';
+    document.getElementById('result-template-badge').style.display = 'none';
+    document.getElementById('storyboard-grid').innerHTML = '';
+    // Reset typewriter UI
+    const rtEl = document.getElementById('ai-response-text');
+    const rcEl = document.getElementById('ai-response-cursor');
+    const hintEl  = document.getElementById('options-hint');
+    const labelEl = document.getElementById('options-story-label');
+    const echoEl  = document.getElementById('options-echo');
+    if (rtEl)    rtEl.textContent    = '';
+    if (rcEl)    rcEl.style.opacity  = '0';
+    if (hintEl)  hintEl.style.opacity  = '0';
+    if (labelEl) labelEl.style.opacity = '0';
+    if (echoEl)  echoEl.style.opacity  = '0';
+    // Reset show-all styles button
+    const showAllBtn = document.getElementById('style-show-all-btn');
+    const recTag     = document.getElementById('style-rec-tag');
+    if (showAllBtn) showAllBtn.style.display = 'none';
+    if (recTag)     recTag.style.display     = 'none';
+    _allStylesVisible = false;
     onStoryInput();
     resetHeight();
     showPhase('phase-compose');
@@ -555,7 +720,6 @@ async function startGenerate() {
     state.useTemplate = false;
 
     showPhase('phase-generating');
-    const titleEl = document.getElementById('loading-title');
     const subEl   = document.getElementById('loading-sub');
     const barEl   = document.getElementById('gen-progress');
     const pctEl   = document.getElementById('gen-progress-text');
@@ -564,16 +728,8 @@ async function startGenerate() {
     generatedStoryTitles = [];
     generatedStoryCams = [];
 
-    function updateUI(idx) {
-        const s = LOADING_STEPS_FREE[idx];
-        if (titleEl) titleEl.textContent = s.title;
-        if (subEl)   subEl.textContent   = s.sub;
-        if (barEl)   barEl.style.width   = s.pct + '%';
-        if (pctEl)   pctEl.textContent   = s.pct + '%';
-    }
-
     try {
-        updateUI(0);
+        updateLoadingUI(0, LOADING_STEPS_FREE);
         const storyboardRes = await askGemini(getStoryboardPrompt(), 'story');
         storyboardData = safeParseJson(storyboardRes.response);
         if (!storyboardData) return;
@@ -581,14 +737,14 @@ async function startGenerate() {
         try { validateStoryboard(storyboardData); }
         catch (err) { console.error(err); alert('Storyboard 結構錯誤：\n' + err.message); return; }
 
-        updateUI(3);
+        updateLoadingUI(3, LOADING_STEPS_FREE);
         let completedCount = 0;
         const shots = storyboardData.shots;
         const total = shots.length;
 
         for (const shot of shots) {
             try {
-                subEl.innerText = `渲染畫面，組合成完整分鏡 (${completedCount + 1}/${total})`;
+                updateLoadingUI(3, LOADING_STEPS_FREE, completedCount);
                 const finalPrompt = buildFinalPrompt(shot);
                 const res = await askGemini(finalPrompt, 'image');
                 generatedImgs.push(res?.image?.length > 0 ? res.image[0] : '../icon/error.jpg');
@@ -605,11 +761,13 @@ async function startGenerate() {
             }
         }
 
-        updateUI(4);
+        updateLoadingUI(4, LOADING_STEPS_FREE);
+        stopLoadingTicker();
         setTimeout(() => { renderResults(); onGenerateDone(); }, 800);
 
     } catch (e) {
         console.error(e);
+        stopLoadingTicker();
         alert('生成失敗：' + e.message);
         showPhase('phase-compose');
     }
@@ -619,36 +777,26 @@ async function startGenerate() {
 async function startTemplateGenerate() {
     showPhase('phase-generating');
 
-    const titleEl = document.getElementById('loading-title');
-    const subEl   = document.getElementById('loading-sub');
-    const barEl   = document.getElementById('gen-progress');
-    const pctEl   = document.getElementById('gen-progress-text');
+    const barEl = document.getElementById('gen-progress');
+    const pctEl = document.getElementById('gen-progress-text');
 
     generatedImgs = []; generatedStoryTitles = []; generatedStoryCams = []; generatedPrompts = [];
 
-    function updateUI(idx) {
-        const s = LOADING_STEPS_TPL[idx];
-        if (titleEl) titleEl.textContent = s.title;
-        if (subEl)   subEl.textContent   = s.sub;
-        if (barEl)   barEl.style.width   = s.pct + '%';
-        if (pctEl)   pctEl.textContent   = s.pct + '%';
-    }
-
     try {
         // Step 1 — resolve variables
-        updateUI(0);
+        updateLoadingUI(0, LOADING_STEPS_TPL);
         const tpl = state.selectedTemplate;
         const resolvedVars = await resolveVariablesFromStory(tpl);
         state.resolvedVariables = resolvedVars;
 
         // Step 2 — fill perShot templates
-        updateUI(1);
+        updateLoadingUI(1, LOADING_STEPS_TPL);
         const rawPrompts = tpl.promptTemplate.perShot.map(t => fillVariables(t, resolvedVars));
         generatedStoryTitles = tpl.structure.map(s => s.action);
         generatedStoryCams   = tpl.structure.map(s => `${s.camera} · ${s.angle}`);
 
         // Step 3 — optimise prompts
-        updateUI(2);
+        updateLoadingUI(2, LOADING_STEPS_TPL);
         const styleDetail = STYLES[state.styleIndex].prompt;
         const styleName   = STYLES[state.styleIndex].name;
         const basePrompt  = fillVariables(tpl.promptTemplate.base, { ...resolvedVars, style: styleDetail });
@@ -670,12 +818,12 @@ ${rawPrompts.map((p, i) => `${i + 1}. ${p}`).join('\n')}
         state.finalPrompts = generatedPrompts;
 
         // Step 4 — generate images
-        updateUI(3);
+        updateLoadingUI(3, LOADING_STEPS_TPL);
         let completedCount = 0;
         const total = generatedPrompts.length;
         for (const prompt of generatedPrompts) {
             try {
-                subEl.innerText = `渲染畫面，組合成完整分鏡 (${completedCount + 1}/${total})`;
+                updateLoadingUI(3, LOADING_STEPS_TPL, completedCount);
                 const res = await askGemini(prompt + ', ' + styleDetail, 'image');
                 generatedImgs.push(res?.image?.length > 0 ? res.image[0] : '../icon/error.jpg');
                 completedCount++;
@@ -689,12 +837,14 @@ ${rawPrompts.map((p, i) => `${i + 1}. ${p}`).join('\n')}
             }
         }
 
-        // Step 5 — render (shared renderResults)
-        updateUI(4);
+        // Step 5 — render
+        updateLoadingUI(4, LOADING_STEPS_TPL);
+        stopLoadingTicker();
         setTimeout(() => { renderResults(); onGenerateDone(); }, 800);
 
     } catch (e) {
         console.error(e);
+        stopLoadingTicker();
         alert('生成失敗：' + e.message);
         showPhase('phase-template');
     }
@@ -893,15 +1043,24 @@ function buildTableView() {
 }
 
 function onGenerateDone() {
-    const meta = document.getElementById('result-meta');
-    // Use storyboard meta title if available (free mode), else story snippet
-    let metaTitle = '';
-    if (!state.useTemplate && storyboardData?.meta?.title) {
-        metaTitle = storyboardData.meta.title;
+    const meta      = document.getElementById('result-meta');
+    const shotCount = generatedImgs.length;
+    const styleName = STYLES[state.styleIndex].name;
+    const ratio     = state.ratio;
+
+    let titlePart = '';
+    if (state.useTemplate && state.selectedTemplate) {
+        // Template mode: use template name (trimmed)
+        const tplName = state.selectedTemplate.name;
+        titlePart = tplName.length > 16 ? tplName.slice(0, 16) + '…' : tplName;
+    } else if (storyboardData?.meta?.title) {
+        // Free mode: use AI-generated title from meta
+        titlePart = storyboardData.meta.title;
     } else {
-        metaTitle = state.story.length > 30 ? state.story.slice(0, 30) + '…' : state.story;
+        titlePart = state.story.length > 20 ? state.story.slice(0, 20) + '…' : state.story;
     }
-    if (meta) meta.textContent = `${metaTitle} · ${STYLES[state.styleIndex].name} · ${state.ratio}`;
+
+    if (meta) meta.textContent = `${titlePart} · ${shotCount} 鏡 · ${styleName} · ${ratio}`;
 
     // Template badge
     const badge = document.getElementById('result-template-badge');

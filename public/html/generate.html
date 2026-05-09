@@ -43,7 +43,7 @@
 
             <!-- ① Story input area -->
             <div class="compose-input-area" id="compose-input-area">
-                <textarea id="story-input" class="compose-textarea" placeholder="描述你的故事、廣告或短影音場景…" rows="3"
+                <textarea id="story-input" class="compose-textarea" placeholder="告訴我你的想法吧，一句話也沒關係 ✦" rows="3"
                     oninput="onStoryInput()"></textarea>
                 <button class="compose-send-btn" id="compose-send" onclick="submitStory()" disabled>
                     <div class="state state--sent">
@@ -63,15 +63,21 @@
             <div class="compose-options" id="compose-options">
 
                 <div class="options-header">
-                    <p class="options-hint">需要調整進階設定嗎？選好後直接生成 ✦</p>
-                    <span class="options-label">故事描述</span>
+                    <div class="ai-response-line" id="ai-response-line">
+                        <span class="ai-response-dot">✦</span>
+                        <span class="ai-response-text" id="ai-response-text"></span>
+                        <span class="ai-response-cursor" id="ai-response-cursor">|</span>
+                    </div>
+                    <p class="options-hint" id="options-hint">有需要幫你調整風格嗎？</p>
+                    <span class="options-label" id="options-story-label">故事描述</span>
                     <div class="options-story-echo" id="options-echo"></div>
                 </div>
 
                 <!-- Style row -->
-                <div class="options-section">
-                    <p class="options-label">風格</p>
+                <div class="options-section" id="style-section">
+                    <p class="options-label">風格 <span class="ai-rec-tag" id="style-rec-tag" style="display:none;">AI 推薦</span></p>
                     <div class="style-chips-row" id="style-chips-row"></div>
+                    <button class="style-show-all-btn" id="style-show-all-btn" onclick="showAllStyles()" style="display:none;">查看全部風格 ↓</button>
                 </div>
 
                 <!-- Ratio row -->

@@ -447,3 +447,54 @@ body { min-height: 100vh; }
     --accent-gold: #c8b878;
     --film-black: #0d0d0d;
 }
+
+/* ══════════════════════════════════════
+   HUMANISED UX ADDITIONS
+══════════════════════════════════════ */
+
+/* ── AI response line (typewriter) ── */
+.ai-response-line {
+    display: flex; align-items: baseline; gap: 8px;
+    padding: 14px 0 6px; min-height: 2.2rem;
+}
+.ai-response-dot {
+    color: var(--purple); font-size: 0.9rem; flex-shrink: 0;
+    animation: dotPulse 2s ease-in-out infinite;
+}
+@keyframes dotPulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+
+.ai-response-text {
+    font-size: 1rem; font-weight: 600; color: var(--text-dark); line-height: 1.5;
+}
+.ai-response-cursor {
+    color: var(--purple); font-weight: 300; font-size: 1.1rem; opacity: 0;
+    animation: cursorBlink 0.9s step-end infinite;
+}
+@keyframes cursorBlink { 0%,100% { opacity:1; } 50% { opacity:0; } }
+
+/* ── Chip recommendation badge ── */
+.chip-rec-badge {
+    display: inline-block; font-size: 0.58rem; font-weight: 800;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    background: var(--purple); color: #fff;
+    padding: 1px 5px; border-radius: 6px; margin-left: 4px; vertical-align: middle;
+}
+.ai-rec-tag {
+    font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--purple);
+    background: var(--purple-soft); border: 1px solid var(--purple-light);
+    padding: 2px 7px; border-radius: 10px; margin-left: 6px; vertical-align: middle;
+}
+
+/* ── Show all styles button ── */
+.style-show-all-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    margin-top: 10px; font-size: 0.75rem; font-weight: 600;
+    color: var(--purple); background: transparent; border: none;
+    cursor: pointer; font-family: var(--font-body);
+    opacity: 0.75; transition: opacity 0.2s; padding: 0;
+}
+.style-show-all-btn:hover { opacity: 1; }
+
+/* ── Options hint fade-in ── */
+#options-hint, #options-story-label, #options-echo { transition: opacity 0.5s; }
