@@ -587,7 +587,7 @@ function resetAll() {
 async function proceedToTemplate() {
     showPhase('phase-template');
     renderTemplateGrid();
-    await aiRecommendTemplate();
+    // await aiRecommendTemplate();
 }
 
 function backToCompose() {
