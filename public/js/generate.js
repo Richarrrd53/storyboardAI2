@@ -261,6 +261,7 @@ function submitStory() {
 
     // Typewriter AI response, then fade in the rest
     const aiText = getAiResponseText(story);
+    buildStyleChips();
     setTimeout(() => {
         typewriterEffect(responseText, aiText, cursorEl, () => {
             // Fade in hint + echo + label
@@ -271,7 +272,6 @@ function submitStory() {
                 hintEl.style.opacity = '1';
                 labelEl.style.opacity = '1';
                 echoEl.style.opacity = '1';
-                buildStyleChips();
             }, 200);
         });
     }, 320); // slight delay after panel opens
@@ -335,6 +335,20 @@ function resetAll() {
     if (showAllBtn) showAllBtn.style.display = 'none';
     if (recTag) recTag.style.display = 'none';
     _allStylesVisible = false;
+
+    const railBottom = document.getElementById("rail-bottom");
+    const railTop = document.getElementById("rail-top");
+    const nums = window.innerWidth/28;
+    for (let i = 0; i < nums; i++){
+        const railHole = document.createElement('div');
+        railHole.classList.add('rail-hole');
+        railBottom.appendChild(railHole);
+    }
+    for (let i = 0; i < nums; i++){
+        const railHole = document.createElement('div');
+        railHole.classList.add('rail-hole');
+        railTop.appendChild(railHole);
+    }
     onStoryInput();
     resetHeight();
     initTemplates();
@@ -1243,8 +1257,8 @@ function adjustHeight() {
 }
 
 function resetHeight() {
-    storyInput.style.height = '79px';
-    inputArea.style.height = '79px';
+    storyInput.style.height = '127px';
+    inputArea.style.height = '127px';
 }
 
 // ── 17. Init ──

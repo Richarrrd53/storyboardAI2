@@ -432,40 +432,85 @@ window.addEventListener('drop', (e) => {
     const file = e.dataTransfer.files[0];
     if (file) handleFile(file);
 });
+
+
 $('btn-pdf').addEventListener('click', () => {
     if (!currentData) return;
 
     const element = document.querySelector('#table-view');
     const originalDisplay = element.style.display;
 
+    // 1. 強制顯示
     element.style.display = 'block';
     element.classList.add('pdf-light-export');
 
     const opt = {
-        margin: [10, 10],
+        margin: [5, 5], 
         filename: `${currentData.title || 'storyboard'}_print.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
-        // ── 加入以下分頁優化設定 ──
-        pagebreak: { 
-            mode: ['avoid-all', 'css', 'legacy'] 
-        },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
         html2canvas: {
-            scale: 2,
+            scale: 2, // 保持高解析度
             backgroundColor: '#ffffff',
             useCORS: true,
+            scrollY: 0,
+            scrollX: 0,
+            // ── 核心修正：鎖定模擬視窗寬度，不隨瀏覽器縮放跑掉 ──
+            windowWidth: 1200, 
+            letterRendering: true,
             logging: false
         },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+        jsPDF: { 
+            unit: 'mm', 
+            format: 'a4', 
+            orientation: 'landscape',
+            // 讓內容自動填滿 A4 寬度
+            compress: true 
+        }
     };
 
-    // 執行匯出邏輯（維持原樣）
     html2pdf().set(opt).from(element).save().then(() => {
         element.classList.remove('pdf-light-export');
         element.style.display = originalDisplay;
-        showToast('PDF 已完美分頁匯出', 'success');
-    }).catch(err => {
-        console.error(err);
-        element.classList.remove('pdf-light-export');
-        showToast('PDF 匯出失敗', 'error');
+        showToast('比例已鎖定並成功匯出', 'success');
     });
 });
+
+const initResizers = () => {
+    const resizers = document.querySelectorAll('.resizer');
+    
+    resizers.forEach(resizer => {
+        let startX, startWidth;
+
+        resizer.addEventListener('mousedown', (e) => {
+            startX = e.pageX;
+            const header = resizer.parentElement;
+            startWidth = header.offsetWidth;
+
+            resizer.classList.add('resizing');
+
+            const onMouseMove = (e) => {
+                const width = startWidth + (e.pageX - startX);
+                if (width > 60) { // 設定最小寬度限制
+                    header.style.width = `${width}px`;
+                }
+            };
+
+            const onMouseUp = () => {
+                resizer.classList.remove('resizing');
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+            };
+
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+        });
+    });
+};
+
+// 記得在渲染表格後呼叫它
+const originalRenderTableView = renderTableView;
+renderTableView = (scenes) => {
+    originalRenderTableView(scenes);
+    initResizers(); // 每次渲染後重新綁定事件
+};

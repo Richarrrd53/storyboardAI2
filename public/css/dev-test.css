@@ -409,7 +409,7 @@ td {
 }
 
 .img-cell {
-    width: 300px;
+    width: 150px;
 }
 
 .img-cell img {
@@ -424,21 +424,23 @@ td {
     font-family: "DM Mono", monospace;
 }
 
+.camera-cell.editable-cell{
+    width: 10px;
+}
+
 .title-cell {
-    width: 200px;
     font-weight: 500;
     color: var(--text-accent);
 }
 
 .time-cell {
-    width: 40px;
+    width: 30px;
     font-family: "DM Mono", monospace;
     color: var(--text-gold);
     text-align: center;
 }
 
 .note-cell {
-    width: 220px;
     color: var(--text-dim);
     font-style: italic;
 }
@@ -517,7 +519,20 @@ td {
 .pdf-light-export {
     background: #ffffff !important;
     color: #000000 !important;
-    padding: 30px;
+    
+    /* 確保所有邊距歸零，避免位移 */
+    margin: 0 !important;
+    padding: 10px !important; /* 僅保留極小內距，讓畫面不至於貼死邊緣 */
+    
+    /* 確保寬度撐滿，不被父元素限制 */
+    width: 100% !important;
+    position: static !important;
+    transform: none !important;
+}
+
+.pdf-light-export table {
+    margin-top: 0 !important;
+    border-collapse: collapse !important;
 }
 
 .pdf-light-export table,
@@ -527,17 +542,43 @@ td {
     color: #000 !important;
 }
 
-/* 建議加入到原本的 .pdf-light-export 區塊中 */
-.pdf-light-export tr {
-    /* 核心關鍵：防止在表格行內換頁 */
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
+.pdf-light-export td, 
+.pdf-light-export th {
+    /* 1. 強制文字換行，防止水平溢出重疊 */
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+    white-space: normal !important;
+
+    /* 2. 重置字元間距與文字渲染模式 */
+    letter-spacing: normal !important;
+    text-rendering: optimizeLegibility !important;
+    
+    /* 3. 稍微增加一點行高，提升易讀性，也能減少重疊感 */
+    line-height: 1.5 !important;
 }
 
-/* 針對圖片也加強保險 */
+
+/* 修改 .pdf-light-export 區塊 */
+.pdf-light-export {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 20px !important;
+
+    /* ── 核心修正：強制固定寬度，確保 html2canvas 抓取到的比例恆定 ── */
+    width: 1200px !important; 
+    box-sizing: border-box !important;
+}
+
+.pdf-light-export table {
+    width: 100% !important;
+    table-layout: fixed !important; /* 確保你手調的欄位比例被尊重 */
+}
+
+/* 確保圖片在 1.5 倍字體下不會撐破版面 */
 .pdf-light-export img {
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
+    max-width: 100% !important;
+    height: auto !important;
     display: block;
 }
 
@@ -626,3 +667,35 @@ details.schema code {
     padding: 1px 5px;
     border-radius: 2px;
 }
+
+th {
+    position: relative; /* 讓調節把手定位在右側 */
+}
+
+.resizer {
+    position: absolute;
+    right: 0;
+    top: 0;
+    height: 100%;
+    width: 6px;
+    background: transparent;
+    cursor: col-resize;
+    user-select: none;
+    transition: background 0.2s;
+}
+
+.resizer:hover, .resizer.resizing {
+    background: var(--border-focus); /* 懸停時顯示你的金黃色主體色 */
+}
+
+/* 確保表格佈局允許固定寬度調整 */
+table {
+    table-layout: fixed;
+}
+
+/* 預設寬度設定 */
+.col-camera { width: 120px; }
+.col-image { width: 300px; }
+.col-action { width: auto; }
+.col-time { width: 120px; }
+.col-note { width: 180px; }

@@ -24,6 +24,7 @@
         <div class="bgDots" id="bgDot4"
             style="width:500px;height:500px;left:25%;bottom:-80px;filter:blur(120px);opacity:0.25;"></div>
         <div id="bgMask"></div>
+        
     </div>
 
     <!-- Nav -->
@@ -104,11 +105,11 @@
 
                 <!-- Generate CTA -->
                 <div class="options-cta-row">
-                    <button class="btn btn-ghost options-back-btn" onclick="resetCompose()">
+                    <button class="btn btn-outline options-back-btn" onclick="resetCompose()">
                         ← 重新輸入
                     </button>
                     <div style="display:flex;gap:10px;align-items:center;">
-                        <button class="btn btn-ghost options-skip-btn" onclick="startGenerate()">
+                        <button class="btn btn-outline options-skip-btn" onclick="startGenerate()">
                             不使用模板繼續 →
                         </button>
                         <button class="btn btn-primary options-gen-btn" onclick="proceedToTemplate()">
@@ -140,7 +141,7 @@
                     <h2 class="template-phase-title">選擇模板 <span>✦</span></h2>
                     <p class="template-phase-sub">AI 已根據你的故事推薦最匹配的模板</p>
                 </div>
-                <button class="btn btn-ghost btn-sm" onclick="backToCompose()">← 返回</button>
+                <button class="btn btn-outline btn-sm" onclick="backToCompose()">← 返回</button>
             </div>
 
             <!-- AI recommendation banner -->
@@ -177,7 +178,7 @@
                     </div>
                     <div class="preview-drawer-body" id="preview-body"></div>
                     <div class="preview-drawer-footer">
-                        <button class="btn btn-ghost btn-sm" onclick="closePreview()">取消</button>
+                        <button class="btn btn-outline btn-sm" onclick="closePreview()">取消</button>
                         <button class="btn btn-primary" id="preview-apply-btn" onclick="applyTemplateAndGenerate()">
                             ✦ 套用並生成
                         </button>
@@ -233,6 +234,14 @@
             <span class="badge-vars" id="badge-vars">—</span>
         </div>
         <div id="storyboard-grid" style="width:100%;"></div>
+    </div>
+
+    <div class="bg-frame" id="bg-top">
+        <div class="rail" id="rail-top"></div>
+    </div>
+    <div class="bg-frame" id="bg-bottom">
+        <div class="rail" id="rail-bottom"></div>
+
     </div>
 
     <!-- ══════════════════════════════════
