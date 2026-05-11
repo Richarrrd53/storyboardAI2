@@ -447,65 +447,140 @@ function openPreview(id, e) {
     document.getElementById('template-preview-drawer').classList.add('open');
 }
 
+// ── Preview helpers ──
+function _pvPaceLabel(pace) {
+    return { fast: '⚡ 快節奏', medium: '🎯 中節奏', slow: '🌊 慢節奏' }[pace] || pace;
+}
+function _pvToneEmoji(tone) {
+    const map = { energetic:'⚡', emotional:'💛', casual:'😊', humor:'😂', situational:'🎭', dramatic:'🎬', trust:'🤝', curiosity:'🔍' };
+    return map[tone] || '✦';
+}
+function _pvArcSteps(structure) {
+    // Try to auto-detect arc from narrative.structure text, fallback to generic 4-step
+    const generic = [
+        { icon: '👀', label: '勾起注意' },
+        { icon: '✨', label: '展示亮點' },
+        { icon: '🔥', label: '情緒高點' },
+        { icon: '🛒', label: '行動呼籲' }
+    ];
+    return generic;
+}
+function _pvSuitability(tpl) {
+    // Build suitability hints from tags + useCase + category
+    const good = [];
+    const warn = [];
+    const t = (tpl.tags || []).join(' ') + ' ' + (tpl.useCase || '') + ' ' + tpl.category;
+    if (/產品|開箱|商品/.test(t)) good.push('有實體產品展示');
+    if (/食物|美食|餐廳/.test(t)) good.push('餐飲、食物類內容');
+    if (/旅遊|生活|vlog/.test(t)) good.push('生活紀錄、旅遊 vlog');
+    if (/社恐|幽默|搞笑|humor/.test(t)) good.push('輕鬆搞笑、人設鮮明');
+    if (/品牌|行銷|廣告/.test(t)) good.push('品牌推廣、商業行銷');
+    if (good.length === 0) good.push('符合「' + tpl.category + '」類型的內容');
+    if (/product|lifestyle/.test(tpl.category)) warn.push('純文字資訊類效果較差');
+    else warn.push('需要強烈視覺感的場景');
+    return { good, warn };
+}
+function _pvShotHint(s) {
+    // Translate technical camera terms to plain language hints
+    const camMap = { 'extreme-close-up':'🔍 極近特寫', 'close-up':'🎯 近景特寫', 'medium-close':'👤 中近景', 'medium':'🧍 中景', 'wide':'🌅 廣角', 'extreme-wide':'🗺️ 超廣角', 'handheld':'✋ 手持晃動感', 'static':'📐 固定鏡頭', 'overhead':'👆 俯拍', 'low-angle':'⬆️ 仰角' };
+    const emoMap = { 'amazement':'驚喜感', 'curiosity':'好奇感', 'satisfaction':'滿足感', 'desire':'渴望感', 'trust':'信任感', 'excitement':'興奮感', 'tension':'緊張感', 'relatability':'共鳴感', 'joy':'喜悅感', 'surprise':'驚訝感' };
+    const camLabel = camMap[s.camera] || s.camera;
+    const emoLabel = emoMap[s.emotion] || s.emotion;
+    return { camLabel, emoLabel };
+}
+
 function buildPreviewHTML(tpl) {
-    return `
-        <div>
-            <p class="pv-section-title">模板說明</p>
-            <p class="pv-desc">${tpl.description}</p>
-        </div>
-        <div>
-            <p class="pv-section-title">敘事結構</p>
-            <div class="pv-narrative-box">
-                <p class="pv-narrative-structure">${tpl.narrative.structure}</p>
-                <span class="pv-tone-badge">${tpl.narrative.tone} · ${tpl.narrative.type}</span>
+    const arcSteps = _pvArcSteps(tpl.narrative.structure);
+    const suitability = _pvSuitability(tpl);
+    const toneEmoji = _pvToneEmoji(tpl.narrative.tone);
+    const paceLabel = _pvPaceLabel(tpl.visualFlow?.pace);
+    const platforms = (tpl.platform || []).join(' · ');
+
+    // ── Section 1: Hero ──
+    const heroHTML = `
+        <div class="pv-hero">
+            <div class="pv-hero-desc">${tpl.description}</div>
+            <div class="pv-hero-chips">
+                <span class="pv-hero-chip">${paceLabel}</span>
+                ${platforms ? `<span class="pv-hero-chip pv-chip-platform">📱 ${platforms}</span>` : ''}
+                <span class="pv-hero-chip pv-chip-shots">🎬 ${tpl.shotsCount} 個鏡頭</span>
+                <span class="pv-hero-chip">${toneEmoji} ${tpl.narrative.tone}</span>
             </div>
-        </div>
-        <div>
-            <p class="pv-section-title">標籤</p>
-            <div class="pv-tags">${tpl.tags.map(t => `<span class="pv-tag">${t}</span>`).join('')}</div>
-        </div>
-        <div>
-            <p class="pv-section-title">可替換變數 — AI 將自動從故事中提取並填入</p>
-            <div class="pv-variables">
-                ${tpl.variables.map(v => `<span class="pv-var"><span class="pv-var-icon">◆</span>{${v}}</span>`).join('')}
-            </div>
-        </div>
-        <div>
-            <p class="pv-section-title">基底提示詞</p>
-            <div class="pv-prompt-base">${tpl.promptTemplate.base}</div>
-        </div>
-        <div>
-            <p class="pv-section-title">分鏡結構（${tpl.shotsCount} 鏡）</p>
-            <div class="pv-structure">
-                ${tpl.structure.map((s, i) => `
-                    <div class="pv-shot">
-                        <div class="pv-shot-num">${s.shot}</div>
-                        <div class="pv-shot-content">
-                            <p class="pv-shot-action">${s.action}</p>
-                            <div class="pv-shot-meta">
-                                <span class="pv-shot-chip">${s.duration}</span>
-                                <span class="pv-shot-chip">${s.camera}</span>
-                                <span class="pv-shot-chip">${s.angle}</span>
-                                <span class="pv-shot-chip">情緒: ${s.emotion}</span>
-                            </div>
-                            <p style="font-size:0.72rem;color:#888;margin-top:5px;">${s.purpose}</p>
-                            <p style="font-size:0.72rem;color:#aaa;margin-top:4px;font-family:monospace;">${tpl.promptTemplate.perShot[i] || ''}</p>
-                        </div>
+        </div>`;
+
+    // ── Section 2: Story arc ──
+    const arcHTML = `
+        <div class="pv-section">
+            <p class="pv-section-label">故事怎麼走</p>
+            <div class="pv-arc">
+                ${arcSteps.map((step, i) => `
+                    <div class="pv-arc-step">
+                        <div class="pv-arc-icon">${step.icon}</div>
+                        <div class="pv-arc-label">${step.label}</div>
                     </div>
+                    ${i < arcSteps.length - 1 ? '<div class="pv-arc-arrow">→</div>' : ''}
                 `).join('')}
             </div>
-        </div>
-        <div>
-            <p class="pv-section-title">成功要素分析</p>
-            <p class="pv-desc">${tpl.analysis.whyItWorks}</p>
-        </div>
-        <div>
-            <p class="pv-section-title">可複製爆款元素</p>
-            <div class="pv-variables">
-                ${tpl.analysis.replicableElements.map(e => `<span class="pv-var"><span class="pv-var-icon">✦</span>${e}</span>`).join('')}
+            <div class="pv-narrative-detail">${tpl.narrative.structure}</div>
+        </div>`;
+
+    // ── Section 3: Suitability ──
+    const suitHTML = `
+        <div class="pv-section">
+            <p class="pv-section-label">這模板適合我嗎？</p>
+            <div class="pv-suit-list">
+                ${suitability.good.map(s => `<div class="pv-suit-row pv-suit-good">✅ ${s}</div>`).join('')}
+                ${suitability.warn.map(s => `<div class="pv-suit-row pv-suit-warn">⚠️ ${s}</div>`).join('')}
             </div>
-        </div>
-    `;
+        </div>`;
+
+    // ── Section 4: Shot list ──
+    const shotsHTML = `
+        <div class="pv-section">
+            <p class="pv-section-label">${tpl.shotsCount} 個畫面長這樣</p>
+            <div class="pv-shots-new">
+                ${tpl.structure.map((s, i) => {
+                    const { camLabel, emoLabel } = _pvShotHint(s);
+                    return `
+                    <div class="pv-shot-new" data-shot="${i}">
+                        <div class="pv-shot-new-num">${s.shot}</div>
+                        <div class="pv-shot-new-body">
+                            <p class="pv-shot-new-action">${s.action}</p>
+                            <p class="pv-shot-new-hint">${s.purpose} · ${s.duration}</p>
+                            <div class="pv-shot-new-tags">
+                                <span class="pv-shot-tag">${camLabel}</span>
+                                <span class="pv-shot-tag pv-shot-tag-emo">${emoLabel}</span>
+                            </div>
+                        </div>
+                    </div>`;
+                }).join('')}
+            </div>
+        </div>`;
+
+    // ── Section 5: AI auto-fill ──
+    const varsHTML = `
+        <div class="pv-section pv-section-magic">
+            <p class="pv-section-label">AI 會從你的故事自動抓取 🪄</p>
+            <div class="pv-vars-new">
+                ${tpl.variables.map(v => {
+                    const labelMap = { character:'主角外觀', student:'學生外觀', scene:'場景地點', emotion:'情緒氛圍', style:'視覺風格', product:'產品名稱', subject:'受訪對象' };
+                    return `<span class="pv-var-new">${labelMap[v] || v}</span>`;
+                }).join('')}
+            </div>
+            <p class="pv-magic-hint">你只需要描述故事，AI 自動填入這些細節</p>
+        </div>`;
+
+    // ── Section 6: Why it works (collapsible) ──
+    const whyHTML = `
+        <div class="pv-section pv-section-why">
+            <p class="pv-section-label">為什麼這個結構有效？</p>
+            <p class="pv-why-text">${tpl.analysis.whyItWorks}</p>
+            <div class="pv-elements">
+                ${tpl.analysis.replicableElements.map(e => `<span class="pv-element-chip">✦ ${e}</span>`).join('')}
+            </div>
+        </div>`;
+
+    return heroHTML + arcHTML + suitHTML + shotsHTML + varsHTML + whyHTML;
 }
 
 function closePreview() {
