@@ -1,0 +1,170 @@
+{
+"id": "yafang_001_2026",
+"name": "雅方國際：董事長是不是長得很像卡爾爺爺",
+"category": "twist",
+"tags": [
+"#雅方國際",
+"#陳美鳳",
+"#卡爾爺爺",
+"#凍齡女神",
+"#二代接班"
+],
+"description": "透過藝人陳美鳳的專訪，從出道年資轉向趣味的跨世代粉絲故事，最後反轉揭露品牌董事長的親民形象。",
+"narrative": {
+"type": "dialogue",
+"structure": "開場詢問年資建立威望，接續跨世代粉絲趣聞製造笑點，隨後轉向短影音話題，最終以董事長神似卡爾爺爺做為爆點收尾。",
+"tone": "humor",
+"summary": "資深藝人陳美鳳與主持人在攝影棚對談，分享保持年輕的秘訣與粉絲互動，並幽默介紹雅方董事長的可愛形象。"
+},
+"hook": {
+"type": "curiosity",
+"position": "start",
+"description": "詢問美鳳姐在演藝圈待了多久，利用大眾對其凍齡外貌的好奇心作為開場。"
+},
+"marketing": {
+"isImplicit": true,
+"exposureType": "environment",
+"brandRole": "active",
+"integrationMethod": "twist",
+"revealTiming": "late",
+"persuasionStyle": "subtle",
+"targetEmotion": [
+"curiosity",
+"relatability"
+]
+},
+"structure": [
+{
+"shot": 1,
+"duration": "7s",
+"camera": "handheld",
+"angle": "eye-level",
+"action": "兩人在攝影棚內站立對談，背景展示產品包裝。",
+"emotion": "professional",
+"purpose": "建立人物關係與場景基調。"
+},
+{
+"shot": 2,
+"duration": "1s",
+"camera": "static",
+"angle": "eye-level",
+"action": "插入導演試鏡的大聲公圖示與音效特效。",
+"emotion": "humorous",
+"purpose": "視覺點綴，增加節奏感與趣味性。"
+},
+{
+"shot": 3,
+"duration": "4s",
+"camera": "static",
+"angle": "eye-level",
+"action": "美鳳姐特寫，談論進入演藝圈的契機。",
+"emotion": "sincere",
+"purpose": "深入訪談內容，聚焦核心人物。"
+},
+{
+"shot": 4,
+"duration": "9s",
+"camera": "static",
+"angle": "eye-level",
+"action": "美鳳姐生動模仿不同世代粉絲要求的合照對話。",
+"emotion": "humorous",
+"purpose": "利用反差情境製造影片第一波笑點。"
+},
+{
+"shot": 5,
+"duration": "3s",
+"camera": "static",
+"angle": "eye-level",
+"action": "主持人與美鳳姐大笑，畫面出現「半斤八兩」字樣。",
+"emotion": "joyful",
+"purpose": "強化綜藝感與互動氛圍。"
+},
+{
+"shot": 6,
+"duration": "11s",
+"camera": "tracking",
+"angle": "eye-level",
+"action": "鏡頭微動，兩人邊走邊聊短影音的拍攝與接班話題。",
+"emotion": "casual",
+"purpose": "引導話題轉向品牌核心人物。"
+},
+{
+"shot": 7,
+"duration": "8s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "美鳳姐誇讚董事長，疊加董事長與卡爾爺爺的對比圖像。",
+"emotion": "surprise",
+"purpose": "揭示影片最大反轉點，建立品牌親民感。"
+},
+{
+"shot": 8,
+"duration": "2s",
+"camera": "static",
+"angle": "eye-level",
+"action": "主持人對鏡頭做總結並引導點擊觀看更多內容。",
+"emotion": "energetic",
+"purpose": "收尾並導引後續轉化行為。"
+}
+],
+"visualFlow": {
+"pace": "medium",
+"rhythmPattern": "對談節奏明快，並在笑點處利用音效與字體放大加強停頓。",
+"transitionStyle": "cut"
+},
+"promptTemplate": {
+"base": "Modern studio lighting, high-definition digital video style, vibrant set colors, commercial quality.",
+"perShot": [
+"{character} talking in {scene} with product boxes in background, {style}.",
+"Motion graphic of a retro megaphone with text pop-up, {style}.",
+"Close-up of {character} speaking with {emotion} expression in {scene}.",
+"{character} miming a conversation with expressive gestures, {emotion}, {style}.",
+"Two {character}s laughing together in {scene}, large text overlay, {emotion}.",
+"Tracking shot of {character} walking through {scene} while talking, {style}.",
+"Split screen showing {product} person next to an old cartoon character, {style}.",
+"Final shot of {character} gesturing to the camera in {scene}, {emotion}."
+]
+},
+"variables": [
+"character",
+"scene",
+"emotion",
+"style",
+"product"
+],
+"controls": {
+"pace": [
+"medium"
+],
+"cameraIntensity": [
+"low"
+],
+"emotionIntensity": [
+"medium"
+]
+},
+"useCase": "品牌形象行銷、企業二代接班故事分享、異業合作專訪。",
+"platform": [
+"tiktok",
+"reels",
+"shorts"
+],
+"shotsCount": 8,
+"source": {
+"videoId": "995oHQpvSs8",
+"title": "董事長是不是長得很像卡爾爺爺",
+"channel": "雅方國際",
+"views": 50000
+},
+"analysis": {
+"whyItWorks": "利用國民藝人的親和力降低商業感，並巧妙運用網路流行語與迷因化元素(卡爾爺爺)將品牌擬人化。",
+"targetAudience": "35歲以上對陳美鳳有共鳴的消費群，以及25-34歲對趣味短影音感興趣的潛在客群。",
+"replicableElements": [
+"資深名人背書",
+"跨世代對話梗",
+"企業主迷因化反轉"
+]
+},
+"confidence": 0.95,
+"version": "2.0"
+}

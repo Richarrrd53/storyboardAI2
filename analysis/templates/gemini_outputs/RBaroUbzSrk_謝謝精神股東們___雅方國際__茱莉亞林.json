@@ -1,0 +1,160 @@
+{
+"id": "RBaroUbzSrk",
+"name": "謝謝精神股東們-雅方國際-茱莉亞林",
+"category": "story",
+"tags": [
+"#00後",
+"#家族企業",
+"#羊肉爐",
+"#職場日常",
+"#二代轉型"
+],
+"description": "雅方國際二代茱莉亞林分享回家接掌家業的心路歷程，從躺平失敗到努力經營社群獲取萬人追蹤的真實故事。",
+"narrative": {
+"type": "montage",
+"structure": "以00後職場共鳴開場，切入品牌傳承背景與父親的職人精神，接著轉折至個人在行銷上的突破與成果，最後以抽獎互動回饋粉絲。",
+"tone": "humor",
+"summary": "描述00後青年放棄躺平回家承接家業，透過社群行銷為傳統品牌注入新活力的過程。"
+},
+"hook": {
+"type": "humor",
+"position": "start",
+"description": "00後躺平失敗，回家做高級牛馬的日常。"
+},
+"marketing": {
+"isImplicit": false,
+"exposureType": "product",
+"brandRole": "active",
+"integrationMethod": "plot",
+"revealTiming": "early",
+"persuasionStyle": "emotional",
+"targetEmotion": [
+"trust",
+"relatability"
+]
+},
+"structure": [
+{
+"shot": 1,
+"duration": "5s",
+"camera": "static",
+"angle": "eye-level",
+"action": "主角在辦公桌前打電腦，隨後臉部出現流淚特效。",
+"emotion": "exhausted",
+"purpose": "建立00後職場社畜共鳴的鉤子。"
+},
+{
+"shot": 2,
+"duration": "10s",
+"camera": "handheld",
+"angle": "eye-level",
+"action": "主角在食品倉庫或冷凍庫展示冰品、羊肉爐與火鍋料產品。",
+"emotion": "busy",
+"purpose": "快速展示品牌產品線的多樣性。"
+},
+{
+"shot": 3,
+"duration": "5s",
+"camera": "static",
+"angle": "eye-level",
+"action": "父親在茶桌前受訪，隨後展示父女穿著正式禮服的合照。",
+"emotion": "professional",
+"purpose": "強調品牌傳承、職人精神與信任感。"
+},
+{
+"shot": 4,
+"duration": "8s",
+"camera": "static",
+"angle": "eye-level",
+"action": "主角在辦公室亂翻文件、拿著產品搞怪的反差動作。",
+"emotion": "humorous",
+"purpose": "透過反差維持觀看趣味性，強化人設。"
+},
+{
+"shot": 5,
+"duration": "10s",
+"camera": "tracking",
+"angle": "eye-level",
+"action": "紀錄主角在辦公室與團隊互動、拍攝短影音的工作側拍。",
+"emotion": "determined",
+"purpose": "展現為了轉型所付出的努力與真實感。"
+},
+{
+"shot": 6,
+"duration": "7s",
+"camera": "static",
+"angle": "eye-level",
+"action": "螢幕錄影展示IG帳號粉絲成長數據與影片截圖。",
+"emotion": "proud",
+"purpose": "用數據證明行銷成果，增加粉絲參與感。"
+},
+{
+"shot": 7,
+"duration": "8s",
+"camera": "handheld",
+"angle": "eye-level",
+"action": "主角穿著實驗室白袍坐在研發室，對著鏡頭呼籲留言抽獎。",
+"emotion": "friendly",
+"purpose": "導流至留言區互動，並進行行動呼籲(CTA)。"
+}
+],
+"visualFlow": {
+"pace": "medium",
+"rhythmPattern": "節奏穩定，結合快剪展示與穩定訪談視角。",
+"transitionStyle": "cut"
+},
+"promptTemplate": {
+"base": "A realistic social media vlog style video with bright lighting and social media UI elements, {style} style.",
+"perShot": [
+"{character} is working at a desk with computer in {scene} with {emotion} expression, digital teardrop effects on face.",
+"{character} is holding and showing various {product} in {scene} with {emotion} expression, handheld camera movement.",
+"An older professional man sitting at a tea table in {scene}, followed by a photo of him and {character} in formal wear.",
+"{character} is doing funny and chaotic movements with {product} on a desk in {scene} with {emotion} expression.",
+"{character} is collaborating with colleagues and holding a camera in {scene} with {emotion} expression, tracking shot.",
+"A screenshot of a social media profile showing growing followers and video thumbnails.",
+"{character} wearing a white lab coat sitting in {scene} holding {product}, talking directly to camera with {emotion} expression."
+]
+},
+"variables": [
+"character",
+"scene",
+"emotion",
+"style",
+"product"
+],
+"controls": {
+"pace": [
+"medium"
+],
+"cameraIntensity": [
+"medium"
+],
+"emotionIntensity": [
+"high"
+]
+},
+"useCase": "品牌故事行銷、傳統產業二代轉型宣傳、社群互動抽獎。",
+"platform": [
+"tiktok",
+"reels",
+"shorts"
+],
+"shotsCount": 7,
+"source": {
+"videoId": "RBaroUbzSrk",
+"title": "謝謝精神股東們 - 雅方國際 - 茱莉亞林",
+"channel": "雅方國際",
+"views": 0
+},
+"analysis": {
+"whyItWorks": "利用00後職場標籤引起共鳴，結合真實的家族品牌背景，成功將冰冷的企業形象轉化為親民的奮鬥故事。",
+"targetAudience": "20-40歲喜愛生活化內容與傳統美食的年輕受眾。",
+"replicableElements": [
+"身分反差(00後vs家族企業)",
+"數據透明化(展示追蹤數成長)",
+"留言互動機制(精神股東定義)"
+]
+},
+"confidence": 0.95,
+"version": "2.0"
+}

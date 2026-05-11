@@ -1,0 +1,160 @@
+{
+"id": "yafang_001",
+"name": "藏鏡人就是來搞我的：雅方國際冷庫篇",
+"category": "twist",
+"tags": [
+"#雅方",
+"#冷鏈",
+"#挑戰",
+"#短影音導覽",
+"#冷凍庫"
+],
+"description": "主角挑戰在負20度的雅方冷凍庫中穿短袖導覽並進行吃冰挑戰，展現極大溫差與品牌趣味性。",
+"narrative": {
+"type": "situational",
+"structure": "起：坐在手推車進入冷庫。承：體驗負20度極低溫與導覽規模。轉：極限吃冰挑戰。合：出庫並導覽每日出貨量與通路。",
+"tone": "humor",
+"summary": "透過第一人稱視角紀錄主角在極地低溫冷庫中的滑稽反應與吃冰過程，藉此介紹雅方國際的冷鏈實力。"
+},
+"hook": {
+"type": "curiosity",
+"position": "start",
+"description": "坐在手推車被推向巨大冷凍庫，懸念引導「千萬冰箱」。"
+},
+"marketing": {
+"isImplicit": false,
+"exposureType": "environment",
+"brandRole": "active",
+"integrationMethod": "plot",
+"revealTiming": "early",
+"persuasionStyle": "subtle",
+"targetEmotion": [
+"curiosity",
+"relatability"
+]
+},
+"structure": [
+{
+"shot": 1,
+"duration": "3s",
+"camera": "tracking",
+"angle": "low-angle",
+"action": "{character} sitting on a trolley being pushed toward {scene} door.",
+"emotion": "anticipation",
+"purpose": "Establish hook and mystery of the 'million-dollar fridge'."
+},
+{
+"shot": 2,
+"duration": "2s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "{character} showing disbelief and reacting to the camera.",
+"emotion": "shock",
+"purpose": "Humanize the reaction and build connection with viewers."
+},
+{
+"shot": 3,
+"duration": "2s",
+"camera": "handheld",
+"angle": "high-angle",
+"action": "{character} walking deeper into {scene} filled with stacks of {product}.",
+"emotion": "fear",
+"purpose": "Show the scale of the facility and the harsh environment."
+},
+{
+"shot": 4,
+"duration": "3s",
+"camera": "tracking",
+"angle": "eye-level",
+"action": "{character} shivering between shelves, surrounded by frozen {product} boxes.",
+"emotion": "shivering",
+"purpose": "Visual proof of extreme temperature contrast."
+},
+{
+"shot": 5,
+"duration": "5s",
+"camera": "static",
+"angle": "eye-level",
+"action": "{character} unwrapping and eating {product} inside the cold storage.",
+"emotion": "persistence",
+"purpose": "The core 'challenge' element and humorous peak."
+},
+{
+"shot": 6,
+"duration": "3s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "Close-up of {character} face with frost and exaggerated cold expression.",
+"emotion": "extreme_cold",
+"purpose": "Sensory detail to emphasize the -20 degree environment."
+},
+{
+"shot": 7,
+"duration": "5s",
+"camera": "wide",
+"angle": "eye-level",
+"action": "{character} gesturing to the warehouse exit and explaining volume.",
+"emotion": "relief",
+"purpose": "Wrap up with professional insights and CTA."
+}
+],
+"visualFlow": {
+"pace": "medium",
+"rhythmPattern": "Build-up suspense, peak at challenge, fast release at the end.",
+"transitionStyle": "cut"
+},
+"promptTemplate": {
+"base": "{style} social media video style, realistic lighting, documentary feel.",
+"perShot": [
+"{character} sitting on trolley moving to {scene} door, {style}.",
+"Close-up of {character} showing {emotion}, {style}.",
+"{character} walking into {scene} with {emotion}, visible cold fog, {style}.",
+"{character} is {emotion} between tall shelves of {product} in {scene}, {style}.",
+"{character} eating {product} with {emotion} in {scene}, {style}.",
+"Close-up of {character} face with cold frost and {emotion}, {style}.",
+"{character} standing in {scene} exit with {emotion}, {style}."
+]
+},
+"variables": [
+"character",
+"scene",
+"emotion",
+"product",
+"style"
+],
+"controls": {
+"pace": [
+"medium"
+],
+"cameraIntensity": [
+"medium"
+],
+"emotionIntensity": [
+"high"
+]
+},
+"useCase": "企業形象推廣、品牌開箱挑戰、冷鏈技術導覽",
+"platform": [
+"reels",
+"shorts",
+"tiktok"
+],
+"shotsCount": 7,
+"source": {
+"videoId": "JpMai2QrzBg",
+"title": "藏鏡人就是來搞我的：雅方國際冷庫篇",
+"channel": "茱莉亞",
+"views": 0
+},
+"analysis": {
+"whyItWorks": "利用生理共感（寒冷）與反差（短袖吃冰）創造記憶點，將枯燥的工廠導覽綜藝化。",
+"targetAudience": "一般消費者、對品牌幕後感興趣的受眾、喜歡挑戰類內容的年輕族群",
+"replicableElements": [
+"極限環境挑戰",
+"第一人稱對話感",
+"高反差視覺場景"
+]
+},
+"confidence": 0.95,
+"version": "2.0"
+}

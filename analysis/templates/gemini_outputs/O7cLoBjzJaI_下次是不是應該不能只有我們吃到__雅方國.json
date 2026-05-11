@@ -1,0 +1,162 @@
+{
+"id": "O7cLoBjzJaI",
+"name": "當你的爸爸是董事長：馬卡龍羊肉爐研發計畫",
+"category": "twist",
+"tags": [
+"#美食",
+"#搞笑",
+"#開箱",
+"#職場",
+"#雅方"
+],
+"description": "以職場情境開場，將法式馬卡龍與在地羊肉爐結合的獵奇研發實驗。",
+"narrative": {
+"type": "situational",
+"structure": "起：董事長要求研發新品；承：主廚構思獵奇組合；轉：製作與試吃大塊羊肉馬卡龍；合：找路人試吃並導流留言。",
+"tone": "humor",
+"summary": "主廚在董事長父親的壓力下，研發出羊肉爐口味馬卡龍，並透過實驗與試吃產生喜劇反差。"
+},
+"hook": {
+"type": "humor",
+"position": "start",
+"description": "董事長與主廚的父女職場對話，加上主廚頭頂上的料理鼠王玩偶視覺點綴。"
+},
+"marketing": {
+"isImplicit": true,
+"exposureType": "prop",
+"brandRole": "active",
+"integrationMethod": "plot",
+"revealTiming": "early",
+"persuasionStyle": "subtle",
+"targetEmotion": [
+"curiosity",
+"relatability"
+]
+},
+"structure": [
+{
+"shot": 1,
+"duration": "8s",
+"camera": "static",
+"angle": "eye-level",
+"action": "董事長與主廚在辦公室對話交代任務",
+"emotion": "serious",
+"purpose": "建立職場壓力與故事背景"
+},
+{
+"shot": 2,
+"duration": "5s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "主廚思考並喊出馬卡龍結合羊肉爐的點子",
+"emotion": "inspired",
+"purpose": "提出核心衝突點（Hook）"
+},
+{
+"shot": 3,
+"duration": "6s",
+"camera": "handheld",
+"angle": "high-angle",
+"action": "在廚房檯面展示紫色馬卡龍殼並放入羊肉",
+"emotion": "focused",
+"purpose": "展示產品製作細節與獵奇感"
+},
+{
+"shot": 4,
+"duration": "11s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "主廚親自試吃不同大小的羊肉組合",
+"emotion": "weird",
+"purpose": "透過表情反差製造笑點"
+},
+{
+"shot": 5,
+"duration": "5s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "網美手式特寫展示馬卡龍夾著肥美羊肉",
+"emotion": "desire",
+"purpose": "視覺衝擊與產品特寫"
+},
+{
+"shot": 6,
+"duration": "14s",
+"camera": "wide",
+"angle": "eye-level",
+"action": "路人/同事參與試吃並進行吐槽對話",
+"emotion": "casual",
+"purpose": "增加真實感與互動趣味"
+},
+{
+"shot": 7,
+"duration": "5s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "主廚對鏡頭崩潰並呼籲觀眾留言",
+"emotion": "funny",
+"purpose": "結尾導流與社群互動"
+}
+],
+"visualFlow": {
+"pace": "fast",
+"rhythmPattern": "對話快速切換配合綜藝字卡跳出",
+"transitionStyle": "cut"
+},
+"promptTemplate": {
+"base": "Taiwanese variety show style, vlog aesthetic, bright lighting, high contrast.",
+"perShot": [
+"{character} and manager in {scene} discussing work with {emotion} expression, {style} style.",
+"Close-up of {character} with {prop} on head, thinking about {product} with {emotion} face.",
+"Handheld shot of {product} assembly in {scene}, macro food photography style.",
+"{character} tasting {product}, funny {emotion} expression, variety show caption overlay.",
+"Macro shot of {product} held by hand, showcasing the texture of {product_twist} inside.",
+"{character} and friends in {scene} reacting to {product}, candid and {emotion}.",
+"{character} looking at camera with {emotion} expression, {style} style, call to action text."
+]
+},
+"variables": [
+"character",
+"scene",
+"emotion",
+"style",
+"product",
+"prop",
+"product_twist"
+],
+"controls": {
+"pace": [
+"fast"
+],
+"cameraIntensity": [
+"medium"
+],
+"emotionIntensity": [
+"high"
+]
+},
+"useCase": "獵奇美食研發、品牌老品新玩行銷、職場情境短劇",
+"platform": [
+"tiktok",
+"reels",
+"shorts"
+],
+"shotsCount": 7,
+"source": {
+"videoId": "O7cLoBjzJaI",
+"title": "當你的爸爸是董事長：雅方國新品研發",
+"channel": "雅方",
+"views": 0
+},
+"analysis": {
+"whyItWorks": "利用法式甜點與中式補湯的極大反差製造好奇心，並透過父女身分設定增加故事張力。",
+"targetAudience": "喜歡獵奇美食、年輕職場族群、社群高度使用者",
+"replicableElements": [
+"異溫層元素強行結合",
+"頭頂裝飾性玩偶建立角色記憶點",
+"快速剪輯與自嘲式對話"
+]
+},
+"confidence": 0.95,
+"version": "2.0"
+}

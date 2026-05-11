@@ -1,0 +1,161 @@
+{
+"id": "yaafang_001",
+"name": "吃羊肉爐長高的我",
+"category": "twist",
+"tags": [
+"#雅方",
+"#羊肉爐",
+"#開箱",
+"#美食",
+"#高CP值"
+],
+"description": "以反擊酸民嫌貴為開頭，透過千元挑戰展示品牌產品豐富度，最終以幽默的長高梗收尾。",
+"narrative": {
+"type": "montage",
+"structure": "起：千元鈔挑戰；承：快速抓取產品；轉：計算總價與禮盒展示；合：品牌理念與長高梗幽默結尾。",
+"tone": "humor",
+"summary": "主持人利用1000元預算展示在雅方能買到的大量冷凍食品，反擊價格昂貴的質疑，並分享吃羊肉爐會長高的個人趣味說法。"
+},
+"hook": {
+"type": "conflict",
+"position": "start",
+"description": "打臉臭酸民：挑戰1000元能買多少東西"
+},
+"marketing": {
+"isImplicit": false,
+"exposureType": "product",
+"brandRole": "active",
+"integrationMethod": "plot",
+"revealTiming": "early",
+"persuasionStyle": "direct",
+"targetEmotion": [
+"trust",
+"curiosity",
+"relatability"
+]
+},
+"structure": [
+{
+"shot": 1,
+"duration": "5s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "{character} holds a thousand-dollar bill and speaks to the camera in {scene}",
+"emotion": "confident",
+"purpose": "Establish the hook and challenge"
+},
+{
+"shot": 2,
+"duration": "5s",
+"camera": "handheld",
+"angle": "high-angle",
+"action": "Rapidly grabbing {product} from the freezer",
+"emotion": "excited",
+"purpose": "Show product variety and abundance"
+},
+{
+"shot": 3,
+"duration": "5s",
+"camera": "static",
+"angle": "eye-level",
+"action": "{character} introduces {product} sets on the table",
+"emotion": "proud",
+"purpose": "Verify the value and price points"
+},
+{
+"shot": 4,
+"duration": "3s",
+"camera": "static",
+"angle": "high-angle",
+"action": "Speed ramp of more {product} filling the table",
+"emotion": "overwhelmed",
+"purpose": "Visual proof of extreme high CP value"
+},
+{
+"shot": 5,
+"duration": "5s",
+"camera": "wide",
+"angle": "eye-level",
+"action": "{character} calculates total cost with a teammate in {scene}",
+"emotion": "casual",
+"purpose": "Humanize the brand through interaction"
+},
+{
+"shot": 6,
+"duration": "4s",
+"camera": "close-up",
+"angle": "low-angle",
+"action": "{character} showcases the premium {product} gift box",
+"emotion": "satisfied",
+"purpose": "Upsell premium options and gift usage"
+},
+{
+"shot": 7,
+"duration": "10s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "{character} tells a funny story about growing tall after eating {product} with {emotion}",
+"emotion": "humorous",
+"purpose": "Create a memorable twist and increase engagement"
+}
+],
+"visualFlow": {
+"pace": "fast",
+"rhythmPattern": "Intro dialogue followed by rapid percussive cutting for product selection",
+"transitionStyle": "cut"
+},
+"promptTemplate": {
+"base": "High-quality short video aesthetic, {style} style, vibrant colors, clear product labels.",
+"perShot": [
+"{character} with {emotion} expression holding money in {scene}, {style} style.",
+"Handheld POV picking up {product} in a {scene} with {style}.",
+"{character} presenting {product} on a table in {scene}, {style}.",
+"Top-down view of many {product} appearing rapidly, {style}.",
+"Wide shot of {character} talking to someone in {scene}, {style}.",
+"Close-up of {product} box held by {character}, {style}.",
+"{character} smiling and telling a joke in {scene}, {style} style."
+]
+},
+"variables": [
+"character",
+"scene",
+"emotion",
+"style",
+"product"
+],
+"controls": {
+"pace": [
+"fast"
+],
+"cameraIntensity": [
+"medium"
+],
+"emotionIntensity": [
+"high"
+]
+},
+"useCase": "E-commerce promotion and brand image building",
+"platform": [
+"tiktok",
+"reels",
+"shorts"
+],
+"shotsCount": 7,
+"source": {
+"videoId": "qQh6_Lz6XX4",
+"title": "吃羊肉爐長高的我_雅方國際",
+"channel": "茱莉亞林",
+"views": 0
+},
+"analysis": {
+"whyItWorks": "Uses a common social media trope (debunking comments) to provide high informational value (pricing) wrapped in entertainment.",
+"targetAudience": "Housewives, budget shoppers, and young people looking for quick meal solutions.",
+"replicableElements": [
+"Money challenge hook",
+"Fast-paced montage",
+"Humorous nonsensical twist ending"
+]
+},
+"confidence": 0.95,
+"version": "2.0"
+}

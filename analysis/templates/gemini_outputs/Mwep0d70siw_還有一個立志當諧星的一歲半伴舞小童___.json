@@ -1,0 +1,192 @@
+{
+"id": "Mwep0d70siw",
+"name": "還有一個立志當諧星的一歲半伴舞小童",
+"category": "twist",
+"tags": [
+"#開箱",
+"#居家生活",
+"#Vlog",
+"#KTV",
+"#育兒"
+],
+"description": "展示極具反差感的豪宅居家生活，從私人電梯到包廂吧檯，最終揭露家庭日常與粉絲慶祝活動。",
+"narrative": {
+"type": "situational",
+"structure": "透過路人提問引發好奇，展示豪宅奢華裝潢（電梯、包廂、吧檯）建立懸念，隨後以沖泡奶粉與育兒生活達成反差轉折，最後結合品牌資訊進行粉絲互動。",
+"tone": "humor",
+"summary": "以姑姑身份澄清誤解開始，帶領觀眾參觀像招待所的住家，展示反差感十足的豪宅育兒日常。"
+},
+"hook": {
+"type": "curiosity",
+"position": "start",
+"description": "家中電梯與569私人包廂門牌，引發對主角財力與生活環境的好奇。"
+},
+"marketing": {
+"isImplicit": false,
+"exposureType": "logo",
+"brandRole": "active",
+"integrationMethod": "plot",
+"revealTiming": "late",
+"persuasionStyle": "subtle",
+"targetEmotion": [
+"curiosity",
+"relatability"
+]
+},
+"structure": [
+{
+"shot": 1,
+"duration": "2s",
+"camera": "handheld",
+"angle": "eye-level",
+"action": "{character} 抱著 {sidekick} 在 {scene_A} 走動，背景有豪華展示櫃",
+"emotion": "casual",
+"purpose": "建立人物關係與第一現場環境"
+},
+{
+"shot": 2,
+"duration": "1s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "{character} 面對鏡頭露出表情轉變",
+"emotion": "{emotion}",
+"purpose": "情緒轉折與節奏引導"
+},
+{
+"shot": 3,
+"duration": "2s",
+"camera": "tracking",
+"angle": "low-angle",
+"action": "鏡頭跟隨進入電梯內部，特寫電梯按鈕",
+"emotion": "suspense",
+"purpose": "展示特殊裝潢，強化豪宅標籤"
+},
+{
+"shot": 4,
+"duration": "1s",
+"camera": "static",
+"angle": "high-angle",
+"action": "展示 569 數字門牌",
+"emotion": "shock",
+"purpose": "建立私人招待所的視覺意象"
+},
+{
+"shot": 5,
+"duration": "3s",
+"camera": "wide",
+"angle": "eye-level",
+"action": "展示充滿迷幻燈光的 KTV 大廳與沙發區",
+"emotion": "curiosity",
+"purpose": "建立主要場景的宏觀印象"
+},
+{
+"shot": 6,
+"duration": "2s",
+"camera": "tracking",
+"angle": "eye-level",
+"action": "鏡頭滑過吧檯展示酒櫃細節",
+"emotion": "curiosity",
+"purpose": "細部展示豪宅設備"
+},
+{
+"shot": 7,
+"duration": "4s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "{character} 在吧檯使用 {product} (奶瓶) 裝入彩色球",
+"emotion": "humor",
+"purpose": "核心反差轉折點，將奢華感轉向生活化"
+},
+{
+"shot": 8,
+"duration": "3s",
+"camera": "wide",
+"angle": "eye-level",
+"action": "{character} 在霓虹燈光下跳舞，{sidekick} 在旁邊互動",
+"emotion": "happy",
+"purpose": "營造熱鬧氛圍，展現影片活力"
+},
+{
+"shot": 9,
+"duration": "4s",
+"camera": "static",
+"angle": "eye-level",
+"action": "{character} 展示手機中的品牌帳號與破十萬粉絲資訊",
+"emotion": "trust",
+"purpose": "商業轉化與個人品牌行銷"
+},
+{
+"shot": 10,
+"duration": "3s",
+"camera": "close-up",
+"angle": "low-angle",
+"action": "{character} 坐在沙發上放鬆吃東西結束影片",
+"emotion": "relatability",
+"purpose": "回歸真實生活，呼籲行動"
+}
+],
+"visualFlow": {
+"pace": "fast",
+"rhythmPattern": "由平緩對話迅速轉入快節奏展示，最終放慢至生活總結",
+"transitionStyle": "cut"
+},
+"promptTemplate": {
+"base": "High-end luxury interior style, neon lighting, cinematic video aesthetic, {style} fashion.",
+"perShot": [
+"Handheld shot of {character} holding {sidekick} in {scene_A}, luxurious cabinets in background, {style} style.",
+"Close-up of {character} making {emotion} expression, bright interior lighting, {style} style.",
+"Tracking shot into a private elevator, {character} pressing buttons, low-angle, cinematic lighting.",
+"Static shot of number plate 569 on a door, high-end design, selective focus.",
+"Wide shot of {scene_B} with purple neon lights, large leather sofas, immersive atmosphere.",
+"Tracking shot of a professional home bar with wine racks and glasses, {style} style.",
+"Close-up of {character} holding {product} at the bar, funny contrast, {style} style.",
+"Wide shot of {character} and {sidekick} dancing in {scene_B}, flashing disco lights.",
+"Static shot of {character} showing smartphone screen with social media profile, bright face lighting.",
+"Low-angle close-up of {character} relaxing on a sofa in {scene_B} with snacks, cozy vibe."
+]
+},
+"variables": [
+"character",
+"sidekick",
+"scene_A",
+"scene_B",
+"emotion",
+"style",
+"product"
+],
+"controls": {
+"pace": [
+"fast"
+],
+"cameraIntensity": [
+"medium"
+],
+"emotionIntensity": [
+"high"
+]
+},
+"useCase": "個人品牌經營與居家開箱類短影音參考",
+"platform": [
+"reels",
+"tiktok",
+"shorts"
+],
+"shotsCount": 10,
+"source": {
+"videoId": "Mwep0d70siw",
+"title": "還有一個立志當諧星的一歲半伴舞小童",
+"channel": "雅方 yaefangofficial",
+"views": 0
+},
+"analysis": {
+"whyItWorks": "利用極致的空間反差（住家 vs 招待所）捕捉觀眾眼球，並用高頻率的情境轉換保持節奏感。",
+"targetAudience": "對精緻生活、潮流美妝、趣味育兒感興趣的年輕族群。",
+"replicableElements": [
+"空間反差法",
+"快節奏生活切換",
+"萌娃互動點綴"
+]
+},
+"confidence": 0.95,
+"version": "2.0"
+}

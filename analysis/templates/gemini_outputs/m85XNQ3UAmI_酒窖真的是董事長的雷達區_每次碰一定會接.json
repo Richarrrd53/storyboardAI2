@@ -1,0 +1,151 @@
+{
+"id": "vlog_luxury_vault_001",
+"name": "豪門金庫與酒窖探秘反轉劇",
+"category": "twist",
+"tags": [
+"#豪門生活",
+"#開箱",
+"#幽默",
+"#家庭趣事",
+"#紅酒收藏"
+],
+"description": "以第一人稱視角帶領觀眾潛入家中秘密酒窖，在盤點名酒時被父親透過監控發現並即時反制，充滿生活感與幽默反轉。",
+"narrative": {
+"type": "situational",
+"structure": "起：展示神祕房門。承：潛入酒窖並翻找鑰匙與名酒。轉：接到父親警告電話。合：使用誇張濾鏡展現驚嚇與悔意。",
+"tone": "humor",
+"summary": "主角潛入家中酒窖打算盤點昂貴藏酒，卻意外被父親抓包的趣味日常。"
+},
+"hook": {
+"type": "curiosity",
+"position": "start",
+"description": "開場展示『家中的神祕金庫』並打開隱藏門，引發觀眾窺探欲。"
+},
+"marketing": {
+"isImplicit": true,
+"exposureType": "prop",
+"brandRole": "passive",
+"integrationMethod": "background",
+"revealTiming": "middle",
+"persuasionStyle": "subtle",
+"targetEmotion": [
+"curiosity",
+"relatability"
+]
+},
+"structure": [
+{
+"shot": 1,
+"duration": "3s",
+"camera": "handheld",
+"angle": "eye-level",
+"action": "主角站在白色隱藏門前介紹金庫，鏡頭隨其推門而入。",
+"emotion": "mysterious",
+"purpose": "建立核心懸念 (Hook)。"
+},
+{
+"shot": 2,
+"duration": "4s",
+"camera": "tracking",
+"angle": "eye-level",
+"action": "鏡頭跟隨進入昏暗酒窖，掃視大量紅酒與洋酒藏品。",
+"emotion": "amazement",
+"purpose": "展示環境細節，加強視覺豐富度。"
+},
+{
+"shot": 3,
+"duration": "2s",
+"camera": "close-up",
+"angle": "low-angle",
+"action": "主角在鞋櫃處翻找隱藏的酒窖鑰匙。",
+"emotion": "mischievous",
+"purpose": "增加敘事細節，塑造『家賊』情境。"
+},
+{
+"shot": 4,
+"duration": "3s",
+"camera": "wide",
+"angle": "eye-level",
+"action": "進入儲藏間內部，展示整齊堆疊的高級烈酒禮盒。",
+"emotion": "excited",
+"purpose": "強調藏品價值感。"
+},
+{
+"shot": 5,
+"duration": "4s",
+"camera": "static",
+"angle": "high-angle",
+"action": "主角坐在桌前用手機掃描標籤，畫面穿插閃光效果。",
+"emotion": "focused",
+"purpose": "展示具體情節發展。"
+},
+{
+"shot": 6,
+"duration": "5s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "手機顯示父親來電，主角面部變為誇張大嘴濾鏡並表現驚恐。",
+"emotion": "shocked",
+"purpose": "完成核心反轉 (Twist)。"
+}
+],
+"visualFlow": {
+"pace": "fast",
+"rhythmPattern": "隨動作快剪，結尾停留於表情反轉。",
+"transitionStyle": "cut"
+},
+"promptTemplate": {
+"base": "A cinematic vlog style video with realistic indoor lighting, focusing on {character} and luxury {scene}.",
+"perShot": [
+"{character} standing in front of {scene}, mysterious atmosphere, {style} style.",
+"POV tracking into {scene} filled with {product}, cinematic low lighting.",
+"Close-up of hands searching for keys in {scene}, {emotion} mood.",
+"Wide shot of {scene} displaying various {product}, organized and luxury.",
+"Static high-angle shot of {character} interacting with {product} using a phone.",
+"Extreme close-up of {character} with {emotion} expression using funny face filter, {style} style."
+]
+},
+"variables": [
+"character",
+"scene",
+"emotion",
+"style",
+"product"
+],
+"controls": {
+"pace": [
+"fast"
+],
+"cameraIntensity": [
+"medium"
+],
+"emotionIntensity": [
+"high"
+]
+},
+"useCase": "個人生活紀錄、幽默反轉劇場、豪宅探訪系列",
+"platform": [
+"tiktok",
+"reels",
+"shorts"
+],
+"shotsCount": 6,
+"source": {
+"videoId": "custom_vlog_001",
+"title": "家裡的酒窖被我發現了",
+"channel": "Anonymous Creator",
+"views": 500000
+},
+"analysis": {
+"whyItWorks": "利用了觀眾對『豪門祕境』的好奇心，結合了人人都有共鳴的『怕爸爸』幽默反轉。",
+"targetAudience": "對生活感、奢侈品、幽默短劇感興趣的年輕族群。",
+"replicableElements": [
+"神祕入口開場",
+"第一人稱探索感",
+"監控/家長反制的情節反轉",
+"誇張濾鏡結尾"
+]
+},
+"confidence": 0.95,
+"version": "2.0"
+}

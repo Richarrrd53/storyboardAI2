@@ -1,0 +1,151 @@
+{
+    "id": "2eNWeO0bawA",
+    "name": "還是堅信女生的直覺比較準",
+    "category": "twist",
+    "tags": [
+        "#職場日常",
+        "#智力測驗",
+        "#雅方國際",
+        "#父女互動",
+        "#幽默"
+    ],
+    "description": "身為公司未來繼承人的女兒挑戰智力測驗，試圖證明女生的直覺比較準，最後卻被董事長老爸的高分成績無情反轉。",
+    "narrative": {
+        "type": "situational",
+        "structure": "起：繼承人身分接受智力測驗挑戰；承：解題過程陷入混亂並宣稱靠直覺；轉：測驗結果107分略高於平均；合：爸爸回傳132分成績，幽默反轉證實男人的直覺更準。",
+        "tone": "humor",
+        "summary": "影片紀錄了辦公室內的智力測驗挑戰，透過女兒與父親的成績對比，創造出溫馨且幽默的職場互動。"
+    },
+    "hook": {
+        "type": "curiosity",
+        "position": "start",
+        "description": "以「身為公司的未來繼承人」身份進行智力測驗作為開頭，吸引觀眾對結果的好奇。"
+    },
+    "marketing": {
+        "isImplicit": true,
+        "exposureType": "environment",
+        "brandRole": "passive",
+        "integrationMethod": "plot",
+        "revealTiming": "early",
+        "persuasionStyle": "subtle",
+        "targetEmotion": [
+            "relatability",
+            "curiosity"
+        ]
+    },
+    "structure": [
+        {
+            "shot": 1,
+            "duration": "2s",
+            "camera": "wide",
+            "angle": "eye-level",
+            "action": "{character} 坐在辦公桌前準備開始測驗",
+            "emotion": "serious",
+            "purpose": "建立情境與角色身分"
+        },
+        {
+            "shot": 2,
+            "duration": "3s",
+            "camera": "close-up",
+            "angle": "eye-level",
+            "action": "{product} 螢幕顯示智力測驗標題與說明",
+            "emotion": "neutral",
+            "purpose": "鎖定影片核心主題"
+        },
+        {
+            "shot": 3,
+            "duration": "5s",
+            "camera": "tracking",
+            "angle": "eye-level",
+            "action": "{character} 在測驗過程中表情逐漸凝重",
+            "emotion": "stress",
+            "purpose": "醞釀解題難度與壓力"
+        },
+        {
+            "shot": 4,
+            "duration": "10s",
+            "camera": "handheld",
+            "angle": "low-angle",
+            "action": "{character} 崩潰抓頭並表示要靠直覺作答",
+            "emotion": "chaotic",
+            "purpose": "展現真實情緒與喜劇效果"
+        },
+        {
+            "shot": 5,
+            "duration": "3s",
+            "camera": "static",
+            "angle": "eye-level",
+            "action": "{product} 顯示測驗最終成績為 107 分",
+            "emotion": "relief",
+            "purpose": "達成初步劇情期待值"
+        },
+        {
+            "shot": 6,
+            "duration": "15s",
+            "camera": "close-up",
+            "angle": "high-angle",
+            "action": "{character} 展示手機上的 Line 對話，顯示爸爸成績 132 分",
+            "emotion": "surprise",
+            "purpose": "最後的反轉爆點與收尾"
+        }
+    ],
+    "visualFlow": {
+        "pace": "fast",
+        "rhythmPattern": "節奏隨題目難度加快，最後在手機對話處留白給觀眾閱讀",
+        "transitionStyle": "cut"
+    },
+    "promptTemplate": {
+        "base": "A {style} video in a {scene} featuring {character} with {emotion} expressions.",
+        "perShot": [
+            "Wide shot of {character} sitting in the {scene} at a desk, looking {emotion}, {style} style.",
+            "Close-up of {product} displaying a website interface in the {scene}.",
+            "Tracking shot of {character} showing {emotion} face while typing, {style} style.",
+            "Handheld low-angle of {character} with {emotion} expression, messy hair, {style} style.",
+            "Static shot of {product} showing a score of 107, {style} style.",
+            "Close-up high-angle of {character} holding a {product} showing chat text with {emotion}."
+        ]
+    },
+    "variables": [
+        "character",
+        "scene",
+        "emotion",
+        "style",
+        "product"
+    ],
+    "controls": {
+        "pace": [
+            "fast"
+        ],
+        "cameraIntensity": [
+            "medium"
+        ],
+        "emotionIntensity": [
+            "high"
+        ]
+    },
+    "useCase": "職場生活短劇、品牌人設建立、家庭幽默互動分享。",
+    "platform": [
+        "tiktok",
+        "reels",
+        "shorts"
+    ],
+    "shotsCount": 6,
+    "source": {
+        "videoId": "2eNWeO0bawA",
+        "title": "還是堅信女生的直覺比較準__雅方國際__",
+        "channel": "雅方國際",
+        "views": 0
+    },
+    "analysis": {
+        "whyItWorks": "利用身分地位的反差（繼承人vs一般人）以及世代間的較量（爸爸比女兒強）引發共鳴，並結合時下的『直覺』迷思創造笑點。",
+        "targetAudience": "上班族、年輕女性、對職場趣味內容感興趣的社群使用者。",
+        "replicableElements": [
+            "實測挑戰類開場",
+            "真實情感的崩潰瞬間剪輯",
+            "螢幕畫面與真人反應切換",
+            "手機對話截圖式的結尾反轉"
+        ]
+    },
+    "confidence": 0.98,
+    "version": "2.0"
+}

@@ -1,0 +1,197 @@
+{
+"id": "LtdAf0VEJAw",
+"name": "我大嫂的笑聲直接變整個影片的重點__雅方",
+"category": "twist",
+"tags": [
+"#閨蜜日常",
+"#穿搭",
+"#幽默",
+"#約會準備",
+"#生活感"
+],
+"description": "閨蜜在更衣室為約會挑選穿搭，透過幽默的互動、魔性的笑聲以及身高對比產生反轉效果。",
+"narrative": {
+"type": "situational",
+"structure": "建立POV約會情境 -> 挑選衣物與試穿崩潰 -> 小孩反應與身高反轉 -> 最終更換平底鞋定案",
+"tone": "humor",
+"summary": "兩位閨蜜在名牌環繞的更衣室討論約會穿搭，過程中充滿毒舌嘲笑與搞笑互動，最終因男生身高問題選擇平底鞋。"
+},
+"hook": {
+"type": "humor",
+"position": "start",
+"description": "第一人稱視角進入塞滿名牌包裝的私人衣櫥，伴隨魔性的笑聲吸引注意。"
+},
+"marketing": {
+"isImplicit": true,
+"exposureType": "prop",
+"brandRole": "passive",
+"integrationMethod": "background",
+"revealTiming": "early",
+"persuasionStyle": "subtle",
+"targetEmotion": [
+"relatability",
+"curiosity"
+]
+},
+"structure": [
+{
+"shot": 1,
+"duration": "2s",
+"camera": "handheld",
+"angle": "eye-level",
+"action": "POV鏡頭掃視衣櫃內大量的Dior、Chanel、LV包裝盒",
+"emotion": "excited",
+"purpose": "建立奢華感與POV沉浸感"
+},
+{
+"shot": 2,
+"duration": "3s",
+"camera": "static",
+"angle": "eye-level",
+"action": "主角對鏡頭打招呼，展示初始黑色短版運動風服飾",
+"emotion": "happy",
+"purpose": "引出主角並確立目前狀態"
+},
+{
+"shot": 3,
+"duration": "3s",
+"camera": "static",
+"angle": "eye-level",
+"action": "兩人對鏡子展示下半身不協調的寬鬆運動褲",
+"emotion": "funny",
+"purpose": "創造第一個視覺笑點(亂搭)"
+},
+{
+"shot": 4,
+"duration": "4s",
+"camera": "wide",
+"angle": "high-angle",
+"action": "俯拍地板上的小孩，背景傳來強烈的魔性笑聲",
+"emotion": "absurd",
+"purpose": "強化聽覺記憶點，展示環境氛圍"
+},
+{
+"shot": 5,
+"duration": "2s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "快速切換特寫，主角展示露背洋裝的細節",
+"emotion": "confident",
+"purpose": "展示產品/穿搭亮點"
+},
+{
+"shot": 6,
+"duration": "3s",
+"camera": "wide",
+"angle": "low-angle",
+"action": "更衣室廣角，眾人因露背裝太誇張而大聲起鬨",
+"emotion": "excited",
+"purpose": "將氣氛推向高潮"
+},
+{
+"shot": 7,
+"duration": "3s",
+"camera": "static",
+"angle": "eye-level",
+"action": "對鏡側身展示露背洋裝的剪裁效果",
+"emotion": "stylish",
+"purpose": "視覺吸引力與穿搭完成度展示"
+},
+{
+"shot": 8,
+"duration": "5s",
+"camera": "tracking",
+"angle": "low-angle",
+"action": "第一人稱低角度拍攝幫忙穿脫10公分高跟鞋，配以搞笑音效",
+"emotion": "hilarious",
+"purpose": "互動式幽默，增加參與感"
+},
+{
+"shot": 9,
+"duration": "4s",
+"camera": "static",
+"angle": "eye-level",
+"action": "兩位高個女性對鏡展示身高優勢並討論約會對象身高",
+"emotion": "arrogant",
+"purpose": "鋪陳最後的身高對比反轉"
+},
+{
+"shot": 10,
+"duration": "5s",
+"camera": "static",
+"angle": "eye-level",
+"action": "得知男生身高後，主角無奈決定更換為平底鞋並以此結束",
+"emotion": "casual",
+"purpose": "收尾並呼應反轉主題"
+}
+],
+"visualFlow": {
+"pace": "fast",
+"rhythmPattern": "對話與轉場緊湊配合，笑點間隔均勻",
+"transitionStyle": "cut"
+},
+"promptTemplate": {
+"base": "Modern luxury walk-in closet background, soft studio lighting, cinematic smartphone style.",
+"perShot": [
+"POV shot scanning {scene} filled with luxury brand boxes, {style} aesthetic.",
+"{character} waving to camera in {scene} wearing {product}, {emotion} expression.",
+"{character} and friend in mirror showing uncoordinated {product} on lower body, {emotion}.",
+"High angle shot of a child sitting in {scene}, featuring loud {emotion} atmosphere.",
+"Close-up of {character} showing backless {product} details, {style}.",
+"Wide low angle of {scene} with {character} acting exaggerated, {emotion} mood.",
+"Mirror reflection of {character} posing in elegant {product}, {style}.",
+"POV tracking shot of legs trying on {product}, {emotion} and clumsy action.",
+"Two tall {character} figures standing together in {scene}, {emotion} looking at mirror.",
+"{character} changing from {product} to flats, with a sarcastic text overlay, {emotion} ending."
+]
+},
+"variables": [
+"character",
+"scene",
+"emotion",
+"style",
+"product"
+],
+"controls": {
+"pace": [
+"fast",
+"medium",
+"slow"
+],
+"cameraIntensity": [
+"low",
+"medium",
+"high"
+],
+"emotionIntensity": [
+"low",
+"medium",
+"high"
+]
+},
+"useCase": "Fashion lifestyle blog, comedy skit for social media, outfit preparation vlog.",
+"platform": [
+"tiktok",
+"reels",
+"shorts"
+],
+"shotsCount": 10,
+"source": {
+"videoId": "LtdAf0VEJAw",
+"title": "我大嫂的笑聲直接變整個影片的重點__雅方",
+"channel": "雅方",
+"views": 50000
+},
+"analysis": {
+"whyItWorks": "結合了真實的閨蜜吐槽、魔性音效吸引留存，以及最後關於身高的普世痛點反轉。",
+"targetAudience": "20-35歲女性，關注潮流穿搭、兩性話題與日常幽默者。",
+"replicableElements": [
+"魔性背景笑聲",
+"對鏡快速轉場",
+"生活化的POV視角",
+"身高壓制/對比幽默"
+]
+},
+"confidence": 0.95,
+"version": "2.0"
+}

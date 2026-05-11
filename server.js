@@ -2,7 +2,6 @@ const express = require('express');
 const path = require('path');
 const fs = require("fs");
 
-const multer = require('multer');
 require('dotenv').config();
 
 if(process.env.GCP_SERVICE_ACCOUNT_BASE64) {
@@ -40,9 +39,6 @@ const genAI = new GoogleGenAI({
     location: location,
 });
 
-// const genAI = new GoogleGenAI({ apiKey: apiKey });
-// const genAIVideo = new GoogleGenerativeAI(apiKey);
-// const fileManager = new GoogleAIFileManager(apiKey);
 
 
 
@@ -61,10 +57,6 @@ app.use(express.static(publicPath));
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ limit: '100mb', extended: true })); // 增加 URL 編碼限制
 
-const upload = multer({
-    dest: '/tmp/',
-    limits: { fileSize: 100 * 1024 * 1024 } // 限制 100MB
-});
 
 
 
@@ -131,90 +123,30 @@ app.post('/api/ask-gemini', async (req, res) => {
     }
 });
 
-app.get('/api/json-data', async (req, res) => {
+app.get('/api/get-templates', async (req, res) => {
+    const targetDir = path.join(process.cwd(), 'analysis', 'templates', 'gemini_outputs');
     try {
-        const folderPath = path.join(process.cwd(), 'analysis', 'templetes', 'gemini_outputs');
-        const files = await fs.readdir(folderPath);
-        const jsonFiles = files.filter(file => path.extname(file).toLowerCase() === '.json');
+        if (!fs.existsSync(targetDir)) {
+            return res.json([]);
+        }
 
+        const files = await fs.promises.readdir(targetDir);
+        const josnFiles = files.filter(file => file.endsWith('.json'));
+        
         const dataArray = await Promise.all(
-            jsonFiles.map(async (file) => {
-                const filePath = path.join(folderPath, file);
-                const content = await fs.readFile(filePath, 'utf8');
+            josnFiles.map(async (file) => {
+                const filePath = path.join(targetDir, file);
+                const content = await fs.promises.readFile(filePath, 'utf-8');
                 return JSON.parse(content);
             })
-        );
-
+        )
         res.json(dataArray);
-    } catch (error) {
-        res.status(500).send('Server Error');
+    }
+    catch (err) {
+        console.error('讀取模板失敗', err);
+        res.status(500).json({ error: '無法讀取模板'});
     }
 });
-
-// app.post('/api/analyze-video', upload.single('video'), async (req, res) => {
-//     try {
-//         if (!req.file) return res.status(400).send('未上傳影片');
-
-//         // 檢查 API Key 是否已初始化 (針對你 readline 的邏輯)
-//         if (!apiKey) {
-//             return res.status(500).json({ error: "伺服器 API Key 尚未設定" });
-//         }
-
-//         // 1. 上傳到 Gemini File API
-//         const uploadResponse = await fileManager.uploadFile(req.file.path, {
-//             mimeType: req.file.mimetype,
-//             displayName: req.file.originalname,
-//         });
-
-//         // 2. 等待影片處理完成
-//         let file = await fileManager.getFile(uploadResponse.file.name);
-//         while (file.state === "PROCESSING") {
-//             process.stdout.write("."); // 讓後端 log 知道還在動
-//             await new Promise((resolve) => setTimeout(resolve, 3000));
-//             file = await fileManager.getFile(uploadResponse.file.name);
-//         }
-
-//         if (file.state === "FAILED") {
-//             throw new Error("Gemini 影片處理失敗");
-//         }
-//         const { marked } = await import('marked');
-//         // 3. 進行分析 - 建議使用目前穩定的模型名稱
-//         const model = genAIVideo.getGenerativeModel({ model: "gemini-3-flash-preview" }); 
-//         const prompt = "你是一個專業的短影音企劃。請觀看影片並分析：1. 【前三秒 Hook】：這支影片開頭如何吸引人？ 2. 【鏡頭語言】：畫面構圖與運鏡方式。";
-
-//         const result = await model.generateContent([
-//             {
-//                 fileData: {
-//                     mimeType: file.mimeType,
-//                     fileUri: file.uri,
-//                 },
-//             },
-//             { text: prompt },
-//         ]);
-
-//         const rawText = result.response.text();// 使用 marked 將 Markdown 轉換為 HTML
-//         const htmlContent = marked.parse(rawText);
-//         // 4. 清理：先刪除本地檔案，避免占用 Vercel /tmp 空間
-//         if (fs.existsSync(req.file.path)) {
-//             fs.unlinkSync(req.file.path);
-//         }
-
-//         // 刪除 Gemini 雲端檔案 (選用，節省雲端空間)
-//         await fileManager.deleteFile(file.name);
-
-//         res.json({ 
-//             analysis: htmlContent, 
-//             raw_text: rawText // 保留一份純文字備用
-//         });
-
-//     } catch (error) {
-//         console.error('Video Analysis Error:', error);
-//         res.status(500).json({ 
-//             error: "影片分析失敗", 
-//             details: error.message 
-//         });
-//     }
-// });
 
 if (process.env.NODE_ENV !== 'production') {
     const PORT = 3000;

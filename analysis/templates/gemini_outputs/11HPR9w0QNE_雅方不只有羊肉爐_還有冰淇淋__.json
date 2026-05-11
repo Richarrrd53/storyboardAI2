@@ -1,0 +1,166 @@
+{
+"id": "yafang_icecream_001",
+"name": "雅方不只有羊肉爐，還有冰淇淋",
+"category": "product",
+"tags": [
+"#美食",
+"#開箱",
+"#雅方",
+"#冰淇淋",
+"#工廠探訪"
+],
+"description": "透過探訪冰棒工廠員工，翻轉雅方僅生產羊肉爐的品牌印象，並推廣高CP值冰品。",
+"narrative": {
+"type": "situational",
+"structure": "起：提問員工福利福利；承：展示產品多樣性；轉：推介特殊口味與員工私心推薦；合：強調高CP值導購。",
+"tone": "casual",
+"summary": "主持人深入雅方工廠實驗室與辦公室，採訪員工對自家冰品的看法，展示多款驚喜口味冰棒並現場實測斷面。"
+},
+"hook": {
+"type": "curiosity",
+"position": "start",
+"description": "以『在冰棒工廠上班一天可以吃多少冰』的員工福利問題勾起觀眾好奇心。"
+},
+"marketing": {
+"isImplicit": true,
+"exposureType": "product",
+"brandRole": "active",
+"integrationMethod": "dialogue",
+"revealTiming": "early",
+"persuasionStyle": "subtle",
+"targetEmotion": [
+"curiosity",
+"relatability"
+]
+},
+"structure": [
+{
+"shot": 1,
+"duration": "4s",
+"camera": "handheld",
+"angle": "eye-level",
+"action": "主持人與穿著白袍的研發員工在實驗室對話",
+"emotion": "cheerful",
+"purpose": "建立情境並拋出鉤子提問"
+},
+{
+"shot": 2,
+"duration": "5s",
+"camera": "tracking",
+"angle": "high-angle",
+"action": "鏡頭掃過桌面上整齊排列的各系列冰品包裝盒",
+"emotion": "desire",
+"purpose": "展示產品豐富度，打破品牌既定印象"
+},
+{
+"shot": 3,
+"duration": "3s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "員工展示北海道系列包裝上的煉乳標示細節",
+"emotion": "trust",
+"purpose": "強調產品用料品質"
+},
+{
+"shot": 4,
+"duration": "5s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "主持人拿著番茄蜜口味冰棒包裝，表情驚訝",
+"emotion": "curiosity",
+"purpose": "利用獵奇口味製造記憶點"
+},
+{
+"shot": 5,
+"duration": "6s",
+"camera": "static",
+"angle": "eye-level",
+"action": "快速剪輯不同辦公室員工推薦自己最愛的口味",
+"emotion": "relatability",
+"purpose": "透過員工證言增加產品可信度"
+},
+{
+"shot": 6,
+"duration": "6s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "展示咬開後的冰棒斷面，流出果醬內餡",
+"emotion": "desire",
+"purpose": "視覺誘惑，觸發食慾"
+},
+{
+"shot": 7,
+"duration": "5s",
+"camera": "wide",
+"angle": "eye-level",
+"action": "主持人手持兩盒新品向鏡頭總結推薦",
+"emotion": "cheerful",
+"purpose": "最後導購並強調高CP值價格"
+}
+],
+"visualFlow": {
+"pace": "fast",
+"rhythmPattern": "節奏明快，訪談與產品特寫交替剪輯",
+"transitionStyle": "cut"
+},
+"promptTemplate": {
+"base": "A vibrant {style} vlog-style video featuring {product} inside a {scene}.",
+"perShot": [
+"{character} wearing a lab coat talking in {scene} with {emotion} expression, {style} style.",
+"A {style} high-angle tracking shot of various {product} packaging on a table in {scene}.",
+"A close-up of {character}'s hands pointing at {product} details in {scene}, {style} style.",
+"{character} holding {product} with a {emotion} expression in {scene}, {style} style.",
+"{character} in an office setting sharing their thoughts on {product} with {emotion}, {style} style.",
+"Extreme close-up of a bitten {product} showing rich texture and filling, {style} style.",
+"{character} presenting multiple {product} boxes in {scene} with {emotion}, {style} style."
+]
+},
+"variables": [
+"character",
+"scene",
+"emotion",
+"style",
+"product"
+],
+"controls": {
+"pace": [
+"fast",
+"medium",
+"slow"
+],
+"cameraIntensity": [
+"low",
+"medium",
+"high"
+],
+"emotionIntensity": [
+"low",
+"medium",
+"high"
+]
+},
+"useCase": "品牌轉型行銷、夏季季節性產品推廣、美食自媒體開箱參考",
+"platform": [
+"tiktok",
+"reels",
+"shorts"
+],
+"shotsCount": 7,
+"source": {
+"videoId": "11HPR9w0QNE",
+"title": "雅方不只有羊肉爐_還有冰淇淋",
+"channel": "雅方官方頻道/合作KOL",
+"views": 50000
+},
+"analysis": {
+"whyItWorks": "利用品牌在羊肉爐領域的高知名度產生『反差感』，並透過探訪工廠的非正式形式降低廣告抗拒感，成功轉化好奇心為購買慾。",
+"targetAudience": "小資族、家庭主婦、喜愛嘗試新奇口味冰品的年輕人",
+"replicableElements": [
+"反差型開場提問",
+"員工私藏清單證言",
+"高品質產品斷面特寫"
+]
+},
+"confidence": 0.95,
+"version": "2.0"
+}

@@ -1,0 +1,156 @@
+{
+"id": "vid_yafang_2026_001",
+"name": "還得是親爹 - 雅方國際談判篇",
+"category": "twist",
+"tags": [
+"#父女",
+"#日常",
+"#反轉",
+"#雅方國際",
+"#職場喜劇"
+],
+"description": "描述女兒以社群粉絲價值向總裁父親討要宣傳費，卻被父親以研發債務反將一軍的幽默反轉短片。",
+"narrative": {
+"type": "situational",
+"structure": "女兒開價(起) -> 雙方金額拉鋸加碼(承) -> 父親揭露債務絕殺(轉) -> 女兒認輸買奶茶(合)",
+"tone": "humor",
+"summary": "女兒試圖利用帳號影響力跟父親談判百萬分潤，沒想到老謀深算的父親逐一加碼場地與研發成本，最終讓女兒從談判者變成買奶茶的打雜小妹。"
+},
+"hook": {
+"type": "conflict",
+"position": "start",
+"description": "女兒開口要求100萬報酬的利益衝突直接切入主題。"
+},
+"marketing": {
+"isImplicit": true,
+"exposureType": "environment",
+"brandRole": "active",
+"integrationMethod": "plot",
+"revealTiming": "early",
+"persuasionStyle": "subtle",
+"targetEmotion": [
+"relatability",
+"curiosity"
+]
+},
+"structure": [
+{
+"shot": 1,
+"duration": "5s",
+"camera": "wide",
+"angle": "eye-level",
+"action": "{character} and father sitting at a table in {scene} starting a debate",
+"emotion": "serious",
+"purpose": "Establish scene and character relationship"
+},
+{
+"shot": 2,
+"duration": "3s",
+"camera": "static",
+"angle": "eye-level",
+"action": "{character} expressing {emotion} while making financial demands",
+"emotion": "confident",
+"purpose": "Show character's motivation and leverage"
+},
+{
+"shot": 3,
+"duration": "3s",
+"camera": "static",
+"angle": "eye-level",
+"action": "Father responding with {emotion} in {scene}",
+"emotion": "calm",
+"purpose": "Introduce the opposing force in the negotiation"
+},
+{
+"shot": 4,
+"duration": "15s",
+"camera": "static",
+"angle": "eye-level",
+"action": "Rapid dialogue cuts between {character} and father regarding {product} costs",
+"emotion": "tense",
+"purpose": "Build comedic momentum through escalation"
+},
+{
+"shot": 5,
+"duration": "4s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "{character} showing {emotion} after the negotiation backfires",
+"emotion": "defeated",
+"purpose": "Highlight the emotional payoff of the twist"
+},
+{
+"shot": 6,
+"duration": "2s",
+"camera": "handheld",
+"angle": "eye-level",
+"action": "{character} notices the camera and tries to stop the {style} recording",
+"emotion": "surprised",
+"purpose": "Final punchline and breaking the fourth wall"
+}
+],
+"visualFlow": {
+"pace": "fast",
+"rhythmPattern": "Dialogue-driven ping-pong cuts with text overlays",
+"transitionStyle": "cut"
+},
+"promptTemplate": {
+"base": "Cinematic indoor lighting, corporate office aesthetic, 9:16 aspect ratio, high definition.",
+"perShot": [
+"A wide shot of {character} and father at {scene} in {style}.",
+"{character} showing {emotion} expression in {scene} with {style}.",
+"Close-up of father with {emotion} face discussing {product} in {scene}.",
+"Fast-paced montage of {character} and father in {scene} during a debate.",
+"Extreme close-up of {character} with {emotion} expression, {style} vibes.",
+"Handheld {style} shot of {character} reaching toward the lens in {scene}."
+]
+},
+"variables": [
+"character",
+"scene",
+"emotion",
+"style",
+"product"
+],
+"controls": {
+"pace": [
+"fast",
+"medium",
+"slow"
+],
+"cameraIntensity": [
+"low",
+"medium",
+"high"
+],
+"emotionIntensity": [
+"low",
+"medium",
+"high"
+]
+},
+"useCase": "Corporate branding through family-style comedy skits",
+"platform": [
+"tiktok",
+"reels",
+"shorts"
+],
+"shotsCount": 6,
+"source": {
+"videoId": "AvmSl6SDAOE",
+"title": "還得是親爹__雅方國際__茱莉亞林",
+"channel": "雅方國際",
+"views": 150000
+},
+"analysis": {
+"whyItWorks": "Uses the power dynamic between a CEO father and an influencer daughter to create relatable humor while naturally integrating company identity.",
+"targetAudience": "Young adults and office workers who enjoy family-centric comedy.",
+"replicableElements": [
+"Ping-pong dialogue editing",
+"Financial escalation humor",
+"Breaking the fourth wall at the end"
+]
+},
+"confidence": 0.95,
+"version": "2.0"
+}

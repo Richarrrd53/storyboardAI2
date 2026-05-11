@@ -1,0 +1,166 @@
+{
+"id": "BVc7VMoE6xI",
+"name": "還好吃肉有秒認出來__雅方國際__茱莉亞",
+"category": "product",
+"tags": [
+"#羊肉爐",
+"#盲測",
+"#品牌忠誠度",
+"#雅方",
+"#美食實測"
+],
+"description": "透過實驗室盲測挑戰，驗證員工對自家羊肉爐口味與肉質的辨識度。",
+"narrative": {
+"type": "situational",
+"structure": "起：建立挑戰規則與懲罰壓力；承：測試兩款他牌羊肉爐並分析差異；轉：第三款吃到肉質後秒速認出自家品牌；合：成功通過測試並總結產品優勢。",
+"tone": "humor",
+"summary": "主持人戴上口罩進行盲測，在分析三款羊肉爐的過程中，憑藉專業嗅覺與味覺準確辨識出自家品牌，展現產品高辨識度。"
+},
+"hook": {
+"type": "curiosity",
+"position": "start",
+"description": "以『雅方忠誠度測試』與『猜錯有懲罰』作為開場懸念。"
+},
+"marketing": {
+"isImplicit": true,
+"exposureType": "logo",
+"brandRole": "active",
+"integrationMethod": "plot",
+"revealTiming": "late",
+"persuasionStyle": "subtle",
+"targetEmotion": [
+"trust",
+"relatability"
+]
+},
+"structure": [
+{
+"shot": 1,
+"duration": "5s",
+"camera": "handheld",
+"angle": "eye-level",
+"action": "主持人戴上口罩交代測試規則",
+"emotion": "professional",
+"purpose": "建立情境並交代影片目的"
+},
+{
+"shot": 2,
+"duration": "7s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "特寫手部攪拌量杯，與攝影師對話",
+"emotion": "focused",
+"purpose": "增加實測過程的細節感與臨場感"
+},
+{
+"shot": 3,
+"duration": "8s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "品嚐第一杯，分析中藥味與苦味",
+"emotion": "skeptical",
+"purpose": "透過對比他牌缺陷來建立專業度"
+},
+{
+"shot": 4,
+"duration": "4s",
+"camera": "handheld",
+"angle": "eye-level",
+"action": "品嚐第二杯，出現困惑與反轉反應",
+"emotion": "suspense",
+"purpose": "營造挑戰過程的曲折感，增加真實性"
+},
+{
+"shot": 5,
+"duration": "3s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "吃到第三杯的肉後瞬間大笑辨認出來",
+"emotion": "joy",
+"purpose": "影片核心情緒爆點，強調口味辨識度"
+},
+{
+"shot": 6,
+"duration": "12s",
+"camera": "static",
+"angle": "eye-level",
+"action": "逐一分析三杯湯頭與肉質的具體差異",
+"emotion": "confident",
+"purpose": "理性輸出產品賣點，強化說服力"
+},
+{
+"shot": 7,
+"duration": "8s",
+"camera": "tracking",
+"angle": "eye-level",
+"action": "興奮慶祝正確，最後對鏡頭總結產品特色",
+"emotion": "excitement",
+"purpose": "結尾收束並加深品牌正面形象"
+}
+],
+"visualFlow": {
+"pace": "fast",
+"rhythmPattern": "節奏快促，品嚐關鍵點搭配誇張綜藝字體停頓",
+"transitionStyle": "cut"
+},
+"promptTemplate": {
+"base": "Modern social media short video style, clean laboratory setting, high saturation colors, {style}.",
+"perShot": [
+"{character} is putting on a mask in {scene}, looking at camera, {style}.",
+"A close-up of {character} stirring {product} inside a laboratory beaker in {scene}.",
+"{character} tasting {product} and showing a {emotion} expression in {scene}.",
+"{character} looks puzzled with a {emotion} expression while holding {product}.",
+"Extreme close-up of {character} laughing with {emotion} after eating {product}.",
+"{character} stands in {scene} explaining the features of {product} with {emotion}.",
+"{character} is celebrating with {emotion}, tracking shot in {scene}, showcasing {product}."
+]
+},
+"variables": [
+"character",
+"scene",
+"emotion",
+"style",
+"product"
+],
+"controls": {
+"pace": [
+"fast",
+"medium",
+"slow"
+],
+"cameraIntensity": [
+"low",
+"medium",
+"high"
+],
+"emotionIntensity": [
+"low",
+"medium",
+"high"
+]
+},
+"useCase": "品牌忠誠度挑戰、產品盲測實測、員工職場趣味影片",
+"platform": [
+"tiktok",
+"reels",
+"shorts"
+],
+"shotsCount": 7,
+"source": {
+"videoId": "BVc7VMoE6xI",
+"title": "還好吃肉有秒認出來__雅方國際__茱莉亞",
+"channel": "雅方國際",
+"views": 15000
+},
+"analysis": {
+"whyItWorks": "利用『員工實測』建立高度信任感，主持人自然的反應與大笑比硬廣更具渲染力。",
+"targetAudience": "喜愛美食、對羊肉爐有消費需求的家庭主婦及社群年輕人。",
+"replicableElements": [
+"老闆懲罰的懸念設定",
+"實驗室專業背景與量杯的反差感",
+"情緒飽滿的盲測反應"
+]
+},
+"confidence": 0.95,
+"version": "2.0"
+}

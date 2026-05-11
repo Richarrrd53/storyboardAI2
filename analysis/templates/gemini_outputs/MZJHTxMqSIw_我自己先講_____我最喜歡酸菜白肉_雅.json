@@ -1,0 +1,199 @@
+{
+"id": "MZJHTxMqSIw",
+"name": "我自己先講_____我最喜歡酸菜白肉_雅",
+"category": "story",
+"tags": [
+"#雅方",
+"#二代接班",
+"#美食工廠",
+"#職人精神",
+"#羊肉爐",
+"#冰棒"
+],
+"description": "透過雅方國際二代接班人的真實日常與心路歷程，展示食品工廠的現代化規模並推廣多元產品。",
+"narrative": {
+"type": "situational",
+"structure": "起：展示千坪工廠建立實力；承：留學歸國後的真實打工人心態；轉：研發與應對負評的挑戰；合：成果展示與超市通路推廣。",
+"tone": "casual",
+"summary": "影片描述一位留學歸國的00後女性接班人，在自家食品廠擔任『高級牛馬』的兩年生活，揭露食品業背後的辛勞與對品質的堅持。"
+},
+"hook": {
+"type": "curiosity",
+"position": "start",
+"description": "以『這是我家在彰化的食品廠』與『總面積上千坪』的高反差開場吸引觀眾好奇。"
+},
+"marketing": {
+"isImplicit": false,
+"exposureType": "product",
+"brandRole": "active",
+"integrationMethod": "plot",
+"revealTiming": "early",
+"persuasionStyle": "direct",
+"targetEmotion": [
+"trust",
+"curiosity",
+"relatability"
+]
+},
+"structure": [
+{
+"shot": 1,
+"duration": "3s",
+"camera": "wide",
+"angle": "eye-level",
+"action": "主角在大型工廠門口揮手開場",
+"emotion": "confident",
+"purpose": "建立規模感與人設開端"
+},
+{
+"shot": 2,
+"duration": "4s",
+"camera": "tracking",
+"angle": "eye-level",
+"action": "快速巡視自動化冰棒與羊肉爐產線",
+"emotion": "professional",
+"purpose": "展現品牌生產實力"
+},
+{
+"shot": 3,
+"duration": "3s",
+"camera": "static",
+"angle": "eye-level",
+"action": "展示主角藍帶主廚專業形象照",
+"emotion": "proud",
+"purpose": "建立專業信任度"
+},
+{
+"shot": 4,
+"duration": "3s",
+"camera": "handheld",
+"angle": "high-angle",
+"action": "主角在辦公室快速敲擊電腦工作",
+"emotion": "busy",
+"purpose": "營造真實打工人共鳴"
+},
+{
+"shot": 5,
+"duration": "4s",
+"camera": "static",
+"angle": "eye-level",
+"action": "在傳統辦公室與董事長對話",
+"emotion": "serious",
+"purpose": "敘事轉折與背景補充"
+},
+{
+"shot": 6,
+"duration": "10s",
+"camera": "handheld",
+"angle": "eye-level",
+"action": "混剪：穿實驗服研發、在實驗室試吃",
+"emotion": "focused",
+"purpose": "強調對產品研發的嚴謹"
+},
+{
+"shot": 7,
+"duration": "10s",
+"camera": "handheld",
+"angle": "eye-level",
+"action": "主角疲累地躺在車內休息看手機",
+"emotion": "tired",
+"purpose": "展現心路歷程中的脆弱與真實"
+},
+{
+"shot": 8,
+"duration": "8s",
+"camera": "static",
+"angle": "eye-level",
+"action": "在辦公室正面回應網路評論",
+"emotion": "resilient",
+"purpose": "展現品牌的高EQ與誠信"
+},
+{
+"shot": 9,
+"duration": "3s",
+"camera": "static",
+"angle": "eye-level",
+"action": "展示與長輩及全產品的溫馨合照",
+"emotion": "warm",
+"purpose": "傳達品牌傳承精神"
+},
+{
+"shot": 10,
+"duration": "15s",
+"camera": "tracking",
+"angle": "eye-level",
+"action": "主角在超市冰櫃前介紹各類產品",
+"emotion": "enthusiastic",
+"purpose": "導購與展示購買通路"
+}
+],
+"visualFlow": {
+"pace": "fast",
+"rhythmPattern": "快節奏剪輯與情緒特寫交替，配合敘事心跳點",
+"transitionStyle": "cut"
+},
+"promptTemplate": {
+"base": "A high-quality short video aesthetic featuring {character} in a {scene} setting, {style} lighting and composition.",
+"perShot": [
+"{character} stands at the entrance of {scene} waving at camera, {emotion}, {style} wide shot.",
+"Fast {style} tracking shot of {product} on an automated production line in {scene}.",
+"A static professional portrait of {character} as a master chef, {emotion} and elegant {style}.",
+"A high-angle handheld shot of {character} working busily at {scene}, {emotion} vibe.",
+"{character} interacting with senior management in a traditional {scene}, {emotion} atmosphere.",
+"A montage of {character} meticulously testing and tasting {product} in {scene}, {emotion}.",
+"{character} resting inside a car in {scene} at night, {emotion} and cinematic {style}.",
+"{character} looking directly at a phone in {scene} with a {emotion} expression.",
+"A static family photo featuring {character} and {product} in {scene}, {emotion} and bright {style}.",
+"{character} enthusiastically pointing at {product} in a supermarket {scene}, {style} tracking shot."
+]
+},
+"variables": [
+"character",
+"scene",
+"emotion",
+"style",
+"product"
+],
+"controls": {
+"pace": [
+"fast",
+"medium",
+"slow"
+],
+"cameraIntensity": [
+"low",
+"medium",
+"high"
+],
+"emotionIntensity": [
+"low",
+"medium",
+"high"
+]
+},
+"useCase": "品牌接班人人設建立、傳統產業轉型故事行銷、產品多樣性展示",
+"platform": [
+"tiktok",
+"reels",
+"shorts"
+],
+"shotsCount": 10,
+"source": {
+"videoId": "MZJHTxMqSIw",
+"title": "我自己先講_____我最喜歡酸菜白肉_雅",
+"channel": "雅方國際",
+"views": 120000
+},
+"analysis": {
+"whyItWorks": "利用身份反差(00後留學歸國 vs 傳產勞動)成功引起關注，並透過透明的工廠展示與真實的情感宣洩建立消費者信任。",
+"targetAudience": "關注職場生活、對品牌故事有興趣、以及冷凍食品消費者",
+"replicableElements": [
+"高反差人設標籤",
+"碎片化生活剪輯",
+"正面回應負面評價",
+"通路實境展示"
+]
+},
+"confidence": 0.95,
+"version": "2.0"
+}

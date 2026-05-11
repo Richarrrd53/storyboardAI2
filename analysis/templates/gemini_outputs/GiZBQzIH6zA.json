@@ -1,0 +1,160 @@
+{
+    "id": "GiZBQzIH6zA",
+    "name": "在新竹吃一天要花多少錢",
+    "category": "story",
+    "tags": [
+        "新竹美食",
+        "在地人推薦",
+        "平價小吃",
+        "ASMR",
+        "生活Vlog"
+    ],
+    "description": "以「新竹吃一天花多少錢」為主題，透過在地人視角挑戰美食沙漠標籤，結合高節奏剪輯與感官特寫推薦五家名店。",
+    "narrative": {
+        "type": "montage",
+        "structure": "起（痛點開場）- 承（名店巡禮）- 轉（味覺轉折）- 合（互動結尾）",
+        "tone": "casual",
+        "summary": "主持人智明走訪新竹廟口與東門市場周邊，實測鴨香飯、脆皮豬、芋泥球等五種美食的價格與口味，最後以社群提問收尾。"
+    },
+    "hook": {
+        "type": "curiosity",
+        "position": "start",
+        "description": "在新竹吃一天要花多少錢？（搭配在地人身份與快速美食集錦）"
+    },
+    "marketing": {
+        "isImplicit": false,
+        "exposureType": "none",
+        "brandRole": "none",
+        "integrationMethod": "none",
+        "revealTiming": "none",
+        "persuasionStyle": "none",
+        "targetEmotion": [
+            "curiosity",
+            "relatability"
+        ]
+    },
+    "structure": [
+        {
+            "shot": 1,
+            "duration": "4s",
+            "camera": "wide",
+            "angle": "eye-level",
+            "action": "主持人對鏡頭說話，畫面快速切換美食大集合畫面",
+            "emotion": "energetic",
+            "purpose": "hook"
+        },
+        {
+            "shot": 2,
+            "duration": "9s",
+            "camera": "close-up",
+            "angle": "high-angle",
+            "action": "廟口鴨香飯：淋油蔥、鴨肉特寫、大口吞嚥畫面",
+            "emotion": "satisfied",
+            "purpose": "first_recommendation"
+        },
+        {
+            "shot": 3,
+            "duration": "10s",
+            "camera": "handheld",
+            "angle": "eye-level",
+            "action": "許二姊：大火炒麵、夾起厚切鴨肉麵條特寫",
+            "emotion": "joyful",
+            "purpose": "flavor_description"
+        },
+        {
+            "shot": 4,
+            "duration": "8s",
+            "camera": "close-up",
+            "angle": "eye-level",
+            "action": "有利脆皮豬：切下豬皮的ASMR清脆聲、咬下後咀嚼特寫",
+            "emotion": "surprised",
+            "purpose": "sensory_highlight"
+        },
+        {
+            "shot": 5,
+            "duration": "9s",
+            "camera": "static",
+            "angle": "high-angle",
+            "action": "石家魚丸：咬開魚丸展示飽滿內餡、喝湯特寫",
+            "emotion": "calm",
+            "purpose": "complementary_food"
+        },
+        {
+            "shot": 6,
+            "duration": "12s",
+            "camera": "close-up",
+            "angle": "eye-level",
+            "action": "林家芋泥球：展示巨大球體、剝開後綿密芋泥溢出特寫",
+            "emotion": "delight",
+            "purpose": "dessert_climax"
+        },
+        {
+            "shot": 7,
+            "duration": "6s",
+            "camera": "handheld",
+            "angle": "eye-level",
+            "action": "主持人總結金額，詢問觀眾推薦，揮手告別",
+            "emotion": "friendly",
+            "purpose": "call_to_action"
+        }
+    ],
+    "visualFlow": {
+        "pace": "fast",
+        "rhythmPattern": "每8-10秒切換一家店，畫面剪輯點落在配音重音與咀嚼動作上",
+        "transitionStyle": "cut"
+    },
+    "promptTemplate": {
+        "base": "A high-quality food vlog style of {character} in {scene} with {style} aesthetic, showing {emotion} while eating {product}.",
+        "perShot": [
+            "A male host {character} talking to camera in Hsinchu street {scene}, fast cut of various food {product}.",
+            "Extreme close-up of duck meat with oil and shallots {product} being poured over rice, bright {style}.",
+            "A chef stir-frying noodles in a steaming wok {scene}, host {character} looking {emotion}.",
+            "Macro shot of crispy roasted pork {product} being sliced, showing crunchy texture, warm {style}.",
+            "A spoon splitting a white fish ball {product} to reveal meat and bamboo shoot filling.",
+            "Close-up of host {character} biting into a large golden taro ball {product}, revealing purple paste.",
+            "Host {character} waving goodbye in front of Hsinchu City God Temple {scene}, text overlay."
+        ]
+    },
+    "variables": [
+        "character",
+        "scene",
+        "emotion",
+        "style",
+        "product"
+    ],
+    "controls": {
+        "pace": [
+            "fast"
+        ],
+        "cameraIntensity": [
+            "medium"
+        ],
+        "emotionIntensity": [
+            "high"
+        ]
+    },
+    "useCase": "美食開箱與旅遊導覽短影音",
+    "platform": [
+        "reels",
+        "tiktok"
+    ],
+    "shotsCount": 7,
+    "source": {
+        "videoId": "GiZBQzIH6zA",
+        "title": "在新竹吃一天要花多少錢",
+        "channel": "智明",
+        "views": 0
+    },
+    "analysis": {
+        "whyItWorks": "利用反差心理（美食沙漠vs在地美味）引發好奇，並透過視覺與聽覺（ASMR）的極致特寫強化食慾。",
+        "targetAudience": "美食愛好者、國內旅遊規劃者、短影音高頻使用者",
+        "replicableElements": [
+            "黃金3秒價格鉤子問句",
+            "食物橫截面特寫",
+            "不甜的正面評價觀點",
+            "透明化店家價格資訊"
+        ]
+    },
+    "confidence": 0.98,
+    "version": "2.0"
+}

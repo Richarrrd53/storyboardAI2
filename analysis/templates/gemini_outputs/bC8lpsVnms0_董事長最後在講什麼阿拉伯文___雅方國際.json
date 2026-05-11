@@ -1,0 +1,170 @@
+{
+"id": "bC8lpsVnms0",
+"name": "董事長最後在講什麼阿拉伯文 | 雅方國際",
+"category": "twist",
+"tags": [
+"#職場",
+"#預支薪水",
+"#搞笑",
+"#互動",
+"#雅方"
+],
+"description": "女主角 Julia 試圖向主管預支薪水遭拒，轉而求助董事長，卻意外引發一場「按讚換薪水」的社群救援挑戰。",
+"narrative": {
+"type": "situational",
+"structure": "Julia 欲言又止地走進辦公室（起）-> 提出預支薪水請求因先前失誤被拒（承）-> 主管表示詢問董事長意願（轉）-> 董事長開出按讚換現金條件，Julia 求助觀眾（合）",
+"tone": "humor",
+"summary": "以職場預支薪水為引子，將流量數據轉化為劇情獎勵的互動式短影音。"
+},
+"hook": {
+"type": "conflict",
+"position": "start",
+"description": "當你想預支薪水：建立起與上司交涉的緊張感與金錢需求的懸念。"
+},
+"marketing": {
+"isImplicit": true,
+"exposureType": "logo",
+"brandRole": "active",
+"integrationMethod": "plot",
+"revealTiming": "early",
+"persuasionStyle": "subtle",
+"targetEmotion": [
+"relatability",
+"curiosity"
+]
+},
+"structure": [
+{
+"shot": 1,
+"duration": "2s",
+"camera": "tracking",
+"angle": "eye-level",
+"action": "Julia 走進辦公空間，顯得侷促不安。",
+"emotion": "anxious",
+"purpose": "建立情境並揭露角色身分與品牌制服。"
+},
+{
+"shot": 2,
+"duration": "7s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "內心獨白字幕閃過，猶豫如何開口。",
+"emotion": "nervous",
+"purpose": "強化心理矛盾，延展懸念。"
+},
+{
+"shot": 3,
+"duration": "3s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "直接提出能否預支薪水的要求。",
+"emotion": "hesitant",
+"purpose": "提出核心衝突點。"
+},
+{
+"shot": 4,
+"duration": "5s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "雙手合十，不斷做出撒嬌拜託的動作。",
+"emotion": "pleading",
+"purpose": "增加情緒張力與角色討喜度。"
+},
+{
+"shot": 5,
+"duration": "5s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "主管回應先前疏失，Julia 出現哭臉特效。",
+"emotion": "disappointment",
+"purpose": "增加轉折難度，導入董事長角色。"
+},
+{
+"shot": 6,
+"duration": "1s",
+"camera": "static",
+"angle": "eye-level",
+"action": "董事長定格照片出現。",
+"emotion": "authoritative",
+"purpose": "建立威權感，預備最後的反轉。"
+},
+{
+"shot": 7,
+"duration": "12s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "聽取手機語音，表情從期待轉向無奈。",
+"emotion": "surprise",
+"purpose": "揭露互動遊戲規則（按讚換錢）。"
+},
+{
+"shot": 8,
+"duration": "5s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "直接對鏡頭說話，請求觀眾按讚。",
+"emotion": "desperate",
+"purpose": "強烈的 Call-to-Action (CTA) 引導互動。"
+}
+],
+"visualFlow": {
+"pace": "medium",
+"rhythmPattern": "前期慢節奏鋪陳心理活動，後期加快語音與動作節奏。",
+"transitionStyle": "cut"
+},
+"promptTemplate": {
+"base": "High quality digital video shot, soft lighting, professional office setting, {style} aesthetic.",
+"perShot": [
+"{character} wearing {product} uniform walking in {scene} with {emotion} face.",
+"Extreme close-up of {character} looking around {scene}, {emotion} expression, internal struggle.",
+"{character} talking to off-camera person in {scene}, feeling {emotion}.",
+"{character} making a prayer gesture towards camera with {emotion} in {scene}.",
+"{character} in {scene} with funny crying animation filter, showing {emotion}.",
+"A static professional portrait of a male CEO in {style} office.",
+"{character} holding a smartphone and listening with {emotion} expression in {scene}.",
+"{character} speaking directly to the lens with {emotion} eyes in {scene}, pleading for help."
+]
+},
+"variables": [
+"character",
+"scene",
+"emotion",
+"style",
+"product"
+],
+"controls": {
+"pace": [
+"medium"
+],
+"cameraIntensity": [
+"low"
+],
+"emotionIntensity": [
+"high"
+]
+},
+"useCase": "職場情境互動短片，用於提升品牌社群參與度與粉絲互動。",
+"platform": [
+"tiktok",
+"reels",
+"shorts"
+],
+"shotsCount": 8,
+"source": {
+"videoId": "bC8lpsVnms0",
+"title": "董事長最後在講什麼阿拉伯文",
+"channel": "雅方國際",
+"views": 0
+},
+"analysis": {
+"whyItWorks": "利用「薪水」這一共鳴度極高的痛點，並結合「1讚 = 1元」的互動機制，將觀眾從旁觀者變為參與者。",
+"targetAudience": "上班族、喜愛趣味互動的社群用戶。",
+"replicableElements": [
+"1讚換1元互動機制",
+"空耳笑話標題設計",
+"誇張的表情特效濾鏡"
+]
+},
+"confidence": 0.95,
+"version": "2.0"
+}

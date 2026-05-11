@@ -1,0 +1,186 @@
+{
+"id": "5dicE2RoyD4",
+"name": "董事長說要拍的_我配合他而已_____雅",
+"category": "twist",
+"tags": [
+"#家庭共鳴",
+"#幽默",
+"#反轉",
+"#父女",
+"#雅方"
+],
+"description": "一段關於父女聯手吐槽家中的「共同天敵」媽媽的幽默短片，最終以驚悚反轉結尾。",
+"narrative": {
+"type": "situational",
+"structure": "起（父女身分介紹與天敵預告）-> 承（交叉控訴管教細節）-> 轉（具體財務損失與特效表情）-> 合（天敵降臨的恐怖平衡）",
+"tone": "humor",
+"summary": "父女透過對話展現對家中女主人嚴厲管教的不滿，利用誇張特效與交叉對位法營造喜劇感，最後以媽媽突然現身作為爆點。"
+},
+"hook": {
+"type": "curiosity",
+"position": "start",
+"description": "開場三秒內拋出「我們兩個有共同的天敵」，誘發觀眾持續觀看以確認天敵是誰。"
+},
+"marketing": {
+"isImplicit": true,
+"exposureType": "prop",
+"brandRole": "passive",
+"integrationMethod": "background",
+"revealTiming": "early",
+"persuasionStyle": "subtle",
+"targetEmotion": [
+"relatability"
+]
+},
+"structure": [
+{
+"shot": 1,
+"duration": "1s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "父親坐在辦公桌前自介身份",
+"emotion": "neutral",
+"purpose": "確立角色關係與權威感反差"
+},
+{
+"shot": 2,
+"duration": "1s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "女兒坐在桌前自介身份",
+"emotion": "neutral",
+"purpose": "確立角色關係，展示品牌制服"
+},
+{
+"shot": 3,
+"duration": "1s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "父親低頭神祕地拋出天敵話題",
+"emotion": "suspense",
+"purpose": "拋出核心鉤子(Hook)"
+},
+{
+"shot": 4,
+"duration": "10s",
+"camera": "static",
+"angle": "eye-level",
+"action": "父女快速交叉剪輯對話，輪流吐槽媽媽的管教",
+"emotion": "humor",
+"purpose": "透過快節奏堆疊情緒共鳴"
+},
+{
+"shot": 5,
+"duration": "2s",
+"camera": "wide",
+"angle": "high-angle",
+"action": "背景切換為龐貝火山噴發的特效畫面",
+"emotion": "shock",
+"purpose": "使用隱喻手法具象化媽媽的憤怒"
+},
+{
+"shot": 6,
+"duration": "4s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "使用誇張的哭臉與大嘴濾鏡進行控訴",
+"emotion": "humor",
+"purpose": "利用視覺特效增加喜劇爆點"
+},
+{
+"shot": 7,
+"duration": "3s",
+"camera": "wide",
+"angle": "eye-level",
+"action": "上下分割畫面，父女同時結盟要求上班權利",
+"emotion": "relatability",
+"purpose": "強化父女陣線，準備進入結尾"
+},
+{
+"shot": 8,
+"duration": "2s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "一隻神祕的手搭在父親肩膀上",
+"emotion": "suspense",
+"purpose": "觸發最後的驚悚反轉"
+},
+{
+"shot": 9,
+"duration": "3s",
+"camera": "static",
+"angle": "eye-level",
+"action": "女兒看向鏡頭外露出驚恐表情並定格",
+"emotion": "shock",
+"purpose": "以懸念和恐懼幽默收尾，引發討論"
+}
+],
+"visualFlow": {
+"pace": "medium",
+"rhythmPattern": "前半段採取快速的一問一答節奏，中段插入特效提速，結尾拉長懸念。",
+"transitionStyle": "cut"
+},
+"promptTemplate": {
+"base": "Realistic videography of {character} in {scene} with {style} lighting, focus on {emotion}.",
+"perShot": [
+"{character} middle-aged man sitting in {scene} with a {emotion} expression, {style} style.",
+"{character} young woman wearing {product} in {scene} with {emotion} look, {style} style.",
+"{character} looking mysterious in {scene} with {emotion} aura, sharp focus.",
+"Fast cut of {character} talking in {scene} with {emotion} expressions.",
+"Cinematic {style} shot of a volcanic eruption representing {emotion}.",
+"{character} with funny {style} distortion filter showing {emotion}.",
+"Split screen showing {character}s in different {scene}s with shared {emotion}.",
+"A creepy hand appearing on {character}'s shoulder in {scene}, {emotion} atmosphere.",
+"{character} staring at off-camera with a frozen {emotion} face, {style} horror comedy style."
+]
+},
+"variables": [
+"character",
+"scene",
+"emotion",
+"style",
+"product"
+],
+"controls": {
+"pace": [
+"fast",
+"medium",
+"slow"
+],
+"cameraIntensity": [
+"low",
+"medium",
+"high"
+],
+"emotionIntensity": [
+"low",
+"medium",
+"high"
+]
+},
+"useCase": "企業人設化行銷，建立品牌親民且幽默的形象。",
+"platform": [
+"tiktok",
+"reels",
+"shorts"
+],
+"shotsCount": 9,
+"source": {
+"videoId": "5dicE2RoyD4",
+"title": "董事長說要拍的_我配合他而已",
+"channel": "雅方",
+"views": 0
+},
+"analysis": {
+"whyItWorks": "利用『怕老婆/怕媽媽』的華人家庭共鳴點，將品牌制服自然植入搞笑敘事中，成功消弭廣告感。",
+"targetAudience": "上班族、家庭族群、喜愛生活喜劇的年輕人",
+"replicableElements": [
+"父女/同事結盟人設",
+"交叉剪輯對白",
+"結尾突發驚悚反轉",
+"誇張視覺濾鏡"
+]
+},
+"confidence": 0.95,
+"version": "2.0"
+}

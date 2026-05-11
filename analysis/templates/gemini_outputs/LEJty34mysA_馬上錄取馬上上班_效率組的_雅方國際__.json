@@ -1,0 +1,160 @@
+{
+"id": "LEJty34mysA",
+"name": "馬上錄取馬上上班_效率組的_雅方國際",
+"category": "twist",
+"tags": [
+"#職場喜劇",
+"#雅方食品",
+"#面試",
+"#品牌故事",
+"#00後主管"
+],
+"description": "這是一部職場喜劇風格的品牌形象短片，利用年輕主管與專業品牌歷史之間的文化與專業反差來建立親和力並推廣企業背景。",
+"narrative": {
+"type": "situational",
+"structure": "建立00後主管人設，透過面試過程中的放空與尷尬反轉，導向專業的公司歷史口播與多元職位招募。",
+"tone": "humor",
+"summary": "一名年輕女性主管在面試過程中顯現出隨性、放空的一面，但在被要求介紹公司時，卻能流暢背誦品牌歷史與產品線，完成品牌置入。"
+},
+"hook": {
+"type": "humor",
+"position": "start",
+"description": "視覺上年輕漂亮的女性主管與傳統食品業的權威感形成強烈對比。"
+},
+"marketing": {
+"isImplicit": false,
+"exposureType": "logo",
+"brandRole": "active",
+"integrationMethod": "dialogue",
+"revealTiming": "middle",
+"persuasionStyle": "direct",
+"targetEmotion": [
+"relatability",
+"curiosity"
+]
+},
+"structure": [
+{
+"shot": 1,
+"duration": "2s",
+"camera": "handheld",
+"angle": "eye-level",
+"action": "{character} 拿著文件走入座，展現動態感。",
+"emotion": "confident",
+"purpose": "建立情境與角色權威感。"
+},
+{
+"shot": 2,
+"duration": "3s",
+"camera": "static",
+"angle": "eye-level",
+"action": "{character} 在 {scene} 坐下並與面試者對視。",
+"emotion": "serious",
+"purpose": "強化面試場景的緊張氛圍。"
+},
+{
+"shot": 3,
+"duration": "2s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "{character} 眼神往上飄，呈現內心OS。",
+"emotion": "confused",
+"purpose": "產生幽默反差效果。"
+},
+{
+"shot": 4,
+"duration": "7s",
+"camera": "static",
+"angle": "eye-level",
+"action": "{character} 翻閱文件卻發生原子筆掉落的小插曲。",
+"emotion": "awkward",
+"purpose": "利用失誤營造親近感與真實感。"
+},
+{
+"shot": 5,
+"duration": "4s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "{character} 露出 {emotion} 表情並進行放空特效展示。",
+"emotion": "blank",
+"purpose": "突顯主管內心的隨性本質。"
+},
+{
+"shot": 6,
+"duration": "14s",
+"camera": "static",
+"angle": "eye-level",
+"action": "{character} 開始流暢地口播關於 {product} 與公司歷史背景。",
+"emotion": "professional",
+"purpose": "核心品牌訊息置入。"
+},
+{
+"shot": 7,
+"duration": "3s",
+"camera": "tracking",
+"angle": "eye-level",
+"action": "{character} 快速起身離開，特寫制服上的 Logo。",
+"emotion": "busy",
+"purpose": "強調大忙人人設並再次曝光品牌。"
+}
+],
+"visualFlow": {
+"pace": "medium",
+"rhythmPattern": "慢速鋪墊反差，中後段快速口播資訊。",
+"transitionStyle": "cut"
+},
+"promptTemplate": {
+"base": "A professional video shot of {character} in {scene}, exhibiting {emotion} expressions in a {style} style.",
+"perShot": [
+"{character} enters {scene} holding documents, {style} handheld movement.",
+"{character} sitting in {scene}, static shot, {emotion} eye contact.",
+"Close-up of {character} with {emotion} eyes looking upwards, {style}.",
+"Static shot of {character} in {scene} flipping through folders with {emotion} clumsiness.",
+"Close-up portrait of {character} with {emotion} expression and funny animation overhead.",
+"Mid-shot of {character} explaining {product} details with {emotion} gestures.",
+"Tracking shot follows {character} walking away in {scene}, focus on outfit logo."
+]
+},
+"variables": [
+"character",
+"scene",
+"emotion",
+"style",
+"product"
+],
+"controls": {
+"pace": [
+"medium"
+],
+"cameraIntensity": [
+"medium"
+],
+"emotionIntensity": [
+"high"
+]
+},
+"useCase": "傳統企業年輕化轉型、徵才招募、品牌故事推廣",
+"platform": [
+"tiktok",
+"reels",
+"shorts"
+],
+"shotsCount": 7,
+"source": {
+"videoId": "LEJty34mysA",
+"title": "馬上錄取馬上上班_效率組的_雅方國際",
+"channel": "雅方國際",
+"views": 0
+},
+"analysis": {
+"whyItWorks": "利用「00後」主管的反差人設降低傳產的嚴肅感，透過幽默劇情順暢地帶出品牌歷史與招募資訊。",
+"targetAudience": "尋求工作的年輕族群、喜愛生活化喜劇的社群使用者",
+"replicableElements": [
+"主管人設化",
+"情境反轉敘事",
+"品牌資訊劇本化"
+]
+},
+"confidence": 0.95,
+"version": "2.0"
+}

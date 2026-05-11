@@ -1,0 +1,152 @@
+{
+"id": "6MjyV3yCKvQ",
+"name": "我自己的系列終於出了_而且包裝你們一定會",
+"category": "product",
+"tags": [
+"#美食",
+"#開箱",
+"#街頭挑戰",
+"#香菜花生牛奶冰",
+"#雅方"
+],
+"description": "創作者Lalla Lin推出聯名香菜冰品，透過街頭「30秒完食挑戰」吸引路人參與並展示產品特色與團購資訊。",
+"narrative": {
+"type": "situational",
+"structure": "起：拋出30秒完食冰棒挑戰目標；承：第一位路人挑戰時因敏感性牙齒與冰痛感失敗；轉：第二位路人以極度認真表情挑戰仍因難度失敗，側寫口味接受度；合：導向團購優惠與留言領連結。",
+"tone": "humor",
+"summary": "以街頭隨機挑戰為包裝，將產品「香菜花生牛奶冰」的獵奇點轉化為趣味互動，最終導購團購活動。"
+},
+"hook": {
+"type": "conflict",
+"position": "start",
+"description": "「讓路人挑戰30秒吃完一支冰」，利用高難度動作與冰痛生理反應吸引點擊。"
+},
+"marketing": {
+"isImplicit": false,
+"exposureType": "product",
+"brandRole": "active",
+"integrationMethod": "plot",
+"revealTiming": "early",
+"persuasionStyle": "subtle",
+"targetEmotion": [
+"curiosity",
+"relatability",
+"desire"
+]
+},
+"structure": [
+{
+"shot": 1,
+"duration": "2s",
+"camera": "wide",
+"angle": "eye-level",
+"action": "{character} 與路人在 {scene} 站立，前方疊加 {product} 包裝圖，說明挑戰規則。",
+"emotion": "energetic",
+"purpose": "建立場景並拋出核心 Hook。"
+},
+{
+"shot": 2,
+"duration": "3s",
+"camera": "handheld",
+"angle": "eye-level",
+"action": "挑戰者拿著 {product} 大口咬下，畫面呈現動態倒數計時。",
+"emotion": "excited",
+"purpose": "展示挑戰過程的緊迫感。"
+},
+{
+"shot": 3,
+"duration": "4s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "特寫挑戰者吃冰時感到腦袋冰凍或牙齒敏感的 {emotion}，特寫冰棒斷面。",
+"emotion": "distressed",
+"purpose": "利用生理反應製造笑點並展示產品細節。"
+},
+{
+"shot": 4,
+"duration": "8s",
+"camera": "tracking",
+"angle": "eye-level",
+"action": "{character} 走動並解釋 {product} 的口味層次與研發用意。",
+"emotion": "confident",
+"purpose": "深入介紹產品特色，降低口味爭議感。"
+},
+{
+"shot": 5,
+"duration": "5s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "第二位路人以誇張認真的表情吃冰，畫面標註字幕強調反差感。",
+"emotion": "determined",
+"purpose": "增加互動多樣性與社群病毒元素。"
+},
+{
+"shot": 6,
+"duration": "10s",
+"camera": "static",
+"angle": "eye-level",
+"action": "{character} 全身出鏡展示多盒 {product}，背景疊加團購資訊字卡。",
+"emotion": "friendly",
+"purpose": "完成 CTA，導引觀眾進行團購動作。"
+}
+],
+"visualFlow": {
+"pace": "fast",
+"rhythmPattern": "挑戰開始-誇張反應-節奏感剪接-資訊揭露",
+"transitionStyle": "cut"
+},
+"promptTemplate": {
+"base": "{style} video of {character} in {scene} interacting with {product}, focusing on {emotion} expressions and fast-paced commercial editing.",
+"perShot": [
+"Medium-wide shot, {character} explaining a challenge in {scene} with {product} graphic overlay, {style}.",
+"Handheld shot, a person aggressively eating {product} in {scene} with a digital timer overlay, {style}.",
+"Extreme close-up on a face showing {emotion} from eating cold {product}, highly detailed textures, {style}.",
+"Tracking shot of {character} walking in {scene} while holding {product}, soft lighting, {style}.",
+"Macro close-up of a person with a {emotion} face trying to finish {product}, funny text stickers, {style}.",
+"Static shot of {character} posing with multiple boxes of {product}, promotional text graphics in background, {style}."
+]
+},
+"variables": [
+"character",
+"scene",
+"emotion",
+"style",
+"product"
+],
+"controls": {
+"pace": [
+"fast",
+"medium"
+],
+"cameraIntensity": [
+"medium"
+],
+"emotionIntensity": [
+"high"
+]
+},
+"useCase": "Creator product launch promotion / Street interview social media marketing.",
+"platform": [
+"tiktok",
+"reels",
+"shorts"
+],
+"shotsCount": 6,
+"source": {
+"videoId": "6MjyV3yCKvQ",
+"title": "我自己的系列終於出了_而且包裝你們一定會",
+"channel": "Lalla Lin",
+"views": 0
+},
+"analysis": {
+"whyItWorks": "利用「高難度小遊戲」掩蓋「產品廣告」的生硬感，且香菜口味本身具備社群討論度，容易引發留言互動。",
+"targetAudience": "創作者粉絲、喜好嘗鮮的年輕族群、喜愛美食短影音的觀眾。",
+"replicableElements": [
+"30秒限時挑戰",
+"生理反應特寫(Brain freeze)",
+"留言關鍵字領連結(自動化導購系統)"
+]
+},
+"confidence": 0.95,
+"version": "2.0"
+}

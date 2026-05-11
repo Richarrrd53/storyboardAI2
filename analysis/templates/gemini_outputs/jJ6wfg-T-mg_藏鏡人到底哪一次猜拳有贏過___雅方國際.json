@@ -1,0 +1,171 @@
+{
+"id": "jJ6wfg-T-mg",
+"name": "藏鏡人到底哪一次猜拳有贏過",
+"category": "twist",
+"tags": [
+"#雅方國際",
+"#羊肉爐",
+"#辦公室日常",
+"#短影音",
+"#惡作劇"
+],
+"description": "以辦公室產品研發為背景，透過猜拳打賭的轉折，將辣椒醬產品融入趣味挑戰中。",
+"narrative": {
+"type": "situational",
+"structure": "起：董事長交辦研發任務；承：秘書暴力加入辣椒醬；轉：同事試吃並發起猜拳賭約；合：藏鏡人猜拳失敗受罰喝湯。",
+"tone": "humor",
+"summary": "一場看似嚴肅的羊肉爐口味研發，演變成辦公室成員間的辣椒挑戰賭局。"
+},
+"hook": {
+"type": "conflict",
+"position": "start",
+"description": "董事長在辦公室對秘書施壓要求研發新口味，營造職場緊張感。"
+},
+"marketing": {
+"isImplicit": false,
+"exposureType": "product",
+"brandRole": "active",
+"integrationMethod": "plot",
+"revealTiming": "early",
+"persuasionStyle": "subtle",
+"targetEmotion": [
+"curiosity",
+"relatability"
+]
+},
+"structure": [
+{
+"shot": 1,
+"duration": "5s",
+"camera": "static",
+"angle": "eye-level",
+"action": "董事長在辦公桌前與站立的秘書對話",
+"emotion": "tense",
+"purpose": "建立故事背景與職場情境"
+},
+{
+"shot": 2,
+"duration": "3s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "秘書對鏡頭展現強顏歡笑的表情",
+"emotion": "helpless",
+"purpose": "強化角色情緒引起共鳴"
+},
+{
+"shot": 3,
+"duration": "5s",
+"camera": "handheld",
+"angle": "eye-level",
+"action": "第一人稱視角展示辣椒醬並大量倒入碗中",
+"emotion": "mischievous",
+"purpose": "產品展示與視覺衝擊"
+},
+{
+"shot": 4,
+"duration": "10s",
+"camera": "static",
+"angle": "high-angle",
+"action": "俯拍實驗台，秘書攪拌湯頭並與旁人對話預警",
+"emotion": "suspense",
+"purpose": "強調產品特徵（辣度）"
+},
+{
+"shot": 5,
+"duration": "8s",
+"camera": "tracking",
+"angle": "eye-level",
+"action": "鏡頭跟隨秘書走向同事辦公桌進行試吃互動",
+"emotion": "curiosity",
+"purpose": "推進劇情至衝突點"
+},
+{
+"shot": 6,
+"duration": "5s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "兩人手部動作進行剪刀石頭布猜拳",
+"emotion": "excitement",
+"purpose": "決定勝負的關鍵轉折"
+},
+{
+"shot": 7,
+"duration": "5s",
+"camera": "wide",
+"angle": "eye-level",
+"action": "藏鏡人背景哀嚎，畫面顯示男生受罰喝湯",
+"emotion": "humor",
+"purpose": "反轉笑點揭曉"
+},
+{
+"shot": 8,
+"duration": "9s",
+"camera": "static",
+"angle": "eye-level",
+"action": "主角對鏡頭總結並引導觀眾留言",
+"emotion": "casual",
+"purpose": "社群互動引流"
+}
+],
+"visualFlow": {
+"pace": "fast",
+"rhythmPattern": "節奏隨劇情轉折加快，猜拳處達到頂峰",
+"transitionStyle": "cut"
+},
+"promptTemplate": {
+"base": "Office setting, bright lighting, variety show style with colorful captions, {style}.",
+"perShot": [
+"{character} talking to an older boss in {scene}, {emotion} mood.",
+"Close-up of {character} with a forced smile expression, {style}.",
+"POV shot holding {product} and pouring it into a bowl in {scene}.",
+"High-angle shot of mixing {product} into a dark soup with {emotion} atmosphere.",
+"{character} walking towards a desk to interact with a colleague in {scene}.",
+"Extreme close-up of two hands playing rock-paper-scissors.",
+"Wide shot of a man drinking from a cup while others laugh in {scene}, {emotion}.",
+"{character} looking at the camera and talking directly to the audience, {style}."
+]
+},
+"variables": [
+"character",
+"scene",
+"emotion",
+"style",
+"product"
+],
+"controls": {
+"pace": [
+"fast",
+"medium"
+],
+"cameraIntensity": [
+"medium"
+],
+"emotionIntensity": [
+"high"
+]
+},
+"useCase": "Brand promotion via office comedy skits",
+"platform": [
+"tiktok",
+"reels",
+"shorts"
+],
+"shotsCount": 8,
+"source": {
+"videoId": "jJ6wfg-T-mg",
+"title": "藏鏡人到底哪一次猜拳有贏過",
+"channel": "雅方國際",
+"views": 0
+},
+"analysis": {
+"whyItWorks": "利用職場共鳴開頭，結合高視覺衝擊的產品使用方式，最後以重複性的角色失敗規律（藏鏡人必輸）建立記憶點。",
+"targetAudience": "上班族、喜愛獵奇美食挑戰者、年輕社群用戶",
+"replicableElements": [
+"職場為難情境",
+"第一人稱參與感",
+"猜拳打賭的強互動性"
+]
+},
+"confidence": 0.95,
+"version": "2.0"
+}
