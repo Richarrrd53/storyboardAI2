@@ -1,7 +1,6 @@
 const express = require('express');
 const path = require('path');
 const fs = require("fs");
-
 require('dotenv').config();
 
 if(process.env.GCP_SERVICE_ACCOUNT_BASE64) {
@@ -38,8 +37,6 @@ const genAI = new GoogleGenAI({
     project: googleCLoudProjectId,
     location: location,
 });
-
-
 
 
 app.get('/', (req, res) => {
