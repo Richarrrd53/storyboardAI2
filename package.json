@@ -24,6 +24,7 @@
     "babel-loader": "^10.0.0",
     "dotenv": "^17.4.2",
     "prisma": "^7.8.0",
+    "tsx": "^4.21.0",
     "webpack": "^5.102.1",
     "webpack-cli": "^6.0.1"
   },

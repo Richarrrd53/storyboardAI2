@@ -119,6 +119,10 @@ p {
     border-radius: var(--radius-sm);
 }
 
+.btn:hover{
+    transform: scale(1.04);
+}
+
 .btn:active {
     transform: scale(0.96);
 }
@@ -134,7 +138,6 @@ p {
 
 .btn-primary:hover {
     background: #E4A953;
-    transform: translateY(-2px);
     box-shadow: 0 6px 16px rgba(220, 156, 71, 0.4);
 }
 
@@ -148,7 +151,6 @@ p {
 
 .btn-ghost:hover {
     background: rgba(255, 255, 255, 0.2);
-    transform: translateY(-2px);
 }
 
 .btn-outline {
@@ -193,20 +195,6 @@ p {
 
 .input-field::placeholder {
     color: var(--text-light);
-}
-
-.nav {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 100;
-    padding: 16px 40px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: rgba(38, 35, 32, 0.95);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 @keyframes fadeInUp {

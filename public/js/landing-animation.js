@@ -26,7 +26,7 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
                 scrollTo: {
                     y: target,
                     autoKill: true,
-                    offsetY: 81
+                    offsetY: 0
                 },
                 ease: "expo.out"
             });
@@ -35,181 +35,14 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 });
 
 document.addEventListener("DOMContentLoaded", function() {
-
-    gsap.fromTo("#bgDot1", {
-        backgroundColor: "#c9b1e9",
-        left: "400px",
-        top: "-60px",
-        scale: '1'
-        }, {
-        backgroundColor: "#ffafcc",
-        left: window.innerWidth - 550 + "px",
-        top: 550 - 700 + "px",
-        scrollTrigger: {
-            trigger: "body",
-            start: "-100px",
-            end: "+=1080px",
-            scrub: true,
-        }
-    });
-    gsap.fromTo("#bgDot2", {
-        backgroundColor: "#ee6055",
-        left: "770px",
-        top: "220px",
-        scale: '1'
-
-    } ,{
-        backgroundColor: "#fcefde",
-        width: "1500px",
-        height: "1500px",
-        left: "0px",
-        top: "-750px",
-        scrollTrigger: {
-            trigger: "body",
-            start: "-100px",
-            end: "+=1080px",
-            scrub: true,
-        }
-    });
-    gsap.fromTo("#bgDot3", {
-        backgroundColor: "#fee440",
-        width: "480px",
-        height: "480px",
-        left: (window.innerWidth - 480) / 2 + "px",
-        top: (window.innerHeight - 480) / 2 + "px",
-    }, {
-        backgroundColor: "#fee440",
-        width: "1200px",
-        height: "1200px",
-        left: "-600px",
-        top: window.innerHeight - 600 + "px",
-        scrollTrigger: {
-            trigger: "body",
-            start: "-100px",
-            end: "+=1080px",
-            scrub: true,
-        }
-    });
-    gsap.fromTo("#bgDot4", {
-        backgroundColor: "#ffa962",
-        width: "360px",
-        height: "360px",
-        left: "600px",
-        top: "290px",
-    }, {
-        backgroundColor: "#ffa962",
-        width: "360px",
-        height: "360px",
-        left: window.innerWidth - 180 + "px",
-        scrollTrigger: {
-            trigger: "body",
-            start: "-100px",
-            end: "+=1080px",
-            scrub: true,
-        }   
-    });
-    gsap.fromTo("#bgDot5",{
-        backgroundColor: "#c9b1e9",
-        width: "250px",
-        height: "250px",
-    }, {
-        backgroundColor: "#ffafcc",
-        width: "1000px",
-        height: "1000px",
-        left: window.innerWidth - 500 + "px",
-        top: window.innerHeight - 500 + "px",
-        scrollTrigger: {
-            trigger: "body",
-            start: "-100px",
-            end: "+=1080px",
-            scrub: true,
-        }
-    });
-    gsap.fromTo("#BG", {
-        backgroundColor: "#efefef",
-    }, {
-        backgroundColor: "#fcefde",
-        scrollTrigger: {
-            trigger: "body",
-            start: "-100px",
-            end: "+=1080px",
-            scrub: true,
-        }
-    });
-
-    gsap.fromTo(".preview-card-1", {
-        top: "320px",
-        right: "5%",
-    }, {
-        top: 320 + "px",
-        right: "-20%",
-        scrollTrigger: {
-            trigger: "body",
-            start: "-100px",
-            end: "+=1080px",
-            scrub: true,
-        }
-    });
-    gsap.fromTo(".preview-card-2", {
-        top: "220px",
-        left: "15%",
-    }, {
-        top: -200 + "px",
-        left: "-10%",
-        scrollTrigger: {
-            trigger: "body",
-            start: "-100px",
-            end: "+=1080px",
-            scrub: true,
-        }
-    });
-    gsap.fromTo(".preview-card-3", {
-        top: "180px",
-        right: "30%",
-    }, {
-        top: -200 + "px",
-        right: "5%",
-        scrollTrigger: {
-            trigger: "body",
-            start: "-100px",
-            end: "+=1080px",
-            scrub: true,
-        }
-    });
-    gsap.fromTo(".preview-card-4", {
-        bottom: "120px",
-        left: "20%",
-    }, {
-        bottom: -420 + "px",
-        left: "5%",
-        scrollTrigger: {
-            trigger: "body",
-            start: "-100px",
-            end: "+=1080px",
-            scrub: true,
-        }
-    });
-    gsap.fromTo(".preview-card-5", {
-        bottom: "180px",
-        right: "25%",
-    }, {
-        bottom: -480 + "px",
-        right: "0%",
-        scrollTrigger: {
-            trigger: "body",
-            start: "-100px",
-            end: "+=1080px",
-            scrub: true,
-        }
-    });
     gsap.fromTo(".hero-inner", {
         scale: '1',
     }, {
         scale: '1.2',
         scrollTrigger: {
-            trigger: "body",
-            start: "-100px",
-            end: "+=1080px",
+            trigger: "#heroSection",
+            start: "top",
+            end: "bottom",
             scrub: true,
         }
     });
@@ -217,33 +50,66 @@ document.addEventListener("DOMContentLoaded", function() {
     gsap.fromTo(".hero-inner", {
         opacity: 1,
         filter: "blur(0px)",
+        x: '0%',
     }, {
         opacity: 0,
         filter: "blur(20px)",
+        x: '-100%',
         scrollTrigger: {
-            trigger: "body",
-            start: "+1080px",
-            end: "+=540px",
+            trigger: "#end-1",
+            start: "top",
+            end: "bottom",
             scrub: true,
         }
     });
+
+    const maskConfigs = [
+        { trigger: "#end-1", endTrigger: "#end-1-2" },
+        { trigger: "#end-2", endTrigger: "#end-2-2" }
+    ];
+
+    maskConfigs.forEach(config => {
+        const tl = gsap.timeline({
+            scrollTrigger: {
+                trigger: config.trigger,
+                start: "top",
+                endTrigger: config.endTrigger,
+                end: "bottom",
+                scrub: true,
+            }
+        });
+
+        tl.to("#black-mask-top", { top: "0" }, 0)
+          .to("#black-mask-bottom", { bottom: "0" }, 0)
+          .to("#black-mask-top", { top: "-50%" }, ">")
+          .to("#black-mask-bottom", { bottom: "-50%" }, "<");
+    });
+
+    const videoTl = gsap.timeline({
+        scrollTrigger: {
+            trigger: "#vv",
+            start: "top",
+            endTrigger: "#end-2",
+            end: "bottom",
+            scrub: true,
+        }
+    });
+
+    videoTl
+        .to("#videos", { x: "0%" }, 0)
+        .to("#videos", { x: "-100%"}, ">");
 
     gsap.fromTo("#videos", {
-        transform: "translate(0, 1280px) scale(0.5)",
+        x: "100%",
     }, {
-        transform: "translate(0, -960px) scale(1.5)",
+        x: "0%",
         scrollTrigger: {
-            trigger: "body",
-            start: "+540px",
-            end: "+=1080px",
+            trigger: "#end-1-2",
+            start: "top",
+            end: "bottom",
             scrub: true,
         }
     });
-
-    
-
-    
-    
 });
 
 document.addEventListener('scroll', function() {
@@ -267,121 +133,6 @@ document.addEventListener('scroll', function() {
         }
     }
     if (window.pageYOffset >= 1620 && window.pageYOffset <= 3240) {
-        gsap.fromTo("#bgDot1", {
-            backgroundColor: "#ffafcc",
-            left: window.innerWidth - 550 + "px",
-            top: 550 - 700 + "px",
-        }, {
-            backgroundColor: "rgb(131, 136, 178)",
-            left: 850 + "px",
-            top: 350 + "px",
-            scrollTrigger: {
-                trigger: "body",
-                start: "+1620px",
-                end: "+=1080px",
-                scrub: true,
-            }
-            });
-        gsap.fromTo("#bgDot2", {
-            backgroundColor: "#fcefde",
-            width: "1500px",
-            height: "1500px",
-            left: "0px",
-            top: "-750px",
-        }, {
-            backgroundColor: "rgb(242, 154, 108)",
-            width: "500px",
-            height: "500px",
-            left: 400 + "px",
-            top: -50 + "px",
-            scrollTrigger: {
-                trigger: "body",
-                start: "+1620px",
-                end: "+=1080px",
-                scrub: true,
-            }
-        });
-        gsap.fromTo("#bgDot3", {
-            backgroundColor: "#fee440",
-            width: "1200px",
-            height: "1200px",
-            left: "-600px",
-            top: window.innerHeight - 600 + "px",
-            }, {
-            backgroundColor: "rgb(255, 28, 209)",
-            width: "300px",
-            height: "300px",
-            left: 760 + "px",
-            top: 500 + "px",
-            scrollTrigger: {
-                trigger: "body",
-                start: "+1620px",
-                end: "+=1080px",
-                scrub: true,
-            }
-        });
-        gsap.fromTo("#bgDot4", {
-            backgroundColor: "#ffa962",
-            width: "360px",
-            height: "360px",
-            left: window.innerWidth - 180 + "px",
-            top: "290px",
-        }, {
-            backgroundColor: "rgb(99, 165, 198)",
-            width: "360px",
-            height: "360px",
-            left: 950 + "px",
-            top: 500 + "px",
-            scrollTrigger: {
-                trigger: "body",
-                start: "+1620px",
-                end: "+=1080px",
-                scrub: true,
-            }
-        });
-        gsap.fromTo("#bgDot5", {
-            backgroundColor: "#ffafcc",
-            width: "1000px",
-            height: "1000px",
-            left: window.innerWidth - 500 + "px",
-            top: window.innerHeight - 500 + "px",
-        }, {
-            backgroundColor: "rgb(166, 220, 231)",
-            width: "200px",
-            height: "200px",
-            left: 1050 + "px",
-            top: 700 + "px",
-            scrollTrigger: {
-                trigger: "body",
-                start: "+1620px",
-                end: "+=1080px",
-                scrub: true,
-            }
-        });
-    
-        gsap.fromTo("#BG", {
-            backgroundColor: "#fcefde",
-        }, {
-            backgroundColor: "#fff",
-            scrollTrigger: {
-                trigger: "body",
-                start: "+1620px",
-                end: "+=1080px",
-                scrub: true,
-            }
-        });
-
-        gsap.fromTo("#videos", {
-            transform: "translate(0, -960px) scale(1.5)",
-        }, {
-            transform: "translate(0, -1980px) scale(1.2)",
-            scrollTrigger: {
-                trigger: "body",
-                start: "+1620px",
-                end: "+=540px",
-                scrub: true,
-            }
-        });
         gsap.fromTo("#features", {
             top: "1080px",
         }, {
@@ -490,97 +241,6 @@ document.addEventListener('scroll', function() {
                 trigger: "body",
                 start: "+4860px",
                 end: "+=540px",
-                scrub: true,
-            }
-        });
-        gsap.fromTo("#bgDot1", {
-            backgroundColor: "rgb(131, 136, 178)",
-            left: 850 + "px",
-            top: 350 + "px",        
-        }, {
-            backgroundColor: "#fcbed4",
-            left: 300 + "px",
-            top: 150 + "px",
-            scrollTrigger: {
-                trigger: "body",
-                start: "+4860px",
-                end: "+=1080px",
-                scrub: true,
-            }
-        });
-        gsap.fromTo("#bgDot2", {
-            backgroundColor: "rgb(242, 154, 108)",
-            width: "500px",
-            height: "500px",
-            left: 400 + "px",
-            top: -50 + "px",
-        }, {
-            backgroundColor: "#fb9fe2",
-            width: "500px",
-            height: "500px",
-            left: 500 + "px",
-            top: -250 + "px",
-            scrollTrigger: {
-                trigger: "body",
-                start: "+4860px",
-                end: "+=1080px",
-                scrub: true,
-            }
-        });
-        gsap.fromTo("#bgDot3", {
-            backgroundColor: "rgb(255, 28, 209)",
-            width: "300px",
-            height: "300px",
-            left: 760 + "px",
-            top: 500 + "px",
-        }, {
-            backgroundColor: "#b8f7d2",
-            width: "500px",
-            height: "500px",
-            left: 100 + "px",
-            top: 500 + "px",
-            scrollTrigger: {
-                trigger: "body",
-                start: "+4860px",
-                end: "+=1080px",
-                scrub: true,
-            }
-        });
-        gsap.fromTo("#bgDot4", {
-            backgroundColor: "rgb(99, 165, 198)",
-            width: "360px",
-            height: "360px",
-            left: 950 + "px",
-            top: 500 + "px",
-        }, {
-            backgroundColor: "#a5e0e3",
-            width: "500px",
-            height: "500px",
-            left: -200 + "px",
-            top: 700 + "px",
-            scrollTrigger: {
-                trigger: "body",
-                start: "+4860px",
-                end: "+=1080px",
-                scrub: true,
-            }
-        });
-        gsap.fromTo("#bgDot5", {
-            backgroundColor: "rgb(166, 220, 231)",
-            width: "200px",
-            height: "200px",
-            left: 1050 + "px",
-            top: 700 + "px",
-        }, {
-            backgroundColor: "#d9b5ec",
-            width: "500px",
-            height: "500px",
-            left: 1620 + "px",
-            top: 500 + "px",
-            scrollTrigger: {
-                trigger: "body",
-                start: "+4860px",
-                end: "+=1080px",
                 scrub: true,
             }
         });
