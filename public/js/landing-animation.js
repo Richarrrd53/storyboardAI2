@@ -116,10 +116,18 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
     const featureContainer = document.getElementById("feature-container");
+    const dragHint = document.getElementById("drag-hint");
     const featureCards = featureContainer.children;
     const totalCards = featureCards.length;
 
     const vh = (v) => window.innerHeight * (v / 100);
+
+    const feature3d = document.getElementById("feature-3d");
+    let radius, currentAngle, xDeg, opacity, blur;
+    let userDragAngle = 0;
+    let isDragabled = false;
+    let userDraging = false;
+    let lastX = 0;
 
     gsap.to({}, {
         scrollTrigger: {
@@ -129,8 +137,6 @@ document.addEventListener("DOMContentLoaded", function() {
             scrub: true,
             onUpdate: (self) => {
                 const progress = self.progress;
-                let radius, currentAngle, xDeg, opacity, blur;
-
                 if (progress < 0.225) {
                     const p = progress / 0.225;
                     opacity = p;
@@ -161,12 +167,22 @@ document.addEventListener("DOMContentLoaded", function() {
                     currentAngle = -150 - (p * 180);
                     xDeg = 0;
                 }
-
+                if (progress >= 0.75){
+                    isDragabled = true;
+                    feature3d.style.cursor = "grab";
+                    dragHint.classList.add("active");
+                }
+                else{
+                    isDragabled = false;
+                    feature3d.style.cursor = "";
+                    dragHint.classList.remove("active");
+                }
+                
                 for (let i = 0; i < totalCards; i++) {
                     const card = featureCards[i];
                     if (!card) continue;
 
-                    const angle = (-360 / totalCards) * i + currentAngle + 90;
+                    const angle = (-360 / totalCards) * i + currentAngle + userDragAngle + 90;
                     const radian = angle * Math.PI / 180;
 
                     const x = radius * Math.cos(radian);
@@ -298,4 +314,61 @@ document.addEventListener("DOMContentLoaded", function() {
             scrub: true,
         }
     });
+
+    const handleStart = (clientX) => {
+        if (!isDragabled) return;
+        userDraging = true;
+        lastX = clientX;
+    };
+
+    const handleMove = (clientX) => {
+        if (!userDraging) return;
+
+        const deltaX = clientX - lastX;
+        userDragAngle -= deltaX * 0.5;
+        lastX = clientX;
+        if (isDragabled){
+            dragHint.classList.remove("active");
+        }
+
+        for (let i = 0; i < totalCards; i++) {
+            const card = featureCards[i];
+            if (!card) continue;
+
+            const angle = (-360 / totalCards) * i + currentAngle + userDragAngle + 90;
+            const radian = angle * Math.PI / 180;
+
+            const x = radius * Math.cos(radian);
+            const y = 0;
+            const z = vh(-75) + radius * Math.sin(radian);
+
+            card.style.opacity = opacity;
+            card.style.filter = `blur(${blur}px)`;
+            card.style.transform = `translate3d(${x}px, ${y}px, ${z}px) rotateX(${xDeg}deg) rotateY(${-angle + 90}deg)`;
+        }
+    };
+
+    const handleEnd = () => {
+        userDraging = false;
+        if(isDragabled){
+            dragHint.classList.add("active");
+        }
+    };
+
+    feature3d.addEventListener("mousedown", (e) => handleStart(e.clientX));
+    window.addEventListener("mousemove", (e) => handleMove(e.clientX));
+    window.addEventListener("mouseup", handleEnd);
+
+    feature3d.addEventListener("touchstart", (e) => {
+        handleStart(e.touches[0].clientX);
+    }, { passive: true });
+
+    window.addEventListener("touchmove", (e) => {
+        if (!userDraging) return;
+        if (e.cancelable) e.preventDefault(); 
+        handleMove(e.touches[0].clientX);
+    }, { passive: false });
+
+    window.addEventListener("touchend", handleEnd);
+
 });

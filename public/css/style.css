@@ -19,10 +19,10 @@
     --card-border: #DCD4C6;
     --shadow-soft: 0 8px 30px rgba(42, 35, 30, 0.15);
     --shadow-card: 0 4px 15px rgba(42, 35, 30, 0.08);
-    --radius-sm: 0px;
-    --radius-md: 4px;
-    --radius-lg: 8px;
-    --radius-xl: 12px;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
     --font-display: "Noto Sans TC", sans-serif;
     --font-body: "Noto Sans TC", sans-serif;
     --bg-dark: #262320;
@@ -67,6 +67,17 @@ body {
     background-position: 0 0, 30px 30px;
     left: 0;
     top: 0;
+    animation: BG 2s linear infinite;
+}
+
+@keyframes BG {
+    from{
+        background-position: 0 0, 30px 30px;
+    }
+    to{
+        background-position: 30px 30px, 60px 60px;
+    }
+    
 }
 
 .bgDots {
@@ -113,52 +124,74 @@ p {
     font-size: 0.95rem;
     border: none;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: all 0.15s cubic-bezier(0, 0, 0.58, 1);
     text-decoration: none;
     white-space: nowrap;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-md);
 }
 
 .btn:hover{
-    transform: scale(1.04);
+    transform: translateY(2px);
 }
 
 .btn:active {
-    transform: scale(0.96);
+    transform: translateY(8px);
+
 }
 
 .btn-primary {
-    background: var(--primary);
-    color: var(--white);
+    background: var(--primary-light);
+    border: 2px solid var(--text-dark);
+    color: var(--text-dark);
     padding: 12px 28px;
-    border-radius: var(--radius-sm);
-    box-shadow: 0 4px 12px rgba(220, 156, 71, 0.3);
+    box-shadow: 
+                0 6px 0px var(--text-dark),
+                inset 0 2px 0px rgba(255, 255, 255, 0.5);
     z-index: 10;
 }
 
 .btn-primary:hover {
-    background: #E4A953;
-    box-shadow: 0 6px 16px rgba(220, 156, 71, 0.4);
+    box-shadow: 0 4px 0px var(--text-dark);
 }
+
+.btn-primary:active {
+    box-shadow: 0 0px 0px var(--text-dark);
+
+}
+
 
 .btn-ghost {
-    background: rgba(255, 255, 255, 0.1);
-    color: var(--off-white);
+    background: var(--white);
+    color: var(--text-dark);
     padding: 12px 28px;
-    border-radius: var(--radius-sm);
-    border: 1.5px solid rgba(255, 255, 255, 0.2);
+    border: 2px solid var(--text-dark);
+    box-shadow: 0 6px 0px var(--text-dark);
 }
 
-.btn-ghost:hover {
-    background: rgba(255, 255, 255, 0.2);
+.btn-ghost:hover{
+    box-shadow: 0 4px 0px var(--text-dark);
+}
+
+.btn-ghost:active {
+    box-shadow: 0 0px 0px var(--text-dark);
+
 }
 
 .btn-outline {
-    background: transparent;
+    background: var(--white);
     color: var(--text-dark);
-    padding: 10px 24px;
-    border-radius: var(--radius-sm);
-    border: 2px solid var(--card-border);
+    padding: 12px 28px;
+    border: 2px solid var(--text-dark);
+    box-shadow: 0 6px 0px var(--text-dark);
+}
+
+.btn-outline:hover{
+    box-shadow: 0 4px 0px var(--text-dark);
+}
+
+.btn-outline:active {
+    box-shadow: 0 0px 0px var(--text-dark);
+
 }
 
 
@@ -280,8 +313,9 @@ p {
         transparent 90% 
     );
     background-size: 30px 78px;
-    background-position: center;
+    background-position: top left;
     background-color: #3f3730;
+    animation: bg-frame 2s linear infinite;
     z-index: 99;
 }
 #bg-top {
@@ -294,15 +328,34 @@ p {
     left: 0;
 }
 
+@keyframes bg-frame {
+    from{
+        background-position: 0px 0px;
+    }
+    to{
+        background-position: 30px 0px;
+    }
+}
+
 .rail{
     position: absolute;
     display: flex;
-    gap: 20px;
+    flex-direction: row;
     flex-direction: row;
     align-items: center;
-    justify-content: center;
+    justify-content: start;
     z-index: 100;
-    width: 100%;
+    width: max-content;
+    animation: rail 2s linear infinite;
+}
+
+@keyframes rail {
+    from{
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(-28px);
+    }
 }
 
 #rail-top{
@@ -320,4 +373,5 @@ p {
     border-radius: 3px;
     background-color: var(--text-light);
     opacity: 0.3;
+    margin-left: 20px;
 }

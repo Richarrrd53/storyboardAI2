@@ -43,7 +43,7 @@ window.addEventListener('resize', () => {
 document.addEventListener('DOMContentLoaded', () => {
     const railBottom = document.getElementById("rail-bottom");
     const railTop = document.getElementById("rail-top");
-    const nums = window.innerWidth / 28;
+    const nums = window.innerWidth / 20;
     for (let i = 0; i < nums; i++) {
         const railHole = document.createElement('div');
         railHole.classList.add('rail-hole');
