@@ -1070,7 +1070,7 @@
 }
 
 .plan-desc {
-    font-size: clamp(0.5rem, 1.2vw, 0.875rem);
+    font-size: clamp(0.4rem, 1.2vw, 0.875rem);
     color: var(--text-light);
     margin-bottom: clamp(5px, 1vw, 24px);
 }
