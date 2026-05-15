@@ -33,6 +33,7 @@
     font-size: clamp(0.6rem, 1.2vw, 0.95rem);
     border-color: var(--bg-dark);
     box-shadow: 0 3px 0 var(--bg-dark);
+    color: var(--text-dark);
     padding: clamp(4px, 1.2vw, 8px) clamp(12px, 1.2vw, 18px);
 }
 
