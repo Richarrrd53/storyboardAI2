@@ -19,7 +19,7 @@
     --card-border: #DCD4C6;
     --shadow-soft: 0 8px 30px rgba(42, 35, 30, 0.15);
     --shadow-card: 0 4px 15px rgba(42, 35, 30, 0.08);
-    --radius-sm: 8px;
+    --radius-sm: 4px;
     --radius-md: 12px;
     --radius-lg: 16px;
     --radius-xl: 24px;
@@ -122,12 +122,12 @@ p {
     font-family: var(--font-body);
     font-weight: 700;
     font-size: 0.95rem;
+    border-radius: var(--radius-sm);
     border: none;
     cursor: pointer;
     transition: all 0.15s cubic-bezier(0, 0, 0.58, 1);
     text-decoration: none;
     white-space: nowrap;
-    border-radius: var(--radius-md);
 }
 
 .btn:hover{
@@ -135,7 +135,7 @@ p {
 }
 
 .btn:active {
-    transform: translateY(8px);
+    transform: translateY(6px);
 
 }
 
@@ -162,19 +162,20 @@ p {
 
 .btn-ghost {
     background: var(--white);
-    color: var(--text-dark);
-    padding: 12px 28px;
-    border: 2px solid var(--text-dark);
-    box-shadow: 0 6px 0px var(--text-dark);
+    color: var(--text-light);
+    border: 2px solid var(--card-border);
+    box-shadow: 0 6px 0 var(--card-border);
+    backdrop-filter: blur(6px);
 }
 
-.btn-ghost:hover{
-    box-shadow: 0 4px 0px var(--text-dark);
+.btn-ghost:hover {
+    box-shadow: 0 4px 0 var(--card-border);
+    transform: translateY(2px);
 }
 
 .btn-ghost:active {
-    box-shadow: 0 0px 0px var(--text-dark);
-
+    box-shadow: 0 0 0 var(--card-border);
+    transform: translateY(4px);
 }
 
 .btn-outline {

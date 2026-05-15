@@ -120,7 +120,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const featureCards = featureContainer.children;
     const totalCards = featureCards.length;
 
-    const vh = (v) => window.innerHeight * (v / 100);
+    const vh = (v) => (window.innerHeight < window.innerWidth) ? window.innerHeight * (v / 100): window.innerWidth * 1.5 * (v / 100);
 
     const feature3d = document.getElementById("feature-3d");
     let radius, currentAngle, xDeg, opacity, blur;
@@ -171,11 +171,13 @@ document.addEventListener("DOMContentLoaded", function() {
                     isDragabled = true;
                     feature3d.style.cursor = "grab";
                     dragHint.classList.add("active");
+                    feature3d.classList.add("is-dragabled");
                 }
                 else{
                     isDragabled = false;
                     feature3d.style.cursor = "";
                     dragHint.classList.remove("active");
+                    feature3d.classList.remove("is-dragabled");
                 }
                 
                 for (let i = 0; i < totalCards; i++) {
@@ -319,6 +321,7 @@ document.addEventListener("DOMContentLoaded", function() {
         if (!isDragabled) return;
         userDraging = true;
         lastX = clientX;
+        feature3d.classList.add("is-dragging");
     };
 
     const handleMove = (clientX) => {
@@ -350,6 +353,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     const handleEnd = () => {
         userDraging = false;
+        feature3d.classList.remove("is-dragging");
         if(isDragabled){
             dragHint.classList.add("active");
         }
