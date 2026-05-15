@@ -534,7 +534,7 @@
     transform-style: preserve-3d;
     background-color: transparent;
     box-shadow: none;
-    border-radius: 0;
+    border-radius: 10px;
     cursor: pointer;
     transition: transform 0s cubic-bezier(.4, 0, .2, 1),
         scale 0.5s cubic-bezier(.4, 0, .2, 1),
