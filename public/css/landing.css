@@ -1,10 +1,14 @@
+*::selection{
+    background-color: rgba(190, 166, 101, 0.3);
+}
+
 .nav {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     z-index: 100;
-    padding: 8px 40px;
+    padding: 8px 20px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -16,7 +20,7 @@
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
-    gap: 20px;
+    gap: clamp(5px, 1.2vw, 20px);
 }
 
 .nav-link {
@@ -26,8 +30,10 @@
 }
 
 .nav .btn {
+    font-size: clamp(0.6rem, 1.2vw, 0.95rem);
     border-color: var(--bg-dark);
     box-shadow: 0 3px 0 var(--bg-dark);
+    padding: clamp(4px, 1.2vw, 8px) clamp(12px, 1.2vw, 18px);
 }
 
 .nav .btn:hover {
@@ -66,9 +72,9 @@
 
 /* Hero buttons shared sizing */
 .hero-inner .btn {
-    font-size: clamp(0.85rem, 1.5vw, 1.1rem);
+    font-size: clamp(0.7rem, 1.5vw, 1.1rem);
     font-weight: 900;
-    padding: clamp(10px, 1.2vw, 14px) clamp(20px, 3vw, 36px);
+    padding: clamp(8px, 1.2vw, 14px) clamp(18px, 3vw, 36px);
     border-width: 2px;
     letter-spacing: 0.04em;
     text-transform: uppercase;
@@ -79,18 +85,18 @@
     background: rgba(255, 255, 255, 0.55);
     color: var(--text-mid);
     border: 2px solid var(--card-border);
-    box-shadow: 0 4px 0 var(--card-border);
+    box-shadow: 0 6px 0 var(--card-border);
     backdrop-filter: blur(6px);
 }
 
 .hero-inner .btn-outline:hover {
-    box-shadow: 0 2px 0 var(--card-border);
+    box-shadow: 0 4px 0 var(--card-border);
     transform: translateY(2px);
 }
 
 .hero-inner .btn-outline:active {
     box-shadow: 0 0 0 var(--card-border);
-    transform: translateY(4px);
+    transform: translateY(6px);
 }
 
 .hero-eyebrow {
@@ -99,7 +105,7 @@
 
 .hero-title {
     font-family: var(--font-display);
-    font-size: clamp(3.5rem, 8vw, 7rem);
+    font-size: clamp(2.5rem, 8vw, 7rem);
     font-weight: 900;
     letter-spacing: -0.04em;
     color: var(--text-dark);
@@ -113,7 +119,7 @@
 }
 
 .hero-subtitle {
-    font-size: clamp(0.95rem, 1.8vw, 1.2rem);
+    font-size: clamp(0.7rem, 1.8vw, 1.2rem);
     font-weight: 500;
     color: var(--text-mid);
     line-height: 1.65;
@@ -349,7 +355,8 @@
 .pricing-section {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 100px 48px;
+    padding: 120px 48px;
+    display: none;
 }
 
 .section-header {
@@ -528,6 +535,7 @@
     background-color: transparent;
     box-shadow: none;
     border-radius: 0;
+    cursor: pointer;
     transition: transform 0s cubic-bezier(.4, 0, .2, 1),
         scale 0.5s cubic-bezier(.4, 0, .2, 1),
         margin 0.5s cubic-bezier(.4, 0, .2, 1),
@@ -556,21 +564,6 @@
     height: 100%;
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
-    /* Ticket shape: left/right scalloped notches at mid-point */
-    clip-path: polygon(
-        0% 0%,
-        100% 0%,
-        100% calc(52% - 14px),
-        calc(100% + 1px) calc(52% - 14px),
-        calc(100% + 1px) calc(52% + 14px),
-        100% calc(52% + 14px),
-        100% 100%,
-        0% 100%,
-        0% calc(52% + 14px),
-        -1px calc(52% + 14px),
-        -1px calc(52% - 14px),
-        0% calc(52% - 14px)
-    );
     border-radius: 10px;
     overflow: hidden;
 }
@@ -583,7 +576,7 @@
     padding: 0;
     background: var(--bg-dark);
     box-shadow:
-        0 20px 60px rgba(0, 0, 0, 0.45),
+        0 20px 60px rgba(0, 0, 0, 0.1),
         inset 0 1px 0 rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(190, 166, 101, 0.25);
 }
@@ -603,6 +596,10 @@
     justify-content: start;
     gap: 4%;
     padding-left: 4%;
+}
+
+.card-strip.bottom{
+    border: 0;
 }
 
 .strip-hole {
@@ -633,7 +630,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 4.5rem;
+    font-size: clamp(2.5rem, 1.2vw, 4.5rem);
     position: relative;
     overflow: hidden;
     box-shadow: inset 0 0 0 1px rgba(190, 166, 101, 0.2);
@@ -662,7 +659,7 @@
 }
 
 .ticket-stub .ticket-category {
-    font-size: 0.65rem;
+    font-size: clamp(0.5rem, 1.2vw, 0.65rem);
     font-weight: 700;
     letter-spacing: 0.15em;
     text-transform: uppercase;
@@ -671,7 +668,7 @@
 }
 
 .ticket-stub .ticket-title {
-    font-size: 1.05rem;
+    font-size: clamp(0.9rem, 1.2vw, 1.05rem);
     font-weight: 900;
     color: var(--off-white);
     line-height: 1.25;
@@ -687,7 +684,7 @@
 }
 
 .ticket-stub .ticket-seat {
-    font-size: 0.7rem;
+    font-size: clamp(0.5rem, 1.2vw, 0.7rem);
     color: rgba(235, 230, 216, 0.45);
     font-weight: 600;
     letter-spacing: 0.08em;
@@ -695,7 +692,7 @@
 
 .ticket-stub .ticket-number {
     font-family: 'Courier New', monospace;
-    font-size: 0.65rem;
+    font-size: clamp(0.45rem, 1.2vw, 0.65rem);
     font-weight: 700;
     color: var(--primary);
     letter-spacing: 0.1em;
@@ -712,7 +709,7 @@
     justify-content: stretch;
     padding: 0;
     box-shadow:
-        0 20px 60px rgba(0, 0, 0, 0.35),
+        0 20px 60px rgba(0, 0, 0, 0.1),
         inset 0 1px 0 rgba(255, 255, 255, 0.6);
     border: 1px solid rgba(190, 166, 101, 0.3);
 }
@@ -727,7 +724,7 @@
 }
 
 .card-back h3 {
-    font-size: 1.2rem;
+    font-size: clamp(0.8rem, 1.2vw, 1.2rem);
     color: var(--bg-dark);
     font-weight: 900;
     letter-spacing: -0.02em;
@@ -738,7 +735,7 @@
 }
 
 .card-back p {
-    font-size: 0.9rem;
+    font-size: clamp(0.6rem, 1.2vw, 0.9rem);
     color: var(--text-mid);
     line-height: 1.7;
     text-align: left;
@@ -789,7 +786,7 @@
 
 .card-back-barcode .barcode-text {
     font-family: 'Courier New', monospace;
-    font-size: 0.6rem;
+    font-size: clamp(0.5rem, 1.2vw, 0.6rem);
     letter-spacing: 0.2em;
     color: var(--text-light);
     text-align: center;
@@ -906,6 +903,8 @@
     padding: 3px 8px;
     border-radius: 2px;
     flex-shrink: 0;
+    margin-right: 20px;
+    margin-left: auto;
 }
 
 
@@ -921,6 +920,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 7vh;
     padding: 0 clamp(16px, 4vw, 48px);
     box-sizing: border-box;
     background: linear-gradient(to bottom, var(--off-white) 70%, transparent 95%);
@@ -928,18 +928,17 @@
 }
 
 .pricing-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 300px));
+    display: flex;
     gap: clamp(12px, 2vw, 24px);
     align-items: start;
     width: 100%;
-    max-width: 980px;
+    max-width: 90.75vh;
 }
 
 .pricing-card {
     width: 100%;
-    max-width: 300px;
-    padding: clamp(24px, 3vw, 36px) clamp(20px, 2.5vw, 32px);
+    max-width: 27.78vh;
+    padding: clamp(6px, 3vw, 36px) clamp(10px, 2.6vw, 32px);
     background: var(--white);
     border: 2px solid transparent;
     border-radius: var(--radius-sm);
@@ -953,10 +952,27 @@
     box-shadow: 0 8px 20px rgba(220, 156, 71, 0.15);
 }
 
+.pricing-card .btn{
+    font-size: clamp(0.5rem, 1.2vw, 0.875rem);
+    width: 100%;
+    border-width: clamp(1px, 0.3vw, 2px);
+    padding: clamp(3px, 1.2vw, 12px) clamp(10px, 2.5vw, 28px);
+    box-shadow: 0 clamp(2px, 0.5vw, 6px) 0 var(--card-border);
+}
+
+.pricing-card .btn:hover{
+    transform: translateY(clamp(1px, 0.3vw, 2px));
+    box-shadow: 0 clamp(1px, 0.2vw, 4px) 0 var(--card-border);
+}
+
+.pricing-card .btn:active {
+    transform: translateY(clamp(2px, 0.5vw, 6px));
+
+    box-shadow: 0 0px 0 var(--card-border);
+}
+
 .pricing-card-featured {
     width: 100%;
-    max-width: 300px;
-    padding: clamp(24px, 3vw, 36px) clamp(20px, 2.5vw, 32px);
     background-image: radial-gradient(at 88% 40%,
             var(--bg-dark) 0px,
             transparent 85%),
@@ -967,7 +983,7 @@
         radial-gradient(at 100% 99%, var(--primary-light) 0px, transparent 85%);
 
     /* box-shadow: 0 16px 64px rgba(123, 94, 167, 0.18), 0px -16px 24px 0px rgba(255, 255, 255, 0.25) inset; */
-    border-color: var(--primary);
+    border-color: var(--text-light);
     color: #fff;
 }
 
@@ -994,29 +1010,19 @@
             var(--primary-light) 0%,
             var(--off-white) 100%);
     color: var(--text-dark);
-
     border: 0;
-    box-shadow: inset 0 -2px 25px -4px #fff;
+    box-shadow: inset 0 -2px 25px -4px #fff, 0 clamp(2px, 0.5vw, 6px) 0 var(--primary-soft);
 }
 
 .pricing-card-featured .btn:hover {
-    background-image: linear-gradient(0deg,
-            var(--off-white) 0%,
-            var(--primary-light) 100%);
-    border: 0;
-    transform: scale(1.05);
-    box-shadow: inset 0 -2px 25px -4px #fff, 0 4px 24px var(--primary-light);
+    transform: translateY(clamp(1px, 0.3vw, 2px));
+    box-shadow: inset 0 -2px 25px -4px #fff, 0 clamp(1px, 0.2vw, 4px) 0 var(--primary-soft);
 }
 
 .pricing-card-featured .btn:active {
-    background-image: linear-gradient(0deg,
-            var(--primary-light) 0%,
-            var(--off-white) 100%);
-    color: var(--text-dark);
-    border: 0;
-    transform: scale(1);
+    transform: translateY(clamp(2px, 0.5vw, 6px));
 
-    box-shadow: inset 0 -2px 25px -4px #fff, 0 4px 24px var(--primary-light);
+    box-shadow: inset 0 -2px 25px -4px #fff, 0 0px 0 var(--primary-soft);
 }
 
 .pricing-card-featured:hover {
@@ -1026,57 +1032,59 @@
 
 .plan-badge {
     display: inline-block;
-    padding: 4px 14px;
+    padding: clamp(2px, 0.4vw, 4px) clamp(7px, 1.2vw, 14px);
     background: transparent;
     border: 2px solid var(--primary);
     border-radius: 100px;
-    font-size: 0.78rem;
+    font-size: clamp(0.4rem, 1.2vw, 0.78rem);
     font-weight: 700;
     color: var(--primary);
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    margin-bottom: 20px;
+    margin-bottom: clamp(5px, 1.2vw, 20px);
 }
 
 .featured-badge {
-    background: var(--primary);
-    color: white;
+    background-image: linear-gradient(135deg, var(--off-white) 0%, var(--primary-light) 100%);
+    padding: clamp(4px, 0.4vw, 6px) clamp(9px, 1.2vw, 16px);
+    border: 0;
+    color: var(--text-dark);
 }
 
 .plan-price {
-    margin-bottom: 8px;
+    margin-bottom: clamp(4px, 1vw, 8px);
 }
 
 .price-num {
     font-family: var(--font-display);
-    font-size: clamp(1.8rem, 3vw, 2.4rem);
+    font-size: clamp(1rem, 3vw, 2.4rem);
     font-weight: 800;
     color: var(--text-dark);
     letter-spacing: -0.04em;
 }
 
 .price-unit {
-    font-size: 1rem;
+    font-size: clamp(0.5rem, 3vw, 1rem);
     color: var(--text-light);
     margin-left: 4px;
 }
 
 .plan-desc {
-    font-size: 0.875rem;
+    font-size: clamp(0.5rem, 1.2vw, 0.875rem);
     color: var(--text-light);
-    margin-bottom: 24px;
+    margin-bottom: clamp(5px, 1vw, 24px);
 }
 
 .plan-features {
     list-style: none;
-    margin-bottom: 32px;
+    margin-bottom: clamp(10px, 3vw, 32px);
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: clamp(5px, 1vw, 10px);
 }
 
 .plan-features li {
-    font-size: 0.875rem;
+    font-size: clamp(0.4rem, 1.2vw, 0.875rem);
     color: var(--text-mid);
 }
 
@@ -1088,7 +1096,6 @@
     max-width: 100%;
     width: 100%;
     margin: 0 auto;
-    padding: 0 48px;
     text-align: center;
     display: flex;
     align-items: center;
@@ -1102,9 +1109,9 @@
 }
 
 .cta-inner .btn {
-    font-size: clamp(1rem, 1.5vw, 1.2rem);
+    font-size: clamp(0.7rem, 1.5vw, 1.1rem);
     font-weight: 900;
-    padding: clamp(12px, 1.2vw, 14px) clamp(24px, 3vw, 36px);
+    padding: clamp(8px, 1.2vw, 14px) clamp(18px, 3vw, 36px);
 }
 
 .cta-inner h2 {
@@ -1229,17 +1236,14 @@
         grid-template-columns: minmax(0, 300px);
         justify-content: center;
     }
-
     .pricing-card,
     .pricing-card-featured {
         max-width: 420px;
+        padding: 6px 10px 10px 10px;
     }
 }
 
 @media (max-width: 768px) {
-    .nav {
-        padding: 12px 20px;
-    }
 
     #nav-progress {
         display: none;
@@ -1254,19 +1258,9 @@
         justify-content: center;
     }
 
-    .hero-inner .btn {
-        font-size: 0.85rem;
-        padding: 10px 20px;
-    }
 
     .section-eyebrow {
         font-size: clamp(1.6rem, 8vw, 3rem);
-    }
-
-    .features,
-    .how-section,
-    .pricing-section {
-        padding: 60px 20px;
     }
 
     .step-item {
@@ -1278,6 +1272,9 @@
 
     .step-badge {
         display: none;
+    }
+    .step-item h3{
+        font-size: 1rem;
     }
 
     .pricing-card,

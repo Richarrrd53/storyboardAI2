@@ -100,8 +100,8 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
     videoTl
-        .to("#videos", { x: "0%" }, 0)
-        .to("#videos", { x: "-100vw"}, ">");
+        .to("#videos", { display: 'flex' }, 0)
+        .to("#videos", { display: 'none'}, ">");
 
     gsap.fromTo("#videos", {
         x: "100vw",
@@ -201,9 +201,9 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
     gsap.fromTo("#features", {
-        x: "200vw",
+        display: 'none',
     }, {
-        x: "0vw",
+        display: 'block',
         scrollTrigger: {
             trigger: "#end-2-2",
             start: "top",
@@ -213,11 +213,11 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
     gsap.fromTo("#feature-title",{
-        y: "40vh",
+        y: "45vh",
         filter: "blur(40px)",
         opacity: 0,
     },{
-        y: "15vh",
+        y: "20vh",
         filter: "blur(0px)",
         opacity: 1,
         scrollTrigger: {
@@ -251,13 +251,13 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
     featureTl
-        .to("#features", { x: "0%"}, 0)
-        .to("#features", { x: "-200vw"}, ">");
+        .to("#features", { display: 'flex'}, 0)
+        .to("#features", { display: 'none'}, ">");
 
     gsap.fromTo("#how", {
-        x: "200vw",
+        display: 'none',
     }, {
-        x: "0vw",
+        display: 'flex',
         scrollTrigger: {
             trigger: "#end-3-3",
             start: "top",
@@ -277,12 +277,12 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
     howTl
-        .to("#how", { x: "0%"}, 0)
-        .to("#how", { x: "-200vw"}, ">");
+        .to("#how", { display: 'flex'}, 0)
+        .to("#how", { display: 'none'}, ">");
     gsap.fromTo("#pricing", {
-        x: "200vw",
+        display: 'none',
     }, {
-        x: "0vw",
+        display: 'flex',
         scrollTrigger: {
             trigger: "#end-4-2",
             start: "top",
@@ -302,13 +302,13 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
     pricingTl
-        .to("#pricing", { x: "0%"}, 0)
-        .to("#pricing", { x: "-200vw"}, ">");
+        .to("#pricing", { display: 'flex'}, 0)
+        .to("#pricing", { display: 'none'}, ">");
 
     gsap.fromTo("#cta", {
-        x: "200vw",
+        display: 'none',
     }, {
-        x: "0vw",
+        display: 'flex',
         scrollTrigger: {
             trigger: "#end-5-2",
             start: "top",
