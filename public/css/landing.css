@@ -1289,8 +1289,8 @@
     }
 
     .pricing-card .btn:hover, .pricing-card .btn:active{
-        box-shadow: 0 1px 0 var(--card-border);
-        transform: translateY(1px);
+        box-shadow: 0 0px 0 var(--card-border);
+        transform: translateY(2px);
     }
 
     .pricing-card-featured .btn{
@@ -1299,8 +1299,8 @@
     }
 
     .pricing-card-featured .btn:hover, .pricing-card-featured .btn:active{
-        box-shadow: 0 1px 0 #dfc49a;
-        transform: translateY(1px);
+        box-shadow: 0 0px 0 #dfc49a;
+        transform: translateY(2px);
     }
 
 
