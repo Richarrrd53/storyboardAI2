@@ -54,20 +54,38 @@ function handleLogin() {
   }
   showToast('登入中…');
   setTimeout(() => {
-    window.location.href = 'dashboard.html';
+    if (window.spaAuth && window.spaNavigate) {
+      window.spaAuth.login();
+      window.spaNavigate('dashboard');
+    } else {
+      localStorage.setItem('spa_logged_in', '1');
+      window.location.href = 'dashboard.html';
+    }
   }, 1000);
 }
 
 function handleRegister() {
   showToast('建立帳號中…');
   setTimeout(() => {
-    window.location.href = 'dashboard.html';
+    if (window.spaAuth && window.spaNavigate) {
+      window.spaAuth.login();
+      window.spaNavigate('dashboard');
+    } else {
+      localStorage.setItem('spa_logged_in', '1');
+      window.location.href = 'dashboard.html';
+    }
   }, 1200);
 }
 
 function handleSocialLogin(provider) {
   showToast(`使用 ${provider} 登入中…`);
   setTimeout(() => {
-    window.location.href = 'dashboard.html';
+    if (window.spaAuth && window.spaNavigate) {
+      window.spaAuth.login();
+      window.spaNavigate('dashboard');
+    } else {
+      localStorage.setItem('spa_logged_in', '1');
+      window.location.href = 'dashboard.html';
+    }
   }, 1200);
 }

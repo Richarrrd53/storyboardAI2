@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-TW">
 
 <head>
@@ -24,10 +24,12 @@
             <a href="#pp" class="nav-link">方案定價</a>
         </div>
         <div class="nav-links">
-            <a href="../html/login.html" class="btn btn-ghost btn-sm">立刻登入</a>
-            <a href="../html/login.html#register" class="btn btn-primary btn-sm">免費開始</a>
+            <a href="#" data-navigate="login" class="btn btn-ghost btn-sm">立刻登入</a>
+            <a href="#" data-navigate="register" class="btn btn-primary btn-sm">免費開始</a>
         </div>
     </nav>
+
+    <main id="page-main">
 
     <!-- 1080 -->
     <section class="hero" id="heroSection">
@@ -43,7 +45,7 @@
             </p>
             <div class="hero-ctas anim-fadeInUp anim-delay-3">
                 <a href="#vv" class="btn btn-outline btn-lg">產品介紹</a>
-                <a href="../html/login.html#register" class="btn btn-primary btn-lg">Get started</a>
+                <a href="#" data-navigate="login" class="btn btn-primary btn-lg">Get started</a>
             </div>
         </div>
     </section>
@@ -697,7 +699,7 @@
                     <li>✓ 雲端存儲（限制空間）</li>
                     <li>✗ 商業匯出</li>
                 </ul>
-                <a href="login.html#register" class="btn btn-ghost btn-block">免費開始</a>
+                <a href="#pp" data-navigate="login" class="btn btn-ghost btn-block">免費開始</a>
             </div>
             <div class="pricing-card card pricing-card-featured">
                 <div class="plan-badge featured-badge">專業方案</div>
@@ -712,7 +714,7 @@
                     <li>✓ 爆點 HOOK 分析</li>
                     <li>✓ 商業 PDF 匯出</li>
                 </ul>
-                <a href="login.html#register" class="btn btn-primary btn-block">立即訂閱</a>
+                <a href="#pp" data-navigate="login" class="btn btn-primary btn-block">立即訂閱</a>
             </div>
             <div class="pricing-card card">
                 <div class="plan-badge">企業方案</div>
@@ -736,10 +738,15 @@
         <div class="cta-inner">
             <h2>準備好開始了嗎？</h2>
             <p>加入數百位創作者，用 AI 讓分鏡創作更快、更精準</p>
-            <a href="../html/login.html#register" class="btn btn-primary btn-lg">馬上體驗 →</a>
+            <a href="#cc" data-navigate="login" class="btn btn-primary btn-lg">馬上體驗 →</a>
         </div>
     </section>
+    </main>
+
+
     <div class="black-mask" id="black-mask-top"></div>
+
+
     <div class="black-mask" id="black-mask-bottom"></div>
     <div class="bg-frame" id="bg-top">
         <div class="rail" id="rail-top"></div>
@@ -749,22 +756,10 @@
 
     </div>
 
-    <!-- Footer -->
-    <!-- <footer class="footer">
-        <div class="footer-brand">
-            <span class="brand-logo" style="font-size:1.1rem;">STORYBOARD <span>AI</span></span>
-            <p>第四視角 · 暨南大學</p>
-        </div>
-        <div class="footer-links">
-            <a href="#">隱私政策</a>
-            <a href="#">服務條款</a>
-            <a href="#">聯絡我們</a>
-        </div>
-    </footer> -->
-
-    <script src="../js/landing.js"></script>
+    <script src="../js/spa-router.js"></script>
     <script src="../js/sys.js"></script>
-    <script type="module" src="../js/landing-animation.js"></script>
 </body>
 
 </html>
+
+

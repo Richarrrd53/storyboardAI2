@@ -3,6 +3,18 @@ const path = require('path');
 const fs = require("fs");
 require('dotenv').config();
 
+const { PrismaClient } = require('@prisma/client');
+const { Pool } = require('pg');
+const { PrismaPg } = require('@prisma/adapter-pg');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
+
+const JWT_SECRET = process.env.JWT_SECRET || 'storyboard-secret-key-123';
+
 if(process.env.GCP_SERVICE_ACCOUNT_BASE64) {
     try{
         const credentialsJson = Buffer.from(process.env.GCP_SERVICE_ACCOUNT_BASE64, 'base64').toString('utf-8');
@@ -53,6 +65,101 @@ const publicPath = path.join(process.cwd(), 'public');
 app.use(express.static(publicPath));
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ limit: '100mb', extended: true })); // 增加 URL 編碼限制
+
+// === AUTHENTICATION API ===
+app.post('/api/auth/login', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        if (!email || !password) {
+            return res.status(400).json({ error: '請提供 Email 和密碼' });
+        }
+
+        const user = await prisma.user.findUnique({ where: { email } });
+        if (!user) {
+            return res.status(401).json({ error: '帳號或密碼錯誤' });
+        }
+
+        const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+        if (!isPasswordValid) {
+            return res.status(401).json({ error: '帳號或密碼錯誤' });
+        }
+
+        const token = jwt.sign(
+            { id: user.id, email: user.email },
+            JWT_SECRET,
+            { expiresIn: '7d' }
+        );
+
+        res.json({
+            message: '登入成功',
+            token,
+            user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                image: user.image
+            }
+        });
+    } catch (error) {
+        console.error('Login Error:', error);
+        res.status(500).json({ error: '伺服器錯誤' });
+    }
+});
+
+app.get('/api/auth/me', async (req, res) => {
+    try {
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ error: '未授權' });
+        }
+
+        const token = authHeader.split(' ')[1];
+        const decoded = jwt.verify(token, JWT_SECRET);
+
+        const user = await prisma.user.findUnique({
+            where: { id: decoded.id },
+            select: { id: true, name: true, email: true, image: true }
+        });
+
+        if (!user) {
+            return res.status(404).json({ error: '找不到使用者' });
+        }
+
+        res.json({ user });
+    } catch (error) {
+        console.error('Auth Me Error:', error);
+        res.status(401).json({ error: 'Token 無效或已過期' });
+    }
+});
+
+app.post('/api/auth/logout', (req, res) => {
+    res.json({ success: true, message: '已登出' });
+});
+
+// === PROJECTS API ===
+app.get('/api/projects', async (req, res) => {
+    try {
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ error: '未授權' });
+        }
+        const token = authHeader.split(' ')[1];
+        const decoded = jwt.verify(token, JWT_SECRET);
+
+        const projects = await prisma.project.findMany({
+            where: { authorId: decoded.id },
+            select: { id: true, shortId: true, title: true, style: true, ratio: true, createAt: true },
+            orderBy: { createAt: 'desc' }
+        });
+
+        res.json({ projects });
+    } catch (error) {
+        console.error('Fetch Projects Error:', error);
+        res.status(500).json({ error: '獲取專案失敗' });
+    }
+});
+// ==========================
+// ==========================
 
 
 
@@ -145,6 +252,14 @@ app.get('/api/get-templates', async (req, res) => {
     }
 });
 
+
+// SPA catch-all — redirect /dashboard, /login, /register, /generate to main.html
+const spaRoutes = ['/dashboard', '/login', '/register', '/generate', '/analyze'];
+spaRoutes.forEach(route => {
+    app.get(route, (req, res) => {
+        res.sendFile(path.join(process.cwd(), 'public', 'main.html'));
+    });
+});
 if (process.env.NODE_ENV !== 'production') {
     const PORT = 3000;
     app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));

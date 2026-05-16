@@ -1,6 +1,11 @@
 const ifm = document.createElement("iframe");
 ifm.id = "ifm";
-ifm.src = "./html/index.html";
+
+// Parse parent URL to determine initial SPA route inside iframe
+let route = window.location.pathname.replace(/^\/|\/$/g, '');
+if (route === 'html' || route === 'index.html') route = '';
+
+ifm.src = `./html/index.html` + (route ? `#/${route}` : '') + window.location.search;
 
 // --- 更改部分 1: 讓 iframe 徹底填滿視窗，不鎖死比例 ---
 ifm.style.position = "fixed";
