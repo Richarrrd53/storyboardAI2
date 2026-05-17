@@ -262,6 +262,62 @@
     };
   }
 
+  async function ensureSharedLayout() {
+    if (dashboardTopbar) return;
+
+    const doc = await fetchPageDoc('/html/dashboard.html');
+    const topbar = doc.querySelector('header.topbar');
+    if (topbar) {
+      dashboardTopbar = topbar.cloneNode(true);
+      dashboardTopbar.id = 'spa-topbar';
+      dashboardTopbar.style.transform = 'translateY(-100%)';
+      document.body.appendChild(dashboardTopbar);
+    }
+    const up = doc.querySelector('.user-panel');
+    if (up) {
+      const upEl = up.cloneNode(true);
+      upEl.id = 'spa-user-panel';
+      document.body.appendChild(upEl);
+    }
+
+    await initSharedLayoutLogic();
+  }
+
+  async function initSharedLayoutLogic() {
+    updateRailHoles();
+
+    const avatar = document.getElementById('top-avatar') || dashboardTopbar?.querySelector('#top-avatar');
+    const panel = document.getElementById('spa-user-panel');
+
+    const user = await spaAuth.fetchUser();
+    if (user && panel) {
+      const name = user.name || 'User';
+      const initial = name.charAt(0).toUpperCase();
+      if (avatar) avatar.textContent = initial;
+
+      const upAvatar = panel.querySelector('.up-avatar');
+      if (upAvatar) upAvatar.textContent = initial;
+
+      const upName = panel.querySelector('.up-name');
+      if (upName) upName.textContent = name;
+
+      const upEmail = panel.querySelector('.up-email');
+      if (upEmail) upEmail.textContent = user.email;
+    } else if (!user && spaAuth.isLoggedIn()) {
+      spaAuth.logout();
+    }
+
+    if (avatar && panel) {
+      avatar.onclick = e => { e.stopPropagation(); panel.classList.toggle('active'); };
+      document.addEventListener('click', () => panel.classList.remove('active'), { once: false });
+    }
+
+    const logout = panel?.querySelector('.up-logout');
+    if (logout) logout.addEventListener('click', e => { e.preventDefault(); spaAuth.logout(); });
+
+    bindTopbarLinks();
+  }
+
   async function renderDashboard() {
     const doc = await fetchPageDoc('/html/dashboard.html');
     const m = initMain();
@@ -269,23 +325,42 @@
     const mainContent = doc.querySelector('main.dash-main');
     if (mainContent) m.appendChild(mainContent.cloneNode(true));
 
-    if (!dashboardTopbar) {
-      const topbar = doc.querySelector('header.topbar');
-      if (topbar) {
-        dashboardTopbar = topbar.cloneNode(true);
-        dashboardTopbar.id = 'spa-topbar';
-        dashboardTopbar.style.transform = 'translateY(-100%)';
-        document.body.appendChild(dashboardTopbar);
-      }
-      const up = doc.querySelector('.user-panel');
-      if (up) {
-        const upEl = up.cloneNode(true);
-        upEl.id = 'spa-user-panel';
-        document.body.appendChild(upEl);
+    await ensureSharedLayout();
+
+    const projectsGrid = document.getElementById('projects-grid');
+    if (projectsGrid) {
+      projectsGrid.innerHTML = '<div style="color:var(--text-mid); text-align:center; padding: 40px; grid-column: 1/-1;">載入中...</div>';
+      const projects = await spaAuth.fetchProjects();
+      projectsGrid.innerHTML = '';
+
+      if (!projects || projects.length === 0) {
+        projectsGrid.innerHTML = `
+          <div class="projects-empty">
+            <h3>尚無專案</h3>
+            <p>開始建立你的第一個分鏡腳本！</p>
+          </div>
+        `;
+      } else {
+        projects.forEach(p => {
+          const date = new Date(p.createAt).toLocaleDateString('zh-TW');
+          const card = document.createElement('div');
+          card.className = 'project-card';
+          card.onclick = () => navigate('generate');
+          card.innerHTML = `
+            <div class="project-thumb">🎬</div>
+            <div class="project-info">
+              <div class="project-title">${p.title}</div>
+              <div class="project-meta">
+                <span class="project-tag">${p.style}</span>
+                <span class="project-tag">${p.ratio}</span>
+              </div>
+              <div class="project-date">建立於 ${date}</div>
+            </div>
+          `;
+          projectsGrid.appendChild(card);
+        });
       }
     }
-
-    initDashboardLogic();
   }
 
   async function initDashboardLogic() {
@@ -363,6 +438,8 @@
     const m = initMain();
     m.className = 'spa-gen-wrap';
     doc.querySelectorAll('.phase').forEach(p => m.appendChild(p.cloneNode(true)));
+
+    await ensureSharedLayout();
   }
 
   function bindTopbarLinks() {
@@ -386,7 +463,7 @@
     const railBottom = document.getElementById('rail-bottom');
     if (!railTop || !railBottom) return;
 
-    const targetNum = Math.floor(window.innerWidth / 20);
+    const targetNum = Math.floor(window.innerWidth / (0.028*window.innerHeight)) + 1;
 
     [railTop, railBottom].forEach(rail => {
       const currentHoles = rail.getElementsByClassName('rail-hole');
@@ -449,8 +526,12 @@
       window._landingKill = null;
     }
 
+    if (page === 'dashboard' || page === 'generate') {
+      updateTopbarActive(page);
+      showDashTopbar();
+    } 
+
     await maskClose();
-    window.scrollTo(0, 0);
 
     const def = pageDefs[page];
     const nextCSS = def ? def.css : [];
@@ -493,6 +574,7 @@
     isTransitioning = false;
 
     await maskOpen();
+    window.scrollTo(0, 0);
   }
 
   window.addEventListener('popstate', e => {

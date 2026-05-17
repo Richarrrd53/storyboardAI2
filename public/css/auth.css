@@ -166,6 +166,12 @@ body {
   background-color: var(--white);
 }
 
+.auth-content,
+.auth-content .btn {
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
 .content-flex{
   display: flex;
   flex-direction: column;

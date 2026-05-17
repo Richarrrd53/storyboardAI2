@@ -97,6 +97,7 @@ body {
     letter-spacing: -0.02em;
     color: var(--off-white);
     font-size: clamp(0.8rem, 1.5vw, 1.25rem);
+    text-decoration: none;
 }
 
 .brand-logo span {
@@ -289,8 +290,8 @@ p {
     content: '';
     position: fixed;
 
-    width: 100%;
-    height: 78px;
+    width: 100vw;
+    height: 7vh;
     background-image: linear-gradient(-60deg,
         var(--text-dark) 0%, 
         var(--text-dark) 10%, 
@@ -312,7 +313,7 @@ p {
         var(--text-dark) 90%,
         transparent 90% 
     );
-    background-size: 30px 78px;
+    background-size: 3vh 7vh;
     background-position: top left;
     background-color: #3f3730;
     animation: bg-frame 2s linear infinite;
@@ -330,10 +331,10 @@ p {
 
 @keyframes bg-frame {
     from{
-        background-position: 0px 0px;
+        background-position: 0vh 0vh;
     }
     to{
-        background-position: 30px 0px;
+        background-position: 3vh 0vh;
     }
 }
 
@@ -354,24 +355,24 @@ p {
         transform: translateX(0);
     }
     to {
-        transform: translateX(-28px);
+        transform: translateX(-2.8vh);
     }
 }
 
 #rail-top{
-    top: 55px;
+    top: 5vh;
 }
 
 #rail-bottom{
-    bottom: 55px;
+    bottom: 5vh;
 }
 
 .rail-hole{
     position: relative;
-    width: 8px;
-    height: 14px;
-    border-radius: 3px;
+    width: 0.8vh;
+    height: 1.3vh;
+    border-radius: 0.3ch;
     background-color: var(--text-light);
     opacity: 0.3;
-    margin-left: 20px;
+    margin-left: 2vh;
 }
