@@ -347,14 +347,23 @@
           card.className = 'project-card';
           card.onclick = () => navigate('generate');
           card.innerHTML = `
+            <div class="card-strip">
+              <div class="strip-hole"></div>
+              <div class="strip-hole"></div>
+              <div class="strip-hole"></div>
+            </div>
             <div class="project-thumb">🎬</div>
             <div class="project-info">
               <div class="project-title">${p.title}</div>
               <div class="project-meta">
-                <span class="project-tag">${p.style}</span>
+                <span class="project-tag">${date}</span>
                 <span class="project-tag">${p.ratio}</span>
               </div>
-              <div class="project-date">建立於 ${date}</div>
+            </div>
+            <div class="card-strip bottom">
+              <div class="strip-hole"></div>
+              <div class="strip-hole"></div>
+              <div class="strip-hole"></div>
             </div>
           `;
           projectsGrid.appendChild(card);
@@ -511,9 +520,22 @@
   function updateTopbarActive(page) {
     if (!dashboardTopbar) return;
     const links = dashboardTopbar.querySelectorAll('.top-link');
-    links.forEach(l => l.classList.remove('active'));
+    links.forEach(l => {
+      l.classList.remove('active');
+      const currentSrc = l.children[0].src;
+      l.children[0].src = currentSrc.replace("focus", "blur");
+    });
     if (page === 'dashboard' && links[0]) links[0].classList.add('active');
     if (page === 'generate' && links[1]) links[1].classList.add('active');
+    if (page === 'history' && links[2]) links[2].classList.add('active');
+    if (page === 'template' && links[3]) links[3].classList.add('active');
+    if (page === 'analysis' && links[4]) links[4].classList.add('active');
+    links.forEach(l => {
+      if (l.classList.contains('active')){
+        const currentSrc = l.children[0].src;
+        l.children[0].src = currentSrc.replace("blur", "focus");
+      }
+    });
   }
 
   async function navigate(page, opts = {}) {
