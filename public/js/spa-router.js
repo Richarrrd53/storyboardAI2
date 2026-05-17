@@ -422,7 +422,7 @@
       }
     },
     login: { css: ['/css/auth.css'], js: ['/js/auth.js'], render: (o) => renderLogin(o?.showRegister) },
-    register: { css: ['/css/auth.css'], js: [], render: () => renderLogin(true) },
+    register: { css: ['/css/auth.css'], js: ['/js/auth.js'], render: () => renderLogin(true) },
     dashboard: { css: ['/css/dashboard.css'], js: ['/js/generate-prefill-path.js'], render: () => renderDashboard() },
     generate: {
       css: ['/css/dashboard.css', '/css/generate.css', '/css/math-curve-loader.css'],

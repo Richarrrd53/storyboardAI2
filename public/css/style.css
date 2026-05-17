@@ -132,11 +132,11 @@ p {
 }
 
 .btn:hover{
-    transform: translateY(2px);
+    transform: translateY(0.2vh);
 }
 
 .btn:active {
-    transform: translateY(6px);
+    transform: translateY(0.6vh);
 
 }
 
@@ -146,17 +146,17 @@ p {
     color: var(--text-dark);
     padding: 12px 28px;
     box-shadow: 
-                0 6px 0px var(--text-dark),
-                inset 0 2px 0px rgba(255, 255, 255, 0.5);
+                0 0.6vh 0px var(--text-dark),
+                inset 0 0.2vh 0px rgba(255, 255, 255, 0.5);
     z-index: 10;
 }
 
 .btn-primary:hover {
-    box-shadow: 0 4px 0px var(--text-dark);
+    box-shadow: 0 0.4vh 0px var(--text-dark);
 }
 
 .btn-primary:active {
-    box-shadow: 0 0px 0px var(--text-dark);
+    box-shadow: 0 0vh px var(--text-dark);
 
 }
 
@@ -165,18 +165,16 @@ p {
     background: var(--white);
     color: var(--text-light);
     border: 2px solid var(--card-border);
-    box-shadow: 0 6px 0 var(--card-border);
+    box-shadow: 0 0.6vh 0 var(--card-border);
     backdrop-filter: blur(6px);
 }
 
 .btn-ghost:hover {
-    box-shadow: 0 4px 0 var(--card-border);
-    transform: translateY(2px);
+    box-shadow: 0 0.4vh 0 var(--card-border);
 }
 
 .btn-ghost:active {
     box-shadow: 0 0 0 var(--card-border);
-    transform: translateY(4px);
 }
 
 .btn-outline {
@@ -184,11 +182,11 @@ p {
     color: var(--text-dark);
     padding: 12px 28px;
     border: 2px solid var(--text-dark);
-    box-shadow: 0 6px 0px var(--text-dark);
+    box-shadow: 0 0.6vh 0px var(--text-dark);
 }
 
 .btn-outline:hover{
-    box-shadow: 0 4px 0px var(--text-dark);
+    box-shadow: 0 0.4vh 0px var(--text-dark);
 }
 
 .btn-outline:active {

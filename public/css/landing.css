@@ -81,25 +81,6 @@
     text-transform: uppercase;
 }
 
-/* Muted push-down ghost button for "產品介紹" */
-.hero-inner .btn-outline {
-    background: rgba(255, 255, 255, 0.55);
-    color: var(--text-mid);
-    border: 2px solid var(--card-border);
-    box-shadow: 0 6px 0 var(--card-border);
-    backdrop-filter: blur(6px);
-}
-
-.hero-inner .btn-outline:hover {
-    box-shadow: 0 4px 0 var(--card-border);
-    transform: translateY(2px);
-}
-
-.hero-inner .btn-outline:active {
-    box-shadow: 0 0 0 var(--card-border);
-    transform: translateY(6px);
-}
-
 .hero-eyebrow {
     margin-bottom: 28px;
 }
@@ -860,7 +841,7 @@
 
 .step-item:hover {
     border-color: var(--primary);
-    box-shadow: 0 4px 0 var(--primary), 0 8px 20px rgba(190, 166, 101, 0.12);
+    box-shadow: 0 0.4vh 0 var(--primary), 0 8px 20px rgba(190, 166, 101, 0.12);
     transform: translateY(-2px);
 }
 
@@ -960,18 +941,6 @@
     width: 100%;
     border-width: 2px;
     padding: clamp(3px, 1.2vw, 12px) clamp(10px, 2.5vw, 28px);
-    box-shadow: 0 6px 0 var(--card-border);
-}
-
-.pricing-card .btn:hover{
-    transform: translateY(2px);
-    box-shadow: 0 4px 0 var(--card-border);
-}
-
-.pricing-card .btn:active {
-    transform: translateY(6px);
-
-    box-shadow: 0 0px 0 var(--card-border);
 }
 
 .pricing-card-featured {
@@ -1014,18 +983,7 @@
             var(--off-white) 100%);
     color: var(--text-dark);
     border: 0;
-    box-shadow: inset 0 -2px 25px -4px #fff, 0 6px 0 #dfc49a;
-}
-
-.pricing-card-featured .btn:hover {
-    transform: translateY(2px);
-    box-shadow: inset 0 -2px 25px -4px #fff, 0 4px 0 #dfc49a;
-}
-
-.pricing-card-featured .btn:active {
-    transform: translateY(6px);
-
-    box-shadow: inset 0 -2px 25px -4px #fff, 0 0px 0 #dfc49a;
+    box-shadow: inset 0 -2px 25px -4px #fff, 0 0.6vh 0 #dfc49a;
 }
 
 .pricing-card-featured:hover {
