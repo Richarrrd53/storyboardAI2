@@ -189,24 +189,47 @@
     window.switchTab = function (tab) {
       const lp = document.getElementById('panel-login');
       const rp = document.getElementById('panel-register');
+      const inner = document.getElementById("auth-inner");
       const tl = document.getElementById('tab-login');
       const tr = document.getElementById('tab-register');
       if (!lp || !rp) return;
       if (tab === 'login') {
         tl.classList.add('active'); tr.classList.remove('active');
-        lp.style.display = 'block'; rp.style.display = 'none';
+        inner.style.transform = "rotateY(0)";
+        lp.style.pointerEvents = "auto";
+        rp.style.pointerEvents = "none";
       } else {
         tr.classList.add('active'); tl.classList.remove('active');
-        rp.style.display = 'block'; lp.style.display = 'none';
+        inner.style.transform = "rotateY(180deg)";
+        lp.style.pointerEvents = "none";
+        rp.style.pointerEvents = "auto";
       }
     };
     if (showRegister) setTimeout(() => window.switchTab('register'), 50);
 
-    window.togglePwd = function (id, btn) {
+    window.togglePwd = function (id, btnId) {
       const inp = document.getElementById(id);
+      const slash = document.getElementById("inputShow"+btnId+"2");
+      const mask = document.getElementById("inputShowMask"+btnId+"2");
       if (!inp) return;
-      if (inp.type === 'password') { inp.type = 'text'; btn.textContent = '\uD83D\uDE48'; }
-      else { inp.type = 'password'; btn.textContent = '\uD83D\uDC41'; }
+      if (inp.type === 'password') { 
+        inp.style.filter = "blur(3px)";
+        setTimeout(() => {
+          inp.style.filter = "blur(0px)";
+          inp.type = 'text';
+        }, 300);
+        slash.style.transform = "translateY(-5vh)";
+        mask.style.transform = "translate(7.5vh, -5vh) rotate(45deg)";
+      }
+      else {
+        inp.style.filter = "blur(3px)";
+        setTimeout(() => {
+          inp.style.filter = "blur(0px)";
+          inp.type = 'password';
+        }, 300);
+        slash.style.transform = "translateY(0vh)";
+        mask.style.transform = "translate(2.5vh, 0vh) rotate(45deg)";
+      }
     };
 
     function showToast(msg) {
@@ -219,8 +242,8 @@
     window.handleLogin = async function () {
       const email = document.getElementById('login-email')?.value;
       const pass = document.getElementById('login-password')?.value;
-      if (!email || !pass) { showToast('\u8ACB\u586B\u5BEB\u96FB\u5B50\u4FE1\u7B4E\u548C\u5BC6\u78BC'); return; }
-      showToast('\u767B\u5165\u4E2D\u2026');
+      if (!email || !pass) { showToast('電子信箱和密碼不可為空！'); return; }
+      showToast('正在驗證中...');
       try {
         await spaAuth.login(email, pass);
         navigate('dashboard');
@@ -230,8 +253,7 @@
     };
 
     window.handleRegister = function () {
-      showToast('\u5EFA\u7ACB\u5E33\u865F\u4E2D\u2026');
-      setTimeout(() => { spaAuth.login(); navigate('dashboard'); }, 1200);
+      showToast('註冊功能尚未推出！');
     };
 
     window.handleSocialLogin = function (provider) {
@@ -267,7 +289,7 @@
   }
 
   async function initDashboardLogic() {
-    refillRail();
+    updateRailHoles();
 
     const avatar = document.getElementById('top-avatar') || dashboardTopbar?.querySelector('#top-avatar');
     const panel = document.getElementById('spa-user-panel') || document.getElementById('user-panel');
@@ -359,16 +381,31 @@
     });
   }
 
-  function refillRail() {
-    ['rail-top', 'rail-bottom'].forEach(id => {
-      const r = document.getElementById(id);
-      if (!r) return;
-      r.innerHTML = '';
-      const n = Math.ceil(window.innerWidth / 28);
-      for (let i = 0; i < n; i++) {
-        const h = document.createElement('div');
-        h.className = 'rail-hole';
-        r.appendChild(h);
+  function updateRailHoles() {
+    const railTop = document.getElementById('rail-top');
+    const railBottom = document.getElementById('rail-bottom');
+    if (!railTop || !railBottom) return;
+
+    const targetNum = Math.floor(window.innerWidth / 20);
+
+    [railTop, railBottom].forEach(rail => {
+      const currentHoles = rail.getElementsByClassName('rail-hole');
+      const currentNum = currentHoles.length;
+
+      if (currentNum < targetNum) {
+        const diff = targetNum - currentNum;
+        const fragment = document.createDocumentFragment();
+        for (let i = 0; i < diff; i++) {
+          const hole = document.createElement('div');
+          hole.classList.add('rail-hole');
+          fragment.appendChild(hole);
+        }
+        rail.appendChild(fragment);
+      } else if (currentNum > targetNum) {
+        const diff = currentNum - targetNum;
+        for (let i = 0; i < diff; i++) {
+          rail.lastElementChild?.remove();
+        }
       }
     });
   }
@@ -384,7 +421,7 @@
         interceptCTAs();
       }
     },
-    login: { css: ['/css/auth.css'], js: [], render: (o) => renderLogin(o?.showRegister) },
+    login: { css: ['/css/auth.css'], js: ['/js/auth.js'], render: (o) => renderLogin(o?.showRegister) },
     register: { css: ['/css/auth.css'], js: [], render: () => renderLogin(true) },
     dashboard: { css: ['/css/dashboard.css'], js: ['/js/generate-prefill-path.js'], render: () => renderDashboard() },
     generate: {
@@ -492,6 +529,9 @@
       maskBot().style.bottom = '0';
     }
 
+    window.addEventListener('resize', updateRailHoles);
+    updateRailHoles();
+
     let initialPage = 'landing';
     const hash = window.location.hash;
     if (hash && hash.startsWith('#/')) {
@@ -516,3 +556,4 @@
   window.spaNavigate = navigate;
 
 })();
+

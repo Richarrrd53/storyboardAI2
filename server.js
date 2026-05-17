@@ -76,12 +76,12 @@ app.post('/api/auth/login', async (req, res) => {
 
         const user = await prisma.user.findUnique({ where: { email } });
         if (!user) {
-            return res.status(401).json({ error: '帳號或密碼錯誤' });
+            return res.status(401).json({ error: '找不到已綁定該電子信箱的使用者' });
         }
 
         const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
         if (!isPasswordValid) {
-            return res.status(401).json({ error: '帳號或密碼錯誤' });
+            return res.status(401).json({ error: '密碼錯誤' });
         }
 
         const token = jwt.sign(

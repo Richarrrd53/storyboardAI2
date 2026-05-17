@@ -24,22 +24,6 @@
     };
     window.addEventListener('resize', handleResize);
 
-    const railBottom = document.getElementById("rail-bottom");
-    const railTop = document.getElementById("rail-top");
-    if (railBottom && railTop) {
-        const nums = window.innerWidth / 20;
-        for (let i = 0; i < nums; i++) {
-            const railHole = document.createElement('div');
-            railHole.classList.add('rail-hole');
-            railBottom.appendChild(railHole);
-        }
-        for (let i = 0; i < nums; i++) {
-            const railHole = document.createElement('div');
-            railHole.classList.add('rail-hole');
-            railTop.appendChild(railHole);
-        }
-    }
-
     const oldKill = window._landingKill;
     window._landingKill = () => {
         if (typeof oldKill === 'function') oldKill();
