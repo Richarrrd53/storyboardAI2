@@ -1269,19 +1269,6 @@
     .cta-inner h2 {
         font-size: clamp(1.8rem, 8vw, 2.5rem);
     }
-
-    .footer {
-        flex-direction: column;
-        gap: 20px;
-        text-align: center;
-        padding: 24px 20px;
-    }
-
-    .footer-links {
-        gap: 16px;
-        flex-wrap: wrap;
-        justify-content: center;
-    }
 }
 
 .black-mask {
