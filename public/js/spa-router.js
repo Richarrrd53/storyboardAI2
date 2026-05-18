@@ -213,22 +213,22 @@
       const mask = document.getElementById("inputShowMask"+btnId+"2");
       if (!inp) return;
       if (inp.type === 'password') { 
-        inp.style.filter = "blur(0.2vh)";
+        inp.style.filter = "blur(3px)";
         setTimeout(() => {
-          inp.style.filter = "blur(0vh)";
+          inp.style.filter = "blur(0px)";
 
           inp.type = 'text';
-        }, 150);
+        }, 300);
         slash.style.transform = "translateY(-5vh)";
         mask.style.transform = "translate(7.5vh, -5vh) rotate(45deg)";
       }
       else {
-        inp.style.filter = "blur(0.2vh)";
+        inp.style.filter = "blur(3px)";
         setTimeout(() => {
-          inp.style.filter = "blur(0vh)";
+          inp.style.filter = "blur(0px)";
 
           inp.type = 'password';
-        }, 150);
+        }, 300);
         slash.style.transform = "translateY(0vh)";
         mask.style.transform = "translate(2.5vh, 0vh) rotate(45deg)";
       }
