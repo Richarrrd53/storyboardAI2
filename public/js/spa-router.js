@@ -216,8 +216,9 @@
         inp.style.filter = "blur(3px)";
         setTimeout(() => {
           inp.style.filter = "blur(0px)";
+
           inp.type = 'text';
-        }, 300);
+        }, 150);
         slash.style.transform = "translateY(-5vh)";
         mask.style.transform = "translate(7.5vh, -5vh) rotate(45deg)";
       }
@@ -225,8 +226,9 @@
         inp.style.filter = "blur(3px)";
         setTimeout(() => {
           inp.style.filter = "blur(0px)";
+
           inp.type = 'password';
-        }, 300);
+        }, 150);
         slash.style.transform = "translateY(0vh)";
         mask.style.transform = "translate(2.5vh, 0vh) rotate(45deg)";
       }
@@ -235,7 +237,9 @@
     function showToast(msg) {
       const t = document.getElementById('toast');
       if (!t) return;
-      t.textContent = msg; t.classList.add('show');
+      t.classList.remove('show');
+      t.textContent = msg;
+      t.classList.add('show');
       setTimeout(() => t.classList.remove('show'), 2800);
     }
 

@@ -31,9 +31,6 @@ body {
 }
 
 .top-nav {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
     display: flex;
     align-items: center;
     gap: 40px;
@@ -71,6 +68,10 @@ body {
     opacity: 0.8 !important;
 }
 
+.top-link.active:active img{
+    opacity: 1 !important;
+}
+
 .top-link::before{
     position: absolute;
     width: 4vh;
@@ -89,7 +90,19 @@ body {
 .top-link.active::before{
     content: '';
     background-color: #fff;
+    box-shadow: 0 0 10px var(--primary-light);
     animation: link-selected 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes link-border {
+    from{
+        scale: 1;
+        opacity: 1;
+    }
+    to{
+        scale: 1.5;
+        opacity: 0;
+    }
 }
 
 @keyframes link-selected {
@@ -108,10 +121,36 @@ body {
     bottom: 0;
     left: 50%;
     transform: translate(-50%, 1.1vh);
-    width: 40px;
+    width: 5vh;
     height: 0.4vh;
     background: var(--primary);
     border-radius: 4px 4px 0 0;
+    animation: link-bottom .3s cubic-bezier(.4,0,.2,1);
+}
+
+@keyframes link-bottom {
+    from{
+        width: 0;
+    }
+    to{
+        width: 5vh;
+    }
+}
+
+.top-link .link-glow{
+    position: absolute;
+    width: 4vh;
+    height: 4vh;
+    clip-path: circle(50%);
+    background: linear-gradient(45deg, transparent 30%, rgb(255, 186, 8) 50%, transparent 70%);
+    background-size: 20vh 20vh;
+    background-position: top right;
+    z-index: 3;
+}
+
+.top-link.active .link-glow{
+    background-position: bottom left;
+    transition: all 1s cubic-bezier(.4,0,.2,1);
 }
 
 .top-right {
@@ -912,3 +951,14 @@ body {
     margin-bottom: 12px;
 }
 
+@media (max-width: 900px) {
+    .top-nav{
+        position: absolute;
+        left: 50%;
+        transform: translate(-50%, 94vh);
+        display: flex;
+        align-items: center;
+        gap: 40px;
+        height: 100%;
+    }
+}
