@@ -322,7 +322,6 @@ p {
 #bg-bottom {
     bottom: 0;
     left: 0;
-    bottom: env(safe-area-inset-bottom, 0px);
 }
 
 @keyframes bg-frame {
