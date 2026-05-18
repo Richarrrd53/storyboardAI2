@@ -1290,7 +1290,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: start;
-    height: 100vh;
+    height: 100svh;
     padding: 10vh 2vh;
     overflow-y: auto;
     background: linear-gradient(to bottom, var(--off-white) 70%, transparent 95%);
@@ -1299,13 +1299,13 @@
 /* Dashboard wrap inside SPA */
 .spa-dash-wrap {
     display: block;
-    height: 100vh;
+    height: 100svh;
     overflow-y: auto;
 }
 
 /* Generate wrap inside SPA */
 .spa-gen-wrap {
     display: block;
-    height: 100vh;
+    height: 100svh;
     overflow-y: auto;
 }
