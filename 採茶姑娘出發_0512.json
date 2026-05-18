@@ -1,0 +1,129 @@
+{
+  "metadata": {
+    "originalStory": "採茶姑娘出發！從一片葉開始🍃帶你認識山城的味道",
+    "style": "預設風格",
+    "stylePrompt": "natural lighting, high resolution, clean composition, soft focus background",
+    "ratio": "直向9:16",
+    "exportTime": "2026-05-18T11:16:00.000Z",
+    "totalShots": 8
+  },
+  "meta": {
+    "title": "採茶姑娘出發！帶你認識山城的味道",
+    "style": "natural lighting, high resolution, clean composition, soft focus background",
+    "ratio": "9:16"
+  },
+  "characters": {
+    "kimo": {
+      "name": "Kimo",
+      "appearance": "Young energetic woman, bright eyes, expressive facial features, tied-back hair",
+      "outfit": "Traditional tea-picking floral sleeves, a wide-brimmed straw hat, and a casual outdoor vest",
+      "personality": "Adventurous, genuine, and easily excited by food"
+    },
+    "group": {
+      "name": "The Tea Crew",
+      "appearance": "A group of cheerful young friends, diverse looks",
+      "outfit": "Casual summer travel outfits and sun protection gear",
+      "personality": "High-energy and supportive"
+    }
+  },
+  "shots": [
+    {
+      "id": 1,
+      "title": "以「Kimo吃下果實後的扭曲表情特寫。」做為開頭，加入震動文字與富有衝擊力的特效",
+      "camera": "Extreme Close-up",
+      "duration": "2s",
+      "emotion": "參考時間軸: 02:18-02:20 建議:搭配強烈震動字體:「天啊!這竟然能吃?」",
+      "characters": [
+        "kimo"
+      ],
+      "shotPrompt": "Extreme close-up on face, eyes squinting, mouth twisted in a bitter reaction after biting a green fruit, intense natural sunlight, tea garden background blurred.",
+      "finalPrompt": "Young energetic woman, bright eyes, expressive facial features, tied-back hair,\nTraditional tea-picking floral sleeves, a wide-brimmed straw hat, and a casual outdoor vest,\nAdventurous, genuine, and easily excited by food,\n\nExtreme close-up on face, eyes squinting, mouth twisted in a bitter reaction after biting a green fruit, intense natural sunlight, tea garden background blurred.,\n\nnatural lighting, high resolution, clean composition, soft focus background,\n\nvertical 9:16 aspect ratio,\nhigh quality,\nconsistent character design",
+      "image": "../images/採茶姑娘出發/1.png"
+    },
+    {
+      "id": 2,
+      "title": "藏鏡人：「要吐出來嗎？」\nKimo：「我吞掉了」",
+      "camera": "Close-up",
+      "duration": "2s",
+      "emotion": "參考時間軸: 02:22-02:24 以搞笑對話讓觀眾會心一笑",
+      "characters": [
+        "kimo"
+      ],
+      "shotPrompt": "Close-up side profile view, Kimo looking slightly guilty but funny, talking with her mouth closed as if she just swallowed something, lush green tea foliage background.",
+      "finalPrompt": "Young energetic woman, bright eyes, expressive facial features, tied-back hair,\nTraditional tea-picking floral sleeves, a wide-brimmed straw hat, and a casual outdoor vest,\nAdventurous, genuine, and easily excited by food,\n\nClose-up side profile view, Kimo looking slightly guilty but funny, talking with her mouth closed as if she just swallowed something, lush green tea foliage background.,\n\nnatural lighting, high resolution, clean composition, soft focus background,\n\nvertical 9:16 aspect ratio,\nhigh quality,\nconsistent character design",
+      "image": "../images/採茶姑娘出發/2.png"
+    },
+    {
+      "id": 3,
+      "title": "電視無訊號的彩色條紋畫面",
+      "camera": "Static",
+      "duration": "1s",
+      "emotion": "特效「逼————」長音消音音效",
+      "characters": [],
+      "shotPrompt": "SMPTE color bars displaying vibrant vertical stripes on a retro television screen, static analog fuzz texture, vintage filter style.",
+      "finalPrompt": "SMPTE color bars displaying vibrant vertical stripes on a retro television screen, static analog fuzz texture, vintage filter style.,\n\nnatural lighting, high resolution, clean composition, soft focus background,\n\nvertical 9:16 aspect ratio,\nhigh quality",
+      "image": "../images/採茶姑娘出發/3.png"
+    },
+    {
+      "id": 4,
+      "title": "製茶五步曲快剪：採茶 -> 萎凋 -> 揉捻 -> 發酵 -> 乾燥。把 5 個步驟濃縮在 5 秒內快速帶過",
+      "camera": "Fast Cuts / Montage",
+      "duration": "5s",
+      "emotion": "參考時間軸: 02:55-03:12 配合文青音樂,從搞笑鬼轉到文青的反差感,使用簡潔俐落的打字機字卡快速閃過工序名稱。",
+      "characters": [],
+      "shotPrompt": "A fast dynamic collage sequence of tea processing: picking leaves, sun-withering, metallic rolling machine spinning, fermentation trays, drying oven heat haze, high energy.",
+      "finalPrompt": "A fast dynamic collage sequence of tea processing: picking leaves, sun-withering, metallic rolling machine spinning, fermentation trays, drying oven heat haze, high energy.,\n\nnatural lighting, high resolution, clean composition, soft focus background,\n\nvertical 9:16 aspect ratio,\nhigh quality",
+      "image": "../images/採茶姑娘出發/4.png"
+    },
+    {
+      "id": 5,
+      "title": "專屬體驗：將茶葉與乾燥花朵混合。加入點綴：剪入一句成員微吐槽「手太笨了」的搞笑對白",
+      "camera": "Medium Close-up",
+      "duration": "7s",
+      "emotion": "參考時間軸: 03:49 附近建議: 在半透明毛玻璃標籤旁,跳出對話框氣泡 UI,增加互動可愛感",
+      "characters": [
+        "group"
+      ],
+      "shotPrompt": "Close-up on hands gently blending deep green tea leaves with delicate pink and yellow dried flower petals in a glass bowl, soft hand gestures, cute semi-transparent glassmorphism dialogue bubble with cute Taiwanese text '手太笨了'.",
+      "finalPrompt": "A group of cheerful young friends, diverse looks,\nCasual summer travel outfits and sun protection gear,\nHigh-energy and supportive,\n\nClose-up on hands gently blending deep green tea leaves with delicate pink and yellow dried flower petals in a glass bowl, soft hand gestures, cute semi-transparent glassmorphism dialogue bubble with cute Taiwanese text '手太笨了'.,\n\nnatural lighting, high resolution, clean composition, soft focus background,\n\nvertical 9:16 aspect ratio,\nhigh quality,\nconsistent character design",
+      "image": "../images/採茶姑娘出發/5.png"
+    },
+    {
+      "id": 6,
+      "title": "紅茶湯特寫。展示辛苦過後的成果",
+      "camera": "Close-up / Macro",
+      "duration": "3s",
+      "emotion": "參考時間軸: 01:21 加入點綴: 0.2 秒極速閃過「爆汁豆乾」特寫,製造視覺殘影與潛意識彩蛋。",
+      "characters": [],
+      "shotPrompt": "Macro shot of clear amber-red black tea being poured gracefully into a transparent glass cup, glowing under golden sunlight, with a split-second motion-blurred flash of a delicious juicy braised tofu appearing in the background.",
+      "finalPrompt": "Macro shot of clear amber-red black tea being poured gracefully into a transparent glass cup, glowing under golden sunlight, with a split-second motion-blurred flash of a delicious juicy braised tofu appearing in the background.,\n\nnatural lighting, high resolution, clean composition, soft focus background,\n\nvertical 9:16 aspect ratio,\nhigh quality",
+      "image": "../images/採茶姑娘出發/6.png"
+    },
+    {
+      "id": 7,
+      "title": "【關鍵懸念】眾人舉起杯子，杯緣即將碰到嘴唇的瞬間————畫面強制切斷！或是模糊轉場",
+      "camera": "Medium Shot",
+      "duration": "2s",
+      "emotion": "參考時間軸: 04:37 附近,留下究竟好不好喝的懸念,吊足觀眾胃口,增加點閱率。",
+      "characters": [
+        "group"
+      ],
+      "shotPrompt": "Dynamic shot of a group raising their tea glasses in a toast, the glass rims just about to touch their lips, sudden dramatic motion blur freeze frame right before drinking, outdoor wooden deck.",
+      "finalPrompt": "A group of cheerful young friends, diverse looks,\nCasual summer travel outfits and sun protection gear,\nHigh-energy and supportive,\n\nDynamic shot of a group raising their tea glasses in a toast, the glass rims just about to touch their lips, sudden dramatic motion blur freeze frame right before drinking, outdoor wooden deck.,\n\nnatural lighting, high resolution, clean composition, soft focus background,\n\nvertical 9:16 aspect ratio,\nhigh quality,\nconsistent character design",
+      "image": "../images/採茶姑娘出發/7.png"
+    },
+    {
+      "id": 8,
+      "title": "顯示影片封面，導流字卡：點擊觀看正片。",
+      "camera": "Static",
+      "duration": "3s",
+      "emotion": "參考時間軸: 結尾建議: 導流按鈕加入呼吸燈閃爍動畫,強烈引導點擊。",
+      "characters": [
+        "kimo"
+      ],
+      "shotPrompt": "Centered vertical layout graphic with video cover art showing Kimo smiling warmly in the tea field, a pulsing glowing breathing-light action button in the center saying '點擊觀看正片'.",
+      "finalPrompt": "Young energetic woman, bright eyes, expressive facial features, tied-back hair,\nTraditional tea-picking floral sleeves, a wide-brimmed straw hat, and a casual outdoor vest,\nAdventurous, genuine, and easily excited by food,\n\nCentered vertical layout graphic with video cover art showing Kimo smiling warmly in the tea field, a pulsing glowing breathing-light action button in the center saying '點擊觀看正片'.,\n\nnatural lighting, high resolution, clean composition, soft focus background,\n\nvertical 9:16 aspect ratio,\nhigh quality,\nconsistent character design",
+      "image": "../images/採茶姑娘出發/8.png"
+    }
+  ]
+}

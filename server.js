@@ -15,8 +15,8 @@ const prisma = new PrismaClient({ adapter });
 
 const JWT_SECRET = process.env.JWT_SECRET || 'storyboard-secret-key-123';
 
-if(process.env.GCP_SERVICE_ACCOUNT_BASE64) {
-    try{
+if (process.env.GCP_SERVICE_ACCOUNT_BASE64) {
+    try {
         const credentialsJson = Buffer.from(process.env.GCP_SERVICE_ACCOUNT_BASE64, 'base64').toString('utf-8');
         const keyPath = path.join('/tmp', 'gcp-key.json');
         fs.writeFileSync(keyPath, credentialsJson);
@@ -27,7 +27,7 @@ if(process.env.GCP_SERVICE_ACCOUNT_BASE64) {
         console.error("❌ 從環境變數載入金鑰失敗：", error.message);
     }
 }
-else{
+else {
     console.log("⚠️ 未偵測到 GCP_SERVICE_ACCOUNT_BASE64，將使用本地 ADC 憑證 (如果有的話)。");
 }
 
@@ -147,9 +147,13 @@ app.get('/api/projects', async (req, res) => {
         const decoded = jwt.verify(token, JWT_SECRET);
 
         const projects = await prisma.project.findMany({
-            where: { authorId: decoded.id },
-            select: { id: true, shortId: true, title: true, style: true, ratio: true, createAt: true },
-            orderBy: { createAt: 'desc' }
+            select: {
+                id: true,
+                title: true,
+                ratio: true,
+                cover: true,
+                createAt: true,
+            }
         });
 
         res.json({ projects });
@@ -236,7 +240,7 @@ app.get('/api/get-templates', async (req, res) => {
 
         const files = await fs.promises.readdir(targetDir);
         const josnFiles = files.filter(file => file.endsWith('.json'));
-        
+
         const dataArray = await Promise.all(
             josnFiles.map(async (file) => {
                 const filePath = path.join(targetDir, file);
@@ -248,7 +252,7 @@ app.get('/api/get-templates', async (req, res) => {
     }
     catch (err) {
         console.error('讀取模板失敗', err);
-        res.status(500).json({ error: '無法讀取模板'});
+        res.status(500).json({ error: '無法讀取模板' });
     }
 });
 

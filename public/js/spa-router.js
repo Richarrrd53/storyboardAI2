@@ -297,10 +297,11 @@
     if (user && panel) {
       const name = user.name || 'User';
       const initial = name.charAt(0).toUpperCase();
-      if (avatar) avatar.textContent = initial;
+      const userImage = (user.image) ? `<img src="${user.image}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" alt="" >`: initial;
+      if (avatar) avatar.innerHTML = userImage;
 
       const upAvatar = panel.querySelector('.up-avatar');
-      if (upAvatar) upAvatar.textContent = initial;
+      if (upAvatar) upAvatar.innerHTML = userImage;
 
       const upName = panel.querySelector('.up-name');
       if (upName) upName.textContent = name;
@@ -313,7 +314,6 @@
 
     if (avatar && panel) {
       avatar.onclick = e => { e.stopPropagation(); panel.classList.toggle('active'); };
-      document.addEventListener('click', () => panel.classList.remove('active'), { once: false });
     }
 
     const logout = panel?.querySelector('.up-logout');
@@ -350,13 +350,16 @@
           const card = document.createElement('div');
           card.className = 'project-card';
           card.onclick = () => navigate('generate');
+          const thumbContent = p.cover 
+            ? `<img src="${p.cover}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;" alt="${p.title}">`
+            : `🎬`;
           card.innerHTML = `
             <div class="card-strip">
               <div class="strip-hole"></div>
               <div class="strip-hole"></div>
               <div class="strip-hole"></div>
             </div>
-            <div class="project-thumb">🎬</div>
+            <div class="project-thumb">${thumbContent}</div>
             <div class="project-info">
               <div class="project-title">${p.title}</div>
               <div class="project-meta">
@@ -427,8 +430,11 @@
           const card = document.createElement('div');
           card.className = 'project-card';
           card.onclick = () => navigate('generate');
+          const thumbContent = p.cover 
+            ? `<img src="${p.cover}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;" alt="${p.title}">`
+            : `🎬`;
           card.innerHTML = `
-            <div class="project-thumb">🎬</div>
+            <div class="project-thumb">${thumbContent}</div>
             <div class="project-info">
               <div class="project-title">${p.title}</div>
               <div class="project-meta">
@@ -664,4 +670,3 @@
   window.spaNavigate = navigate;
 
 })();
-
