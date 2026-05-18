@@ -9,9 +9,9 @@
 
     if (!input || !showBtn) continue;
 
-    showBtn.style.marginLeft = (input.value === "") ? "44dvh" : "36.8dvh";
+    showBtn.style.marginLeft = (input.value === "") ? "100%" : "calc(100% - 1vh - 4vh)";
     input.addEventListener("input", () => {
-      showBtn.style.marginLeft = (input.value === "") ? "44dvh" : "36.8dvh";
+      showBtn.style.marginLeft = (input.value === "") ? "100%" : "calc(100% - 1vh - 4vh)";
     });
   }
   const authContent1 = document.getElementById("auth-content-1");

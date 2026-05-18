@@ -1295,13 +1295,13 @@
 /* Dashboard wrap inside SPA */
 .spa-dash-wrap {
     display: block;
-    height: 100svh;
+    height: 110vh;
     overflow-y: auto;
 }
 
 /* Generate wrap inside SPA */
 .spa-gen-wrap {
     display: block;
-    height: 100svh;
+    height: 110vh;
     overflow-y: auto;
 }
