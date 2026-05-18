@@ -19,4 +19,6 @@
   const maxContentHeight = authContent1.offsetHeight;
   authContent1.style.height = maxContentHeight + "px";
   authContent2.style.height = maxContentHeight + "px";
+  let v = window.innerHeight * 0.01;
+  document.documentElement.style.setProperty('--v', `${v}px`);
 })();
