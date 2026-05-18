@@ -219,8 +219,8 @@
 
           inp.type = 'text';
         }, 150);
-        slash.style.transform = "translateY(-5dvh)";
-        mask.style.transform = "translate(7.5dvh, -5dvh) rotate(45deg)";
+        slash.style.transform = "translateY(-5vh)";
+        mask.style.transform = "translate(7.5vh, -5vh) rotate(45deg)";
       }
       else {
         inp.style.filter = "blur(3px)";
@@ -229,8 +229,8 @@
 
           inp.type = 'password';
         }, 150);
-        slash.style.transform = "translateY(0dvh)";
-        mask.style.transform = "translate(2.5dvh, 0dvh) rotate(45deg)";
+        slash.style.transform = "translateY(0vh)";
+        mask.style.transform = "translate(2.5vh, 0vh) rotate(45deg)";
       }
     };
 
