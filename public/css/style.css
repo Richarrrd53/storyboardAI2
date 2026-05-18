@@ -28,9 +28,7 @@
     --bg-dark: #262320;
 }
 
-*,
-*::before,
-*::after {
+*{
     box-sizing: border-box;
     margin: 0;
     padding: 0;
@@ -40,13 +38,12 @@
 html {
     font-size: 16px;
     scrollbar-width: none;
-    height: 100dvh;
 }
 
 body {
     font-family: var(--font-body);
     color: var(--text-dark);
-    min-height: 100vh;
+    height: 100dvh;
     overflow-x: hidden;
     background: var(--bg-dark);
     scrollbar-width: none;
