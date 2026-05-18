@@ -645,6 +645,9 @@
 
     window.addEventListener('resize', updateRailHoles);
     updateRailHoles();
+    
+    let v = window.innerHeight * 0.01;
+    document.documentElement.style.setProperty('--v', `${v}px`);
 
     let initialPage = 'landing';
     const hash = window.location.hash;
@@ -665,6 +668,11 @@
       }
       await maskOpen();
     }
+  });
+
+  window.addEventListener('resize', () => {
+    let v = window.innerHeight * 0.01;
+    document.documentElement.style.setProperty('--v', `${v}px`);
   });
 
   window.spaNavigate = navigate;
