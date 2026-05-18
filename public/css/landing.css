@@ -1289,7 +1289,6 @@
     padding: 10vh 2vh;
     overflow-y: auto;
     background: linear-gradient(to bottom, var(--off-white) 70%, transparent 95%);
-    box-sizing: content-box;
 }
 
 /* Dashboard wrap inside SPA */
@@ -1297,7 +1296,6 @@
     display: block;
     height: 100svh;
     overflow-y: auto;
-    box-sizing: content-box;
 }
 
 /* Generate wrap inside SPA */
@@ -1305,5 +1303,4 @@
     display: block;
     height: 100svh;
     overflow-y: auto;
-    box-sizing: content-box;
 }
