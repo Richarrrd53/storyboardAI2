@@ -17,5 +17,6 @@
   const authContent1 = document.getElementById("auth-content-1");
   const authContent2 = document.getElementById("auth-content-2");
   const maxContentHeight = authContent1.offsetHeight;
+  authContent1.style.height = maxContentHeight + "px";
   authContent2.style.height = maxContentHeight + "px";
 })();
