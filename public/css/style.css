@@ -243,10 +243,10 @@ p {
 .anim-delay-2 { animation-delay: 0.2s; }
 .anim-delay-3 { animation-delay: 0.3s; }
 
-::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar { width: 2px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-    background: rgba(220, 156, 71, 0.4);
+    background: var(--text-dark);
     border-radius: 10px;
 }
 
