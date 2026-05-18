@@ -1,6 +1,6 @@
 body {
     display: flex;
-    min-height: 100vh;
+    min-height: 100dvh;
 }
 
 .topbar {
@@ -8,7 +8,7 @@ body {
     top: 0px;
     left: 0;
     right: 0;
-    height: 5.5vh;
+    height: 5.5dvh;
     background: transparent;
     display: flex;
     align-items: center;
@@ -49,8 +49,8 @@ body {
 }
 
 .top-link img {
-    width: 2.5vh;
-    height: 2.5vh;
+    width: 2.5dvh;
+    height: 2.5dvh;
     z-index: 2;
     opacity: 1 !important;
 }
@@ -74,8 +74,8 @@ body {
 
 .top-link::before{
     position: absolute;
-    width: 4vh;
-    height: 4vh;
+    width: 4dvh;
+    height: 4dvh;
     border-radius: 50%;
     background-color: transparent;
     z-index: 1;
@@ -120,9 +120,9 @@ body {
     position: absolute;
     bottom: 0;
     left: 50%;
-    transform: translate(-50%, 1.1vh);
-    width: 5vh;
-    height: 0.4vh;
+    transform: translate(-50%, 1.1dvh);
+    width: 5dvh;
+    height: 0.4dvh;
     background: var(--primary);
     border-radius: 4px 4px 0 0;
     animation: link-bottom .3s cubic-bezier(.4,0,.2,1);
@@ -133,17 +133,17 @@ body {
         width: 0;
     }
     to{
-        width: 5vh;
+        width: 5dvh;
     }
 }
 
 .top-link .link-glow{
     position: absolute;
-    width: 4vh;
-    height: 4vh;
+    width: 4dvh;
+    height: 4dvh;
     clip-path: circle(50%);
     background: linear-gradient(45deg, transparent 30%, rgb(255, 186, 8) 50%, transparent 70%);
-    background-size: 16vh 16vh;
+    background-size: 16dvh 16dvh;
     background-position: top right;
     z-index: 3;
 }
@@ -160,8 +160,8 @@ body {
 }
 
 .top-avatar {
-    width: 5vh;
-    height: 5vh;
+    width: 5dvh;
+    height: 5dvh;
     border-radius: 50%;
     background: var(--off-white);
     border: 2px solid var(--primary);
@@ -187,10 +187,10 @@ body {
 .top-avatar::before{
     content: "";
     position: absolute;
-    width: 5vh;
-    height: 5vh;
+    width: 5dvh;
+    height: 5dvh;
     background: linear-gradient(45deg, transparent 30%, #fff 50%, transparent 70%);
-    background-size: 20vh 20vh;
+    background-size: 20dvh 20dvh;
     background-position: top right;
 }
 
@@ -210,14 +210,14 @@ body {
 .user-panel {
     position: fixed;
     
-    top: -12vh;
-    right: -9vh;
+    top: -12dvh;
+    right: -9dvh;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1.5vh;
-    padding: 1.5vh 2.2vh;
-    min-width: 30vh;
+    gap: 1.5dvh;
+    padding: 1.5dvh 2.2dvh;
+    min-width: 30dvh;
     background: var(--white);
     border: 2px solid var(--card-border);
     border-radius: var(--radius-lg);
@@ -225,7 +225,7 @@ body {
     z-index: 50;
     opacity: 1;
     pointer-events: none;
-    transform: translate(-14.25vh, 12.7vh);
+    transform: translate(-14.25dvh, 12.7dvh);
     scale: 0;
     transition: all 0.4s cubic-bezier(.4,0,.2,1);
 }
@@ -234,8 +234,8 @@ body {
     pointer-events: all;
     transform: translate(0, 0);
     scale: 1;
-    top: 9vh;
-    right: 2vh;
+    top: 9dvh;
+    right: 2dvh;
 }
 
 
@@ -243,7 +243,7 @@ body {
     display: flex;
     flex-direction: row;
     align-items: center;
-    gap: 1.5vh;
+    gap: 1.5dvh;
 }
 
 .up-avatar {
@@ -300,18 +300,18 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 0vh;
+    gap: 0dvh;
 }
 
 .up-btn{
     width: 100%;
-    padding: 1vh 1vh;
+    padding: 1dvh 1dvh;
     display: flex;
     flex-direction: row;
     align-items: center;
     justify-content: start;
-    gap: 1vh;
-    border-radius: 1vh;
+    gap: 1dvh;
+    border-radius: 1dvh;
     cursor: pointer;
     color: #2e2e2e;
     text-decoration: none;
@@ -321,8 +321,8 @@ body {
 
 
 .up-btn img{
-    height: 2vh;
-    width: 2vh;
+    height: 2dvh;
+    width: 2dvh;
     transition: all 0.3s cubic-bezier(.4,0,.2,1);
 }
 
@@ -953,7 +953,7 @@ body {
     height: 50%;
     background-color: var(--bg-dark);
     border: 1px solid rgba(190, 166, 101, 0.5);
-    border-radius: 0.37vh;
+    border-radius: 0.37dvh;
 }
 
 .strip-num {
@@ -1042,7 +1042,7 @@ body {
     .top-nav{
         position: absolute;
         left: 50%;
-        transform: translate(-50%, 94vh);
+        transform: translate(-50%, 94dvh);
         display: flex;
         align-items: center;
         gap: 40px;

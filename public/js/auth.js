@@ -9,9 +9,9 @@
 
     if (!input || !showBtn) continue;
 
-    showBtn.style.marginLeft = (input.value === "") ? "44vh" : "36.8vh";
+    showBtn.style.marginLeft = (input.value === "") ? "44dvh" : "36.8dvh";
     input.addEventListener("input", () => {
-      showBtn.style.marginLeft = (input.value === "") ? "44vh" : "36.8vh";
+      showBtn.style.marginLeft = (input.value === "") ? "44dvh" : "36.8dvh";
     });
   }
 })();

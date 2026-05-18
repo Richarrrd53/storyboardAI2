@@ -131,11 +131,11 @@ p {
 }
 
 .btn:hover{
-    transform: translateY(0.2vh);
+    transform: translateY(0.2dvh);
 }
 
 .btn:active {
-    transform: translateY(0.6vh);
+    transform: translateY(0.6dvh);
 
 }
 
@@ -145,17 +145,17 @@ p {
     color: var(--text-dark);
     padding: 12px 28px;
     box-shadow: 
-                0 0.6vh 0px var(--text-dark),
-                inset 0 0.2vh 0px rgba(255, 255, 255, 0.5);
+                0 0.6dvh 0px var(--text-dark),
+                inset 0 0.2dvh 0px rgba(255, 255, 255, 0.5);
     z-index: 10;
 }
 
 .btn-primary:hover {
-    box-shadow: 0 0.4vh 0px var(--text-dark);
+    box-shadow: 0 0.4dvh 0px var(--text-dark);
 }
 
 .btn-primary:active {
-    box-shadow: 0 0vh px var(--text-dark);
+    box-shadow: 0 0dvh px var(--text-dark);
 
 }
 
@@ -164,12 +164,12 @@ p {
     background: var(--white);
     color: var(--text-light);
     border: 2px solid var(--card-border);
-    box-shadow: 0 0.6vh 0 var(--card-border);
+    box-shadow: 0 0.6dvh 0 var(--card-border);
     backdrop-filter: blur(6px);
 }
 
 .btn-ghost:hover {
-    box-shadow: 0 0.4vh 0 var(--card-border);
+    box-shadow: 0 0.4dvh 0 var(--card-border);
 }
 
 .btn-ghost:active {
@@ -181,11 +181,11 @@ p {
     color: var(--text-dark);
     padding: 12px 28px;
     border: 2px solid var(--text-dark);
-    box-shadow: 0 0.6vh 0px var(--text-dark);
+    box-shadow: 0 0.6dvh 0px var(--text-dark);
 }
 
 .btn-outline:hover{
-    box-shadow: 0 0.4vh 0px var(--text-dark);
+    box-shadow: 0 0.4dvh 0px var(--text-dark);
 }
 
 .btn-outline:active {
@@ -256,7 +256,7 @@ p {
 
 #notifyWindowBG {
     position: fixed; top: 0; left: 0; z-index: 9999;
-    width: 100vw; height: 100vh;
+    width: 100vw; height: 100dvh;
     background: rgba(38, 35, 32, 0.6);
     backdrop-filter: blur(8px);
     display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -289,7 +289,7 @@ p {
     position: fixed;
 
     width: 100vw;
-    height: 7vh;
+    height: 7dvh;
     background-image: linear-gradient(-60deg,
         var(--text-dark) 0%, 
         var(--text-dark) 10%, 
@@ -311,7 +311,7 @@ p {
         var(--text-dark) 90%,
         transparent 90% 
     );
-    background-size: 3vh 7vh;
+    background-size: 3dvh 7dvh;
     background-position: top left;
     background-color: #3f3730;
     animation: bg-frame 2s linear infinite;
@@ -329,10 +329,10 @@ p {
 
 @keyframes bg-frame {
     from{
-        background-position: 0vh 0vh;
+        background-position: 0dvh 0dvh;
     }
     to{
-        background-position: 3vh 0vh;
+        background-position: 3dvh 0dvh;
     }
 }
 
@@ -353,24 +353,24 @@ p {
         transform: translateX(0);
     }
     to {
-        transform: translateX(-2.8vh);
+        transform: translateX(-2.8dvh);
     }
 }
 
 #rail-top{
-    top: 5vh;
+    top: 5dvh;
 }
 
 #rail-bottom{
-    bottom: 5vh;
+    bottom: 5dvh;
 }
 
 .rail-hole{
     position: relative;
-    width: 0.8vh;
-    height: 1.3vh;
+    width: 0.8dvh;
+    height: 1.3dvh;
     border-radius: 0.3ch;
     background-color: var(--text-light);
     opacity: 0.3;
-    margin-left: 2vh;
+    margin-left: 2dvh;
 }
