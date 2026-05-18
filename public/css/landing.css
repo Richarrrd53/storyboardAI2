@@ -1287,7 +1287,7 @@
     align-items: center;
     justify-content: start;
     padding: 10vh 2vh 0;
-    height: 107vh;
+    height: 110vh;
     overflow-y: auto;
     background: linear-gradient(to bottom, var(--off-white) 70%, transparent 95%);
 }
@@ -1295,13 +1295,13 @@
 /* Dashboard wrap inside SPA */
 .spa-dash-wrap {
     display: block;
-    height: 107vh;
+    height: 110vh;
     overflow-y: auto;
 }
 
 /* Generate wrap inside SPA */
 .spa-gen-wrap {
     display: block;
-    height: 107vh;
+    height: 110vh;
     overflow-y: auto;
 }
