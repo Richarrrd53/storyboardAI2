@@ -10,15 +10,6 @@ body {
   display: none;
 }
 
-.auth-brand {
-  position: fixed;
-  top: 28px;
-  left: 48px;
-  font-size: 1.2rem;
-  text-decoration: none;
-  z-index: 10;
-}
-
 .auth-container {
   width: 50vh;
   max-width: 80vw;
@@ -36,93 +27,101 @@ body {
   align-items: center;
   justify-content: start;
   gap: 0.5vh;
-  background: var(--card-border);
-  border: 1px solid var(--text-dark);
-  border-radius: 1.5vh;
+  background: var(--text-dark);
+  border-radius: 100vh;
   padding: 0.5vh;
   width: 30vh;
-  height: 6vh;
+  z-index: 1;
 }
 
 .auth-tab {
   position: relative;
   flex: 1;
-  padding: 11px;
-  border-radius: 1vh;
+  padding: 0.6vh 1vh;
+  border-radius: 100vh;
   border: 0;
   font-family: var(--font-body);
   font-size: clamp(0.6rem, 1.2vw, 0.9rem);
   font-weight: 600;
-  color: var(--text-light);
+  color: var(--white);
   background: transparent;
   cursor: pointer;
   transition: all 0.2s;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-tab span{
   z-index: 2;
 }
 
 .auth-tab:hover{
   scale: 1.05;
+  opacity: 0.8;
 }
 
 .auth-tab:active{
   scale: 0.95;
 }
 
-#tab-register:active ~ .tab-selector{
-  animation: none;
+.auth-tab.active:hover{
+  scale: 1;
+  opacity: 1;
 }
 
-#tab-register.active ~ .tab-selector{
-  margin-left: 14.5vh;
-  animation: select 0.3s ease forwards;
+.auth-tab.active:active{
+  scale: 1;
 }
 
-#tab-login:active ~ .tab-selector{
-  animation: none;
+.auth-tab::before{
+  content: '';
+  position: absolute;
+  border-radius: 100vh;
+  width: 100%;
+  height: 100%;
+  background: var(--white);
+  opacity: 0;
+  z-index: 1;
 }
 
-#tab-login.active ~ .tab-selector{
-  margin-left: 0vh;
-  animation: select 0.3s ease forwards;
+.auth-tab.active::before{
+  opacity: 1;
+  animation: select 0.3s cubic-bezier(.33,1.53,.69,.99);
 }
 
 @keyframes select {
   0% {
-    transform: scale(0.95);
-  }
-  50% {
-    transform: scale(1.05);
+    transform: scale(0.5);
   }
   100% {
     transform: scale(1);
   }
 }
 
+.auth-tab::after{
+  content: '';
+  position: absolute;
+  border-radius: 100vh;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(45deg, transparent 30%, rgb(255, 186, 8) 50%, transparent 70%);
+  background-size: 400% 100%;
+  background-position: right;
+  transition: none;
+}
+
+.auth-tab.active::after{
+  background-position: left;
+  transition: all .5s cubic-bezier(.4,0,.2,1);
+  z-index: 3;
+  animation: select 0.3s cubic-bezier(.33,1.53,.69,.99);
+}
+
 .auth-tab.active {
-  color: var(--primary-light);
+  color: var(--text-dark);
 }
-
-.tab-selector{
-  position: absolute;
-  width: 14vh;
-  height: 4.5vh;
-  border-radius: 1vh;
-  background-color: var(--text-dark);
-  z-index: 1;
-  transition: all .3s cubic-bezier(.4,0,.2,1);
-}
-
-.tab-selector::before, .tab-selector::after {
-  content: "";
-  position: absolute;
-  width: 0.5vh;
-  height: 0.5vh;
-  border-radius: 50%;
-  background-color: var(--text-dark);
-  opacity: 0;
-  animation: particles 0.5s ease forwards;
-}
-
 /* --- Panel --- */
 .auth-inner{
   position: relative;
@@ -172,7 +171,7 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: start;
-  gap: 1.5vh;
+  gap: 1vh;
 }
 
 .auth-header {
@@ -181,8 +180,7 @@ body {
 }
 
 .auth-strip {
-  width: 100%;
-  height: 6vh;
+  height: 5vh;
   background-color: #3a3228;
   background-size: auto;
   border-bottom: 2px dashed rgba(190, 166, 101, 0.5);
@@ -239,7 +237,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: start;
-  gap: 1vh;
+  gap: 0.5vh;
   border: 2px solid var(--card-border);
   border-radius: 1.5vh;
   transition: all 0.5s cubic-bezier(.4, 0, .2, 1);
@@ -311,7 +309,15 @@ body {
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 1vh;
+}
+
+.form-row .form-group {
+  gap: 0.2vh;
+}
+
+.form-row .input-field{
+  width: 70%;
 }
 
 .input-icon-btn {
@@ -435,7 +441,7 @@ body {
 
 /* --- Terms / Switch --- */
 .terms-note {
-  font-size: 0.75rem;
+  font-size: clamp(0.6rem, 1.1vw, 0.75rem);
   color: var(--text-light);
   text-align: center;
   margin-top: 10px;
@@ -450,7 +456,7 @@ body {
 
 .auth-switch {
   text-align: center;
-  font-size: clamp(0.65rem, 0.3vw, 0.875rem);
+  font-size: clamp(0.65rem, 1.2vw, 0.875rem);
   color: var(--text-light);
   margin-top: 16px;
 }

@@ -49,11 +49,11 @@
 }
 
 .hero {
-    min-height: 100vh;
+    height: 100dvh;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 120px 48px 80px;
+    padding: 7vh 5vh;
     max-width: 100%;
     margin: 0 auto;
     position: relative;
@@ -1210,10 +1210,6 @@
         display: none;
     }
 
-    .hero {
-        padding: 100px 20px 60px;
-    }
-
     .hero-ctas {
         gap: 16px;
         justify-content: center;
@@ -1282,7 +1278,6 @@
 /* ── SPA Layout ─────────────────────────────────────────── */
 #page-main {
     position: relative;
-    width: 100%;
 }
 
 /* Login wrap inside SPA */
@@ -1291,7 +1286,6 @@
     flex-direction: column;
     align-items: center;
     justify-content: start;
-    height: 100svh;
     padding: 10vh 2vh;
     overflow-y: auto;
     background: linear-gradient(to bottom, var(--off-white) 70%, transparent 95%);
