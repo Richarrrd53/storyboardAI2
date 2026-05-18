@@ -13,6 +13,7 @@
     align-items: center;
     justify-content: space-between;
     background: transparent;
+    transition: all 0.5s cubic-bezier(.4,0,.2,1);
 }
 
 .nav-links {

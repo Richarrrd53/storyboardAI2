@@ -29,7 +29,6 @@
 }
 
 *{
-    box-sizing: border-box;
     margin: 0;
     padding: 0;
     -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
@@ -43,8 +42,6 @@ html {
 body {
     font-family: var(--font-body);
     color: var(--text-dark);
-    height: 100dvh;
-    overflow-x: hidden;
     background: var(--bg-dark);
     scrollbar-width: none;
 }
@@ -80,13 +77,6 @@ body {
 
 .bgDots {
     display: none;
-}
-
-#bgMask {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    background-image: linear-gradient(to bottom, #e4d9ce 60%, transparent 80%);
 }
 
 .brand-logo {
@@ -370,7 +360,7 @@ p {
     position: relative;
     width: 0.8vh;
     height: 1.3vh;
-    border-radius: 0.3ch;
+    border-radius: 0.3vh;
     background-color: var(--text-light);
     opacity: 0.3;
     margin-left: 2vh;
