@@ -306,6 +306,15 @@
       const upName = panel.querySelector('.up-name');
       if (upName) upName.textContent = name;
 
+      const upPlan = panel.querySelector('.up-plan');
+      const plan = user.plan || 'free';
+      const plans = {"free": "Free", "pro": "Pro", "promax": "Pro Max"};
+      if (upPlan) {
+        
+        upPlan.classList.add(user.plan);
+        upPlan.textContent = plans[user.plan];
+      }
+
       const upEmail = panel.querySelector('.up-email');
       if (upEmail) upEmail.textContent = user.email;
     } else if (!user && spaAuth.isLoggedIn()) {

@@ -41,6 +41,7 @@ model User {
   email        String    @unique
   passwordHash String
   image        String?
+  plan         String    @default("free")
   project      Project[]
   createAt     DateTime  @default(now())
 }

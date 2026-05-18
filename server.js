@@ -118,7 +118,7 @@ app.get('/api/auth/me', async (req, res) => {
 
         const user = await prisma.user.findUnique({
             where: { id: decoded.id },
-            select: { id: true, name: true, email: true, image: true }
+            select: { id: true, name: true, email: true, image: true, plan: true }
         });
 
         if (!user) {
