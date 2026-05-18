@@ -222,7 +222,7 @@ body{
     border: 2px solid var(--card-border);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-soft);
-    z-index: 50;
+    z-index: 950;
     opacity: 1;
     pointer-events: none;
     transform: translate(-14.25dvh, 12.7dvh);
