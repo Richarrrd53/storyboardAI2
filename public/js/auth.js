@@ -14,4 +14,8 @@
       showBtn.style.marginLeft = (input.value === "") ? "44dvh" : "36.8dvh";
     });
   }
+  const authContent1 = document.getElementById("auth-content-1");
+  const authContent2 = document.getElementById("auth-content-2");
+  const maxContentHeight = authContent1.style.height;
+  authContent2.style.height = maxContentHeight + "px";
 })();
