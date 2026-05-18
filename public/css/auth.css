@@ -153,8 +153,7 @@ body {
 
 .auth-content {
   padding: 3.6vh 3.6vh;
-  max-height: 51.1vh;
-  height: 70vh;
+  max-height: 47.8vh;
   overflow-y: scroll;
   
   background-color: var(--white);
