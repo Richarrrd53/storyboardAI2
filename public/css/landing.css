@@ -1287,6 +1287,7 @@
     align-items: center;
     justify-content: start;
     padding: 10vh 2vh 0;
+    height: 110vh;
     overflow-y: auto;
     background: linear-gradient(to bottom, var(--off-white) 70%, transparent 95%);
 }
