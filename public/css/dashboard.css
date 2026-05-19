@@ -87,7 +87,7 @@
 .top-link.active::before{
     content: '';
     background-color: #fff;
-    box-shadow: 0 0 10px var(--primary-light);
+    /* box-shadow: 0 0 10px var(--primary-light); */
     animation: link-selected 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
