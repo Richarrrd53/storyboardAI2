@@ -4,6 +4,7 @@
   let currentPage = 'landing';
   let isTransitioning = false;
   let dashboardTopbar = null;
+  let mobileBottomNav = null;
   let landingHTML = '';
   let landingClass = '';
 
@@ -106,6 +107,10 @@
       dashboardTopbar.style.transition = 'transform 0.5s cubic-bezier(0.16,1,0.3,1) 0.05s';
       dashboardTopbar.style.transform = 'translateY(0)';
     }
+    if (mobileBottomNav) {
+      mobileBottomNav.style.transition = 'transform 0.5s cubic-bezier(0.16,1,0.3,1) 0.05s';
+      mobileBottomNav.style.transform = 'translateY(0)';
+    }
   }
 
   function showLandingNav() {
@@ -116,7 +121,11 @@
     }
     if (dashboardTopbar) {
       dashboardTopbar.style.transition = 'transform 0.45s cubic-bezier(0.76,0,0.24,1)';
-      dashboardTopbar.style.transform = 'translateY(-100%)';
+      dashboardTopbar.style.transform = 'translateY(-130%)';
+    }
+    if (mobileBottomNav) {
+      mobileBottomNav.style.transition = 'transform 0.45s cubic-bezier(0.76,0,0.24,1)';
+      mobileBottomNav.style.transform = 'translateY(105%)';
     }
   }
 
@@ -274,9 +283,18 @@
     if (topbar) {
       dashboardTopbar = topbar.cloneNode(true);
       dashboardTopbar.id = 'spa-topbar';
-      dashboardTopbar.style.transform = 'translateY(-100%)';
+      dashboardTopbar.style.transform = 'translateY(-130%)';
       document.body.appendChild(dashboardTopbar);
     }
+
+    const mobNav = doc.querySelector('.mobile-bottom-nav');
+    if (mobNav) {
+      mobileBottomNav = mobNav.cloneNode(true);
+      mobileBottomNav.id = 'spa-mobile-nav';
+      mobileBottomNav.style.transform = 'translateY(105%)';
+      document.body.appendChild(mobileBottomNav);
+    }
+
     const up = doc.querySelector('.user-panel');
     if (up) {
       const upEl = up.cloneNode(true);
@@ -471,18 +489,24 @@
   }
 
   function bindTopbarLinks() {
-    const tb = document.getElementById('spa-topbar') || dashboardTopbar;
-    if (!tb) return;
-    tb.querySelectorAll('a[href]').forEach(a => {
-      const href = a.getAttribute('href') || '';
-      let page = null;
-      if (href.includes('generate.html')) page = 'generate';
-      else if (href.includes('dashboard.html')) page = 'dashboard';
-      if (page) {
-        const newA = a.cloneNode(true);
-        newA.addEventListener('click', e => { e.preventDefault(); navigate(page); });
-        a.parentNode.replaceChild(newA, a);
-      }
+    const containers = [
+      document.getElementById('spa-topbar') || dashboardTopbar,
+      document.getElementById('spa-mobile-nav') || mobileBottomNav
+    ];
+
+    containers.forEach(container => {
+      if (!container) return;
+      container.querySelectorAll('a[href]').forEach(a => {
+        const href = a.getAttribute('href') || '';
+        let page = null;
+        if (href.includes('generate.html')) page = 'generate';
+        else if (href.includes('dashboard.html')) page = 'dashboard';
+        if (page) {
+          const newA = a.cloneNode(true);
+          newA.addEventListener('click', e => { e.preventDefault(); navigate(page); });
+          a.parentNode.replaceChild(newA, a);
+        }
+      });
     });
   }
 
@@ -537,23 +561,35 @@
   };
 
   function updateTopbarActive(page) {
-    if (!dashboardTopbar) return;
-    const links = dashboardTopbar.querySelectorAll('.top-link');
-    links.forEach(l => {
-      l.classList.remove('active');
-      const currentSrc = l.children[0].src;
-      l.children[0].src = currentSrc.replace("focus", "blur");
-    });
-    if (page === 'dashboard' && links[0]) links[0].classList.add('active');
-    if (page === 'generate' && links[1]) links[1].classList.add('active');
-    if (page === 'history' && links[2]) links[2].classList.add('active');
-    if (page === 'template' && links[3]) links[3].classList.add('active');
-    if (page === 'analysis' && links[4]) links[4].classList.add('active');
-    links.forEach(l => {
-      if (l.classList.contains('active')){
-        const currentSrc = l.children[0].src;
-        l.children[0].src = currentSrc.replace("blur", "focus");
-      }
+    const containers = [dashboardTopbar, mobileBottomNav];
+    
+    containers.forEach(container => {
+      if (!container) return;
+      const links = container.querySelectorAll('.top-link');
+      if (links.length === 0) return;
+      
+      links.forEach(l => {
+        l.classList.remove('active');
+        const img = l.querySelector('img');
+        if (img && img.src) {
+          img.src = img.src.replace("focus", "blur");
+        }
+      });
+      
+      if (page === 'dashboard' && links[0]) links[0].classList.add('active');
+      if (page === 'generate' && links[1]) links[1].classList.add('active');
+      if (page === 'history' && links[2]) links[2].classList.add('active');
+      if (page === 'template' && links[3]) links[3].classList.add('active');
+      if (page === 'analysis' && links[4]) links[4].classList.add('active');
+      
+      links.forEach(l => {
+        if (l.classList.contains('active')){
+          const img = l.querySelector('img');
+          if (img && img.src) {
+            img.src = img.src.replace("blur", "focus");
+          }
+        }
+      });
     });
   }
 
@@ -594,6 +630,9 @@
 
     if (dashboardTopbar) {
       dashboardTopbar.style.display = (page === 'dashboard' || page === 'generate') ? '' : 'none';
+    }
+    if (mobileBottomNav) {
+      mobileBottomNav.style.display = (page === 'dashboard' || page === 'generate') ? '' : 'none';
     }
     const userPanel = document.getElementById('spa-user-panel');
     if (userPanel) {
