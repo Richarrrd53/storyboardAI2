@@ -50,6 +50,11 @@
     height: 2.5vh;
     z-index: 2;
     opacity: 1 !important;
+    animation: link-img 0.5s cubic-bezier(.33,1.53,.69,.99);
+}
+
+.top-link:active img {
+    animation: none;
 }
 
 .top-link:hover {
@@ -65,8 +70,25 @@
     opacity: 0.8 !important;
 }
 
-.top-link.active:active img{
+.top-link.active img{
     opacity: 1 !important;
+    animation: link-img 0.5s cubic-bezier(.33,1.53,.69,.99);
+}
+
+
+@keyframes link-img {
+    0%{
+        transform: translateY(0) scaleX(1)scaleY(1);
+    }
+    30%{
+        transform: translateY(0vh) scaleX(1.1) scaleY(0.9);
+    }
+    60%{
+        transform: translateY(-0.3vh) scaleX(1) scaleY(1.1);
+    }
+    100%{
+        transform: translateY(0) scaleX(1) scaleY(1);
+    }
 }
 
 .top-link::before{
