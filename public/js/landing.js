@@ -30,4 +30,5 @@
         window.removeEventListener('resize', handleResize);
         observer.disconnect();
     };
+    
 })();

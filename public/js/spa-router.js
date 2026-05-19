@@ -125,7 +125,7 @@
     }
     if (mobileBottomNav) {
       mobileBottomNav.style.transition = 'transform 0.45s cubic-bezier(0.76,0,0.24,1)';
-      mobileBottomNav.style.transform = 'translateY(105%)';
+      mobileBottomNav.style.transform = 'translateY(130%)';
     }
   }
 
@@ -291,7 +291,7 @@
     if (mobNav) {
       mobileBottomNav = mobNav.cloneNode(true);
       mobileBottomNav.id = 'spa-mobile-nav';
-      mobileBottomNav.style.transform = 'translateY(105%)';
+      mobileBottomNav.style.transform = 'translateY(130%)';
       document.body.appendChild(mobileBottomNav);
     }
 
@@ -718,10 +718,12 @@
     }
   });
 
-  window.addEventListener('resize', () => {
-    let v = window.innerHeight * 0.01;
-    document.documentElement.style.setProperty('--v', `${v}px`);
-  });
+  const bgTop = document.getElementById("bg-top");
+  const railTop = document.getElementById("rail-top");
+  const railBottom = document.getElementById("rail-bottom");
+
+  railTop.style.top = bgTop.offsetHeight * (5/7) + "px";
+  railBottom.style.bottom = bgTop.offsetHeight * (5/7) + "px";
 
   window.spaNavigate = navigate;
 

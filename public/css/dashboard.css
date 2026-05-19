@@ -226,6 +226,29 @@
         z-index: 999;
     }
 
+    .link-group{
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1.5vh;
+    }
+
+    .link-title{
+        font-size: 0.6rem;
+        font-weight: 700;
+        color: var(--off-white);
+        transition: all 0.5s cubic-bezier(.4,0,.2,1);
+    }
+
+    .top-link.active ~ .link-title{
+        color: var(--primary-light);
+    }
+
+    .top-link.active::after{
+        background: transparent;
+    }
+
     .top-link::before{
         position: absolute;
         width: 15vw;
@@ -326,6 +349,7 @@
     position: relative;
     width: max-content;
     height: max-content;
+    text-wrap: nowrap;
     transition: all .5s cubic-bezier(.4,0,.2,1);
 }
 
