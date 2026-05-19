@@ -151,18 +151,29 @@
     });
   }
 
+  const loadedScripts = new Set();
+
   function injectScript(src) {
     return new Promise((resolve) => {
+      const pathname = new URL(src, window.location.href).pathname;
+      
+      if (loadedScripts.has(pathname)) {
+        resolve();
+        return;
+      }
+      
       const s = document.createElement('script');
       s.dataset.spaScript = '1';
       if (src.includes('landing-animation.js')) {
         s.type = 'module';
       }
-      s.src = src + '?t=' + Date.now();
-      s.onload = resolve;
+      s.src = src; 
+      s.onload = () => {
+        loadedScripts.add(pathname);
+        resolve();
+      };
       s.onerror = resolve;
       document.body.appendChild(s);
-      injectedScripts.push(s);
     });
   }
 
@@ -276,30 +287,30 @@
   }
 
   async function ensureSharedLayout() {
-    if (dashboardTopbar) return;
+    if (!dashboardTopbar) {
+      const doc = await fetchPageDoc('/html/dashboard.html');
+      const topbar = doc.querySelector('header.topbar');
+      if (topbar) {
+        dashboardTopbar = topbar.cloneNode(true);
+        dashboardTopbar.id = 'spa-topbar';
+        dashboardTopbar.style.transform = 'translateY(-130%)';
+        document.body.appendChild(dashboardTopbar);
+      }
 
-    const doc = await fetchPageDoc('/html/dashboard.html');
-    const topbar = doc.querySelector('header.topbar');
-    if (topbar) {
-      dashboardTopbar = topbar.cloneNode(true);
-      dashboardTopbar.id = 'spa-topbar';
-      dashboardTopbar.style.transform = 'translateY(-130%)';
-      document.body.appendChild(dashboardTopbar);
-    }
+      const mobNav = doc.querySelector('.mobile-bottom-nav');
+      if (mobNav) {
+        mobileBottomNav = mobNav.cloneNode(true);
+        mobileBottomNav.id = 'spa-mobile-nav';
+        mobileBottomNav.style.transform = 'translateY(130%)';
+        document.body.appendChild(mobileBottomNav);
+      }
 
-    const mobNav = doc.querySelector('.mobile-bottom-nav');
-    if (mobNav) {
-      mobileBottomNav = mobNav.cloneNode(true);
-      mobileBottomNav.id = 'spa-mobile-nav';
-      mobileBottomNav.style.transform = 'translateY(130%)';
-      document.body.appendChild(mobileBottomNav);
-    }
-
-    const up = doc.querySelector('.user-panel');
-    if (up) {
-      const upEl = up.cloneNode(true);
-      upEl.id = 'spa-user-panel';
-      document.body.appendChild(upEl);
+      const up = doc.querySelector('.user-panel');
+      if (up) {
+        const upEl = up.cloneNode(true);
+        upEl.id = 'spa-user-panel';
+        document.body.appendChild(upEl);
+      }
     }
 
     await initSharedLayoutLogic();
@@ -497,14 +508,19 @@
     containers.forEach(container => {
       if (!container) return;
       container.querySelectorAll('a[href]').forEach(a => {
+        if (a.dataset.spaBound) return;
+
         const href = a.getAttribute('href') || '';
         let page = null;
         if (href.includes('generate.html')) page = 'generate';
         else if (href.includes('dashboard.html')) page = 'dashboard';
+        
         if (page) {
-          const newA = a.cloneNode(true);
-          newA.addEventListener('click', e => { e.preventDefault(); navigate(page); });
-          a.parentNode.replaceChild(newA, a);
+          a.dataset.spaBound = 'true';
+          a.addEventListener('click', e => {
+            e.preventDefault();
+            navigate(page);
+          });
         }
       });
     });
@@ -619,6 +635,12 @@
       def.css.forEach(href => injectCSS(href));
       await def.render(opts);
       for (const src of def.js) await injectScript(src);
+    }
+    if (page === 'generate' && typeof window.initGeneratePage === 'function') {
+        window.initGeneratePage();
+    } 
+    else if (page === 'landing' && typeof window.initLandingPage === 'function') {
+        window.initLandingPage();
     }
 
     if (page === 'dashboard' || page === 'generate') {

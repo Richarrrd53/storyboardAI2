@@ -5,7 +5,7 @@
     top: 0px;
     left: 0;
     right: 0;
-    height: 5.5dvh;
+    height: 5.5vh;
     background: transparent;
     display: flex;
     align-items: center;
@@ -46,8 +46,8 @@
 }
 
 .top-link img {
-    width: 2.5dvh;
-    height: 2.5dvh;
+    width: 2.5vh;
+    height: 2.5vh;
     z-index: 2;
     opacity: 1 !important;
 }
@@ -71,8 +71,8 @@
 
 .top-link::before{
     position: absolute;
-    width: 4dvh;
-    height: 4dvh;
+    width: 4vh;
+    height: 4vh;
     border-radius: 50%;
     background-color: transparent;
     z-index: 1;
@@ -117,9 +117,9 @@
     position: absolute;
     bottom: 0;
     left: 50%;
-    transform: translate(-50%, 1.1dvh);
-    width: 5dvh;
-    height: 0.4dvh;
+    transform: translate(-50%, 1.1vh);
+    width: 5vh;
+    height: 0.4vh;
     background: var(--primary);
     border-radius: 4px 4px 0 0;
     animation: link-bottom .3s cubic-bezier(.4,0,.2,1);
@@ -130,17 +130,17 @@
         width: 0;
     }
     to{
-        width: 5dvh;
+        width: 5vh;
     }
 }
 
 .top-link .link-glow{
     position: absolute;
-    width: 4dvh;
-    height: 4dvh;
+    width: 4vh;
+    height: 4vh;
     border-radius: 50%;
     background: linear-gradient(45deg, transparent 30%, rgb(255, 186, 8) 50%, transparent 70%);
-    background-size: 16dvh 16dvh;
+    background-size: 16vh 16vh;
     background-position: top right;
     z-index: 3;
 }
@@ -185,10 +185,10 @@
 .top-avatar::before{
     content: "";
     position: absolute;
-    width: 5dvh;
-    height: 5dvh;
+    width: 5vh;
+    height: 5vh;
     background: linear-gradient(45deg, transparent 30%, #fff 50%, transparent 70%);
-    background-size: 20dvh 20dvh;
+    background-size: 20vh 20vh;
     background-position: top right;
 }
 
@@ -262,7 +262,7 @@
     .top-link .link-glow{
         width: 15vw;
         border-radius: 2vh;
-        background-size: 60vw 16dvh;
+        background-size: 60vw 16vh;
     }
 
 }
@@ -274,9 +274,9 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1.5dvh;
-    padding: 1.5dvh 2.2dvh;
-    min-width: 20dvh;
+    gap: 1.5vh;
+    padding: 1.5vh 2.2vh;
+    min-width: 20vh;
     background: var(--white);
     border: 2px solid var(--card-border);
     border-radius: var(--radius-lg);
@@ -302,7 +302,7 @@
     display: flex;
     flex-direction: row;
     align-items: center;
-    gap: 1.5dvh;
+    gap: 1.5vh;
 }
 
 .up-avatar {
@@ -407,18 +407,18 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 0dvh;
+    gap: 0vh;
 }
 
 .up-btn{
     width: 100%;
-    padding: 1dvh 1dvh;
+    padding: 1vh 1vh;
     display: flex;
     flex-direction: row;
     align-items: center;
     justify-content: start;
-    gap: 1dvh;
-    border-radius: 1dvh;
+    gap: 1vh;
+    border-radius: 1vh;
     cursor: pointer;
     color: #2e2e2e;
     text-decoration: none;
@@ -428,8 +428,8 @@
 
 
 .up-btn img{
-    height: 2dvh;
-    width: 2dvh;
+    height: 2vh;
+    width: 2vh;
     transition: all 0.3s cubic-bezier(.4,0,.2,1);
 }
 
@@ -1062,7 +1062,7 @@
     height: 50%;
     background-color: var(--bg-dark);
     border: 1px solid rgba(190, 166, 101, 0.5);
-    border-radius: 0.37dvh;
+    border-radius: 0.37vh;
 }
 
 .strip-num {
