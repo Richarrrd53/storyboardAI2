@@ -86,6 +86,9 @@
     60%{
         transform: translateY(-0.3vh) scaleX(1) scaleY(1.1);
     }
+    90%{
+        transform: translateY(0.1vh) scaleX(1) scaleY(0.9);
+    }   
     100%{
         transform: translateY(0) scaleX(1) scaleY(1);
     }

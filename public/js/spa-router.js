@@ -636,6 +636,7 @@
       await def.render(opts);
       for (const src of def.js) await injectScript(src);
     }
+
     if (page === 'generate' && typeof window.initGeneratePage === 'function') {
         window.initGeneratePage();
     } 
@@ -672,11 +673,14 @@
       window.parent.history.replaceState(null, '', parentPath);
     }
 
-    currentPage = page;
-    isTransitioning = false;
+    window.scrollTo(0, 0);
+
+    await new Promise(resolve => setTimeout(resolve, 80));
 
     await maskOpen();
-    window.scrollTo(0, 0);
+
+    currentPage = page;
+    isTransitioning = false;
   }
 
   window.addEventListener('popstate', e => {
@@ -736,6 +740,20 @@
       for (const src of pageDefs.landing.js) {
         await injectScript(src);
       }
+      
+      if ('scrollRestoration' in history) {
+        history.scrollRestoration = 'manual';
+      }
+      window.scrollTo(0, 0);
+      
+      updateRailHoles();
+      
+      if (typeof window.initLandingPage === 'function') {
+        window.initLandingPage();
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       await maskOpen();
     }
   });
