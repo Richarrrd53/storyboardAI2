@@ -1,0 +1,701 @@
+:root {
+    /* ── 顏色變數 ── */
+    --bg-main: #0d0d0d;
+    --bg-card: #0a0a0a;
+    --bg-rail: #080808;
+    --bg-accent: #252118;
+    --bg-btn: #1a1a1a;
+    --bg-btn-hover: #222;
+    --bg-editable-focus: #1a1610;
+    --bg-overlay: rgba(8, 8, 8, 0.72);
+    --bg-overlay-box: rgba(37, 33, 24, 0.35);
+
+    --text-main: #e8e3d8;
+    --text-dim: #666;
+    --text-muted: #555;
+    --text-disabled: #444;
+    --text-accent: #e8d9b8;
+    --text-gold: #c8b878;
+    --text-link: #998f7e;
+
+    --border-main: #2a2a2a;
+    --border-dim: #1a1a1a;
+    --border-accent: #3a3326;
+    --border-focus: #c8b878;
+    --border-overlay: #5a4d2a;
+
+    /* ── 字體大小 (1.5倍縮放) ── */
+    --fs-h1: 24px;
+    /* 16px * 1.5 */
+    --fs-h2: 60px;
+    /* 40px * 1.5 */
+    --fs-body: 21px;
+    /* 14px * 1.5 */
+    --fs-table: 19.5px;
+    /* 13px * 1.5 */
+    --fs-small: 18px;
+    /* 12px * 1.5 */
+    --fs-mono: 16.5px;
+    /* 11px * 1.5 */
+    --fs-toast: 21px;
+    /* 14px * 1.5 */
+    --fs-overlay: 27px;
+    /* 18px * 1.5 */
+
+    /* ── 間距與尺寸 ── */
+    --radius-sm: 3px;
+    --radius-md: 5px;
+    --radius-lg: 16px;
+    --spacing-lg: 3.75rem;
+    --scrollbar-height: 4.5px;
+    /* 3px * 1.5 */
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background: var(--bg-main);
+    color: var(--text-main);
+    font-family: "Noto Serif TC", serif;
+    padding: var(--spacing-lg) 2rem;
+    min-height: 100vh;
+    font-size: var(--fs-body);
+}
+
+/* ── 基礎 UI 元件 ── */
+.page-header {
+    margin-bottom: 2.25rem;
+    border-bottom: 0.5px solid var(--border-main);
+    padding-bottom: 1.8rem;
+}
+
+.page-header h1 {
+    font-size: var(--fs-h1);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+}
+
+.page-header p {
+    font-size: var(--fs-h2);
+    font-weight: 500;
+    margin-bottom: 18px;
+}
+
+.meta {
+    display: flex;
+    gap: 30px;
+    flex-wrap: wrap;
+}
+
+.meta-item {
+    font-size: var(--fs-body);
+    color: var(--text-muted);
+}
+
+.meta-item span {
+    color: #999;
+}
+
+.import-bar {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    margin-bottom: 2.25rem;
+    flex-wrap: wrap;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    font-size: var(--fs-body);
+    padding: 12px 24px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-btn);
+    color: #c8c2b4;
+    border: 0.5px solid var(--border-main);
+    cursor: pointer;
+    font-family: "DM Mono", monospace;
+    transition: all 0.15s;
+}
+
+.btn:hover {
+    background: var(--bg-btn-hover);
+    color: var(--text-main);
+}
+
+.btn.primary {
+    background: var(--bg-accent);
+    color: var(--text-accent);
+    border-color: var(--border-accent);
+}
+
+.btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+.view-toggle-wrap {
+    display: inline-flex;
+    background: rgba(255, 255, 255, 0.04);
+    padding: 4px;
+    border-radius: var(--radius-md);
+    border: 0.5px solid var(--border-main);
+    margin-left: auto;
+}
+
+.view-btn {
+    padding: 9px 21px;
+    border-radius: var(--radius-sm);
+    font-size: var(--fs-body);
+    font-family: "DM Mono", monospace;
+    cursor: pointer;
+    color: var(--text-muted);
+    border: none;
+    background: transparent;
+}
+
+.view-btn.active {
+    background: var(--bg-accent);
+    color: var(--text-accent);
+}
+
+/* ── 空狀態與拖曳 ── */
+.dropzone {
+    border: 0.75px dashed var(--border-main);
+    border-radius: 6px;
+    padding: 3.75rem;
+    text-align: center;
+    color: var(--text-muted);
+    margin-bottom: 2.25rem;
+    cursor: pointer;
+}
+
+.dropzone:hover {
+    background: #0f0f0f;
+    color: #888;
+}
+
+.dropzone .hint {
+    font-size: var(--fs-body);
+    color: var(--text-dim);
+    margin-bottom: 12px;
+    font-family: "DM Mono", monospace;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 6rem 2rem;
+    color: var(--text-disabled);
+    font-size: var(--fs-body);
+}
+
+.empty-state .icon {
+    font-size: 48px;
+    margin-bottom: 18px;
+    opacity: 0.3;
+}
+
+/* ── 電影膠捲視圖 ── */
+#film-view {
+    display: none;
+}
+
+#film-view.visible {
+    display: block;
+}
+
+.filmstrip-container {
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 21px;
+    cursor: grab;
+    scrollbar-width: thin;
+    scrollbar-color: #2e2920 transparent;
+}
+
+.filmstrip-container::-webkit-scrollbar {
+    height: var(--scrollbar-height);
+}
+
+.filmstrip-container::-webkit-scrollbar-thumb {
+    background: #2e2920;
+    border-radius: 99px;
+}
+
+.filmstrip-container::-webkit-scrollbar-thumb:hover {
+    background: var(--border-overlay);
+}
+
+.filmstrip {
+    display: flex;
+    align-items: stretch;
+    min-width: max-content;
+}
+
+.film-frame {
+    width: 390px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border-dim);
+    background: var(--bg-card);
+    position: relative;
+}
+
+.film-frame:first-child {
+    border-left: 1px solid var(--border-dim);
+}
+
+.sprocket-row {
+    display: flex;
+    align-items: center;
+    padding: 9px 12px;
+    gap: 9px;
+    background: var(--bg-rail);
+    border-bottom: 1px solid var(--border-dim);
+}
+
+.sprocket {
+    width: 18px;
+    height: 15px;
+    background: var(--bg-main);
+    border: 1px solid #222;
+    border-radius: 3px;
+}
+
+.frame-num {
+    font-size: var(--fs-mono);
+    font-family: "DM Mono", monospace;
+    color: #333;
+    margin-left: auto;
+}
+
+.film-img-wrap {
+    width: 100%;
+    aspect-ratio: 16/9;
+    overflow: hidden;
+    background: #111;
+}
+
+.film-img-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.film-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-disabled);
+    font-size: var(--fs-body);
+    border: 0.75px dashed #1f1f1f;
+}
+
+.film-caption {
+    padding: 10px 12px;
+    flex: 1;
+    background: #0a0a0a;
+}
+
+.film-caption-title {
+    font-size: var(--fs-body);
+    line-height: 1.7;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+    /* clamp to 3 lines */
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.film-camera {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.film-badge {
+    display: inline-block;
+    font-size: 12px;
+    padding: 2px 7px;
+    border-radius: 2px;
+    background: #141414;
+    color: #666;
+    border: 0.5px solid #222;
+    font-family: "DM Mono", monospace;
+    letter-spacing: 0.05em;
+    width: fit-content;
+}
+
+.film-cam-detail {
+    font-size: 14px;
+    color: #444;
+    line-height: 1.5;
+    font-family: "DM Mono", monospace;
+}
+
+.filmstrip-rail {
+    background: var(--bg-rail);
+    border: 1px solid var(--border-dim);
+    height: 27px;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    gap: 21px;
+}
+
+.rail-hole {
+    width: 21px;
+    height: 15px;
+    background: var(--bg-main);
+    border: 0.5px solid #1f1f1f;
+    border-radius: 3px;
+}
+
+/* ── 表格型式 ── */
+#table-view {
+    display: none;
+}
+
+#table-view.visible {
+    display: block;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--fs-table);
+}
+
+th {
+    padding: 15px 21px;
+    text-align: left;
+    color: var(--text-muted);
+    border-bottom: 0.5px solid var(--border-dim);
+    text-transform: uppercase;
+}
+
+td {
+    padding: 18px 21px;
+    border-bottom: 0.5px solid var(--border-dim);
+    vertical-align: top;
+}
+
+.editable-cell {
+    padding: 9px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    outline: none;
+}
+
+.editable-cell:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: #3a3a3a;
+}
+
+.editable-cell:focus {
+    background: var(--bg-editable-focus);
+    border-color: var(--border-focus);
+    color: #fff;
+}
+
+.img-cell {
+    width: 150px;
+}
+
+.img-cell img {
+    width: 100%;
+    aspect-ratio: 16/9;
+    object-fit: cover;
+    border-radius: 6px;
+}
+
+.camera-cell {
+    width: 20px;
+    font-family: "DM Mono", monospace;
+}
+
+.camera-cell.editable-cell{
+    width: 10px;
+}
+
+.title-cell {
+    font-weight: 500;
+    color: var(--text-accent);
+}
+
+.time-cell {
+    width: 30px;
+    font-family: "DM Mono", monospace;
+    color: var(--text-gold);
+    text-align: center;
+}
+
+.note-cell {
+    color: var(--text-dim);
+    font-style: italic;
+}
+
+/* ── 拖曳覆蓋層 ── */
+#drag-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+    background: var(--bg-overlay);
+    backdrop-filter: blur(14px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease;
+}
+
+#drag-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.drag-overlay-box {
+    width: min(840px, calc(100vw - 6rem));
+    padding: 5.25rem 3rem;
+    border: 2.25px dashed var(--border-overlay);
+    border-radius: var(--radius-lg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 27px;
+    background: var(--bg-overlay-box);
+    animation: overlayPulse 2s ease-in-out infinite;
+}
+
+.drag-overlay-icon {
+    width: 72px;
+    height: 72px;
+    color: var(--text-gold);
+    opacity: 0.6;
+}
+
+.drag-overlay-label {
+    font-size: var(--fs-overlay);
+    font-weight: 500;
+    color: var(--text-accent);
+}
+
+.drag-overlay-sub {
+    font-size: var(--fs-body);
+    color: #5a5040;
+    font-family: "DM Mono", monospace;
+}
+
+/* ── 其他組件 ── */
+.toast {
+    position: fixed;
+    bottom: 36px;
+    right: 36px;
+    background: var(--bg-btn);
+    border: 0.5px solid var(--border-main);
+    border-radius: 6px;
+    padding: 18px 27px;
+    font-size: var(--fs-toast);
+    opacity: 0;
+    transition: all 0.25s;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateY(-10px);
+}
+
+.pdf-light-export {
+    background: #ffffff !important;
+    color: #000000 !important;
+    
+    /* 確保所有邊距歸零，避免位移 */
+    margin: 0 !important;
+    padding: 10px !important; /* 僅保留極小內距，讓畫面不至於貼死邊緣 */
+    
+    /* 確保寬度撐滿，不被父元素限制 */
+    width: 100% !important;
+    position: static !important;
+    transform: none !important;
+}
+
+.pdf-light-export table {
+    margin-top: 0 !important;
+    border-collapse: collapse !important;
+}
+
+.pdf-light-export table,
+.pdf-light-export th,
+.pdf-light-export td {
+    border-color: #ddd !important;
+    color: #000 !important;
+}
+
+.pdf-light-export td, 
+.pdf-light-export th {
+    /* 1. 強制文字換行，防止水平溢出重疊 */
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+    white-space: normal !important;
+
+    /* 2. 重置字元間距與文字渲染模式 */
+    letter-spacing: normal !important;
+    text-rendering: optimizeLegibility !important;
+    
+    /* 3. 稍微增加一點行高，提升易讀性，也能減少重疊感 */
+    line-height: 1.5 !important;
+}
+
+
+/* 修改 .pdf-light-export 區塊 */
+.pdf-light-export {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 20px !important;
+
+    /* ── 核心修正：強制固定寬度，確保 html2canvas 抓取到的比例恆定 ── */
+    width: 1200px !important; 
+    box-sizing: border-box !important;
+}
+
+.pdf-light-export table {
+    width: 100% !important;
+    table-layout: fixed !important; /* 確保你手調的欄位比例被尊重 */
+}
+
+/* 確保圖片在 1.5 倍字體下不會撐破版面 */
+.pdf-light-export img {
+    max-width: 100% !important;
+    height: auto !important;
+    display: block;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in-view {
+    animation: fadeInUp 0.35s ease forwards;
+}
+
+@keyframes overlayPulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 60px rgba(90, 77, 42, 0.12);
+    }
+
+    50% {
+        box-shadow: 0 0 90px rgba(90, 77, 42, 0.25);
+    }
+}
+
+details.schema {
+    margin-top: 2rem;
+    border: 0.5px solid #1f1f1f;
+    border-radius: 4px;
+    background: #0a0a0a;
+}
+
+details.schema summary {
+    padding: 12px 16px;
+    font-size: 14px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #666;
+    cursor: pointer;
+    font-family: "DM Mono", monospace;
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+details.schema summary::-webkit-details-marker {
+    display: none;
+}
+
+details.schema summary::after {
+    content: "+";
+    color: #444;
+    font-size: 14px;
+}
+
+details.schema[open] summary::after {
+    content: "−";
+}
+
+details.schema pre {
+    padding: 0 16px 16px;
+    font-size: 14px;
+    color: #888;
+    font-family: "DM Mono", monospace;
+    line-height: 1.6;
+    overflow-x: auto;
+}
+
+details.schema .note {
+    padding: 0 16px 12px;
+    font-size: 14px;
+    color: #555;
+    line-height: 1.6;
+}
+
+details.schema code {
+    color: #c8b878;
+    background: #1a1610;
+    padding: 1px 5px;
+    border-radius: 2px;
+}
+
+th {
+    position: relative; /* 讓調節把手定位在右側 */
+}
+
+.resizer {
+    position: absolute;
+    right: 0;
+    top: 0;
+    height: 100%;
+    width: 6px;
+    background: transparent;
+    cursor: col-resize;
+    user-select: none;
+    transition: background 0.2s;
+}
+
+.resizer:hover, .resizer.resizing {
+    background: var(--border-focus); /* 懸停時顯示你的金黃色主體色 */
+}
+
+/* 確保表格佈局允許固定寬度調整 */
+table {
+    table-layout: fixed;
+}
+
+/* 預設寬度設定 */
+.col-camera { width: 120px; }
+.col-image { width: 300px; }
+.col-action { width: auto; }
+.col-time { width: 120px; }
+.col-note { width: 180px; }

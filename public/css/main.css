@@ -1,0 +1,18 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+#ifm{
+    margin: 0;
+    overflow: hidden;
+    scale: 1;
+    border: 0;
+    outline: 0;
+    left: 0;
+    top: 0;
+    transition: all 0.5s cubic-bezier(.4,0,.2,1);
+    scrollbar-width: none;
+}

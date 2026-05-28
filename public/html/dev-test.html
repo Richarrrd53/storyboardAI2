@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Storyboard — Dynamic Import</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500&family=DM+Mono:wght@400&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../css/dev-test.css">
+</head>
+
+<body>
+
+    <!-- ── Full-page drag overlay ── -->
+    <div id="drag-overlay">
+        <div class="drag-overlay-box">
+            <svg class="drag-overlay-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+            <span class="drag-overlay-label">將檔案拖移到這裡</span>
+            <span class="drag-overlay-sub">.json &nbsp;·&nbsp; 放開即匯入</span>
+        </div>
+    </div>
+
+    <!-- ── Page Header ── -->
+    <div class="page-header">
+        <h1>Storyboard</h1>
+        <p id="sb-title">尚未匯入分鏡資料</p>
+        <div class="meta">
+            <div class="meta-item">風格 <span id="sb-style">—</span></div>
+            <div class="meta-item">比例 <span id="sb-ratio">—</span></div>
+            <div class="meta-item">匯出 <span id="sb-date">—</span></div>
+            <div class="meta-item">場數 <span id="sb-count">0</span></div>
+        </div>
+    </div>
+
+    <!-- ── Action Bar ── -->
+    <div class="import-bar">
+        <button class="btn primary" id="btn-import">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+            匯入 JSON
+        </button>
+        <button class="btn" id="btn-sample">載入範例</button>
+        <button class="btn" id="btn-template">下載模板</button>
+        <button class="btn" id="btn-export" style="display:none;">匯出 JSON</button>
+        <button class="btn" id="btn-pdf" style="display:none;">下載 PDF</button>
+        <button class="btn" id="btn-clear" style="display:none;">清除</button>
+        <input type="file" id="file-input" accept=".json,application/json" style="display:none;">
+
+        <!-- View Toggle — only shown once data is loaded -->
+        <div class="view-toggle-wrap" id="view-toggle" style="display:none;">
+            <button class="view-btn active" id="vbtn-film" onclick="switchView('film')">電影膠捲</button>
+            <button class="view-btn" id="vbtn-table" onclick="switchView('table')">表格型式</button>
+        </div>
+    </div>
+
+    <!-- ── Drop Zone ── -->
+    <div class="dropzone" id="dropzone">
+        <div class="hint">拖曳 JSON 檔案到此處，或點擊上方按鈕匯入</div>
+        <div class="filetypes">支援 .json 格式 · 圖片可使用 URL 或 Base64 (data:image/...)</div>
+    </div>
+
+    <!-- ══════════════════════════════════
+     FILM STRIP VIEW (電影膠捲)
+══════════════════════════════════ -->
+    <div id="film-view">
+        <!-- rail and frames are injected by JS -->
+    </div>
+
+    <!-- ══════════════════════════════════
+     TABLE VIEW (表格型式，無 Prompt)
+══════════════════════════════════ -->
+    <div id="table-view">
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="col-camera">Camera<div class="resizer"></div>
+                        </th>
+                        <th class="col-image">Image<div class="resizer"></div>
+                        </th>
+                        <th class="col-action">Action<div class="resizer"></div>
+                        </th>
+                        <th class="col-time">Time<div class="resizer"></div>
+                        </th>
+                        <th class="col-note">Note<div class="resizer"></div>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody id="tbody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ── Empty State ── -->
+    <div class="empty-state" id="empty-state">
+        <div class="icon">◊</div>
+        <div>匯入 JSON 檔案後，分鏡資料將自動填入下方</div>
+    </div>
+
+    <!-- ── Schema Reference ── -->
+    <details class="schema">
+        <summary>JSON 格式說明 / Schema Reference</summary>
+        <div class="note">
+            支援兩種格式：扁平結構 (<code>title</code>/<code>scenes</code>) 或巢狀結構
+            (<code>metadata</code>/<code>frames</code>)。Camera 欄位可拆成 <code>cameraType</code> +
+            <code>cameraDetail</code>，也可只給單一 <code>camera</code> 字串 — 系統會自動以第一個逗號切分為徽章與細節。圖片支援 URL 或
+            <code>data:image/...;base64,...</code>。
+        </div>
+        <pre>// Format A — 扁平結構
+{
+  "title": "一隻狗狗在草地上奔跑",
+  "style": "電影風格",
+  "ratio": "橫向16:9",
+  "exportDate": "2026-04-20",
+  "scenes": [
+    {
+      "id": 1,
+      "image": "https://example.com/shot1.jpg",
+      "title": "場景描述...",
+      "cameraType": "特寫鏡頭",
+      "cameraDetail": "大光圈淺景深，低角度。",
+      "prompt": "close-up of a golden retriever..."
+    }
+  ]
+}
+
+// Format B — 巢狀結構（與 Storyboard 工具匯出格式相容）
+{
+  "metadata": {
+    "originalStory": "一隻狗狗在草地上奔跑",
+    "style": "電影風格",
+    "ratio": "橫向16:9",
+    "exportTime": "2026-04-20T13:53:38.778Z"
+  },
+  "frames": [
+    {
+      "id": 1,
+      "title": "場景描述...",
+      "camera": "特寫鏡頭，大光圈淺景深，低角度。",
+      "prompt": "close-up of a golden retriever...",
+      "image": "data:image/jpeg;base64,..."
+    }
+  ]
+}</pre>
+    </details>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="../js/dev-test.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</body>
+
+</html>

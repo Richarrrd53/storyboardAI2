@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard — Storyboard AI</title>
+    <link rel="stylesheet" href="../css/style.css" />
+    <link rel="stylesheet" href="../css/dashboard.css" />
+</head>
+
+<body>
+
+    <!-- Dynamic BG -->
+    <div id="BG">
+        <div class="bgDots" id="bgDot1"
+            style="width:600px;height:600px;left:-100px;top:-100px;filter:blur(120px);opacity:0.35;"></div>
+        <div class="bgDots" id="bgDot2"
+            style="width:500px;height:500px;right:-80px;top:60px;filter:blur(120px);opacity:0.28;"></div>
+        <div class="bgDots" id="bgDot4"
+            style="width:400px;height:400px;left:30%;bottom:-60px;filter:blur(100px);opacity:0.22;"></div>
+        <div id="bgMask"></div>
+
+    </div>
+
+    <!-- ═══ TOPBAR ═══ -->
+    <header class="topbar">
+        <div class="top-left">
+            <a href="./dashboard.html" class="top-logo brand-logo">STORYBOARD
+                <span>AI</span>
+            </a>
+        </div>
+
+        <nav class="top-nav">
+            <a href="./dashboard.html" class="top-link active" title="我的專案">
+                <img src="../icon/folder-blur.svg" alt="" style="z-index: 2; opacity: 0;">
+                <div class="link-glow"></div>
+            </a>
+            <a href="./generate.html" class="top-link" title="生成分鏡">
+                <img src="../icon/plus-blur.svg" alt="" style="z-index: 2; opacity: 0;">
+                <div class="link-glow"></div>
+            </a>
+            <a href="./history.html" class="top-link" title="歷史專案">
+                <img src="../icon/history-blur.svg" alt="" style="z-index: 2; opacity: 0;">
+                <div class="link-glow"></div>
+            </a>
+            <a href="./template.html" class="top-link" title="爆點模板庫">
+                <img src="../icon/search-blur.svg" alt="" style="z-index: 2; opacity: 0;">
+                <div class="link-glow"></div>
+            </a>
+            <a class="top-link" title="數據分析">
+                <img src="../icon/chart-blur.svg" alt="" style="z-index: 2; opacity: 0;">
+                <div class="link-glow"></div>
+            </a>
+        </nav>
+
+        <div class="top-right">
+            <div class="top-avatar" id="top-avatar">黃</div>
+        </div>
+    </header>
+    <nav class="mobile-bottom-nav">
+        <div class="link-group">
+            <a href="./dashboard.html" class="top-link active" title="我的專案">
+                <img src="../icon/folder-blur.svg" alt="">
+                <div class="link-glow"></div>
+            </a>
+            <p class="link-title">我的專案</p>
+        </div>
+        <div class="link-group">
+            <a href="./generate.html" class="top-link" title="生成分鏡">
+                <img src="../icon/plus-blur.svg" alt="">
+                <div class="link-glow"></div>
+            </a>
+            <p class="link-title">生成分鏡</p>
+        </div>
+        <div class="link-group">
+            <a href="./history.html" class="top-link" title="歷史專案">
+                <img src="../icon/history-blur.svg" alt="">
+                <div class="link-glow"></div>
+            </a>
+            <p class="link-title">歷史專案</p>
+        </div>
+        <div class="link-group">
+            <a href="./template.html" class="top-link" title="爆點模板庫">
+                <img src="../icon/search-blur.svg" alt="">
+                <div class="link-glow"></div>
+            </a>
+            <p class="link-title">爆點模板庫</p>
+        </div>
+        <div class="link-group">
+            <a class="top-link" title="數據分析">
+                <img src="../icon/chart-blur.svg" alt="">
+                <div class="link-glow"></div>
+            </a>
+            <p class="link-title">數據分析</p>
+        </div>
+    </nav>
+
+    <!-- ═══ MAIN CONTENT ═══ -->
+    <main class="dash-main">
+
+        <!-- Hero Input Section -->
+        
+        <!-- Project Management Section -->
+        <section class="projects-management anim-fadeInUp">
+            <div class="projects-header">
+                <h1 class="projects-title">我的專案</h1>
+                <a class="new-project-btn" onclick="navigate('generate')">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    新增專案
+                </a>
+            </div>
+            
+            <div class="projects-grid" id="projects-grid">
+                <!-- Projects will be dynamically rendered here -->
+            </div>
+        </section>
+</div>
+
+    </main>
+
+    <div class="bg-frame" id="bg-top">
+        <div class="rail" id="rail-top"></div>
+    </div>
+    <div class="bg-frame" id="bg-bottom">
+        <div class="rail" id="rail-bottom"></div>
+
+    </div>
+
+
+    <!-- User Tooltip Panel -->
+    <div class="user-panel" id="user-panel">
+        <div class="up-header">
+            <div class="up-avatar">黃</div>
+            <div>
+                <p class="up-name">黃晟銘</p>
+                <p class="up-email">aaaa@bbbb.edu.tw</p>
+            </div>
+            <div class="up-plan">Free</div>
+        </div>
+        <div class="up-divide"></div>
+        <div class="up-body">
+            <a  class="up-btn"><img src="../icon/profile.svg" alt=""><span>個人檔案</span></a>
+            <a  class="up-btn"><img src="../icon/upgrade.svg" alt=""><span>升級方案</span></a>
+            <a  class="up-btn"><img src="../icon/setting.svg" alt=""><span>設定</span></a>
+        </div>
+        <div class="up-divide"></div>
+        <a href="../html/login.html" class="up-btn up-logout"><img src="../icon/logout.svg" alt=""><span>登出</span></a>
+    </div>
+
+    <script src="../js/generate-prefill-path.js"></script>
+    <script src="../js/dashboard.js"></script>
+    <script src="../js/sys.js"></script>
+    <script>
+        function launchGenerate() {
+            const story = document.getElementById('dash-story').value.trim();
+            const ratio = document.getElementById('dash-ratio').value;
+            const styleIdx = document.getElementById('dash-style').value;
+
+            if (!story) {
+                document.getElementById('dash-story').focus();
+                document.querySelector('.idea-box').classList.add('shake');
+                setTimeout(() => document.querySelector('.idea-box').classList.remove('shake'), 600);
+                return;
+            }
+
+            sessionStorage.setItem('sb_story', story);
+            sessionStorage.setItem('sb_ratio', ratio);
+            sessionStorage.setItem('sb_styleIdx', styleIdx);
+            sessionStorage.setItem('sb_skipToStep', '3');
+
+            window.location.href = './generate.html';
+        }
+
+        document.getElementById('dash-story').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                launchGenerate();
+            }
+        });
+
+        document.getElementById('top-avatar').addEventListener('click', function (e) {
+            e.stopPropagation();
+            const panel = document.getElementById('user-panel');
+            panel.classList.toggle('active');
+        });
+
+        document.addEventListener('click', () => {
+            document.getElementById('user-panel').classList.remove('active');
+        });
+    </script>
+</body>
+
+</html>
