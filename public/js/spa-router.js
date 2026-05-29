@@ -669,29 +669,90 @@
         return;
       }
       const data = await res.json();
-      const p = data.project;
+      const p = data?.project;
+      if (!p) {
+        throw new Error('伺服器回傳資料缺少 project 欄位');
+      }
 
-      const shotsHtml = (p.shots || []).map(s => `
-        <div class="shot-card">
-          <div class="shot-title">${s.title}</div>
-          <div class="shot-meta">時長: ${s.duration} • 相機: ${s.camera}</div>
-          <pre class="shot-payload">${JSON.stringify(s.payload,null,2)}</pre>
-        </div>
-      `).join('');
+      const shots = Array.isArray(p.shots) ? p.shots : (p.shots ? [p.shots] : []);
+      // ✅ 修改點 1：將 safeTranslate 與 safeFormat 預設補上 async 處理
+      const safeTranslate = typeof window.translatePromptText === 'function' ? window.translatePromptText : async (v) => String(v || '');
+      const safeFormat = typeof window.formatPromptText === 'function' ? window.formatPromptText : async (v) => String(v || '');
+
+      // ✅ 修改點 2：改用 await Promise.all 確保所有翻譯都跑完再產生 HTML
+      const shotsHtmlArray = await Promise.all(shots.map(async (s, index) => {
+        if (!s || typeof s !== 'object') return '';
+        const payload = s.payload || {};
+        
+        // 取得翻譯
+        const shotPrompt = await safeTranslate(payload.shotPrompt || payload.prompt || '');
+        const finalPrompt = await safeTranslate(payload.finalPrompt || '');
+        
+        // 🔽 增加這兩行：在這裡先 await 等待 format 執行完畢 🔽
+        const formattedShotPrompt = await safeFormat(shotPrompt);
+        const formattedFinalPrompt = await safeFormat(finalPrompt);
+        // 🔼 -------------------------------------------------- 🔼
+        
+        const emotion = payload.emotion || s.emotion || '';
+        const imageUrl = payload.image || '';
+
+        return `
+          <div class="shot-card">
+            <div class="shot-card-header">
+              <div class="shot-card-title-wrapper">
+                <div class="shot-ordinal">鏡頭 ${s.order ?? index + 1}</div>
+                <div class="shot-title">${s.title || '未命名鏡頭'}</div>
+              </div>
+              <div class="shot-tags">
+                <span class="shot-chip">時長：${s.duration || '未設定'}</span>
+                <span class="shot-chip">相機：${s.camera || '未設定'}</span>
+                ${emotion ? `<span class="shot-chip">情緒：${emotion}</span>` : ''}
+              </div>
+            </div>
+            <div class="shot-card-body">
+              ${shotPrompt ? `<div class="shot-section"><span class="shot-section-label">鏡頭說明</span><p class="shot-section-text">${formattedShotPrompt}</p></div>` : ''}
+              ${finalPrompt ? `<div class="shot-section"><span class="shot-section-label">最終提示</span><p class="shot-section-text">${formattedFinalPrompt}</p></div>` : ''}
+              ${imageUrl ? `<div class="shot-image-wrapper"><img class="shot-image" src="${imageUrl}" alt="${s.title || 'shot image'}"></div>` : ''}
+            </div>
+            <details class="shot-more">
+              <summary>查看原始資料</summary>
+              <pre class="shot-payload">${JSON.stringify(payload, null, 2)}</pre>
+            </details>
+          </div>
+        `;
+      }));
+
+      // ✅ 將陣列合併回字串
+      const shotsHtml = shotsHtmlArray.join('');
 
       mEl.innerHTML = `
         <div class="project-detail">
-          <h2>${p.title}</h2>
-          <div class="project-meta-row">作者: ${p.author?.name || ''} • 建立於 ${new Date(p.createAt).toLocaleString('zh-TW')}</div>
-          <div class="project-cover">${p.cover? `<img src="${p.cover}" alt="cover">` : ''}</div>
+          <div class="project-summary">
+            <div>
+              <h2>${p.title}</h2>
+              <div class="project-meta-row">作者: ${p.author?.name || '未知'} • 建立於 ${new Date(p.createAt).toLocaleString('zh-TW')}</div>
+            </div>
+            <div class="project-attributes">
+              <span class="project-attribute">風格：${p.style || '未指定'}</span>
+              <span class="project-attribute">比例：${p.ratio || '未指定'}</span>
+              <span class="project-attribute">專案 ID：${p.shortId || p.id}</span>
+            </div>
+          </div>
+          <div class="project-cover">
+            ${p.cover ? `<img src="${p.cover}" alt="cover">` : `<div class="project-cover-empty">尚無封面</div>`}
+          </div>
           <section class="project-shots">
-            <h3>鏡頭列表</h3>
+            <div class="project-shots-headline">
+              <h3>鏡頭列表</h3>
+              <span class="shots-count">共 ${p.shots?.length || 0} 鏡頭</span>
+            </div>
             ${shotsHtml || '<div class="projects-empty"><p>尚無鏡頭資料</p></div>'}
           </section>
         </div>
       `;
     } catch (e) {
-      mEl.innerHTML = `<div class="projects-empty"><h3>讀取專案發生錯誤</h3><p>${e.message}</p></div>`;
+      console.error('renderProject error', e, { projectId, data: e?.data });
+      mEl.innerHTML = `<div class="projects-empty"><h3>讀取專案發生錯誤</h3><p>${e.message || '未知錯誤'}</p></div>`;
     }
   }
 
@@ -769,7 +830,7 @@
     dashboard: { css: ['/css/dashboard.css'], js: ['/js/generate-prefill-path.js'], render: () => renderDashboard() },
     generate: {
       css: ['/css/dashboard.css', '/css/generate.css', '/css/math-curve-loader.css'],
-      js: ['/js/math-curve-loader.js', '/js/token-manager.js', '/js/generate.js'],
+      js: ['/js/math-curve-loader.js', '/js/token-manager.js', '/js/prompt-translate.js', '/js/generate.js'],
       render: () => renderGenerate()
     },
     template: {
@@ -847,7 +908,8 @@
     if (def) {
       def.css.forEach(href => injectCSS(href));
       await def.render(opts);
-      for (const src of def.js) await injectScript(src);
+      const jsToLoad = Array.isArray(def.js) ? def.js : [];
+      for (const src of jsToLoad) await injectScript(src);
     }
 
     if (page === 'generate' && typeof window.initGeneratePage === 'function') {
@@ -920,6 +982,39 @@
   }
 
   document.addEventListener('DOMContentLoaded', async () => {
+    // Global error capture to help identify uncaught runtime errors in SPA
+    window.addEventListener('error', (ev) => {
+      try {
+        const msg = ev?.error?.stack || `${ev.message} at ${ev.filename}:${ev.lineno}:${ev.colno}`;
+        console.error('Captured error:', ev.error || ev.message, ev);
+        // show a non-blocking overlay if possible
+        try {
+          const overlay = document.createElement('div');
+          overlay.style.position = 'fixed';
+          overlay.style.right = '12px';
+          overlay.style.bottom = '12px';
+          overlay.style.zIndex = '99999';
+          overlay.style.maxWidth = '480px';
+          overlay.style.padding = '10px 12px';
+          overlay.style.background = 'rgba(0,0,0,0.85)';
+          overlay.style.color = '#fff';
+          overlay.style.fontSize = '12px';
+          overlay.style.borderRadius = '6px';
+          overlay.textContent = 'Error: ' + (ev?.message || 'see console');
+          document.body.appendChild(overlay);
+          setTimeout(() => overlay.remove(), 20000);
+        } catch (e) {}
+        // also show alert to prompt user to copy stack
+        alert('發生未捕捉錯誤，請複製 Console 的錯誤訊息並貼給我。\n\n' + (msg ? msg.toString().slice(0,2000) : 'no stack'));
+      } catch (e) { console.error('error handler failed', e); }
+    });
+
+    window.addEventListener('unhandledrejection', (ev) => {
+      try {
+        console.error('Unhandled rejection', ev.reason);
+        alert('未處理的 Promise 錯誤：請貼上 Console 中的錯誤訊息。\n\n' + (ev.reason && ev.reason.stack ? ev.reason.stack : String(ev.reason)).slice(0,2000));
+      } catch (e) { console.error('rejection handler failed', e); }
+    });
     const m = document.getElementById('page-main');
     if (m) {
       landingHTML = m.innerHTML;
@@ -953,7 +1048,8 @@
       navigate(initialPage, { noHistory: true, force: true });
     } else {
       interceptCTAs();
-      for (const src of pageDefs.landing.js) {
+      const landingJs = Array.isArray(pageDefs.landing?.js) ? pageDefs.landing.js : [];
+      for (const src of landingJs) {
         await injectScript(src);
       }
       

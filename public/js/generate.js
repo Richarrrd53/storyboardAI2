@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
- // ── DOM refs (改成 let，允許動態刷新) ──
+  // ── DOM refs (改成 let，允許動態刷新) ──
   let storyInput = null;
   let inputArea = null;
 
@@ -529,7 +529,7 @@
 
   async function applyTemplateAndGenerate() {
       closePreview();
-      if (!state.selectedTemplate) { alert('請先選擇一個模板！'); return; }
+      if (!state.selectedTemplate) { await alert('請先選擇一個模板！'); return; }
       state.useTemplate = true;
       await startTemplateGenerate();
   }
@@ -554,21 +554,32 @@
       '直向2:3': 'vertical 2:3 aspect ratio, portrait composition',
   }[state.ratio] || 'composition';
 
-  function buildFinalPrompt(shot) {
+  async function buildFinalPrompt(shot) {
       const styleDetail = STYLES[state.styleIndex].prompt;
+      const styleZh = (window.translatePromptText && typeof window.translatePromptText === 'function') ? await window.translatePromptText(styleDetail) : styleDetail;
+      const ratioZh = (window.translatePromptText && typeof window.translatePromptText === 'function') ? await window.translatePromptText(ratioPrompt) : ratioPrompt;
       const characterData = (shot.characters || [])
           .map(id => window.storyboardData.characters[id])
           .filter(Boolean);
+      const shotPromptRaw = shot.shotPrompt || shot.prompt || '';
+      const shotZh = (window.translatePromptText && typeof window.translatePromptText === 'function') ? await window.translatePromptText(shotPromptRaw) : shotPromptRaw;
 
       if (characterData.length === 0) {
-          return `${shot.shotPrompt},\n\n${styleDetail},\n\n${ratioPrompt} composition,\nhigh quality`;
+          return `${shotZh}，\n\n${styleZh}，\n\n${ratioZh}，\n高品質`;
       }
 
-      const characterPrompt = characterData
-          .map(char => `${char.appearance},\n${char.outfit},\n${char.personality}`)
-          .join(',');
+      // 處理陣列內的非同步翻譯，必須使用 await Promise.all
+      const characterPromptArray = await Promise.all(characterData.map(async char => {
+          const a = char.appearance || '';
+          const o = char.outfit || '';
+          const p = char.personality || '';
+          const raw = [a, o, p].filter(Boolean).join(', ');
+          return (window.translatePromptText && typeof window.translatePromptText === 'function') ? await window.translatePromptText(raw) : raw;
+      }));
+      
+      const characterPrompt = characterPromptArray.join('，');
 
-      return `${characterPrompt},\n\n${shot.shotPrompt},\n\n${styleDetail},\n\n${ratioPrompt} composition,\nhigh quality,\nconsistent character design`;
+      return `${characterPrompt}，\n\n${shotZh}，\n\n${styleZh}，\n${ratioZh}，\n高品質，角色設計一致`;
   }
 
   async function startGenerate() {
@@ -590,7 +601,7 @@
           if (!window.storyboardData) return;
           window.storyboardData = normalizeStoryboard(window.storyboardData);
           try { validateStoryboard(window.storyboardData); }
-          catch (err) { console.error(err); alert('Storyboard 結構錯誤：\n' + err.message); return; }
+          catch (err) { console.error(err); await alert('Storyboard 結構錯誤：\n' + err.message); return; }
 
           updateLoadingUI(3, LOADING_STEPS_FREE);
           let completedCount = 0;
@@ -600,7 +611,7 @@
           for (const shot of shots) {
               try {
                   updateLoadingUI(3, LOADING_STEPS_FREE, completedCount);
-                  const finalPrompt = buildFinalPrompt(shot);
+                  const finalPrompt = await buildFinalPrompt(shot);
                   const res = await askGemini(finalPrompt, 'image');
                   window.generatedImgs.push(res?.image?.length > 0 ? res.image[0] : '../icon/error.jpg');
                   window.generatedStoryTitles.push(shot.story);
@@ -623,7 +634,8 @@
       } catch (e) {
           console.error(e);
           stopLoadingTicker();
-          alert('生成失敗：' + e.message);
+          // 修正點 1：加上 await
+          await alert('生成失敗：' + e.message); 
           showPhase('phase-compose');
       }
   }
@@ -664,7 +676,9 @@
           for (const prompt of window.generatedPrompts) {
               try {
                   updateLoadingUI(3, LOADING_STEPS_TPL, completedCount);
-                  const res = await askGemini(prompt + ', ' + styleDetail, 'image');
+                  const promptZh = (window.translatePromptText && typeof window.translatePromptText === 'function') ? await window.translatePromptText(prompt) : prompt;
+                  const styleZh = (window.translatePromptText && typeof window.translatePromptText === 'function') ? await window.translatePromptText(styleDetail) : styleDetail;
+                  const res = await askGemini(promptZh + ', ' + styleZh, 'image');
                   window.generatedImgs.push(res?.image?.length > 0 ? res.image[0] : '../icon/error.jpg');
                   completedCount++;
                   const progress = 50 + (completedCount / total) * 45;
@@ -684,7 +698,8 @@
       } catch (e) {
           console.error(e);
           stopLoadingTicker();
-          alert('生成失敗：' + e.message);
+          // ✅ 修正點 2：加上 await
+          await alert('生成失敗：' + e.message); 
           showPhase('phase-template');
       }
   }

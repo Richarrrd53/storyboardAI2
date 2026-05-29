@@ -66,6 +66,12 @@ app.use(express.static(publicPath));
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ limit: '100mb', extended: true })); // 增加 URL 編碼限制
 
+// Request logger for debugging missing static resources
+app.use((req, res, next) => {
+    console.log(`${new Date().toISOString()} → ${req.method} ${req.originalUrl}`);
+    next();
+});
+
 // === AUTHENTICATION API ===
 app.post('/api/auth/login', async (req, res) => {
     try {
@@ -286,12 +292,27 @@ app.get('/api/get-templates', async (req, res) => {
 });
 
 
-// SPA catch-all — redirect /dashboard, /login, /register, /generate to main.html
-const spaRoutes = ['/dashboard', '/login', '/register', '/generate', '/analyze'];
+// SPA catch-all — redirect SPA routes to main.html
+const spaRoutes = ['/dashboard', '/login', '/register', '/generate', '/analyze', '/project', '/history', '/template'];
 spaRoutes.forEach(route => {
     app.get(route, (req, res) => {
         res.sendFile(path.join(process.cwd(), 'public', 'main.html'));
     });
+});
+
+// Fallback for any non-API route to support client-side SPA routing
+app.get(/^\/(?!api\/).*/, (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'public', 'main.html'));
+});
+
+// 404 handler — log and return a helpful message
+app.use((req, res) => {
+    console.warn(`404 Not Found: ${req.method} ${req.originalUrl}`);
+    if (req.originalUrl.startsWith('/api/')) {
+        res.status(404).json({ error: 'API endpoint not found', path: req.originalUrl });
+    } else {
+        res.status(404).send('Not Found');
+    }
 });
 if (process.env.NODE_ENV !== 'production') {
     const PORT = 3000;

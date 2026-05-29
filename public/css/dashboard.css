@@ -1163,6 +1163,258 @@
     background: var(--white);
     border: 2px dashed var(--card-border);
     border-radius: var(--radius-lg);
+}
+
+/* Project Detail View */
+.spa-project-wrap {
+    padding: 24px 20px 40px;
+}
+
+.project-detail {
+    display: grid;
+    grid-template-columns: 1.25fr 1fr;
+    gap: 28px;
+    align-items: start;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.project-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.project-summary h2 {
+    font-size: 2.3rem;
+    font-weight: 900;
+    line-height: 1.05;
+    margin: 0 0 10px;
+}
+
+.project-meta-row {
+    color: var(--text-mid);
+    font-size: 0.95rem;
+    letter-spacing: 0.02em;
+}
+
+.project-attributes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 6px;
+}
+
+.project-attribute {
+    display: inline-flex;
+    align-items: center;
+    background: var(--off-white);
+    color: var(--text-dark);
+    padding: 10px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--card-border);
+    font-size: 0.88rem;
+    font-weight: 700;
+}
+
+.project-cover {
+    min-height: 280px;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    border: 1px solid var(--card-border);
+    background: var(--card-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.project-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.project-cover-empty {
+    color: var(--text-mid);
+    font-size: 1rem;
+    padding: 20px;
+}
+
+.project-shots {
+    grid-column: 1 / -1;
+    display: grid;
+    gap: 20px;
+    margin-top: 12px;
+}
+
+.project-shots-headline {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.project-shots-headline h3 {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 900;
+}
+
+.shots-count {
+    color: var(--text-mid);
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.shot-card {
+    padding: 22px;
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--card-border);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.05);
+}
+
+.shot-title {
+    font-size: 1.05rem;
+    font-weight: 800;
+    margin-bottom: 10px;
+    color: var(--text-dark);
+}
+
+.shot-meta {
+    font-size: 0.92rem;
+    color: var(--text-mid);
+    margin-bottom: 16px;
+}
+
+.shot-payload {
+    margin: 0;
+    background: var(--bg);
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    padding: 16px;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: var(--text-dark);
+    white-space: pre-wrap;
+    overflow-x: auto;
+}
+
+.shot-card-header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-start;
+    margin-bottom: 18px;
+}
+
+.shot-card-title-wrapper {
+    display: grid;
+    gap: 10px;
+}
+
+.shot-ordinal {
+    font-size: 0.95rem;
+    color: var(--text-mid);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.shot-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.shot-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 12px;
+    background: var(--off-white);
+    border: 1px solid var(--card-border);
+    border-radius: 999px;
+    font-size: 0.85rem;
+    color: var(--text-dark);
+    font-weight: 700;
+}
+
+.shot-card-body {
+    display: grid;
+    gap: 16px;
+}
+
+.shot-section {
+    display: grid;
+    gap: 10px;
+    padding: 16px;
+    border-radius: 16px;
+    background: var(--bg);
+    border: 1px solid var(--card-border);
+}
+
+.shot-section-label {
+    font-size: 0.92rem;
+    color: var(--text-dark);
+    font-weight: 800;
+}
+
+.shot-section-text {
+    margin: 0;
+    color: var(--text-mid);
+    line-height: 1.7;
+    white-space: pre-wrap;
+}
+
+.shot-image-wrapper {
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid var(--card-border);
+}
+
+.shot-image {
+    width: 100%;
+    display: block;
+    object-fit: cover;
+}
+
+.shot-more {
+    margin-top: 16px;
+    border-top: 1px solid var(--card-border);
+    padding-top: 16px;
+}
+
+.shot-more summary {
+    cursor: pointer;
+    font-weight: 800;
+    color: var(--text-dark);
+    margin-bottom: 12px;
+}
+
+@media (max-width: 960px) {
+    .project-detail {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .spa-project-wrap {
+        padding: 18px 16px 30px;
+    }
+
+    .project-summary h2 {
+        font-size: 1.85rem;
+    }
+
+    .project-attribute {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
     color: var(--text-mid);
 }
 

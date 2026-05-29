@@ -765,7 +765,7 @@ function buildPreviewHTML(tpl) {
         <!-- Base prompt -->
         <div>
             <p class="pv-section-title">基底提示詞</p>
-            <div class="pv-prompt-base">${tpl.promptTemplate.base}</div>
+            <div class="pv-prompt-base">${formatPromptText(tpl.promptTemplate.base)}</div>
         </div>
 
         <!-- Structure -->
@@ -784,7 +784,7 @@ function buildPreviewHTML(tpl) {
                                 <span class="pv-shot-chip">情緒: ${s.emotion}</span>
                             </div>
                             <p style="font-size:0.72rem;color:#888;margin-top:5px;">${s.purpose}</p>
-                            <p style="font-size:0.72rem;color:#aaa;margin-top:4px;font-family:monospace;">${tpl.promptTemplate.perShot[i] || ''}</p>
+                            <p style="font-size:0.72rem;color:#aaa;margin-top:4px;font-family:monospace;">${formatPromptText(tpl.promptTemplate.perShot[i] || '')}</p>
                         </div>
                     </div>
                 `).join('')}
@@ -823,7 +823,7 @@ let generatedStoryCams = [];
 let generatedPrompts = [];
 
 async function startTemplateGenerate() {
-    if (!state.selectedTemplate) { alert('請先選擇一個模板！'); return; }
+    if (!state.selectedTemplate) { await alert('請先選擇一個模板！'); return; }
     showPhase('phase-generating');
 
     const titleEl = document.getElementById('loading-title');
@@ -918,7 +918,7 @@ ${rawPrompts.map((p, i) => `${i + 1}. ${p}`).join('\n')}
 
     } catch (e) {
         console.error(e);
-        alert('生成失敗：' + e.message);
+        await alert('生成失敗：' + e.message);
         showPhase('phase-template');
     }
 }
