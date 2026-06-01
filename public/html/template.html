@@ -7,24 +7,66 @@
   <title>爆點模板庫 — Storyboard AI</title>
   <link rel="stylesheet" href="../css/style.css" />
   <link rel="stylesheet" href="../css/dashboard.css" />
+  <link rel="stylesheet" href="../css/template.css" />
 </head>
 
 <body>
   <main class="dash-main template-main">
+    <section class="template-hero">
+      <div class="hero-copy">
+        <h1>爆點模板庫。</h1>
+        <div class="hero-actions">
+          <a class="new-template-btn" onclick="openNewTemplateModal()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            新增模板
+          </a>
+        </div>
+      </div>
+      <div class="hero-cards">
+        <article class="hero-card hero-card-large">
+          <span>熱門推薦</span>
+          <h2>快速吸睛開場</h2>
+          <p>專為 15 秒爆點影片設計，從第一秒就抓住注意力。</p>
+        </article>
+        <div class="hero-card-stack">
+          <article class="hero-card hero-card-small">
+            <span>品牌故事</span>
+            <h3>情緒動線</h3>
+            <p>用簡潔節奏打造情緒起伏，傳遞品牌價值。</p>
+          </article>
+          <article class="hero-card hero-card-small">
+            <span>促銷轉換</span>
+            <h3>商品焦點</h3>
+            <p>把畫面重心放在產品，再用爆點引導留存。</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
     <section class="projects-management anim-fadeInUp">
-      <div class="projects-header">
-        <h1 class="projects-title">爆點模板庫</h1>
-        <a class="new-project-btn" onclick="navigate('generate')">
+      <div class="projects-header template-header">
+        <div>
+          <h2 class="projects-title">爆點模板庫</h2>
+          <p class="template-subtitle">探索並套用多種爆點短影片模板，依類別快速篩選，讓你的下一支影片更容易觸及受眾與提升點閱率。</p>
+        </div>
+        <a class="new-template-btn" onclick="openNewTemplateModal()">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
             <line x1="12" y1="5" x2="12" y2="19"></line>
             <line x1="5" y1="12" x2="19" y2="12"></line>
           </svg>
-          新增專案
+          新增模板
         </a>
       </div>
 
       <div class="template-layout">
         <aside class="template-cats" id="template-cats">
+          <div class="template-cat-header">
+            <h2>模板分類</h2>
+            <p>從熱門、廣告、品牌、生活與促銷等模板中快速篩選最適合的爆點形式。</p>
+          </div>
           <!-- categories rendered here -->
         </aside>
 
@@ -33,7 +75,10 @@
             <!-- templates rendered here -->
           </div>
           <div class="template-detail" id="template-detail">
-            <!-- detail shown when clicking a template -->
+            <div class="template-detail-empty">
+              <h2>請先選擇一個模板</h2>
+              <p>點選左方任一模板卡即可查看詳情、套用建議與內容預覽，快速啟動你的短影片腳本創作。</p>
+            </div>
           </div>
         </section>
       </div>
@@ -48,8 +93,50 @@
     <div class="rail" id="rail-bottom"></div>
   </div>
 
+  <div class="template-modal-overlay" id="template-modal">
+    <div class="template-modal-panel">
+      <button class="template-modal-close" type="button" onclick="closeNewTemplateModal()">×</button>
+      <div class="template-modal-head">
+        <p>新增爆點模板</p>
+        <h3>先選擇影片來源，讓系統自動建立你的影片模板骨架</h3>
+      </div>
+
+      <div class="template-modal-section">
+        <div class="template-modal-section-title">選擇影片來源</div>
+        <div class="video-source-tabs">
+          <button class="video-source-tab active" type="button" data-source="url">影片網址</button>
+          <button class="video-source-tab" type="button" data-source="file">上傳檔案</button>
+        </div>
+        <div class="video-source-panel active" data-target="url">
+          <input class="input-url" id="video-url-input" type="url" placeholder="貼上影片連結，如 YouTube / MP4 網址" />
+        </div>
+        <div class="video-source-panel" data-target="file">
+          <label class="file-upload-btn" for="video-file-input">選擇影片檔案</label>
+          <input id="video-file-input" type="file" accept="video/*" hidden />
+          <div class="file-info" id="video-file-name">目前尚未選擇檔案</div>
+        </div>
+      </div>
+
+      <div class="template-modal-section">
+        <label class="template-modal-section-title">模板名稱</label>
+        <input class="template-modal-input" id="template-name-input" type="text" placeholder="輸入模板名稱，例如：爆發式開場" />
+      </div>
+
+      <div class="template-modal-section">
+        <label class="template-modal-section-title">模板描述</label>
+        <textarea class="template-modal-textarea" id="template-description-input" placeholder="描述此模板希望達成的效果，例如：快速建立吸睛開場與高轉換節奏。" rows="4"></textarea>
+      </div>
+
+      <div class="template-modal-actions">
+        <button class="btn btn-ghost" type="button" onclick="closeNewTemplateModal()">取消</button>
+        <button class="btn btn-primary" type="button" onclick="submitNewTemplate()">建立模板</button>
+      </div>
+    </div>
+  </div>
+
   <script src="../js/generate-prefill-path.js"></script>
   <script src="../js/sys.js"></script>
+  <script src="../js/template.js"></script>
 </body>
 
 </html>

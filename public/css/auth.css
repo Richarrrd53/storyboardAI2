@@ -433,9 +433,9 @@ body {
 }
 
 .role-chip input:checked+span {
-  background: var(--purple-soft);
-  border-color: var(--purple-light);
-  color: var(--primary-light);
+  background: var(--primary-soft);
+  border-color: var(--primary-light);
+  color: var(--primary);
 }
 
 /* --- Terms / Switch --- */

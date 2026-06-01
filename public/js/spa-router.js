@@ -568,6 +568,10 @@
 
     await ensureSharedLayout();
 
+    if (typeof initTemplatePage === 'function') {
+      initTemplatePage();
+    }
+
     const catsEl = document.getElementById('template-cats');
     const gridEl = document.getElementById('template-grid');
     const detailEl = document.getElementById('template-detail');
@@ -834,8 +838,8 @@
       render: () => renderGenerate()
     },
     template: {
-      css: ['/css/dashboard.css'],
-      js: ['/js/generate-prefill-path.js'],
+      css: ['/css/dashboard.css', '/css/template.css'],
+      js: ['/js/generate-prefill-path.js', '/js/template.js'],
       render: () => renderTemplate()
     },
     project: {
