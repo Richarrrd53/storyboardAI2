@@ -3,7 +3,7 @@
   ============================================ */
 
 body {
-  font-size: 1.5vh;
+  font-size: clamp(14px, 1.5vh, 16px);
 }
 
 .nav-links{
@@ -153,8 +153,8 @@ body {
 
 .auth-content {
   padding: 3.6vh 3.6vh;
-  max-height: 47.8vh;
-  overflow-y: scroll;
+  max-height: none;
+  overflow-y: visible;
   
   background-color: var(--white);
 }
@@ -182,7 +182,7 @@ body {
   height: 5vh;
   background-color: #3a3228;
   background-size: auto;
-  border-bottom: 2px dashed rgba(190, 166, 101, 0.5);
+  border-bottom: 2px dashed rgba(234, 97, 19, 0.5);
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -193,14 +193,14 @@ body {
 
 .auth-strip.bottom {
   border: 0;
-  border-top: 2px dashed rgba(190, 166, 101, 0.5);
+  border-top: 2px dashed rgba(234, 97, 19, 0.5);
 }
 
 .strip-hole {
   width: 6%;
   height: 50%;
   background-color: var(--bg-dark);
-  border: 1px solid rgba(190, 166, 101, 0.5);
+  border: 1px solid rgba(234, 97, 19, 0.5);
   border-radius: 0.6vh;
 }
 
@@ -231,7 +231,8 @@ body {
 .form-group {
   position: relative;
   width: 100%;
-  height: 6vh;
+  height: 7vh;
+  min-height: 44px; 
   margin-bottom: 1vh;
   display: flex;
   align-items: center;
@@ -247,6 +248,15 @@ body {
 .form-group:hover {
   border-color: var(--text-dark);
   box-shadow: 0 0 0.5vh var(--text-light);
+}
+
+.form-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-mid);
+  margin-bottom: 4px;
+  display:block;
+
 }
 
 .form-group .icon {
@@ -307,7 +317,7 @@ body {
 
 .form-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 1vh;
 }
 
@@ -500,4 +510,6 @@ body {
   width: 100%;
   padding: clamp(8px, 1.2vw, 12px) 28px;
   font-size: clamp(0.7rem, 1.2vw, 0.95rem);
+  min-height: 44px;
+  font-weight: 700;
 }

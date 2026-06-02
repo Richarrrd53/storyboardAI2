@@ -1,5 +1,5 @@
 *::selection{
-    background-color: rgba(190, 166, 101, 0.3);
+    background-color: rgba(234, 97, 19, 0.3);
 }
 
 .nav {
@@ -561,7 +561,7 @@
     box-shadow:
         0 20px 60px rgba(0, 0, 0, 0.1),
         inset 0 1px 0 rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(190, 166, 101, 0.25);
+    border: 1px solid rgba(234, 97, 19, 0.25);
 }
 
 /* Sprocket holes strip along top */
@@ -572,7 +572,7 @@
     flex-shrink: 0;
     background-color: #3a3228;
     background-size: auto;
-    border-bottom: 1px dashed rgba(190, 166, 101, 0.2);
+    border-bottom: 1px dashed rgba(234, 97, 19, 0.2);
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -583,7 +583,7 @@
 
 .card-strip.bottom{
     border: 0;
-    border-top: 1px dashed rgba(190, 166, 101, 0.2);
+    border-top: 1px dashed rgba(234, 97, 19, 0.2);
 
 }
 
@@ -591,7 +591,7 @@
     width: 6%;
     height: 50%;
     background-color: var(--bg-dark);
-    border: 1px solid rgba(190, 166, 101, 0.5);
+    border: 1px solid rgba(234, 97, 19, 0.5);
     border-radius: 0.37vh;
 }
 
@@ -618,7 +618,7 @@
     font-size: clamp(2.5rem, 1.2vw, 4.5rem);
     position: relative;
     overflow: hidden;
-    box-shadow: inset 0 0 0 1px rgba(190, 166, 101, 0.2);
+    box-shadow: inset 0 0 0 1px rgba(234, 97, 19, 0.2);
 }
 
 /* Film frame corners */
@@ -627,8 +627,8 @@
     position: absolute;
     inset: 0;
     background:
-        linear-gradient(to bottom right, rgba(190, 166, 101, 0.15) 0%, transparent 40%),
-        linear-gradient(to bottom left, rgba(190, 166, 101, 0.15) 0%, transparent 40%);
+        linear-gradient(to bottom right, rgba(234, 97, 19, 0.15) 0%, transparent 40%),
+        linear-gradient(to bottom left, rgba(234, 97, 19, 0.15) 0%, transparent 40%);
     border-radius: 6px;
     pointer-events: none;
 }
@@ -696,7 +696,7 @@
     box-shadow:
         0 20px 60px rgba(0, 0, 0, 0.1),
         inset 0 1px 0 rgba(255, 255, 255, 0.6);
-    border: 1px solid rgba(190, 166, 101, 0.3);
+    border: 1px solid rgba(234, 97, 19, 0.3);
 }
 
 
@@ -716,7 +716,7 @@
     line-height: 1.5;
     text-align: left;
     padding-bottom: 5%;
-    border-bottom: 1px solid rgba(190, 166, 101, 0.35);
+    border-bottom: 1px solid rgba(234, 97, 19, 0.35);
 }
 
 .card-back p {
@@ -984,7 +984,7 @@
             var(--off-white) 100%);
     color: var(--text-dark);
     border: 0;
-    box-shadow: inset 0 -2px 25px -4px #fff, 0 0.6vh 0 #dfc49a;
+    box-shadow: inset 0 -2px 25px -4px #fff, 0 0.6vh 0 #fbb931;
 }
 
 .pricing-card-featured:hover {
@@ -1253,11 +1253,11 @@
 
     .pricing-card-featured .btn{
         border-width: 1px;
-        box-shadow: 0 2px 0 #dfc49a;
+        box-shadow: 0 2px 0 #fbb931;
     }
 
     .pricing-card-featured .btn:hover, .pricing-card-featured .btn:active{
-        box-shadow: 0 0px 0 #dfc49a;
+        box-shadow: 0 0px 0 #fbb931;
         transform: translateY(2px);
     }
 

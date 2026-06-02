@@ -200,7 +200,7 @@
 
 .top-avatar:hover {
     transform: scale(1.05);
-    box-shadow: 0 0 15px rgba(220, 156, 71, 0.4);
+    box-shadow: 0 0 15px rgba(234, 97, 19, 0.4);
 }
 
 .top-avatar:active{
@@ -532,7 +532,7 @@
 
 .idea-box:focus-within {
     border-color: var(--primary) !important;
-    box-shadow: 0 15px 40px rgba(0,0,0,0.4), 0 0 0 4px rgba(220, 156, 71, 0.2) !important;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.4), 0 0 0 4px rgba(234, 97, 19, 0.2) !important;
 }
 
 @keyframes shake {
@@ -578,14 +578,14 @@
     justify-content: center;
     color: var(--white);
     cursor: pointer;
-    box-shadow: 0 4px 12px rgba(220, 156, 71, 0.4);
+    box-shadow: 0 4px 12px rgba(234, 97, 19, 0.4);
     transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .idea-send-btn:hover {
     transform: scale(1.08);
-    background: #EBB866;
-    box-shadow: 0 8px 20px rgba(220, 156, 71, 0.5);
+    background: #f88f22;
+    box-shadow: 0 8px 20px rgba(234, 97, 19, 0.5);
 }
 
 .idea-box-footer {
@@ -747,7 +747,7 @@
 .recent-item:hover {
     border-color: var(--primary);
     transform: translateX(8px);
-    box-shadow: 0 8px 20px rgba(220, 156, 71, 0.15);
+    box-shadow: 0 8px 20px rgba(234, 97, 19, 0.15);
 }
 
 .recent-thumb {
@@ -920,7 +920,7 @@
 .tmpl-card:hover {
     border-color: var(--primary);
     transform: translateY(-4px);
-    box-shadow: 0 10px 20px rgba(220, 156, 71, 0.15);
+    box-shadow: 0 10px 20px rgba(234, 97, 19, 0.15);
 }
 
 .tmpl-preview {
@@ -1027,13 +1027,13 @@
     font-weight: 800;
     cursor: pointer;
     transition: all 0.3s;
-    box-shadow: 0 4px 15px rgba(220, 156, 71, 0.4);
+    box-shadow: 0 4px 15px rgba(234, 97, 19, 0.4);
 }
 
 .new-project-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(220, 156, 71, 0.6);
-    background: #EBB866;
+    box-shadow: 0 8px 20px rgba(234, 97, 19, 0.6);
+    background: #f88f22;
 }
 
 .projects-grid {
@@ -1057,7 +1057,7 @@
 .project-card:hover {
     border-color: var(--primary);
     transform: translateY(-6px);
-    box-shadow: 0 15px 30px rgba(220, 156, 71, 0.15);
+    box-shadow: 0 15px 30px rgba(234, 97, 19, 0.15);
 }
 
 .card-strip {
@@ -1067,7 +1067,7 @@
     flex-shrink: 0;
     background-color: #3a3228;
     background-size: auto;
-    border-bottom: 1px dashed rgba(190, 166, 101, 0.2);
+    border-bottom: 1px dashed rgba(234, 97, 19, 0.2);
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -1078,7 +1078,7 @@
 
 .card-strip.bottom{
     border: 0;
-    border-top: 1px dashed rgba(190, 166, 101, 0.2);
+    border-top: 1px dashed rgba(234, 97, 19, 0.2);
 
 }
 
@@ -1086,7 +1086,7 @@
     width: 6%;
     height: 50%;
     background-color: var(--bg-dark);
-    border: 1px solid rgba(190, 166, 101, 0.5);
+    border: 1px solid rgba(234, 97, 19, 0.5);
     border-radius: 0.37vh;
 }
 
