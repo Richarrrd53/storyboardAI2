@@ -1,31 +1,32 @@
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@100;300;400;500;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
 
 :root {
-    --primary: #bea665;
-    --primary-light: #eec480;
-    --primary-soft: #FDF9EE;
-    --peach: #D86B49;
-    --peach-light: #E48D73;
-    --yellow-warm: #F4D37A;
-    --lavender: #4A423A;
-    --lavender-light: #6E6458;
+    --primary: #E8A838;
+    --primary-light: #F4C060;
+    --primary-soft: #FDF3E7;
+    --peach: #E8673A;
+    --peach-light: #F08555;
+    --yellow-warm: #F4C060;
+    --lavender: #E8673A;
+    --lavender-light: #F08555;
     --white: #FFFFFF;
-    --off-white: #EBE6D8;
-    --text-dark: #3A322C;
-    --text-mid: #685E53;
-    --text-light: #948A7D;
-    --card-bg: #F5F2E9;
-    --card-border: #DCD4C6;
-    --shadow-soft: 0 8px 30px rgba(42, 35, 30, 0.15);
-    --shadow-card: 0 4px 15px rgba(42, 35, 30, 0.08);
+    --off-white: #FDF0E6;
+    --text-dark: #3A2215;
+    --text-mid: #7A4A2C;
+    --text-light: #B07A5A;
+    --card-bg: #F5E6D8;
+    --card-border: #DCC4A6;
+    --shadow-soft: 0 8px 30px rgba(232, 103, 58, 0.15);
+    --shadow-card: 0 4px 15px rgba(232, 103, 58, 0.08);
     --radius-sm: 4px;
     --radius-md: 12px;
     --radius-lg: 16px;
     --radius-xl: 24px;
-    --font-display: "Noto Sans TC", sans-serif;
-    --font-body: "Noto Sans TC", sans-serif;
-    --bg-dark: #262320;
+    --font-display:'Poppins', sans-serif;
+    --font-body: 'Poppins', sans-serif;
+    --bg-dark: #1A1015;
 }
 
 *{
