@@ -3,6 +3,9 @@
   const AUTH_KEY = 'spa_logged_in';
   let currentPage = 'landing';
   let isTransitioning = false;
+  let currentNavController = null;
+  let navSeq = 0;
+  let targetPage = null;
   let dashboardTopbar = null;
   let mobileBottomNav = null;
   let landingHTML = '';
@@ -42,39 +45,48 @@
       }
       navigate('landing', { force: true });
     },
-    fetchUser: async () => {
+    fetchUser: async (signal) => {
       const token = localStorage.getItem(AUTH_TOKEN_KEY);
       if (!token) return null;
+
       try {
         const res = await fetch('/api/auth/me', {
+          signal,
           headers: { 'Authorization': `Bearer ${token}` }
         });
+
         if (!res.ok) {
           localStorage.removeItem(AUTH_TOKEN_KEY);
           return null;
         }
+
         const data = await res.json();
         return data.user;
       } catch (e) {
+        if (e.name === 'AbortError') return null;
         return null;
       }
     },
-    fetchProjects: async () => {
+    fetchProjects: async (signal) => {
       const token = localStorage.getItem(AUTH_TOKEN_KEY);
       if (!token) return [];
+
       try {
         const res = await fetch('/api/projects', {
+          signal,
           headers: { 'Authorization': `Bearer ${token}` }
         });
+
         if (!res.ok) return [];
+
         const data = await res.json();
         return data.projects || [];
       } catch (e) {
+        if (e.name === 'AbortError') return [];
         return [];
       }
     }
-  };
-
+  }
   function maskClose() {
     return new Promise(resolve => {
       const easing = 'cubic-bezier(0.76,0,0.24,1)';
@@ -153,37 +165,70 @@
 
   const loadedScripts = new Set();
 
-  function injectScript(src) {
+  function injectScript(src, signal) {
     return new Promise((resolve) => {
-      const pathname = new URL(src, window.location.href).pathname;
-      
-      if (loadedScripts.has(pathname)) {
-        resolve();
+      if (signal?.aborted) {
+        resolve(false);
         return;
       }
-      
+
+      const pathname = new URL(src, window.location.href).pathname;
+
+      // 已經載入過的 script，絕對不要再次 append
+      if (loadedScripts.has(pathname)) {
+        resolve(true);
+        return;
+      }
+
+      // 如果 DOM 裡已經有同路徑 script，也視為已載入
+      const existing = document.querySelector(`script[data-spa-script][data-src="${pathname}"]`);
+      if (existing) {
+        loadedScripts.add(pathname);
+        resolve(true);
+        return;
+      }
+
       const s = document.createElement('script');
       s.dataset.spaScript = '1';
+      s.dataset.src = pathname;
+
       if (src.includes('landing-animation.js')) {
         s.type = 'module';
       }
-      s.src = src; 
-      s.onload = () => {
-        loadedScripts.add(pathname);
-        resolve();
+
+      s.src = src;
+
+      const cleanup = () => {
+        s.onload = null;
+        s.onerror = null;
       };
-      s.onerror = resolve;
+
+      s.onload = () => {
+        cleanup();
+
+        if (!signal?.aborted) {
+          loadedScripts.add(pathname);
+        }
+
+        resolve(true);
+      };
+
+      s.onerror = () => {
+        cleanup();
+        resolve(false);
+      };
+
       document.body.appendChild(s);
     });
   }
 
   function removePageScripts() {
-    injectedScripts.forEach(s => s.remove());
-    injectedScripts.length = 0;
+    // injectedScripts.forEach(s => s.remove());
+    // injectedScripts.length = 0;
   }
 
-  async function fetchPageDoc(url) {
-    const res = await fetch(url);
+  async function fetchPageDoc(url, signal) {
+    const res = await fetch(url, { signal });
     const html = await res.text();
     return new DOMParser().parseFromString(html, 'text/html');
   }
@@ -286,9 +331,11 @@
     };
   }
 
-  async function ensureSharedLayout() {
+  async function ensureSharedLayout(signal) {
     if (!dashboardTopbar) {
-      const doc = await fetchPageDoc('/html/dashboard.html');
+      const doc = await fetchPageDoc('/html/dashboard.html', signal);
+      if (signal?.aborted) return;
+
       const topbar = doc.querySelector('header.topbar');
       if (topbar) {
         dashboardTopbar = topbar.cloneNode(true);
@@ -313,20 +360,25 @@
       }
     }
 
-    await initSharedLayoutLogic();
+    await initSharedLayoutLogic(signal);
   }
 
-  async function initSharedLayoutLogic() {
+  async function initSharedLayoutLogic(signal) {
     updateRailHoles();
 
     const avatar = document.getElementById('top-avatar') || dashboardTopbar?.querySelector('#top-avatar');
     const panel = document.getElementById('spa-user-panel');
 
-    const user = await spaAuth.fetchUser();
+    const user = await spaAuth.fetchUser(signal);
+    if (signal?.aborted) return;
+
     if (user && panel) {
       const name = user.name || 'User';
       const initial = name.charAt(0).toUpperCase();
-      const userImage = (user.image) ? `<img src="${user.image}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" alt="" >`: initial;
+      const userImage = user.image
+        ? `<img src="${user.image}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" alt="">`
+        : initial;
+
       if (avatar) avatar.innerHTML = userImage;
 
       const upAvatar = panel.querySelector('.up-avatar');
@@ -336,10 +388,9 @@
       if (upName) upName.textContent = name;
 
       const upPlan = panel.querySelector('.up-plan');
-      const plan = user.plan || 'free';
-      const plans = {"free": "Free", "pro": "Pro", "promax": "Pro Max"};
+      const plans = { free: 'Free', pro: 'Pro', promax: 'Pro Max' };
+
       if (upPlan) {
-        
         upPlan.classList.add(user.plan);
         upPlan.textContent = plans[user.plan];
       }
@@ -351,28 +402,43 @@
     }
 
     if (avatar && panel) {
-      avatar.onclick = e => { e.stopPropagation(); panel.classList.toggle('active'); };
+      avatar.onclick = e => {
+        e.stopPropagation();
+        panel.classList.toggle('active');
+      };
     }
 
     const logout = panel?.querySelector('.up-logout');
-    if (logout) logout.addEventListener('click', e => { e.preventDefault(); spaAuth.logout(); });
+    if (logout) {
+      logout.addEventListener('click', e => {
+        e.preventDefault();
+        spaAuth.logout();
+      });
+    }
 
     bindTopbarLinks();
   }
 
-  async function renderDashboard() {
-    const doc = await fetchPageDoc('/html/dashboard.html');
+  async function renderDashboard(signal) {
+    const doc = await fetchPageDoc('/html/dashboard.html', signal);
+    if (signal?.aborted) return;
+
     const m = initMain();
     m.className = 'spa-dash-wrap';
+
     const mainContent = doc.querySelector('main.dash-main');
     if (mainContent) m.appendChild(mainContent.cloneNode(true));
 
-    await ensureSharedLayout();
+    await ensureSharedLayout(signal);
+    if (signal?.aborted) return;
 
     const projectsGrid = document.getElementById('projects-grid');
     if (projectsGrid) {
       projectsGrid.innerHTML = '<div style="color:var(--text-mid); text-align:center; padding: 40px; grid-column: 1/-1;">載入中...</div>';
-      const projects = await spaAuth.fetchProjects();
+
+      const projects = await spaAuth.fetchProjects(signal);
+      if (signal?.aborted) return;
+
       projectsGrid.innerHTML = '';
 
       if (!projects || projects.length === 0) {
@@ -387,10 +453,12 @@
           const date = new Date(p.createAt).toLocaleDateString('zh-TW');
           const card = document.createElement('div');
           card.className = 'project-card';
-          card.onclick = () => navigate('generate');
-          const thumbContent = p.cover 
+          card.onclick = () => navigate('project', { id: p.id });
+
+          const thumbContent = p.cover
             ? `<img src="${p.cover}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;" alt="${p.title}">`
             : `🎬`;
+
           card.innerHTML = `
             <div class="card-strip">
               <div class="strip-hole"></div>
@@ -411,6 +479,7 @@
               <div class="strip-hole"></div>
             </div>
           `;
+
           projectsGrid.appendChild(card);
         });
       }
@@ -490,13 +559,436 @@
     bindTopbarLinks();
   }
 
-  async function renderGenerate() {
-    const doc = await fetchPageDoc('/html/generate.html');
+  async function renderGenerate(signal) {
+    const doc = await fetchPageDoc('/html/generate.html', signal);
+    if (signal?.aborted) return;
+
     const m = initMain();
     m.className = 'spa-gen-wrap';
-    doc.querySelectorAll('.phase').forEach(p => m.appendChild(p.cloneNode(true)));
 
-    await ensureSharedLayout();
+    doc.querySelectorAll('.phase').forEach(p => {
+      m.appendChild(p.cloneNode(true));
+    });
+
+    await ensureSharedLayout(signal);
+  }
+
+  async function renderHistory(signal) {
+    const doc = await fetchPageDoc('/html/history.html', signal);
+    if (signal?.aborted) return;
+
+    const m = initMain();
+    m.className = 'spa-history-wrap';
+
+    const mainContent = doc.querySelector('main.history-main');
+    if (mainContent) m.appendChild(mainContent.cloneNode(true));
+
+    await ensureSharedLayout(signal);
+    if (signal?.aborted) return;
+
+    const projectsGrid = document.getElementById('projects-grid');
+    if (!projectsGrid) return;
+
+    projectsGrid.innerHTML = '<div style="color:var(--text-mid); text-align:center; padding: 40px; grid-column: 1/-1;">載入中...</div>';
+
+    const projects = await spaAuth.fetchProjects(signal);
+    if (signal?.aborted) return;
+
+    projectsGrid.innerHTML = '';
+
+    if (!projects || projects.length === 0) {
+      projectsGrid.innerHTML = `
+        <div class="projects-empty">
+          <h3>目前尚無歷史專案</h3>
+          <p>你可以先新增專案，系統會自動保留歷史紀錄。</p>
+        </div>
+      `;
+      return;
+    }
+
+    projects.forEach(p => {
+      const date = new Date(p.createAt).toLocaleDateString('zh-TW');
+      const card = document.createElement('div');
+      card.className = 'project-card';
+      card.onclick = () => navigate('project', { id: p.id });
+
+      const thumbContent = p.cover
+        ? `<img src="${p.cover}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;" alt="${p.title}">`
+        : `🎬`;
+
+      card.innerHTML = `
+        <div class="card-strip">
+          <div class="strip-hole"></div>
+          <div class="strip-hole"></div>
+          <div class="strip-hole"></div>
+        </div>
+        <div class="project-thumb">${thumbContent}</div>
+        <div class="project-info">
+          <div class="project-title">${p.title}</div>
+          <div class="project-meta">
+            <span class="project-tag">${date}</span>
+            <span class="project-tag">${p.ratio}</span>
+          </div>
+          <div class="project-date">專案風格：${p.style || '未指定'}</div>
+        </div>
+        <div class="card-strip bottom">
+          <div class="strip-hole"></div>
+          <div class="strip-hole"></div>
+          <div class="strip-hole"></div>
+        </div>
+      `;
+
+      projectsGrid.appendChild(card);
+    });
+  }
+
+  async function renderTemplate(signal) {
+    const doc = await fetchPageDoc('/html/template.html', signal);
+    if (signal?.aborted) return;
+
+    const m = initMain();
+    m.className = 'spa-template-wrap';
+
+    const mainContent = doc.querySelector('main.template-main');
+    if (mainContent) m.appendChild(mainContent.cloneNode(true));
+
+    await ensureSharedLayout(signal);
+    if (signal?.aborted) return;
+
+    const catsEl = document.getElementById('template-cats');
+    const gridEl = document.getElementById('template-grid');
+    const detailEl = document.getElementById('template-detail');
+
+    if (!catsEl || !gridEl || !detailEl) return;
+
+    gridEl.innerHTML = '<div style="color:var(--text-mid); text-align:center; padding: 40px; grid-column: 1/-1;">載入中...</div>';
+
+    let templates = [];
+    try {
+      const res = await fetch('/api/get-templates', { signal });
+      if (res.ok) templates = await res.json();
+    } catch (e) {
+      if (e.name === 'AbortError') return;
+      templates = [];
+    }
+
+    if (signal?.aborted) return;
+
+    if (!templates || templates.length === 0) {
+      catsEl.innerHTML = '';
+      gridEl.innerHTML = `
+        <div class="projects-empty">
+          <h3>目前尚無模板</h3>
+          <p>已同步的爆點模板尚未產生，請稍後再試或上傳模板。</p>
+        </div>
+      `;
+      return;
+    }
+
+    const groups = {};
+    templates.forEach(t => {
+      const k = t.category || t.type || '未分類';
+      if (!groups[k]) groups[k] = [];
+      groups[k].push(t);
+    });
+
+    const categories = Object.keys(groups);
+
+    catsEl.innerHTML = categories
+      .map((c, i) => `<button class="tpl-cat ${i === 0 ? 'active' : ''}" data-cat="${c}">${c} <span class="count">(${groups[c].length})</span></button>`)
+      .join('');
+
+    function renderGridFor(cat) {
+      const items = groups[cat] || [];
+
+      gridEl.innerHTML = items.map(it => `
+        <div class="template-card" data-id="${it.id || ''}" data-title="${(it.title || '無標題').replace(/"/g, '')}">
+          <div class="template-thumb">${it.thumbnail ? `<img src="${it.thumbnail}" alt="${it.title}">` : '📄'}</div>
+          <div class="template-info">
+            <div class="template-title">${it.title || '無標題'}</div>
+          </div>
+        </div>
+      `).join('');
+
+      gridEl.querySelectorAll('.template-card').forEach(el => {
+        el.addEventListener('click', () => {
+          const id = el.dataset.id;
+          const t = items.find(x => (x.id || '') === id) || items.find(x => (x.title || '') === el.dataset.title);
+          if (!t) return;
+
+          detailEl.innerHTML = `
+            <h3>${t.title || '無標題'}</h3>
+            <p><strong>分類：</strong>${t.category || t.type || '未分類'}</p>
+            <div class="template-body">${t.content ? (typeof t.content === 'string' ? t.content : JSON.stringify(t.content)) : '<em>無內容預覽</em>'}</div>
+          `;
+
+          detailEl.scrollIntoView({ behavior: 'smooth' });
+        });
+      });
+    }
+
+    renderGridFor(categories[0]);
+
+    catsEl.querySelectorAll('.tpl-cat').forEach(b => {
+      b.addEventListener('click', () => {
+        catsEl.querySelectorAll('.tpl-cat').forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
+        renderGridFor(b.dataset.cat);
+      });
+    });
+
+    if (typeof window.initTemplatePage === 'function') {
+      window.initTemplatePage();
+    }
+  }
+
+  async function renderProject(idOrOpts, signal) {
+    const id = typeof idOrOpts === 'string' ? idOrOpts : (idOrOpts?.id || null);
+    let projectId = id;
+
+    if (!projectId) {
+      const hash = window.location.hash || '';
+      const match = hash.match(/^#\/project\/(.+)$/);
+      if (match) projectId = match[1];
+    }
+
+    const m = initMain();
+    m.className = 'spa-project-wrap';
+
+    await ensureSharedLayout(signal);
+    if (signal?.aborted) return;
+
+    if (!projectId) {
+      m.innerHTML = `<div class="projects-empty"><h3>找不到專案 ID</h3></div>`;
+      return;
+    }
+
+    m.innerHTML = '<div style="padding:24px;">載入中…</div>';
+
+    try {
+      const res = await fetch(`/api/projects/${projectId}`, {
+        signal,
+        headers: { 'Authorization': `Bearer ${spaAuth.getToken()}` }
+      });
+
+      if (signal?.aborted) return;
+
+      if (!res.ok) {
+        m.innerHTML = `<div class="projects-empty"><h3>無法取得專案（${res.status}）</h3></div>`;
+        return;
+      }
+
+      const data = await res.json();
+      const p = data?.project;
+
+      if (!p) throw new Error('伺服器回傳資料缺少 project 欄位');
+
+      const shots = Array.isArray(p.shots) ? p.shots : (p.shots ? [p.shots] : []);
+      const safeTranslate = typeof window.translatePromptText === 'function'
+        ? window.translatePromptText
+        : async v => String(v || '');
+
+      const safeFormat = typeof window.formatPromptText === 'function'
+        ? window.formatPromptText
+        : async v => String(v || '');
+
+      const processedShots = await Promise.all(shots.map(async (s, index) => {
+        const payload = s.payload || {};
+        const shotPrompt = await safeTranslate(payload.shotPrompt || payload.prompt || '');
+        const formattedShotPrompt = await safeFormat(shotPrompt);
+        const emotion = payload.emotion || s.emotion || '';
+        const imageUrl = payload.image || '';
+        const order = s.order ?? (index + 1);
+        return {
+          order,
+          title: s.title || '未命名鏡頭',
+          camera: s.camera || '未設定',
+          duration: s.duration || '0s',
+          emotion,
+          imageUrl,
+          formattedShotPrompt
+        };
+      }));
+
+      if (signal?.aborted) return;
+
+      let tableRowsHtml = '';
+      processedShots.forEach(s => {
+        tableRowsHtml += `
+          <tr>
+            <td class="camera-cell">${s.order}</td>
+            <td class="img-cell">
+              ${s.imageUrl ? `<img src="${s.imageUrl}" onerror="this.outerHTML='<div class=\\'placeholder\\'>IMAGE FAILED</div>'">` : `<div class="placeholder">NO IMAGE</div>`}
+            </td>
+            <td class="title-cell">${s.title}</td>
+            <td class="time-cell">${s.duration}</td>
+            <td class="note-cell">${s.emotion || '—'}</td>
+          </tr>
+        `;
+      });
+
+      const holeCount = Math.max(processedShots.length * 3, 20);
+      let railHolesHtml = '';
+      for (let i = 0; i < holeCount; i++) {
+        railHolesHtml += '<div class="rail-hole"></div>';
+      }
+
+      let filmFramesHtml = '';
+      processedShots.forEach(s => {
+        filmFramesHtml += `
+          <div class="film-frame">
+            <div class="sprocket-row">
+              <div class="sprocket"></div><div class="sprocket"></div><div class="sprocket"></div>
+              <span class="frame-num">${String(s.order).padStart(2, '0')}</span>
+            </div>
+            <div class="film-img-wrap">
+              ${s.imageUrl ? `<img src="${s.imageUrl}" loading="lazy" onerror="this.outerHTML='<div class=\\'film-placeholder\\'>NO IMAGE</div>'">` : `<div class="film-placeholder">NO IMAGE</div>`}
+            </div>
+            <div class="film-caption">
+              <div class="film-caption-title">${s.title}</div>
+              <div class="film-camera">
+                <span class="film-badge">${s.camera}</span>
+                ${s.emotion ? `<div class="film-cam-detail">${s.emotion}</div>` : ''}
+              </div>
+            </div>
+            <div class="sprocket-row bottom">
+              <div class="sprocket"></div><div class="sprocket"></div><div class="sprocket"></div>
+            </div>
+          </div>
+        `;
+      });
+
+      m.innerHTML = `
+        <div class="project-detail">
+          <div class="project-summary">
+            <div>
+              <h2>${p.title}</h2>
+              <div class="project-meta-row">作者: ${p.author?.name || '未知'} • 建立於 ${new Date(p.createAt).toLocaleString('zh-TW')}</div>
+            </div>
+            <div class="project-attributes">
+              <span class="project-attribute">風格：${p.style || '未指定'}</span>
+              <span class="project-attribute">比例：${p.ratio || '未指定'}</span>
+              <span class="project-attribute">共 ${processedShots.length} 鏡頭</span>
+            </div>
+          </div>
+
+          <div class="view-toggle-container">
+            <div class="view-toggle-bar">
+              <button id="vbtn-table" class="toggle-btn active"><span>表格模式</span></button>
+              <button id="vbtn-film" class="toggle-btn"><span>膠捲模式</span></button>
+            </div>
+          </div>
+
+          <div id="project-table-view" class="view-section visible" style="display: block;">
+            <table class="storyboard-table" style="width:100%; border-collapse: collapse;">
+              <thead>
+                <tr>
+                  <th class="th-cam">鏡頭</th>
+                  <th class="th-img">畫面</th>
+                  <th class="th-title">故事內容 / 動作</th>
+                  <th class="th-time">時長</th>
+                  <th class="th-note">情緒 / 備註</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${tableRowsHtml || '<tr><td colspan="5" style="text-align:center; padding:24px;">尚無鏡頭資料</td></tr>'}
+              </tbody>
+            </table>
+          </div>
+
+          <div id="project-film-view" class="view-section" style="display: none; width: 100%; overflow: hidden;">
+            <div class="filmstrip-rail" style="display:flex; gap:4px; padding: 10px 0;">${railHolesHtml}</div>
+            <div class="filmstrip-container" style="overflow-x: auto; width: 100%; cursor: grab; user-select: none;">
+              <div class="filmstrip" style="display: flex; gap: 20px; padding: 10px 0; width: max-content;">
+                ${filmFramesHtml || '<div class="film-placeholder">尚無鏡頭資料</div>'}
+              </div>
+            </div>
+            <div class="filmstrip-rail" style="display:flex; gap:4px; padding: 10px 0;">${railHolesHtml}</div>
+          </div>
+        </div>
+      `;
+
+      const btnTable = m.querySelector('#vbtn-table');
+      const btnFilm = m.querySelector('#vbtn-film');
+      const tableView = m.querySelector('#project-table-view');
+      const filmView = m.querySelector('#project-film-view');
+
+      function switchView(mode) {
+        const easing = 'cubic-bezier(0.16, 1, 0.3, 1)';
+        if (mode === 'table') {
+          btnTable.classList.add('active');
+          btnFilm.classList.remove('active');
+
+          tableView.style.display = 'block';
+          filmView.style.display = 'none';
+        } else {
+          btnFilm.classList.add('active');
+          btnTable.classList.remove('active');
+          
+          filmView.style.display = 'block';
+          tableView.style.display = 'none';
+        }
+      }
+
+      btnTable.addEventListener('click', () => switchView('table'));
+      btnFilm.addEventListener('click', () => switchView('film'));
+
+      const container = filmView.querySelector('.filmstrip-container');
+      if (container) {
+        container.addEventListener('wheel', (e) => {
+          if (e.deltaX !== 0) return;
+          e.preventDefault();
+
+          container._wheelTarget = (container._wheelTarget ?? container.scrollLeft) + e.deltaY * 2;
+          if (!container._wheelRaf) {
+            container._wheelRaf = requestAnimationFrame(function step() {
+              const diff = container._wheelTarget - container.scrollLeft;
+              if (Math.abs(diff) < 0.5) {
+                container.scrollLeft = container._wheelTarget;
+                container._wheelRaf = null;
+              } else {
+                container.scrollLeft += diff * 0.3;
+                container._wheelRaf = requestAnimationFrame(step);
+              }
+            });
+          }
+        }, { passive: false });
+
+        let isDragging = false;
+        let startX = 0;
+        let startScroll = 0;
+
+        container.addEventListener('pointerdown', (e) => {
+          if (e.button !== 0) return;
+          isDragging = true;
+          startX = e.clientX;
+          startScroll = container.scrollLeft;
+          container._wheelTarget = container.scrollLeft;
+          container.style.cursor = 'grabbing';
+          container.setPointerCapture(e.pointerId);
+        });
+
+        container.addEventListener('pointermove', (e) => {
+          if (!isDragging) return;
+          const dx = e.clientX - startX;
+          container.scrollLeft = startScroll - dx;
+          container._wheelTarget = container.scrollLeft;
+        });
+
+        const stopDrag = () => {
+          isDragging = false;
+          container.style.cursor = 'grab';
+        };
+        container.addEventListener('pointerup', stopDrag);
+        container.addEventListener('pointercancel', stopDrag);
+      }
+
+    } catch (e) {
+      if (e.name !== 'AbortError') {
+        console.error('renderProject error', e);
+        m.innerHTML = `<div class="projects-empty"><h3>讀取專案發生錯誤</h3><p>${e.message || '未知錯誤'}</p></div>`;
+      }
+    }
   }
 
   function bindTopbarLinks() {
@@ -507,14 +999,19 @@
 
     containers.forEach(container => {
       if (!container) return;
+
       container.querySelectorAll('a[href]').forEach(a => {
         if (a.dataset.spaBound) return;
 
         const href = a.getAttribute('href') || '';
         let page = null;
+
         if (href.includes('generate.html')) page = 'generate';
         else if (href.includes('dashboard.html')) page = 'dashboard';
-        
+        else if (href.includes('history.html')) page = 'history';
+        else if (href.includes('template.html')) page = 'template';
+        else if (href.includes('analysis.html')) page = 'analysis';
+
         if (page) {
           a.dataset.spaBound = 'true';
           a.addEventListener('click', e => {
@@ -566,15 +1063,84 @@
         interceptCTAs();
       }
     },
-    login: { css: ['/css/auth.css'], js: ['/js/auth.js'], render: (o) => renderLogin(o?.showRegister) },
-    register: { css: ['/css/auth.css'], js: ['/js/auth.js'], render: () => renderLogin(true) },
-    dashboard: { css: ['/css/dashboard.css'], js: ['/js/generate-prefill-path.js'], render: () => renderDashboard() },
+
+    login: {
+      css: ['/css/auth.css'],
+      js: ['/js/auth.js'],
+      render: (o) => renderLogin(o?.showRegister)
+    },
+
+    register: {
+      css: ['/css/auth.css'],
+      js: ['/js/auth.js'],
+      render: () => renderLogin(true)
+    },
+
+    dashboard: {
+      css: ['/css/dashboard.css'],
+      js: ['/js/generate-prefill-path.js'],
+      render: (o, signal) => renderDashboard(signal)
+    },
+
     generate: {
       css: ['/css/dashboard.css', '/css/generate.css', '/css/math-curve-loader.css'],
-      js: ['/js/math-curve-loader.js', '/js/token-manager.js', '/js/generate.js'],
-      render: () => renderGenerate()
+      js: ['/js/math-curve-loader.js', '/js/token-manager.js', '/js/prompt-translate.js', '/js/generate.js'],
+      render: (o, signal) => renderGenerate(signal)
     },
+
+    history: {
+      css: ['/css/dashboard.css'],
+      js: ['/js/generate-prefill-path.js'],
+      render: (o, signal) => renderHistory(signal)
+    },
+
+    template: {
+      css: ['/css/dashboard.css', '/css/template.css'],
+      js: ['/js/generate-prefill-path.js', '/js/template.js'],
+      render: (o, signal) => renderTemplate(signal)
+    },
+
+    project: {
+      css: ['/css/dashboard.css'],
+      js: ['/js/prompt-translate.js'],
+      render: (o, signal) => renderProject(o?.id || o, signal)
+    }
   };
+
+  function isDashboardPage(page) {
+    return ['dashboard', 'generate', 'history', 'template', 'project', 'analysis'].includes(page);
+  }
+
+  function getHashForPage(page, opts = {}) {
+    if (page === 'landing') return '';
+    if (page === 'project' && opts?.id) return `#/project/${opts.id}`;
+    return `#/${page}`;
+  }
+
+  function parseRouteFromHash(hash) {
+    if (!hash || !hash.startsWith('#/')) {
+      return { page: 'landing', opts: {} };
+    }
+
+    const route = hash.substring(2);
+
+    const projectMatch = route.match(/^project\/(.+)$/);
+    if (projectMatch) {
+      return {
+        page: 'project',
+        opts: { id: decodeURIComponent(projectMatch[1]) }
+      };
+    }
+
+    if (pageDefs[route]) {
+      return {
+        page: route,
+        opts: {}
+      };
+    }
+
+    return { page: 'landing', opts: {} };
+  }
 
   function updateTopbarActive(page) {
     const containers = [dashboardTopbar, mobileBottomNav];
@@ -610,82 +1176,164 @@
   }
 
   async function navigate(page, opts = {}) {
-    if (isTransitioning) return;
-    if (page === currentPage && !opts.force) return;
+    const activePage = targetPage || currentPage;
+
+    if (page === activePage && !opts.force) return;
+
+    targetPage = page;
+
+    const mySeq = ++navSeq;
+
+    if (currentNavController) {
+      currentNavController.abort();
+    }
+
+    const controller = new AbortController();
+    currentNavController = controller;
+    const signal = controller.signal;
+
     isTransitioning = true;
 
-    if (window._landingKill) {
-      window._landingKill();
-      window._landingKill = null;
-    }
+    try {
+      if (window._landingKill) {
+        window._landingKill();
+        window._landingKill = null;
+      }
 
-    if (page === 'dashboard' || page === 'generate') {
-      updateTopbarActive(page);
-      showDashTopbar();
-    } 
+      if (isDashboardPage(page)) {
+        updateTopbarActive(page);
+        showDashTopbar();
+      }
 
-    await maskClose();
+      const top = maskTop();
+      const bot = maskBot();
 
-    const def = pageDefs[page];
-    const nextCSS = def ? def.css : [];
-    removePageCSS(nextCSS);
-    removePageScripts();
+      const maskAlreadyClosed =
+        top &&
+        bot &&
+        (top.style.top === '0px' || top.style.top === '0') &&
+        (bot.style.bottom === '0px' || bot.style.bottom === '0');
 
-    if (def) {
-      def.css.forEach(href => injectCSS(href));
-      await def.render(opts);
-      for (const src of def.js) await injectScript(src);
-    }
+      if (!maskAlreadyClosed) {
+        await maskClose();
+      }
 
-    if (page === 'generate' && typeof window.initGeneratePage === 'function') {
+      if (signal.aborted || mySeq !== navSeq) return;
+
+      const def = pageDefs[page];
+      const nextCSS = def ? def.css : [];
+
+      removePageCSS(nextCSS);
+      removePageScripts();
+
+      if (def) {
+        def.css.forEach(href => injectCSS(href));
+
+        await def.render(opts, signal);
+        if (signal.aborted || mySeq !== navSeq) return;
+
+        const jsToLoad = Array.isArray(def.js) ? def.js : [];
+        for (const src of jsToLoad) {
+          await injectScript(src, signal);
+          if (signal.aborted || mySeq !== navSeq) return;
+        }
+      }
+
+      if (page === 'generate' && typeof window.initGeneratePage === 'function') {
         window.initGeneratePage();
-    } 
-    else if (page === 'landing' && typeof window.initLandingPage === 'function') {
+      } else if (page === 'landing' && typeof window.initLandingPage === 'function') {
         window.initLandingPage();
+      } else if (page === 'template' && typeof window.initTemplatePage === 'function') {
+        window.initTemplatePage();
+      }
+
+      if (isDashboardPage(page)) {
+        showDashTopbar();
+        updateTopbarActive(page);
+      } else if (page === 'landing' || page === 'login' || page === 'register') {
+        showLandingNav();
+      }
+
+      if (dashboardTopbar) {
+        dashboardTopbar.style.display = isDashboardPage(page) ? '' : 'none';
+      }
+
+      if (mobileBottomNav) {
+        mobileBottomNav.style.display = isDashboardPage(page) ? '' : 'none';
+      }
+
+      const userPanel = document.getElementById('spa-user-panel');
+      if (userPanel) {
+        userPanel.style.display = isDashboardPage(page) ? '' : 'none';
+
+        if (!isDashboardPage(page)) {
+          userPanel.classList.remove('active');
+        }
+      }
+
+      if (!opts.noHistory) {
+        const hash = getHashForPage(page, opts);
+        history.pushState(
+          { page, id: opts?.id || null },
+          '',
+          window.location.pathname + window.location.search + hash
+        );
+      }
+
+      if (window.parent && window.parent !== window) {
+        const parentPath =
+          page === 'landing'
+            ? '/'
+            : page === 'project' && opts?.id
+              ? `/project/${opts.id}`
+              : `/${page}`;
+
+        window.parent.history.replaceState(null, '', parentPath);
+      }
+
+      window.scrollTo(0, 0);
+
+      await new Promise(resolve => setTimeout(resolve, 80));
+
+      if (signal.aborted || mySeq !== navSeq) return;
+
+      await maskOpen();
+
+      if (signal.aborted || mySeq !== navSeq) return;
+
+      currentPage = page;
+    } catch (e) {
+      if (e.name !== 'AbortError') {
+        console.error('[spa navigate error]', e);
+      }
+    } finally {
+      if (currentNavController === controller) {
+        currentNavController = null;
+        isTransitioning = false;
+        targetPage = null;
+      }
     }
-
-    if (page === 'dashboard' || page === 'generate') {
-      showDashTopbar();
-      updateTopbarActive(page);
-    } else if (page === 'landing' || page === 'login' || page === 'register') {
-      showLandingNav();
-    }
-
-    if (dashboardTopbar) {
-      dashboardTopbar.style.display = (page === 'dashboard' || page === 'generate') ? '' : 'none';
-    }
-    if (mobileBottomNav) {
-      mobileBottomNav.style.display = (page === 'dashboard' || page === 'generate') ? '' : 'none';
-    }
-    const userPanel = document.getElementById('spa-user-panel');
-    if (userPanel) {
-      userPanel.style.display = (page === 'dashboard' || page === 'generate') ? '' : 'none';
-      if (page !== 'dashboard' && page !== 'generate') userPanel.classList.remove('active');
-    }
-
-    if (!opts.noHistory) {
-      const hash = page === 'landing' ? '' : `#/${page}`;
-      history.pushState({ page }, '', window.location.pathname + window.location.search + hash);
-    }
-
-    if (window.parent && window.parent !== window) {
-      const parentPath = page === 'landing' ? '/' : `/${page}`;
-      window.parent.history.replaceState(null, '', parentPath);
-    }
-
-    window.scrollTo(0, 0);
-
-    await new Promise(resolve => setTimeout(resolve, 80));
-
-    await maskOpen();
-
-    currentPage = page;
-    isTransitioning = false;
   }
 
   window.addEventListener('popstate', e => {
-    const page = e.state?.page || 'landing';
-    navigate(page, { noHistory: true, force: true });
+    const statePage = e.state?.page;
+    const stateId = e.state?.id;
+
+    if (statePage) {
+      navigate(statePage, {
+        id: stateId || undefined,
+        noHistory: true,
+        force: true
+      });
+      return;
+    }
+
+    const parsed = parseRouteFromHash(window.location.hash);
+    navigate(parsed.page, {
+      ...parsed.opts,
+      noHistory: true,
+      force: true
+    });
   });
 
   function interceptCTAs() {
@@ -719,22 +1367,42 @@
 
     window.addEventListener('resize', updateRailHoles);
     updateRailHoles();
-    
-    let v = window.innerHeight * 0.01;
-    document.documentElement.style.setProperty('--v', `${v}px`);
 
     let initialPage = 'landing';
-    const hash = window.location.hash;
-    if (hash && hash.startsWith('#/')) {
-      const route = hash.substring(2);
-      if (pageDefs[route]) {
-        initialPage = route;
+    let initialOpts = {};
+
+    const parsedHash = parseRouteFromHash(window.location.hash);
+    if (parsedHash.page !== 'landing') {
+      initialPage = parsedHash.page;
+      initialOpts = parsedHash.opts || {};
+    } else {
+      const pathname = window.location.pathname;
+      if (pathname && pathname !== '/') {
+        const projectMatch = pathname.match(/^\/project\/(.+)$/);
+        if (projectMatch) {
+          initialPage = 'project';
+          initialOpts = { id: decodeURIComponent(projectMatch[1]) };
+        } else {
+          const cleanRoute = pathname.substring(1);
+          if (pageDefs[cleanRoute]) {
+            initialPage = cleanRoute;
+          }
+        }
       }
     }
-    history.replaceState({ page: initialPage }, '', window.location.pathname + window.location.search + hash);
+
+    history.replaceState(
+      { page: initialPage, id: initialOpts.id || null },
+      '',
+      window.location.pathname + window.location.search + window.location.hash
+    );
 
     if (initialPage !== 'landing') {
-      navigate(initialPage, { noHistory: true, force: true });
+      navigate(initialPage, {
+        ...initialOpts,
+        noHistory: true,
+        force: true
+      });
     } else {
       interceptCTAs();
       for (const src of pageDefs.landing.js) {

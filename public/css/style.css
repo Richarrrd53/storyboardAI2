@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@100;300;400;500;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@900&family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Noto+Serif+TC:wght@200..900&family=Noto+Serif:ital,wght@0,100..900;1,100..900&display=swap');
 
 :root {
     --primary: #bea665;
@@ -23,7 +24,7 @@
     --radius-md: 12px;
     --radius-lg: 16px;
     --radius-xl: 24px;
-    --font-display: "Noto Sans TC", sans-serif;
+    --font-display: "Noto Serif TC", serif;
     --font-body: "Noto Sans TC", sans-serif;
     --bg-dark: #262320;
 }
@@ -102,7 +103,7 @@ h1,
 h2,
 h3 {
     font-family: var(--font-display);
-    font-weight: 700;
+    font-weight: 900;
     line-height: 1.1;
 }
 

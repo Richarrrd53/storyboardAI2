@@ -164,6 +164,32 @@ app.get('/api/projects', async (req, res) => {
         res.status(500).json({ error: '獲取專案失敗' });
     }
 });
+// GET single project (with shots and metadata)
+app.get('/api/projects/:id', async (req, res) => {
+    try {
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ error: '未授權' });
+        }
+        const token = authHeader.split(' ')[1];
+        const decoded = jwt.verify(token, JWT_SECRET);
+
+        const id = req.params.id;
+        const project = await prisma.project.findUnique({
+            where: { id },
+            include: { shots: true, author: true }
+        });
+
+        if (!project) return res.status(404).json({ error: '找不到專案' });
+        if (project.authorId !== decoded.id) return res.status(403).json({ error: '沒有存取權限' });
+
+        res.json({ project });
+    } catch (error) {
+        console.error('Fetch Project Error:', error);
+        res.status(500).json({ error: '獲取專案失敗' });
+    }
+});
+
 // ==========================
 // ==========================
 
@@ -260,7 +286,7 @@ app.get('/api/get-templates', async (req, res) => {
 
 
 // SPA catch-all — redirect /dashboard, /login, /register, /generate to main.html
-const spaRoutes = ['/dashboard', '/login', '/register', '/generate', '/analyze'];
+const spaRoutes = ['/dashboard', '/login', '/register', '/generate', '/analyze', '/project/:id'];
 spaRoutes.forEach(route => {
     app.get(route, (req, res) => {
         res.sendFile(path.join(process.cwd(), 'public', 'main.html'));

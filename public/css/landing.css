@@ -350,6 +350,7 @@
     font-size: clamp(2rem, 7vw, 84px);
     line-height: 1.2;
     font-weight: 900;
+    font-family: var(--font-display);
     text-transform: uppercase;
     color: var(--text-dark);
 }
