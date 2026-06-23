@@ -372,3 +372,149 @@ p {
     opacity: 0.3;
     margin-left: 2vh;
 }
+
+/* ── Transition Page Loader Overlay ────────────────────────── */
+.transition-loader-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000; /* Higher than black masks (50) and borders (99) */
+    pointer-events: none;
+    opacity: 0;
+    filter: blur(10px);
+    transition: opacity 0.4s ease, filter 0.4s ease;
+}
+
+.transition-loader-overlay.active {
+    opacity: 1;
+    filter: blur(0px);
+    pointer-events: auto;
+}
+
+.transition-loader-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    text-align: center;
+}
+
+.transition-loader-svg {
+    width: 100px;
+    height: 100px;
+    overflow: visible;
+    color: var(--primary-light);
+    animation: loaderCardPulse 2.4s ease-in-out infinite;
+}
+
+.transition-loader-text-el {
+    font-family: var(--font-body);
+    font-size: 1.15rem;
+    color: var(--primary-soft);
+    margin-top: 24px;
+    letter-spacing: 0.12em;
+    font-weight: 700;
+    transition: opacity 0.5s ease, filter 0.5s ease;
+    opacity: 1;
+    filter: blur(0px);
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.95), 0 0 20px rgba(238, 196, 128, 0.45);
+    text-align: center;
+}
+
+.transition-loader-text-el.blur-out {
+    opacity: 0;
+    filter: blur(8px);
+}
+
+@keyframes loaderCardPulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.06);
+    }
+}
+
+/* ── Project Card Delete & Restore Buttons ────────────────── */
+.project-card {
+    position: relative;
+}
+
+.project-delete-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(255, 255, 255, 0.85);
+    border: 2px solid var(--text-dark);
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.95rem;
+    z-index: 10;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    padding: 0;
+}
+
+.project-delete-btn:hover {
+    background: var(--peach) !important;
+    border-color: var(--text-dark) !important;
+    color: var(--white) !important;
+    transform: scale(1.1);
+}
+
+.project-delete-btn:active {
+    transform: scale(0.9);
+}
+
+.project-card-deleted {
+    opacity: 0.55;
+    filter: grayscale(40%);
+    border: 2px dashed var(--card-border) !important;
+    background: rgba(0, 0, 0, 0.04) !important;
+    cursor: not-allowed !important;
+}
+
+.project-card-deleted:hover {
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.project-restore-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: var(--primary-light);
+    color: var(--text-dark);
+    border: 2px solid var(--text-dark);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-family: var(--font-body);
+    font-weight: 800;
+    font-size: 0.8rem;
+    cursor: pointer;
+    z-index: 10;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.project-restore-btn:hover {
+    background: var(--white);
+    color: var(--text-dark);
+    transform: scale(1.05);
+}
+
+.project-restore-btn:active {
+    transform: scale(0.95);
+}

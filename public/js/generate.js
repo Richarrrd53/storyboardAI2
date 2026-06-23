@@ -49,19 +49,19 @@
   ];
 
   const LOADING_STEPS_FREE = [
-      { pct: 0, messages: ['正在讀懂你的故事…', '拆解場景節奏中…', '思考故事結構…'] },
-      { pct: 10, messages: ['找出最有張力的畫面…', '識別情緒節點…', '挖掘視覺細節…'] },
-      { pct: 20, messages: ['幫你設計鏡頭順序…', '想像每個轉場的感覺…', '調整構圖節奏…'] },
-      { pct: 50, messages: ['渲染第 {n} 張畫面…', '快好了，稍等一下 ✦', '正在上色…'] },
-      { pct: 100, messages: ['檢查節奏有沒有問題…', '收尾中…', '快完成了 ✦'] },
+      { pct: 0, messages: ['正在努力讀懂你的精彩故事喔 ✨', '拼命拆解場景節奏中... 🏄', '悄悄思考故事的最強結構... 💭'] },
+      { pct: 10, messages: ['努力捕捉最有張力的畫面！📸', '偵測故事的情緒波動中... 💓', '挖出所有隱藏的視覺小細節 ✨'] },
+      { pct: 20, messages: ['正在幫你排排站設計鏡頭順序 🎬', '想像每個轉場的絲滑感覺～ ✨', '精心調整構圖的黃金比例中 📐'] },
+      { pct: 50, messages: ['正在著色並渲染第 {n} 張畫面囉！🎨', '再等一下下... 美麗的畫面快生出來了 ✦', '畫筆飛速揮舞中，正在為您著色... 🖌️'] },
+      { pct: 100, messages: ['偷偷檢查鏡頭節奏有沒有完美... 🔍', '最後整理收尾中，請準備好驚嘆！🎉', '叮咚！快完成了，精彩分鏡即將登場 ✦'] },
   ];
 
   const LOADING_STEPS_TPL = [
-      { pct: 0, messages: ['套用模板結構中…', '解析故事變數…', '對應分鏡模板…'] },
-      { pct: 15, messages: ['把故事填進模板…', '代入場景與角色…', '整理關鍵元素…'] },
-      { pct: 30, messages: ['優化每個分鏡提示詞…', '調整風格語氣…', '細修畫面描述…'] },
-      { pct: 50, messages: ['渲染第 {n} 張畫面…', '快好了，稍等一下 ✦', '正在上色…'] },
-      { pct: 100, messages: ['確保節奏連貫…', 'HOOK 設計到位…', '快完成了 ✦'] },
+      { pct: 0, messages: ['套用精美的模板結構中 📐', '解析故事的奇妙變數 ✨', '把你的創意對應到分鏡模板上 🎯'] },
+      { pct: 15, messages: ['把熱騰騰的故事填進模板中 📝', '代入場景與角色，讓他們動起來 🎬', '整理最關鍵的畫面元素中... 💡'] },
+      { pct: 30, messages: ['優化每個分鏡的魔法提示詞 🪄', '調整畫面風格與溫暖語氣 ✨', '細細雕琢每一幀的畫面描述 🖌'] },
+      { pct: 50, messages: ['正在著色並渲染第 {n} 張畫面囉！🎨', '再等一下下... 美麗的畫面快生出來了 ✦', '畫筆飛速揮舞中，正在為您著色... 🖌️'] },
+      { pct: 100, messages: ['確保節奏連貫又迷人～ ✨', '亮點 HOOK 設計已到位！🔥', '叮咚！快完成了，精彩分鏡即將登場 ✦'] },
   ];
 
   let _loadingTickerTimer = null;
@@ -86,13 +86,19 @@
       if (_loadingTickerTimer) { clearTimeout(_loadingTickerTimer); _loadingTickerTimer = null; }
   }
 
-  function updateLoadingUI(stepIdx, steps, completedCount = 0) {
+  function updateLoadingUI(stepIdx, steps, completedCount = 0, total = 0) {
       const s = steps[stepIdx];
       const subEl = document.getElementById('loading-sub');
       const barEl = document.getElementById('gen-progress');
       const pctEl = document.getElementById('gen-progress-text');
-      if (barEl) barEl.style.width = s.pct + '%';
-      if (pctEl) pctEl.textContent = s.pct + '%';
+      
+      let pct = s.pct;
+      if (stepIdx === 3 && total > 0) {
+          pct = Math.floor(50 + (completedCount / total) * 45);
+      }
+      
+      if (barEl) barEl.style.width = pct + '%';
+      if (pctEl) pctEl.textContent = pct + '%';
       const subMessages = {
           0: '分析故事語意，拆解場景節奏',
           1: '識別人物、場景與情感節點',
@@ -541,9 +547,40 @@
   window.generatedPrompts = [];
 
   function getStoryboardPrompt() {
-      const styleName = STYLES[state.styleIndex].name;
       const styleDetail = STYLES[state.styleIndex].prompt;
-      return `你是一個專業短影音分鏡系統...`;
+      return `你是一個專業的短影音分鏡設計系統。
+請分析使用者的故事描述，並為其設計一個包含分鏡鏡頭與角色設定的完整分鏡腳本。
+
+使用者故事："""${state.story}"""
+影片風格：${STYLES[state.styleIndex].name} (${styleDetail})
+
+請嚴格輸出符合以下 JSON 格式的內容，不要包含任何 markdown 外框或額外的說明文字：
+{
+  "meta": {
+    "title": "影片標題（簡短有吸引力）"
+  },
+  "characters": {
+    "char_1": {
+      "appearance": "主角外貌特徵（英文描述，例如: young Asian woman, long black hair）",
+      "outfit": "主角服裝（英文描述，例如: white t-shirt, blue jeans）",
+      "personality": "性格或神情（英文描述，例如: smiling, energetic）"
+    }
+  },
+  "shots": [
+    {
+      "id": 1,
+      "story": "分鏡畫面發生的情節與動作描述（中文，用於畫面標題）",
+      "camera": "鏡頭與運鏡方式（例如: close-up, medium shot, tracking shot）",
+      "duration": "鏡頭時長（例如: 3s, 4s）",
+      "emotion": "此鏡頭的情緒（例如: excited, satisfied, neutral）",
+      "shotPrompt": "此鏡頭畫面的英文提示詞描述（例如: a close up of a young woman smiling in a bright kitchen）",
+      "characters": ["char_1"]
+    }
+  ]
+}
+注意：
+1. "shots" 中的 "characters" 必須關聯到 "characters" 物件中的 key（例如 "char_1"）。
+2. 所有提示詞、角色外觀及服飾描述必須使用英文，以方便圖像生成。`;
   }
 
   const ratioPrompt = {
@@ -610,8 +647,9 @@
 
           for (const shot of shots) {
               try {
-                  updateLoadingUI(3, LOADING_STEPS_FREE, completedCount);
+                  updateLoadingUI(3, LOADING_STEPS_FREE, completedCount, total);
                   const finalPrompt = await buildFinalPrompt(shot);
+                  shot.finalPrompt = finalPrompt;
                   const res = await askGemini(finalPrompt, 'image');
                   window.generatedImgs.push(res?.image?.length > 0 ? res.image[0] : '../icon/error.jpg');
                   window.generatedStoryTitles.push(shot.story);
@@ -629,6 +667,11 @@
 
           updateLoadingUI(4, LOADING_STEPS_FREE);
           stopLoadingTicker();
+          const titleEl = document.getElementById('loading-title');
+          const subEl = document.getElementById('loading-sub');
+          if (titleEl) titleEl.textContent = '正在幫您把專案儲存下來...請稍後 ✦';
+          if (subEl) subEl.textContent = '正在備份到雲端，請勿關閉網頁';
+          await saveProjectToDatabase();
           setTimeout(() => { renderResults(); onGenerateDone(); }, 800);
 
       } catch (e) {
@@ -675,7 +718,7 @@
           const total = window.generatedPrompts.length;
           for (const prompt of window.generatedPrompts) {
               try {
-                  updateLoadingUI(3, LOADING_STEPS_TPL, completedCount);
+                  updateLoadingUI(3, LOADING_STEPS_TPL, completedCount, total);
                   const promptZh = (window.translatePromptText && typeof window.translatePromptText === 'function') ? await window.translatePromptText(prompt) : prompt;
                   const styleZh = (window.translatePromptText && typeof window.translatePromptText === 'function') ? await window.translatePromptText(styleDetail) : styleDetail;
                   const res = await askGemini(promptZh + ', ' + styleZh, 'image');
@@ -693,6 +736,11 @@
 
           updateLoadingUI(4, LOADING_STEPS_TPL);
           stopLoadingTicker();
+          const titleEl = document.getElementById('loading-title');
+          const subEl = document.getElementById('loading-sub');
+          if (titleEl) titleEl.textContent = '正在幫您把專案儲存下來...請稍後 ✦';
+          if (subEl) subEl.textContent = '正在備份到雲端，請勿關閉網頁';
+          await saveProjectToDatabase();
           setTimeout(() => { renderResults(); onGenerateDone(); }, 800);
 
       } catch (e) {
@@ -823,6 +871,102 @@
       target.innerHTML = html;
   }
 
+  async function saveProjectToDatabase() {
+      if (!window.spaAuth || !window.spaAuth.isLoggedIn()) {
+          console.log("ℹ️ 使用者未登入，跳過自動儲存專案至資料庫。");
+          return;
+      }
+
+      try {
+          console.log("⏳ 正在自動將產生的專案儲存至資料庫...");
+          let title = '';
+          if (state.useTemplate && state.selectedTemplate) {
+              title = state.selectedTemplate.name;
+          } else if (window.storyboardData?.meta?.title) {
+              title = window.storyboardData.meta.title;
+          } else {
+              title = state.story.length > 25 ? state.story.slice(0, 25) + '...' : state.story;
+          }
+
+          const style = STYLES[state.styleIndex].name;
+          const ratio = state.ratio;
+          const cover = window.generatedImgs[0] || null;
+
+          const metadata = state.useTemplate 
+              ? { useTemplate: true, templateId: state.selectedTemplate?.id, resolvedVariables: state.resolvedVariables }
+              : (window.storyboardData?.meta || {});
+
+          const characters = state.useTemplate 
+              ? {} 
+              : (window.storyboardData?.characters || {});
+
+          const shots = window.generatedImgs.map((img, i) => {
+              let shotPrompt = '';
+              let finalPrompt = '';
+              let emotion = '';
+              let duration = '3s';
+
+              if (state.useTemplate && state.selectedTemplate) {
+                  const tplShot = state.selectedTemplate.structure[i] || {};
+                  shotPrompt = state.finalPrompts[i] || '';
+                  finalPrompt = state.finalPrompts[i] || '';
+                  emotion = tplShot.emotion || '';
+                  duration = tplShot.duration || '3s';
+              } else if (window.storyboardData && window.storyboardData.shots) {
+                  const normalShot = window.storyboardData.shots[i] || {};
+                  shotPrompt = normalShot.shotPrompt || normalShot.prompt || '';
+                  finalPrompt = normalShot.finalPrompt || '';
+                  emotion = normalShot.emotion || '';
+                  duration = normalShot.duration || '3s';
+              }
+
+              return {
+                  order: i + 1,
+                  title: window.generatedStoryTitles[i] || '',
+                  camera: window.generatedStoryCams[i] || '',
+                  duration: duration,
+                  payload: {
+                      image: img,
+                      emotion: emotion,
+                      shotPrompt: shotPrompt,
+                      finalPrompt: finalPrompt
+                  }
+              };
+          });
+
+          const token = window.spaAuth.getToken();
+          const res = await fetch('/api/projects', {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({
+                  title,
+                  style,
+                  ratio,
+                  cover,
+                  metadata,
+                  characters,
+                  shots
+              })
+          });
+
+          if (!res.ok) {
+              const errData = await res.json();
+              throw new Error(errData.error || '儲存專案失敗');
+          }
+
+          const result = await res.json();
+          console.log("✅ 專案自動儲存資料庫成功，ID:", result.project?.id);
+          if (typeof window.clearSpaCache === 'function') {
+              window.clearSpaCache();
+          }
+      } catch (error) {
+          console.error("❌ 專案自動儲存至資料庫時出錯:", error);
+      }
+  }
+
   function onGenerateDone() {
       const meta = document.getElementById('result-meta');
       const shotCount = window.generatedImgs.length;
@@ -850,6 +994,7 @@
               badge.style.display = 'none';
           }
       }
+
   }
 
   function initDragScroll(el) {
@@ -959,6 +1104,11 @@
 
       // 3. 重設頁面狀態與載入模板
       resetAll();
+
+      // 4. 重新初始化數學曲線載入器（處理 SPA 頁面切換腳本快取）
+      if (typeof window.initMathCurveLoader === 'function') {
+          window.initMathCurveLoader();
+      }
   }
 
   window.initGeneratePage = initGeneratePage;
@@ -976,5 +1126,6 @@
   window.exportStoryboardJson = exportStoryboardJson;
   window.showAllStyles = showAllStyles;
   window.onStoryInput = onStoryInput;
+  window.startGenerate = startGenerate;
 
 })();

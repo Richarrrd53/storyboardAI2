@@ -18,6 +18,7 @@ model Project {
   metadata     Json?
   characters   Json?
   shots        Shot[]
+  is_deleted   Boolean  @default(false)
   createAt     DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }

@@ -11,6 +11,18 @@
   let landingHTML = '';
   let landingClass = '';
 
+  // In-memory cache for API requests
+  let cacheProjectsList = null;
+  const cacheProjectDetails = {};
+
+  window.clearSpaCache = () => {
+    cacheProjectsList = null;
+    for (const key in cacheProjectDetails) {
+      delete cacheProjectDetails[key];
+    }
+    console.log("🧹 SPA client-side API cache cleared.");
+  };
+
   const maskTop = () => document.getElementById('black-mask-top');
   const maskBot = () => document.getElementById('black-mask-bottom');
   const landingNav = () => document.querySelector('.nav');
@@ -32,6 +44,7 @@
       }
       const data = await res.json();
       localStorage.setItem(AUTH_TOKEN_KEY, data.token);
+      window.clearSpaCache();
       return data;
     },
     logout: async () => {
@@ -39,6 +52,7 @@
         await fetch('/api/auth/logout', { method: 'POST' });
       } catch (e) { }
       localStorage.removeItem(AUTH_TOKEN_KEY);
+      window.clearSpaCache();
       window.location.hash = '';
       if (window.parent && window.parent !== window) {
         window.parent.history.replaceState(null, '', '/');
@@ -72,7 +86,7 @@
       if (!token) return [];
 
       try {
-        const res = await fetch('/api/projects', {
+        const res = await fetch('/api/projects?include_deleted=true', {
           signal,
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -228,8 +242,18 @@
   }
 
   async function fetchPageDoc(url, signal) {
+    const cacheKey = 'spa_page_cache_' + url;
+    const cachedHTML = localStorage.getItem(cacheKey);
+    if (cachedHTML) {
+      return new DOMParser().parseFromString(cachedHTML, 'text/html');
+    }
     const res = await fetch(url, { signal });
     const html = await res.text();
+    try {
+      localStorage.setItem(cacheKey, html);
+    } catch (e) {
+      console.warn('Failed to cache page doc in localStorage:', e);
+    }
     return new DOMParser().parseFromString(html, 'text/html');
   }
 
@@ -321,8 +345,43 @@
       }
     };
 
-    window.handleRegister = function () {
-      showToast('註冊功能尚未推出！');
+    window.handleRegister = async function () {
+      const name = document.getElementById('register-username')?.value?.trim();
+      const email = document.getElementById('register-email')?.value?.trim();
+      const pass = document.getElementById('register-password')?.value;
+      const pass2 = document.getElementById('register-password-2')?.value;
+      
+      if (!name || !email || !pass || !pass2) { 
+        showToast('所有欄位皆不可為空！'); 
+        return; 
+      }
+      if (pass !== pass2) { 
+        showToast('兩次輸入的密碼不一致！'); 
+        return; 
+      }
+      if (pass.length < 8) { 
+        showToast('密碼長度至少需 8 個字元！'); 
+        return; 
+      }
+
+      showToast('正在註冊中...');
+      try {
+        const res = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, password: pass })
+        });
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.error || '註冊失敗');
+        }
+        const data = await res.json();
+        showToast('註冊成功！已為您自動登入。');
+        localStorage.setItem(AUTH_TOKEN_KEY, data.token);
+        navigate('dashboard');
+      } catch (error) {
+        showToast(error.message);
+      }
     };
 
     window.handleSocialLogin = function (provider) {
@@ -434,54 +493,115 @@
 
     const projectsGrid = document.getElementById('projects-grid');
     if (projectsGrid) {
-      projectsGrid.innerHTML = '<div style="color:var(--text-mid); text-align:center; padding: 40px; grid-column: 1/-1;">載入中...</div>';
-
-      const projects = await spaAuth.fetchProjects(signal);
-      if (signal?.aborted) return;
-
-      projectsGrid.innerHTML = '';
-
-      if (!projects || projects.length === 0) {
-        projectsGrid.innerHTML = `
-          <div class="projects-empty">
-            <h3>尚無專案</h3>
-            <p>開始建立你的第一個分鏡腳本！</p>
-          </div>
-        `;
-      } else {
-        projects.forEach(p => {
-          const date = new Date(p.createAt).toLocaleDateString('zh-TW');
-          const card = document.createElement('div');
-          card.className = 'project-card';
-          card.onclick = () => navigate('project', { id: p.id });
-
-          const thumbContent = p.cover
-            ? `<img src="${p.cover}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;" alt="${p.title}">`
-            : `🎬`;
-
-          card.innerHTML = `
-            <div class="card-strip">
-              <div class="strip-hole"></div>
-              <div class="strip-hole"></div>
-              <div class="strip-hole"></div>
-            </div>
-            <div class="project-thumb">${thumbContent}</div>
-            <div class="project-info">
-              <div class="project-title">${p.title}</div>
-              <div class="project-meta">
-                <span class="project-tag">${date}</span>
-                <span class="project-tag">${p.ratio}</span>
-              </div>
-            </div>
-            <div class="card-strip bottom">
-              <div class="strip-hole"></div>
-              <div class="strip-hole"></div>
-              <div class="strip-hole"></div>
+      function displayProjects(projects) {
+        // Filter out soft-deleted projects for the Dashboard
+        const activeProjects = (projects || []).filter(p => !p.is_deleted);
+        
+        projectsGrid.innerHTML = '';
+        if (activeProjects.length === 0) {
+          projectsGrid.innerHTML = `
+            <div class="projects-empty">
+              <h3>尚無專案</h3>
+              <p>開始建立你的第一個分鏡腳本！</p>
             </div>
           `;
+        } else {
+          activeProjects.forEach(p => {
+            const date = new Date(p.createAt).toLocaleDateString('zh-TW');
+            const card = document.createElement('div');
+            card.className = 'project-card';
+            
+            // Navigate only if the click is not on the delete button
+            card.onclick = (e) => {
+              if (e.target.closest('.project-delete-btn')) return;
+              navigate('project', { id: p.id });
+            };
 
-          projectsGrid.appendChild(card);
-        });
+            const thumbContent = p.cover
+              ? `<img src="${p.cover}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;" alt="${p.title}">`
+              : `🎬`;
+
+            card.innerHTML = `
+              <div class="card-strip">
+                <div class="strip-hole"></div>
+                <div class="strip-hole"></div>
+                <div class="strip-hole"></div>
+              </div>
+              <button class="project-delete-btn" title="刪除專案" data-id="${p.id}">🗑️</button>
+              <div class="project-thumb">${thumbContent}</div>
+              <div class="project-info">
+                <div class="project-title">${p.title}</div>
+                <div class="project-meta">
+                  <span class="project-tag">${date}</span>
+                  <span class="project-tag">${p.ratio}</span>
+                </div>
+              </div>
+              <div class="card-strip bottom">
+                <div class="strip-hole"></div>
+                <div class="strip-hole"></div>
+                <div class="strip-hole"></div>
+              </div>
+            `;
+
+            // Bind click handler for delete button
+            const delBtn = card.querySelector('.project-delete-btn');
+            if (delBtn) {
+              delBtn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                if (confirm('確定要將此專案移至資源回收桶嗎？')) {
+                  try {
+                    const token = spaAuth.getToken();
+                    const res = await fetch(`/api/projects/${p.id}`, {
+                      method: 'DELETE',
+                      headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (res.ok) {
+                      window.clearSpaCache();
+                      const updatedProjects = await spaAuth.fetchProjects();
+                      cacheProjectsList = updatedProjects;
+                      displayProjects(updatedProjects);
+                    } else {
+                      alert('刪除失敗');
+                    }
+                  } catch (err) {
+                    console.error(err);
+                    alert('刪除失敗，伺服器出錯');
+                  }
+                }
+              });
+            }
+
+            projectsGrid.appendChild(card);
+          });
+        }
+      }
+
+      if (cacheProjectsList) {
+        displayProjects(cacheProjectsList);
+        fetchProjectsBackground();
+      } else {
+        projectsGrid.innerHTML = '<div style="color:var(--text-mid); text-align:center; padding: 40px; grid-column: 1/-1;">載入中...</div>';
+        await fetchProjectsNetwork();
+      }
+
+      async function fetchProjectsNetwork() {
+        const projects = await spaAuth.fetchProjects(signal);
+        if (signal?.aborted) return;
+        cacheProjectsList = projects;
+        displayProjects(projects);
+      }
+
+      async function fetchProjectsBackground() {
+        try {
+          const projects = await spaAuth.fetchProjects(signal);
+          if (signal?.aborted) return;
+          const currentJSON = JSON.stringify(cacheProjectsList);
+          const newJSON = JSON.stringify(projects);
+          if (currentJSON !== newJSON) {
+            cacheProjectsList = projects;
+            displayProjects(projects);
+          }
+        } catch (e) {}
       }
     }
   }
@@ -589,57 +709,153 @@
     const projectsGrid = document.getElementById('projects-grid');
     if (!projectsGrid) return;
 
-    projectsGrid.innerHTML = '<div style="color:var(--text-mid); text-align:center; padding: 40px; grid-column: 1/-1;">載入中...</div>';
+    function displayHistory(projects) {
+      projectsGrid.innerHTML = '';
+      if (!projects || projects.length === 0) {
+        projectsGrid.innerHTML = `
+          <div class="projects-empty">
+            <h3>目前尚無歷史專案</h3>
+            <p>你可以先新增專案，系統會自動保留歷史紀錄。</p>
+          </div>
+        `;
+      } else {
+        projects.forEach(p => {
+          const date = new Date(p.createAt).toLocaleDateString('zh-TW');
+          const card = document.createElement('div');
+          
+          if (p.is_deleted) {
+            card.className = 'project-card project-card-deleted';
+            card.onclick = (e) => {
+              if (e.target.closest('.project-restore-btn')) return;
+              alert('此專案已被刪除，請點擊「還原」按鈕進行還原。');
+            };
+          } else {
+            card.className = 'project-card';
+            card.onclick = (e) => {
+              if (e.target.closest('.project-delete-btn')) return;
+              navigate('project', { id: p.id });
+            };
+          }
 
-    const projects = await spaAuth.fetchProjects(signal);
-    if (signal?.aborted) return;
+          const thumbContent = p.cover
+            ? `<img src="${p.cover}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;" alt="${p.title}">`
+            : `🎬`;
 
-    projectsGrid.innerHTML = '';
+          const actionButtonHtml = p.is_deleted
+            ? `<button class="project-restore-btn" title="還原專案" data-id="${p.id}">↩️ 還原</button>`
+            : `<button class="project-delete-btn" title="刪除專案" data-id="${p.id}">🗑️</button>`;
 
-    if (!projects || projects.length === 0) {
-      projectsGrid.innerHTML = `
-        <div class="projects-empty">
-          <h3>目前尚無歷史專案</h3>
-          <p>你可以先新增專案，系統會自動保留歷史紀錄。</p>
-        </div>
-      `;
-      return;
+          card.innerHTML = `
+            <div class="card-strip">
+              <div class="strip-hole"></div>
+              <div class="strip-hole"></div>
+              <div class="strip-hole"></div>
+            </div>
+            ${actionButtonHtml}
+            <div class="project-thumb">${thumbContent}</div>
+            <div class="project-info">
+              <div class="project-title">${p.title}</div>
+              <div class="project-meta">
+                <span class="project-tag">${date}</span>
+                <span class="project-tag">${p.ratio}</span>
+              </div>
+              <div class="project-date">專案風格：${p.style || '未指定'}</div>
+            </div>
+            <div class="card-strip bottom">
+              <div class="strip-hole"></div>
+              <div class="strip-hole"></div>
+              <div class="strip-hole"></div>
+            </div>
+          `;
+
+          // Bind click handler for delete button
+          const delBtn = card.querySelector('.project-delete-btn');
+          if (delBtn) {
+            delBtn.addEventListener('click', async (e) => {
+              e.stopPropagation();
+              if (confirm('確定要將此專案移至資源回收桶嗎？')) {
+                try {
+                  const token = spaAuth.getToken();
+                  const res = await fetch(`/api/projects/${p.id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                  });
+                  if (res.ok) {
+                    window.clearSpaCache();
+                    const updatedProjects = await spaAuth.fetchProjects();
+                    cacheProjectsList = updatedProjects;
+                    displayHistory(updatedProjects);
+                  } else {
+                    alert('刪除失敗');
+                  }
+                } catch (err) {
+                  console.error(err);
+                  alert('刪除失敗，伺服器出錯');
+                }
+              }
+            });
+          }
+
+          // Bind click handler for restore button
+          const restoreBtn = card.querySelector('.project-restore-btn');
+          if (restoreBtn) {
+            restoreBtn.addEventListener('click', async (e) => {
+              e.stopPropagation();
+              if (confirm('確定要還原此專案嗎？')) {
+                try {
+                  const token = spaAuth.getToken();
+                  const res = await fetch(`/api/projects/${p.id}/restore`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                  });
+                  if (res.ok) {
+                    window.clearSpaCache();
+                    const updatedProjects = await spaAuth.fetchProjects();
+                    cacheProjectsList = updatedProjects;
+                    displayHistory(updatedProjects);
+                  } else {
+                    alert('還原失敗');
+                  }
+                } catch (err) {
+                  console.error(err);
+                  alert('還原失敗，伺服器出錯');
+                }
+              }
+            });
+          }
+
+          projectsGrid.appendChild(card);
+        });
+      }
     }
 
-    projects.forEach(p => {
-      const date = new Date(p.createAt).toLocaleDateString('zh-TW');
-      const card = document.createElement('div');
-      card.className = 'project-card';
-      card.onclick = () => navigate('project', { id: p.id });
+    if (cacheProjectsList) {
+      displayHistory(cacheProjectsList);
+      fetchHistoryBackground();
+    } else {
+      projectsGrid.innerHTML = '<div style="color:var(--text-mid); text-align:center; padding: 40px; grid-column: 1/-1;">載入中...</div>';
+      await fetchHistoryNetwork();
+    }
 
-      const thumbContent = p.cover
-        ? `<img src="${p.cover}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;" alt="${p.title}">`
-        : `🎬`;
+    async function fetchHistoryNetwork() {
+      const projects = await spaAuth.fetchProjects(signal);
+      if (signal?.aborted) return;
+      cacheProjectsList = projects;
+      displayHistory(projects);
+    }
 
-      card.innerHTML = `
-        <div class="card-strip">
-          <div class="strip-hole"></div>
-          <div class="strip-hole"></div>
-          <div class="strip-hole"></div>
-        </div>
-        <div class="project-thumb">${thumbContent}</div>
-        <div class="project-info">
-          <div class="project-title">${p.title}</div>
-          <div class="project-meta">
-            <span class="project-tag">${date}</span>
-            <span class="project-tag">${p.ratio}</span>
-          </div>
-          <div class="project-date">專案風格：${p.style || '未指定'}</div>
-        </div>
-        <div class="card-strip bottom">
-          <div class="strip-hole"></div>
-          <div class="strip-hole"></div>
-          <div class="strip-hole"></div>
-        </div>
-      `;
-
-      projectsGrid.appendChild(card);
-    });
+    async function fetchHistoryBackground() {
+      try {
+        const projects = await spaAuth.fetchProjects(signal);
+        if (signal?.aborted) return;
+        const currentJSON = JSON.stringify(cacheProjectsList);
+        const newJSON = JSON.stringify(projects);
+        if (currentJSON !== newJSON) {
+          cacheProjectsList = projects;
+          displayHistory(projects);
+        }
+      } catch (e) {}
+    }
   }
 
   async function renderTemplate(signal) {
@@ -763,26 +979,7 @@
       return;
     }
 
-    m.innerHTML = '<div style="padding:24px;">載入中…</div>';
-
-    try {
-      const res = await fetch(`/api/projects/${projectId}`, {
-        signal,
-        headers: { 'Authorization': `Bearer ${spaAuth.getToken()}` }
-      });
-
-      if (signal?.aborted) return;
-
-      if (!res.ok) {
-        m.innerHTML = `<div class="projects-empty"><h3>無法取得專案（${res.status}）</h3></div>`;
-        return;
-      }
-
-      const data = await res.json();
-      const p = data?.project;
-
-      if (!p) throw new Error('伺服器回傳資料缺少 project 欄位');
-
+    async function renderWithProjectData(p) {
       const shots = Array.isArray(p.shots) ? p.shots : (p.shots ? [p.shots] : []);
       const safeTranslate = typeof window.translatePromptText === 'function'
         ? window.translatePromptText
@@ -914,17 +1111,14 @@
       const filmView = m.querySelector('#project-film-view');
 
       function switchView(mode) {
-        const easing = 'cubic-bezier(0.16, 1, 0.3, 1)';
         if (mode === 'table') {
           btnTable.classList.add('active');
           btnFilm.classList.remove('active');
-
           tableView.style.display = 'block';
           filmView.style.display = 'none';
         } else {
           btnFilm.classList.add('active');
           btnTable.classList.remove('active');
-          
           filmView.style.display = 'block';
           tableView.style.display = 'none';
         }
@@ -982,12 +1176,66 @@
         container.addEventListener('pointerup', stopDrag);
         container.addEventListener('pointercancel', stopDrag);
       }
+    }
 
-    } catch (e) {
-      if (e.name !== 'AbortError') {
-        console.error('renderProject error', e);
-        m.innerHTML = `<div class="projects-empty"><h3>讀取專案發生錯誤</h3><p>${e.message || '未知錯誤'}</p></div>`;
+    if (cacheProjectDetails[projectId]) {
+      await renderWithProjectData(cacheProjectDetails[projectId]);
+      fetchProjectBackground();
+    } else {
+      m.innerHTML = '<div style="padding:24px;">載入中…</div>';
+      await fetchProjectNetwork();
+    }
+
+    async function fetchProjectNetwork() {
+      try {
+        const res = await fetch(`/api/projects/${projectId}`, {
+          signal,
+          headers: { 'Authorization': `Bearer ${spaAuth.getToken()}` }
+        });
+
+        if (signal?.aborted) return;
+
+        if (!res.ok) {
+          m.innerHTML = `<div class="projects-empty"><h3>無法取得專案（${res.status}）</h3></div>`;
+          return;
+        }
+
+        const data = await res.json();
+        const p = data?.project;
+
+        if (!p) throw new Error('伺服器回傳資料缺少 project 欄位');
+
+        cacheProjectDetails[projectId] = p;
+        await renderWithProjectData(p);
+      } catch (e) {
+        if (e.name !== 'AbortError') {
+          console.error('renderProject error', e);
+          m.innerHTML = `<div class="projects-empty"><h3>讀取專案發生錯誤</h3><p>${e.message || '未知錯誤'}</p></div>`;
+        }
       }
+    }
+
+    async function fetchProjectBackground() {
+      try {
+        const res = await fetch(`/api/projects/${projectId}`, {
+          signal,
+          headers: { 'Authorization': `Bearer ${spaAuth.getToken()}` }
+        });
+
+        if (signal?.aborted) return;
+        if (!res.ok) return;
+
+        const data = await res.json();
+        const p = data?.project;
+        if (!p) return;
+
+        const currentJSON = JSON.stringify(cacheProjectDetails[projectId]);
+        const newJSON = JSON.stringify(p);
+        if (currentJSON !== newJSON) {
+          cacheProjectDetails[projectId] = p;
+          await renderWithProjectData(p);
+        }
+      } catch (e) {}
     }
   }
 
@@ -1194,6 +1442,45 @@
 
     isTransitioning = true;
 
+    // Transition loader timer
+    let showLoaderTimer = null;
+    let loaderShowing = false;
+
+    function cleanupTransitionLoader() {
+      if (showLoaderTimer) {
+        clearTimeout(showLoaderTimer);
+        showLoaderTimer = null;
+      }
+      if (loaderShowing) {
+        loaderShowing = false;
+        const overlay = document.getElementById('transition-loader-overlay');
+        if (overlay) {
+          overlay.classList.remove('active');
+        }
+        stopTextCycling();
+        setTimeout(() => {
+          if (!loaderShowing && window.spaTransitionLoader) {
+            window.spaTransitionLoader.stop();
+          }
+        }, 450);
+      }
+    }
+
+    signal.addEventListener('abort', cleanupTransitionLoader);
+
+    // Start 1-second timeout
+    showLoaderTimer = setTimeout(() => {
+      loaderShowing = true;
+      const overlay = document.getElementById('transition-loader-overlay');
+      if (overlay) {
+        overlay.classList.add('active');
+      }
+      if (window.spaTransitionLoader) {
+        window.spaTransitionLoader.start();
+      }
+      startTextCycling();
+    }, 1000);
+
     try {
       if (window._landingKill) {
         window._landingKill();
@@ -1295,6 +1582,8 @@
 
       await new Promise(resolve => setTimeout(resolve, 80));
 
+      cleanupTransitionLoader();
+
       if (signal.aborted || mySeq !== navSeq) return;
 
       await maskOpen();
@@ -1307,6 +1596,7 @@
         console.error('[spa navigate error]', e);
       }
     } finally {
+      cleanupTransitionLoader();
       if (currentNavController === controller) {
         currentNavController = null;
         isTransitioning = false;
@@ -1352,6 +1642,7 @@
   }
 
   document.addEventListener('DOMContentLoaded', async () => {
+    initTransitionLoader();
     const m = document.getElementById('page-main');
     if (m) {
       landingHTML = m.innerHTML;
@@ -1430,8 +1721,160 @@
   const railTop = document.getElementById("rail-top");
   const railBottom = document.getElementById("rail-bottom");
 
-  railTop.style.top = bgTop.offsetHeight * (5/7) + "px";
-  railBottom.style.bottom = bgTop.offsetHeight * (5/7) + "px";
+  if (bgTop && railTop && railBottom) {
+    railTop.style.top = bgTop.offsetHeight * (5/7) + "px";
+    railBottom.style.bottom = bgTop.offsetHeight * (5/7) + "px";
+  }
+
+  const cuteTexts = [
+    "劇目準備中... 🎬",
+    "正在排練精彩分鏡... 🎭",
+    "正在佈置舞台場景... 🎪",
+    "演員配音準備中... 🎙️",
+    "正在為您調配電影色彩... 🎨",
+    "導演正在校對腳本細節... 📝",
+    "膠捲正在沖洗中，請稍候... 🎞️",
+    "正在調度攝影機軌道... 📹",
+    "正在後製調光與合成特效... ✨",
+    "寫作靈感已送達，正在繪製草稿... 💡"
+  ];
+
+  let textCycleInterval = null;
+  let currentTextIndex = 0;
+
+  function startTextCycling() {
+    const textEl = document.getElementById('transition-loader-text');
+    if (!textEl) return;
+
+    currentTextIndex = 0;
+    textEl.textContent = cuteTexts[currentTextIndex];
+    textEl.classList.remove('blur-out');
+
+    textCycleInterval = setInterval(() => {
+      textEl.classList.add('blur-out');
+      setTimeout(() => {
+        currentTextIndex = (currentTextIndex + 1) % cuteTexts.length;
+        textEl.textContent = cuteTexts[currentTextIndex];
+        textEl.classList.remove('blur-out');
+      }, 500);
+    }, 2800);
+  }
+
+  function stopTextCycling() {
+    if (textCycleInterval) {
+      clearInterval(textCycleInterval);
+      textCycleInterval = null;
+    }
+  }
+
+  function initTransitionLoader() {
+    const overlay = document.getElementById('transition-loader-overlay');
+    const group = document.getElementById('transition-loader-group');
+    const path = document.getElementById('transition-loader-path');
+    if (!overlay || !group || !path) return;
+
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const particleCount = 45;
+    const trailSpan = 0.32;
+    const durationMs = 5400;
+    const rotationDurationMs = 28000;
+    const pulseDurationMs = 4600;
+    const strokeWidth = 4.5;
+    const roseA = 9.2;
+    const roseABoost = 0.6;
+    const roseBreathBase = 0.72;
+    const roseBreathBoost = 0.28;
+    const roseK = 5;
+    const roseScale = 3.25;
+
+    path.setAttribute('stroke-width', String(strokeWidth));
+
+    const particles = Array.from({ length: particleCount }, () => {
+      const circle = document.createElementNS(SVG_NS, 'circle');
+      circle.setAttribute('fill', 'currentColor');
+      group.appendChild(circle);
+      return circle;
+    });
+
+    function normalizeProgress(progress) {
+      return ((progress % 1) + 1) % 1;
+    }
+
+    function getDetailScale(time) {
+      const pulseProgress = (time % pulseDurationMs) / pulseDurationMs;
+      const pulseAngle = pulseProgress * Math.PI * 2;
+      return 0.52 + ((Math.sin(pulseAngle + 0.55) + 1) / 2) * 0.48;
+    }
+
+    function getRotation(time) {
+      return -((time % rotationDurationMs) / rotationDurationMs) * 360;
+    }
+
+    function point(progress, detailScale) {
+      const t = progress * Math.PI * 2;
+      const a = roseA + detailScale * roseABoost;
+      const r = a * (roseBreathBase + detailScale * roseBreathBoost) * Math.cos(roseK * t);
+      return {
+        x: 50 + Math.cos(t) * r * roseScale,
+        y: 50 + Math.sin(t) * r * roseScale,
+      };
+    }
+
+    function buildPath(detailScale, steps = 180) {
+      return Array.from({ length: steps + 1 }, (_, index) => {
+        const pt = point(index / steps, detailScale);
+        return `${index === 0 ? 'M' : 'L'} ${pt.x.toFixed(2)} ${pt.y.toFixed(2)}`;
+      }).join(' ');
+    }
+
+    function getParticle(index, progress, detailScale) {
+      const tailOffset = index / (particleCount - 1);
+      const pt = point(normalizeProgress(progress - tailOffset * trailSpan), detailScale);
+      const fade = Math.pow(1 - tailOffset, 0.56);
+      return {
+        x: pt.x,
+        y: pt.y,
+        radius: 0.6 + fade * 2.2,
+        opacity: 0.04 + fade * 0.96,
+      };
+    }
+
+    const startedAt = performance.now();
+    let animId = null;
+
+    function render(now) {
+      const time = now - startedAt;
+      const progress = (time % durationMs) / durationMs;
+      const detailScale = getDetailScale(time);
+
+      group.setAttribute('transform', `rotate(${getRotation(time)} 50 50)`);
+      path.setAttribute('d', buildPath(detailScale));
+
+      particles.forEach((node, index) => {
+        const p = getParticle(index, progress, detailScale);
+        node.setAttribute('cx', p.x.toFixed(2));
+        node.setAttribute('cy', p.y.toFixed(2));
+        node.setAttribute('r', p.radius.toFixed(2));
+        node.setAttribute('opacity', p.opacity.toFixed(3));
+      });
+
+      animId = requestAnimationFrame(render);
+    }
+
+    window.spaTransitionLoader = {
+      start() {
+        if (!animId) {
+          animId = requestAnimationFrame(render);
+        }
+      },
+      stop() {
+        if (animId) {
+          cancelAnimationFrame(animId);
+          animId = null;
+        }
+      }
+    };
+  }
 
   window.spaNavigate = navigate;
 
