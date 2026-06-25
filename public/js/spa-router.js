@@ -14,13 +14,60 @@
   // In-memory cache for API requests
   let cacheProjectsList = null;
   const cacheProjectDetails = {};
+  const pendingDeletions = {};
+  let activeDisplayProjectsFn = null;
+  let activeDisplayHistoryFn = null;
 
   window.clearSpaCache = () => {
     cacheProjectsList = null;
     for (const key in cacheProjectDetails) {
       delete cacheProjectDetails[key];
     }
+    for (const key in pendingDeletions) {
+      clearTimeout(pendingDeletions[key].deleteTimeout);
+      clearTimeout(pendingDeletions[key].transitionTimeout);
+      delete pendingDeletions[key];
+    }
     console.log("🧹 SPA client-side API cache cleared.");
+  };
+
+  let toastTimeout = null;
+
+  window.showSpaToast = (message, onUndo, duration = 5000) => {
+    const toast = document.getElementById('global-toast');
+    const toastText = document.getElementById('global-toast-text');
+    const undoBtn = document.getElementById('global-toast-undo');
+    if (!toast || !toastText || !undoBtn) return;
+
+    if (toastTimeout) {
+      clearTimeout(toastTimeout);
+      toastTimeout = null;
+    }
+
+    toastText.textContent = message;
+
+    if (onUndo) {
+      undoBtn.style.display = '';
+      undoBtn.onclick = (e) => {
+        e.preventDefault();
+        onUndo();
+        toast.classList.remove('show');
+        if (toastTimeout) {
+          clearTimeout(toastTimeout);
+          toastTimeout = null;
+        }
+      };
+    } else {
+      undoBtn.style.display = 'none';
+      undoBtn.onclick = null;
+    }
+
+    toast.classList.add('show');
+
+    toastTimeout = setTimeout(() => {
+      toast.classList.remove('show');
+      toastTimeout = null;
+    }, duration);
   };
 
   const maskTop = () => document.getElementById('black-mask-top');
@@ -494,8 +541,9 @@
     const projectsGrid = document.getElementById('projects-grid');
     if (projectsGrid) {
       function displayProjects(projects) {
-        // Filter out soft-deleted projects for the Dashboard
-        const activeProjects = (projects || []).filter(p => !p.is_deleted);
+        activeDisplayProjectsFn = displayProjects;
+        // Filter out soft-deleted and pending-deleted projects for the Dashboard
+        const activeProjects = (projects || []).filter(p => !p.is_deleted && !pendingDeletions[p.id]);
         
         projectsGrid.innerHTML = '';
         if (activeProjects.length === 0) {
@@ -546,9 +594,22 @@
             // Bind click handler for delete button
             const delBtn = card.querySelector('.project-delete-btn');
             if (delBtn) {
-              delBtn.addEventListener('click', async (e) => {
+              delBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                if (confirm('確定要將此專案移至資源回收桶嗎？')) {
+                if (!confirm('確定要將此專案移至資源回收桶嗎？')) return;
+
+                // Apply transition immediately to fade out the card
+                card.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+                card.style.opacity = '0';
+                card.style.transform = 'scale(0.9) translateY(20px)';
+
+                // Set timer to update cache list UI representation after transition completes
+                const transitionTimeout = setTimeout(() => {
+                  displayProjects(cacheProjectsList);
+                }, 400);
+
+                // Set timer to call delete API after 5 seconds
+                const deleteTimeout = setTimeout(async () => {
                   try {
                     const token = spaAuth.getToken();
                     const res = await fetch(`/api/projects/${p.id}`, {
@@ -556,18 +617,41 @@
                       headers: { 'Authorization': `Bearer ${token}` }
                     });
                     if (res.ok) {
-                      window.clearSpaCache();
-                      const updatedProjects = await spaAuth.fetchProjects();
-                      cacheProjectsList = updatedProjects;
-                      displayProjects(updatedProjects);
-                    } else {
-                      alert('刪除失敗');
+                      p.is_deleted = true;
+                      const updated = await spaAuth.fetchProjects();
+                      cacheProjectsList = updated;
+                      // Show Deleted notification
+                      window.showSpaToast(`專案「${p.title}」已移至資源回收桶。`);
                     }
                   } catch (err) {
-                    console.error(err);
-                    alert('刪除失敗，伺服器出錯');
+                    console.error('Failed to soft-delete project on server', err);
                   }
-                }
+                  delete pendingDeletions[p.id];
+                  if (currentPage === 'dashboard' && activeDisplayProjectsFn) {
+                    activeDisplayProjectsFn(cacheProjectsList);
+                  } else if (currentPage === 'history' && activeDisplayHistoryFn) {
+                    activeDisplayHistoryFn(cacheProjectsList);
+                  }
+                }, 5000);
+
+                pendingDeletions[p.id] = {
+                  deleteTimeout,
+                  transitionTimeout,
+                  project: p
+                };
+
+                // Show Undo notification
+                window.showSpaToast(`專案「${p.title}」已移至資源回收桶。`, () => {
+                  const item = pendingDeletions[p.id];
+                  if (item) {
+                    clearTimeout(item.deleteTimeout);
+                    clearTimeout(item.transitionTimeout);
+                    delete pendingDeletions[p.id];
+                  }
+                  // Show Restored notification
+                  window.showSpaToast("專案已復原。");
+                  displayProjects(cacheProjectsList);
+                }, 5000);
               });
             }
 
@@ -710,8 +794,75 @@
     if (!projectsGrid) return;
 
     function displayHistory(projects) {
+      activeDisplayHistoryFn = displayHistory;
+
+      function bindHistoryDeleteHandler(delBtn, card, p) {
+        delBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (!confirm('確定要將此專案移至資源回收桶嗎？')) return;
+
+          // Apply transition immediately to fade out the card
+          card.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+          card.style.opacity = '0';
+          card.style.transform = 'scale(0.9) translateY(20px)';
+
+          // Set timer to update cache list UI representation after transition completes
+          const transitionTimeout = setTimeout(() => {
+            displayHistory(cacheProjectsList);
+          }, 400);
+
+          // Set timer to call delete API after 5 seconds
+          const deleteTimeout = setTimeout(async () => {
+            try {
+              const token = spaAuth.getToken();
+              const res = await fetch(`/api/projects/${p.id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+              });
+              if (res.ok) {
+                p.is_deleted = true;
+                const updated = await spaAuth.fetchProjects();
+                cacheProjectsList = updated;
+                // Show Deleted notification
+                window.showSpaToast(`專案「${p.title}」已移至資源回收桶。`);
+              }
+            } catch (err) {
+              console.error('Failed to soft-delete project on server', err);
+            }
+            delete pendingDeletions[p.id];
+            if (currentPage === 'dashboard' && activeDisplayProjectsFn) {
+              activeDisplayProjectsFn(cacheProjectsList);
+            } else if (currentPage === 'history' && activeDisplayHistoryFn) {
+              activeDisplayHistoryFn(cacheProjectsList);
+            }
+          }, 5000);
+
+          pendingDeletions[p.id] = {
+            deleteTimeout,
+            transitionTimeout,
+            project: p
+          };
+
+          // Show Undo notification
+          window.showSpaToast(`專案「${p.title}」已移至資源回收桶。`, () => {
+            const item = pendingDeletions[p.id];
+            if (item) {
+              clearTimeout(item.deleteTimeout);
+              clearTimeout(item.transitionTimeout);
+              delete pendingDeletions[p.id];
+            }
+            // Show Restored notification
+            window.showSpaToast("專案已復原。");
+            displayHistory(cacheProjectsList);
+          }, 5000);
+        });
+      }
+
+      // Filter out projects that are currently pending deletion
+      const visibleProjects = (projects || []).filter(p => !pendingDeletions[p.id]);
+
       projectsGrid.innerHTML = '';
-      if (!projects || projects.length === 0) {
+      if (!visibleProjects || visibleProjects.length === 0) {
         projectsGrid.innerHTML = `
           <div class="projects-empty">
             <h3>目前尚無歷史專案</h3>
@@ -719,7 +870,7 @@
           </div>
         `;
       } else {
-        projects.forEach(p => {
+        visibleProjects.forEach(p => {
           const date = new Date(p.createAt).toLocaleDateString('zh-TW');
           const card = document.createElement('div');
           
@@ -771,55 +922,55 @@
           // Bind click handler for delete button
           const delBtn = card.querySelector('.project-delete-btn');
           if (delBtn) {
-            delBtn.addEventListener('click', async (e) => {
-              e.stopPropagation();
-              if (confirm('確定要將此專案移至資源回收桶嗎？')) {
-                try {
-                  const token = spaAuth.getToken();
-                  const res = await fetch(`/api/projects/${p.id}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                  });
-                  if (res.ok) {
-                    window.clearSpaCache();
-                    const updatedProjects = await spaAuth.fetchProjects();
-                    cacheProjectsList = updatedProjects;
-                    displayHistory(updatedProjects);
-                  } else {
-                    alert('刪除失敗');
-                  }
-                } catch (err) {
-                  console.error(err);
-                  alert('刪除失敗，伺服器出錯');
-                }
-              }
-            });
+            bindHistoryDeleteHandler(delBtn, card, p);
           }
 
-          // Bind click handler for restore button
+          // Bind click handler for restore button (optimistic restoration)
           const restoreBtn = card.querySelector('.project-restore-btn');
           if (restoreBtn) {
             restoreBtn.addEventListener('click', async (e) => {
               e.stopPropagation();
-              if (confirm('確定要還原此專案嗎？')) {
-                try {
-                  const token = spaAuth.getToken();
-                  const res = await fetch(`/api/projects/${p.id}/restore`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                  });
-                  if (res.ok) {
-                    window.clearSpaCache();
-                    const updatedProjects = await spaAuth.fetchProjects();
-                    cacheProjectsList = updatedProjects;
-                    displayHistory(updatedProjects);
-                  } else {
-                    alert('還原失敗');
-                  }
-                } catch (err) {
-                  console.error(err);
-                  alert('還原失敗，伺服器出錯');
+              if (!confirm('確定要還原此專案嗎？')) return;
+
+              // Optimistically update the status in local projects representation
+              p.is_deleted = false;
+
+              // Optimistically update card UI immediately (already-deleted -> normal active)
+              card.className = 'project-card';
+              card.onclick = (event) => {
+                if (event.target.closest('.project-delete-btn')) return;
+                navigate('project', { id: p.id });
+              };
+
+              const newDelBtn = document.createElement('button');
+              newDelBtn.className = 'project-delete-btn';
+              newDelBtn.title = '刪除專案';
+              newDelBtn.dataset.id = p.id;
+              newDelBtn.textContent = '🗑️';
+
+              bindHistoryDeleteHandler(newDelBtn, card, p);
+              restoreBtn.replaceWith(newDelBtn);
+
+              // Show restored toast notification
+              window.showSpaToast(`專案「${p.title}」已還原。`);
+
+              try {
+                const token = spaAuth.getToken();
+                const res = await fetch(`/api/projects/${p.id}/restore`, {
+                  method: 'POST',
+                  headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                  const updated = await spaAuth.fetchProjects();
+                  cacheProjectsList = updated;
+                } else {
+                  throw new Error('還原失敗');
                 }
+              } catch (err) {
+                console.error('Failed to restore project on server', err);
+                p.is_deleted = true;
+                displayHistory(cacheProjectsList);
+                alert('還原失敗，伺服器出錯');
               }
             });
           }
@@ -1428,6 +1579,29 @@
 
     if (page === activePage && !opts.force) return;
 
+    // Flush any pending deletions immediately when switching pages
+    for (const id in pendingDeletions) {
+      const item = pendingDeletions[id];
+      if (item) {
+        clearTimeout(item.deleteTimeout);
+        clearTimeout(item.transitionTimeout);
+        
+        // Immediately make the DELETE request in the background
+        const token = spaAuth.getToken();
+        fetch(`/api/projects/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        }).catch(err => console.error('Immediate delete failed on navigate', err));
+        
+        item.project.is_deleted = true;
+        delete pendingDeletions[id];
+      }
+    }
+    const toast = document.getElementById('global-toast');
+    if (toast) {
+      toast.classList.remove('show');
+    }
+
     targetPage = page;
 
     const mySeq = ++navSeq;
@@ -1468,7 +1642,8 @@
 
     signal.addEventListener('abort', cleanupTransitionLoader);
 
-    // Start 1-second timeout
+    // Start transition loader timeout (immediately for landing page & login/register pages, 1s for other pages)
+    const delay = ['landing', 'login', 'register'].includes(page) ? 0 : 1000;
     showLoaderTimer = setTimeout(() => {
       loaderShowing = true;
       const overlay = document.getElementById('transition-loader-overlay');
@@ -1479,7 +1654,7 @@
         window.spaTransitionLoader.start();
       }
       startTextCycling();
-    }, 1000);
+    }, delay);
 
     try {
       if (window._landingKill) {
