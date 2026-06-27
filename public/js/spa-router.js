@@ -594,9 +594,10 @@
             // Bind click handler for delete button
             const delBtn = card.querySelector('.project-delete-btn');
             if (delBtn) {
-              delBtn.addEventListener('click', (e) => {
+              delBtn.addEventListener('click', async (e) => {
                 e.stopPropagation();
-                if (!confirm('確定要將此專案移至資源回收桶嗎？')) return;
+                const isConfirmed = await confirm('是否刪除此專案？', `「${p.title}」將從此頁面上刪除，刪除後的專案將會移至「資源回收桶」，您可以在「歷史專案」復原`, 'delete', '刪除', card);
+                if (!isConfirmed) return;
 
                 // Apply transition immediately to fade out the card
                 card.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
