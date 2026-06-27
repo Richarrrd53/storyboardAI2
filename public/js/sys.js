@@ -86,8 +86,8 @@ function confirm(message, description, type = 'default', btnText, projectEl) {
             previewContainer.appendChild(cloneProject);
             windowEl.appendChild(previewContainer);
 
-            const delBtn = cloneProject.querySelector('.project-delete-btn');
-            delBtn.remove()
+            const delBtn = cloneProject.querySelector('.project-delete-btn') || cloneProject.querySelector('.project-option-btn');
+            if (delBtn) delBtn.remove();
             cloneProject.classList.add('lock');
 
             const trashBinContainer = document.createElement("div");
@@ -151,10 +151,57 @@ function confirm(message, description, type = 'default', btnText, projectEl) {
         btn2.textContent = btnText || "確定";
         btnContainer.appendChild(btn2);
 
-        btn2.onclick = () => {
-            closeWindow();
-            resolve(true);
-        };
+        if(type == 'delete'){
+            btn2.onclick = () => {
+                const trashbin = windowEl.querySelector('.sys-delete-trashbin');
+                const trashbinTop = windowEl.querySelector(".sys-delete-trashbin-top");
+                const cloneProject = windowEl.querySelector('.project-card');
+    
+                trashbin.style.animation = "trashbin 1s cubic-bezier(.33,1.53,.69,.99) 2 alternate";
+                trashbinTop.style.animation = "trashbin-top 0.5s cubic-bezier(.4,0,.2,1) 2 alternate";
+    
+                let position = { x: 0, y: 0, z: 0 };
+                let velocity = { x: 0, y: -16, z: -8 };
+                const gravity = 1.1;
+    
+                const animate = () => {
+                    position.x += velocity.x;
+                    position.z += velocity.z;
+                    velocity.y += gravity;
+                    position.y += velocity.y;
+    
+                    let s = position.z/-232;
+                    let currentScale = Math.max(0, 0.8 - s * 0.5);
+                    cloneProject.style.transform = `translate3d(${position.x}px, ${position.y}px, ${position.z}px) rotateX(${s*135}deg) scale(${currentScale})`;
+                    
+                    cloneProject.style.filter = `blur(${Math.max(s-0.5)*10}px)`;
+                    cloneProject.style.zIndex = (s > 0.5) ? 0 : 2;
+    
+                    if (position.y < 0) { 
+                        requestAnimationFrame(animate);
+                    }
+                    else{
+    
+                        cloneProject.style.opacity = 0;
+                    }
+                };
+    
+                requestAnimationFrame(animate);
+                setTimeout(() => {
+                    closeWindow();
+                }, 1000);
+                setTimeout(() => {
+                    resolve(true);
+                }, 1500);
+            }
+        }
+        else{
+            btn2.onclick = () => {
+                closeWindow();
+                resolve(true);
+            };
+        }
+
 
 
 

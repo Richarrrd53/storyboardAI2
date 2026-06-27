@@ -515,8 +515,8 @@ app.get('/api/get-templates', async (req, res) => {
 });
 
 
-// SPA catch-all — redirect /dashboard, /login, /register, /generate to main.html
-const spaRoutes = ['/dashboard', '/login', '/register', '/generate', '/analyze', '/project/:id'];
+// SPA catch-all — redirect routes to main.html
+const spaRoutes = ['/dashboard', '/login', '/register', '/generate', '/analyze', '/analysis', '/history', '/template', '/project/:id'];
 spaRoutes.forEach(route => {
     app.get(route, (req, res) => {
         res.sendFile(path.join(process.cwd(), 'public', 'main.html'));

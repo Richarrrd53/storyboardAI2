@@ -310,6 +310,220 @@
     return m;
   }
 
+  async function deleteProject(p, card, refreshCallback) {
+    const isConfirmed = await confirm('是否刪除此專案？', `「${p.title}」將從此頁面上刪除，刪除後的專案將會移至「資源回收桶」，您可以在「歷史專案」復原`, 'delete', '刪除', card);
+    if (!isConfirmed) return;
+
+    // Apply transition immediately to fade out the card
+    card.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+    card.style.opacity = '0';
+    card.style.transform = 'scale(0.9) translateY(20px)';
+
+    // Set timer to update cache list UI representation after transition completes
+    const transitionTimeout = setTimeout(() => {
+      refreshCallback();
+    }, 400);
+
+    // Set timer to call delete API after 5 seconds
+    const deleteTimeout = setTimeout(async () => {
+      try {
+        const token = spaAuth.getToken();
+        const res = await fetch(`/api/projects/${p.id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          p.is_deleted = true;
+          const updated = await spaAuth.fetchProjects();
+          cacheProjectsList = updated;
+          // Show Deleted notification
+          window.showSpaToast(`專案「${p.title}」已移至資源回收桶。`);
+        }
+      } catch (err) {
+        console.error('Failed to soft-delete project on server', err);
+      }
+      delete pendingDeletions[p.id];
+      if (currentPage === 'dashboard' && activeDisplayProjectsFn) {
+        activeDisplayProjectsFn(cacheProjectsList);
+      } else if (currentPage === 'history' && activeDisplayHistoryFn) {
+        activeDisplayHistoryFn(cacheProjectsList);
+      }
+    }, 5000);
+
+    pendingDeletions[p.id] = {
+      deleteTimeout,
+      transitionTimeout,
+      project: p
+    };
+
+    // Show Undo notification
+    window.showSpaToast(`專案「${p.title}」已移至資源回收桶。`, () => {
+      const item = pendingDeletions[p.id];
+      if (item) {
+        clearTimeout(item.deleteTimeout);
+        clearTimeout(item.transitionTimeout);
+        delete pendingDeletions[p.id];
+      }
+      // Show Restored notification
+      window.showSpaToast("專案已復原。");
+      refreshCallback();
+    }, 5000);
+  }
+
+  async function restoreProject(p, card, refreshCallback) {
+    if (!confirm('確定要還原此專案嗎？')) return;
+
+    // Optimistically update the status in local representation
+    p.is_deleted = false;
+    refreshCallback();
+
+    // Show restored toast notification
+    window.showSpaToast(`專案「${p.title}」已還原。`);
+
+    try {
+      const token = spaAuth.getToken();
+      const res = await fetch(`/api/projects/${p.id}/restore`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const updated = await spaAuth.fetchProjects();
+        cacheProjectsList = updated;
+      } else {
+        throw new Error('還原失敗');
+      }
+    } catch (err) {
+      console.error('Failed to restore project on server', err);
+      p.is_deleted = true;
+      refreshCallback();
+      alert('還原失敗，伺服器出錯');
+    }
+  }
+
+  function showProjectOptionsDropdown(project, card, optionBtn, isHistoryPage, refreshCallback) {
+    const overlay = document.createElement('div');
+    overlay.className = 'options-dropdown-overlay';
+
+    const menu = document.createElement('div');
+    menu.className = 'options-dropdown-menu';
+
+    // Determine actions html
+    let actionsHtml = '';
+    if (project.is_deleted) {
+      actionsHtml = `
+        <button class="options-dropdown-item restore" id="opt-restore">
+          <span class="options-dropdown-item-icon">
+            <img src="../icon/restore.svg">
+          </span>
+          <span>還原專案</span>
+        </button>
+      `;
+    } else {
+      actionsHtml = `
+        <button class="options-dropdown-item open" id="opt-open">
+          <span class="options-dropdown-item-icon">
+            <div class="folder">
+              <div class="front-side">
+                <div class="cover"></div>
+              </div>
+              <div class="back-side">
+                <div class="tip"></div>
+                <div class="cover"></div>
+              </div>
+            </div>
+          </span>
+          <span>開啟專案</span>
+        </button>
+        <button class="options-dropdown-item delete" id="opt-delete">
+          <span class="options-dropdown-item-icon">
+            <img class="delete-1" src="../icon/delete-1.svg">
+            <img class="delete-2" src="../icon/delete-2.svg">
+          </span>
+          <span>刪除專案</span>
+        </button>
+      `;
+    }
+
+    menu.innerHTML = actionsHtml;
+    overlay.appendChild(menu);
+    document.body.appendChild(overlay);
+
+    // Calculate position relative to optionBtn
+    const rect = optionBtn.getBoundingClientRect();
+    const menuWidth = 170; // Matches CSS width
+    const gap = 16; // Spacing gap
+
+    // Top aligns with the button top
+    let top = rect.top + window.scrollY;
+
+    // Primary position: right side
+    let left = rect.right + window.scrollX + gap;
+    let transformOrigin = 'top left';
+
+    // Check if it overflows the right edge of the screen
+    if (left + menuWidth > window.innerWidth) {
+      // Fallback: left side
+      left = rect.left + window.scrollX - menuWidth - gap;
+      transformOrigin = 'top right';
+    }
+
+    // Safety margins for small screen sizes
+    left = Math.max(10, Math.min(left, window.innerWidth - menuWidth - 10));
+
+    menu.style.top = `${top}px`;
+    menu.style.left = `${left}px`;
+    menu.style.transformOrigin = transformOrigin;
+
+    // Trigger transition
+    setTimeout(() => {
+      overlay.classList.add('active');
+      menu.classList.add('active');
+    }, 10);
+
+    const closeDropdown = () => {
+      menu.classList.remove('active');
+      menu.style.transition = 
+      setTimeout(() => {
+        overlay.classList.remove('active');
+      }, 500);
+      setTimeout(() => overlay.remove(), 700);
+    };
+
+    // Close when overlay is clicked
+    overlay.addEventListener('click', closeDropdown);
+
+    // Option: Open
+    const openBtn = menu.querySelector('#opt-open');
+    if (openBtn) {
+      openBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeDropdown();
+        navigate('project', { id: project.id });
+      });
+    }
+
+    // Option: Delete
+    const deleteBtn = menu.querySelector('#opt-delete');
+    if (deleteBtn) {
+      deleteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeDropdown();
+        deleteProject(project, card, refreshCallback);
+      });
+    }
+
+    // Option: Restore
+    const restoreBtn = menu.querySelector('#opt-restore');
+    if (restoreBtn) {
+      restoreBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeDropdown();
+        restoreProject(project, card, refreshCallback);
+      });
+    }
+  }
+
+
   async function renderLogin(showRegister) {
     const doc = await fetchPageDoc('/html/login.html');
     const m = initMain();
@@ -559,14 +773,14 @@
             const card = document.createElement('div');
             card.className = 'project-card';
             
-            // Navigate only if the click is not on the delete button
+            // Navigate only if the click is not on the options button
             card.onclick = (e) => {
-              if (e.target.closest('.project-delete-btn')) return;
+              if (e.target.closest('.project-option-btn')) return;
               navigate('project', { id: p.id });
             };
 
             const thumbContent = p.cover
-              ? `<img src="${p.cover}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;" alt="${p.title}">`
+              ? `<img src="${p.cover}" style="width: 100%; height: 100%; object-fit: cover;" alt="${p.title}">`
               : `🎬`;
 
             card.innerHTML = `
@@ -574,8 +788,8 @@
                 <div class="strip-hole"></div>
                 <div class="strip-hole"></div>
                 <div class="strip-hole"></div>
+                <button class="project-option-btn" title="專案選項" data-id="${p.id}">⋯</button>
               </div>
-              <button class="project-delete-btn" title="刪除專案" data-id="${p.id}">🗑️</button>
               <div class="project-thumb">${thumbContent}</div>
               <div class="project-info">
                 <div class="project-title">${p.title}</div>
@@ -591,68 +805,11 @@
               </div>
             `;
 
-            // Bind click handler for delete button
-            const delBtn = card.querySelector('.project-delete-btn');
-            if (delBtn) {
-              delBtn.addEventListener('click', async (e) => {
+            const optionBtn = card.querySelector('.project-option-btn');
+            if (optionBtn) {
+              optionBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const isConfirmed = await confirm('是否刪除此專案？', `「${p.title}」將從此頁面上刪除，刪除後的專案將會移至「資源回收桶」，您可以在「歷史專案」復原`, 'delete', '刪除', card);
-                if (!isConfirmed) return;
-
-                // Apply transition immediately to fade out the card
-                card.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
-                card.style.opacity = '0';
-                card.style.transform = 'scale(0.9) translateY(20px)';
-
-                // Set timer to update cache list UI representation after transition completes
-                const transitionTimeout = setTimeout(() => {
-                  displayProjects(cacheProjectsList);
-                }, 400);
-
-                // Set timer to call delete API after 5 seconds
-                const deleteTimeout = setTimeout(async () => {
-                  try {
-                    const token = spaAuth.getToken();
-                    const res = await fetch(`/api/projects/${p.id}`, {
-                      method: 'DELETE',
-                      headers: { 'Authorization': `Bearer ${token}` }
-                    });
-                    if (res.ok) {
-                      p.is_deleted = true;
-                      const updated = await spaAuth.fetchProjects();
-                      cacheProjectsList = updated;
-                      // Show Deleted notification
-                      window.showSpaToast(`專案「${p.title}」已移至資源回收桶。`);
-                    }
-                  } catch (err) {
-                    console.error('Failed to soft-delete project on server', err);
-                  }
-                  delete pendingDeletions[p.id];
-                  if (currentPage === 'dashboard' && activeDisplayProjectsFn) {
-                    activeDisplayProjectsFn(cacheProjectsList);
-                  } else if (currentPage === 'history' && activeDisplayHistoryFn) {
-                    activeDisplayHistoryFn(cacheProjectsList);
-                  }
-                }, 5000);
-
-                pendingDeletions[p.id] = {
-                  deleteTimeout,
-                  transitionTimeout,
-                  project: p
-                };
-
-                // Show Undo notification
-                window.showSpaToast(`專案「${p.title}」已移至資源回收桶。`, () => {
-                  const item = pendingDeletions[p.id];
-                  if (item) {
-                    clearTimeout(item.deleteTimeout);
-                    clearTimeout(item.transitionTimeout);
-                    delete pendingDeletions[p.id];
-                  }
-                  // Show Restored notification
-                  window.showSpaToast("專案已復原。");
-                  displayProjects(cacheProjectsList);
-                }, 5000);
+                showProjectOptionsDropdown(p, card, optionBtn, false, () => displayProjects(cacheProjectsList));
               });
             }
 
@@ -797,68 +954,6 @@
     function displayHistory(projects) {
       activeDisplayHistoryFn = displayHistory;
 
-      function bindHistoryDeleteHandler(delBtn, card, p) {
-        delBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          if (!confirm('確定要將此專案移至資源回收桶嗎？')) return;
-
-          // Apply transition immediately to fade out the card
-          card.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
-          card.style.opacity = '0';
-          card.style.transform = 'scale(0.9) translateY(20px)';
-
-          // Set timer to update cache list UI representation after transition completes
-          const transitionTimeout = setTimeout(() => {
-            displayHistory(cacheProjectsList);
-          }, 400);
-
-          // Set timer to call delete API after 5 seconds
-          const deleteTimeout = setTimeout(async () => {
-            try {
-              const token = spaAuth.getToken();
-              const res = await fetch(`/api/projects/${p.id}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
-              });
-              if (res.ok) {
-                p.is_deleted = true;
-                const updated = await spaAuth.fetchProjects();
-                cacheProjectsList = updated;
-                // Show Deleted notification
-                window.showSpaToast(`專案「${p.title}」已移至資源回收桶。`);
-              }
-            } catch (err) {
-              console.error('Failed to soft-delete project on server', err);
-            }
-            delete pendingDeletions[p.id];
-            if (currentPage === 'dashboard' && activeDisplayProjectsFn) {
-              activeDisplayProjectsFn(cacheProjectsList);
-            } else if (currentPage === 'history' && activeDisplayHistoryFn) {
-              activeDisplayHistoryFn(cacheProjectsList);
-            }
-          }, 5000);
-
-          pendingDeletions[p.id] = {
-            deleteTimeout,
-            transitionTimeout,
-            project: p
-          };
-
-          // Show Undo notification
-          window.showSpaToast(`專案「${p.title}」已移至資源回收桶。`, () => {
-            const item = pendingDeletions[p.id];
-            if (item) {
-              clearTimeout(item.deleteTimeout);
-              clearTimeout(item.transitionTimeout);
-              delete pendingDeletions[p.id];
-            }
-            // Show Restored notification
-            window.showSpaToast("專案已復原。");
-            displayHistory(cacheProjectsList);
-          }, 5000);
-        });
-      }
-
       // Filter out projects that are currently pending deletion
       const visibleProjects = (projects || []).filter(p => !pendingDeletions[p.id]);
 
@@ -878,13 +973,13 @@
           if (p.is_deleted) {
             card.className = 'project-card project-card-deleted';
             card.onclick = (e) => {
-              if (e.target.closest('.project-restore-btn')) return;
-              alert('此專案已被刪除，請點擊「還原」按鈕進行還原。');
+              if (e.target.closest('.project-option-btn')) return;
+              alert('此專案已被刪除，請點擊右上角「⋯」按鈕並選擇「還原專案」進行還原。');
             };
           } else {
             card.className = 'project-card';
             card.onclick = (e) => {
-              if (e.target.closest('.project-delete-btn')) return;
+              if (e.target.closest('.project-option-btn')) return;
               navigate('project', { id: p.id });
             };
           }
@@ -893,17 +988,13 @@
             ? `<img src="${p.cover}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;" alt="${p.title}">`
             : `🎬`;
 
-          const actionButtonHtml = p.is_deleted
-            ? `<button class="project-restore-btn" title="還原專案" data-id="${p.id}">↩️ 還原</button>`
-            : `<button class="project-delete-btn" title="刪除專案" data-id="${p.id}">🗑️</button>`;
-
           card.innerHTML = `
             <div class="card-strip">
               <div class="strip-hole"></div>
               <div class="strip-hole"></div>
               <div class="strip-hole"></div>
+              <button class="project-option-btn" title="專案選項" data-id="${p.id}">⋯</button>
             </div>
-            ${actionButtonHtml}
             <div class="project-thumb">${thumbContent}</div>
             <div class="project-info">
               <div class="project-title">${p.title}</div>
@@ -920,59 +1011,11 @@
             </div>
           `;
 
-          // Bind click handler for delete button
-          const delBtn = card.querySelector('.project-delete-btn');
-          if (delBtn) {
-            bindHistoryDeleteHandler(delBtn, card, p);
-          }
-
-          // Bind click handler for restore button (optimistic restoration)
-          const restoreBtn = card.querySelector('.project-restore-btn');
-          if (restoreBtn) {
-            restoreBtn.addEventListener('click', async (e) => {
+          const optionBtn = card.querySelector('.project-option-btn');
+          if (optionBtn) {
+            optionBtn.addEventListener('click', (e) => {
               e.stopPropagation();
-              if (!confirm('確定要還原此專案嗎？')) return;
-
-              // Optimistically update the status in local projects representation
-              p.is_deleted = false;
-
-              // Optimistically update card UI immediately (already-deleted -> normal active)
-              card.className = 'project-card';
-              card.onclick = (event) => {
-                if (event.target.closest('.project-delete-btn')) return;
-                navigate('project', { id: p.id });
-              };
-
-              const newDelBtn = document.createElement('button');
-              newDelBtn.className = 'project-delete-btn';
-              newDelBtn.title = '刪除專案';
-              newDelBtn.dataset.id = p.id;
-              newDelBtn.textContent = '🗑️';
-
-              bindHistoryDeleteHandler(newDelBtn, card, p);
-              restoreBtn.replaceWith(newDelBtn);
-
-              // Show restored toast notification
-              window.showSpaToast(`專案「${p.title}」已還原。`);
-
-              try {
-                const token = spaAuth.getToken();
-                const res = await fetch(`/api/projects/${p.id}/restore`, {
-                  method: 'POST',
-                  headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (res.ok) {
-                  const updated = await spaAuth.fetchProjects();
-                  cacheProjectsList = updated;
-                } else {
-                  throw new Error('還原失敗');
-                }
-              } catch (err) {
-                console.error('Failed to restore project on server', err);
-                p.is_deleted = true;
-                displayHistory(cacheProjectsList);
-                alert('還原失敗，伺服器出錯');
-              }
+              showProjectOptionsDropdown(p, card, optionBtn, true, () => displayHistory(cacheProjectsList));
             });
           }
 
