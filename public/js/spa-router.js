@@ -1141,6 +1141,13 @@
         ? window.formatPromptText
         : async v => String(v || '');
 
+      const escapeHtml = (value = '') => String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+
       const processedShots = await Promise.all(shots.map(async (s, index) => {
         const payload = s.payload || {};
         const shotPrompt = await safeTranslate(payload.shotPrompt || payload.prompt || '');
@@ -1149,29 +1156,47 @@
         const imageUrl = payload.image || '';
         const order = s.order ?? (index + 1);
         return {
+          id: s.id || null,
           order,
           title: s.title || '未命名鏡頭',
           camera: s.camera || '未設定',
           duration: s.duration || '0s',
           emotion,
           imageUrl,
-          formattedShotPrompt
+          formattedShotPrompt,
+          payload
         };
       }));
 
       if (signal?.aborted) return;
 
+      const editableShots = processedShots.map((shot) => ({
+        id: shot.id,
+        order: shot.order,
+        title: shot.title,
+        camera: shot.camera,
+        duration: shot.duration,
+        emotion: shot.emotion,
+        payload: shot.payload || {}
+      }));
+
       let tableRowsHtml = '';
-      processedShots.forEach(s => {
+      editableShots.forEach((shot, index) => {
         tableRowsHtml += `
-          <tr>
-            <td class="camera-cell">${s.order}</td>
+          <tr data-shot-index="${index}">
+            <td class="camera-cell">${shot.order}</td>
             <td class="img-cell">
-              ${s.imageUrl ? `<img src="${s.imageUrl}" onerror="this.outerHTML='<div class=\\'placeholder\\'>IMAGE FAILED</div>'">` : `<div class="placeholder">NO IMAGE</div>`}
+              ${processedShots[index].imageUrl ? `<img src="${processedShots[index].imageUrl}" onerror="this.outerHTML='<div class=\\'placeholder\\'>IMAGE FAILED</div>'">` : `<div class="placeholder">NO IMAGE</div>`}
             </td>
-            <td class="title-cell">${s.title}</td>
-            <td class="time-cell">${s.duration}</td>
-            <td class="note-cell">${s.emotion || '—'}</td>
+            <td class="title-cell">
+              <div class="editable-cell" contenteditable="true" data-field="title" data-index="${index}">${escapeHtml(shot.title)}</div>
+            </td>
+            <td class="time-cell">
+              <div class="editable-cell" contenteditable="true" data-field="duration" data-index="${index}">${escapeHtml(shot.duration)}</div>
+            </td>
+            <td class="note-cell">
+              <div class="editable-cell" contenteditable="true" data-field="emotion" data-index="${index}">${escapeHtml(shot.emotion || '')}</div>
+            </td>
           </tr>
         `;
       });
@@ -1229,6 +1254,10 @@
           </div>
 
           <div id="project-table-view" class="view-section visible" style="display: block;">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:12px; flex-wrap:wrap;">
+              <div style="font-size:0.95rem; color:var(--text-mid);">可直接編輯表格欄位，完成後點擊儲存。</div>
+              <button id="save-project-table-btn" style="padding:8px 14px; border:0; border-radius:999px; background:#1f2937; color:white; cursor:pointer;">儲存表格變更</button>
+            </div>
             <table class="storyboard-table" style="width:100%; border-collapse: collapse;">
               <thead>
                 <tr>
@@ -1261,6 +1290,75 @@
       const btnFilm = m.querySelector('#vbtn-film');
       const tableView = m.querySelector('#project-table-view');
       const filmView = m.querySelector('#project-film-view');
+      const saveBtn = m.querySelector('#save-project-table-btn');
+      const editableFields = m.querySelectorAll('.editable-cell[data-field]');
+      const draftShots = editableShots.map((shot) => ({ ...shot }));
+
+      editableFields.forEach((el) => {
+        el.addEventListener('input', () => {
+          const index = Number(el.dataset.index || 0);
+          const field = el.dataset.field;
+          const value = el.innerText.replace(/\r?\n/g, ' ').trim();
+          if (!draftShots[index]) return;
+          draftShots[index][field] = value;
+        });
+      });
+
+      if (saveBtn) {
+        saveBtn.addEventListener('click', async () => {
+          if (!projectId) return;
+
+          saveBtn.disabled = true;
+          saveBtn.textContent = '儲存中...';
+
+          try {
+            const payloadShots = draftShots.map((shot) => ({
+              id: shot.id,
+              order: shot.order,
+              title: shot.title || '',
+              camera: shot.camera || '',
+              duration: shot.duration || '0s',
+              payload: {
+                ...(shot.payload || {}),
+                emotion: shot.emotion || ''
+              }
+            }));
+
+            const authToken = window.spaAuth?.getToken?.() || '';
+            const res = await fetch(`/api/projects/${projectId}`, {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+              },
+              body: JSON.stringify({ shots: payloadShots })
+            });
+
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+              throw new Error(data.error || '儲存失敗');
+            }
+
+            const updatedShots = Array.isArray(data.project?.shots) ? data.project.shots : payloadShots;
+            cacheProjectDetails[projectId] = {
+              ...p,
+              ...data.project,
+              shots: updatedShots
+            };
+            saveBtn.textContent = '已儲存';
+          } catch (error) {
+            console.error('Save project table error:', error);
+            saveBtn.textContent = '儲存失敗';
+          } finally {
+            setTimeout(() => {
+              if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.textContent = '儲存表格變更';
+              }
+            }, 1500);
+          }
+        });
+      }
 
       function switchView(mode) {
         if (mode === 'table') {

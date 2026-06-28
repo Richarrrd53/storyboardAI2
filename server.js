@@ -305,6 +305,87 @@ app.post('/api/projects/:id/restore', async (req, res) => {
     }
 });
 
+app.patch('/api/projects/:id', async (req, res) => {
+    try {
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ error: '未授權' });
+        }
+        const token = authHeader.split(' ')[1];
+        const decoded = jwt.verify(token, JWT_SECRET);
+
+        const id = req.params.id;
+        const project = await prisma.project.findUnique({ where: { id } });
+        if (!project) {
+            return res.status(404).json({ error: '找不到專案' });
+        }
+        if (project.authorId !== decoded.id) {
+            return res.status(403).json({ error: '沒有權限修改此專案' });
+        }
+
+        const { title, style, ratio, cover, metadata, characters, shots } = req.body;
+        const updateData = {};
+
+        if (title !== undefined) updateData.title = title;
+        if (style !== undefined) updateData.style = style;
+        if (ratio !== undefined) updateData.ratio = ratio;
+        if (cover !== undefined) updateData.cover = cover;
+        if (metadata !== undefined) updateData.metadata = metadata;
+        if (characters !== undefined) updateData.characters = characters;
+
+        const updatedProject = await prisma.$transaction(async (tx) => {
+            let projectResult = project;
+            if (Object.keys(updateData).length > 0) {
+                projectResult = await tx.project.update({
+                    where: { id },
+                    data: updateData
+                });
+            }
+
+            if (Array.isArray(shots)) {
+                await tx.shot.deleteMany({ where: { projectId: id } });
+                if (shots.length > 0) {
+                    await tx.shot.createMany({
+                        data: shots.map((shot, index) => ({
+                            projectId: id,
+                            order: shot.order ?? (index + 1),
+                            title: shot.title || '',
+                            camera: shot.camera || '',
+                            duration: shot.duration || '3s',
+                            payload: shot.payload || {}
+                        }))
+                    });
+                }
+            }
+
+            return tx.project.findUnique({
+                where: { id },
+                include: { shots: true, author: true }
+            });
+        });
+
+        const formattedProject = {
+            ...updatedProject,
+            createAt: toTaipeiTZ(updatedProject.createAt),
+            updatedAt: toTaipeiTZ(updatedProject.updatedAt),
+            shots: (updatedProject.shots || []).map(s => ({
+                ...s,
+                createAt: toTaipeiTZ(s.createAt),
+                updateAt: toTaipeiTZ(s.updateAt)
+            })),
+            author: updatedProject.author ? {
+                ...updatedProject.author,
+                createAt: toTaipeiTZ(updatedProject.author.createAt)
+            } : null
+        };
+
+        res.json({ message: '專案更新成功', project: formattedProject });
+    } catch (error) {
+        console.error('Update Project Error:', error);
+        res.status(500).json({ error: '更新專案失敗' });
+    }
+});
+
 // GET single project (with shots and metadata)
 app.get('/api/projects/:id', async (req, res) => {
     try {
