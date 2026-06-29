@@ -15,6 +15,8 @@
   let cacheProjectsList = null;
   const cacheProjectDetails = {};
   const pendingDeletions = {};
+  const recentlyDeleted = new Set();
+  const recentlyRestored = new Set();
   let activeDisplayProjectsFn = null;
   let activeDisplayHistoryFn = null;
 
@@ -28,6 +30,8 @@
       clearTimeout(pendingDeletions[key].transitionTimeout);
       delete pendingDeletions[key];
     }
+    recentlyDeleted.clear();
+    recentlyRestored.clear();
     console.log("🧹 SPA client-side API cache cleared.");
   };
 
@@ -141,7 +145,29 @@
         if (!res.ok) return [];
 
         const data = await res.json();
-        return data.projects || [];
+        const projects = data.projects || [];
+
+        // Apply recent client-side state adjustments
+        projects.forEach(p => {
+          if (recentlyDeleted.has(p.id)) {
+            p.is_deleted = true;
+          }
+          if (recentlyRestored.has(p.id)) {
+            p.is_deleted = false;
+          }
+        });
+
+        // Clean up sets if the server state has caught up
+        projects.forEach(p => {
+          if (p.is_deleted && recentlyDeleted.has(p.id)) {
+            recentlyDeleted.delete(p.id);
+          }
+          if (!p.is_deleted && recentlyRestored.has(p.id)) {
+            recentlyRestored.delete(p.id);
+          }
+        });
+
+        return projects;
       } catch (e) {
         if (e.name === 'AbortError') return [];
         return [];
@@ -334,6 +360,8 @@
         });
         if (res.ok) {
           p.is_deleted = true;
+          recentlyDeleted.add(p.id);
+          recentlyRestored.delete(p.id);
           const updated = await spaAuth.fetchProjects();
           cacheProjectsList = updated;
           // Show Deleted notification
@@ -371,10 +399,13 @@
   }
 
   async function restoreProject(p, card, refreshCallback) {
-    if (!confirm('確定要還原此專案嗎？')) return;
+    const isConfirmed = await confirm('是否還原此專案？', ``, 'default', '還原', null);
+    if (!isConfirmed) return;
 
     // Optimistically update the status in local representation
     p.is_deleted = false;
+    recentlyRestored.add(p.id);
+    recentlyDeleted.delete(p.id);
     refreshCallback();
 
     // Show restored toast notification
@@ -395,6 +426,8 @@
     } catch (err) {
       console.error('Failed to restore project on server', err);
       p.is_deleted = true;
+      recentlyRestored.delete(p.id);
+      recentlyDeleted.add(p.id);
       refreshCallback();
       alert('還原失敗，伺服器出錯');
     }
@@ -1638,6 +1671,8 @@
         }).catch(err => console.error('Immediate delete failed on navigate', err));
         
         item.project.is_deleted = true;
+        recentlyDeleted.add(id);
+        recentlyRestored.delete(id);
         delete pendingDeletions[id];
       }
     }

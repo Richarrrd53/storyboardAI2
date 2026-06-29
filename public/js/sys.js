@@ -141,7 +141,7 @@ function confirm(message, description, type = 'default', btnText, projectEl) {
             'danger': "#6f1d1b",
             'success': "#52c41a",
             'warning': "#faad14",
-            'default': "var(--test-dark)"
+            'default': "var(--text-dark)"
         }
 
         const btn2 = document.createElement("button");
