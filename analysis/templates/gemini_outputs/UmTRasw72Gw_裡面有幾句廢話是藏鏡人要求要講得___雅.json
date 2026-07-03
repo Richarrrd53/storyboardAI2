@@ -1,0 +1,182 @@
+{
+"id": "UmTRasw72Gw",
+"name": "Julia 教你煮 - 雅方羊肉爐正確吃法教學",
+"category": "product",
+"tags": [
+"#雅方羊肉爐",
+"#美食教學",
+"#開箱",
+"#Julia",
+"#羊肉爐"
+],
+"description": "Julia 針對網友反應羊肉爐太鹹的問題進行澄清，並親自示範正確的烹飪步驟與配料建議。",
+"narrative": {
+"type": "situational",
+"structure": "起：拋出太鹹負評鉤子；承：示範加水與選鍋步驟；轉：加入火鍋料與幽默互動；合：試吃好評並呼籲留言。",
+"tone": "humor",
+"summary": "透過解決消費者痛點（太鹹）來展示產品正確煮法，並結合幽默對話增加社群互動性。"
+},
+"hook": {
+"type": "conflict",
+"position": "start",
+"description": "正面回應網友對產品「太鹹」的負面反饋，引發觀眾好奇。"
+},
+"marketing": {
+"isImplicit": false,
+"exposureType": "product",
+"brandRole": "active",
+"integrationMethod": "plot",
+"revealTiming": "early",
+"persuasionStyle": "subtle",
+"targetEmotion": [
+"trust",
+"curiosity",
+"relatability"
+]
+},
+"structure": [
+{
+"shot": 1,
+"duration": "2s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "Julia 拿著羊肉爐包裝，神情嚴肅地對鏡頭說話。",
+"emotion": "serious",
+"purpose": "拋出核心問題點吸引注意力。"
+},
+{
+"shot": 2,
+"duration": "2s",
+"camera": "static",
+"angle": "eye-level",
+"action": "畫面出現「要、加、水」巨大動態文字。",
+"emotion": "shock",
+"purpose": "強化訊息傳遞，建立強烈視覺記憶。"
+},
+{
+"shot": 3,
+"duration": "3s",
+"camera": "wide",
+"angle": "eye-level",
+"action": "Julia 展示使用的不鏽鋼大鍋，解釋鍋具大小需求。",
+"emotion": "casual",
+"purpose": "基礎工具準備教學。"
+},
+{
+"shot": 4,
+"duration": "3s",
+"camera": "static",
+"angle": "eye-level",
+"action": "展示鍋內加入水與羊肉湯底的狀態。",
+"emotion": "neutral",
+"purpose": "操作步驟具體化。"
+},
+{
+"shot": 5,
+"duration": "2s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "Julia 快速碎念「這找我沒有用」，展現冷面幽默。",
+"emotion": "humor",
+"purpose": "塑造人設並調節影片節奏。"
+},
+{
+"shot": 6,
+"duration": "4s",
+"camera": "handheld",
+"angle": "high-angle",
+"action": "將凍豆腐等火鍋料放入滾燙的湯底中。",
+"emotion": "anticipation",
+"purpose": "展示產品豐富度與吃法。"
+},
+{
+"shot": 7,
+"duration": "3s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "Julia 拿著豆瓣醬包，對著湯匙吹氣試喝。",
+"emotion": "curiosity",
+"purpose": "食欲感呈現，引發味覺聯想。"
+},
+{
+"shot": 8,
+"duration": "3s",
+"camera": "static",
+"angle": "eye-level",
+"action": "Julia 比出大拇指點讚，畫面加上「一定是最大拇指」標題。",
+"emotion": "trust",
+"purpose": "產品品質肯定與最終背書。"
+},
+{
+"shot": 9,
+"duration": "2s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "Julia 面對鏡頭結尾，要求觀眾有問題留言。",
+"emotion": "relatability",
+"purpose": "社群互動引導 (CTA)。"
+}
+],
+"visualFlow": {
+"pace": "medium",
+"rhythmPattern": "快切文字與實操畫面交替",
+"transitionStyle": "cut"
+},
+"promptTemplate": {
+"base": "Influencer style short video, commercial lighting, clean kitchen setting, vivid product packaging, cinematic 4k.",
+"perShot": [
+"{character} holds {product} with a serious {emotion} on face in {scene}, eye-level close-up, {style}.",
+"Bold typography 'ADD WATER' flashes on screen with {style} motion graphics.",
+"{character} showing a large metal pot in {scene}, explaining size, {style}.",
+"View of {product} soup boiling in a pot with water in {scene}, {style}.",
+"{character} looking into camera with a sarcastic {emotion}, {style}.",
+"Handheld shot of adding ingredients into {product} in the pot, {style}.",
+"{character} tasting {product} sauce with a {emotion} expression, {style}.",
+"{character} gives a thumbs-up next to {product} with 'Best' text overlay, {style}.",
+"{character} talking directly to camera in {scene}, inviting comments with {emotion} tone, {style}."
+]
+},
+"variables": [
+"character",
+"scene",
+"emotion",
+"style",
+"product"
+],
+"controls": {
+"pace": [
+"medium"
+],
+"cameraIntensity": [
+"medium"
+],
+"emotionIntensity": [
+"high"
+]
+},
+"useCase": "品牌公關澄清、產品使用教學、電商引流",
+"platform": [
+"tiktok",
+"reels",
+"shorts"
+],
+"shotsCount": 9,
+"source": {
+"videoId": "UmTRasw72Gw",
+"title": "Julia 教你煮：雅方羊肉爐正確煮法",
+"channel": "雅方國際企業",
+"views": 0
+},
+"analysis": {
+"whyItWorks": "正面回應負評轉化為教學機會，Julia 的幽默人設降低了廣告感，有效提升信任度。",
+"targetAudience": "常吃冷凍食品的家庭客、對負評持觀望態度的潛在顧客、年輕社群用戶。",
+"replicableElements": [
+"回應負評開場",
+"快節奏文字字卡",
+"冷面幽默人設",
+"最後大拇指認證視覺"
+]
+},
+"confidence": 0.95,
+"version": "2.0"
+}

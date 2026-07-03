@@ -1,0 +1,164 @@
+{
+"videoId": "bypM6dCvLlI",
+"metadata": {
+"category": "twist",
+"tone": "humorous",
+"shotsCount": 10,
+"confidence": 0.95
+},
+"structure": [
+{
+"shot": 1,
+"phase": "intro",
+"narrative": "situational",
+"timestamp": "00:00"
+},
+{
+"shot": 2,
+"phase": "buildup",
+"narrative": "situational",
+"timestamp": "00:04"
+},
+{
+"shot": 3,
+"phase": "transition",
+"narrative": "situational",
+"timestamp": "00:07"
+},
+{
+"shot": 4,
+"phase": "climax",
+"narrative": "situational",
+"timestamp": "00:10"
+},
+{
+"shot": 5,
+"phase": "climax",
+"narrative": "situational",
+"timestamp": "00:13"
+},
+{
+"shot": 6,
+"phase": "delivery",
+"narrative": "montage",
+"timestamp": "00:28"
+},
+{
+"shot": 7,
+"phase": "delivery",
+"narrative": "montage",
+"timestamp": "00:30"
+},
+{
+"shot": 8,
+"phase": "delivery",
+"narrative": "montage",
+"timestamp": "00:40"
+},
+{
+"shot": 9,
+"phase": "delivery",
+"narrative": "montage",
+"timestamp": "00:45"
+},
+{
+"shot": 10,
+"phase": "outro",
+"narrative": "situational",
+"timestamp": "00:58"
+}
+],
+"perShot": [
+{
+"shotIdx": 1,
+"camera": "static",
+"angle": "eye-level",
+"duration": 2
+},
+{
+"shotIdx": 2,
+"camera": "close-up",
+"angle": "eye-level",
+"duration": 2
+},
+{
+"shotIdx": 3,
+"camera": "tracking",
+"angle": "eye-level",
+"duration": 3
+},
+{
+"shotIdx": 4,
+"camera": "static",
+"angle": "eye-level",
+"duration": 3
+},
+{
+"shotIdx": 5,
+"camera": "static",
+"angle": "eye-level",
+"duration": 14
+},
+{
+"shotIdx": 6,
+"camera": "handheld",
+"angle": "high-angle",
+"duration": 2
+},
+{
+"shotIdx": 7,
+"camera": "static",
+"angle": "eye-level",
+"duration": 10
+},
+{
+"shotIdx": 8,
+"camera": "close-up",
+"angle": "high-angle",
+"duration": 4
+},
+{
+"shotIdx": 9,
+"camera": "wide",
+"angle": "eye-level",
+"duration": 12
+},
+{
+"shotIdx": 10,
+"camera": "static",
+"angle": "eye-level",
+"duration": 2
+}
+],
+"marketing": {
+"hook": "當公司沒大人時的情境共鳴與老闆扣薪的轉折",
+"isImplicit": false,
+"brandRole": "雅方 (Yaa Fang)",
+"exposureType": "direct"
+},
+"promptTemplate": {
+"perShot": [
+"{character_B} standing at the door of {setting_A} giving instructions.",
+"Close-up of {character_A} with {visual_effect_evil} and mischievous expression.",
+"Tracking shot of {character_A} walking out of {setting_A} with joy.",
+"Static shot of {character_A} looking at phone with {emotion_shocked}.",
+"Overlay of {character_B} with {visual_effect_boss} appearing next to {character_A}.",
+"Handheld high-angle sweep of {product_items} inside {setting_B}.",
+"Static shot of {character_A} presenting {product_items} in {setting_B}.",
+"Close-up high-angle of {character_A} hands picking up {product_items}.",
+"Wide shot of {character_A} showing {product_items} and gift bags.",
+"Static shot of {character_A} pointing to CTA text in {style}."
+],
+"variables": [
+{ "name": "character_A", "description": "Female office worker in grey hoodie" },
+{ "name": "character_B", "description": "Male boss in formal shirt" },
+{ "name": "setting_A", "description": "Modern office interior" },
+{ "name": "setting_B", "description": "Warehouse with chest freezers" },
+{ "name": "product_items", "description": "Frozen soup packs and bowls" },
+{ "name": "visual_effect_evil", "description": "Cartoon devil horns and laughter effect" },
+{ "name": "visual_effect_boss", "description": "Circular head inset with red glowing eye" },
+{ "name": "emotion_shocked", "description": "Expression of fear or surprise" },
+{ "name": "style", "description": "9:16 vertical short video style" }
+]
+}
+}

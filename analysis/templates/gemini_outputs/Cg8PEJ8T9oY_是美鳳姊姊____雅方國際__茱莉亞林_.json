@@ -1,0 +1,110 @@
+{
+"videoMetadata": {
+"category": "twist",
+"shotsCount": 6,
+"confidenceScore": 0.95
+},
+"marketing": {
+"isImplicit": true,
+"brandRole": "core_story",
+"exposureType": "product_placement",
+"hooks": [
+"Celebrity Misleading Hook",
+"Mystery of Unchanged Packaging",
+"Behind-the-scenes Brand Story"
+]
+},
+"structure": [
+{
+"shotId": 1,
+"phase": "hook",
+"technique": "situational",
+"description": "Misleading opening about a potential secret daughter."
+},
+{
+"shotId": 2,
+"phase": "lead_in",
+"technique": "situational",
+"description": "Group wide shot showing the studio and product display."
+},
+{
+"shotId": 3,
+"phase": "development",
+"technique": "montage",
+"description": "Celebrity sharing the personal story of brand endorsement."
+},
+{
+"shotId": 4,
+"phase": "climax",
+"technique": "situational",
+"description": "Brand owner explains the 22-year packaging logic."
+},
+{
+"shotId": 5,
+"phase": "product_reveal",
+"technique": "close_up",
+"description": "Detailed shot of the long-standing product packaging."
+},
+{
+"shotId": 6,
+"phase": "ending",
+"technique": "situational",
+"description": "Humorous conclusion with studio laughter."
+}
+],
+"promptTemplate": {
+"variables": [
+"character_A",
+"character_B",
+"character_C",
+"scene",
+"product",
+"emotion",
+"style"
+],
+"perShot": [
+{
+"shotId": 1,
+"camera": "handheld",
+"angle": "eye-level",
+"duration": "2s",
+"prompt": "Handheld shot of {character_A} and {character_B} in {scene}, expressing {emotion}, {style} style."
+},
+{
+"shotId": 2,
+"camera": "wide",
+"angle": "eye-level",
+"duration": "6s",
+"prompt": "Static wide shot of {character_A}, {character_B}, and {character_C} in {scene} with {product} display, {style} style."
+},
+{
+"shotId": 3,
+"camera": "medium",
+"angle": "eye-level",
+"duration": "8s",
+"prompt": "Medium shot of {character_B} speaking in {scene}, blurred background, showing {emotion}, {style} style."
+},
+{
+"shotId": 4,
+"camera": "medium",
+"angle": "eye-level",
+"duration": "25s",
+"prompt": "Medium shot of {character_C} holding {product} and talking to {character_B} in {scene}, {style} style."
+},
+{
+"shotId": 5,
+"camera": "close-up",
+"angle": "eye-level",
+"duration": "10s",
+"prompt": "Extreme close-up of {product} featuring {character_B} portrait, {style} style."
+},
+{
+"shotId": 6,
+"camera": "handheld",
+"angle": "eye-level",
+"duration": "7s",
+"prompt": "Handheld medium shot of {character_A} and {character_B} laughing in {scene}, {style} style."
+}
+]
+}
+}

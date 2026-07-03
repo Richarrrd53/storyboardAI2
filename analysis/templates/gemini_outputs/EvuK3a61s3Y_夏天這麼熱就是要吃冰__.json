@@ -1,0 +1,174 @@
+{
+"videoMetadata": {
+"category": "product",
+"tone": "energetic",
+"shotsCount": 11
+},
+"structure": [
+{
+"shot": 1,
+"phase": "hook",
+"narrative": "montage",
+"duration": 1.5
+},
+{
+"shot": 2,
+"phase": "story",
+"narrative": "situational",
+"duration": 2.0
+},
+{
+"shot": 3,
+"phase": "story",
+"narrative": "situational",
+"duration": 3.0
+},
+{
+"shot": 4,
+"phase": "story",
+"narrative": "montage",
+"duration": 2.0
+},
+{
+"shot": 5,
+"phase": "story",
+"narrative": "situational",
+"duration": 4.0
+},
+{
+"shot": 6,
+"phase": "story",
+"narrative": "situational",
+"duration": 3.0
+},
+{
+"shot": 7,
+"phase": "twist",
+"narrative": "situational",
+"duration": 5.0
+},
+{
+"shot": 8,
+"phase": "product",
+"narrative": "montage",
+"duration": 4.0
+},
+{
+"shot": 9,
+"phase": "emotion",
+"narrative": "situational",
+"duration": 3.0
+},
+{
+"shot": 10,
+"phase": "product",
+"narrative": "situational",
+"duration": 5.0
+},
+{
+"shot": 11,
+"phase": "product",
+"narrative": "situational",
+"duration": 5.0
+}
+],
+"perShot": [
+{
+"shot": 1,
+"camera": "close-up",
+"angle": "eye-level",
+"visual": "A female operating {liquid_nitrogen_vapor} in a lab setting, mysterious atmosphere."
+},
+{
+"shot": 2,
+"camera": "wide",
+"angle": "low-angle",
+"visual": "Showing the large scale of {Setting_Factory} with high-tech machinery."
+},
+{
+"shot": 3,
+"camera": "medium",
+"angle": "eye-level",
+"visual": "{character} explaining the factory costs with hand gestures."
+},
+{
+"shot": 4,
+"camera": "tracking",
+"angle": "high-angle",
+"visual": "Conveyor belt moving rows of {Product_Feature} in the factory."
+},
+{
+"shot": 5,
+"camera": "handheld",
+"angle": "eye-level",
+"visual": "Walking through the factory, {character} discussing local market habits."
+},
+{
+"shot": 6,
+"camera": "tracking",
+"angle": "eye-level",
+"visual": "Pointing at the automated packaging process of the ice cream."
+},
+{
+"shot": 7,
+"camera": "handheld",
+"angle": "eye-level",
+"visual": "{character} performing a demonstration with {liquid_nitrogen_vapor} to create a bar."
+},
+{
+"shot": 8,
+"camera": "close-up",
+"angle": "high-angle",
+"visual": "Detailed process of dipping {Product_Feature} into sauce and flash freezing."
+},
+{
+"shot": 9,
+"camera": "medium",
+"angle": "eye-level",
+"visual": "{character} tasting the finished {Product_Feature} with {emotion} expression."
+},
+{
+"shot": 10,
+"camera": "handheld",
+"angle": "eye-level",
+"visual": "Scene transitions to {Setting_Retail}, finding empty shelves of the product."
+},
+{
+"shot": 11,
+"camera": "close-up",
+"angle": "eye-level",
+"visual": "Holding the brand box, discussing heritage and quality with {style} style."
+}
+],
+"marketing": {
+"isImplicit": false,
+"brandRole": "雅方 (Yafang)",
+"exposureType": "direct",
+"hook": "Liquid nitrogen 'Breaking Bad' style mystery opening.",
+"cta": "Available at major retailers like PX Mart."
+},
+"promptTemplate": {
+"perShot": [
+"{character} is in {Setting_Factory} using {liquid_nitrogen_vapor}, {style}.",
+"Wide view of {Setting_Factory} showing automated lines.",
+"{character} explains production in {Setting_Factory}, {emotion}.",
+"Rows of {Product_Feature} on a conveyor belt.",
+"{character} walking and talking in {Setting_Factory}.",
+"Focus on the packaging area of {Setting_Factory}.",
+"{character} making {Product_Feature} manually with {liquid_nitrogen_vapor}.",
+"Close-up of {Product_Feature} being dipped in sauce.",
+"{character} eating {Product_Feature} with {emotion}.",
+"Checking the freezer in {Setting_Retail}.",
+"{character} presenting the branded box of {Product_Feature}."
+],
+"variables": [
+"character",
+"Setting_Factory",
+"Setting_Retail",
+"Product_Feature",
+"liquid_nitrogen_vapor",
+"emotion",
+"style"
+]
+}
+}

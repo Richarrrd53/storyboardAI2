@@ -1,0 +1,197 @@
+{
+"id": "shzq6YoW0q8",
+"name": "劇情純屬虛構而已_雅方國際__茱莉亞林",
+"category": "story",
+"tags": [
+"#職場",
+"#00後主管",
+"#雅方",
+"#幽默",
+"#情境劇"
+],
+"description": "透過00後主管與下屬的日常互動，展現其獨特的職場風格與極高的情緒價值，並巧妙置入雅方冰品。",
+"narrative": {
+"type": "situational",
+"structure": "起：主管急忙進公司；承：展現主管特權與吃冰日常；轉：員工出錯打翻樣品；合：主管高情商化解危機並大讚00後主管。",
+"tone": "humor",
+"summary": "描述一位性格特立獨行的00後主管，不但在公司帶領下屬吃冰、幫忙擋會議，甚至在員工闖禍時也能情緒穩定地以反向思維解決問題。"
+},
+"hook": {
+"type": "curiosity",
+"position": "start",
+"description": "快節奏跑步入場搭配「跑得亂七八糟的是我的00後主管」反差設定。"
+},
+"marketing": {
+"isImplicit": true,
+"exposureType": "product",
+"brandRole": "active",
+"integrationMethod": "plot",
+"revealTiming": "early",
+"persuasionStyle": "subtle",
+"targetEmotion": [
+"relatability",
+"curiosity",
+"trust"
+]
+},
+"structure": [
+{
+"shot": 1,
+"duration": "2s",
+"camera": "tracking",
+"angle": "eye-level",
+"action": "{character} 快速跑過大門口進入公司",
+"emotion": "hurried",
+"purpose": "建立急迫感與引入主角"
+},
+{
+"shot": 2,
+"duration": "3s",
+"camera": "handheld",
+"angle": "eye-level",
+"action": "鏡頭跟隨 {character} 進入室內，旁白介紹角色",
+"emotion": "casual",
+"purpose": "角色定位與背景說明"
+},
+{
+"shot": 3,
+"duration": "2s",
+"camera": "close-up",
+"angle": "low-angle",
+"action": "{character} 從冰櫃取出 {product}",
+"emotion": "joy",
+"purpose": "產品首次曝光與性格展示"
+},
+{
+"shot": 4,
+"duration": "2s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "{character} 與員工在 {scene} 一起吃 {product}",
+"emotion": "relaxed",
+"purpose": "強化品牌與輕鬆氛圍的連結"
+},
+{
+"shot": 5,
+"duration": "3s",
+"camera": "static",
+"angle": "eye-level",
+"action": "第三方主管在 {scene} 訓斥員工",
+"emotion": "tense",
+"purpose": "創造劇情衝突"
+},
+{
+"shot": 6,
+"duration": "3s",
+"camera": "tracking",
+"angle": "eye-level",
+"action": "{character} 出現並將員工帶離現場",
+"emotion": "cool",
+"purpose": "展現主管保護力與角色魅力"
+},
+{
+"shot": 7,
+"duration": "2s",
+"camera": "static",
+"angle": "high-angle",
+"action": "桌上的實驗液體被打翻，滿地狼藉",
+"emotion": "shock",
+"purpose": "劇情轉折與危機發生"
+},
+{
+"shot": 8,
+"duration": "4s",
+"camera": "wide",
+"angle": "eye-level",
+"action": "{character} 走近看著打翻的液體，員工一臉驚恐",
+"emotion": "nervous",
+"purpose": "對比主管與員工的情緒反應"
+},
+{
+"shot": 9,
+"duration": "4s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "{character} 淡定分析狀況並給出正面解讀",
+"emotion": "calm",
+"purpose": "核心價值輸出，體現情緒管理"
+},
+{
+"shot": 10,
+"duration": "2s",
+"camera": "wide",
+"angle": "eye-level",
+"action": "{character} 瀟灑離開，畫面出現讚賞字樣",
+"emotion": "admiring",
+"purpose": "結尾昇華與品牌正面聯想"
+}
+],
+"visualFlow": {
+"pace": "medium",
+"rhythmPattern": "快節奏開場後轉入日常情境，最後以慢節奏的情緒價值對話收尾",
+"transitionStyle": "cut"
+},
+"promptTemplate": {
+"base": "Cinematic short video style, {style}, bright office lighting, high quality.",
+"perShot": [
+"{character} running fast towards camera in {scene}, {style}.",
+"Handheld POV following {character} into {scene}, {style}.",
+"Extreme close-up of {character} picking up {product} from freezer, {style}.",
+"Close-up of {character} eating {product} in {scene}, {emotion} expression, {style}.",
+"Wide shot of a professional office setting {scene}, {style}.",
+"{character} leading another person away in {scene}, {style}.",
+"Top-down view of spilled liquid on a metal table in {scene}, {style}.",
+"Wide shot of {character} looking at a mess in {scene}, {style}.",
+"Close-up portrait of {character} with a {emotion} and wise look, {style}.",
+"{character} walking away confidently in {scene}, {style}."
+]
+},
+"variables": [
+"character",
+"scene",
+"emotion",
+"style",
+"product"
+],
+"controls": {
+"pace": [
+"fast",
+"medium",
+"slow"
+],
+"cameraIntensity": [
+"low",
+"medium",
+"high"
+],
+"emotionIntensity": [
+"low",
+"medium",
+"high"
+]
+},
+"useCase": "品牌形象短片、職場共鳴內容",
+"platform": [
+"tiktok",
+"reels",
+"shorts"
+],
+"shotsCount": 10,
+"source": {
+"videoId": "shzq6YoW0q8",
+"title": "劇情純屬虛構而已_雅方國際__茱莉亞林",
+"channel": "雅方國際",
+"views": 0
+},
+"analysis": {
+"whyItWorks": "利用世代價值觀差異（00後整頓職場）引發熱議，並將產品作為情緒舒壓的象徵。",
+"targetAudience": "上班族、年輕世代、品牌既有客戶",
+"replicableElements": [
+"反差的人設標籤",
+"解決痛點的爽感劇情",
+"產品與情緒價值的綁定"
+]
+},
+"confidence": 0.95,
+"version": "2.0"
+}

@@ -1,0 +1,137 @@
+{
+"templateName": "Luxury-Contrast Dialogue Viral Template",
+"category": "twist",
+"shotsCount": 6,
+"confidenceScore": 0.95,
+"metadata": {
+"tone": "humorous",
+"pacing": "fast",
+"targetAudience": "social_media_users"
+},
+"marketing": {
+"isImplicit": true,
+"brandRole": "hero",
+"exposureType": "placement",
+"hookType": "monetary_shock"
+},
+"structure": [
+{
+"shotId": 1,
+"segment": "hook",
+"transition": "none"
+},
+{
+"shotId": 2,
+"segment": "story_development",
+"transition": "cut"
+},
+{
+"shotId": 3,
+"segment": "conflict_buildup",
+"transition": "cut"
+},
+{
+"shotId": 4,
+"segment": "climax_setup",
+"transition": "cut"
+},
+{
+"shotId": 5,
+"segment": "twist",
+"transition": "graphic_overlay"
+},
+{
+"shotId": 6,
+"segment": "resolution",
+"transition": "cut"
+}
+],
+"perShot": [
+{
+"shotId": 1,
+"camera": "wide",
+"angle": "eye-level",
+"duration": 5.0,
+"description": "Establish the scene with two characters at a tea table."
+},
+{
+"shotId": 2,
+"camera": "close-up",
+"angle": "eye-level",
+"duration": 10.0,
+"description": "Close reaction of the father figure to the monetary statement."
+},
+{
+"shotId": 3,
+"camera": "wide",
+"angle": "eye-level",
+"duration": 15.0,
+"description": "Mid-shot conversation about the history of the company."
+},
+{
+"shotId": 4,
+"camera": "close-up",
+"angle": "low-angle",
+"duration": 7.0,
+"description": "Detail shot focusing on the luxury product on the wrist."
+},
+{
+"shotId": 5,
+"camera": "close-up",
+"angle": "eye-level",
+"duration": 10.0,
+"description": "The father experiences mental lag with visual effects."
+},
+{
+"shotId": 6,
+"camera": "wide",
+"angle": "eye-level",
+"duration": 12.0,
+"description": "Group laughter and chaotic camera movement to end."
+}
+],
+"promptTemplate": {
+"perShot": [
+"{character_A} and {character_B} sitting at {scene} with {props}, {style} style.",
+"{character_B} showing {emotion} in a {camera} shot, {style} style.",
+"{character_B} gesturing with {props} explaining history in {scene}, {style} style.",
+"A {camera} of {character_A}'s wrist wearing {product}, {style} style.",
+"{character_B} with {emotion} and a loading icon overlay, {style} style.",
+"Handheld shot of {character_A} and {character_B} laughing in {scene}, {style} style."
+],
+"variables": [
+{
+"key": "character_A",
+"description": "Young energetic female wearing branded polo"
+},
+{
+"key": "character_B",
+"description": "Middle-aged businessman with glasses"
+},
+{
+"key": "scene",
+"description": "Office with traditional tea set and business decor"
+},
+{
+"key": "props",
+"description": "Chinese tea set and snacks"
+},
+{
+"key": "product",
+"description": "Luxury silver bracelet"
+},
+{
+"key": "emotion",
+"description": "Shocked, confused, or laughing expression"
+},
+{
+"key": "style",
+"description": "POV handheld smartphone cinematography"
+},
+{
+"key": "camera",
+"description": "Shot type like close-up or wide"
+}
+]
+}
+}

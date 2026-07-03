@@ -82,7 +82,7 @@ function resetNewTemplateModal() {
     if (descInput) descInput.value = '';
 }
 
-function submitNewTemplate() {
+async function submitNewTemplate() {
     const nameInput = document.getElementById('template-name-input');
     const descInput = document.getElementById('template-description-input');
     const urlInput = document.getElementById('video-url-input');
@@ -114,11 +114,69 @@ function submitNewTemplate() {
         }
     }
 
-    const sourceLabel = templateSelectedVideo.type === 'url'
-        ? `影片網址：${templateSelectedVideo.url}`
-        : `影片檔案：${videoFile.name}`;
+    const templateId = 'tpl_' + Math.random().toString(36).substr(2, 9);
+    const payload = {
+        id: templateId,
+        name: templateName,
+        category: 'custom',
+        tags: ['#自訂模板'],
+        description: templateDesc,
+        narrative: {
+            type: 'dialogue',
+            structure: '起承轉合',
+            tone: 'casual',
+            summary: templateDesc
+        },
+        visualFlow: {
+            pace: 'medium',
+            transitionStyle: 'cut'
+        },
+        promptTemplate: {
+            base: 'High-quality video shot, {style} style.',
+            perShot: [
+                '{character} in {scene} with {emotion} expression, {style} style.'
+            ]
+        },
+        variables: ['character', 'scene', 'emotion'],
+        platform: ['shorts'],
+        shotsCount: 1,
+        structure: [
+            {
+                shot: 1,
+                duration: '5s',
+                camera: 'static',
+                angle: 'eye-level',
+                action: '主角在畫面中展示產品',
+                emotion: 'satisfaction',
+                purpose: '產品展示'
+            }
+        ]
+    };
 
-    alert(`已建立模板：${templateName}\n${sourceLabel}\n
-系統會依據影片來源與描述，進行爆點模板建議。`);
-    closeNewTemplateModal();
+    try {
+        const res = await fetch('/api/templates', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+            alert(`已成功建立並儲存模板到資料庫！\n名稱：${templateName}`);
+            closeNewTemplateModal();
+            // Trigger refresh of the SPA template page
+            if (typeof window.location.reload === 'function') {
+                // We are in an iframe, we can re-render via SPA navigate
+                if (window.spaNavigate) {
+                    window.spaNavigate('template', { force: true });
+                } else {
+                    window.location.reload();
+                }
+            }
+        } else {
+            const err = await res.json();
+            alert('儲存模板失敗: ' + (err.error || '未知錯誤'));
+        }
+    } catch (e) {
+        console.error(e);
+        alert('儲存模板失敗: ' + e.message);
+    }
 }

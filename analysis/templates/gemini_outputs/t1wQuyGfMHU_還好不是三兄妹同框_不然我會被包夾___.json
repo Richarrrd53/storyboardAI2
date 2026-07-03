@@ -1,0 +1,192 @@
+{
+"id": "t1wQuyGfMHU",
+"name": "還好不是三兄妹同框_不然我會被包夾",
+"category": "twist",
+"tags": [
+"#辦公室日常",
+"#兄妹",
+"#真心話大挑戰",
+"#反轉"
+],
+"description": "辦公室兄妹檔進行真心話挑戰，輸家需支付十萬罰金，意外揭露多年家族秘密。",
+"narrative": {
+"type": "situational",
+"structure": "起：介紹職位差異；承：設定十萬賭注挑戰；轉：揭露私吞紅包與撞車往事；合：哥哥崩潰，妹妹獲勝逃跑。",
+"tone": "humor",
+"summary": "一場關於職場兄妹地位的真心話對決，最終演變成揭露童年與家庭往事的搞笑爆料大戰。"
+},
+"hook": {
+"type": "conflict",
+"position": "start",
+"description": "以兄妹職位階級差異與高額賭注『十萬塊』作為開場懸念。"
+},
+"marketing": {
+"isImplicit": true,
+"exposureType": "prop",
+"brandRole": "passive",
+"integrationMethod": "background",
+"revealTiming": "early",
+"persuasionStyle": "subtle",
+"targetEmotion": [
+"curiosity",
+"relatability"
+]
+},
+"structure": [
+{
+"shot": 1,
+"duration": "2s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "{character} 坐在會議桌前介紹自己是董事長秘書。",
+"emotion": "casual",
+"purpose": "建立人物背景與初步職位衝突。"
+},
+{
+"shot": 2,
+"duration": "1s",
+"camera": "static",
+"angle": "eye-level",
+"action": "插入「謙虛謙虛」特效字體與圓形縮放效果。",
+"emotion": "humor",
+"purpose": "增加趣味綜藝感。"
+},
+{
+"shot": 3,
+"duration": "3s",
+"camera": "wide",
+"angle": "low-angle",
+"action": "哥哥走進辦公室加入對話，氣勢凌人。",
+"emotion": "suspense",
+"purpose": "引入第二位主角，提升衝突感。"
+},
+{
+"shot": 4,
+"duration": "4s",
+"camera": "handheld",
+"angle": "eye-level",
+"action": "兩人在辦公區對話，約定十萬塊賭注的遊戲規則。",
+"emotion": "curiosity",
+"purpose": "設定高額賭注，鎖定觀眾停留。"
+},
+{
+"shot": 5,
+"duration": "5s",
+"camera": "static",
+"angle": "eye-level",
+"action": "哥哥率先揭露妹妹小時候存錢筒被偷錢的真相。",
+"emotion": "humor",
+"purpose": "第一波爆料，引發第一層轉折。"
+},
+{
+"shot": 6,
+"duration": "6s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "妹妹反擊揭露她私吞了兩份壓歲錢紅包。",
+"emotion": "desire",
+"purpose": "第二波爆料，局勢反轉。"
+},
+{
+"shot": 7,
+"duration": "3s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "哥哥臉部震驚特寫，配上震驚音效。",
+"emotion": "relatability",
+"purpose": "捕捉受害者反應，製造笑點。"
+},
+{
+"shot": 8,
+"duration": "10s",
+"camera": "static",
+"angle": "eye-level",
+"action": "妹妹爆料哥哥曾開爸爸的車撞到麥當勞得來速並隱瞞至今。",
+"emotion": "curiosity",
+"purpose": "終極爆料，引發最高潮反轉。"
+},
+{
+"shot": 9,
+"duration": "2s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "插入爸爸的反應畫面或震驚表情包。",
+"emotion": "trust",
+"purpose": "擴大事件範圍，強化喜劇效果。"
+},
+{
+"shot": 10,
+"duration": "3s",
+"camera": "tracking",
+"angle": "eye-level",
+"action": "哥哥起身追討，妹妹大笑著跑開。",
+"emotion": "humor",
+"purpose": "收尾並留給觀眾回味空間。"
+}
+],
+"visualFlow": {
+"pace": "fast",
+"rhythmPattern": "對話接招，爆料層層遞進，配合快速剪輯。",
+"transitionStyle": "cut"
+},
+"promptTemplate": {
+"base": "Modern office interior, bright lighting, {style} style, focus on characters interactions.",
+"perShot": [
+"{character} female sitting at conference table with {emotion} expression, close-up.",
+"Text overlay animation with {style} visual effects.",
+"{character} male walking through {scene} with {emotion} look, wide angle.",
+"Two people arguing in {scene}, {style} vlog style.",
+"{character} male telling a secret with {emotion} expression.",
+"{character} female smiling confidently, {emotion} intensity high, close-up.",
+"{character} male face with {emotion} shock, visual shock effects.",
+"{character} female talking to camera, {scene} background, explaining {product} context.",
+"Reaction shot of an older man in {scene} with {emotion}.",
+"{character} female running away from {character} male in {scene}, {pace} motion."
+]
+},
+"variables": [
+"character",
+"scene",
+"emotion",
+"style",
+"product",
+"pace"
+],
+"controls": {
+"pace": [
+"fast",
+"medium"
+],
+"cameraIntensity": [
+"medium",
+"high"
+],
+"emotionIntensity": [
+"high"
+]
+},
+"useCase": "職場生活趣事、家庭成員互動、品牌置入情境劇。",
+"platform": [
+"tiktok",
+"reels",
+"shorts"
+],
+"shotsCount": 10,
+"source": {
+"videoId": "t1wQuyGfMHU",
+"title": "還好不是三兄妹同框_不然我會被包夾",
+"channel": "未知",
+"views": 150000
+},
+"analysis": {
+"whyItWorks": "利用真實的兄妹張力與高額賭注創造吸引力，爆料內容具備生活共鳴且有多次反轉。",
+"targetAudience": "上班族、年輕家庭成員、喜愛幽默情境劇的社群用戶。",
+"replicableElements": [
+"高額賭注遊戲設定",
+"親友間的秘密爆料機制",
+"後期綜藝特效字體與音效"
+]
+},
+"confidence": 0.95,
+"version": "2.0"
+}

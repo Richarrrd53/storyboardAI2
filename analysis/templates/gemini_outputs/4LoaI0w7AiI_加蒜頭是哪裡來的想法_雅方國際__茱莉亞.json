@@ -1,187 +1,187 @@
 {
-    "id": "4LoaI0w7AiI",
-    "name": "加蒜頭是哪裡來的想法_雅方國際_茱莉亞",
-    "category": "twist",
-    "tags": [
-        "#美食",
-        "#香菜",
-        "#挑戰",
-        "#雅方",
-        "#惡搞"
-    ],
-    "description": "研發人員挑戰製作香菜大蒜冰棒，並透過猜拳決定誰要吃完這支令人崩潰的冰棒。",
-    "narrative": {
-        "type": "situational",
-        "structure": "起：攝影師拿出香菜挑戰主管；承：加入大蒜並展示製作過程蒙太奇；轉：主管親自試吃並表達強烈心理壓力；合：猜拳決定輸家必須吃完。",
-        "tone": "humor",
-        "summary": "一段展示食品品牌研發活力與幽默感的創意挑戰影片，利用極端食材組合引發好奇與娛樂效果。"
-    },
-    "hook": {
-        "type": "shock",
-        "position": "start",
-        "description": "特製香菜冰棒的標題以及隨即加入大蒜的荒謬提議。"
-    },
-    "marketing": {
-        "isImplicit": true,
-        "exposureType": "logo",
-        "brandRole": "active",
-        "integrationMethod": "plot",
-        "revealTiming": "early",
-        "persuasionStyle": "subtle",
-        "targetEmotion": [
-            "curiosity",
-            "relatability"
-        ]
-    },
-    "structure": [
-        {
-            "shot": 1,
-            "duration": "3s",
-            "camera": "handheld",
-            "angle": "eye-level",
-            "action": "攝影師遞出香菜，主角提出製作方案",
-            "emotion": "neutral",
-            "purpose": "建立故事衝突點"
-        },
-        {
-            "shot": 2,
-            "duration": "1s",
-            "camera": "handheld",
-            "angle": "high-angle",
-            "action": "將大蒜瓣丟入攪拌機",
-            "emotion": "shock",
-            "purpose": "增加戲劇張力"
-        },
-        {
-            "shot": 3,
-            "duration": "2s",
-            "camera": "handheld",
-            "angle": "eye-level",
-            "action": "快速切碎大蒜的動作",
-            "emotion": "busy",
-            "purpose": "展示製作節奏"
-        },
-        {
-            "shot": 4,
-            "duration": "2s",
-            "camera": "static",
-            "angle": "eye-level",
-            "action": "攪拌機運轉，香菜汁變綠",
-            "emotion": "curiosity",
-            "purpose": "視覺進度展示"
-        },
-        {
-            "shot": 5,
-            "duration": "3s",
-            "camera": "tracking",
-            "angle": "eye-level",
-            "action": "在鍋中加入奶粉與糖並攪拌",
-            "emotion": "experimental",
-            "purpose": "展示研發實驗感"
-        },
-        {
-            "shot": 6,
-            "duration": "2s",
-            "camera": "static",
-            "angle": "high-angle",
-            "action": "將綠色液體倒入冰棒模具",
-            "emotion": "anticipation",
-            "purpose": "產品成型展示"
-        },
-        {
-            "shot": 7,
-            "duration": "9s",
-            "camera": "close-up",
-            "angle": "eye-level",
-            "action": "主角試吃冰棒並面露難色，描述口感",
-            "emotion": "distress",
-            "purpose": "傳遞真實反饋與笑點"
-        },
-        {
-            "shot": 8,
-            "duration": "7s",
-            "camera": "tracking",
-            "angle": "eye-level",
-            "action": "主角與攝影師猜拳決定輸贏",
-            "emotion": "tension",
-            "purpose": "製造最終懸念"
-        },
-        {
-            "shot": 9,
-            "duration": "3s",
-            "camera": "wide",
-            "angle": "eye-level",
-            "action": "攝影師吃掉冰棒，主角拍手慶祝",
-            "emotion": "humor",
-            "purpose": "收尾與喜劇反轉"
-        }
-    ],
-    "visualFlow": {
-        "pace": "fast",
-        "rhythmPattern": "前半段快速剪輯動作，後半段留白反應時間",
-        "transitionStyle": "cut"
-    },
-    "promptTemplate": {
-        "base": "Professional short video aesthetic, high saturation, vivid colors, realistic textures, {style}.",
-        "perShot": [
-            "{character} interacting with {product} in {scene}, {emotion} expression, {style}.",
-            "Close-up of garlic being added to a blender in {scene}, {style}.",
-            "Quick cuts of {character} chopping ingredients in {scene}, {style}.",
-            "A blender mixing green liquid in {scene}, professional lighting, {style}.",
-            "Tracking shot of {character} adding powder to a metallic pot in {scene}, {style}.",
-            "Pouring green liquid into a {product} mold, high-angle, {style}.",
-            "Close-up of {character} tasting {product} in {scene} with {emotion}, {style}.",
-            "{character} playing a game in {scene} with high {emotion}, {style}.",
-            "Wide shot of {character} in {scene} celebrating with {emotion}, {style}."
-        ]
-    },
-    "variables": [
-        "character",
-        "scene",
-        "emotion",
-        "style",
-        "product"
-    ],
-    "controls": {
-        "pace": [
-            "fast",
-            "medium",
-            "slow"
-        ],
-        "cameraIntensity": [
-            "low",
-            "medium",
-            "high"
-        ],
-        "emotionIntensity": [
-            "low",
-            "medium",
-            "high"
-        ]
-    },
-    "useCase": "品牌社群媒體趣味內容、食品開發幕後花絮、食材挑戰系列短片",
-    "platform": [
-        "tiktok",
-        "reels",
-        "shorts"
-    ],
-    "shotsCount": 9,
-    "source": {
-        "videoId": "4LoaI0w7AiI",
-        "title": "加蒜頭是哪裡來的想法_雅方國際_茱莉亞",
-        "channel": "雅方國際",
-        "views": 0
-    },
-    "analysis": {
-        "whyItWorks": "利用極端口味（香菜+大蒜）的爭議性引起強烈互動，並透過真誠且幽默的人員互動消解品牌距離感。",
-        "targetAudience": "喜愛美食挑戰、香菜愛好者/嫌惡者、年輕社群用戶",
-        "replicableElements": [
-            "食材獵奇組合",
-            "員工真誠反應",
-            "猜拳勝負機制",
-            "快節奏製作流程"
-        ]
-    },
-    "confidence": 0.95,
-    "version": "2.0"
+"id": "4LoaI0w7AiI",
+"name": "加蒜頭是哪裡來的想法_雅方國際_茱莉亞",
+"category": "twist",
+"tags": [
+"#美食",
+"#香菜",
+"#挑戰",
+"#雅方",
+"#惡搞"
+],
+"description": "研發人員挑戰製作香菜大蒜冰棒，並透過猜拳決定誰要吃完這支令人崩潰的冰棒。",
+"narrative": {
+"type": "situational",
+"structure": "起：攝影師拿出香菜挑戰主管；承：加入大蒜並展示製作過程蒙太奇；轉：主管親自試吃並表達強烈心理壓力；合：猜拳決定輸家必須吃完。",
+"tone": "humor",
+"summary": "一段展示食品品牌研發活力與幽默感的創意挑戰影片，利用極端食材組合引發好奇與娛樂效果。"
+},
+"hook": {
+"type": "shock",
+"position": "start",
+"description": "特製香菜冰棒的標題以及隨即加入大蒜的荒謬提議。"
+},
+"marketing": {
+"isImplicit": true,
+"exposureType": "logo",
+"brandRole": "active",
+"integrationMethod": "plot",
+"revealTiming": "early",
+"persuasionStyle": "subtle",
+"targetEmotion": [
+"curiosity",
+"relatability"
+]
+},
+"structure": [
+{
+"shot": 1,
+"duration": "3s",
+"camera": "handheld",
+"angle": "eye-level",
+"action": "攝影師遞出香菜，主角提出製作方案",
+"emotion": "neutral",
+"purpose": "建立故事衝突點"
+},
+{
+"shot": 2,
+"duration": "1s",
+"camera": "handheld",
+"angle": "high-angle",
+"action": "將大蒜瓣丟入攪拌機",
+"emotion": "shock",
+"purpose": "增加戲劇張力"
+},
+{
+"shot": 3,
+"duration": "2s",
+"camera": "handheld",
+"angle": "eye-level",
+"action": "快速切碎大蒜的動作",
+"emotion": "busy",
+"purpose": "展示製作節奏"
+},
+{
+"shot": 4,
+"duration": "2s",
+"camera": "static",
+"angle": "eye-level",
+"action": "攪拌機運轉，香菜汁變綠",
+"emotion": "curiosity",
+"purpose": "視覺進度展示"
+},
+{
+"shot": 5,
+"duration": "3s",
+"camera": "tracking",
+"angle": "eye-level",
+"action": "在鍋中加入奶粉與糖並攪拌",
+"emotion": "experimental",
+"purpose": "展示研發實驗感"
+},
+{
+"shot": 6,
+"duration": "2s",
+"camera": "static",
+"angle": "high-angle",
+"action": "將綠色液體倒入冰棒模具",
+"emotion": "anticipation",
+"purpose": "產品成型展示"
+},
+{
+"shot": 7,
+"duration": "9s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "主角試吃冰棒並面露難色，描述口感",
+"emotion": "distress",
+"purpose": "傳遞真實反饋與笑點"
+},
+{
+"shot": 8,
+"duration": "7s",
+"camera": "tracking",
+"angle": "eye-level",
+"action": "主角與攝影師猜拳決定輸贏",
+"emotion": "tension",
+"purpose": "製造最終懸念"
+},
+{
+"shot": 9,
+"duration": "3s",
+"camera": "wide",
+"angle": "eye-level",
+"action": "攝影師吃掉冰棒，主角拍手慶祝",
+"emotion": "humor",
+"purpose": "收尾與喜劇反轉"
+}
+],
+"visualFlow": {
+"pace": "fast",
+"rhythmPattern": "前半段快速剪輯動作，後半段留白反應時間",
+"transitionStyle": "cut"
+},
+"promptTemplate": {
+"base": "Professional short video aesthetic, high saturation, vivid colors, realistic textures, {style}.",
+"perShot": [
+"{character} interacting with {product} in {scene}, {emotion} expression, {style}.",
+"Close-up of garlic being added to a blender in {scene}, {style}.",
+"Quick cuts of {character} chopping ingredients in {scene}, {style}.",
+"A blender mixing green liquid in {scene}, professional lighting, {style}.",
+"Tracking shot of {character} adding powder to a metallic pot in {scene}, {style}.",
+"Pouring green liquid into a {product} mold, high-angle, {style}.",
+"Close-up of {character} tasting {product} in {scene} with {emotion}, {style}.",
+"{character} playing a game in {scene} with high {emotion}, {style}.",
+"Wide shot of {character} in {scene} celebrating with {emotion}, {style}."
+]
+},
+"variables": [
+"character",
+"scene",
+"emotion",
+"style",
+"product"
+],
+"controls": {
+"pace": [
+"fast",
+"medium",
+"slow"
+],
+"cameraIntensity": [
+"low",
+"medium",
+"high"
+],
+"emotionIntensity": [
+"low",
+"medium",
+"high"
+]
+},
+"useCase": "品牌社群媒體趣味內容、食品開發幕後花絮、食材挑戰系列短片",
+"platform": [
+"tiktok",
+"reels",
+"shorts"
+],
+"shotsCount": 9,
+"source": {
+"videoId": "4LoaI0w7AiI",
+"title": "加蒜頭是哪裡來的想法_雅方國際_茱莉亞",
+"channel": "雅方國際",
+"views": 0
+},
+"analysis": {
+"whyItWorks": "利用極端口味（香菜+大蒜）的爭議性引起強烈互動，並透過真誠且幽默的人員互動消解品牌距離感。",
+"targetAudience": "喜愛美食挑戰、香菜愛好者/嫌惡者、年輕社群用戶",
+"replicableElements": [
+"食材獵奇組合",
+"員工真誠反應",
+"猜拳勝負機制",
+"快節奏製作流程"
+]
+},
+"confidence": 0.95,
+"version": "2.0"
 }

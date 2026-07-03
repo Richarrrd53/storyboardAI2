@@ -1,0 +1,170 @@
+{
+"id": "xhxE9sk1Ayo",
+"name": "回覆一下少數網友的反應 - 雅方國際",
+"category": "twist",
+"tags": [
+"#雅方羊肉爐",
+"#開箱",
+"#工廠直擊",
+"#闢謠"
+],
+"description": "針對網友質疑羊肉份量過少，親自前往工廠展示生產線並現場開箱驗證。",
+"narrative": {
+"type": "situational",
+"structure": "起：引用負評建立衝突；承：展示工廠標準化流程；轉：現場開箱撥開肉塊展示份量；合：試吃並回擊酸民。",
+"tone": "humor",
+"summary": "以幽默直白的方式回應網友對產品份量的質疑，透過工廠實勘與現場烹煮證實產品真材實料。"
+},
+"hook": {
+"type": "conflict",
+"position": "start",
+"description": "畫面上方疊加網友留言截圖，直接點出「肉很少」的爭議點。"
+},
+"marketing": {
+"isImplicit": false,
+"exposureType": "product",
+"brandRole": "active",
+"integrationMethod": "plot",
+"revealTiming": "early",
+"persuasionStyle": "direct",
+"targetEmotion": [
+"trust",
+"curiosity",
+"relatability"
+]
+},
+"structure": [
+{
+"shot": 1,
+"duration": "3s",
+"camera": "handheld",
+"angle": "eye-level",
+"action": "主角站在工廠門口，前方出現網友批評肉少的截圖",
+"emotion": "helplessness",
+"purpose": "立住衝突點引發好奇"
+},
+{
+"shot": 2,
+"duration": "2s",
+"camera": "tracking",
+"angle": "high-angle",
+"action": "鏡頭跟隨生產線展示肉塊與湯頭充填",
+"emotion": "professional",
+"purpose": "展示自動化生產的公平性"
+},
+{
+"shot": 3,
+"duration": "2s",
+"camera": "static",
+"angle": "eye-level",
+"action": "主角指向快速通過的包裝成品",
+"emotion": "confident",
+"purpose": "強調出貨速度與規模"
+},
+{
+"shot": 4,
+"duration": "2s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "主角拿起一包包裝好的成品",
+"emotion": "anticipation",
+"purpose": "準備進入開箱環節"
+},
+{
+"shot": 5,
+"duration": "4s",
+"camera": "close-up",
+"angle": "high-angle",
+"action": "將內容物倒入鍋中，用湯勺撥開展示大量肉塊",
+"emotion": "shock",
+"purpose": "視覺化呈現真實份量闢謠"
+},
+{
+"shot": 6,
+"duration": "3s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "主角吃下羊肉並露出極度滿足的表情",
+"emotion": "satisfaction",
+"purpose": "透過食慾傳達產品美味"
+},
+{
+"shot": 7,
+"duration": "2s",
+"camera": "handheld",
+"angle": "eye-level",
+"action": "將大塊羊肉夾起靠近鏡頭特寫",
+"emotion": "desire",
+"purpose": "展示細節與吸引力"
+},
+{
+"shot": 8,
+"duration": "2s",
+"camera": "static",
+"angle": "eye-level",
+"action": "主角看向鏡頭對網友喊話，背景為研發室",
+"emotion": "playful",
+"purpose": "呼籲購買並結束影片"
+}
+],
+"visualFlow": {
+"pace": "fast",
+"rhythmPattern": "快節奏剪輯配合音效點",
+"transitionStyle": "cut"
+},
+"promptTemplate": {
+"base": "High quality VLOG style, natural lighting, commercial food photography.",
+"perShot": [
+"{character} stands in {scene} looking at camera with {emotion} expression.",
+"A {scene} showing {product} moving on a conveyor belt, {style}.",
+"{character} points at {product} in the {scene}.",
+"A close-up of {character} holding {product} package.",
+"Pouring {product} into a pot in {scene}, showing many meat chunks, {style}.",
+"{character} eating {product} with {emotion} expression, close-up.",
+"Extreme close-up of {product} being held by a pair of chopsticks.",
+"{character} talking to camera in {scene} with {emotion} expression."
+]
+},
+"variables": [
+"character",
+"scene",
+"product",
+"emotion",
+"style"
+],
+"controls": {
+"pace": [
+"fast"
+],
+"cameraIntensity": [
+"medium"
+],
+"emotionIntensity": [
+"high"
+]
+},
+"useCase": "品牌公關闢謠、產品份量開箱、工廠直擊宣傳",
+"platform": [
+"tiktok",
+"reels",
+"shorts"
+],
+"shotsCount": 8,
+"source": {
+"videoId": "xhxE9sk1Ayo",
+"title": "回覆一下少數網友的反應",
+"channel": "雅方國際",
+"views": 0
+},
+"analysis": {
+"whyItWorks": "利用負評轉化為開場鉤子，並透過第一人稱實測增加真實度，有效解決消費者疑慮。",
+"targetAudience": "家庭煮夫/主婦、愛吃火鍋的年輕人、對產品性價比敏感的消費者",
+"replicableElements": [
+"負評開場法",
+"工廠/後台直擊鏡頭",
+"誇張的情緒反應轉場"
+]
+},
+"confidence": 0.95,
+"version": "2.0"
+}

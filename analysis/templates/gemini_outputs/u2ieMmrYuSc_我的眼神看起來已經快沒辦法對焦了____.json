@@ -1,0 +1,161 @@
+{
+"id": "u2ieMmrYuSc",
+"name": "我的眼神看起來已經快沒辦法對焦了",
+"category": "story",
+"tags": [
+"#藍帶",
+"#開箱",
+"#美食",
+"#雅方",
+"#雪糕"
+],
+"description": "藍帶主廚研發人員展示百萬證書並介紹自家創新研發的優格雪糕。",
+"narrative": {
+"type": "situational",
+"structure": "起：展示百萬藍帶證書引發好奇；承：揭露研發人員身份與考證動機；轉：置入研發產品優格雪糕；合：澄清品牌標籤並提供購買資訊。",
+"tone": "casual",
+"summary": "影片透過展示高價藍帶證書破題，建立專業人設後轉向介紹研發的冰棒產品，成功將專業形象轉化為產品信任感。"
+},
+"hook": {
+"type": "curiosity",
+"position": "start",
+"description": "展示價值一百萬的藍帶廚藝學校證書"
+},
+"marketing": {
+"isImplicit": false,
+"exposureType": "product",
+"brandRole": "active",
+"integrationMethod": "plot",
+"revealTiming": "middle",
+"persuasionStyle": "subtle",
+"targetEmotion": [
+"trust",
+"curiosity",
+"relatability"
+]
+},
+"structure": [
+{
+"shot": 1,
+"duration": "2s",
+"camera": "close-up",
+"angle": "high-angle",
+"action": "{character}展示藍帶證書，鏡頭從證書特寫拉至人臉",
+"emotion": "proud",
+"purpose": "展示高價值物件吸引停留"
+},
+{
+"shot": 2,
+"duration": "3s",
+"camera": "static",
+"angle": "eye-level",
+"action": "{character}戴上廚師帽並穿著制服出鏡",
+"emotion": "professional",
+"purpose": "確立專業身份人設"
+},
+{
+"shot": 3,
+"duration": "4s",
+"camera": "handheld",
+"angle": "eye-level",
+"action": "{character}在{scene}中對談考證書的動機",
+"emotion": "casual",
+"purpose": "建立敘事背景與真實感"
+},
+{
+"shot": 4,
+"duration": "5s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "{character}拿出{product}並展示其包裝",
+"emotion": "confident",
+"purpose": "產品正式登場與置入"
+},
+{
+"shot": 5,
+"duration": "3s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "特寫被咬開的{product}展示內部果醬層次",
+"emotion": "desire",
+"purpose": "強調產品獨特賣點"
+},
+{
+"shot": 6,
+"duration": "4s",
+"camera": "wide",
+"angle": "eye-level",
+"action": "{character}與經典廣告畫面合成並解釋品牌背景",
+"emotion": "humor",
+"purpose": "品牌聯想與認知翻轉"
+},
+{
+"shot": 7,
+"duration": "3s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "{character}對鏡頭總結並告知購買通路",
+"emotion": "friendly",
+"purpose": "導購與行動呼籲"
+}
+],
+"visualFlow": {
+"pace": "medium",
+"rhythmPattern": "對話驅動節奏，關鍵產品點加速特寫",
+"transitionStyle": "cut"
+},
+"promptTemplate": {
+"base": "{style} social media short video, high quality, indoor soft lighting, {character} in {scene}.",
+"perShot": [
+"{character} holding a certificate in {scene}, close-up, {emotion} expression, {style}.",
+"{character} wearing a chef hat, eye-level, {emotion} look, {style}.",
+"{character} talking casually in {scene}, handheld camera, {style}.",
+"{character} presenting {product} to the camera, {emotion} and {style}.",
+"Macro shot of {product} texture with fruit jam inside, high detail, {style}.",
+"{character} in {scene} with commercial footage overlay, {style}.",
+"{character} smiling and talking to camera, close-up, {emotion}, {style}."
+]
+},
+"variables": [
+"character",
+"scene",
+"emotion",
+"style",
+"product"
+],
+"controls": {
+"pace": [
+"medium"
+],
+"cameraIntensity": [
+"medium"
+],
+"emotionIntensity": [
+"medium"
+]
+},
+"useCase": "個人品牌專業背書與產品導購",
+"platform": [
+"tiktok",
+"reels",
+"shorts"
+],
+"shotsCount": 7,
+"source": {
+"videoId": "u2ieMmrYuSc",
+"title": "我的眼神看起來已經快沒辦法對焦了",
+"channel": "Hsuan-Ying Lin",
+"views": 50000
+},
+"analysis": {
+"whyItWorks": "利用百萬學費的「高標記感」與「平價冰棒」形成強烈反差，提升產品專業價值。",
+"targetAudience": "追求性價比、受專業背景吸引、對品牌有既定印象的消費者。",
+"replicableElements": [
+"高價值證照開場",
+"專業制服變裝",
+"品牌反差認知扭轉"
+]
+},
+"confidence": 0.95,
+"version": "2.0"
+}

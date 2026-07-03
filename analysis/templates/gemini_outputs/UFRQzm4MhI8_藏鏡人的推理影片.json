@@ -1,0 +1,161 @@
+{
+"id": "UFRQzm4MhI8",
+"name": "藏鏡人的推理影片：我的二代同事",
+"category": "twist",
+"tags": [
+"#富二代",
+"#職場",
+"#反轉",
+"#幽默",
+"#隱形富豪"
+],
+"description": "描述一位看似平凡的職場同事，實際上是公司董事長千金的趣味反轉故事。",
+"narrative": {
+"type": "situational",
+"structure": "起：名車下車建立富二代懸念；承：展現日常勤奮工作與名牌包反差；轉：同事詢問住家空間與工資來源；合：揭曉爸爸是董事長的真相。",
+"tone": "humor",
+"summary": "旁白介紹一位家境優渥卻極度低調勤奮的同事，最後透過對話揭露該同事其實是自家公司接班人的反轉真相。"
+},
+"hook": {
+"type": "curiosity",
+"position": "start",
+"description": "我有個同事是二代，他家一天的收入比我年薪還多。"
+},
+"marketing": {
+"isImplicit": true,
+"exposureType": "prop",
+"brandRole": "passive",
+"integrationMethod": "plot",
+"revealTiming": "middle",
+"persuasionStyle": "subtle",
+"targetEmotion": [
+"curiosity",
+"relatability"
+]
+},
+"structure": [
+{
+"shot": 1,
+"duration": "1s",
+"camera": "tracking",
+"angle": "low-angle",
+"action": "{character} steps out of a luxury black off-road vehicle.",
+"emotion": "mysterious",
+"purpose": "Establish the wealthy background of the character."
+},
+{
+"shot": 2,
+"duration": "1s",
+"camera": "static",
+"angle": "eye-level",
+"action": "A fast montage of the automated production line in {scene}.",
+"emotion": "professional",
+"purpose": "Show the scale of the family business."
+},
+{
+"shot": 3,
+"duration": "1s",
+"camera": "handheld",
+"angle": "high-angle",
+"action": "{character} working at a messy desk with documents.",
+"emotion": "focused",
+"purpose": "Contrast wealth with hardworking daily life."
+},
+{
+"shot": 4,
+"duration": "1s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "{character} answering the phone in the office.",
+"emotion": "casual",
+"purpose": "Reinforce the low-profile employee persona."
+},
+{
+"shot": 5,
+"duration": "3s",
+"camera": "static",
+"angle": "eye-level",
+"action": "Colleague points at {product} and mentions its high price.",
+"emotion": "surprised",
+"purpose": "Introduce material evidence of wealth."
+},
+{
+"shot": 6,
+"duration": "5s",
+"camera": "static",
+"angle": "eye-level",
+"action": "{character} lying on the desk talking about living with family in {scene}.",
+"emotion": "calm",
+"purpose": "Build up to the final reveal through dialogue."
+},
+{
+"shot": 7,
+"duration": "10s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "{character} reveals that her father is the chairman with {emotion}.",
+"emotion": "smug",
+"purpose": "Deliver the final twist and punchline."
+}
+],
+"visualFlow": {
+"pace": "fast",
+"rhythmPattern": "Rapid cuts in the beginning, slowing down for dialogue at the end.",
+"transitionStyle": "cut"
+},
+"promptTemplate": {
+"base": "High-quality short video style, realistic lighting, vibrant colors, {style}.",
+"perShot": [
+"{character} getting out of a black SUV in {scene}, {style}.",
+"Wide shot of an industrial {scene} with machinery, {style}.",
+"{character} busy working at a desk in {scene} with {emotion} expression.",
+"Close-up of {character} using a phone in {scene}, {style}.",
+"{character} showing {product} to a colleague in {scene}.",
+"{character} resting on a desk in {scene} with a {emotion} look.",
+"Extreme close-up of {character} smiling with {emotion} in {scene}."
+]
+},
+"variables": [
+"character",
+"scene",
+"emotion",
+"style",
+"product"
+],
+"controls": {
+"pace": [
+"fast",
+"medium"
+],
+"cameraIntensity": [
+"medium"
+],
+"emotionIntensity": [
+"high"
+]
+},
+"useCase": "Workplace humor and brand storytelling for high-end products or corporate image.",
+"platform": [
+"tiktok",
+"reels",
+"shorts"
+],
+"shotsCount": 7,
+"source": {
+"videoId": "UFRQzm4MhI8",
+"title": "我的同事是二代",
+"channel": "藏鏡人",
+"views": 500000
+},
+"analysis": {
+"whyItWorks": "It uses the 'undercover boss' trope combined with a relatable workplace setting and a sharp comedic twist.",
+"targetAudience": "Office workers, young adults, people interested in luxury lifestyles.",
+"replicableElements": [
+"The 3-second hook starting with wealth contrast",
+"Dialogue-driven reveal",
+"Use of high-end props to hint at identity"
+]
+},
+"confidence": 0.95,
+"version": "2.0"
+}

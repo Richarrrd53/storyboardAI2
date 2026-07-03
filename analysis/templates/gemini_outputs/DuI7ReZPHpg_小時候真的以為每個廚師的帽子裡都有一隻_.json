@@ -1,0 +1,84 @@
+{
+"videoMetadata": {
+"category": "twist",
+"tone": "humorous",
+"shotsCount": 5
+},
+"marketing": {
+"isImplicit": false,
+"brandRole": "influencer_recommendation",
+"exposureType": "direct_display"
+},
+"structure": [
+{
+"phase": "hook",
+"narrative": "situational",
+"timestamp": "00:00-00:05"
+},
+{
+"phase": "development",
+"narrative": "situational",
+"timestamp": "00:06-00:23"
+},
+{
+"phase": "climax",
+"narrative": "montage",
+"timestamp": "00:24-00:40"
+},
+{
+"phase": "climax",
+"narrative": "situational",
+"timestamp": "00:41-00:44"
+},
+{
+"phase": "ending",
+"narrative": "situational",
+"timestamp": "00:45-00:51"
+}
+],
+"perShot": [
+{
+"shotId": 1,
+"camera": "close-up",
+"angle": "eye-level",
+"duration": 5.0,
+"promptTemplate": "A comparison between {character} and a cartoon character on a phone screen, {style}."
+},
+{
+"shotId": 2,
+"camera": "static",
+"angle": "eye-level",
+"duration": 18.0,
+"promptTemplate": "{character} removes a hat to reveal {prop} on head, engaging in a funny dialogue, {emotion}."
+},
+{
+"shotId": 3,
+"camera": "handheld",
+"angle": "eye-level",
+"duration": 17.0,
+"promptTemplate": "{character} introduces {product} in {scene}, fast-paced movement, {style}."
+},
+{
+"shotId": 4,
+"camera": "close-up",
+"angle": "eye-level",
+"duration": 4.0,
+"promptTemplate": "A joke about the boss also having {prop} on head, {emotion}."
+},
+{
+"shotId": 5,
+"camera": "static",
+"angle": "eye-level",
+"duration": 7.0,
+"promptTemplate": "{character} standing in {scene} giving a thumbs up then laughing awkwardly, {emotion}."
+}
+],
+"variables": {
+"character": "A young female university student in a chef uniform",
+"prop": "A blue rat plush toy pulling hair strands",
+"product": "Yafang frozen food packages including mutton hotpot",
+"scene": "A professional kitchen or commercial freezer area",
+"emotion": "Humorous and slightly embarrassed expression",
+"style": "Social media vlog style with bright lighting"
+}
+}

@@ -1,0 +1,134 @@
+{
+"metadata": {
+"title": "00後整頓職場系列：雅方羊肉爐篇",
+"version": "1.0",
+"category": "twist",
+"tone": "humorous",
+"shotsCount": 8
+},
+"structure": [
+{
+"phase": "hook",
+"timestamp": "00:00-00:03",
+"description": "00後留學回國秘書開名車上班，建立反差感。"
+},
+{
+"phase": "development",
+"timestamp": "00:03-00:08",
+"description": "秘書提供簡單早餐，董事長感到傻眼。"
+},
+{
+"phase": "development",
+"timestamp": "00:08-00:13",
+"description": "秘書利用職權在實驗室吃冰棒享受特權。"
+},
+{
+"phase": "conflict",
+"timestamp": "00:13-00:17",
+"description": "秘書進入廚房準備午餐，展現生活白痴的一面。"
+},
+{
+"phase": "conflict",
+"timestamp": "00:17-00:20",
+"description": "羊肉爐包裝卡在鍋中，處理過程混亂。"
+},
+{
+"phase": "conflict",
+"timestamp": "00:20-00:26",
+"description": "秘書對廚房設備感到崩潰，並被同事責備。"
+},
+{
+"phase": "climax",
+"timestamp": "00:26-00:36",
+"description": "秘書直接將整鍋未拆袋的羊肉爐交給董事長。"
+},
+{
+"phase": "resolution",
+"timestamp": "00:36-00:38",
+"description": "秘書拿回手機，完成職場整頓情節。"
+}
+],
+"marketing": {
+"hookPoint": "Role Reversal & Luxury Lifestyle",
+"isImplicit": false,
+"brandRole": "core_prop",
+"exposureType": "visual_and_verbal"
+},
+"variables": {
+"character": "A confident young woman with short hair in a brand uniform",
+"boss": "A middle-aged man with glasses in a light blue shirt",
+"scene_car": "Luxury SUV interior, natural daylight",
+"scene_office": "Modern minimalist office and laboratory environment",
+"scene_kitchen": "Industrial or office kitchen setting",
+"product_icecream": "Chocolate coated ice cream bar with branding",
+"product_mutton": "Frozen mutton hot pot bag with brand logo",
+"brand": "Ya Fang logo on uniform and packaging",
+"style": "Realistic lifestyle vlog with comedic subtitles",
+"emotion_secretary": "Arrogant, confident, or confused",
+"emotion_boss": "Helpless and stunned"
+},
+"promptTemplate": {
+"perShot": [
+"{character} getting out of a car at {scene_car} with {product_icecream}, {style}.",
+"{character} placing a simple breakfast for {boss} in {scene_office}, {emotion_boss}.",
+"{character} eating {product_icecream} in the lab while showing off {brand}, {style}.",
+"{character} entering {scene_kitchen} to prepare {product_mutton}, {emotion_secretary}.",
+"Close-up of {product_mutton} stuck in a cooking pot in {scene_kitchen}.",
+"{character} looking frustrated at kitchen appliances with {emotion_secretary} expression.",
+"{character} serving the messy {product_mutton} pot to {boss} in {scene_office}.",
+"Close-up of {boss} reacting with {emotion_boss} as {character} leaves, {style}."
+]
+},
+"technicalSpecs": {
+"perShot": [
+{
+"shotId": 1,
+"camera": "handheld",
+"angle": "eye-level",
+"duration": 3
+},
+{
+"shotId": 2,
+"camera": "static",
+"angle": "eye-level",
+"duration": 5
+},
+{
+"shotId": 3,
+"camera": "handheld",
+"angle": "eye-level",
+"duration": 5
+},
+{
+"shotId": 4,
+"camera": "tracking",
+"angle": "eye-level",
+"duration": 4
+},
+{
+"shotId": 5,
+"camera": "close-up",
+"angle": "high-angle",
+"duration": 3
+},
+{
+"shotId": 6,
+"camera": "handheld",
+"angle": "eye-level",
+"duration": 6
+},
+{
+"shotId": 7,
+"camera": "static",
+"angle": "eye-level",
+"duration": 10
+},
+{
+"shotId": 8,
+"camera": "close-up",
+"angle": "low-angle",
+"duration": 2
+}
+]
+}
+}

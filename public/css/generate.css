@@ -595,3 +595,70 @@
     transition: all 0.2s;
 }
 .pv-element-chip:hover { background: var(--primary-soft); color: var(--primary); border-color: var(--primary); transform: translateY(-2px); }
+
+/* ── Variable Customization Styles ── */
+#phase-variables {
+    gap: 20px;
+}
+
+.var-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.var-label {
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: var(--text-mid);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.var-label .hint {
+    color: var(--text-light);
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: normal;
+    font-size: 0.75rem;
+}
+
+.var-input {
+    width: 100%;
+    border-radius: var(--radius-sm);
+    border: 2px solid var(--card-border);
+    background: var(--white);
+    padding: 12px 16px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-dark);
+    outline: none;
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.var-input:focus {
+    border-color: var(--primary);
+    background: var(--primary-soft);
+    box-shadow: 0 4px 12px rgba(220, 156, 71, 0.1);
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+#variables-form::-webkit-scrollbar {
+    width: 6px;
+}
+#variables-form::-webkit-scrollbar-track {
+    background: transparent;
+}
+#variables-form::-webkit-scrollbar-thumb {
+    background: rgba(220, 156, 71, 0.2);
+    border-radius: 3px;
+}
+#variables-form::-webkit-scrollbar-thumb:hover {
+    background: rgba(220, 156, 71, 0.4);
+}

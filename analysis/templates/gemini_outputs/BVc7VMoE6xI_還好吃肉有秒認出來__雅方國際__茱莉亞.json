@@ -1,166 +1,102 @@
 {
-"id": "BVc7VMoE6xI",
-"name": "還好吃肉有秒認出來__雅方國際__茱莉亞",
+"videoMetadata": {
+"title": "雅方忠誠度測試",
 "category": "product",
-"tags": [
-"#羊肉爐",
-"#盲測",
-"#品牌忠誠度",
-"#雅方",
-"#美食實測"
-],
-"description": "透過實驗室盲測挑戰，驗證員工對自家羊肉爐口味與肉質的辨識度。",
-"narrative": {
-"type": "situational",
-"structure": "起：建立挑戰規則與懲罰壓力；承：測試兩款他牌羊肉爐並分析差異；轉：第三款吃到肉質後秒速認出自家品牌；合：成功通過測試並總結產品優勢。",
-"tone": "humor",
-"summary": "主持人戴上口罩進行盲測，在分析三款羊肉爐的過程中，憑藉專業嗅覺與味覺準確辨識出自家品牌，展現產品高辨識度。"
-},
-"hook": {
-"type": "curiosity",
-"position": "start",
-"description": "以『雅方忠誠度測試』與『猜錯有懲罰』作為開場懸念。"
+"tone": "humorous",
+"shotsCount": 6
 },
 "marketing": {
-"isImplicit": true,
-"exposureType": "logo",
-"brandRole": "active",
-"integrationMethod": "plot",
-"revealTiming": "late",
-"persuasionStyle": "subtle",
-"targetEmotion": [
-"trust",
-"relatability"
-]
+"hook": "老闆說猜錯有懲罰的恐懼與好奇心",
+"isImplicit": false,
+"brandRole": "core_product",
+"exposureType": "direct"
 },
 "structure": [
 {
 "shot": 1,
-"duration": "5s",
-"camera": "handheld",
-"angle": "eye-level",
-"action": "主持人戴上口罩交代測試規則",
-"emotion": "professional",
-"purpose": "建立情境並交代影片目的"
+"phase": "introduction",
+"narrative": "situational"
 },
 {
 "shot": 2,
-"duration": "7s",
-"camera": "close-up",
-"angle": "eye-level",
-"action": "特寫手部攪拌量杯，與攝影師對話",
-"emotion": "focused",
-"purpose": "增加實測過程的細節感與臨場感"
+"phase": "transition",
+"narrative": "situational"
 },
 {
 "shot": 3,
-"duration": "8s",
-"camera": "close-up",
-"angle": "eye-level",
-"action": "品嚐第一杯，分析中藥味與苦味",
-"emotion": "skeptical",
-"purpose": "透過對比他牌缺陷來建立專業度"
+"phase": "development",
+"narrative": "situational"
 },
 {
 "shot": 4,
-"duration": "4s",
-"camera": "handheld",
-"angle": "eye-level",
-"action": "品嚐第二杯，出現困惑與反轉反應",
-"emotion": "suspense",
-"purpose": "營造挑戰過程的曲折感，增加真實性"
+"phase": "details",
+"narrative": "situational"
 },
 {
 "shot": 5,
-"duration": "3s",
-"camera": "close-up",
-"angle": "eye-level",
-"action": "吃到第三杯的肉後瞬間大笑辨認出來",
-"emotion": "joy",
-"purpose": "影片核心情緒爆點，強調口味辨識度"
+"phase": "climax",
+"narrative": "situational"
 },
 {
 "shot": 6,
-"duration": "12s",
-"camera": "static",
-"angle": "eye-level",
-"action": "逐一分析三杯湯頭與肉質的具體差異",
-"emotion": "confident",
-"purpose": "理性輸出產品賣點，強化說服力"
-},
-{
-"shot": 7,
-"duration": "8s",
-"camera": "tracking",
-"angle": "eye-level",
-"action": "興奮慶祝正確，最後對鏡頭總結產品特色",
-"emotion": "excitement",
-"purpose": "結尾收束並加深品牌正面形象"
+"phase": "conclusion",
+"narrative": "situational"
 }
 ],
-"visualFlow": {
-"pace": "fast",
-"rhythmPattern": "節奏快促，品嚐關鍵點搭配誇張綜藝字體停頓",
-"transitionStyle": "cut"
-},
-"promptTemplate": {
-"base": "Modern social media short video style, clean laboratory setting, high saturation colors, {style}.",
 "perShot": [
-"{character} is putting on a mask in {scene}, looking at camera, {style}.",
-"A close-up of {character} stirring {product} inside a laboratory beaker in {scene}.",
-"{character} tasting {product} and showing a {emotion} expression in {scene}.",
-"{character} looks puzzled with a {emotion} expression while holding {product}.",
-"Extreme close-up of {character} laughing with {emotion} after eating {product}.",
-"{character} stands in {scene} explaining the features of {product} with {emotion}.",
-"{character} is celebrating with {emotion}, tracking shot in {scene}, showcasing {product}."
-]
+{
+"shot": 1,
+"camera": "handheld",
+"angle": "eye-level",
+"duration": 5,
+"promptTemplate": "{character} stands in {scene} talking to camera, showing {emotion} expression, {style} style."
 },
-"variables": [
-"character",
-"scene",
-"emotion",
-"style",
-"product"
-],
-"controls": {
-"pace": [
-"fast",
-"medium",
-"slow"
-],
-"cameraIntensity": [
-"low",
-"medium",
-"high"
-],
-"emotionIntensity": [
-"low",
-"medium",
-"high"
-]
+{
+"shot": 2,
+"camera": "tracking",
+"angle": "eye-level",
+"duration": 3,
+"promptTemplate": "A hand passes {product} to {character} in {scene}, {style} style."
 },
-"useCase": "品牌忠誠度挑戰、產品盲測實測、員工職場趣味影片",
-"platform": [
-"tiktok",
-"reels",
-"shorts"
+{
+"shot": 3,
+"camera": "medium shot",
+"angle": "eye-level",
+"duration": 12,
+"promptTemplate": "{character} is tasting {product} in {scene} with {emotion} expression, {style} style."
+},
+{
+"shot": 4,
+"camera": "close-up",
+"angle": "eye-level",
+"duration": 8,
+"promptTemplate": "Close-up of {product} inside a beaker with straws in {scene}, {style} style."
+},
+{
+"shot": 5,
+"camera": "close-up",
+"angle": "eye-level",
+"duration": 16,
+"promptTemplate": "{character} laughing loudly after tasting {product}, showing high {emotion}, {style} style."
+},
+{
+"shot": 6,
+"camera": "wide",
+"angle": "eye-level",
+"duration": 9,
+"promptTemplate": "{character} cheering and jumping in {scene} celebrating the result, {style} style."
+}
 ],
-"shotsCount": 7,
-"source": {
-"videoId": "BVc7VMoE6xI",
-"title": "還好吃肉有秒認出來__雅方國際__茱莉亞",
-"channel": "雅方國際",
-"views": 15000
+"variables": {
+"character": "an outgoing female host in a grey and blue uniform",
+"scene": "a professional food R&D laboratory with stainless steel equipment",
+"product": "mutton hot pot soup in a laboratory beaker",
+"emotion": "ranging from confusion and hesitation to extreme excitement",
+"style": "fast-paced social media video with variety show captions",
+"product_feature": "dark herbal soup base with chewy mutton chunks"
 },
-"analysis": {
-"whyItWorks": "利用『員工實測』建立高度信任感，主持人自然的反應與大笑比硬廣更具渲染力。",
-"targetAudience": "喜愛美食、對羊肉爐有消費需求的家庭主婦及社群年輕人。",
-"replicableElements": [
-"老闆懲罰的懸念設定",
-"實驗室專業背景與量杯的反差感",
-"情緒飽滿的盲測反應"
-]
-},
+"systemInference": {
 "confidence": 0.95,
-"version": "2.0"
+"notes": "The analysis successfully mapped situational narrative and humorous tone to the JSON schema."
+}
 }

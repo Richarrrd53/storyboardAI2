@@ -490,27 +490,42 @@ app.post('/api/ask-gemini', async (req, res) => {
 });
 
 app.get('/api/get-templates', async (req, res) => {
-    const targetDir = path.join(process.cwd(), 'analysis', 'templates', 'gemini_outputs');
     try {
-        if (!fs.existsSync(targetDir)) {
-            return res.json([]);
-        }
-
-        const files = await fs.promises.readdir(targetDir);
-        const josnFiles = files.filter(file => file.endsWith('.json'));
-        
-        const dataArray = await Promise.all(
-            josnFiles.map(async (file) => {
-                const filePath = path.join(targetDir, file);
-                const content = await fs.promises.readFile(filePath, 'utf-8');
-                return JSON.parse(content);
-            })
-        )
+        const templates = await prisma.template.findMany({
+            orderBy: { createAt: 'desc' }
+        });
+        const dataArray = templates.map(t => {
+            return typeof t.content === 'string' ? JSON.parse(t.content) : t.content;
+        });
         res.json(dataArray);
     }
     catch (err) {
         console.error('讀取模板失敗', err);
         res.status(500).json({ error: '無法讀取模板'});
+    }
+});
+
+app.post('/api/templates', async (req, res) => {
+    try {
+        const data = req.body;
+        if (!data || !data.id || !data.name) {
+            return res.status(400).json({ error: '缺少必要欄位：id, name' });
+        }
+        const newTpl = await prisma.template.create({
+            data: {
+                id: data.id,
+                name: data.name,
+                category: data.category || '未分類',
+                tags: data.tags || [],
+                description: data.description || '',
+                content: data,
+                is_custom: true
+            }
+        });
+        res.json({ success: true, template: newTpl });
+    } catch (err) {
+        console.error('新增模板失敗', err);
+        res.status(500).json({ error: '新增模板失敗', details: err.message });
     }
 });
 

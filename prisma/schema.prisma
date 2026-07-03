@@ -46,3 +46,15 @@ model User {
   project      Project[]
   createAt     DateTime  @default(now())
 }
+
+model Template {
+  id          String   @id
+  name        String
+  category    String
+  tags        Json
+  description String?
+  content     Json
+  is_custom   Boolean  @default(false)
+  createAt    DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

@@ -1,0 +1,186 @@
+{
+"id": "ueQ9I3w-eE8",
+"name": "我話還沒講完欸 | 雅方隨意杯 x 茱莉亞林",
+"category": "twist",
+"tags": [
+"#雅方",
+"#夾娃娃機",
+"#開箱",
+"#諧音梗",
+"#台中美食"
+],
+"description": "女主角挑戰夾取雅方產品，從頻頻失敗到大獲全勝，最後以店長的諧音口誤幽默收尾。",
+"narrative": {
+"type": "situational",
+"structure": "起：失敗建立懸念；承：挑戰難度升級；轉：大量出貨獲得滿足感；合：諧音梗幽默反轉",
+"tone": "humor",
+"summary": "在夾娃娃機店挑戰夾取雅方產品，經歷失敗後在店長指導與換台後大成功，並置入產品口味介紹。"
+},
+"hook": {
+"type": "conflict",
+"position": "start",
+"description": "女主角宣稱夾不到並展現挫折感，利用觀眾的同情心與挑戰心理留人。"
+},
+"marketing": {
+"isImplicit": false,
+"exposureType": "product",
+"brandRole": "active",
+"integrationMethod": "plot",
+"revealTiming": "early",
+"persuasionStyle": "emotional",
+"targetEmotion": [
+"curiosity",
+"desire",
+"relatability"
+]
+},
+"structure": [
+{
+"shot": 1,
+"duration": "1s",
+"camera": "handheld",
+"angle": "eye-level",
+"action": "女主角在機台前抱怨夾不到",
+"emotion": "frustrated",
+"purpose": "建立初始矛盾與鉤子"
+},
+{
+"shot": 2,
+"duration": "1.5s",
+"camera": "static",
+"angle": "eye-level",
+"action": "爪子夾起產品但滑落",
+"emotion": "disappointed",
+"purpose": "展示產品並強化挑戰難度"
+},
+{
+"shot": 3,
+"duration": "2s",
+"camera": "handheld",
+"angle": "high-angle",
+"action": "女主角與店長對話溝通",
+"emotion": "skeptical",
+"purpose": "引入技術專家角色轉變節奏"
+},
+{
+"shot": 4,
+"duration": "1s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "女主角專注盯著爪子的眼神特寫",
+"emotion": "focused",
+"purpose": "營造緊張感"
+},
+{
+"shot": 5,
+"duration": "2.5s",
+"camera": "tracking",
+"angle": "low-angle",
+"action": "爪子成功抓起盒裝產品掉入洞口",
+"emotion": "successful",
+"purpose": "達成第一個高潮點"
+},
+{
+"shot": 6,
+"duration": "2s",
+"camera": "wide",
+"angle": "eye-level",
+"action": "女主角興奮大叫並晃動身體",
+"emotion": "excited",
+"purpose": "情緒宣洩與勝利展示"
+},
+{
+"shot": 7,
+"duration": "3s",
+"camera": "static",
+"angle": "eye-level",
+"action": "多個不同機台連續出貨的快剪蒙太奇",
+"emotion": "satisfied",
+"purpose": "展示產品多樣性與獲得感"
+},
+{
+"shot": 8,
+"duration": "4s",
+"camera": "tracking",
+"angle": "eye-level",
+"action": "推著裝滿戰利品的購物車走出店門",
+"emotion": "proud",
+"purpose": "視覺呈現豐碩成果"
+},
+{
+"shot": 9,
+"duration": "3s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "逐一指點並介紹車內的各類口味產品",
+"emotion": "happy",
+"purpose": "核心產品清單展示"
+},
+{
+"shot": 10,
+"duration": "2s",
+"camera": "handheld",
+"angle": "eye-level",
+"action": "店長諧音口誤與女主角傻眼反擊",
+"emotion": "humorous",
+"purpose": "結尾神反轉增加記憶點"
+}
+],
+"visualFlow": {
+"pace": "fast",
+"rhythmPattern": "失敗-失敗-成功-連續成功-反轉幽默",
+"transitionStyle": "cut"
+},
+"promptTemplate": {
+"base": "High quality short video style, bright interior lighting, vibrant colors, social media aesthetic.",
+"perShot": [
+"{character} standing in front of claw machine in {scene} with {emotion} expression, {style}.",
+"Claw machine claw picking up {product} and dropping it, close-up, {style}.",
+"{character} talking to shop manager in {scene}, handheld camera, {style}.",
+"Extreme close-up of {character}'s eyes showing {emotion} at {scene}, {style}.",
+"Low angle shot of {product} falling into the prize hole, {style}.",
+"{character} celebrating with {emotion} in {scene}, wide shot, {style}.",
+"Montage of multiple {product} items falling from claw machines, {style}.",
+"{character} pushing a cart full of {product} leaving {scene}, tracking shot, {style}.",
+"Close-up of various {product} types being displayed by {character}, {style}.",
+"{character} laughing and reacting to a joke in {scene} with {style}."
+]
+},
+"variables": [
+"character",
+"scene",
+"emotion",
+"style",
+"product"
+],
+"controls": {
+"pace": ["fast"],
+"cameraIntensity": ["medium"],
+"emotionIntensity": ["high"]
+},
+"useCase": "品牌產品置入與異業合作推廣",
+"platform": [
+"tiktok",
+"reels",
+"shorts"
+],
+"shotsCount": 10,
+"source": {
+"videoId": "ueQ9I3w-eE8",
+"title": "我話還沒講完欸",
+"channel": "茱莉亞林",
+"views": 50000
+},
+"analysis": {
+"whyItWorks": "利用夾娃娃機的博弈心理吸引觀眾，並透過網紅的真實反應與幽默諧音梗消解廣告的生硬感。",
+"targetAudience": "喜歡看夾娃娃挑戰、追求高CP值生活與年輕社群用戶。",
+"replicableElements": [
+"夾不到的挫折共鳴",
+"成功出貨的視覺爽感",
+"結尾的意外幽默反轉",
+"產品作為挑戰獎勵的設計"
+]
+},
+"confidence": 0.95,
+"version": "2.0"
+}

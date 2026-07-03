@@ -34,6 +34,12 @@
 
         <div class="compose-card card" id="compose-card">
 
+            <!-- Template Select Banner -->
+            <div class="template-preselect-banner" id="template-preselect-banner" style="display: none; align-items: center; justify-content: space-between; padding: 12px 26px; background: rgba(93, 58, 155, 0.08); border-bottom: 1px solid rgba(93, 58, 155, 0.15); color: #5d3a9b; font-weight: 700; font-size: 0.9rem;">
+                <span>已套用模板：<span id="preselected-template-name" style="color: var(--accent-gold);"></span></span>
+                <button onclick="clearSelectedTemplate()" style="background: none; border: none; color: #ff5e5e; font-weight: 700; cursor: pointer; padding: 4px 8px; font-size: 0.85rem;">取消套用 ✕</button>
+            </div>
+
             <!-- ① Story input area -->
             <div class="compose-input-area" id="compose-input-area">
                 <textarea id="story-input" class="compose-textarea" placeholder="告訴我你的想法吧，一句話也沒關係 ✦" rows="3"
@@ -148,9 +154,18 @@
                 </div>
             </div>
 
-            <!-- Template grid -->
-            <div class="template-container">
-                <div class="template-grid" id="template-grid"></div>
+            <!-- Template Layout matching template.html -->
+            <div class="template-layout">
+                <aside class="template-cats" id="generate-template-cats">
+                    <div class="template-cat-header">
+                        <h2>模板分類</h2>
+                        <p>選擇最符合故事結構的爆點模式。</p>
+                    </div>
+                </aside>
+
+                <section class="template-list">
+                    <div class="template-grid" id="template-grid"></div>
+                </section>
             </div>
 
             <!-- Template apply footer -->
@@ -181,17 +196,64 @@
     </div>
 
     <!-- ══════════════════════════════════
+       PHASE 1.6 — VARIABLE CUSTOMIZATION
+    ══════════════════════════════════ -->
+    <div class="phase" id="phase-variables">
+        <div class="template-phase-wrap" style="max-width: 720px; width: 100%;">
+            <div class="template-phase-header" style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h2 class="template-phase-title" style="margin: 0; font-size: 1.6rem; font-weight: 800;">設定模板變數 <span style="color: var(--primary);">✦</span></h2>
+                    <p class="template-phase-sub" style="margin: 4px 0 0; color: var(--text-mid); font-size: 0.9rem;">自訂義模板中的可替換詞彙，讓分鏡更符合你的品牌與故事</p>
+                </div>
+                <button class="btn btn-outline btn-sm" onclick="backToTemplateOrCompose()">← 返回</button>
+            </div>
+
+            <!-- Loader for AI variable extraction -->
+            <div class="variables-loading-container" id="variables-loading-container" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 40px; background: rgba(255,255,255,0.7); border: 2px solid var(--white); border-radius: 28px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); backdrop-filter: blur(10px); gap: 24px;">
+                <div class="math-loader-wrapper" style="width: 140px; height: 140px; color: var(--primary);">
+                    <svg class="loader math-loader-svg" viewBox="0 0 100 100" fill="none" aria-hidden="true" style="width: 100%; height: 100%; display: block;">
+                        <g class="math-loader-group">
+                            <path class="math-loader-path" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" opacity="0.1"></path>
+                        </g>
+                        <g class="math-loader-sucked"></g>
+                    </svg>
+                </div>
+                <p style="font-weight: 700; color: var(--text-mid); margin: 0;">AI 正在分析故事並提取模板變數...</p>
+            </div>
+
+            <!-- Variables form -->
+            <div class="variables-form-container" id="variables-form-container" style="display: none; background: rgba(255,255,255,0.85); border: 4px solid var(--white); border-radius: 28px; box-shadow: 0 15px 40px rgba(0,0,0,0.1); backdrop-filter: blur(12px); overflow: hidden;">
+                <div style="padding: 24px 26px 8px; border-bottom: 2px solid var(--card-border);">
+                    <div style="font-size: 0.95rem; font-weight: 800; color: var(--text-dark); margin-bottom: 4px;">模板內的可變元素</div>
+                    <div style="font-size: 0.8rem; color: var(--text-light); font-weight: 500;">AI 已為你自動提取以下欄位，你可以自由修改或微調</div>
+                </div>
+                <form id="variables-form" onsubmit="event.preventDefault();" style="padding: 24px 26px; display: flex; flex-direction: column; gap: 20px; max-height: 380px; overflow-y: auto;">
+                    <!-- Dynamic inputs will be inserted here -->
+                </form>
+            </div>
+
+            <!-- Variables footer -->
+            <div class="template-apply-footer" id="variables-footer" style="display: none; margin-top: 20px; align-items: center; justify-content: space-between;">
+                <span class="taf-hint" id="variables-hint" style="color: var(--text-mid); font-size: 0.9rem;">確認變數後即可開始生成分鏡</span>
+                <button class="btn btn-primary" onclick="confirmVariablesAndGenerate()">
+                    ✦ 開始生成分鏡
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════
        PHASE 2 — GENERATING
     ══════════════════════════════════ -->
     <div class="phase" id="phase-generating">
         <div class="generating-wrap">
             <div class="gen-preview-card" id="gen-preview-card">
-                <svg class="loader" viewBox="0 0 100 100" fill="none" aria-hidden="true">
-                    <g id="group">
-                        <path id="path" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                <svg class="loader math-loader-svg" viewBox="0 0 100 100" fill="none" aria-hidden="true">
+                    <g class="math-loader-group">
+                        <path class="math-loader-path" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
                             opacity="0.1"></path>
                     </g>
-                    <g id="sucked-assets"></g>
+                    <g class="math-loader-sucked"></g>
                 </svg>
             </div>
             <div class="gen-text-area">

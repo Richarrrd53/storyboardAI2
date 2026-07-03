@@ -1,0 +1,126 @@
+{
+"metadata": {
+"category": "twist",
+"shotsCount": 7,
+"confidence": 0.95
+},
+"structure": [
+{
+"shot": 1,
+"phase": "introduction",
+"narrative": "situational"
+},
+{
+"shot": 2,
+"phase": "development",
+"narrative": "montage"
+},
+{
+"shot": 3,
+"phase": "development",
+"narrative": "situational"
+},
+{
+"shot": 4,
+"phase": "climax",
+"narrative": "montage"
+},
+{
+"shot": 5,
+"phase": "climax",
+"narrative": "montage"
+},
+{
+"shot": 6,
+"phase": "climax",
+"narrative": "montage"
+},
+{
+"shot": 7,
+"phase": "conclusion",
+"narrative": "situational"
+}
+],
+"perShot": [
+{
+"shot": 1,
+"camera": "static",
+"angle": "eye-level",
+"duration": 3,
+"tone": "humorous"
+},
+{
+"shot": 2,
+"camera": "handheld",
+"angle": "high-angle",
+"duration": 2,
+"tone": "mysterious"
+},
+{
+"shot": 3,
+"camera": "static",
+"angle": "eye-level",
+"duration": 5,
+"tone": "suspenseful"
+},
+{
+"shot": 4,
+"camera": "close-up",
+"angle": "eye-level",
+"duration": 13,
+"tone": "dramatic"
+},
+{
+"shot": 5,
+"camera": "tracking",
+"angle": "eye-level",
+"duration": 10,
+"tone": "chaotic"
+},
+{
+"shot": 6,
+"camera": "wide",
+"angle": "high-angle",
+"duration": 10,
+"tone": "chaotic"
+},
+{
+"shot": 7,
+"camera": "static",
+"angle": "eye-level",
+"duration": 8,
+"tone": "professional"
+}
+],
+"marketing": {
+"hook": "weird food combination reaction",
+"isImplicit": false,
+"brandRole": "host",
+"exposureType": "uniform"
+},
+"promptTemplate": {
+"perShot": [
+"{character} standing in {scene} with text overlays, {style} style.",
+"Handheld view of {product} on a tray in {scene}, {style} style.",
+"{character} holding {product} in {scene}, preparing to taste, {style} style.",
+"Close-up of {character} showing {emotion} after eating {product}, {style} style.",
+"Tracking shot of a person in white shirt experiencing {emotion} in {scene}, {style} style.",
+"Wide shot of staff members showing {emotion} with explosion effects in {scene}, {style} style.",
+"{character} giving final remarks and CTA in {scene}, {style} style."
+],
+"variables": [
+"character",
+"scene",
+"product",
+"emotion",
+"style"
+]
+},
+"variableDefinitions": {
+"character": "A young female host with short brown hair wearing a navy polo shirt",
+"scene": "A clean professional kitchen lab with stainless steel tables",
+"product": "Dark brown savory popsicles on a metal tray",
+"emotion": "Extreme disgust and gagging reflex",
+"style": "Social media vlog style with high energy"
+}
+}

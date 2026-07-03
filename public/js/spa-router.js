@@ -320,7 +320,8 @@
     if (cachedHTML) {
       return new DOMParser().parseFromString(cachedHTML, 'text/html');
     }
-    const res = await fetch(url, { signal });
+    // 加入時間戳記避免瀏覽器 HTTP 快取
+    const res = await fetch(url + '?v=' + Date.now(), { signal });
     const html = await res.text();
     try {
       localStorage.setItem(cacheKey, html);
@@ -954,7 +955,7 @@
     bindTopbarLinks();
   }
 
-  async function renderGenerate(signal) {
+  async function renderGenerate(opts, signal) {
     const doc = await fetchPageDoc('/html/generate.html', signal);
     if (signal?.aborted) return;
 
@@ -966,6 +967,12 @@
     });
 
     await ensureSharedLayout(signal);
+
+    if (opts && opts.templateId) {
+      window.preselectedTemplateId = opts.templateId;
+    } else {
+      window.preselectedTemplateId = null;
+    }
   }
 
   async function renderHistory(signal) {
@@ -1129,14 +1136,23 @@
       return;
     }
 
-    const groups = {};
+    const CAT_MAP = {
+      'product': '商品焦點',
+      'story': '品牌故事',
+      'twist': '反轉爆點',
+      'custom': '自訂模板',
+      '未分類': '未分類'
+    };
+
+    const groups = { '全部': templates };
     templates.forEach(t => {
-      const k = t.category || t.type || '未分類';
+      const dbCat = t.category || t.type || '未分類';
+      const k = CAT_MAP[dbCat] || dbCat;
       if (!groups[k]) groups[k] = [];
       groups[k].push(t);
     });
 
-    const categories = Object.keys(groups);
+    const categories = ['全部', ...Object.keys(groups).filter(k => k !== '全部')];
 
     catsEl.innerHTML = categories
       .map((c, i) => `<button class="tpl-cat ${i === 0 ? 'active' : ''}" data-cat="${c}">${c} <span class="count">(${groups[c].length})</span></button>`)
@@ -1146,10 +1162,10 @@
       const items = groups[cat] || [];
 
       gridEl.innerHTML = items.map(it => `
-        <div class="template-card" data-id="${it.id || ''}" data-title="${(it.title || '無標題').replace(/"/g, '')}">
-          <div class="template-thumb">${it.thumbnail ? `<img src="${it.thumbnail}" alt="${it.title}">` : '📄'}</div>
+        <div class="template-card" data-id="${it.id || ''}" data-title="${(it.name || it.title || '無標題').replace(/"/g, '')}">
+          <div class="template-thumb">${it.thumbnail ? `<img src="${it.thumbnail}" alt="${it.name || it.title}">` : '📄'}</div>
           <div class="template-info">
-            <div class="template-title">${it.title || '無標題'}</div>
+            <div class="template-title">${it.name || it.title || '無標題'}</div>
           </div>
         </div>
       `).join('');
@@ -1157,14 +1173,66 @@
       gridEl.querySelectorAll('.template-card').forEach(el => {
         el.addEventListener('click', () => {
           const id = el.dataset.id;
-          const t = items.find(x => (x.id || '') === id) || items.find(x => (x.title || '') === el.dataset.title);
+          const t = items.find(x => (x.id || '') === id) || items.find(x => (x.name || x.title || '') === el.dataset.title);
           if (!t) return;
 
+          const varsList = Array.isArray(t.variables) ? t.variables : [];
+          const platformText = Array.isArray(t.platform) ? t.platform.join(', ') : (t.platform || '無限制');
+          const narrativeType = t.narrative?.type || '無';
+          const paceLabel = t.visualFlow?.pace || 'medium';
+          const duration = t.structure?.length ? t.structure.map(s => parseInt(s.duration) || 0).reduce((a, b) => a + b, 0) + 's' : '0s';
+
           detailEl.innerHTML = `
-            <h3>${t.title || '無標題'}</h3>
-            <p><strong>分類：</strong>${t.category || t.type || '未分類'}</p>
-            <div class="template-body">${t.content ? (typeof t.content === 'string' ? t.content : JSON.stringify(t.content)) : '<em>無內容預覽</em>'}</div>
+            <div class="template-detail-header" style="border-bottom: 2px solid var(--border-warm); padding-bottom: 20px; margin-bottom: 20px;">
+              <span class="tc-category" style="background: var(--primary-soft); color: var(--primary); padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase;">${CAT_MAP[t.category] || t.category || '未分類'}</span>
+              <h3 style="font-size: 1.6rem; font-weight: 800; color: #21143f; margin-top: 12px; margin-bottom: 8px;">${t.name || t.title || '無標題'}</h3>
+              <p style="color: #6b6481; line-height: 1.6; font-size: 0.95rem; margin-bottom: 0;">${t.description || '無描述'}</p>
+            </div>
+            
+            <div class="template-detail-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+              <div style="background: #fdfaf4; padding: 12px 16px; border-radius: 16px; border: 1px solid rgba(220,156,71,0.1);">
+                <div style="font-size: 0.75rem; color: #a19a86; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">適用平台</div>
+                <div style="font-size: 0.9rem; font-weight: 700; color: #5f4b2a;">${platformText}</div>
+              </div>
+              <div style="background: #fdfaf4; padding: 12px 16px; border-radius: 16px; border: 1px solid rgba(220,156,71,0.1);">
+                <div style="font-size: 0.75rem; color: #a19a86; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">鏡頭個數 / 總長</div>
+                <div style="font-size: 0.9rem; font-weight: 700; color: #5f4b2a;">${t.shotsCount || t.structure?.length || 0} 鏡 (${duration})</div>
+              </div>
+              <div style="background: #fdfaf4; padding: 12px 16px; border-radius: 16px; border: 1px solid rgba(220,156,71,0.1);">
+                <div style="font-size: 0.75rem; color: #a19a86; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">敘事手法 / 語調</div>
+                <div style="font-size: 0.9rem; font-weight: 700; color: #5f4b2a;">${narrativeType} (${t.narrative?.tone || 'casual'})</div>
+              </div>
+              <div style="background: #fdfaf4; padding: 12px 16px; border-radius: 16px; border: 1px solid rgba(220,156,71,0.1);">
+                <div style="font-size: 0.75rem; color: #a19a86; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">節奏律動</div>
+                <div style="font-size: 0.9rem; font-weight: 700; color: #5f4b2a;">${paceLabel} 節奏</div>
+              </div>
+            </div>
+
+            <div style="margin-bottom: 24px;">
+              <h4 style="font-weight: 800; color: #21143f; margin-bottom: 10px; font-size: 0.95rem;">可替換變數</h4>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                ${varsList.map(v => `<span style="background: #f0f0fa; color: #5d3a9b; padding: 4px 12px; border-radius: 20px; font-size: 0.82rem; font-weight: 700; border: 1px solid rgba(93,58,155,0.1);">${v}</span>`).join('') || '<em style="color:#a19a86;font-size:0.9rem;">無變數</em>'}
+              </div>
+            </div>
+
+            <div style="margin-bottom: 30px;">
+              <h4 style="font-weight: 800; color: #21143f; margin-bottom: 10px; font-size: 0.95rem;">推薦應用場景</h4>
+              <p style="font-size: 0.92rem; color: #5f5f7d; line-height: 1.6;">${t.useCase || '美食、開箱、生活紀錄等系列短片。'}</p>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid #eee; padding-top: 20px;">
+              <button class="btn btn-primary" id="tpl-use-btn" style="width: 100%; justify-content: center; height: 48px; border-radius: 12px; font-weight:700;">
+                ✦ 選擇此模板並輸入故事
+              </button>
+            </div>
           `;
+
+          const useBtn = detailEl.querySelector('#tpl-use-btn');
+          if (useBtn) {
+            useBtn.addEventListener('click', () => {
+              window.spaNavigate('generate', { templateId: t.id });
+            });
+          }
 
           detailEl.scrollIntoView({ behavior: 'smooth' });
         });
@@ -1559,9 +1627,9 @@
     },
 
     generate: {
-      css: ['/css/dashboard.css', '/css/generate.css', '/css/math-curve-loader.css'],
+      css: ['/css/dashboard.css', '/css/generate.css', '/css/math-curve-loader.css', '/css/template.css'],
       js: ['/js/math-curve-loader.js', '/js/token-manager.js', '/js/prompt-translate.js', '/js/generate.js'],
-      render: (o, signal) => renderGenerate(signal)
+      render: (o, signal) => renderGenerate(o, signal)
     },
 
     history: {
@@ -1583,6 +1651,10 @@
     }
   };
 
+  window.spaNavigate = (page, opts) => {
+    navigate(page, opts);
+  };
+
   function isDashboardPage(page) {
     return ['dashboard', 'generate', 'history', 'template', 'project', 'analysis'].includes(page);
   }
@@ -1590,6 +1662,7 @@
   function getHashForPage(page, opts = {}) {
     if (page === 'landing') return '';
     if (page === 'project' && opts?.id) return `#/project/${opts.id}`;
+    if (page === 'generate' && opts?.templateId) return `#/generate?templateId=${opts.templateId}`;
     return `#/${page}`;
   }
 
@@ -1598,20 +1671,31 @@
       return { page: 'landing', opts: {} };
     }
 
-    const route = hash.substring(2);
+    const fullRoute = hash.substring(2);
+    const parts = fullRoute.split('?');
+    const route = parts[0];
+    const queryString = parts[1] || '';
+
+    const opts = {};
+    if (queryString) {
+      const searchParams = new URLSearchParams(queryString);
+      for (const [key, value] of searchParams.entries()) {
+        opts[key] = value;
+      }
+    }
 
     const projectMatch = route.match(/^project\/(.+)$/);
     if (projectMatch) {
       return {
         page: 'project',
-        opts: { id: decodeURIComponent(projectMatch[1]) }
+        opts: { ...opts, id: decodeURIComponent(projectMatch[1]) }
       };
     }
 
     if (pageDefs[route]) {
       return {
         page: route,
-        opts: {}
+        opts
       };
     }
 
@@ -1896,6 +1980,14 @@
   }
 
   document.addEventListener('DOMContentLoaded', async () => {
+    // 清除過期的頁面快取，確保最新版 HTML 被載入
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('spa_page_cache_')) {
+        localStorage.removeItem(key);
+      }
+    }
+
     initTransitionLoader();
     const m = document.getElementById('page-main');
     if (m) {

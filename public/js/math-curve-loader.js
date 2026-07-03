@@ -37,9 +37,6 @@
       },
   };
 
-  let suckedContainer = null;
-  let suckedAssets = [];
-  
   const assetColors = [
       '#DC9C47', // gold
       '#d86b49', // peach
@@ -78,65 +75,6 @@
       };
   }
 
-  function spawnSuckedAsset() {
-      if (!suckedContainer) {
-          suckedContainer = document.querySelector('#sucked-assets');
-          if (!suckedContainer) return;
-      }
-      const angle = Math.random() * Math.PI * 2;
-      const startRadius = 75 + Math.random() * 20;
-      const speed = 0.5 + Math.random() * 0.5; // Fly straight towards center
-      const color = assetColors[Math.floor(Math.random() * assetColors.length)];
-      const radius = 1.0 + Math.random() * 1.5; // Simple, lightweight particles
-      
-      const el = document.createElementNS(SVG_NS, 'circle');
-      el.setAttribute('r', String(radius));
-      el.setAttribute('fill', color);
-      el.setAttribute('opacity', '0');
-      suckedContainer.appendChild(el);
-
-      suckedAssets.push({
-          el,
-          radius: startRadius,
-          angle,
-          speed
-      });
-  }
-
-  function updateSuckedAssets() {
-      // Lower density: 4% spawn rate, max 10 elements simultaneously
-      if (Math.random() < 0.04 && suckedAssets.length < 10) {
-          spawnSuckedAsset();
-      }
-
-      for (let i = suckedAssets.length - 1; i >= 0; i--) {
-          const asset = suckedAssets[i];
-          asset.radius -= asset.speed; // Straight line movement to center
-
-          const x = 50 + Math.cos(asset.angle) * asset.radius;
-          const y = 50 + Math.sin(asset.angle) * asset.radius;
-
-          let opacity = 0;
-          if (asset.radius > 70) {
-              opacity = (95 - asset.radius) / 25;
-          } else if (asset.radius > 15) {
-              opacity = 0.8;
-          } else {
-              opacity = asset.radius / 15 * 0.8;
-          }
-          opacity = Math.max(0, Math.min(0.8, opacity));
-
-          asset.el.setAttribute('cx', x.toFixed(2));
-          asset.el.setAttribute('cy', y.toFixed(2));
-          asset.el.setAttribute('opacity', opacity.toFixed(3));
-
-          if (asset.radius <= 2) {
-              asset.el.remove();
-              suckedAssets.splice(i, 1);
-          }
-      }
-  }
-
   let animId = null;
 
   window.initMathCurveLoader = function () {
@@ -145,57 +83,113 @@
           animId = null;
       }
 
-      const group = document.querySelector('#group');
-      const path = document.querySelector('#path');
-      suckedContainer = document.querySelector('#sucked-assets');
+      const loaders = [];
+      const svgEls = document.querySelectorAll('.math-loader-svg');
       
-      if (!group || !path) {
-          return;
-      }
+      svgEls.forEach(svg => {
+          const group = svg.querySelector('.math-loader-group');
+          const path = svg.querySelector('.math-loader-path');
+          const suckedContainer = svg.querySelector('.math-loader-sucked');
+          
+          if (!group || !path) return;
 
-      // Remove any existing circle elements inside group (particles)
-      const circles = group.querySelectorAll('circle');
-      circles.forEach(c => c.remove());
+          // Remove any existing particles inside group
+          group.querySelectorAll('circle').forEach(c => c.remove());
+          if (suckedContainer) suckedContainer.innerHTML = '';
 
-      // Reset suckedAssets
-      suckedAssets.forEach(asset => {
-          try { asset.el.remove(); } catch(e) {}
+          path.setAttribute('stroke-width', String(config.strokeWidth));
+
+          const particles = Array.from({ length: config.particleCount }, () => {
+              const circle = document.createElementNS(SVG_NS, 'circle');
+              circle.setAttribute('fill', 'currentColor');
+              group.appendChild(circle);
+              return circle;
+          });
+
+          loaders.push({
+              group,
+              path,
+              suckedContainer,
+              particles,
+              suckedAssets: []
+          });
       });
-      suckedAssets = [];
 
-      path.setAttribute('stroke-width', String(config.strokeWidth));
-
-      const particles = Array.from({ length: config.particleCount }, () => {
-          const circle = document.createElementNS(SVG_NS, 'circle');
-          circle.setAttribute('fill', 'currentColor');
-          group.appendChild(circle);
-          return circle;
-      });
+      if (loaders.length === 0) return;
 
       const startedAt = performance.now();
 
-      function render(now) {
-          const currentGroup = document.querySelector('#group');
-          const currentPath = document.querySelector('#path');
-          if (!currentGroup || !currentPath) {
-              animId = null;
-              return;
+      function updateSuckedAssets(loader) {
+          if (!loader.suckedContainer) return;
+          // Spawn rate: 4% spawn rate, max 10 elements simultaneously
+          if (Math.random() < 0.04 && loader.suckedAssets.length < 10) {
+              const angle = Math.random() * Math.PI * 2;
+              const startRadius = 75 + Math.random() * 20;
+              const speed = 0.5 + Math.random() * 0.5; // Fly straight towards center
+              const color = assetColors[Math.floor(Math.random() * assetColors.length)];
+              const radius = 1.0 + Math.random() * 1.5;
+              
+              const el = document.createElementNS(SVG_NS, 'circle');
+              el.setAttribute('r', String(radius));
+              el.setAttribute('fill', color);
+              el.setAttribute('opacity', '0');
+              loader.suckedContainer.appendChild(el);
+
+              loader.suckedAssets.push({
+                  el,
+                  radius: startRadius,
+                  angle,
+                  speed
+              });
           }
 
+          for (let i = loader.suckedAssets.length - 1; i >= 0; i--) {
+              const asset = loader.suckedAssets[i];
+              asset.radius -= asset.speed;
+
+              const x = 50 + Math.cos(asset.angle) * asset.radius;
+              const y = 50 + Math.sin(asset.angle) * asset.radius;
+
+              let opacity = 0;
+              if (asset.radius > 70) {
+                  opacity = (95 - asset.radius) / 25;
+              } else if (asset.radius > 15) {
+                  opacity = 0.8;
+              } else {
+                  opacity = asset.radius / 15 * 0.8;
+              }
+              opacity = Math.max(0, Math.min(0.8, opacity));
+
+              asset.el.setAttribute('cx', x.toFixed(2));
+              asset.el.setAttribute('cy', y.toFixed(2));
+              asset.el.setAttribute('opacity', opacity.toFixed(3));
+
+              if (asset.radius <= 2) {
+                  asset.el.remove();
+                  loader.suckedAssets.splice(i, 1);
+              }
+          }
+      }
+
+      function render(now) {
           const time = now - startedAt;
           const progress = (time % config.durationMs) / config.durationMs;
           const detailScale = getDetailScale(time);
-          currentGroup.setAttribute('transform', `rotate(${getRotation(time)} 50 50)`);
-          currentPath.setAttribute('d', buildPath(detailScale));
-          particles.forEach((node, index) => {
-              const particle = getParticle(index, progress, detailScale);
-              node.setAttribute('cx', particle.x.toFixed(2));
-              node.setAttribute('cy', particle.y.toFixed(2));
-              node.setAttribute('r', particle.radius.toFixed(2));
-              node.setAttribute('opacity', particle.opacity.toFixed(3));
+          const rotation = getRotation(time);
+          const pathD = buildPath(detailScale);
+
+          loaders.forEach(loader => {
+              loader.group.setAttribute('transform', `rotate(${rotation} 50 50)`);
+              loader.path.setAttribute('d', pathD);
+              loader.particles.forEach((node, index) => {
+                  const particle = getParticle(index, progress, detailScale);
+                  node.setAttribute('cx', particle.x.toFixed(2));
+                  node.setAttribute('cy', particle.y.toFixed(2));
+                  node.setAttribute('r', particle.radius.toFixed(2));
+                  node.setAttribute('opacity', particle.opacity.toFixed(3));
+              });
+              updateSuckedAssets(loader);
           });
-          
-          updateSuckedAssets();
           
           animId = requestAnimationFrame(render);
       }
@@ -204,7 +198,7 @@
   };
 
   // Run automatically if DOM is already ready
-  if (document.querySelector('#group') && document.querySelector('#path')) {
+  if (document.querySelector('.math-loader-svg')) {
       window.initMathCurveLoader();
   }
 

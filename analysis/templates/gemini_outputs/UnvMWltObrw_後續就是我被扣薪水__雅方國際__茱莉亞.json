@@ -1,0 +1,160 @@
+{
+"id": "UnvMWltObrw",
+"name": "00後整頓職場 - 雅方國際",
+"category": "twist",
+"tags": [
+"#職場",
+"#整頓職場",
+"#雅方",
+"#開箱",
+"#生活"
+],
+"description": "Z世代員工以叛逆態度挑戰董事長權威，最後反轉揭露為品牌推廣，利用反差感創造記憶點。",
+"narrative": {
+"type": "situational",
+"structure": "起：自嘲上班無聊；承：傲慢挑戰權威並投餵產品；轉：衝突爆發丟下產品離職；合：反轉揭露正片與推廣。",
+"tone": "humor",
+"summary": "一名年輕員工在辦公室對老闆展現極度無禮的態度，強行推銷冰棒失敗後憤而離職，隨後揭露這其實是品牌行銷的拍攝過程。"
+},
+"hook": {
+"type": "conflict",
+"position": "start",
+"description": "00後整頓職場的標題搭配員工對老闆說『造個謠』的叛逆行為。"
+},
+"marketing": {
+"isImplicit": false,
+"exposureType": "product",
+"brandRole": "active",
+"integrationMethod": "plot",
+"revealTiming": "middle",
+"persuasionStyle": "subtle",
+"targetEmotion": [
+"curiosity",
+"relatability"
+]
+},
+"structure": [
+{
+"shot": 1,
+"duration": "2s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "主角對鏡頭低語準備造謠",
+"emotion": "cunning",
+"purpose": "建立故事懸念"
+},
+{
+"shot": 2,
+"duration": "3s",
+"camera": "wide",
+"angle": "eye-level",
+"action": "主角雙手插口袋走進董事長辦公室",
+"emotion": "arrogant",
+"purpose": "建立角色衝突感"
+},
+{
+"shot": 3,
+"duration": "4s",
+"camera": "static",
+"angle": "eye-level",
+"action": "董事長坐在辦公桌後表現困惑",
+"emotion": "confused",
+"purpose": "增強真實反應對比"
+},
+{
+"shot": 4,
+"duration": "2s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "主角展示手中產品",
+"emotion": "proud",
+"purpose": "產品核心展示"
+},
+{
+"shot": 5,
+"duration": "2s",
+"camera": "medium",
+"angle": "high-angle",
+"action": "產品被丟在辦公桌上並滑落",
+"emotion": "aggressive",
+"purpose": "製造戲劇性衝突笑點"
+},
+{
+"shot": 6,
+"duration": "3s",
+"camera": "tracking",
+"angle": "eye-level",
+"action": "主角瀟灑揮手走出辦公室",
+"emotion": "carefree",
+"purpose": "完成人設收尾"
+},
+{
+"shot": 7,
+"duration": "5s",
+"camera": "static",
+"angle": "eye-level",
+"action": "畫面切換至正片說明與帳號追蹤",
+"emotion": "emotional",
+"purpose": "品牌轉化與留存"
+}
+],
+"visualFlow": {
+"pace": "medium",
+"rhythmPattern": "前段快速切換建立衝突，後段節奏放緩進行感性敘事",
+"transitionStyle": "cut"
+},
+"promptTemplate": {
+"base": "High-quality vlog style, vertical 9:16 aspect ratio, corporate office background.",
+"perShot": [
+"{character} looks at the camera with {emotion} expression in {scene}, {style} style.",
+"{character} walking into {scene} arrogantly, {style} style.",
+"An older man as the boss sitting in {scene}, looking {emotion}, eye-level static shot.",
+"Close up shot of {character} holding {product}, highlighting the packaging, {style} style.",
+"{product} is being thrown on the desk in {scene}, high-angle view.",
+"{character} walking away from {scene} with {emotion} gesture, tracking shot.",
+"Text overlay on {scene} background, promoting {product} and {style} lifestyle."
+]
+},
+"variables": [
+"character",
+"scene",
+"emotion",
+"style",
+"product"
+],
+"controls": {
+"pace": [
+"medium"
+],
+"cameraIntensity": [
+"medium"
+],
+"emotionIntensity": [
+"high"
+]
+},
+"useCase": "品牌擬人化經營與職場共鳴行銷",
+"platform": [
+"tiktok",
+"reels",
+"shorts"
+],
+"shotsCount": 7,
+"source": {
+"videoId": "UnvMWltObrw",
+"title": "後續就是我被扣薪水_雅方國際_茱莉亞",
+"channel": "雅方國際",
+"views": 100000
+},
+"analysis": {
+"whyItWorks": "利用Z世代反抗職場權威的集體情緒，配合低成本感的情境劇，降低觀眾對廣告的戒心。",
+"targetAudience": "上班族、年輕求職者、喜歡短影音迷因的受眾",
+"replicableElements": [
+"職場衝突人設",
+"粗糙但真實的辦公室場景",
+"前段整人後段溫情/正經的反轉結構"
+]
+},
+"confidence": 0.95,
+"version": "2.0"
+}

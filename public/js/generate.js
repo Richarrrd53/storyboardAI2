@@ -34,6 +34,18 @@
       TEMPLATES = await getTemplates();
       if(TEMPLATES.length == 0){
           console.warn("無可用模板")
+      } else {
+          if (window.preselectedTemplateId) {
+              const tpl = TEMPLATES.find(t => t.id === window.preselectedTemplateId);
+              if (tpl) {
+                  state.selectedTemplate = tpl;
+                  state.useTemplate = true;
+                  updatePreselectedTemplateUI();
+                  if (typeof window.showSpaToast === 'function') {
+                      window.showSpaToast(`已選用模板：${tpl.name}`);
+                  }
+              }
+          }
       }
   }
 
@@ -309,6 +321,9 @@
       document.getElementById('style-chips-row').innerHTML = '';
       document.querySelectorAll('.ratio-chip').forEach((c, i) => c.classList.toggle('active', i === 0));
       document.getElementById('result-template-badge').style.display = 'none';
+
+      const banner = document.getElementById('template-preselect-banner');
+      if (banner) banner.style.display = 'none';
       document.getElementById('storyboard-grid').innerHTML = '';
       const rtEl = document.getElementById('ai-response-text');
       const rcEl = document.getElementById('ai-response-cursor');
@@ -346,39 +361,93 @@
   }
 
   async function proceedToTemplate() {
-      showPhase('phase-template');
-      renderTemplateGrid();
+      if (state.selectedTemplate) {
+          enterVariablesPhase();
+      } else {
+          showPhase('phase-template');
+          renderTemplateGrid();
+      }
   }
 
   function backToCompose() {
       showPhase('phase-compose');
   }
 
-  function renderTemplateGrid() {
+  const CAT_MAP = {
+      'product': '商品焦點',
+      'story': '品牌故事',
+      'twist': '反轉爆點',
+      'custom': '自訂模板',
+      '未分類': '未分類'
+  };
+
+  function renderTemplateGridFiltered(filteredTemplates) {
       const grid = document.getElementById('template-grid');
       grid.innerHTML = '';
-      TEMPLATES.forEach(tpl => {
+      if (filteredTemplates.length === 0) {
+          grid.innerHTML = '<div style="color:var(--text-mid); text-align:center; padding: 40px; grid-column: 1/-1;">此分類下目前無可用模板</div>';
+          return;
+      }
+      filteredTemplates.forEach(tpl => {
           const card = document.createElement('div');
           card.className = 'template-card';
           card.id = `tpl-card-${tpl.id}`;
+          if (state.selectedTemplate && state.selectedTemplate.id === tpl.id) {
+              card.classList.add('selected');
+          }
           card.innerHTML = `
-              <span class="tc-category">${tpl.category}</span>
-              <h3 class="tc-name">${tpl.name}</h3>
-              <p class="tc-desc">${tpl.description}</p>
-              <div class="tc-tags">${tpl.tags.slice(0, 4).map(t => `<span class="tc-tag">${t}</span>`).join('')}</div>
-              <div class="tc-meta">
-                  <span class="tc-meta-item"><span class="tc-meta-dot"></span>${tpl.narrative.tone}</span>
-                  <span class="tc-meta-item"><span class="tc-meta-dot"></span>${tpl.visualFlow.pace} 節奏</span>
-                  <span class="tc-meta-item"><span class="tc-meta-dot"></span>${tpl.platform.join(' / ')}</span>
+              <div class="template-thumb">${tpl.thumbnail ? `<img src="${tpl.thumbnail}" alt="${tpl.name}">` : '📄'}</div>
+              <div class="template-info">
+                  <div class="template-title">${tpl.name}</div>
               </div>
-              <div class="tc-footer">
-                  <span class="tc-shots">${tpl.shotsCount} 個分鏡</span>
-                  <button class="tc-preview-btn" onclick="openPreview('${tpl.id}', event)">預覽模板 →</button>
+              <div style="margin-top: 10px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f6f6f6; padding-top: 8px;">
+                  <span style="font-size: 0.75rem; color: var(--text-light); font-weight: 700; background: var(--primary-soft); color: var(--primary); padding: 2px 8px; border-radius: 4px;">${CAT_MAP[tpl.category] || tpl.category || '未分類'}</span>
+                  <button class="tc-preview-btn" onclick="openPreview('${tpl.id}', event)" style="background: none; border: none; color: var(--primary); font-size: 0.8rem; font-weight: 800; cursor: pointer; padding: 2px 6px;">預覽 ➔</button>
               </div>
           `;
           card.onclick = () => selectTemplate(tpl.id);
           grid.appendChild(card);
       });
+  }
+
+  function renderTemplateGrid() {
+      // 1. Group templates by category using translated Chinese keys
+      const groups = { '全部': TEMPLATES };
+      TEMPLATES.forEach(t => {
+          const dbCat = t.category || '未分類';
+          const k = CAT_MAP[dbCat] || dbCat;
+          if (!groups[k]) groups[k] = [];
+          groups[k].push(t);
+      });
+
+      const categories = ['全部', ...Object.keys(groups).filter(k => k !== '全部')];
+
+      // 2. Render category list
+      const catsEl = document.getElementById('generate-template-cats');
+      if (catsEl) {
+          catsEl.innerHTML = `
+              <div class="template-cat-header">
+                  <h2>模板分類</h2>
+                  <p>選擇最符合故事結構的爆點模式。</p>
+              </div>
+              ` + categories.map((c, i) => `
+                  <button class="tpl-cat ${i === 0 ? 'active' : ''}" data-cat="${c}">
+                      ${c} <span class="count">(${groups[c].length})</span>
+                  </button>
+              `).join('');
+
+          // 3. Bind click events to category buttons
+          catsEl.querySelectorAll('.tpl-cat').forEach(btn => {
+              btn.onclick = () => {
+                  catsEl.querySelectorAll('.tpl-cat').forEach(x => x.classList.remove('active'));
+                  btn.classList.add('active');
+                  renderTemplateGridFiltered(groups[btn.dataset.cat] || []);
+              };
+          });
+      }
+
+      // 4. Default to render "全部" category
+      renderTemplateGridFiltered(TEMPLATES);
   }
 
   function selectTemplate(id) {
@@ -392,6 +461,7 @@
       if (state.selectedTemplate) {
           hint.textContent = `已選擇：${state.selectedTemplate.name}`;
           btn.disabled = false;
+          btn.textContent = '✦ 下一步 (自訂變數)';
       }
   }
 
@@ -537,7 +607,7 @@
       closePreview();
       if (!state.selectedTemplate) { await alert('請先選擇一個模板！'); return; }
       state.useTemplate = true;
-      await startTemplateGenerate();
+      enterVariablesPhase();
   }
 
   window.storyboardData = null;
@@ -693,8 +763,7 @@
       try {
           updateLoadingUI(0, LOADING_STEPS_TPL);
           const tpl = state.selectedTemplate;
-          const resolvedVars = await resolveVariablesFromStory(tpl);
-          state.resolvedVariables = resolvedVars;
+          const resolvedVars = state.resolvedVariables;
 
           updateLoadingUI(1, LOADING_STEPS_TPL);
           const rawPrompts = tpl.promptTemplate.perShot.map(t => fillVariables(t, resolvedVars));
@@ -755,7 +824,20 @@
   async function resolveVariablesFromStory(tpl) {
       const vars = tpl.variables;
       const styleName = STYLES[state.styleIndex].name;
-      const prompt = `變數提取請求...`;
+      const prompt = `根據以下短影音故事描述，提取對應的變數值（繁體中文或英文皆可，以英文為佳，適合圖像生成）：
+
+故事描述：
+"${state.story}"
+
+需要提取的變數：
+${vars.map(v => `- ${v}: ${getVariableHint(v)}`).join('\n')}
+
+風格偏好：${styleName}
+
+請嚴格按照以下格式輸出（每行一個變數，格式：變數名稱: 值）：
+${vars.map(v => `${v}: <值>`).join('\n')}
+
+重要：只輸出變數清單，不要有其他說明文字。`;
 
       try {
           const res = await askGemini(prompt, 'flash');
@@ -1109,6 +1191,118 @@
       if (typeof window.initMathCurveLoader === 'function') {
           window.initMathCurveLoader();
       }
+   }
+
+  function updateComposeButtonText() {
+      const genBtn = document.querySelector('.options-gen-btn');
+      if (!genBtn) return;
+      if (state.selectedTemplate) {
+          genBtn.textContent = '✦ 下一步 (自訂變數)';
+      } else {
+          genBtn.textContent = '✦ 選擇模板';
+      }
+  }
+
+  function updatePreselectedTemplateUI() {
+      const banner = document.getElementById('template-preselect-banner');
+      const nameSpan = document.getElementById('preselected-template-name');
+      const skipBtn = document.querySelector('.options-skip-btn');
+      
+      if (state.selectedTemplate) {
+          if (banner) banner.style.display = 'flex';
+          if (nameSpan) nameSpan.textContent = state.selectedTemplate.name;
+          if (skipBtn) skipBtn.style.display = 'none';
+          state.useTemplate = true;
+      } else {
+          if (banner) banner.style.display = 'none';
+          if (skipBtn) skipBtn.style.display = '';
+          state.useTemplate = false;
+      }
+      updateComposeButtonText();
+  }
+
+  function clearSelectedTemplate() {
+      state.selectedTemplate = null;
+      window.preselectedTemplateId = null;
+      updatePreselectedTemplateUI();
+  }
+
+  async function enterVariablesPhase() {
+      showPhase('phase-variables');
+      
+      const loader = document.getElementById('variables-loading-container');
+      const formContainer = document.getElementById('variables-form-container');
+      const footer = document.getElementById('variables-footer');
+      const form = document.getElementById('variables-form');
+
+      if (!loader || !formContainer || !footer || !form) {
+          console.warn('⚠️ 偵測到瀏覽器快取舊版 HTML 結構，正在強制清理快取並重載頁面...');
+          for (let i = localStorage.length - 1; i >= 0; i--) {
+              const key = localStorage.key(i);
+              if (key && key.startsWith('spa_page_cache_')) {
+                  localStorage.removeItem(key);
+              }
+          }
+          window.location.reload();
+          return;
+      }
+
+      loader.style.display = 'flex';
+      if (typeof window.initMathCurveLoader === 'function') {
+          window.initMathCurveLoader();
+      }
+      formContainer.style.display = 'none';
+      footer.style.display = 'none';
+      form.innerHTML = '';
+
+      try {
+          const tpl = state.selectedTemplate;
+          const resolvedVars = await resolveVariablesFromStory(tpl);
+          state.resolvedVariables = resolvedVars;
+
+          const vars = tpl.variables || [];
+          vars.forEach(v => {
+              const value = resolvedVars[v] || '';
+              const hint = getVariableHint(v);
+              
+              const group = document.createElement('div');
+              group.className = 'var-input-group';
+              group.innerHTML = `
+                  <label class="var-label">${v} <span class="hint">(${hint})</span></label>
+                  <input type="text" class="var-input" data-var="${v}" value="${value.replace(/"/g, '&quot;')}">
+              `;
+              form.appendChild(group);
+          });
+
+          loader.style.display = 'none';
+          formContainer.style.display = 'block';
+          footer.style.display = 'flex';
+      } catch (err) {
+          console.error(err);
+          alert('分析變數失敗：' + err.message);
+          backToTemplateOrCompose();
+      }
+  }
+
+  function confirmVariablesAndGenerate() {
+      const inputs = document.querySelectorAll('.var-input');
+      const resolved = { style: STYLES[state.styleIndex].prompt };
+      
+      inputs.forEach(input => {
+          const v = input.dataset.var;
+          resolved[v] = input.value.trim();
+      });
+
+      state.resolvedVariables = resolved;
+      startTemplateGenerate();
+  }
+
+  function backToTemplateOrCompose() {
+      if (window.preselectedTemplateId) {
+          showPhase('phase-compose');
+      } else {
+          showPhase('phase-template');
+      }
   }
 
   window.initGeneratePage = initGeneratePage;
@@ -1127,5 +1321,8 @@
   window.showAllStyles = showAllStyles;
   window.onStoryInput = onStoryInput;
   window.startGenerate = startGenerate;
+  window.clearSelectedTemplate = clearSelectedTemplate;
+  window.backToTemplateOrCompose = backToTemplateOrCompose;
+  window.confirmVariablesAndGenerate = confirmVariablesAndGenerate;
 
 })();

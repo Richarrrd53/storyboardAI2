@@ -1,0 +1,125 @@
+{
+"videoId": "EFdHtQxsFS8",
+"metadata": {
+"category": "story",
+"shotsCount": 7,
+"confidence": 0.95
+},
+"analysis": {
+"structure": [
+{
+"shot": 1,
+"segment": "hook",
+"technique": "situational",
+"description": "女兒提及留學花費震撼彈"
+},
+{
+"shot": 2,
+"segment": "exploration",
+"technique": "situational",
+"description": "父親補充移民與總體花費"
+},
+{
+"shot": 3,
+"segment": "exploration",
+"technique": "situational",
+"description": "父親表達對教育與眼界的看法"
+},
+{
+"shot": 4,
+"segment": "insight",
+"technique": "situational",
+"description": "女兒談論大學科系與現職關聯"
+},
+{
+"shot": 5,
+"segment": "insight",
+"technique": "situational",
+"description": "父親對女兒攝影興趣的回應"
+},
+{
+"shot": 6,
+"segment": "insight",
+"technique": "situational",
+"description": "討論留學對性格的改變"
+},
+{
+"shot": 7,
+"segment": "twist",
+"technique": "montage",
+"description": "父親描述女兒以前很內向引發反差笑點"
+}
+]
+},
+"marketing": {
+"isImplicit": true,
+"brandRole": "background_context",
+"exposureType": "wardrobe_and_environment",
+"hooks": [
+"留學千萬花費話題",
+"優質老爸感言",
+"內向性格的反差反轉"
+]
+},
+"promptTemplate": {
+"variables": [
+"character_a",
+"character_b",
+"scene",
+"emotion",
+"style",
+"product_brand"
+],
+"perShot": [
+{
+"shot": 1,
+"camera": "handheld",
+"angle": "eye-level",
+"duration": 3,
+"prompt": "{character_a} in {scene} with surprised {emotion}, wearing {product_brand} uniform, {style} vlogging style."
+},
+{
+"shot": 2,
+"camera": "static",
+"angle": "eye-level",
+"duration": 3,
+"prompt": "{character_b} sitting in {scene}, calm {emotion}, traditional tea set on table, {style} style."
+},
+{
+"shot": 3,
+"camera": "close-up",
+"angle": "eye-level",
+"duration": 4,
+"prompt": "Close-up of {character_b} with sincere {emotion}, talking about education, {style} interview style."
+},
+{
+"shot": 4,
+"camera": "handheld",
+"angle": "eye-level",
+"duration": 2,
+"prompt": "{character_a} standing in {scene}, confident {emotion}, {style} style."
+},
+{
+"shot": 5,
+"camera": "close-up",
+"angle": "eye-level",
+"duration": 2,
+"prompt": "Close-up of {character_b} with awkward but polite {emotion}, nodding, {style} style."
+},
+{
+"shot": 6,
+"camera": "wide",
+"angle": "eye-level",
+"duration": 3,
+"prompt": "Wide shot of {character_a} and {character_b} in {scene}, thoughtful {emotion}, {style} style."
+},
+{
+"shot": 7,
+"camera": "static",
+"angle": "eye-level",
+"duration": 4,
+"prompt": "{character_b} speaking in {scene} with humorous {emotion}, overlaid with meme elements, {style} style."
+}
+]
+}
+}

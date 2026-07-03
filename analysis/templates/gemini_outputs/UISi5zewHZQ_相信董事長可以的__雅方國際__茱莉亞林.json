@@ -1,0 +1,151 @@
+{
+"id": "UISi5zewHZQ",
+"name": "相信董事長可以的",
+"category": "twist",
+"tags": [
+"#雅方國際",
+"#短影音行銷",
+"#反轉劇情",
+"#職場喜劇"
+],
+"description": "當董事長是你爸，特助女兒安排的超狂出差行程讓老闆也崩潰。",
+"narrative": {
+"type": "situational",
+"structure": "起：匯報專業行程；承：行程轉為荒謬；轉：董事長抗議；合：身分反轉定格",
+"tone": "humor",
+"summary": "女兒擔任特助，為董事長父親安排了毫無休息時間的跨國出差行程，最後以『女兒都是對的』展現家庭地位反轉。"
+},
+"hook": {
+"type": "shock",
+"position": "start",
+"description": "標題顯示『當董事長是你爸』，建立角色衝突與反差期待。"
+},
+"marketing": {
+"isImplicit": true,
+"exposureType": "logo",
+"brandRole": "active",
+"integrationMethod": "plot",
+"revealTiming": "early",
+"persuasionStyle": "subtle",
+"targetEmotion": [
+"relatability",
+"curiosity",
+"trust"
+]
+},
+"structure": [
+{
+"shot": 1,
+"duration": "2s",
+"camera": "static",
+"angle": "eye-level",
+"action": "女兒站在辦公桌旁拿著筆記本向坐在茶几前的爸爸報告行程",
+"emotion": "serious",
+"purpose": "建立專業職場匯報的情境假象"
+},
+{
+"shot": 2,
+"duration": "3s",
+"camera": "static",
+"angle": "eye-level",
+"action": "切換至爸爸特寫，表現出聽得一臉茫然與放空的表情",
+"emotion": "confused",
+"purpose": "利用表情落差製造第一層笑點"
+},
+{
+"shot": 3,
+"duration": "5s",
+"camera": "wide",
+"angle": "eye-level",
+"action": "快速剪輯地圖路徑與飛機素材，疊加人物頭像表現瘋狂移動過程",
+"emotion": "chaotic",
+"purpose": "視覺化行程的荒謬感與緊湊節奏"
+},
+{
+"shot": 4,
+"duration": "2s",
+"camera": "static",
+"angle": "eye-level",
+"action": "爸爸放下行程手冊，對著女兒大聲抗議",
+"emotion": "suspense",
+"purpose": "爆發戲劇衝突，推動至劇情轉折"
+},
+{
+"shot": 5,
+"duration": "3s",
+"camera": "handheld",
+"angle": "eye-level",
+"action": "女兒手拍桌子，強勢要求爸爸承擔公司繁重訂單量",
+"emotion": "casual",
+"purpose": "完成父女身分與職位權力的最終反轉"
+},
+{
+"shot": 6,
+"duration": "2s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "爸爸露出尷尬而不失禮貌的微笑，畫面定格並出現標題字",
+"emotion": "humor",
+"purpose": "結尾鉤子，強化社群共鳴與溫馨感"
+}
+],
+"visualFlow": {
+"pace": "medium",
+"rhythmPattern": "前半段穩定匯報，中段地圖快節奏，結尾定格幽默",
+"transitionStyle": "cut",
+"montageDescription": "快速的地圖動畫切換"
+},
+"promptTemplate": {
+"base": "{style} style, a scene in {scene} featuring {character} and $character_2.",
+"perShot": [
+"{character} wearing $product is reporting to $character_1 in {scene}, {style}.",
+"Close-up of $character_1 with {emotion} expression, {style}.",
+"A fast-paced animation of $scene map with $character_1's face moving, {style}.",
+"$character_1 reacting with {emotion} in {scene}, {style}.",
+"$character_2 uses {emotion} tone in {scene}, wearing $product logo, {style}.",
+"Close-up of $character_1 smiling with {emotion}, frozen frame, {style}."
+]
+},
+"variables": [
+"character",
+"scene",
+"emotion",
+"style",
+"product"
+],
+"controls": {
+"pace": [
+"medium"
+],
+"cameraIntensity": [
+"low"
+],
+"emotionIntensity": [
+"high"
+]
+},
+"useCase": "企業品牌形象擬人化、老闆個人IP經營",
+"platform": [
+"tiktok",
+"reels",
+"shorts"
+],
+"shotsCount": 6,
+"source": {
+"videoId": "UISi5zewHZQ",
+"title": "相信董事長可以的",
+"channel": "雅方國際_茱莉亞林",
+"views": 0
+},
+"analysis": {
+"whyItWorks": "利用家庭倫理(女兒最大)與職場地位(董事長最大)的權力失調，創造反差笑點與品牌實力暗示。",
+"targetAudience": "上班族、創業家、家庭受眾",
+"replicableElements": [
+"職位反轉劇情",
+"地圖快速轉場素材",
+"尷尬微笑定格結尾"
+]
+},
+"confidence": 0.95,
+"version": "2.0"
+}

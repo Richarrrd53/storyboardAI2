@@ -1,0 +1,85 @@
+{
+"videoId": "HQRvHBtvm-U",
+"analysisVersion": "1.0",
+"category": "twist",
+"tone": "humorous",
+"marketing": {
+"isImplicit": true,
+"brandRole": "corporate_culture",
+"exposureType": "background_placement"
+},
+"shotsCount": 4,
+"structure": [
+{
+"phase": "hook",
+"timestamp": "00:00-00:03",
+"narrative": "situational"
+},
+{
+"phase": "rising_action",
+"timestamp": "00:03-00:18",
+"narrative": "situational"
+},
+{
+"phase": "climax",
+"timestamp": "00:18-00:27",
+"narrative": "reaction"
+},
+{
+"phase": "falling_action",
+"timestamp": "00:27-00:35",
+"narrative": "situational"
+}
+],
+"perShot": [
+{
+"shotNumber": 1,
+"camera": "wide",
+"angle": "eye-level",
+"duration": 3,
+"description": "Father and daughter sitting at the desk with a big title overlay.",
+"promptTemplate": "{character_a} and {character_b} are sitting at {scene} with {text_overlay}, {style}."
+},
+{
+"shotNumber": 2,
+"camera": "close-up",
+"angle": "eye-level",
+"duration": 15,
+"description": "Intercut close-ups of father explaining rules and daughter reacting dismissively.",
+"promptTemplate": "Intercut close-ups of {character_a} with {emotion_a} and {character_b} with {emotion_b}, {style}."
+},
+{
+"shotNumber": 3,
+"camera": "handheld",
+"angle": "high-angle",
+"duration": 9,
+"description": "POV shot of a phone screen showing a prank involving garlic and a treasure basin.",
+"promptTemplate": "{camera_pov} view of {prop_mobile} showing {action_prank} involving {product_prop} and {scene_element}, {style}."
+},
+{
+"shotNumber": 4,
+"camera": "tracking",
+"angle": "eye-level",
+"duration": 8,
+"description": "Camera follows daughter laughing as father reacts in the background.",
+"promptTemplate": "{camera_move} shot of {character_b} with {emotion_c} while {character_a} reacts in {scene}, {style}."
+}
+],
+"variables": {
+"character_a": "middle-aged man in formal shirt",
+"character_b": "young woman in casual hoodie",
+"scene": "traditional corporate office with wooden furniture",
+"text_overlay": "large bold text asking about family rules",
+"emotion_a": "serious and authoritative",
+"emotion_b": "rebellious and playful",
+"emotion_c": "laughing and walking away",
+"camera_pov": "handheld first-person",
+"camera_move": "tracking",
+"prop_mobile": "smartphone screen",
+"action_prank": "putting garlic into a vase",
+"product_prop": "garlic bulbs",
+"scene_element": "ceramic treasure basin",
+"style": "clean interior lighting, social media vlog aesthetic"
+},
+"confidenceScore": 0.95
+}

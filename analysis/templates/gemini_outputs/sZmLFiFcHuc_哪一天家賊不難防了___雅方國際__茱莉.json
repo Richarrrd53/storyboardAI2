@@ -1,0 +1,204 @@
+{
+"id": "sZmLFiFcHuc",
+"name": "哪一天家賊不難防了_雅方國際_茱莉",
+"category": "twist",
+"tags": [
+"#雅方",
+"#羊肉爐",
+"#二代接班",
+"#家賊難防",
+"#幽默"
+],
+"description": "二代接班人以幽默短影音方式介紹自家企業規模，並透過與父親的趣味互動翻轉商業廣告的沉悶感。",
+"narrative": {
+"type": "situational",
+"structure": "起：接獲拍片任務並展示規模；承：父親碎念產品理念；轉：快轉父親演說並要求改帳戶；合：父親傻眼與家賊標籤。",
+"tone": "humor",
+"summary": "女兒受老爸之託拍攝公司宣傳片，快速展示工廠後與神似卡爾爺爺的老爸互動，最後以要求掌握收款帳戶達成搞笑反轉。"
+},
+"hook": {
+"type": "humor",
+"position": "start",
+"description": "老爸又叫我拍宣傳片的高顏值開場與快速工廠導覽。"
+},
+"marketing": {
+"isImplicit": false,
+"exposureType": "product",
+"brandRole": "active",
+"integrationMethod": "plot",
+"revealTiming": "early",
+"persuasionStyle": "emotional",
+"targetEmotion": [
+"relatability",
+"curiosity",
+"trust"
+]
+},
+"structure": [
+{
+"shot": 1,
+"duration": "1s",
+"camera": "wide",
+"angle": "eye-level",
+"action": "女主角在工廠門口揮手開場",
+"emotion": "energetic",
+"purpose": "建立場景與角色身份"
+},
+{
+"shot": 2,
+"duration": "1s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "展示冰棒產品",
+"emotion": "confident",
+"purpose": "產品曝光"
+},
+{
+"shot": 3,
+"duration": "1s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "展示羊肉爐產品",
+"emotion": "professional",
+"purpose": "核心產品曝光"
+},
+{
+"shot": 4,
+"duration": "2s",
+"camera": "tracking",
+"angle": "eye-level",
+"action": "快步走過生產線",
+"emotion": "busy",
+"purpose": "展示企業生產實力"
+},
+{
+"shot": 5,
+"duration": "2s",
+"camera": "tracking",
+"angle": "eye-level",
+"action": "進入冷凍庫感到寒冷跑開",
+"emotion": "funny",
+"purpose": "展示倉儲規模並增加趣味性"
+},
+{
+"shot": 6,
+"duration": "2s",
+"camera": "handheld",
+"angle": "low-angle",
+"action": "走入辦公室，切換至老爸場景",
+"emotion": "casual",
+"purpose": "轉場至互動情境"
+},
+{
+"shot": 7,
+"duration": "2s",
+"camera": "static",
+"angle": "eye-level",
+"action": "老爸看著手機認真講述產品",
+"emotion": "serious",
+"purpose": "塑造父親角色與產品理念"
+},
+{
+"shot": 8,
+"duration": "1s",
+"camera": "static",
+"angle": "high-angle",
+"action": "女兒聽得不耐煩，畫面快轉",
+"emotion": "bored",
+"purpose": "笑點鋪陳與節奏控制"
+},
+{
+"shot": 9,
+"duration": "2s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "老爸交代未來公司交給孩子",
+"emotion": "earnest",
+"purpose": "情感連結與轉折預備"
+},
+{
+"shot": 10,
+"duration": "2s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "女兒提議將收款帳戶改成自己的名字",
+"emotion": "mischievous",
+"purpose": "製造核心反轉"
+},
+{
+"shot": 11,
+"duration": "1s",
+"camera": "close-up",
+"angle": "eye-level",
+"action": "老爸震驚定格，畫面出現家賊難防文字",
+"emotion": "shocked",
+"purpose": "收尾點題與幽默完結"
+}
+],
+"visualFlow": {
+"pace": "fast",
+"rhythmPattern": "快速快切導覽後進入穩定對話節奏，最後停頓爆梗",
+"transitionStyle": "cut"
+},
+"promptTemplate": {
+"base": "A vibrant and bright short video style, high saturation, real factory and office environment.",
+"perShot": [
+"{character} waving hands at {scene} entrance with {emotion} mood.",
+"{character} holding {product} close to camera, {style} lighting.",
+"{character} showcasing {product} box with a {emotion} smile.",
+"{character} walking fast through {scene} showing machines.",
+"{character} shivering and running in {scene} filled with boxes.",
+"{character} entering {scene} with {cameraIntensity} movement.",
+"{character_dad} sitting at desk in {scene} talking seriously about {product}.",
+"{character} looking {emotion} with fast-forward graphic overlay.",
+"{character_dad} giving a {emotion} speech to {character}.",
+"{character} whispering {emotion} request about financial account.",
+"{character_dad} face in {emotion} expression with funny text overlay, {style} style."
+]
+},
+"variables": [
+"character",
+"character_dad",
+"scene",
+"emotion",
+"style",
+"product"
+],
+"controls": {
+"pace": [
+"fast",
+"medium"
+],
+"cameraIntensity": [
+"medium",
+"high"
+],
+"emotionIntensity": [
+"high"
+]
+},
+"useCase": "企業形象推廣、產品宣傳、接班人日常",
+"platform": [
+"tiktok",
+"reels",
+"shorts"
+],
+"shotsCount": 11,
+"source": {
+"videoId": "sZmLFiFcHuc",
+"title": "哪一天家賊不難防了_雅方國際_茱莉",
+"channel": "雅方國際",
+"views": 100000
+},
+"analysis": {
+"whyItWorks": "利用二代與一代的衝突趣味性，打破傳統宣傳片的枯燥，將產線與倉儲自然融入劇情。",
+"targetAudience": "年輕消費者、家庭主婦、喜愛幽默短影音的人群",
+"replicableElements": [
+"高顏值代言人與長輩的幽默對話",
+"快轉與定格特效的運用",
+"反轉式的收尾邏輯"
+]
+},
+"confidence": 0.95,
+"version": "2.0"
+}
