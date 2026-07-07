@@ -504,7 +504,7 @@ p {
 .transition-loader-overlay.active {
     opacity: 1;
     filter: blur(0px);
-    pointer-events: auto;
+    pointer-events: none;
 }
 
 .transition-loader-content {

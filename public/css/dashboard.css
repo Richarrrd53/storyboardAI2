@@ -203,6 +203,12 @@
     overflow: hidden;
 }
 
+.top-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
 .top-avatar:hover {
     transform: scale(1.05);
     box-shadow: 0 0 15px rgba(220, 156, 71, 0.4);
@@ -353,6 +359,7 @@
 .up-avatar img {
     width: 100%;
     height: 100%;
+    object-fit: cover;
 }
 
 .up-name {

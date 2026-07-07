@@ -2,10 +2,12 @@
   'use strict';
   const AUTH_KEY = 'spa_logged_in';
   let currentPage = 'landing';
+  let currentOpts = {};
   let isTransitioning = false;
   let currentNavController = null;
   let navSeq = 0;
   let targetPage = null;
+  let targetOpts = null;
   let dashboardTopbar = null;
   let mobileBottomNav = null;
   let landingHTML = '';
@@ -13,6 +15,7 @@
 
   // In-memory cache for API requests
   let cacheProjectsList = null;
+  let cacheTemplatesList = null;
   const cacheProjectDetails = {};
   const pendingDeletions = {};
   const recentlyDeleted = new Set();
@@ -20,8 +23,17 @@
   let activeDisplayProjectsFn = null;
   let activeDisplayHistoryFn = null;
 
+  // In-memory cache for HTML documents
+  window.htmlMemoryCache = {};
+
+  // Pending API requests to avoid duplicates
+  let pendingProjectsPromise = null;
+  let pendingTemplatesPromise = null;
+  const pendingProjectDetailsPromises = {};
+
   window.clearSpaCache = () => {
     cacheProjectsList = null;
+    cacheTemplatesList = null;
     for (const key in cacheProjectDetails) {
       delete cacheProjectDetails[key];
     }
@@ -32,6 +44,14 @@
     }
     recentlyDeleted.clear();
     recentlyRestored.clear();
+    for (const key in window.htmlMemoryCache) {
+      delete window.htmlMemoryCache[key];
+    }
+    for (const key in pendingProjectDetailsPromises) {
+      delete pendingProjectDetailsPromises[key];
+    }
+    pendingProjectsPromise = null;
+    pendingTemplatesPromise = null;
     console.log("🧹 SPA client-side API cache cleared.");
   };
 
@@ -133,66 +153,174 @@
       }
     },
     fetchProjects: async (signal) => {
+      if (pendingProjectsPromise) {
+        return pendingProjectsPromise;
+      }
+
       const token = localStorage.getItem(AUTH_TOKEN_KEY);
       if (!token) return [];
 
+      pendingProjectsPromise = (async () => {
+        try {
+          const res = await fetch('/api/projects?include_deleted=true', {
+            signal,
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+
+          if (!res.ok) return [];
+
+          const data = await res.json();
+          const projects = data.projects || [];
+
+          // Apply recent client-side state adjustments
+          projects.forEach(p => {
+            if (recentlyDeleted.has(p.id)) {
+              p.is_deleted = true;
+            }
+            if (recentlyRestored.has(p.id)) {
+              p.is_deleted = false;
+            }
+          });
+
+          // Clean up sets if the server state has caught up
+          projects.forEach(p => {
+            if (p.is_deleted && recentlyDeleted.has(p.id)) {
+              recentlyDeleted.delete(p.id);
+            }
+            if (!p.is_deleted && recentlyRestored.has(p.id)) {
+              recentlyRestored.delete(p.id);
+            }
+          });
+
+          return projects;
+        } catch (e) {
+          if (e.name === 'AbortError') return [];
+          return [];
+        } finally {
+          pendingProjectsPromise = null;
+        }
+      })();
+
+      return pendingProjectsPromise;
+    }
+  };
+
+  function rafDelay(ms) {
+    return new Promise(resolve => {
+      const start = performance.now();
+      function frame(now) {
+        if (now - start >= ms) {
+          resolve();
+        } else {
+          requestAnimationFrame(frame);
+        }
+      }
+      requestAnimationFrame(frame);
+    });
+  }
+
+  async function fetchTemplates(signal) {
+    if (cacheTemplatesList) return cacheTemplatesList;
+    if (pendingTemplatesPromise) return pendingTemplatesPromise;
+
+    pendingTemplatesPromise = (async () => {
       try {
-        const res = await fetch('/api/projects?include_deleted=true', {
-          signal,
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-
-        if (!res.ok) return [];
-
-        const data = await res.json();
-        const projects = data.projects || [];
-
-        // Apply recent client-side state adjustments
-        projects.forEach(p => {
-          if (recentlyDeleted.has(p.id)) {
-            p.is_deleted = true;
-          }
-          if (recentlyRestored.has(p.id)) {
-            p.is_deleted = false;
-          }
-        });
-
-        // Clean up sets if the server state has caught up
-        projects.forEach(p => {
-          if (p.is_deleted && recentlyDeleted.has(p.id)) {
-            recentlyDeleted.delete(p.id);
-          }
-          if (!p.is_deleted && recentlyRestored.has(p.id)) {
-            recentlyRestored.delete(p.id);
-          }
-        });
-
-        return projects;
-      } catch (e) {
-        if (e.name === 'AbortError') return [];
+        const res = await fetch('/api/get-templates', { signal });
+        if (res.ok) {
+          const templates = await res.json();
+          cacheTemplatesList = templates;
+          return templates;
+        }
         return [];
+      } catch (e) {
+        return [];
+      } finally {
+        pendingTemplatesPromise = null;
+      }
+    })();
+
+    return pendingTemplatesPromise;
+  }
+
+  async function fetchProjectDetail(projectId, signal) {
+    if (cacheProjectDetails[projectId]) return cacheProjectDetails[projectId];
+    if (pendingProjectDetailsPromises[projectId]) return pendingProjectDetailsPromises[projectId];
+
+    pendingProjectDetailsPromises[projectId] = (async () => {
+      try {
+        const res = await fetch(`/api/projects/${projectId}`, {
+          signal,
+          headers: { 'Authorization': `Bearer ${spaAuth.getToken()}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const p = data?.project;
+          if (p) {
+            cacheProjectDetails[projectId] = p;
+            return p;
+          }
+        }
+        return null;
+      } catch (e) {
+        return null;
+      } finally {
+        delete pendingProjectDetailsPromises[projectId];
+      }
+    })();
+
+    return pendingProjectDetailsPromises[projectId];
+  }
+
+  async function prefetchPage(page, opts = {}) {
+    // 1. Prefetch HTML page document
+    let htmlUrl = null;
+    if (page === 'login' || page === 'register') htmlUrl = '/html/login.html';
+    else if (page === 'dashboard' || page === 'project') htmlUrl = '/html/dashboard.html';
+    else if (page === 'generate') htmlUrl = '/html/generate.html';
+    else if (page === 'history') htmlUrl = '/html/history.html';
+    else if (page === 'template') htmlUrl = '/html/template.html';
+
+    if (htmlUrl) {
+      fetchPageDoc(htmlUrl).catch(() => {});
+    }
+
+    // 2. Prefetch API requests for pages
+    if (spaAuth.isLoggedIn()) {
+      if (page === 'dashboard' || page === 'history') {
+        if (!cacheProjectsList) {
+          spaAuth.fetchProjects().catch(() => {});
+        }
+      } else if (page === 'template') {
+        fetchTemplates().catch(() => {});
+      } else if (page === 'project' && opts.id) {
+        fetchProjectDetail(opts.id).catch(() => {});
       }
     }
   }
+
   function maskClose() {
     return new Promise(resolve => {
       const easing = 'cubic-bezier(0.76,0,0.24,1)';
-      maskTop().style.transition = `top 0.4s ${easing}`;
-      maskBot().style.transition = `bottom 0.4s ${easing}`;
-      maskTop().style.top = '0';
-      maskBot().style.bottom = '0';
-      setTimeout(resolve, 420);
+      requestAnimationFrame(() => {
+        maskTop().style.transition = `top 0.3s ${easing}`;
+        maskBot().style.transition = `bottom 0.3s ${easing}`;
+        maskTop().style.top = '0';
+        maskBot().style.bottom = '0';
+        rafDelay(300).then(resolve);
+      });
     });
   }
 
   function maskOpen() {
     return new Promise(resolve => {
       const easing = 'cubic-bezier(0.16,1,0.3,1)';
-      maskTop().style.transition = `top 0.5s ${easing}`;
-      maskBot().style.transition = `bottom 0.5s ${easing}`;
-      maskTop().style.top = '-50%';
-      maskBot().style.bottom = '-50%';
-      setTimeout(resolve, 520);
+      requestAnimationFrame(() => {
+        maskTop().style.transition = `top 0.3s ${easing}`;
+        maskBot().style.transition = `bottom 0.3s ${easing}`;
+        maskTop().style.top = '-50%';
+        maskBot().style.bottom = '-50%';
+        rafDelay(300).then(resolve);
+      });
     });
   }
 
@@ -309,16 +437,80 @@
     });
   }
 
+  function injectScripts(scripts, signal) {
+    if (!scripts || scripts.length === 0) return Promise.resolve();
+    const promises = scripts.map(src => {
+      return new Promise((resolve) => {
+        if (signal?.aborted) {
+          resolve(false);
+          return;
+        }
+
+        const pathname = new URL(src, window.location.href).pathname;
+
+        if (loadedScripts.has(pathname)) {
+          resolve(true);
+          return;
+        }
+
+        const existing = document.querySelector(`script[data-spa-script][data-src="${pathname}"]`);
+        if (existing) {
+          loadedScripts.add(pathname);
+          resolve(true);
+          return;
+        }
+
+        const s = document.createElement('script');
+        s.dataset.spaScript = '1';
+        s.dataset.src = pathname;
+
+        if (src.includes('landing-animation.js')) {
+          s.type = 'module';
+        } else {
+          s.async = false;
+        }
+
+        s.src = src;
+
+        const cleanup = () => {
+          s.onload = null;
+          s.onerror = null;
+        };
+
+        s.onload = () => {
+          cleanup();
+          if (!signal?.aborted) {
+            loadedScripts.add(pathname);
+          }
+          resolve(true);
+        };
+
+        s.onerror = () => {
+          cleanup();
+          resolve(false);
+        };
+
+        document.body.appendChild(s);
+      });
+    });
+    return Promise.all(promises);
+  }
+
   function removePageScripts() {
     // injectedScripts.forEach(s => s.remove());
     // injectedScripts.length = 0;
   }
 
   async function fetchPageDoc(url, signal) {
+    if (window.htmlMemoryCache[url]) {
+      return window.htmlMemoryCache[url];
+    }
     const cacheKey = 'spa_page_cache_' + url;
     const cachedHTML = localStorage.getItem(cacheKey);
     if (cachedHTML) {
-      return new DOMParser().parseFromString(cachedHTML, 'text/html');
+      const doc = new DOMParser().parseFromString(cachedHTML, 'text/html');
+      window.htmlMemoryCache[url] = doc;
+      return doc;
     }
     // 加入時間戳記避免瀏覽器 HTTP 快取
     const res = await fetch(url + '?v=' + Date.now(), { signal });
@@ -328,7 +520,9 @@
     } catch (e) {
       console.warn('Failed to cache page doc in localStorage:', e);
     }
-    return new DOMParser().parseFromString(html, 'text/html');
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    window.htmlMemoryCache[url] = doc;
+    return doc;
   }
 
   function initMain() {
@@ -763,10 +957,14 @@
     }
 
     const logout = panel?.querySelector('.up-logout');
-    if (logout) {
-      logout.addEventListener('click', e => {
+    if (logout && !logout.dataset.spaBound) {
+      logout.dataset.spaBound = 'true';
+      logout.addEventListener('click', async e => {
         e.preventDefault();
-        spaAuth.logout();
+        const isConfirmed = await confirm('是否確定登出？', '登出後將清除快取並返回首頁。', 'danger', '登出');
+        if (isConfirmed) {
+          spaAuth.logout();
+        }
       });
     }
 
@@ -812,6 +1010,9 @@
               if (e.target.closest('.project-option-btn')) return;
               navigate('project', { id: p.id });
             };
+            card.addEventListener('pointerenter', () => {
+              prefetchPage('project', { id: p.id });
+            });
 
             const thumbContent = p.cover
               ? `<img src="${p.cover}" style="width: 100%; height: 100%;" alt="${p.title}">`
@@ -857,7 +1058,7 @@
         fetchProjectsBackground();
       } else {
         projectsGrid.innerHTML = '<div style="color:var(--text-mid); text-align:center; padding: 40px; grid-column: 1/-1;">載入中...</div>';
-        await fetchProjectsNetwork();
+        fetchProjectsNetwork();
       }
 
       async function fetchProjectsNetwork() {
@@ -912,7 +1113,16 @@
     }
 
     const logout = panel?.querySelector('.up-logout');
-    if (logout) logout.addEventListener('click', e => { e.preventDefault(); spaAuth.logout(); });
+    if (logout && !logout.dataset.spaBound) {
+      logout.dataset.spaBound = 'true';
+      logout.addEventListener('click', async e => {
+        e.preventDefault();
+        const isConfirmed = await confirm('是否確定登出？', '登出後將清除快取並返回首頁。', 'danger', '登出');
+        if (isConfirmed) {
+          spaAuth.logout();
+        }
+      });
+    }
 
     const projectsGrid = document.getElementById('projects-grid');
     if (projectsGrid) {
@@ -933,6 +1143,9 @@
           const card = document.createElement('div');
           card.className = 'project-card';
           card.onclick = () => navigate('generate');
+          card.addEventListener('pointerenter', () => {
+            prefetchPage('generate');
+          });
           const thumbContent = p.cover 
             ? `<img src="${p.cover}" style="width: 100%; height: 100%;" alt="${p.title}">`
             : `🎬`;
@@ -1022,6 +1235,9 @@
               if (e.target.closest('.project-option-btn')) return;
               navigate('project', { id: p.id });
             };
+            card.addEventListener('pointerenter', () => {
+              prefetchPage('project', { id: p.id });
+            });
           }
 
           const thumbContent = p.cover
@@ -1069,7 +1285,7 @@
       fetchHistoryBackground();
     } else {
       projectsGrid.innerHTML = '<div style="color:var(--text-mid); text-align:center; padding: 40px; grid-column: 1/-1;">載入中...</div>';
-      await fetchHistoryNetwork();
+      fetchHistoryNetwork();
     }
 
     async function fetchHistoryNetwork() {
@@ -1116,8 +1332,7 @@
 
     let templates = [];
     try {
-      const res = await fetch('/api/get-templates', { signal });
-      if (res.ok) templates = await res.json();
+      templates = await fetchTemplates(signal);
     } catch (e) {
       if (e.name === 'AbortError') return;
       templates = [];
@@ -1484,24 +1699,12 @@
 
     async function fetchProjectNetwork() {
       try {
-        const res = await fetch(`/api/projects/${projectId}`, {
-          signal,
-          headers: { 'Authorization': `Bearer ${spaAuth.getToken()}` }
-        });
-
+        const p = await fetchProjectDetail(projectId, signal);
         if (signal?.aborted) return;
-
-        if (!res.ok) {
-          m.innerHTML = `<div class="projects-empty"><h3>無法取得專案（${res.status}）</h3></div>`;
+        if (!p) {
+          m.innerHTML = `<div class="projects-empty"><h3>無法取得專案</h3></div>`;
           return;
         }
-
-        const data = await res.json();
-        const p = data?.project;
-
-        if (!p) throw new Error('伺服器回傳資料缺少 project 欄位');
-
-        cacheProjectDetails[projectId] = p;
         await renderWithProjectData(p);
       } catch (e) {
         if (e.name !== 'AbortError') {
@@ -1561,6 +1764,9 @@
           a.addEventListener('click', e => {
             e.preventDefault();
             navigate(page);
+          });
+          a.addEventListener('pointerenter', () => {
+            prefetchPage(page);
           });
         }
       });
@@ -1736,9 +1942,26 @@
   }
 
   async function navigate(page, opts = {}) {
-    const activePage = targetPage || currentPage;
+    if (isDashboardPage(page) && !spaAuth.isLoggedIn()) {
+      window.location.hash = '';
+      navigate('landing', { force: true });
+      setTimeout(async () => {
+        const isConfirmed = await confirm('未登入，是否跳轉到登入頁面？', '', 'default', '登入');
+        if (isConfirmed) {
+          navigate('login');
+        }
+      }, 500);
+      return;
+    }
 
-    if (page === activePage && !opts.force) return;
+    const activePage = targetPage || currentPage;
+    const activeOpts = targetPage ? targetOpts : currentOpts;
+
+    const isSameRoute = (page === activePage) && 
+      (opts.id === activeOpts?.id) && 
+      (opts.templateId === activeOpts?.templateId);
+
+    if (isSameRoute && !opts.force) return;
 
     // Flush any pending deletions immediately when switching pages
     for (const id in pendingDeletions) {
@@ -1766,6 +1989,7 @@
     }
 
     targetPage = page;
+    targetOpts = opts;
 
     const mySeq = ++navSeq;
 
@@ -1820,6 +2044,8 @@
     }, delay);
 
     try {
+      const prefetchPromise = prefetchPage(page, opts);
+
       if (window._landingKill) {
         window._landingKill();
         window._landingKill = null;
@@ -1839,9 +2065,9 @@
         (top.style.top === '0px' || top.style.top === '0') &&
         (bot.style.bottom === '0px' || bot.style.bottom === '0');
 
-      if (!maskAlreadyClosed) {
-        await maskClose();
-      }
+      const maskPromise = maskAlreadyClosed ? Promise.resolve() : maskClose();
+
+      await Promise.all([maskPromise, prefetchPromise]);
 
       if (signal.aborted || mySeq !== navSeq) return;
 
@@ -1858,10 +2084,8 @@
         if (signal.aborted || mySeq !== navSeq) return;
 
         const jsToLoad = Array.isArray(def.js) ? def.js : [];
-        for (const src of jsToLoad) {
-          await injectScript(src, signal);
-          if (signal.aborted || mySeq !== navSeq) return;
-        }
+        await injectScripts(jsToLoad, signal);
+        if (signal.aborted || mySeq !== navSeq) return;
       }
 
       if (page === 'generate' && typeof window.initGeneratePage === 'function') {
@@ -1918,7 +2142,7 @@
 
       window.scrollTo(0, 0);
 
-      await new Promise(resolve => setTimeout(resolve, 80));
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
       cleanupTransitionLoader();
 
@@ -1929,6 +2153,7 @@
       if (signal.aborted || mySeq !== navSeq) return;
 
       currentPage = page;
+      currentOpts = opts;
     } catch (e) {
       if (e.name !== 'AbortError') {
         console.error('[spa navigate error]', e);
@@ -1939,6 +2164,7 @@
         currentNavController = null;
         isTransitioning = false;
         targetPage = null;
+        targetOpts = null;
       }
     }
   }
@@ -1966,6 +2192,9 @@
 
   function interceptCTAs() {
     document.querySelectorAll('[data-navigate]').forEach(el => {
+      if (el.dataset.spaBound) return;
+      el.dataset.spaBound = 'true';
+
       el.addEventListener('click', e => {
         e.preventDefault();
         e.stopImmediatePropagation();
@@ -1976,10 +2205,27 @@
           navigate(target === 'register' ? 'register' : 'login');
         }
       });
+
+      el.addEventListener('pointerenter', () => {
+        const target = el.getAttribute('data-navigate');
+        const page = spaAuth.isLoggedIn() ? 'dashboard' : (target === 'register' ? 'register' : 'login');
+        prefetchPage(page);
+      });
     });
   }
 
   document.addEventListener('DOMContentLoaded', async () => {
+    // 使用者選單跳出後點擊空白處可收回
+    document.addEventListener('click', (e) => {
+      const panel = document.getElementById('spa-user-panel');
+      const avatar = document.getElementById('top-avatar') || (typeof dashboardTopbar !== 'undefined' && dashboardTopbar ? dashboardTopbar.querySelector('#top-avatar') : null);
+      if (panel && panel.classList.contains('active')) {
+        if (!e.target.closest('#spa-user-panel') && !e.target.closest('#top-avatar') && (!avatar || !avatar.contains(e.target))) {
+          panel.classList.remove('active');
+        }
+      }
+    });
+
     // 清除過期的頁面快取，確保最新版 HTML 被載入
     for (let i = localStorage.length - 1; i >= 0; i--) {
       const key = localStorage.key(i);
@@ -2042,9 +2288,7 @@
       });
     } else {
       interceptCTAs();
-      for (const src of pageDefs.landing.js) {
-        await injectScript(src);
-      }
+      await injectScripts(pageDefs.landing.js);
       
       if ('scrollRestoration' in history) {
         history.scrollRestoration = 'manual';
@@ -2057,7 +2301,7 @@
         window.initLandingPage();
       }
 
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
       
       await maskOpen();
     }
