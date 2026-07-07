@@ -16,19 +16,29 @@ const prisma = new PrismaClient({ adapter });
 const JWT_SECRET = process.env.JWT_SECRET || 'storyboard-secret-key-123';
 
 if(process.env.GCP_SERVICE_ACCOUNT_BASE64) {
+    console.log("👉偵測到使用雲端部屬，正在進行認證...");
     try{
         const credentialsJson = Buffer.from(process.env.GCP_SERVICE_ACCOUNT_BASE64, 'base64').toString('utf-8');
         const keyPath = path.join('/tmp', 'gcp-key.json');
         fs.writeFileSync(keyPath, credentialsJson);
         process.env.GOOGLE_APPLICATION_CREDENTIALS = keyPath;
-        console.log("✅ 成功從環境變數載入金鑰，並寫入臨時檔案。");
+        console.log("👌認證成功！");
     }
     catch (error) {
-        console.error("❌ 從環境變數載入金鑰失敗：", error.message);
+        console.error("🫸認證失敗：", error.message);
     }
 }
-else{
-    console.log("⚠️ 未偵測到 GCP_SERVICE_ACCOUNT_BASE64，將使用本地 ADC 憑證 (如果有的話)。");
+else if(process.env.GOOGLE_APPLICATION_CREDENTIALS){
+    console.log("👉偵測到使用本地端部屬，正在進行認證...");
+    try{
+        if (!fs.existsSync(process.env.GOOGLE_APPLICATION_CREDENTIALS)) {
+            throw new Error(`找不到指定的金鑰檔案：${process.env.GOOGLE_APPLICATION_CREDENTIALS}`);
+        }
+        console.log("👌認證成功！");
+    }
+    catch (error) {
+        console.error("🫸認證失敗：", error.message);
+    }
 }
 
 
@@ -427,21 +437,37 @@ app.post('/api/projects', async (req, res) => {
 
 
 app.post('/api/ask-gemini', async (req, res) => {
-    const { question, type } = req.body;
+    const { question, type, ratio } = req.body;
+
+    let targetRatio = "16:9";
+    if (ratio) {
+        if (ratio.includes("16:9")) targetRatio = "16:9";
+        else if (ratio.includes("9:16")) targetRatio = "9:16";
+        else if (ratio.includes("3:2")) targetRatio = "3:2";
+        else if (ratio.includes("2:3")) targetRatio = "2:3";
+        else if (ratio.includes("1:1")) targetRatio = "1:1";
+    }
+
     const modelConfigs = {
         'flash': {
             model: 'gemini-2.5-flash-lite',
-            config: { responseModalities: ['Text'] }
+            config: { responseModalities: ['TEXT'] }
         },
         'image': {
-            model: "gemini-3.1-flash-image-preview",
-            config: { responseModalities: ['Text', 'Image'] }
+            model: 'gemini-3.1-flash-image',
+            config: { 
+                responseModalities: ['TEXT', 'IMAGE'],
+                imageConfig: {
+                    aspectRatio: targetRatio,
+                    imageSize: '1K'
+                }
+            }
         },
         'story': {
-            model: "gemini-3-flash-preview",
-            config: { responseModalities: ['Text'] }
+            model: 'gemini-3.5-flash',
+            config: { responseModalities: ['TEXT'] }
         }
-    }
+    };
 
     const selectedConfig = modelConfigs[type] || modelConfigs['flash'];
 

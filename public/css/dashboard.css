@@ -1169,12 +1169,18 @@
 .project-thumb {
     width: 100%;
     max-width: 40vw;
+    aspect-ratio: 16 / 9;
     background: linear-gradient(135deg, #2a2a3e, #1a1a2e);
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 3rem;
+}
+
+.project-thumb img{
+    object-fit: scale-down;
+    aspect-ratio: 16 / 9;
 }
 
 .project-thumb::after {

@@ -653,40 +653,38 @@
 2. 所有提示詞、角色外觀及服飾描述必須使用英文，以方便圖像生成。`;
   }
 
-  const ratioPrompt = {
-      '橫向16:9': 'horizontal 16:9 aspect ratio, wide landscape composition',
-      '直向9:16': 'vertical 9:16 aspect ratio, portrait composition, tall frame',
-      '1:1': 'square 1:1 aspect ratio',
-      '橫向3:2': 'horizontal 3:2 aspect ratio, landscape composition',
-      '直向2:3': 'vertical 2:3 aspect ratio, portrait composition',
-  }[state.ratio] || 'composition';
+  function getRatioPrompt() {
+      return {
+          '橫向16:9': 'horizontal 16:9 aspect ratio, wide landscape composition',
+          '直向9:16': 'vertical 9:16 aspect ratio, portrait composition, tall frame',
+          '1:1': 'square 1:1 aspect ratio',
+          '橫向3:2': 'horizontal 3:2 aspect ratio, landscape composition',
+          '直向2:3': 'vertical 2:3 aspect ratio, portrait composition',
+      }[state.ratio] || 'composition';
+  }
 
   async function buildFinalPrompt(shot) {
       const styleDetail = STYLES[state.styleIndex].prompt;
-      const styleZh = (window.translatePromptText && typeof window.translatePromptText === 'function') ? await window.translatePromptText(styleDetail) : styleDetail;
-      const ratioZh = (window.translatePromptText && typeof window.translatePromptText === 'function') ? await window.translatePromptText(ratioPrompt) : ratioPrompt;
+      const rPrompt = getRatioPrompt();
       const characterData = (shot.characters || [])
           .map(id => window.storyboardData.characters[id])
           .filter(Boolean);
       const shotPromptRaw = shot.shotPrompt || shot.prompt || '';
-      const shotZh = (window.translatePromptText && typeof window.translatePromptText === 'function') ? await window.translatePromptText(shotPromptRaw) : shotPromptRaw;
 
       if (characterData.length === 0) {
-          return `${shotZh}，\n\n${styleZh}，\n\n${ratioZh}，\n高品質`;
+          return `${shotPromptRaw}, ${styleDetail}, ${rPrompt}, high quality`;
       }
 
-      // 處理陣列內的非同步翻譯，必須使用 await Promise.all
-      const characterPromptArray = await Promise.all(characterData.map(async char => {
+      const characterPromptArray = characterData.map(char => {
           const a = char.appearance || '';
           const o = char.outfit || '';
           const p = char.personality || '';
-          const raw = [a, o, p].filter(Boolean).join(', ');
-          return (window.translatePromptText && typeof window.translatePromptText === 'function') ? await window.translatePromptText(raw) : raw;
-      }));
+          return [a, o, p].filter(Boolean).join(', ');
+      });
       
-      const characterPrompt = characterPromptArray.join('，');
+      const characterPrompt = characterPromptArray.join(', ');
 
-      return `${characterPrompt}，\n\n${shotZh}，\n\n${styleZh}，\n${ratioZh}，\n高品質，角色設計一致`;
+      return `${characterPrompt}, ${shotPromptRaw}, ${styleDetail}, ${rPrompt}, high quality, consistent character design`;
   }
 
   async function startGenerate() {
@@ -714,24 +712,80 @@
           let completedCount = 0;
           const shots = window.storyboardData.shots;
           const total = shots.length;
+          const retryQueue = []; // [{ index, prompt, shot }]
 
-          for (const shot of shots) {
+          // Initialize with placeholder images and empty arrays to preserve indices
+          window.generatedImgs = Array(total).fill('../icon/error.jpg');
+          window.generatedStoryTitles = Array(total).fill('');
+          window.generatedStoryCams = Array(total).fill('');
+
+          for (let i = 0; i < total; i++) {
+              const shot = shots[i];
+              window.generatedStoryTitles[i] = shot.story;
+              window.generatedStoryCams[i] = shot.camera;
+
               try {
                   updateLoadingUI(3, LOADING_STEPS_FREE, completedCount, total);
                   const finalPrompt = await buildFinalPrompt(shot);
                   shot.finalPrompt = finalPrompt;
+                  
                   const res = await askGemini(finalPrompt, 'image');
-                  window.generatedImgs.push(res?.image?.length > 0 ? res.image[0] : '../icon/error.jpg');
-                  window.generatedStoryTitles.push(shot.story);
-                  window.generatedStoryCams.push(shot.camera);
-                  completedCount++;
+                  if (res?.image?.length > 0) {
+                      window.generatedImgs[i] = res.image[0];
+                      completedCount++;
+                  }
+                  
                   const progress = 50 + (completedCount / total) * 45;
                   barEl.style.width = `${progress}%`;
                   pctEl.innerText = `${Math.floor(progress)}%`;
-                  if (completedCount < total) await delay(30000);
+                  
+                  if (i < total - 1) await delay(30000);
               } catch (err) {
-                  console.error('單張圖片生成失敗:', err);
-                  window.generatedImgs.push('../icon/error.jpg');
+                  console.error(`第 ${i+1} 張圖片生成失敗:`, err);
+                  const is429 = err.status === 429 || 
+                                (err.status === 500 && (
+                                    String(err.details).includes('429') || 
+                                    String(err.details).toLowerCase().includes('too many requests') ||
+                                    String(err.details).toLowerCase().includes('resource has been exhausted') ||
+                                    String(err.details).includes('RESOURCE_EXHAUSTED')
+                                ));
+                  
+                  if (is429) {
+                      console.warn(`偵測到 429 錯誤（頻率限制），已將第 ${i+1} 張圖片加入延遲重試佇列。`);
+                      retryQueue.push({ index: i, prompt: shot.finalPrompt || '', shot: shot });
+                  }
+              }
+          }
+
+          // Process retry queue for 429 failures in freeform generation
+          if (retryQueue.length > 0) {
+              console.log(`🎬 開始重試生成自由格式佇列中的 ${retryQueue.length} 張失敗圖片...`);
+              // Wait 20 seconds before starting retries to let rate limit window clear
+              await delay(20000);
+              
+              for (let k = 0; k < retryQueue.length; k++) {
+                  const item = retryQueue[k];
+                  const i = item.index;
+                  const finalPrompt = item.prompt;
+                  
+                  try {
+                      console.log(`🔄 正在重新嘗試生成第 ${i + 1} 張圖片...`);
+                      const res = await askGemini(finalPrompt, 'image');
+                      
+                      if (res?.image?.length > 0) {
+                          window.generatedImgs[i] = res.image[0];
+                          console.log(`✅ 第 ${i + 1} 張圖片重新生成成功並插入原位置！`);
+                          completedCount++;
+                      }
+                      
+                      const progress = 50 + (completedCount / total) * 45;
+                      barEl.style.width = `${Math.min(99, progress)}%`;
+                      pctEl.innerText = `${Math.min(99, Math.floor(progress))}%`;
+                      
+                      if (k < retryQueue.length - 1) await delay(30000);
+                  } catch (retryErr) {
+                      console.error(`❌ 第 ${i + 1} 張圖片重新生成依然失敗:`, retryErr);
+                  }
               }
           }
 
@@ -775,9 +829,28 @@
           const styleName = STYLES[state.styleIndex].name;
           const basePrompt = fillVariables(tpl.promptTemplate.base, { ...resolvedVars, style: styleDetail });
 
-          const optimizeReq = `優化內容請求...`;
+          const optimizeReq = `你是一個專業的分鏡提示詞優化專家。請將使用者的短影音故事與所選模板的分鏡提示詞相結合，並以使用者輸入的故事為核心主體。
 
-          const optimizeRes = await askGemini(optimizeReq, 'flash');
+使用者輸入的故事：
+"""${state.story}"""
+
+模板基底風格：
+"""${basePrompt}"""
+
+模板原始分鏡提示詞（僅供結構、鏡頭參考，請根據使用者故事內容重寫與細化）：
+${rawPrompts.map((p, i) => `${i + 1}. ${p}`).join('\n')}
+
+優化指導原則：
+1. 必須以「使用者輸入的故事」內容作為主體，確保每一幕畫面展現故事的具體情節、人物動作與細節。
+2. 保持模板原始分鏡的鏡頭感、視角與節奏（如特寫、空鏡、追隨鏡頭等）。
+3. 融入自訂變數設定（${JSON.stringify(resolvedVars)}）。
+4. 優化後的提示詞必須為英文，適合 Stable Diffusion 等圖像生成模型，多使用具體的視覺描述，避開抽象詞彙。
+5. 保持分鏡間角色外觀、服裝與場景的一致性。
+
+請嚴格按照以下格式回覆（每行以數字. 開頭，只輸出英文提示詞，不要有任何中文或解釋文字）：
+${rawPrompts.map((_, i) => `${i + 1}. [Optimized English prompt for shot ${i + 1}]`).join('\n')}`;
+
+          const optimizeRes = await askGemini(optimizeReq, 'story');
           window.generatedPrompts = parseNumberedList(optimizeRes.response);
           if (window.generatedPrompts.length < rawPrompts.length) window.generatedPrompts = rawPrompts;
           state.finalPrompts = window.generatedPrompts;
@@ -785,21 +858,77 @@
           updateLoadingUI(3, LOADING_STEPS_TPL);
           let completedCount = 0;
           const total = window.generatedPrompts.length;
-          for (const prompt of window.generatedPrompts) {
+          const retryQueue = []; // [{ index, prompt }]
+
+          // Initialize with placeholder images
+          window.generatedImgs = Array(total).fill('../icon/error.jpg');
+
+          for (let i = 0; i < total; i++) {
+              const prompt = window.generatedPrompts[i];
               try {
                   updateLoadingUI(3, LOADING_STEPS_TPL, completedCount, total);
-                  const promptZh = (window.translatePromptText && typeof window.translatePromptText === 'function') ? await window.translatePromptText(prompt) : prompt;
-                  const styleZh = (window.translatePromptText && typeof window.translatePromptText === 'function') ? await window.translatePromptText(styleDetail) : styleDetail;
-                  const res = await askGemini(promptZh + ', ' + styleZh, 'image');
-                  window.generatedImgs.push(res?.image?.length > 0 ? res.image[0] : '../icon/error.jpg');
-                  completedCount++;
+                  
+                  // Use English prompt directly without translation!
+                  const imagePrompt = prompt + ', ' + styleDetail;
+                  const res = await askGemini(imagePrompt, 'image');
+                  
+                  if (res?.image?.length > 0) {
+                      window.generatedImgs[i] = res.image[0];
+                      completedCount++;
+                  }
+                  
                   const progress = 50 + (completedCount / total) * 45;
                   barEl.style.width = `${progress}%`;
                   pctEl.innerText = `${Math.floor(progress)}%`;
-                  if (completedCount < total) await delay(30000);
+                  
+                  if (i < total - 1) await delay(30000);
               } catch (err) {
-                  console.error('單張圖片生成失敗:', err);
-                  window.generatedImgs.push('../icon/error.jpg');
+                  console.error(`第 ${i+1} 張圖片生成失敗:`, err);
+                  const is429 = err.status === 429 || 
+                                (err.status === 500 && (
+                                    String(err.details).includes('429') || 
+                                    String(err.details).toLowerCase().includes('too many requests') ||
+                                    String(err.details).toLowerCase().includes('resource has been exhausted') ||
+                                    String(err.details).includes('RESOURCE_EXHAUSTED')
+                                ));
+                  
+                  if (is429) {
+                      console.warn(`偵測到 429 錯誤（頻率限制），已將第 ${i+1} 張圖片加入延遲重試佇列。`);
+                      retryQueue.push({ index: i, prompt: prompt });
+                  }
+              }
+          }
+
+          // Process retry queue for 429 failures
+          if (retryQueue.length > 0) {
+              console.log(`🎬 開始重試生成佇列中的 ${retryQueue.length} 張失敗圖片...`);
+              // Wait 20 seconds before starting retries to let rate limit window clear
+              await delay(20000);
+              
+              for (let k = 0; k < retryQueue.length; k++) {
+                  const item = retryQueue[k];
+                  const i = item.index;
+                  const prompt = item.prompt;
+                  
+                  try {
+                      console.log(`🔄 正在重新嘗試生成第 ${i + 1} 張圖片...`);
+                      const imagePrompt = prompt + ', ' + styleDetail;
+                      const res = await askGemini(imagePrompt, 'image');
+                      
+                      if (res?.image?.length > 0) {
+                          window.generatedImgs[i] = res.image[0];
+                          console.log(`✅ 第 ${i + 1} 張圖片重新生成成功並插入原位置！`);
+                          completedCount++;
+                      }
+                      
+                      const progress = 50 + (completedCount / total) * 45;
+                      barEl.style.width = `${Math.min(99, progress)}%`;
+                      pctEl.innerText = `${Math.min(99, Math.floor(progress))}%`;
+                      
+                      if (k < retryQueue.length - 1) await delay(30000);
+                  } catch (retryErr) {
+                      console.error(`❌ 第 ${i + 1} 張圖片重新生成依然失敗:`, retryErr);
+                  }
               }
           }
 
@@ -1132,8 +1261,20 @@ ${vars.map(v => `${v}: <值>`).join('\n')}
   function validateStoryboard(data) { return true; }
   function normalizeStoryboard(data) { return data; }
   async function askGemini(question, type) {
-      const res = await fetch('/api/ask-gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question, type }) });
-      return await res.json();
+      const res = await fetch('/api/ask-gemini', { 
+          method: 'POST', 
+          headers: { 'Content-Type': 'application/json' }, 
+          body: JSON.stringify({ question, type, ratio: state.ratio }) 
+      });
+      const data = await res.json();
+      if (!res.ok) {
+          const err = new Error(data.error || '請求失敗');
+          err.status = res.status;
+          err.details = data.details || '';
+          err.data = data;
+          throw err;
+      }
+      return data;
   }
   function delay(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 

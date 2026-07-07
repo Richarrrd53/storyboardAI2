@@ -730,7 +730,7 @@
       const name = user.name || 'User';
       const initial = name.charAt(0).toUpperCase();
       const userImage = user.image
-        ? `<img src="${user.image}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" alt="">`
+        ? `<img src="${user.image}" style="width: 100%; height: 100%; border-radius: 50%;" alt="">`
         : initial;
 
       if (avatar) avatar.innerHTML = userImage;
@@ -814,7 +814,7 @@
             };
 
             const thumbContent = p.cover
-              ? `<img src="${p.cover}" style="width: 100%; height: 100%; object-fit: cover;" alt="${p.title}">`
+              ? `<img src="${p.cover}" style="width: 100%; height: 100%;" alt="${p.title}">`
               : `🎬`;
 
             card.innerHTML = `
@@ -934,7 +934,7 @@
           card.className = 'project-card';
           card.onclick = () => navigate('generate');
           const thumbContent = p.cover 
-            ? `<img src="${p.cover}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;" alt="${p.title}">`
+            ? `<img src="${p.cover}" style="width: 100%; height: 100%;" alt="${p.title}">`
             : `🎬`;
           card.innerHTML = `
             <div class="project-thumb">${thumbContent}</div>
@@ -1025,7 +1025,7 @@
           }
 
           const thumbContent = p.cover
-            ? `<img src="${p.cover}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;" alt="${p.title}">`
+            ? `<img src="${p.cover}" style="width: 100%; height: 100%; " alt="${p.title}">`
             : `🎬`;
 
           card.innerHTML = `
