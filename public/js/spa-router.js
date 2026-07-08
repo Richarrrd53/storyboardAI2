@@ -23,6 +23,29 @@
   let activeDisplayProjectsFn = null;
   let activeDisplayHistoryFn = null;
 
+  const SKELETON_CARDS_HTML = Array.from({ length: 3 }).map(() => `
+    <div class="project-card skeleton">
+      <div class="card-strip">
+        <div class="strip-hole"></div>
+        <div class="strip-hole"></div>
+        <div class="strip-hole"></div>
+      </div>
+      <div class="project-thumb skeleton-pulse" style="background: #e9e9f2; aspect-ratio: 16 / 9;"></div>
+      <div class="project-info">
+        <div class="skeleton-pulse" style="background: #e9e9f2; height: 1.2rem; border-radius: 4px; width: 70%; margin-bottom: 12px;"></div>
+        <div class="project-meta" style="margin-bottom: 0; display: flex; gap: 12px;">
+          <div class="skeleton-pulse" style="background: #e9e9f2; height: 16px; border-radius: 4px; width: 60px;"></div>
+          <div class="skeleton-pulse" style="background: #e9e9f2; height: 16px; border-radius: 4px; width: 40px;"></div>
+        </div>
+      </div>
+      <div class="card-strip bottom">
+        <div class="strip-hole"></div>
+        <div class="strip-hole"></div>
+        <div class="strip-hole"></div>
+      </div>
+    </div>
+  `).join('');
+
   // In-memory cache for HTML documents
   window.htmlMemoryCache = {};
 
@@ -1057,7 +1080,7 @@
         displayProjects(cacheProjectsList);
         fetchProjectsBackground();
       } else {
-        projectsGrid.innerHTML = '<div style="color:var(--text-mid); text-align:center; padding: 40px; grid-column: 1/-1;">載入中...</div>';
+        projectsGrid.innerHTML = SKELETON_CARDS_HTML;
         fetchProjectsNetwork();
       }
 
@@ -1126,7 +1149,7 @@
 
     const projectsGrid = document.getElementById('projects-grid');
     if (projectsGrid) {
-      projectsGrid.innerHTML = '<div style="color:var(--text-mid); text-align:center; padding: 40px; grid-column: 1/-1;">載入中...</div>';
+      projectsGrid.innerHTML = SKELETON_CARDS_HTML;
       const projects = await spaAuth.fetchProjects();
       projectsGrid.innerHTML = '';
 
@@ -1284,7 +1307,7 @@
       displayHistory(cacheProjectsList);
       fetchHistoryBackground();
     } else {
-      projectsGrid.innerHTML = '<div style="color:var(--text-mid); text-align:center; padding: 40px; grid-column: 1/-1;">載入中...</div>';
+      projectsGrid.innerHTML = SKELETON_CARDS_HTML;
       fetchHistoryNetwork();
     }
 

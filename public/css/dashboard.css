@@ -2182,3 +2182,28 @@ table {
 .toggle-btn.active {
     color: var(--text-dark);
 }
+
+/* Skeleton Loading Effect */
+@keyframes skeleton-pulse {
+    0% {
+        opacity: 0.65;
+        background-color: #e9e9f2;
+    }
+    50% {
+        opacity: 1;
+        background-color: #dfdfea;
+    }
+    100% {
+        opacity: 0.65;
+        background-color: #e9e9f2;
+    }
+}
+
+.skeleton-pulse {
+    animation: skeleton-pulse 1.4s infinite ease-in-out;
+}
+
+.project-card.skeleton {
+    pointer-events: none;
+    user-select: none;
+}
