@@ -247,7 +247,6 @@ app.get('/api/projects', async (req, res) => {
                 title: true,
                 ratio: true,
                 style: true,
-                cover: true,
                 is_deleted: true,
                 createAt: true,
             },
@@ -263,6 +262,36 @@ app.get('/api/projects', async (req, res) => {
     } catch (error) {
         console.error('Fetch Projects Error:', error);
         res.status(500).json({ error: '獲取專案失敗' });
+    }
+});
+
+// GET project cover (binary stream endpoint)
+app.get('/api/projects/:id/cover', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const project = await prisma.project.findUnique({
+            where: { id },
+            select: { cover: true }
+        });
+        if (!project || !project.cover) {
+            return res.status(404).send('Not Found');
+        }
+
+        if (project.cover.startsWith('data:')) {
+            const matches = project.cover.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+            if (matches && matches.length === 3) {
+                const contentType = matches[1];
+                const buffer = Buffer.from(matches[2], 'base64');
+                res.setHeader('Content-Type', contentType);
+                res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
+                return res.send(buffer);
+            }
+        }
+
+        res.redirect(project.cover);
+    } catch (err) {
+        console.error('Fetch Cover Error:', err);
+        res.status(500).send('Server Error');
     }
 });
 

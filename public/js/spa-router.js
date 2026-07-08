@@ -340,7 +340,7 @@
         img.alt = 'Cover';
         img.style.width = '100%';
         img.style.height = '100%';
-        img.style.objectFit = 'cover';
+        img.style.objectFit = 'scale-down';
         img.style.opacity = '0';
         img.style.transition = 'opacity 0.45s ease-in-out';
         
@@ -349,6 +349,10 @@
           img.style.opacity = '1';
           thumb.classList.remove('loading');
         });
+      };
+      img.onerror = () => {
+        thumb.innerHTML = '🎬';
+        thumb.classList.remove('loading');
       };
       img.src = src;
     });
@@ -1070,9 +1074,7 @@
               prefetchPage('project', { id: p.id });
             });
 
-            const thumbHTML = p.cover
-              ? `<div class="project-thumb loading" data-src="${p.cover}"></div>`
-              : `<div class="project-thumb">🎬</div>`;
+            const thumbHTML = `<div class="project-thumb loading" data-src="/api/projects/${p.id}/cover"></div>`;
 
             card.innerHTML = `
               <div class="card-strip">
@@ -1203,9 +1205,7 @@
           card.addEventListener('pointerenter', () => {
             prefetchPage('generate');
           });
-          const thumbHTML = p.cover 
-            ? `<div class="project-thumb loading" data-src="${p.cover}"></div>`
-            : `<div class="project-thumb">🎬</div>`;
+          const thumbHTML = `<div class="project-thumb loading" data-src="/api/projects/${p.id}/cover"></div>`;
           card.innerHTML = `
             ${thumbHTML}
             <div class="project-info">
@@ -1298,9 +1298,7 @@
             });
           }
 
-          const thumbHTML = p.cover
-            ? `<div class="project-thumb loading" data-src="${p.cover}"></div>`
-            : `<div class="project-thumb">🎬</div>`;
+          const thumbHTML = `<div class="project-thumb loading" data-src="/api/projects/${p.id}/cover"></div>`;
 
           card.innerHTML = `
             <div class="card-strip">
