@@ -842,7 +842,7 @@
     90deg,
     #f5f5f7 0%,
     #f5f5f7 25%,
-    var(--primary, #dc9c47) 50%,
+    var(--primary-light) 50%,
     #f5f5f7 75%,
     #f5f5f7 100%
   );
