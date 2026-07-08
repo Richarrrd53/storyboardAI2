@@ -2207,3 +2207,18 @@ table {
     pointer-events: none;
     user-select: none;
 }
+
+.project-card.skeleton .card-strip {
+    background-color: #f0f0f5;
+    border-bottom: 1px dashed rgba(223, 223, 234, 0.6);
+}
+
+.project-card.skeleton .card-strip.bottom {
+    border-top: 1px dashed rgba(223, 223, 234, 0.6);
+    border-bottom: 0;
+}
+
+.project-card.skeleton .strip-hole {
+    background-color: #e2e2ec;
+    border-color: #d1d1df;
+}
