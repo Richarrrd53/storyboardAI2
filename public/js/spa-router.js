@@ -50,6 +50,7 @@
   window.htmlMemoryCache = {};
   window.spaMaskClose = maskClose;
   window.spaMaskOpen = maskOpen;
+  window.spaSeedProjectCache = (projectId, projectData) => { cacheProjectDetails[projectId] = projectData; };
 
   // Pending API requests to avoid duplicates
   let pendingProjectsPromise = null;

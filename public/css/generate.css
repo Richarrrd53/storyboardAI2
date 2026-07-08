@@ -875,7 +875,7 @@
     aspect-ratio: 1/1;
     border-radius: 50%;
     background: var(--primary-light);
-    opacity: 0.4;
+    opacity: 0.2;
     filter: blur(5px);
     z-index: 999;
 }

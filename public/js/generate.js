@@ -847,7 +847,7 @@
           if (barEl) barEl.style.width = '95%';
           if (pctEl) pctEl.innerText = '95%';
 
-          await saveProjectToDatabase();
+          const projectId = await saveProjectToDatabase();
 
           if (barEl) barEl.style.width = '100%';
           if (pctEl) pctEl.innerText = '100%';
@@ -855,7 +855,14 @@
           if (subEl) subEl.textContent = '準備跳轉至專案檢視頁面';
 
           updateGenStep('step-render', 'success');
-          setTimeout(() => { renderResults(); onGenerateDone(); }, 800);
+          setTimeout(() => {
+              if (projectId && window.spaNavigate) {
+                  window.spaNavigate('project', { id: projectId });
+              } else {
+                  renderResults();
+                  onGenerateDone();
+              }
+          }, 800);
 
       } catch (e) {
           if (e.name === 'AbortError') {
@@ -1034,7 +1041,7 @@ ${rawPrompts.map((_, i) => `${i + 1}. [Optimized English prompt for shot ${i + 1
           if (barEl) barEl.style.width = '95%';
           if (pctEl) pctEl.innerText = '95%';
 
-          await saveProjectToDatabase();
+          const projectId = await saveProjectToDatabase();
 
           if (barEl) barEl.style.width = '100%';
           if (pctEl) pctEl.innerText = '100%';
@@ -1042,7 +1049,14 @@ ${rawPrompts.map((_, i) => `${i + 1}. [Optimized English prompt for shot ${i + 1
           if (subEl) subEl.textContent = '準備跳轉至專案檢視頁面';
 
           updateGenStep('step-render', 'success');
-          setTimeout(() => { renderResults(); onGenerateDone(); }, 800);
+          setTimeout(() => {
+              if (projectId && window.spaNavigate) {
+                  window.spaNavigate('project', { id: projectId });
+              } else {
+                  renderResults();
+                  onGenerateDone();
+              }
+          }, 800);
 
       } catch (e) {
           if (e.name === 'AbortError') {
@@ -1281,11 +1295,18 @@ ${vars.map(v => `${v}: <值>`).join('\n')}
 
           const result = await res.json();
           console.log("✅ 專案自動儲存資料庫成功，ID:", result.project?.id);
+          
+          if (result.project && typeof window.spaSeedProjectCache === 'function') {
+              window.spaSeedProjectCache(result.project.id, result.project);
+          }
+
           if (typeof window.clearSpaCache === 'function') {
               window.clearSpaCache();
           }
+          return result.project?.id;
       } catch (error) {
           console.error("❌ 專案自動儲存至資料庫時出錯:", error);
+          return null;
       }
   }
 
