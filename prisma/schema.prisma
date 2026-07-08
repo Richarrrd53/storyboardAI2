@@ -21,6 +21,9 @@ model Project {
   is_deleted   Boolean  @default(false)
   createAt     DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  @@index([authorId])
+  @@index([authorId, is_deleted, createAt])
 }
 
 model Shot {

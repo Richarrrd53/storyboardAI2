@@ -78,6 +78,7 @@
 
   let _loadingTickerTimer = null;
   let _loadingTickerIdx = 0;
+  let activeGenController = null;
 
   function startLoadingTicker(stepMessages, completedCount) {
       stopLoadingTicker();
@@ -96,6 +97,28 @@
 
   function stopLoadingTicker() {
       if (_loadingTickerTimer) { clearTimeout(_loadingTickerTimer); _loadingTickerTimer = null; }
+  }
+
+  function updateGenStep(stepId, status) {
+      const el = document.getElementById(stepId);
+      if (!el) return;
+      el.dataset.status = status;
+      if (stepId === 'step-prompt' && (status === 'success' || status === 'pending')) {
+          const titleEl = el.querySelector('.step-title');
+          if (titleEl) titleEl.textContent = '繪製分鏡草稿...';
+      }
+      if (status === 'active') {
+          el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+  }
+
+  function updatePromptStepProgress(completedCount, total) {
+      const el = document.getElementById('step-prompt');
+      if (!el) return;
+      const titleEl = el.querySelector('.step-title');
+      if (titleEl) {
+          titleEl.textContent = `繪製分鏡草稿 (${completedCount}/${total})...`;
+      }
   }
 
   function updateLoadingUI(stepIdx, steps, completedCount = 0, total = 0) {
@@ -691,7 +714,23 @@
       if (!state.story) return;
       state.useTemplate = false;
 
+      activeGenController = new AbortController();
+      window.isGeneratingStoryboard = true;
+      window.abortStoryboardGeneration = () => {
+          if (activeGenController) activeGenController.abort();
+      };
+
+      if (window.spaMaskClose) {
+          await window.spaMaskClose();
+      }
       showPhase('phase-generating');
+      if (window.spaMaskOpen) {
+          await window.spaMaskOpen();
+      }
+      const allSteps = ['step-analyze', 'step-structure', 'step-prompt', 'step-render'];
+      allSteps.forEach(id => updateGenStep(id, 'pending'));
+
+      updateGenStep('step-analyze', 'active');
       const barEl = document.getElementById('gen-progress');
       const pctEl = document.getElementById('gen-progress-text');
 
@@ -708,6 +747,8 @@
           try { validateStoryboard(window.storyboardData); }
           catch (err) { console.error(err); await alert('Storyboard 結構錯誤：\n' + err.message); return; }
 
+          updateGenStep('step-analyze', 'success');
+          updateGenStep('step-structure', 'active');
           updateLoadingUI(3, LOADING_STEPS_FREE);
           let completedCount = 0;
           const shots = window.storyboardData.shots;
@@ -719,6 +760,9 @@
           window.generatedStoryTitles = Array(total).fill('');
           window.generatedStoryCams = Array(total).fill('');
 
+          updateGenStep('step-structure', 'success');
+          updateGenStep('step-prompt', 'active');
+          updatePromptStepProgress(0, total);
           for (let i = 0; i < total; i++) {
               const shot = shots[i];
               window.generatedStoryTitles[i] = shot.story;
@@ -733,6 +777,7 @@
                   if (res?.image?.length > 0) {
                       window.generatedImgs[i] = res.image[0];
                       completedCount++;
+                      updatePromptStepProgress(completedCount, total);
                   }
                   
                   const progress = 50 + (completedCount / total) * 45;
@@ -776,6 +821,7 @@
                           window.generatedImgs[i] = res.image[0];
                           console.log(`✅ 第 ${i + 1} 張圖片重新生成成功並插入原位置！`);
                           completedCount++;
+                          updatePromptStepProgress(completedCount, total);
                       }
                       
                       const progress = 50 + (completedCount / total) * 45;
@@ -789,26 +835,63 @@
               }
           }
 
+          updateGenStep('step-prompt', 'success');
+          updateGenStep('step-render', 'active');
           updateLoadingUI(4, LOADING_STEPS_FREE);
           stopLoadingTicker();
           const titleEl = document.getElementById('loading-title');
           const subEl = document.getElementById('loading-sub');
-          if (titleEl) titleEl.textContent = '正在幫您把專案儲存下來...請稍後 ✦';
+          if (titleEl) titleEl.textContent = '正在沖洗底片並儲存至資料庫...請稍後 ✦';
           if (subEl) subEl.textContent = '正在備份到雲端，請勿關閉網頁';
+
+          if (barEl) barEl.style.width = '95%';
+          if (pctEl) pctEl.innerText = '95%';
+
           await saveProjectToDatabase();
+
+          if (barEl) barEl.style.width = '100%';
+          if (pctEl) pctEl.innerText = '100%';
+          if (titleEl) titleEl.textContent = '備份至雲端，專案建立完成！';
+          if (subEl) subEl.textContent = '準備跳轉至專案檢視頁面';
+
+          updateGenStep('step-render', 'success');
           setTimeout(() => { renderResults(); onGenerateDone(); }, 800);
 
       } catch (e) {
+          if (e.name === 'AbortError') {
+              console.log('生成程序已被使用者手動打斷中斷。');
+              return;
+          }
           console.error(e);
           stopLoadingTicker();
           // 修正點 1：加上 await
           await alert('生成失敗：' + e.message); 
           showPhase('phase-compose');
+      } finally {
+          window.isGeneratingStoryboard = false;
+          window.abortStoryboardGeneration = null;
+          activeGenController = null;
       }
   }
 
   async function startTemplateGenerate() {
+      activeGenController = new AbortController();
+      window.isGeneratingStoryboard = true;
+      window.abortStoryboardGeneration = () => {
+          if (activeGenController) activeGenController.abort();
+      };
+
+      if (window.spaMaskClose) {
+          await window.spaMaskClose();
+      }
       showPhase('phase-generating');
+      if (window.spaMaskOpen) {
+          await window.spaMaskOpen();
+      }
+      const allSteps = ['step-analyze', 'step-structure', 'step-prompt', 'step-render'];
+      allSteps.forEach(id => updateGenStep(id, 'pending'));
+
+      updateGenStep('step-analyze', 'active');
       const barEl = document.getElementById('gen-progress');
       const pctEl = document.getElementById('gen-progress-text');
 
@@ -819,6 +902,8 @@
           const tpl = state.selectedTemplate;
           const resolvedVars = state.resolvedVariables;
 
+          updateGenStep('step-analyze', 'success');
+          updateGenStep('step-structure', 'active');
           updateLoadingUI(1, LOADING_STEPS_TPL);
           const rawPrompts = tpl.promptTemplate.perShot.map(t => fillVariables(t, resolvedVars));
           window.generatedStoryTitles = tpl.structure.map(s => s.action);
@@ -855,6 +940,9 @@ ${rawPrompts.map((_, i) => `${i + 1}. [Optimized English prompt for shot ${i + 1
           if (window.generatedPrompts.length < rawPrompts.length) window.generatedPrompts = rawPrompts;
           state.finalPrompts = window.generatedPrompts;
 
+          updateGenStep('step-structure', 'success');
+          updateGenStep('step-prompt', 'active');
+          updatePromptStepProgress(0, total);
           updateLoadingUI(3, LOADING_STEPS_TPL);
           let completedCount = 0;
           const total = window.generatedPrompts.length;
@@ -875,6 +963,7 @@ ${rawPrompts.map((_, i) => `${i + 1}. [Optimized English prompt for shot ${i + 1
                   if (res?.image?.length > 0) {
                       window.generatedImgs[i] = res.image[0];
                       completedCount++;
+                      updatePromptStepProgress(completedCount, total);
                   }
                   
                   const progress = 50 + (completedCount / total) * 45;
@@ -919,6 +1008,7 @@ ${rawPrompts.map((_, i) => `${i + 1}. [Optimized English prompt for shot ${i + 1
                           window.generatedImgs[i] = res.image[0];
                           console.log(`✅ 第 ${i + 1} 張圖片重新生成成功並插入原位置！`);
                           completedCount++;
+                          updatePromptStepProgress(completedCount, total);
                       }
                       
                       const progress = 50 + (completedCount / total) * 45;
@@ -932,21 +1022,42 @@ ${rawPrompts.map((_, i) => `${i + 1}. [Optimized English prompt for shot ${i + 1
               }
           }
 
+          updateGenStep('step-prompt', 'success');
+          updateGenStep('step-render', 'active');
           updateLoadingUI(4, LOADING_STEPS_TPL);
           stopLoadingTicker();
           const titleEl = document.getElementById('loading-title');
           const subEl = document.getElementById('loading-sub');
-          if (titleEl) titleEl.textContent = '正在幫您把專案儲存下來...請稍後 ✦';
+          if (titleEl) titleEl.textContent = '正在沖洗底片並儲存至資料庫...請稍後 ✦';
           if (subEl) subEl.textContent = '正在備份到雲端，請勿關閉網頁';
+
+          if (barEl) barEl.style.width = '95%';
+          if (pctEl) pctEl.innerText = '95%';
+
           await saveProjectToDatabase();
+
+          if (barEl) barEl.style.width = '100%';
+          if (pctEl) pctEl.innerText = '100%';
+          if (titleEl) titleEl.textContent = '備份至雲端，專案建立完成！';
+          if (subEl) subEl.textContent = '準備跳轉至專案檢視頁面';
+
+          updateGenStep('step-render', 'success');
           setTimeout(() => { renderResults(); onGenerateDone(); }, 800);
 
       } catch (e) {
+          if (e.name === 'AbortError') {
+              console.log('生成程序已被使用者手動打斷中斷。');
+              return;
+          }
           console.error(e);
           stopLoadingTicker();
           // ✅ 修正點 2：加上 await
           await alert('生成失敗：' + e.message); 
           showPhase('phase-template');
+      } finally {
+          window.isGeneratingStoryboard = false;
+          window.abortStoryboardGeneration = null;
+          activeGenController = null;
       }
   }
 

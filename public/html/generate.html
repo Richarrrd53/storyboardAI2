@@ -246,7 +246,13 @@
        PHASE 2 — GENERATING
     ══════════════════════════════════ -->
     <div class="phase" id="phase-generating">
+        <!-- Corner Filmstrips -->
+        <div class="corner-filmstrip top-left"></div>
+        <div class="corner-filmstrip bottom-right"></div>
+
         <div class="generating-wrap">
+            <div class="generating-glow"></div>
+            <!-- Top: Math Curve Animation -->
             <div class="gen-preview-card" id="gen-preview-card">
                 <svg class="loader math-loader-svg" viewBox="0 0 100 100" fill="none" aria-hidden="true">
                     <g class="math-loader-group">
@@ -256,13 +262,59 @@
                     <g class="math-loader-sucked"></g>
                 </svg>
             </div>
-            <div class="gen-text-area">
-                <h2 class="gen-loading-title" id="loading-title">正在規劃腳本結構…</h2>
-                <p class="gen-loading-sub" id="loading-sub">分析故事語意，拆解場景節奏</p>
-                <div class="gen-progress-track">
+
+            <!-- Middle: Progress Bar & Status Text -->
+            <div class="gen-progress-container" style="width: 100%; max-width: 400px; margin: 10px auto;">
+                <div class="gen-progress-track" style="background: rgba(255,255,255,0.15); height: 6px; border-radius: 3px; overflow: hidden; position: relative;">
                     <div class="gen-progress-fill" id="gen-progress"></div>
                 </div>
-                <span class="gen-progress-pct" id="gen-progress-text">0%</span>
+                <div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 0.82rem; font-weight: 700; color: var(--text-light);">
+                    <span id="loading-title">正在規劃腳本結構…</span>
+                    <span class="gen-progress-pct" id="gen-progress-text">0%</span>
+                </div>
+            </div>
+
+            <!-- Bottom: Status Machine Steps -->
+            <div class="generation-status-container">
+                <div class="gen-step" id="step-analyze" data-status="pending">
+                    <div class="step-icon-wrap">
+                        <div class="step-icon"></div>
+                    </div>
+                    <div class="step-content">
+                        <div class="step-title">解析故事靈感...</div>
+                        <div class="step-details">正在分析文本結構與核心主旨</div>
+                    </div>
+                </div>
+
+                <div class="gen-step" id="step-structure" data-status="pending">
+                    <div class="step-icon-wrap">
+                        <div class="step-icon"></div>
+                    </div>
+                    <div class="step-content">
+                        <div class="step-title">編排鏡頭結構...</div>
+                        <div class="step-details">正在規劃鏡位、視角與時間軸</div>
+                    </div>
+                </div>
+
+                <div class="gen-step" id="step-prompt" data-status="pending">
+                    <div class="step-icon-wrap">
+                        <div class="step-icon"></div>
+                    </div>
+                    <div class="step-content">
+                        <div class="step-title">繪製分鏡草稿...</div>
+                        <div class="step-details">正在為每個鏡頭注入視覺風格與情緒</div>
+                    </div>
+                </div>
+
+                <div class="gen-step" id="step-render" data-status="pending">
+                    <div class="step-icon-wrap">
+                        <div class="step-icon"></div>
+                    </div>
+                    <div class="step-content">
+                        <div class="step-title">沖洗電影底片...</div>
+                        <div class="step-details">進行最後的影像流暢度優化與膠捲成型</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

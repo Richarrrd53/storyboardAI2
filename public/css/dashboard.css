@@ -1185,9 +1185,23 @@
     font-size: 3rem;
 }
 
-.project-thumb img{
-    object-fit: scale-down;
+.project-thumb img,
+.project-thumb .lazy-thumb {
+    object-fit: cover;
+    width: 100%;
+    height: 100%;
     aspect-ratio: 16 / 9;
+}
+
+.project-thumb.loading {
+    animation: thumbPulse 1.8s ease-in-out infinite;
+    background: linear-gradient(90deg, #1d191c 0%, #30262b 50%, #1d191c 100%);
+    background-size: 200% 100%;
+}
+
+@keyframes thumbPulse {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
 }
 
 .project-thumb::after {
@@ -2206,6 +2220,7 @@ table {
 .project-card.skeleton {
     pointer-events: none;
     user-select: none;
+    opacity: 0.5;
 }
 
 .project-card.skeleton .card-strip {

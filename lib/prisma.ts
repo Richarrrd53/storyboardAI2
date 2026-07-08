@@ -11,7 +11,18 @@ if (!connectionString) {
 // 我們會將 prisma 實例掛載在 global 物件上
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
-const pool = new pg.Pool({ connectionString });
+const pool = new pg.Pool({ 
+    connectionString,
+    max: 10,
+    idleTimeoutMillis: 10000,
+    connectionTimeoutMillis: 10000,
+    keepAlive: true
+});
+
+pool.on('error', (err) => {
+    console.error('⚠️ Unexpected pg connection pool error in prisma.ts:', err.message);
+});
+
 const adapter = new PrismaPg(pool);
 
 export const prisma = globalForPrisma.prisma || new PrismaClient({adapter});

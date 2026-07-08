@@ -9,7 +9,18 @@ const { PrismaPg } = require('@prisma/adapter-pg');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const pool = new Pool({ 
+    connectionString: process.env.DATABASE_URL,
+    max: 10,
+    idleTimeoutMillis: 10000, // Close idle connections after 10 seconds to avoid using dead serverless connections
+    connectionTimeoutMillis: 10000,
+    keepAlive: true
+});
+
+pool.on('error', (err) => {
+    console.error('⚠️ Unexpected pg connection pool error:', err.message);
+});
+
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 

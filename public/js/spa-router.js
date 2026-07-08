@@ -48,6 +48,8 @@
 
   // In-memory cache for HTML documents
   window.htmlMemoryCache = {};
+  window.spaMaskClose = maskClose;
+  window.spaMaskOpen = maskOpen;
 
   // Pending API requests to avoid duplicates
   let pendingProjectsPromise = null;
@@ -164,15 +166,19 @@
         });
 
         if (!res.ok) {
-          localStorage.removeItem(AUTH_TOKEN_KEY);
-          return null;
+          if (res.status === 401 || res.status === 403) {
+            localStorage.removeItem(AUTH_TOKEN_KEY);
+            window.clearSpaCache();
+            return { valid: false };
+          }
+          return { valid: true, error: true };
         }
 
         const data = await res.json();
-        return data.user;
+        return { valid: true, user: data.user };
       } catch (e) {
-        if (e.name === 'AbortError') return null;
-        return null;
+        if (e.name === 'AbortError') return { valid: true, aborted: true };
+        return { valid: true, error: true };
       }
     },
     fetchProjects: async (signal) => {
@@ -319,6 +325,33 @@
         fetchProjectDetail(opts.id).catch(() => {});
       }
     }
+  }
+
+  function lazyLoadProjectThumbs(container) {
+    if (!container) return;
+    const thumbs = container.querySelectorAll('.project-thumb.loading');
+    thumbs.forEach(thumb => {
+      const src = thumb.dataset.src;
+      if (!src) return;
+      
+      const img = new Image();
+      img.onload = () => {
+        img.className = 'lazy-thumb';
+        img.alt = 'Cover';
+        img.style.width = '100%';
+        img.style.height = '100%';
+        img.style.objectFit = 'cover';
+        img.style.opacity = '0';
+        img.style.transition = 'opacity 0.45s ease-in-out';
+        
+        thumb.appendChild(img);
+        requestAnimationFrame(() => {
+          img.style.opacity = '1';
+          thumb.classList.remove('loading');
+        });
+      };
+      img.src = src;
+    });
   }
 
   function maskClose() {
@@ -940,14 +973,14 @@
     const avatar = document.getElementById('top-avatar') || dashboardTopbar?.querySelector('#top-avatar');
     const panel = document.getElementById('spa-user-panel');
 
-    const user = await spaAuth.fetchUser(signal);
-    if (signal?.aborted) return;
+    const result = await spaAuth.fetchUser(signal);
+    if (signal?.aborted || result?.aborted) return;
 
-    if (user && panel) {
-      const name = user.name || 'User';
+    if (result && result.user && panel) {
+      const name = result.user.name || 'User';
       const initial = name.charAt(0).toUpperCase();
-      const userImage = user.image
-        ? `<img src="${user.image}" style="width: 100%; height: 100%; border-radius: 50%;" alt="">`
+      const userImage = result.user.image
+        ? `<img src="${result.user.image}" style="width: 100%; height: 100%; border-radius: 50%;" alt="">`
         : initial;
 
       if (avatar) avatar.innerHTML = userImage;
@@ -962,13 +995,13 @@
       const plans = { free: 'Free', pro: 'Pro', promax: 'Pro Max' };
 
       if (upPlan) {
-        upPlan.classList.add(user.plan);
-        upPlan.textContent = plans[user.plan];
+        upPlan.classList.add(result.user.plan);
+        upPlan.textContent = plans[result.user.plan];
       }
 
       const upEmail = panel.querySelector('.up-email');
-      if (upEmail) upEmail.textContent = user.email;
-    } else if (!user && spaAuth.isLoggedIn()) {
+      if (upEmail) upEmail.textContent = result.user.email;
+    } else if (result && result.valid === false) {
       spaAuth.logout();
     }
 
@@ -1037,9 +1070,9 @@
               prefetchPage('project', { id: p.id });
             });
 
-            const thumbContent = p.cover
-              ? `<img src="${p.cover}" style="width: 100%; height: 100%;" alt="${p.title}">`
-              : `🎬`;
+            const thumbHTML = p.cover
+              ? `<div class="project-thumb loading" data-src="${p.cover}"></div>`
+              : `<div class="project-thumb">🎬</div>`;
 
             card.innerHTML = `
               <div class="card-strip">
@@ -1048,7 +1081,7 @@
                 <div class="strip-hole"></div>
                 <button class="project-option-btn" title="專案選項" data-id="${p.id}">⋯</button>
               </div>
-              <div class="project-thumb">${thumbContent}</div>
+              ${thumbHTML}
               <div class="project-info">
                 <div class="project-title">${p.title}</div>
                 <div class="project-meta">
@@ -1073,6 +1106,7 @@
 
             projectsGrid.appendChild(card);
           });
+          lazyLoadProjectThumbs(projectsGrid);
         }
       }
 
@@ -1112,9 +1146,9 @@
     const avatar = document.getElementById('top-avatar') || dashboardTopbar?.querySelector('#top-avatar');
     const panel = document.getElementById('spa-user-panel') || document.getElementById('user-panel');
 
-    const user = await spaAuth.fetchUser();
-    if (user && panel) {
-      const name = user.name || 'User';
+    const result = await spaAuth.fetchUser();
+    if (result && result.user && panel) {
+      const name = result.user.name || 'User';
       const initial = name.charAt(0).toUpperCase();
       if (avatar) avatar.textContent = initial;
 
@@ -1125,8 +1159,8 @@
       if (upName) upName.textContent = name;
 
       const upEmail = panel.querySelector('.up-email');
-      if (upEmail) upEmail.textContent = user.email;
-    } else if (!user && spaAuth.isLoggedIn()) {
+      if (upEmail) upEmail.textContent = result.user.email;
+    } else if (result && result.valid === false) {
       spaAuth.logout();
     }
 
@@ -1169,11 +1203,11 @@
           card.addEventListener('pointerenter', () => {
             prefetchPage('generate');
           });
-          const thumbContent = p.cover 
-            ? `<img src="${p.cover}" style="width: 100%; height: 100%;" alt="${p.title}">`
-            : `🎬`;
+          const thumbHTML = p.cover 
+            ? `<div class="project-thumb loading" data-src="${p.cover}"></div>`
+            : `<div class="project-thumb">🎬</div>`;
           card.innerHTML = `
-            <div class="project-thumb">${thumbContent}</div>
+            ${thumbHTML}
             <div class="project-info">
               <div class="project-title">${p.title}</div>
               <div class="project-meta">
@@ -1185,6 +1219,7 @@
           `;
           projectsGrid.appendChild(card);
         });
+        lazyLoadProjectThumbs(projectsGrid);
       }
     }
 
@@ -1263,9 +1298,9 @@
             });
           }
 
-          const thumbContent = p.cover
-            ? `<img src="${p.cover}" style="width: 100%; height: 100%; " alt="${p.title}">`
-            : `🎬`;
+          const thumbHTML = p.cover
+            ? `<div class="project-thumb loading" data-src="${p.cover}"></div>`
+            : `<div class="project-thumb">🎬</div>`;
 
           card.innerHTML = `
             <div class="card-strip">
@@ -1274,7 +1309,7 @@
               <div class="strip-hole"></div>
               <button class="project-option-btn" title="專案選項" data-id="${p.id}">⋯</button>
             </div>
-            <div class="project-thumb">${thumbContent}</div>
+            ${thumbHTML}
             <div class="project-info">
               <div class="project-title">${p.title}</div>
               <div class="project-meta">
@@ -1300,6 +1335,7 @@
 
           projectsGrid.appendChild(card);
         });
+        lazyLoadProjectThumbs(projectsGrid);
       }
     }
 
@@ -1965,15 +2001,32 @@
   }
 
   async function navigate(page, opts = {}) {
-    if (isDashboardPage(page) && !spaAuth.isLoggedIn()) {
-      window.location.hash = '';
-      navigate('landing', { force: true });
-      setTimeout(async () => {
-        const isConfirmed = await confirm('未登入，是否跳轉到登入頁面？', '', 'default', '登入');
-        if (isConfirmed) {
-          navigate('login');
+    if (window.isGeneratingStoryboard) {
+      const confirmLeave = await confirm(
+        '是否要中斷目前生成進度並離開？',
+        '離開後目前正在產出的分鏡與畫面將會遺失。',
+        'danger',
+        '離開'
+      );
+      if (!confirmLeave) {
+        if (currentPage) {
+          const prevHash = getHashForPage(currentPage, currentOpts);
+          window.location.hash = prevHash;
         }
-      }, 500);
+        return;
+      } else {
+        window.isGeneratingStoryboard = false;
+        if (typeof window.abortStoryboardGeneration === 'function') {
+          window.abortStoryboardGeneration();
+        }
+      }
+    }
+
+    if (isDashboardPage(page) && !spaAuth.isLoggedIn()) {
+      navigate('login', { force: true });
+      setTimeout(() => {
+        window.showSpaToast('您尚未登入，請先登入以存取該頁面。');
+      }, 400);
       return;
     }
 
