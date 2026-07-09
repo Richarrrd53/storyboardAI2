@@ -1193,7 +1193,8 @@
     aspect-ratio: 16 / 9;
 }
 
-.project-thumb.loading {
+.project-thumb.loading,
+.project-view-thumb.loading {
     animation: thumbPulse 1.8s ease-in-out infinite;
     background: linear-gradient(90deg, #1d191c 0%, #30262b 50%, #1d191c 100%);
     background-size: 200% 100%;
@@ -1202,6 +1203,34 @@
 @keyframes thumbPulse {
     0% { background-position: 200% 0; }
     100% { background-position: -200% 0; }
+}
+
+.project-view-thumb {
+    width: 100%;
+    height: 100%;
+    aspect-ratio: 16 / 9;
+    position: relative;
+    overflow: hidden;
+    background: #111;
+}
+
+.project-view-thumb img,
+.project-view-thumb .lazy-thumb {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.img-cell .project-view-thumb {
+    border-radius: 6px;
+}
+
+.skeleton-text {
+    background: linear-gradient(90deg, #1d191c 0%, #30262b 50%, #1d191c 100%);
+    background-size: 200% 100%;
+    animation: thumbPulse 1.8s ease-in-out infinite;
+    display: inline-block;
+    border-radius: 4px;
 }
 
 .project-thumb::after {

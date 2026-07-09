@@ -359,6 +359,37 @@
     });
   }
 
+  function lazyLoadProjectViewThumbs(container) {
+    if (!container) return;
+    const thumbs = container.querySelectorAll('.project-view-thumb.loading');
+    thumbs.forEach(thumb => {
+      const src = thumb.dataset.src;
+      if (!src) return;
+      
+      const img = new Image();
+      img.onload = () => {
+        img.className = 'lazy-thumb';
+        img.alt = 'Shot';
+        img.style.width = '100%';
+        img.style.height = '100%';
+        img.style.objectFit = 'cover';
+        img.style.opacity = '0';
+        img.style.transition = 'opacity 0.45s ease-in-out';
+        
+        thumb.appendChild(img);
+        requestAnimationFrame(() => {
+          img.style.opacity = '1';
+          thumb.classList.remove('loading');
+        });
+      };
+      img.onerror = () => {
+        thumb.innerHTML = '<div class="placeholder">NO IMAGE</div>';
+        thumb.classList.remove('loading');
+      };
+      img.src = src;
+    });
+  }
+
   function maskClose() {
     return new Promise(resolve => {
       const easing = 'cubic-bezier(0.76,0,0.24,1)';
@@ -1548,6 +1579,55 @@
       return;
     }
 
+    function renderProjectSkeleton(container) {
+      container.innerHTML = `
+        <div class="project-detail loading-skeleton">
+          <div class="project-summary">
+            <div>
+              <h2 class="skeleton-text" style="width: 250px; height: 32px; margin: 0;"></h2>
+              <div class="project-meta-row skeleton-text" style="width: 180px; height: 16px; margin-top: 8px;"></div>
+            </div>
+            <div class="project-attributes">
+              <span class="project-attribute skeleton-text" style="width: 80px; height: 20px; border-radius: 20px;"></span>
+              <span class="project-attribute skeleton-text" style="width: 80px; height: 20px; border-radius: 20px;"></span>
+              <span class="project-attribute skeleton-text" style="width: 60px; height: 20px; border-radius: 20px;"></span>
+            </div>
+          </div>
+
+          <div class="view-toggle-container" style="opacity: 0.5; pointer-events: none;">
+            <div class="view-toggle-bar">
+              <button class="toggle-btn active"><span>載入中...</span></button>
+            </div>
+          </div>
+
+          <div id="project-table-view" class="view-section visible" style="display: block;">
+            <table class="storyboard-table" style="width:100%; border-collapse: collapse;">
+              <thead>
+                <tr>
+                  <th class="th-cam">鏡頭</th>
+                  <th class="th-img">畫面</th>
+                  <th class="th-title">故事內容 / 動作</th>
+                  <th class="th-time">時長</th>
+                  <th class="th-note">情緒 / 備註</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${[1, 2, 3, 4].map(idx => `
+                  <tr>
+                    <td class="camera-cell"><span class="skeleton-text" style="width: 20px; height: 16px;"></span></td>
+                    <td class="img-cell"><div class="project-view-thumb loading"></div></td>
+                    <td class="title-cell"><span class="skeleton-text" style="width: 80%; height: 16px;"></span></td>
+                    <td class="time-cell"><span class="skeleton-text" style="width: 30px; height: 16px;"></span></td>
+                    <td class="note-cell"><span class="skeleton-text" style="width: 40px; height: 16px;"></span></td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
     async function renderWithProjectData(p) {
       const shots = Array.isArray(p.shots) ? p.shots : (p.shots ? [p.shots] : []);
       const safeTranslate = typeof window.translatePromptText === 'function'
@@ -1584,7 +1664,7 @@
           <tr>
             <td class="camera-cell">${s.order}</td>
             <td class="img-cell">
-              ${s.imageUrl ? `<img src="${s.imageUrl}" onerror="this.outerHTML='<div class=\\'placeholder\\'>IMAGE FAILED</div>'">` : `<div class="placeholder">NO IMAGE</div>`}
+              ${s.imageUrl ? `<div class="project-view-thumb loading" data-src="${s.imageUrl}"></div>` : `<div class="placeholder">NO IMAGE</div>`}
             </td>
             <td class="title-cell">${s.title}</td>
             <td class="time-cell">${s.duration}</td>
@@ -1608,7 +1688,7 @@
               <span class="frame-num">${String(s.order).padStart(2, '0')}</span>
             </div>
             <div class="film-img-wrap">
-              ${s.imageUrl ? `<img src="${s.imageUrl}" loading="lazy" onerror="this.outerHTML='<div class=\\'film-placeholder\\'>NO IMAGE</div>'">` : `<div class="film-placeholder">NO IMAGE</div>`}
+              ${s.imageUrl ? `<div class="project-view-thumb loading" data-src="${s.imageUrl}"></div>` : `<div class="film-placeholder">NO IMAGE</div>`}
             </div>
             <div class="film-caption">
               <div class="film-caption-title">${s.title}</div>
@@ -1745,14 +1825,15 @@
         container.addEventListener('pointerup', stopDrag);
         container.addEventListener('pointercancel', stopDrag);
       }
+      lazyLoadProjectViewThumbs(m);
     }
 
     if (cacheProjectDetails[projectId]) {
       await renderWithProjectData(cacheProjectDetails[projectId]);
       fetchProjectBackground();
     } else {
-      m.innerHTML = '<div style="padding:24px;">載入中…</div>';
-      await fetchProjectNetwork();
+      renderProjectSkeleton(m);
+      fetchProjectNetwork();
     }
 
     async function fetchProjectNetwork() {
