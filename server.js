@@ -295,6 +295,38 @@ app.get('/api/projects/:id/cover', async (req, res) => {
     }
 });
 
+// GET shot image (binary stream endpoint)
+app.get('/api/projects/:projectId/shots/:shotId/image', async (req, res) => {
+    try {
+        const { shotId } = req.params;
+        const shot = await prisma.shot.findUnique({
+            where: { id: shotId },
+            select: { payload: true }
+        });
+
+        if (!shot || !shot.payload || !shot.payload.image) {
+            return res.status(404).send('Not Found');
+        }
+
+        const imageUrl = shot.payload.image;
+        if (imageUrl.startsWith('data:')) {
+            const matches = imageUrl.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+            if (matches && matches.length === 3) {
+                const contentType = matches[1];
+                const buffer = Buffer.from(matches[2], 'base64');
+                res.setHeader('Content-Type', contentType);
+                res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
+                return res.send(buffer);
+            }
+        }
+
+        res.redirect(imageUrl);
+    } catch (err) {
+        console.error('Fetch Shot Image Error:', err);
+        res.status(500).send('Server Error');
+    }
+});
+
 // DELETE project (soft delete)
 app.delete('/api/projects/:id', async (req, res) => {
     try {
@@ -371,15 +403,28 @@ app.get('/api/projects/:id', async (req, res) => {
             include: { shots: true, author: true }
         });
 
+        let cleanCover = project.cover;
+        if (cleanCover && cleanCover.startsWith('data:')) {
+            cleanCover = `/api/projects/${project.id}/cover`;
+        }
+
         const formattedProject = {
             ...project,
+            cover: cleanCover,
             createAt: toTaipeiTZ(project.createAt),
             updatedAt: toTaipeiTZ(project.updatedAt),
-            shots: (project.shots || []).map(s => ({
-                ...s,
-                createAt: toTaipeiTZ(s.createAt),
-                updateAt: toTaipeiTZ(s.updateAt)
-            })),
+            shots: (project.shots || []).map(s => {
+                let cleanPayload = { ...s.payload };
+                if (cleanPayload.image && cleanPayload.image.startsWith('data:')) {
+                    cleanPayload.image = `/api/projects/${project.id}/shots/${s.id}/image`;
+                }
+                return {
+                    ...s,
+                    payload: cleanPayload,
+                    createAt: toTaipeiTZ(s.createAt),
+                    updateAt: toTaipeiTZ(s.updateAt)
+                };
+            }),
             author: project.author ? {
                 ...project.author,
                 createAt: toTaipeiTZ(project.author.createAt)
