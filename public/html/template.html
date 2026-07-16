@@ -12,87 +12,328 @@
 
 <body>
   <main id="page-main" class="dash-main template-main">
-    <section class="template-hero">
-      <div class="hero-copy">
-        <h1>爆點模板庫。</h1>
-        <div class="hero-actions">
-          <a class="new-template-btn" onclick="openNewTemplateModal()">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+    
+    <!-- ============================================
+         STATE 1: APPLE MUSIC / ROON STYLE BROWSE STORE
+         ============================================ -->
+    <section id="template-store-view" class="template-store-container anim-fadeInUp">
+      
+      <!-- Apple Music style Spotlight / Hero Spotlight Banner -->
+      <div class="store-spotlight-banner">
+        <div class="spotlight-badge">✦ 本月精選爆點模板</div>
+        <div class="spotlight-content">
+          <div class="spotlight-text">
+            <span class="spotlight-tag">#大眾共鳴 #懸念反轉 #美食挑戰</span>
+            <h2 class="spotlight-title">「挑戰在新竹吃一天要花多少錢？」</h2>
+            <p class="spotlight-desc">利用高懸念的金額鉤子 (Hook) 作為開場，中段快速開箱 5 家在地小吃，並配合 ASMR 聽覺爆點與真實大口吃播，讓觀眾停留率飆升！這是當下最火紅的高點閱短片結構。</p>
+            <div class="spotlight-actions">
+              <button class="btn btn-spotlight-apply" onclick="window.spaNavigate('generate', { templateId: 'GiZBQzIH6zA' })">
+                ✦ 立即套用此範本
+              </button>
+              <button class="btn btn-spotlight-detail" onclick="triggerTemplateDetail('GiZBQzIH6zA')">
+                查看剪輯時間軸解析
+              </button>
+            </div>
+          </div>
+          <div class="spotlight-graphic">
+            <div class="glass-timeline-preview">
+              <div class="preview-track-label">AI 結構解析</div>
+              <div class="preview-track hook-t">0-3s HOOK 吸睛懸念</div>
+              <div class="preview-track narr-t">3-30s 食物特寫/節奏快剪</div>
+              <div class="preview-track conflict-t">30-40s 脆皮ASMR衝突</div>
+              <div class="preview-track outro-t">40-46s 價格總結/引導按讚</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Categories Browse Section (Roon Grid) -->
+      <div class="store-section-title">
+        <h3>瀏覽類型分類</h3>
+        <p>點選下方分類，快速篩選適合您影片調性與目標平台的結構模板</p>
+      </div>
+      
+      <div class="store-categories-grid" id="store-categories">
+        <!-- Gradients and counts will be updated dynamically, or static placeholders with flex -->
+        <div class="category-card cat-all active" data-cat-id="全部">
+          <div class="cat-card-bg"></div>
+          <div class="cat-card-content">
+            <span class="cat-count" id="count-all">0 模板</span>
+            <h4>全部模板</h4>
+            <p>瀏覽所有 AI 分析與自訂的影片爆點結構</p>
+          </div>
+        </div>
+        <div class="category-card cat-product" data-cat-id="product">
+          <div class="cat-card-bg"></div>
+          <div class="cat-card-content">
+            <span class="cat-count" id="count-product">0 模板</span>
+            <h4>商品焦點</h4>
+            <p>專為高轉換、開箱與產品導購設計的吸睛結構</p>
+          </div>
+        </div>
+        <div class="category-card cat-story" data-cat-id="story">
+          <div class="cat-card-bg"></div>
+          <div class="cat-card-content">
+            <span class="cat-count" id="count-story">0 模板</span>
+            <h4>品牌故事</h4>
+            <p>藉由日常生活、Vlog 或品牌價值故事感化受眾</p>
+          </div>
+        </div>
+        <div class="category-card cat-twist" data-cat-id="twist">
+          <div class="cat-card-bg"></div>
+          <div class="cat-card-content">
+            <span class="cat-count" id="count-twist">0 模板</span>
+            <h4>反轉爆點</h4>
+            <p>運用職場、搞笑或生活反轉讓觀眾產生意想不到的驚喜</p>
+          </div>
+        </div>
+        <div class="category-card cat-custom" data-cat-id="custom">
+          <div class="cat-card-bg"></div>
+          <div class="cat-card-content">
+            <span class="cat-count" id="count-custom">0 模板</span>
+            <h4>自訂模板</h4>
+            <p>您手動建立或從上傳影片分析產生的個人模板</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Store Grid Header -->
+      <div class="store-grid-header">
+        <div class="header-left">
+          <h3 id="current-category-title">熱門推薦爆點結構</h3>
+          <p id="current-category-desc">點擊下方卡片，深入查看時間軸軌道設計與 AI 剖析</p>
+        </div>
+        <div class="header-right">
+          <!-- Search Bar -->
+          <div class="store-search-wrapper">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="store-search-input" placeholder="搜尋模板名稱、描述或標籤..." />
+          </div>
+          <!-- New Template Button -->
+          <button class="new-template-btn" onclick="openNewTemplateModal()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
               <line x1="12" y1="5" x2="12" y2="19"></line>
               <line x1="5" y1="12" x2="19" y2="12"></line>
             </svg>
             新增模板
-          </a>
+          </button>
         </div>
       </div>
-      <div class="hero-cards">
-        <article class="hero-card hero-card-large">
-          <span>熱門推薦</span>
-          <h2>快速吸睛開場</h2>
-          <p>專為 15 秒爆點影片設計，從第一秒就抓住注意力。</p>
-        </article>
-        <div class="hero-card-stack">
-          <article class="hero-card hero-card-small">
-            <span>品牌故事</span>
-            <h3>情緒動線</h3>
-            <p>用簡潔節奏打造情緒起伏，傳遞品牌價值。</p>
-          </article>
-          <article class="hero-card hero-card-small">
-            <span>促銷轉換</span>
-            <h3>商品焦點</h3>
-            <p>把畫面重心放在產品，再用爆點引導留存。</p>
-          </article>
-        </div>
+
+      <!-- Main Template Cards Grid -->
+      <div class="template-grid" id="template-grid">
+        <!-- Rendered template cards go here -->
       </div>
     </section>
 
-    <section class="projects-management anim-fadeInUp">
-      <div class="projects-header template-header">
-        <div>
-          <h2 class="projects-title">爆點模板庫</h2>
-          <p class="template-subtitle">探索並套用多種爆點短影片模板，依類別快速篩選，讓你的下一支影片更容易觸及受眾與提升點閱率。</p>
-        </div>
-        <a class="new-template-btn" onclick="openNewTemplateModal()">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <line x1="5" y1="12" x2="19" y2="12"></line>
+    <!-- ============================================
+         STATE 2: IMMERSIVE TIMELINE & INSPECTOR PANEL (HIDDEN BY DEFAULT)
+         ============================================ -->
+    <section id="template-detail-immersive" class="template-detail-immersive-container anim-fadeInUp" style="display: none;">
+      
+      <!-- Back navigation bar -->
+      <div class="detail-back-bar">
+        <button class="btn-back-to-store" onclick="backToStoreBrowse()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
           </svg>
-          新增模板
-        </a>
+          返回模板庫商店
+        </button>
+        <span class="detail-navigation-path">爆點模板庫 / <span id="nav-template-name">正在讀取...</span></span>
       </div>
 
-      <div class="template-layout">
-        <aside class="template-cats" id="template-cats">
-          <div class="template-cat-header">
-            <h2>模板分類</h2>
-            <p>從熱門、廣告、品牌、生活與促銷等模板中快速篩選最適合的爆點形式。</p>
+      <!-- Template Title Header -->
+      <div class="detail-template-hero-header">
+        <div class="detail-header-left">
+          <div class="detail-badges-row">
+            <span class="badge-cat" id="detail-category-badge">商品焦點</span>
+            <span class="badge-shots" id="detail-shots-count-badge">8 鏡頭</span>
+            <span class="badge-duration" id="detail-duration-badge">38s</span>
           </div>
-          <!-- categories rendered here -->
-        </aside>
+          <h2 class="detail-template-title" id="detail-template-title">載入中...</h2>
+          <p class="detail-template-desc" id="detail-template-desc">載入中...</p>
+        </div>
+        <div class="detail-header-right">
+          <button class="btn-apply-template-main" id="btn-apply-template-main">
+            ✦ 套用此模板並編寫腳本
+          </button>
+        </div>
+      </div>
 
-        <section class="template-list">
-          <div class="template-grid" id="template-grid">
-            <!-- templates rendered here -->
+      <!-- timeline widget container -->
+      <div class="timeline-editor-wrapper">
+        <div class="timeline-editor-title">
+          <div class="left-label">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="9" y1="3" x2="9" y2="21"></line>
+              <line x1="15" y1="3" x2="15" y2="21"></line>
+              <line x1="3" y1="9" x2="21" y2="9"></line>
+              <line x1="3" y1="15" x2="21" y2="15"></line>
+            </svg>
+            <span>腳本剪輯時間軸軌道 (Timeline Editor Tracks)</span>
           </div>
-          <div class="template-detail" id="template-detail">
-            <div class="template-detail-empty">
-              <h2>請先選擇一個模板</h2>
-              <p>點選左方任一模板卡即可查看詳情、套用建議與內容預覽，快速啟動你的短影片腳本創作。</p>
+          <div class="right-info">
+            <span class="info-tip">💡 點擊時間軸軌道區塊或點選秒數，可將指針對齊並載入對應 AI 分析</span>
+          </div>
+        </div>
+
+        <div class="timeline-scroll-container">
+          <div class="timeline-editor-body" id="timeline-editor-body">
+            
+            <!-- Playhead (The vertical pointer) -->
+            <div class="timeline-playhead" id="timeline-playhead">
+              <div class="playhead-head">00:00</div>
+              <div class="playhead-line"></div>
+            </div>
+
+            <!-- Track 1: Time Ruler -->
+            <div class="timeline-track-row track-ruler-row">
+              <div class="track-header-cell">時間軸刻度</div>
+              <div class="track-content-cell ruler-ticks" id="ruler-ticks">
+                <!-- Ticks rendered dynamically -->
+              </div>
+            </div>
+
+            <!-- Track 2: Shots Track -->
+            <div class="timeline-track-row track-shots-row">
+              <div class="track-header-cell">🎥 鏡頭分鏡</div>
+              <div class="track-content-cell track-shots-container" id="track-shots-container">
+                <!-- Shots blocks rendered dynamically -->
+              </div>
+            </div>
+
+            <!-- Track 3: Hook Track -->
+            <div class="timeline-track-row track-ai-row track-hook-row">
+              <div class="track-header-cell ai-coral-header">🎯 開場 Hook (0-3s)</div>
+              <div class="track-content-cell track-ai-container" id="track-hook-container">
+                <!-- Hook block rendered dynamically -->
+              </div>
+            </div>
+
+            <!-- Track 4: Narrative Track -->
+            <div class="timeline-track-row track-ai-row track-narrative-row">
+              <div class="track-header-cell ai-purple-header">🎬 中段敘事手法</div>
+              <div class="track-content-cell track-ai-container" id="track-narrative-container">
+                <!-- Narrative block rendered dynamically -->
+              </div>
+            </div>
+
+            <!-- Track 5: Emotion Track -->
+            <div class="timeline-track-row track-ai-row track-emotion-row">
+              <div class="track-header-cell ai-cyan-header">🌊 情緒帶動/起伏</div>
+              <div class="track-content-cell track-ai-container" id="track-emotion-container">
+                <!-- Emotion block rendered dynamically -->
+              </div>
+            </div>
+
+            <!-- Track 6: Q&A Track -->
+            <div class="timeline-track-row track-ai-row track-qa-row">
+              <div class="track-header-cell ai-green-header">🗣️ 藏鏡人互動提問</div>
+              <div class="track-content-cell track-ai-container" id="track-qa-container">
+                <!-- Q&A block rendered dynamically -->
+              </div>
+            </div>
+
+            <!-- Track 7: Conflict Track -->
+            <div class="timeline-track-row track-ai-row track-conflict-row">
+              <div class="track-header-cell ai-orange-header">⚡ 視覺衝突與干擾</div>
+              <div class="track-content-cell track-ai-container" id="track-conflict-container">
+                <!-- Conflict block rendered dynamically -->
+              </div>
+            </div>
+
+            <!-- Track 8: Outro & Brand Track -->
+            <div class="timeline-track-row track-ai-row track-outro-row">
+              <div class="track-header-cell ai-gold-header">🏆 尾段好奇心與品牌</div>
+              <div class="track-content-cell track-ai-container" id="track-outro-container">
+                <!-- Outro block rendered dynamically -->
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Inspector (Left) & Metadata Card (Right) -->
+      <div class="detail-bottom-layout">
+        
+        <!-- Left: Inspector panel (updates based on playhead or click) -->
+        <div class="inspector-panel" id="timeline-inspector">
+          <div class="inspector-header">
+            <h4 class="inspector-title" id="inspector-title">請選取時間軸區段</h4>
+            <span class="inspector-badge" id="inspector-badge">讀取中</span>
+          </div>
+          <div class="inspector-body" id="inspector-body-content">
+            <div class="inspector-empty-state">
+              <p>👈 請在上方時間軸軌道中點擊任何一個「分鏡鏡頭」或「AI 結構分析軌道」，此處將以專屬分色呈現該時段的詳細台詞、動作以及 AI 設計手法。</p>
             </div>
           </div>
-        </section>
-      </div>
+        </div>
 
+        <!-- Right: Meta Side info -->
+        <div class="metadata-side-panel">
+          <div class="side-panel-section">
+            <h5>模板基本屬性</h5>
+            <table class="meta-table">
+              <tr>
+                <td class="meta-label">適合題材</td>
+                <td class="meta-val" id="meta-usecase">-</td>
+              </tr>
+              <tr>
+                <td class="meta-label">適合平台</td>
+                <td class="meta-val" id="meta-platforms">-</td>
+              </tr>
+              <tr>
+                <td class="meta-label">適合受眾</td>
+                <td class="meta-val" id="meta-audience">-</td>
+              </tr>
+              <tr>
+                <td class="meta-label">鏡頭個數</td>
+                <td class="meta-val" id="meta-shotscount">-</td>
+              </tr>
+              <tr>
+                <td class="meta-label">建議總長</td>
+                <td class="meta-val" id="meta-duration">-</td>
+              </tr>
+              <tr>
+                <td class="meta-label">可替換變數</td>
+                <td class="meta-val" id="meta-variables">-</td>
+              </tr>
+            </table>
+          </div>
+
+          <div class="side-panel-section">
+            <h5>AI 爆點原理解析 (Why it works)</h5>
+            <p class="why-it-works-text" id="meta-why-it-works">-</p>
+          </div>
+
+          <div class="side-panel-section">
+            <h5>可複製的黃金元素 (Replicable Elements)</h5>
+            <ul class="replicable-list" id="meta-replicable-elements">
+              <!-- rendered dynamically -->
+            </ul>
+          </div>
+        </div>
+
+      </div>
     </section>
+
   </main>
 
-
+  <!-- ============================================
+       MODAL FOR CREATING TEMPLATES
+       ============================================ -->
   <div class="template-modal-overlay" id="template-modal">
     <div class="template-modal-panel">
       <button class="template-modal-close" type="button" onclick="closeNewTemplateModal()">×</button>
       <div class="template-modal-head">
         <p>新增爆點模板</p>
-        <h3>先選擇影片來源，讓系統自動建立你的影片模板骨架</h3>
+        <h3>貼上影片網址，讓 AI 分析並自動建立您的影片模板結構</h3>
       </div>
 
       <div class="template-modal-section">
@@ -113,12 +354,12 @@
 
       <div class="template-modal-section">
         <label class="template-modal-section-title">模板名稱</label>
-        <input class="template-modal-input" id="template-name-input" type="text" placeholder="輸入模板名稱，例如：爆發式開場" />
+        <input class="template-modal-input" id="template-name-input" type="text" placeholder="輸入模板名稱，例如：在新竹吃一天要花多少錢" />
       </div>
 
       <div class="template-modal-section">
         <label class="template-modal-section-title">模板描述</label>
-        <textarea class="template-modal-textarea" id="template-description-input" placeholder="描述此模板希望達成的效果，例如：快速建立吸睛開場與高轉換節奏。" rows="4"></textarea>
+        <textarea class="template-modal-textarea" id="template-description-input" placeholder="描述此模板希望達成的效果與受眾點..." rows="4"></textarea>
       </div>
 
       <div class="template-modal-actions">
@@ -130,6 +371,7 @@
 
   <script src="../js/generate-prefill-path.js"></script>
   <script src="../js/sys.js"></script>
+  <script src="../js/template-timeline.js"></script>
   <script src="../js/template.js"></script>
 </body>
 

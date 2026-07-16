@@ -1809,16 +1809,21 @@ async function ensureSharedLayout(signal) {
     const m = initMain();
     m.className = 'spa-template-wrap';
 
+    const pageMain = document.getElementById('page-main');
+    if (pageMain) {
+      pageMain.style.padding = '0';
+    }
+
     cloneMainContent(doc, m);
 
     await ensureSharedLayout(signal);
     if (signal?.aborted) return;
 
-    const catsEl = document.getElementById('template-cats');
+    const categoriesEl = document.getElementById('store-categories');
     const gridEl = document.getElementById('template-grid');
-    const detailEl = document.getElementById('template-detail');
+    const detailImmersiveEl = document.getElementById('template-detail-immersive');
 
-    if (!catsEl || !gridEl || !detailEl) return;
+    if (!categoriesEl || !gridEl || !detailImmersiveEl) return;
 
     gridEl.innerHTML = '<div style="color:var(--text-mid); text-align:center; padding: 40px; grid-column: 1/-1;">載入中...</div>';
 
@@ -1833,7 +1838,6 @@ async function ensureSharedLayout(signal) {
     if (signal?.aborted) return;
 
     if (!templates || templates.length === 0) {
-      catsEl.innerHTML = '';
       gridEl.innerHTML = `
         <div class="projects-empty">
           <h3>目前尚無模板</h3>
@@ -1851,110 +1855,148 @@ async function ensureSharedLayout(signal) {
       '未分類': '未分類'
     };
 
-    const groups = { '全部': templates };
+    // Calculate count per category
+    const catCounts = { '全部': templates.length, 'product': 0, 'story': 0, 'twist': 0, 'custom': 0 };
     templates.forEach(t => {
-      const dbCat = t.category || t.type || '未分類';
-      const k = CAT_MAP[dbCat] || dbCat;
-      if (!groups[k]) groups[k] = [];
-      groups[k].push(t);
+      const cat = t.category || t.type;
+      const key = (cat === 'custom' || cat === 'product' || cat === 'story' || cat === 'twist') ? cat : 'custom';
+      catCounts[key]++;
     });
 
-    const categories = ['全部', ...Object.keys(groups).filter(k => k !== '全部')];
+    // Update counts elements
+    const countAllEl = document.getElementById('count-all');
+    if (countAllEl) countAllEl.textContent = `${catCounts['全部']} 模板`;
+    const countProdEl = document.getElementById('count-product');
+    if (countProdEl) countProdEl.textContent = `${catCounts['product']} 模板`;
+    const countStoryEl = document.getElementById('count-story');
+    if (countStoryEl) countStoryEl.textContent = `${catCounts['story']} 模板`;
+    const countTwistEl = document.getElementById('count-twist');
+    if (countTwistEl) countTwistEl.textContent = `${catCounts['twist']} 模板`;
+    const countCustomEl = document.getElementById('count-custom');
+    if (countCustomEl) countCustomEl.textContent = `${catCounts['custom']} 模板`;
 
-    catsEl.innerHTML = categories
-      .map((c, i) => `<button class="tpl-cat ${i === 0 ? 'active' : ''}" data-cat="${c}">${c} <span class="count">(${groups[c].length})</span></button>`)
-      .join('');
+    let currentCategory = '全部';
+    let searchQuery = '';
 
-    function renderGridFor(cat) {
-      const items = groups[cat] || [];
+    function filterAndDisplay() {
+      // 1. Filter by category
+      let filtered = templates;
+      if (currentCategory !== '全部') {
+        filtered = templates.filter(t => {
+          const c = t.category || t.type;
+          if (currentCategory === 'custom') {
+            return c !== 'product' && c !== 'story' && c !== 'twist';
+          }
+          return c === currentCategory;
+        });
+      }
 
-      gridEl.innerHTML = items.map(it => `
-        <div class="template-card" data-id="${it.id || ''}" data-title="${(it.name || it.title || '無標題').replace(/"/g, '')}">
-          <div class="template-thumb">${it.thumbnail ? `<img src="${it.thumbnail}" alt="${it.name || it.title}">` : '📄'}</div>
-          <div class="template-info">
-            <div class="template-title">${it.name || it.title || '無標題'}</div>
+      // 2. Filter by search query
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        filtered = filtered.filter(t => {
+          const nameMatch = (t.name || t.title || '').toLowerCase().includes(query);
+          const descMatch = (t.description || '').toLowerCase().includes(query);
+          const tagMatch = Array.isArray(t.tags) && t.tags.some(tag => tag.toLowerCase().includes(query));
+          return nameMatch || descMatch || tagMatch;
+        });
+      }
+
+      // 3. Display
+      if (filtered.length === 0) {
+        gridEl.innerHTML = `
+          <div style="color:var(--text-mid); text-align:center; padding: 60px; grid-column: 1/-1; font-size:1.05rem; font-weight:700;">
+            沒有找到符合條件的模板
+            <p style="font-size:0.9rem; color:#8b87a8; font-weight:normal; margin-top:8px;">試試其他關鍵字，或是點選其他分類瀏覽。</p>
           </div>
-        </div>
-      `).join('');
+        `;
+        return;
+      }
 
+      gridEl.innerHTML = filtered.map(t => {
+        const shotCount = t.shotsCount || (t.structure ? t.structure.length : 0);
+        const tags = Array.isArray(t.tags) ? t.tags.slice(0, 3).map(tag => `<span>${tag}</span>`).join(' ') : '';
+        const platforms = Array.isArray(t.platform) ? t.platform.map(p => `<span class="platform-badge">${p}</span>`).join('') : '<span class="platform-badge">shorts</span>';
+        
+        let duration = '0s';
+        if (t.structure && t.structure.length) {
+          const sumSec = t.structure.map(s => parseInt(s.duration) || 0).reduce((a, b) => a + b, 0);
+          duration = `${sumSec}s`;
+        }
+
+        return `
+          <div class="template-card" data-id="${t.id}">
+            <div class="template-card-header">
+              <span class="template-card-cat">${CAT_MAP[t.category] || t.category || '未分類'}</span>
+              <span class="template-card-shots">${shotCount} 鏡頭</span>
+            </div>
+            <div class="template-card-body">
+              <h4>${t.name || t.title || '無標題'}</h4>
+              <p>${t.description || '無描述'}</p>
+              <div class="template-card-tags">
+                ${tags}
+              </div>
+            </div>
+            <div class="template-card-footer">
+              <div class="platform-badges">
+                ${platforms}
+              </div>
+              <div class="template-card-duration">
+                ⏱️ ${duration}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Add click listeners to template cards
       gridEl.querySelectorAll('.template-card').forEach(el => {
         el.addEventListener('click', () => {
           const id = el.dataset.id;
-          const t = items.find(x => (x.id || '') === id) || items.find(x => (x.name || x.title || '') === el.dataset.title);
-          if (!t) return;
-
-          const varsList = Array.isArray(t.variables) ? t.variables : [];
-          const platformText = Array.isArray(t.platform) ? t.platform.join(', ') : (t.platform || '無限制');
-          const narrativeType = t.narrative?.type || '無';
-          const paceLabel = t.visualFlow?.pace || 'medium';
-          const duration = t.structure?.length ? t.structure.map(s => parseInt(s.duration) || 0).reduce((a, b) => a + b, 0) + 's' : '0s';
-
-          detailEl.innerHTML = `
-            <div class="template-detail-header" style="border-bottom: 2px solid var(--border-warm); padding-bottom: 20px; margin-bottom: 20px;">
-              <span class="tc-category" style="background: var(--primary-soft); color: var(--primary); padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase;">${CAT_MAP[t.category] || t.category || '未分類'}</span>
-              <h3 style="font-size: 1.6rem; font-weight: 800; color: #21143f; margin-top: 12px; margin-bottom: 8px;">${t.name || t.title || '無標題'}</h3>
-              <p style="color: #6b6481; line-height: 1.6; font-size: 0.95rem; margin-bottom: 0;">${t.description || '無描述'}</p>
-            </div>
-            
-            <div class="template-detail-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
-              <div style="background: #fdfaf4; padding: 12px 16px; border-radius: 16px; border: 1px solid rgba(220,156,71,0.1);">
-                <div style="font-size: 0.75rem; color: #a19a86; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">適用平台</div>
-                <div style="font-size: 0.9rem; font-weight: 700; color: #5f4b2a;">${platformText}</div>
-              </div>
-              <div style="background: #fdfaf4; padding: 12px 16px; border-radius: 16px; border: 1px solid rgba(220,156,71,0.1);">
-                <div style="font-size: 0.75rem; color: #a19a86; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">鏡頭個數 / 總長</div>
-                <div style="font-size: 0.9rem; font-weight: 700; color: #5f4b2a;">${t.shotsCount || t.structure?.length || 0} 鏡 (${duration})</div>
-              </div>
-              <div style="background: #fdfaf4; padding: 12px 16px; border-radius: 16px; border: 1px solid rgba(220,156,71,0.1);">
-                <div style="font-size: 0.75rem; color: #a19a86; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">敘事手法 / 語調</div>
-                <div style="font-size: 0.9rem; font-weight: 700; color: #5f4b2a;">${narrativeType} (${t.narrative?.tone || 'casual'})</div>
-              </div>
-              <div style="background: #fdfaf4; padding: 12px 16px; border-radius: 16px; border: 1px solid rgba(220,156,71,0.1);">
-                <div style="font-size: 0.75rem; color: #a19a86; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">節奏律動</div>
-                <div style="font-size: 0.9rem; font-weight: 700; color: #5f4b2a;">${paceLabel} 節奏</div>
-              </div>
-            </div>
-
-            <div style="margin-bottom: 24px;">
-              <h4 style="font-weight: 800; color: #21143f; margin-bottom: 10px; font-size: 0.95rem;">可替換變數</h4>
-              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                ${varsList.map(v => `<span style="background: #f0f0fa; color: #5d3a9b; padding: 4px 12px; border-radius: 20px; font-size: 0.82rem; font-weight: 700; border: 1px solid rgba(93,58,155,0.1);">${v}</span>`).join('') || '<em style="color:#a19a86;font-size:0.9rem;">無變數</em>'}
-              </div>
-            </div>
-
-            <div style="margin-bottom: 30px;">
-              <h4 style="font-weight: 800; color: #21143f; margin-bottom: 10px; font-size: 0.95rem;">推薦應用場景</h4>
-              <p style="font-size: 0.92rem; color: #5f5f7d; line-height: 1.6;">${t.useCase || '美食、開箱、生活紀錄等系列短片。'}</p>
-            </div>
-
-            <div style="display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid #eee; padding-top: 20px;">
-              <button class="btn btn-primary" id="tpl-use-btn" style="width: 100%; justify-content: center; height: 48px; border-radius: 12px; font-weight:700;">
-                ✦ 選擇此模板並輸入故事
-              </button>
-            </div>
-          `;
-
-          const useBtn = detailEl.querySelector('#tpl-use-btn');
-          if (useBtn) {
-            useBtn.addEventListener('click', () => {
-              window.spaNavigate('generate', { templateId: t.id });
-            });
+          const template = templates.find(x => x.id === id);
+          if (template && window.renderTemplateDetailTimeline) {
+            window.renderTemplateDetailTimeline(template, detailImmersiveEl);
           }
-
-          detailEl.scrollIntoView({ behavior: 'smooth' });
         });
       });
     }
 
-    renderGridFor(categories[0]);
+    // Set category card click listeners
+    const catCards = categoriesEl.querySelectorAll('.category-card');
+    catCards.forEach(card => {
+      card.addEventListener('click', () => {
+        catCards.forEach(c => c.classList.remove('active'));
+        card.classList.add('active');
 
-    catsEl.querySelectorAll('.tpl-cat').forEach(b => {
-      b.addEventListener('click', () => {
-        catsEl.querySelectorAll('.tpl-cat').forEach(x => x.classList.remove('active'));
-        b.classList.add('active');
-        renderGridFor(b.dataset.cat);
+        currentCategory = card.dataset.catId;
+
+        // Update titles
+        const catTitleEl = document.getElementById('current-category-title');
+        const catDescEl = document.getElementById('current-category-desc');
+
+        if (currentCategory === '全部') {
+          if (catTitleEl) catTitleEl.textContent = '熱門推薦爆點結構';
+          if (catDescEl) catDescEl.textContent = '點擊下方卡片，深入查看時間軸軌道設計與 AI 剖析';
+        } else {
+          if (catTitleEl) catTitleEl.textContent = `${CAT_MAP[currentCategory] || currentCategory} 推薦模板`;
+          if (catDescEl) catDescEl.textContent = `專門為 ${CAT_MAP[currentCategory] || currentCategory} 特性精選與優化的爆點結構`;
+        }
+
+        filterAndDisplay();
       });
     });
+
+    // Set search listener
+    const searchInput = document.getElementById('store-search-input');
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        searchQuery = e.target.value;
+        filterAndDisplay();
+      });
+    }
+
+    // Initialize display
+    filterAndDisplay();
 
     if (typeof window.initTemplatePage === 'function') {
       window.initTemplatePage();
@@ -2491,7 +2533,7 @@ async function ensureSharedLayout(signal) {
 
     template: {
       css: ['/css/dashboard.css', '/css/template.css'],
-      js: ['/js/generate-prefill-path.js', '/js/template.js'],
+      js: ['/js/generate-prefill-path.js', '/js/template-timeline.js', '/js/template.js'],
       render: (o, signal) => renderTemplate(signal)
     },
 
@@ -2718,6 +2760,7 @@ async function ensureSharedLayout(signal) {
     const pageMain = document.getElementById('page-main');
     if (pageMain) {
       pageMain.classList.remove('is-generating');
+      pageMain.style.padding = '';
     }
 
     // 當從登入/註冊頁面登入進入 Dashboard 時，若先前為展開狀態，自動將其收回（在 mask 遮罩期間完成）

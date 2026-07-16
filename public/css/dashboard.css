@@ -2710,6 +2710,11 @@ table {
     margin-bottom: 56px; /* spacing between quickstart and projects section */
 }
 
+.home-hero-section *{
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
 .home-hero-grid {
     display: grid;
     grid-template-columns: 2.2fr 1fr;
@@ -2718,7 +2723,7 @@ table {
 
 /* Left Hero Banner Card */
 .hero-banner-card {
-    background: linear-gradient(135deg, #1d4ed8, #2563eb, #3b82f6);
+    background: linear-gradient(135deg, var(--primary), var(--primary-light), var(--yellow-warm));
     border-radius: 24px;
     padding: 36px;
     display: flex;
@@ -2730,7 +2735,6 @@ table {
     transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
     overflow: hidden;
     position: relative;
-    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .hero-banner-card::before {
@@ -2749,6 +2753,12 @@ table {
 .hero-banner-card:hover {
     transform: translateY(-6px);
     box-shadow: 0 30px 60px rgba(37, 99, 235, 0.24);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+.hero-banner-card:active {
+    transform: translateY(0px);
+    box-shadow: 0 0px 0px rgba(37, 99, 235, 0.24);
     border-color: rgba(255, 255, 255, 0.25);
 }
 
@@ -2841,13 +2851,17 @@ table {
     height: 100%;
     object-fit: cover;
     border-radius: 20px;
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15), inset 0 0 1px rgba(255, 255, 255, 0.2);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1), inset 0 0 1px rgba(255, 255, 255, 0.2);
     border: 1px solid rgba(255, 255, 255, 0.15);
     transition: all 0.5s ease;
 }
 
 .hero-banner-card:hover .hero-media-img {
     transform: scale(1.05) rotate(2deg);
+}
+
+.hero-banner-card:active .hero-media-img {
+    transform: scale(0.95) rotate(-0deg);
 }
 
 /* Right Stacked Widget Cards */
@@ -2893,6 +2907,13 @@ table {
     box-shadow: 0 15px 35px rgba(37, 99, 235, 0.08);
     border-color: rgba(37, 99, 235, 0.25);
 }
+
+.quick-widget-card:active {
+    transform: translateY(0px);
+    box-shadow: 0 0px 0px rgba(37, 99, 235, 0.08);
+    border-color: rgba(37, 99, 235, 0.25);
+}
+
 
 .quick-widget-card:hover::before {
     opacity: 1;
