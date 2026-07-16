@@ -46,8 +46,8 @@ function alert(message, options = { btnText: "確定", duration: 15000 }) {
         };
 
         setTimeout(() => {
-            bg.style.background = "rgba(46, 46, 46, 0.2)";
-            bg.style.backdropFilter = "blur(40px)";
+            bg.style.background = "var(--primary-soft)";
+            bg.style.backdropFilter = "blur(50px)";
             windowEl.style.scale = "1";
             windowEl.style.transform = "translate(0, 0px)";
             windowEl.style.filter = "blur(0)";
@@ -124,6 +124,7 @@ function confirm(message, description, type = 'default', btnText, projectEl) {
         };
 
         const btn1 = document.createElement("button");
+        btn1.classList.add("btn");
         btn1.classList.add("sys-btn");
         btn1.classList.add("secondary")
         btn1.textContent = "取消";
@@ -137,17 +138,15 @@ function confirm(message, description, type = 'default', btnText, projectEl) {
         };
 
         const typeStyles = {
-            'delete': "#6f1d1b",
-            'danger': "#6f1d1b",
-            'success': "#52c41a",
-            'warning': "#faad14",
-            'default': "var(--text-dark)"
+            'delete': "linear-gradient(135deg, #b9201e, #6f1d1b)",
+            'danger': "linear-gradient(135deg, #b9201e, #6f1d1b)",
         }
 
         const btn2 = document.createElement("button");
+        btn2.classList.add("btn");
         btn2.classList.add("sys-btn");
-        btn2.classList.add("primary")
-        btn2.style.backgroundColor = typeStyles[type];
+        btn2.classList.add("primary");
+        btn2.style.background = typeStyles[type] || "";
         btn2.textContent = btnText || "確定";
         btnContainer.appendChild(btn2);
 
@@ -206,8 +205,8 @@ function confirm(message, description, type = 'default', btnText, projectEl) {
 
 
         setTimeout(() => {
-            bg.style.background = "rgba(46, 46, 46, 0.2)";
-            bg.style.backdropFilter = "blur(40px)";
+            bg.style.background = "var(--primary-soft)";
+            bg.style.backdropFilter = "blur(50px)";
             windowEl.style.scale = 1;
             windowEl.style.filter = "blur(0)";
             windowEl.style.opacity = "1"

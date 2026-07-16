@@ -32,6 +32,15 @@
         </div>
 
         <nav class="side-body">
+
+            <a href="../generate" class="side-link highlight" id="nav-generate" title="新建分鏡">
+                <img src="../icon/plus-blur.svg" alt="" style="z-index: 2; opacity: 1;">
+                <span>新建分鏡</span>
+                <div class="link-glow"></div>
+            </a>
+
+            <hr>
+            
             <a href="../dashboard" class="side-link" id="nav-home" title="首頁">
                 <img src="../icon/home-blur.svg" alt="" style="z-index: 2; opacity: 1;">
                 <span>首頁</span>
@@ -39,12 +48,12 @@
             </a>
             <div class="side-nav-group" id="nav-projects-group">
                 <div class="side-link-row">
-                    <a href="../projects" class="side-link" id="nav-projects" title="專案">
+                    <a href="../projects" class="side-link" id="nav-projects" title="分鏡">
                         <img src="../icon/folder-blur.svg" alt="" style="z-index: 2; opacity: 1;">
-                        <span>專案</span>
+                        <span>分鏡</span>
                         <div class="link-glow"></div>
                     </a>
-                    <button class="sub-list-toggle" id="projects-toggle-btn" title="展開/收疊專案" type="button">
+                    <button class="sub-list-toggle" id="projects-toggle-btn" title="展開/收疊分鏡" type="button">
                         <svg class="toggle-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
                             <line x1="5" y1="12" x2="19" y2="12"></line>
                             <line x1="12" y1="5" x2="12" y2="19" class="toggle-vertical-line"></line>
@@ -52,9 +61,6 @@
                     </button>
                 </div>
                 <div class="side-sub-list" id="sidebar-projects-list">
-                    <a href="../generate" class="sub-link new-project-sub-link" title="新建專案">
-                        <span class="sub-text">+ 新建專案</span>
-                    </a>
                 </div>
             </div>
             <a href="../history" class="side-link" id="nav-history" title="資源回收桶">
@@ -82,38 +88,63 @@
             <p class="welcome-subtitle">今天想創作什麼樣的分鏡故事呢？</p>
         </section>
 
-        <!-- Quick Start Cards -->
-        <section class="home-quickstart anim-fadeInUp anim-delay-1">
-            <div class="quickstart-grid">
-                <div class="quickstart-card generate-card" onclick="spaNavigate('generate')">
-                    <div class="card-icon">
-                        <img src="../icon/plus-focus.svg" alt="Generate">
+        <!-- Welcome & Quickstart Section -->
+        <section class="home-hero-section anim-fadeInUp anim-delay-1">
+            <div class="home-hero-grid">
+                <!-- Left Banner Card: Create Storyboard -->
+                <div class="hero-banner-card" onclick="spaNavigate('generate')">
+                    <div class="hero-banner-content">
+                        <span class="hero-banner-badge">AI 創作助理</span>
+                        <h2 class="hero-banner-title">靈感，一鍵轉換</h2>
+                        <p class="hero-banner-desc">輸入故事，一鍵智慧分析分鏡、編排鏡頭並生成精美畫面與鏡頭動態描述。</p>
+                        <button class="hero-banner-btn">
+                            <span>立刻新建分鏡</span>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12 5 19 12 12 19"></polyline>
+                            </svg>
+                        </button>
                     </div>
-                    <div class="card-content">
-                        <h3>新建分鏡</h3>
-                        <p>輸入故事腳本，一鍵智慧生成分鏡畫面與動態描述</p>
+                    <div class="hero-banner-media">
+                        <img src="../images/home_hero_banner.png" alt="Creative Illustration" class="hero-media-img">
                     </div>
-                    <div class="card-arrow">→</div>
                 </div>
-                <div class="quickstart-card template-card" onclick="spaNavigate('template')">
-                    <div class="card-icon">
-                        <img src="../icon/search-focus.svg" alt="Template">
+
+                <!-- Right Quickstart Grid -->
+                <div class="hero-quick-grid">
+                    <!-- Template Card -->
+                    <div class="quick-widget-card template-widget" onclick="spaNavigate('template')">
+                        <div class="widget-icon">
+                            <img src="../icon/search-focus.svg" alt="Templates">
+                        </div>
+                        <div class="widget-content">
+                            <h3>爆點模板庫</h3>
+                            <p>套用最熱門的短影音腳本</p>
+                        </div>
+                        <div class="widget-arrow">→</div>
                     </div>
-                    <div class="card-content">
-                        <h3>爆點模板庫</h3>
-                        <p>瀏覽與套用當前最熱門的短影音分鏡腳本模板</p>
+                    
+                    <!-- Recycle Bin Card -->
+                    <div class="quick-widget-card recycle-widget" onclick="spaNavigate('history')">
+                        <div class="widget-icon">
+                            <img src="../icon/trash-focus.svg" alt="Recycle Bin">
+                        </div>
+                        <div class="widget-content">
+                            <h3>資源回收桶</h3>
+                            <p>復原或清理軟刪除分鏡</p>
+                        </div>
+                        <div class="widget-arrow">→</div>
                     </div>
-                    <div class="card-arrow">→</div>
                 </div>
             </div>
         </section>
 
         <!-- Recent Projects Section -->
-        <section class="projects-management anim-fadeInUp anim-delay-2" style="margin-top: 40px;">
+        <section class="projects-management anim-fadeInUp anim-delay-2" style="margin-top: 56px;">
             <div class="projects-header">
-                <h2 class="projects-title" style="font-size: 1.5rem;">最近編輯專案</h2>
+                <h2 class="projects-title" style="font-size: 1.5rem;">最近編輯分鏡</h2>
                 <a onclick="spaNavigate('projects')" style="cursor: pointer; display: flex; align-items: center; gap: 5px; color: var(--primary); text-decoration: none; font-weight: 600; font-size: 0.95rem;">
-                    查看所有專案
+                    查看所有分鏡
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="9 18 15 12 9 6"></polyline>
                     </svg>

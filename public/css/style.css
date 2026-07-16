@@ -232,7 +232,7 @@ main{
 .anim-delay-2 { animation-delay: 0.2s; }
 .anim-delay-3 { animation-delay: 0.3s; }
 
-::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar { width: 2px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
     background: var(--primary-soft);
@@ -252,7 +252,7 @@ main{
 .sys-window {
     padding: 2vh;
     border-radius: 30px;
-    background-color: #efefef;
+    background-color: var(--off-white);
     transform: translateY(-50px) scale(0.95);
     opacity: 0;
     scale: 0;
@@ -309,8 +309,8 @@ main{
 }
 
 .sys-btn.primary{
-    background-color: var(--text-dark);
-    color: #efefef;
+    background: linear-gradient(135deg, var(--primary-light), var(--primary));
+    color: var(--off-white);
 }
 
 .sys-btn.secondary{
@@ -618,53 +618,31 @@ main{
     position: fixed;
     bottom: 40px;
     left: 50%;
-    transform: translateX(-50%) translateY(120px);
-    background: #3A322C;
-    border: 2px solid var(--primary-light);
-    color: var(--off-white);
+    transform: translateX(-50%) translateY(100%);
+    background: var(--off-white);
+    color: var(--text-dark);
     padding: 14px 24px;
-    border-radius: var(--radius-md);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    border-radius: 999px;
+    box-shadow: 0 10px 30px var(--primary-soft);
     z-index: 2000; /* Higher than loader overlay (1000) */
     display: flex;
     align-items: center;
     gap: 16px;
     opacity: 0;
     pointer-events: none;
-    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s ease;
+    transition: transform 0.4s cubic-bezier(.31,.01,.66,-0.59), opacity 0.4s ease;
     font-family: var(--font-body);
     font-weight: 500;
     font-size: 0.95rem;
 }
 
 .global-toast.show {
+    transition: transform 0.4s cubic-bezier(.33, 1.53,.69,.99), opacity 0.4s ease;
     transform: translateX(-50%) translateY(0);
     opacity: 1;
     pointer-events: auto;
 }
 
-.global-toast-undo-btn {
-    background: var(--primary-light);
-    color: var(--text-dark);
-    border: 2px solid var(--text-dark);
-    border-radius: var(--radius-sm);
-    padding: 4px 12px;
-    font-family: var(--font-body);
-    font-weight: 700;
-    font-size: 0.85rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
-}
-
-.global-toast-undo-btn:hover {
-    background: var(--white);
-    transform: scale(1.05);
-}
-
-.global-toast-undo-btn:active {
-    transform: scale(0.95);
-}
 
 /* ── Project Options Dropdown ───────────────────────────── */
 .options-dropdown-overlay {

@@ -1,6 +1,26 @@
 (function () {
   'use strict';
 
+  async function performPageContentTransition(action) {
+      const contentEl = document.getElementById('page-content') || document.getElementById('page-main');
+      if (contentEl) {
+          contentEl.style.transition = 'opacity 0.3s ease, filter 0.3s ease';
+          contentEl.style.opacity = '0';
+          contentEl.style.filter = 'blur(15px)';
+          await new Promise(resolve => setTimeout(resolve, 300));
+      }
+      
+      action();
+      
+      if (contentEl) {
+          contentEl.style.opacity = '1';
+          contentEl.style.filter = 'blur(0px)';
+          await new Promise(resolve => setTimeout(resolve, 300));
+          contentEl.style.removeProperty('filter');
+          contentEl.style.removeProperty('transition');
+      }
+  }
+
   // ── DOM refs (改成 let，允許動態刷新) ──
   let storyInput = null;
   let inputArea = null;
@@ -153,6 +173,15 @@
           el.offsetHeight;
           el.style.animation = '';
           el.classList.add('active');
+      }
+
+      const pageMain = document.getElementById('page-main');
+      if (pageMain) {
+          if (id === 'phase-generating') {
+              pageMain.classList.add('is-generating');
+          } else {
+              pageMain.classList.remove('is-generating');
+          }
       }
   }
 
@@ -706,13 +735,9 @@
           if (activeGenController) activeGenController.abort();
       };
 
-      if (window.spaMaskClose) {
-          await window.spaMaskClose();
-      }
-      showPhase('phase-generating');
-      if (window.spaMaskOpen) {
-          await window.spaMaskOpen();
-      }
+      await performPageContentTransition(() => {
+          showPhase('phase-generating');
+      });
       const allSteps = ['step-analyze', 'step-structure', 'step-prompt', 'step-render'];
       allSteps.forEach(id => updateGenStep(id, 'pending'));
 
@@ -837,8 +862,8 @@
 
           if (barEl) barEl.style.width = '100%';
           if (pctEl) pctEl.innerText = '100%';
-          if (titleEl) titleEl.textContent = '備份至雲端，專案建立完成！';
-          if (subEl) subEl.textContent = '準備跳轉至專案檢視頁面';
+          if (titleEl) titleEl.textContent = '備份至雲端，分鏡建立完成！';
+          if (subEl) subEl.textContent = '準備跳轉至分鏡檢視頁面';
 
           updateGenStep('step-render', 'success');
           setTimeout(() => {
@@ -874,13 +899,9 @@
           if (activeGenController) activeGenController.abort();
       };
 
-      if (window.spaMaskClose) {
-          await window.spaMaskClose();
-      }
-      showPhase('phase-generating');
-      if (window.spaMaskOpen) {
-          await window.spaMaskOpen();
-      }
+      await performPageContentTransition(() => {
+          showPhase('phase-generating');
+      });
       const allSteps = ['step-analyze', 'step-structure', 'step-prompt', 'step-render'];
       allSteps.forEach(id => updateGenStep(id, 'pending'));
 
@@ -1031,8 +1052,8 @@ ${rawPrompts.map((_, i) => `${i + 1}. [Optimized English prompt for shot ${i + 1
 
           if (barEl) barEl.style.width = '100%';
           if (pctEl) pctEl.innerText = '100%';
-          if (titleEl) titleEl.textContent = '備份至雲端，專案建立完成！';
-          if (subEl) subEl.textContent = '準備跳轉至專案檢視頁面';
+          if (titleEl) titleEl.textContent = '備份至雲端，分鏡建立完成！';
+          if (subEl) subEl.textContent = '準備跳轉至分鏡檢視頁面';
 
           updateGenStep('step-render', 'success');
           setTimeout(() => {
@@ -1194,13 +1215,12 @@ ${vars.map(v => `${v}: <值>`).join('\n')}
   }
 
   async function saveProjectToDatabase() {
-      if (!window.spaAuth || !window.spaAuth.isLoggedIn()) {
-          console.log("ℹ️ 使用者未登入，跳過自動儲存專案至資料庫。");
+          console.log("ℹ️ 使用者未登入，跳過自動儲存分鏡至資料庫。");
           return;
       }
 
       try {
-          console.log("⏳ 正在自動將產生的專案儲存至資料庫...");
+          console.log("⏳ 正在自動將產生的分鏡儲存至資料庫...");
           let title = '';
           if (state.useTemplate && state.selectedTemplate) {
               title = state.selectedTemplate.name;
@@ -1276,11 +1296,11 @@ ${vars.map(v => `${v}: <值>`).join('\n')}
 
           if (!res.ok) {
               const errData = await res.json();
-              throw new Error(errData.error || '儲存專案失敗');
+              throw new Error(errData.error || '儲存分鏡失敗');
           }
 
           const result = await res.json();
-          console.log("✅ 專案自動儲存資料庫成功，ID:", result.project?.id);
+          console.log("✅ 分鏡自動儲存資料庫成功，ID:", result.project?.id);
           
           if (result.project && typeof window.spaSeedProjectCache === 'function') {
               window.spaSeedProjectCache(result.project.id, result.project);
@@ -1291,7 +1311,7 @@ ${vars.map(v => `${v}: <值>`).join('\n')}
           }
           return result.project?.id;
       } catch (error) {
-          console.error("❌ 專案自動儲存至資料庫時出錯:", error);
+          console.error("❌ 分鏡自動儲存至資料庫時出錯:", error);
           return null;
       }
   }

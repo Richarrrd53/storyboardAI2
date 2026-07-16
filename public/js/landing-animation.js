@@ -189,6 +189,9 @@ window.initLandingPage = () => {
             landingCtx.revert();
             landingCtx = null;
         }
+        if (typeof ScrollTrigger !== 'undefined') {
+            ScrollTrigger.getAll().forEach(t => t.kill());
+        }
         const bg = document.getElementById('BG');
         if (bg) {
             bg.style.removeProperty('background');

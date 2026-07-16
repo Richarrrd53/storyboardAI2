@@ -329,6 +329,14 @@
     }
   }
 
+  function prefetchAuthResources() {
+    if (!spaAuth.isLoggedIn()) {
+      prefetchPage('login').catch(() => {});
+      injectCSS('/css/auth.css').catch(() => {});
+      fetch('/js/auth.js').catch(() => {});
+    }
+  }
+
   function lazyLoadProjectThumbs(container) {
     if (!container) return;
     const thumbs = container.querySelectorAll('.project-thumb.loading');
@@ -860,7 +868,7 @@
   }
 
   async function deleteProject(p, card, refreshCallback) {
-    const isConfirmed = await confirm('是否刪除此專案？', `「${p.title}」將從此頁面上刪除，刪除後的專案將會移至「資源回收桶」，您可以在「歷史專案」復原`, 'delete', '刪除', card);
+    const isConfirmed = await confirm('是否刪除此分鏡？', `「${p.title}」將從此頁面上刪除，刪除後的分鏡將會移至「資源回收桶」，您可以在「歷史分鏡」復原`, 'delete', '刪除', card);
     if (!isConfirmed) return;
 
     card.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
@@ -884,7 +892,7 @@
           recentlyRestored.delete(p.id);
           const updated = await spaAuth.fetchProjects();
           cacheProjectsList = updated;
-          window.showSpaToast(`專案「${p.title}」已移至資源回收桶。`);
+          window.showSpaToast(`分鏡「${p.title}」已移至資源回收桶。`);
         }
       } catch (err) {
         console.error('Failed to soft-delete project on server', err);
@@ -903,20 +911,20 @@
       project: p
     };
 
-    window.showSpaToast(`專案「${p.title}」已移至資源回收桶。`, () => {
+    window.showSpaToast(`分鏡「${p.title}」已移至資源回收桶。`, () => {
       const item = pendingDeletions[p.id];
       if (item) {
         clearTimeout(item.deleteTimeout);
         clearTimeout(item.transitionTimeout);
         delete pendingDeletions[p.id];
       }
-      window.showSpaToast("專案已復原。");
+      window.showSpaToast("分鏡已復原。");
       refreshCallback();
     }, 5000);
   }
 
   async function restoreProject(p, card, refreshCallback) {
-    const isConfirmed = await confirm('是否還原此專案？', ``, 'default', '還原', null);
+    const isConfirmed = await confirm('是否還原此分鏡？', ``, 'default', '還原', null);
     if (!isConfirmed) return;
 
     p.is_deleted = false;
@@ -924,7 +932,7 @@
     recentlyDeleted.delete(p.id);
     refreshCallback();
 
-    window.showSpaToast(`專案「${p.title}」已還原。`);
+    window.showSpaToast(`分鏡「${p.title}」已還原。`);
 
     try {
       const token = spaAuth.getToken();
@@ -962,7 +970,7 @@
           <span class="options-dropdown-item-icon">
             <img src="../icon/restore.svg">
           </span>
-          <span>還原專案</span>
+          <span>還原分鏡</span>
         </button>
       `;
     } else {
@@ -979,14 +987,14 @@
               </div>
             </div>
           </span>
-          <span>開啟專案</span>
+          <span>開啟分鏡</span>
         </button>
         <button class="options-dropdown-item delete" id="opt-delete">
           <span class="options-dropdown-item-icon">
             <img class="delete-1" src="../icon/delete-1.svg">
             <img class="delete-2" src="../icon/delete-2.svg">
           </span>
-          <span>刪除專案</span>
+          <span>刪除分鏡</span>
         </button>
       `;
     }
@@ -1128,22 +1136,35 @@ function initLoginLogic(showRegister) {
       }
     };
 
-    function showToast(msg) {
+    let toastTimeout = null;
+    function showToast(msg, duration = 2800) {
       const t = document.getElementById('toast');
       if (!t) return;
+      if (toastTimeout) {
+        clearTimeout(toastTimeout);
+        toastTimeout = null;
+      }
       t.classList.remove('show');
       t.textContent = msg;
+      void t.offsetWidth; // Force reflow
       t.classList.add('show');
-      setTimeout(() => t.classList.remove('show'), 2800);
+      if (duration > 0) {
+        toastTimeout = setTimeout(() => {
+          t.classList.remove('show');
+          toastTimeout = null;
+        }, duration);
+      }
     }
 
     window.handleLogin = async function () {
       const email = document.getElementById('login-email')?.value;
       const pass = document.getElementById('login-password')?.value;
       if (!email || !pass) { showToast('電子信箱和密碼不可為空！'); return; }
-      showToast('正在驗證中...');
+      showToast('正在驗證中...', 99999);
       try {
         await spaAuth.login(email, pass);
+        const t = document.getElementById('toast');
+        if (t) t.classList.remove('show');
         navigate('dashboard');
       } catch (error) {
         showToast(error.message);
@@ -1169,7 +1190,7 @@ function initLoginLogic(showRegister) {
         return; 
       }
 
-      showToast('正在註冊中...');
+      showToast('正在註冊中...', 99999);
       try {
         const res = await fetch('/api/auth/register', {
           method: 'POST',
@@ -1300,7 +1321,7 @@ async function ensureSharedLayout(signal) {
     bindSidebarLinks();
 
     const parsed = parseRouteFromHash(window.location.hash);
-    if (parsed.page === 'project' || parsed.page === 'generate' || parsed.page === 'projects') {
+    if (parsed.page === 'project' || parsed.page === 'projects') {
       localStorage.setItem('sidebar_projects_expanded', 'true');
       expandSidebar(true);
       const subList = document.getElementById('sidebar-projects-list') || dashboardSidebar?.querySelector('#sidebar-projects-list');
@@ -1345,7 +1366,7 @@ async function ensureSharedLayout(signal) {
         if (recentProjects.length === 0) {
           recentProjectsGrid.innerHTML = `
             <div class="projects-empty">
-              <h3>尚無專案</h3>
+              <h3>尚無分鏡</h3>
               <p>點擊上方「新建分鏡」開始建立你的第一個分鏡腳本！</p>
             </div>
           `;
@@ -1370,7 +1391,7 @@ async function ensureSharedLayout(signal) {
                 <div class="strip-hole"></div>
                 <div class="strip-hole"></div>
                 <div class="strip-hole"></div>
-                <button class="project-option-btn" title="專案選項" data-id="${p.id}">⋯</button>
+                <button class="project-option-btn" title="分鏡選項" data-id="${p.id}">⋯</button>
               </div>
               ${thumbHTML}
               <div class="project-info">
@@ -1467,7 +1488,7 @@ async function ensureSharedLayout(signal) {
         if (activeProjects.length === 0) {
           projectsGrid.innerHTML = `
             <div class="projects-empty">
-              <h3>尚無專案</h3>
+              <h3>尚無分鏡</h3>
               <p>開始建立你的第一個分鏡腳本！</p>
             </div>
           `;
@@ -1492,7 +1513,7 @@ async function ensureSharedLayout(signal) {
                 <div class="strip-hole"></div>
                 <div class="strip-hole"></div>
                 <div class="strip-hole"></div>
-                <button class="project-option-btn" title="專案選項" data-id="${p.id}">⋯</button>
+                <button class="project-option-btn" title="分鏡選項" data-id="${p.id}">⋯</button>
               </div>
               ${thumbHTML}
               <div class="project-info">
@@ -1608,7 +1629,7 @@ async function ensureSharedLayout(signal) {
       if (!projects || projects.length === 0) {
         projectsGrid.innerHTML = `
           <div class="projects-empty">
-            <h3>尚無專案</h3>
+            <h3>尚無分鏡</h3>
             <p>開始建立你的第一個分鏡腳本！</p>
           </div>
         `;
@@ -1685,7 +1706,7 @@ async function ensureSharedLayout(signal) {
         projectsGrid.innerHTML = `
           <div class="projects-empty">
             <h3>資源回收桶目前是空的</h3>
-            <p>刪除的專案將會暫時保留在此處，以便日後還原。</p>
+            <p>刪除的分鏡將會暫時保留在此處，以便日後還原。</p>
           </div>
         `;
       } else {
@@ -1697,7 +1718,7 @@ async function ensureSharedLayout(signal) {
             card.className = 'project-card project-card-deleted';
             card.onclick = (e) => {
               if (e.target.closest('.project-option-btn')) return;
-              alert('此專案已被刪除，請點擊右上角「⋯」按鈕並選擇「還原專案」進行還原。');
+              alert('此分鏡已被刪除，請點擊右上角「⋯」按鈕並選擇「還原分鏡」進行還原。');
             };
           } else {
             card.className = 'project-card';
@@ -1717,7 +1738,7 @@ async function ensureSharedLayout(signal) {
               <div class="strip-hole"></div>
               <div class="strip-hole"></div>
               <div class="strip-hole"></div>
-              <button class="project-option-btn" title="專案選項" data-id="${p.id}">⋯</button>
+              <button class="project-option-btn" title="分鏡選項" data-id="${p.id}">⋯</button>
             </div>
             ${thumbHTML}
             <div class="project-info">
@@ -1726,7 +1747,7 @@ async function ensureSharedLayout(signal) {
                 <span class="project-tag">${date}</span>
                 <span class="project-tag">${p.ratio}</span>
               </div>
-              <div class="project-date">專案風格：${p.style || '未指定'}</div>
+              <div class="project-date">分鏡風格：${p.style || '未指定'}</div>
             </div>
             <div class="card-strip bottom">
               <div class="strip-hole"></div>
@@ -1957,28 +1978,30 @@ async function ensureSharedLayout(signal) {
     if (signal?.aborted) return;
 
     if (!projectId) {
-      m.innerHTML = `<div class="projects-empty"><h3>找不到專案 ID</h3></div>`;
+      m.innerHTML = `<div class="projects-empty"><h3>找不到分鏡 ID</h3></div>`;
       return;
     }
 
     function renderProjectSkeleton(container) {
       container.innerHTML = `
         <div class="project-detail loading-skeleton">
-          <div class="project-summary">
-            <div>
-              <h2 class="skeleton-text" style="width: 250px; height: 32px; margin: 0;"></h2>
-              <div class="project-meta-row skeleton-text" style="width: 180px; height: 16px; margin-top: 8px;"></div>
+          <div class="project-header-sticky">
+            <div class="project-summary">
+              <div>
+                <h2 class="skeleton-text" style="width: 250px; height: 32px; margin: 0;"></h2>
+                <div class="project-meta-row skeleton-text" style="width: 180px; height: 16px; margin-top: 8px;"></div>
+              </div>
+              <div class="project-attributes">
+                <span class="project-attribute skeleton-text" style="width: 80px; height: 20px; border-radius: 20px;"></span>
+                <span class="project-attribute skeleton-text" style="width: 80px; height: 20px; border-radius: 20px;"></span>
+                <span class="project-attribute skeleton-text" style="width: 60px; height: 20px; border-radius: 20px;"></span>
+              </div>
             </div>
-            <div class="project-attributes">
-              <span class="project-attribute skeleton-text" style="width: 80px; height: 20px; border-radius: 20px;"></span>
-              <span class="project-attribute skeleton-text" style="width: 80px; height: 20px; border-radius: 20px;"></span>
-              <span class="project-attribute skeleton-text" style="width: 60px; height: 20px; border-radius: 20px;"></span>
-            </div>
-          </div>
 
-          <div class="view-toggle-container" style="opacity: 0.5; pointer-events: none;">
-            <div class="view-toggle-bar">
-              <button class="toggle-btn active"><span>載入中...</span></button>
+            <div class="view-toggle-container" style="opacity: 0.5; pointer-events: none;">
+              <div class="view-toggle-bar">
+                <button class="toggle-btn active"><span>載入中...</span></button>
+              </div>
             </div>
           </div>
 
@@ -2095,22 +2118,24 @@ async function ensureSharedLayout(signal) {
 
       m.innerHTML = `
         <div class="project-detail">
-          <div class="project-summary">
-            <div>
-              <h2>${p.title}</h2>
-              <div class="project-meta-row">作者: ${p.author?.name || '未知'} • 建立於 ${new Date(p.createAt).toLocaleString('zh-TW')}</div>
+          <div class="project-header-sticky">
+            <div class="project-summary">
+              <div>
+                <h2>${p.title}</h2>
+                <div class="project-meta-row">作者: ${p.author?.name || '未知'} • 建立於 ${new Date(p.createAt).toLocaleString('zh-TW')}</div>
+              </div>
+              <div class="project-attributes">
+                <span class="project-attribute">風格：${p.style || '未指定'}</span>
+                <span class="project-attribute">比例：${p.ratio || '未指定'}</span>
+                <span class="project-attribute">共 ${processedShots.length} 鏡頭</span>
+              </div>
             </div>
-            <div class="project-attributes">
-              <span class="project-attribute">風格：${p.style || '未指定'}</span>
-              <span class="project-attribute">比例：${p.ratio || '未指定'}</span>
-              <span class="project-attribute">共 ${processedShots.length} 鏡頭</span>
-            </div>
-          </div>
 
-          <div class="view-toggle-container">
-            <div class="view-toggle-bar">
-              <button id="vbtn-table" class="toggle-btn active"><span>表格模式</span></button>
-              <button id="vbtn-film" class="toggle-btn"><span>膠捲模式</span></button>
+            <div class="view-toggle-container">
+              <div class="view-toggle-bar">
+                <button id="vbtn-table" class="toggle-btn active"><span>表格模式</span></button>
+                <button id="vbtn-film" class="toggle-btn"><span>膠捲模式</span></button>
+              </div>
             </div>
           </div>
 
@@ -2230,14 +2255,14 @@ async function ensureSharedLayout(signal) {
         const p = await fetchProjectDetail(projectId, signal);
         if (signal?.aborted) return;
         if (!p) {
-          m.innerHTML = `<div class="projects-empty"><h3>無法取得專案</h3></div>`;
+          m.innerHTML = `<div class="projects-empty"><h3>無法取得分鏡</h3></div>`;
           return;
         }
         await renderWithProjectData(p);
       } catch (e) {
         if (e.name !== 'AbortError') {
           console.error('renderProject error', e);
-          m.innerHTML = `<div class="projects-empty"><h3>讀取專案發生錯誤</h3><p>${e.message || '未知錯誤'}</p></div>`;
+          m.innerHTML = `<div class="projects-empty"><h3>讀取分鏡發生錯誤</h3><p>${e.message || '未知錯誤'}</p></div>`;
         }
       }
     }
@@ -2573,14 +2598,17 @@ async function ensureSharedLayout(signal) {
     if (!sidebar) return;
 
     let activeMainPage = page;
-    if (page === 'project' || page === 'generate') {
+    if (page === 'project') {
       activeMainPage = 'projects';
+    } else if (page === 'generate') {
+      activeMainPage = 'generate';
     }
 
     const links = sidebar.querySelectorAll('.side-link');
     links.forEach(l => {
       const href = l.getAttribute('href') || '';
       const shouldBeActive = 
+        (activeMainPage === 'generate' && href.includes('generate')) ||
         (activeMainPage === 'dashboard' && href.includes('dashboard')) ||
         (activeMainPage === 'projects' && href.includes('projects')) ||
         (activeMainPage === 'history' && href.includes('history')) ||
@@ -2605,6 +2633,15 @@ async function ensureSharedLayout(signal) {
       }
     });
 
+    const btnPrimary = sidebar.querySelector('.sidebar-btn-primary');
+    if (btnPrimary) {
+      if (activeMainPage === 'generate') {
+        btnPrimary.classList.add('active');
+      } else {
+        btnPrimary.classList.remove('active');
+      }
+    }
+
     updateSidebarProjects();
   }
 
@@ -2617,17 +2654,10 @@ async function ensureSharedLayout(signal) {
     const activeProjects = (cacheProjectsList || []).filter(p => !p.is_deleted && !pendingDeletions[p.id]);
     const currentJSON = JSON.stringify(activeProjects.map(p => ({ id: p.id, title: p.title })));
 
-    if (currentJSON !== lastRenderedProjectsJSON || !sidebarList.querySelector('.project-sub-link')) {
+    if (currentJSON !== lastRenderedProjectsJSON) {
       lastRenderedProjectsJSON = currentJSON;
       sidebarList.innerHTML = '';
       
-      const newProjectLink = document.createElement('a');
-      newProjectLink.href = '../generate';
-      newProjectLink.className = 'sub-link new-project-sub-link';
-      newProjectLink.title = '新建專案';
-      newProjectLink.innerHTML = `<span class="sub-text">+ 新建專案</span><div class="link-glow"></div>`;
-      sidebarList.appendChild(newProjectLink);
-
       activeProjects.forEach(p => {
         const a = document.createElement('a');
         a.href = `../project/${p.id}`;
@@ -2681,15 +2711,27 @@ async function ensureSharedLayout(signal) {
       if (activeLink) {
         activeLink.classList.add('active');
       }
-    } else if (routeInfo.page === 'generate') {
-      const activeLink = sidebarList.querySelector('.new-project-sub-link');
-      if (activeLink) {
-        activeLink.classList.add('active');
-      }
     }
   }
 
   async function navigate(page, opts = {}) {
+    const pageMain = document.getElementById('page-main');
+    if (pageMain) {
+      pageMain.classList.remove('is-generating');
+    }
+
+    // 當從登入/註冊頁面登入進入 Dashboard 時，若先前為展開狀態，自動將其收回（在 mask 遮罩期間完成）
+    if ((currentPage === 'login' || currentPage === 'register') && isDashboardPage(page)) {
+      if (localStorage.getItem('sidebar_projects_expanded') === 'true') {
+        localStorage.setItem('sidebar_projects_expanded', 'false');
+        expandSidebar(false);
+        const subList = document.getElementById('sidebar-projects-list') || dashboardSidebar?.querySelector('#sidebar-projects-list');
+        const navProjectsGroup = document.getElementById('nav-projects-group') || dashboardSidebar?.querySelector('#nav-projects-group');
+        if (subList) subList.classList.remove('expanded');
+        if (navProjectsGroup) navProjectsGroup.classList.remove('expanded');
+      }
+    }
+
     if (window.isGeneratingStoryboard) {
       const confirmLeave = await confirm(
         '是否要中斷目前生成進度並離開？',
@@ -2757,7 +2799,8 @@ async function ensureSharedLayout(signal) {
     const mySeq = ++navSeq;
 
     // 立即隱藏 landing 頁面內容，防止 flash
-    if (page !== 'landing') {
+    // 立即隱藏 landing 頁面內容，防止 flash (僅在當前為 landing 且要跳轉到其他頁面時)
+    if (currentPage === 'landing' && page !== 'landing') {
       const pageMain = document.getElementById('page-main');
       if (pageMain) {
         let content = document.getElementById('page-content');
@@ -2804,6 +2847,7 @@ async function ensureSharedLayout(signal) {
     // 即時變更側邊欄與佈局狀態
     if (isDashboardPage(page)) {
       document.body.classList.add('dashboard-layout');
+      document.body.classList.remove('auth-layout');
       if (dashboardSidebar) dashboardSidebar.style.display = '';
       if (dashboardTopbar) dashboardTopbar.style.display = '';
       if (mobileBottomNav) mobileBottomNav.style.display = '';
@@ -2812,7 +2856,7 @@ async function ensureSharedLayout(signal) {
       if (userPanel) userPanel.style.display = '';
 
       // 進入專案頁面時，自動展開側邊欄與專案子清單
-      if (page === 'project' || page === 'projects' || page === 'generate') {
+      if (page === 'project' || page === 'projects') {
         localStorage.setItem('sidebar_projects_expanded', 'true');
         expandSidebar(true);
         const subList = document.getElementById('sidebar-projects-list') || dashboardSidebar?.querySelector('#sidebar-projects-list');
@@ -2824,6 +2868,11 @@ async function ensureSharedLayout(signal) {
       updateSidebarActive(page);
     } else {
       document.body.classList.remove('dashboard-layout');
+      if (page === 'login' || page === 'register') {
+        document.body.classList.add('auth-layout');
+      } else {
+        document.body.classList.remove('auth-layout');
+      }
       if (dashboardSidebar) dashboardSidebar.style.display = 'none';
       if (dashboardTopbar) dashboardTopbar.style.display = 'none';
       if (mobileBottomNav) mobileBottomNav.style.display = 'none';
@@ -2834,10 +2883,13 @@ async function ensureSharedLayout(signal) {
         userPanel.classList.remove('active');
       }
       
-      // 如果回到 landing / login / register，復原原本 navbar 的顯示
+      // 如果回到 landing / login / register，復原原本 navbar 的顯示並清除本機 margin
       const nav = document.getElementById('nav') || document.querySelector('.nav');
       if (nav) nav.style.display = '';
       showLandingNav();
+      
+      const pageMain = document.getElementById('page-main');
+      if (pageMain) pageMain.style.margin = '';
     }
 
     if (currentNavController) {
@@ -2958,11 +3010,13 @@ async function ensureSharedLayout(signal) {
         window._landingKill = null;
       }
 
-      window.scrollTo(0, 0);
-
       if (page === 'generate' && typeof window.initGeneratePage === 'function') {
         window.initGeneratePage();
       } else if (page === 'landing' && typeof window.initLandingPage === 'function') {
+        prefetchAuthResources();
+        if (typeof window.initLandingLogic === 'function') {
+          window.initLandingLogic();
+        }
         window.initLandingPage();
       } else if (page === 'template' && typeof window.initTemplatePage === 'function') {
         window.initTemplatePage();
@@ -2970,10 +3024,16 @@ async function ensureSharedLayout(signal) {
 
       if (isDashboardPage(page)) {
         document.body.classList.add('dashboard-layout');
+        document.body.classList.remove('auth-layout');
         showDashTopbar();
         updateSidebarActive(page);
-      } else if (page === 'landing' || page === 'login' || page === 'register') {
+      } else if (page === 'landing') {
         document.body.classList.remove('dashboard-layout');
+        document.body.classList.remove('auth-layout');
+        showLandingNav();
+      } else if (page === 'login' || page === 'register') {
+        document.body.classList.remove('dashboard-layout');
+        document.body.classList.add('auth-layout');
         showLandingNav();
       }
 
@@ -3016,6 +3076,10 @@ async function ensureSharedLayout(signal) {
           contentEl.style.filter = 'blur(0px)';
         }
         await maskOpen();
+      }
+
+      if (contentEl) {
+        contentEl.style.removeProperty('filter');
       }
 
       if (signal.aborted || mySeq !== navSeq) return;
@@ -3182,6 +3246,7 @@ async function ensureSharedLayout(signal) {
       });
     } else {
       interceptCTAs();
+      prefetchAuthResources();
       await injectScripts(pageDefs.landing.js);
       
       if ('scrollRestoration' in history) {
