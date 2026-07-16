@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-TW">
 
 <head>
@@ -15,13 +15,13 @@
         <div class="gradient-blob-yellow"></div>
     </div>
 
-    <nav class="nav">
+    <nav class="nav" id="nav">
         <a href="#heroSection" class="brand-logo">STORYBOARD <span>AI</span></a>
         <div class="nav-links" id="nav-progress">
-            <a href="#vv" class="nav-link">概念影片</a>
-            <a href="#ff" class="nav-link">功能特色</a>
-            <a href="#hh" class="nav-link">使用流程</a>
-            <a href="#pp" class="nav-link">方案定價</a>
+            <a href="#videos" class="nav-link">概念影片</a>
+            <a href="#features" class="nav-link">功能特色</a>
+            <a href="#how" class="nav-link">使用流程</a>
+            <a href="#pricing" class="nav-link">方案定價</a>
         </div>
         <div class="nav-links">
             <a href="#" data-navigate="login" class="btn btn-ghost btn-sm">立刻登入</a>
@@ -34,617 +34,83 @@
     <!-- 1080 -->
     <section class="hero" id="heroSection">
         <div class="hero-inner">
-            <div class="hero-eyebrow anim-fadeInUp">
-                <span class="tag-pill">✦ StoryboardAI</span>
+            <div class="hero-bg" id="heroBG">
+                
+                <div class="hero-content">
+                    <div class="hero-eyebrow anim-fadeInUp">
+                        <span class="tag-pill">✦ StoryboardAI</span>
+                    </div>
+                    <h1 class="hero-title anim-fadeInUp anim-delay-1">
+                        靈感，<br><span class="hero-ai">一鍵轉換</span>
+                    </h1>
+                    <div class="hero-ctas anim-fadeInUp anim-delay-3">
+                        <a href="#" data-navigate="login" class="btn btn-primary btn-lg">Get started</a>
+                    </div>
+                </div>
+                <div class="hero-readmore">
+                    <a href="#videos" class="btn ">
+                        <svg viewBox="0 0 14 15"fill="none"xmlns="http://www.w3.org/2000/svg"class="button-icon-svg"width="10"><path d="M13.376 11.552l-.264-10.44-10.44-.24.024 2.28 6.96-.048L.2 12.56l1.488 1.488 9.432-9.432-.048 6.912 2.304.024z"fill="currentColor"></path></svg></svg>
+                        <span>了解更多</span>
+                    </a>
+                </div>
             </div>
-            <h1 class="hero-title anim-fadeInUp anim-delay-1">
-                靈感，<span class="hero-ai">一鍵轉換</span>
-            </h1>
-            <p class="hero-subtitle anim-fadeInUp anim-delay-2">
-                從故事到分鏡，一鍵生成，讓影像創作回歸純粹的創意
-            </p>
-            <div class="hero-ctas anim-fadeInUp anim-delay-3">
-                <a href="#vv" class="btn btn-outline btn-lg">產品介紹</a>
-                <a href="#" data-navigate="login" class="btn btn-primary btn-lg">Get started</a>
-            </div>
+            <div class="hero-footer"></div>
         </div>
     </section>
-
-    <section style="width: 100%; height: 20vh;" id="end-1"></section>
-    <section style="width: 100%; height: 20vh;" id="end-1-2"></section>
-    <section style="width: 100%; height: 0vh;" id="vv"></section>
-    <section style="width: 100%; height: 20vh;" id="end-2"></section>
-    <section style="width: 100%; height: 20vh;" id="end-2-2"></section>
-    <section style="width: 100%; height: 100vh;" id="start-3">
-        <section style="width: 100%; height: 50%;"></section>
-        <section style="width: 100%; height: 25%;" id="start-3-2"></section>
-        <section style="width: 100%; height: 0%;" id="ff"></section>
-        <section style="width: 100%; height: 25%;" id="end-3"></section>
-    </section>
-    <section style="width: 100%; height: 20vh;" id="end-3-2"></section>
-    <section style="width: 100%; height: 20vh;" id="end-3-3"></section>
-    <section style="width: 100%; height: 0vh;" id="hh"></section>
-    <section style="width: 100%; height: 20vh;" id="end-4"></section>
-    <section style="width: 100%; height: 20vh;" id="end-4-2"></section>
-    <section style="width: 100%; height: 0vh;" id="pp"></section>
-    <section style="width: 100%; height: 20vh;" id="end-5"></section>
-    <section style="width: 100%; height: 20vh;" id="end-5-2"></section>
-    <section style="width: 100%; height: 0vh;" id="cc"></section>
-    <section style="width: 100%; height: 100vh;"></section>
-
+    <div style="width: 100vw; height: 900px;"></div>
+    <div class="perspective-container">
+        <div class="perspective-filmstrip"></div>
+        <div class="clapper">
+            <img id="clapper-top" src="../icon/clapperboard-2.svg" alt="">
+            <img id="clapper-bottom" src="../icon/clapperboard.svg" alt="">
+        </div>
+    </div>
     <section class="videos" id="videos">
         <video class="video-container" id="intro_video" muted playsinline loop>
             <source src="../video/StoryboardAI_Intro.mp4" type="video/mp4">
         </video>
     </section>
 
+    <section class="slogan">
+        <div class="slogan-film-strip strip1"></div>
+        <div class="slogan-film-strip strip2"></div>
+        <h1 class="slogan-title">你的短影音助理</h1>
+        <p class="slogan-content">從故事到分鏡，一秒生成視覺框架，讓你的靈感，一鍵轉換。</p>
 
-    <!-- Features -->
+    </section>  
+    
     <section class="features" id="features">
         <div class="section-header">
-            <p class="section-eyebrow" id="feature-title">從構想到分鏡，全面提升效率</p>
-            <!-- <h2 class="section-title">從構想到分鏡<br />只需三個步驟</h2> -->
+            <h2 class="section-title">你最好的選擇</h2>
+            <h2 class="section-content">結合專業編導思維，為你打造巴拉巴拉1231234567abcdefg...abcdefghijklmnopqrstuvwxyz1234567890987654321掰不下去了巴拉巴拉巴拉巴拉巴拉巴拉巴拉巴拉</h2>
         </div>
-        <div id="feature-3d">
-            <div id="drag-hint">
+
+        <div class="features-grid">
+            <!-- 特色卡片 1 -->
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M16.5 9.5L12.3 13.7L10.7 11.3L7.5 14.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> <path d="M14.5 9.5H16.5V11.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> <path d="M9 22H15C20 22 22 20 22 15V9C22 4 20 2 15 2H9C4 2 2 4 2 9V15C2 20 4 22 9 22Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
+                    
+                </div>
+                <h3 class="feature-card-title">熱門爆點模板庫</h3>
+                <p class="feature-card-desc">包含超過百種當前最熱門的短影音爆款模板，快速套用不卡關，讓創意瞬間抓住觀眾眼球。</p>
             </div>
-            <div class="features-grid" id="feature-container">
-                <div class="feature-card card">
-                    <div class="card-inner">
-                        <div class="card-front">
-                            <div class="card-strip">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-num">01</div>
-                            </div>
-                            <div class="ticket-film-area" style="background:linear-gradient(135deg,#2a1f0e,#3d2e12)">📝
-                            </div>
-                            <div class="ticket-stub"><span class="ticket-category">TEMPLATE LIBRARY</span><span
-                                    class="ticket-title">熱門爆點模板庫</span>
-                                <div class="ticket-meta"><span class="ticket-seat">FEATURE A-01</span><span
-                                        class="ticket-number">READ MORE</span></div>
-                            </div>
-                            <div class="card-strip bottom">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                            </div>
-                        </div>
-                        <div class="card-back">
-                            <div class="card-strip">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-num">01</div>
-                            </div>
-                            <div class="card-back-content">
-                                <h3>熱門爆點模板庫</h3>
-                                <p>包含超過百種當前最熱門的短影音爆款模板，快速套用不卡關，讓創意瞬間抓住觀眾眼球。</p>
-                            </div>
-                            <div class="card-back-barcode">
-                                <div class="barcode-lines">
-                                    <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-                                </div><span class="barcode-text">STORYBOARD-AI · 001</span>
-                            </div>
-                            <div class="card-strip bottom">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                            </div>
-                        </div>
-                    </div>
+            <!-- 特色卡片 2 -->
+            <div class="feature-card highlighted-card">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M12 3C12 7.97056 16.0294 12 21 12C16.0294 12 12 16.0294 12 21C12 16.0294 7.97056 12 3 12C7.97056 12 12 7.97056 12 3Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
                 </div>
-                <div class="feature-card card">
-                    <div class="card-inner">
-                        <div class="card-front">
-                            <div class="card-strip">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-num">02</div>
-                            </div>
-                            <div class="ticket-film-area" style="background:linear-gradient(135deg,#1f1510,#3a2415)">🎬
-                            </div>
-                            <div class="ticket-stub"><span class="ticket-category">AI GENERATION</span><span
-                                    class="ticket-title">AI短影音分鏡生成</span>
-                                <div class="ticket-meta"><span class="ticket-seat">FEATURE A-02</span><span
-                                        class="ticket-number">READ MORE</span></div>
-                            </div>
-                            <div class="card-strip bottom">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                            </div>
-                        </div>
-                        <div class="card-strip">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-num">02</div>
-                            </div>
-                        <div class="card-back">
-                            <div class="card-back-content">
-                                <h3>AI短影音分鏡生成</h3>
-                                <p>只要輸入文字腳本，AI即可自動為您生成專業的短影音分鏡圖，大幅縮短前置作業時間。</p>
-                            </div>
-                            <div class="card-back-barcode">
-                                <div class="barcode-lines">
-                                    <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-                                </div><span class="barcode-text">STORYBOARD-AI · 002</span>
-                            </div>
-                            <div class="card-strip bottom">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="feature-card card">
-                    <div class="card-inner">
-                        <div class="card-front">
-                            <div class="card-strip">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-num">03</div>
-                            </div>
-                            <div class="ticket-film-area" style="background:linear-gradient(135deg,#201a08,#3a3010)">✨
-                            </div>
-                            <div class="ticket-stub"><span class="ticket-category">CUSTOMIZATION</span><span
-                                    class="ticket-title">靈活自訂義修改</span>
-                                <div class="ticket-meta"><span class="ticket-seat">FEATURE B-01</span><span
-                                        class="ticket-number">READ MORE</span></div>
-                            </div>
-                            <div class="card-strip bottom">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                            </div>
-                        </div>
-                        <div class="card-back">
-                            <div class="card-strip">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-num">03</div>
-                            </div>
-                            <div class="card-back-content">
-                                <h3>靈活自訂義修改</h3>
-                                <p>生成的分鏡支援細部調整，從運鏡方向到角色表情，讓每個畫面都符合您的完美想像。</p>
-                            </div>
-                            <div class="card-back-barcode">
-                                <div class="barcode-lines">
-                                    <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-                                </div><span class="barcode-text">STORYBOARD-AI · 003</span>
-                            </div>
-                            <div class="card-strip bottom">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="feature-card card">
-                    <div class="card-inner">
-                        <div class="card-front">
-                            <div class="card-strip">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-num">04</div>
-                            </div>
-                            <div class="ticket-film-area" style="background:linear-gradient(135deg,#0e1f15,#1a3326)">🔒
-                            </div>
-                            <div class="ticket-stub"><span class="ticket-category">OFFLINE · SECURE</span><span
-                                    class="ticket-title">本地端離線運算</span>
-                                <div class="ticket-meta"><span class="ticket-seat">FEATURE B-02</span><span
-                                        class="ticket-number">READ MORE</span></div>
-                            </div>
-                            
-                            <div class="card-strip bottom">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                            </div>
-                            
-                        </div>
-                        <div class="card-back">
-                            <div class="card-strip">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-num">04</div>
-                            </div>
-                            <div class="card-back-content">
-                                <h3>本地端離線運算</h3>
-                                <p>支援完全離線的 NPU 運算，確保未公開的商業機密與原創劇本獲得最高層級的資安保護。</p>
-                            </div>
-                            <div class="card-back-barcode">
-                                <div class="barcode-lines">
-                                    <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-                                </div><span class="barcode-text">STORYBOARD-AI · 004</span>
-                            </div>
-                            <div class="card-strip bottom">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="feature-card card">
-                    <div class="card-inner">
-                        <div class="card-front">
-                            <div class="card-strip">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-num">05</div>
-                            </div>
-                            <div class="ticket-film-area" style="background:linear-gradient(135deg,#170f22,#2a1f3d)">📊
-                            </div>
-                            <div class="ticket-stub"><span class="ticket-category">3D MOCAP</span><span
-                                    class="ticket-title">3D 動作捕捉與參數調整</span>
-                                <div class="ticket-meta"><span class="ticket-seat">FEATURE C-01</span><span
-                                        class="ticket-number">READ MORE</span></div>
-                            </div>
-                            <div class="card-strip bottom">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                            </div>
-                        </div>
-                        <div class="card-back">
-                            <div class="card-strip">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-num">05</div>
-                            </div>
-                            <div class="card-back-content">
-                                <h3>3D 動作捕捉與參數調整</h3>
-                                <p>整合 3D 動作捕捉技術，讓分鏡人物動作更自然，並提供多項專業運鏡參數供進階調整。</p>
-                            </div>
-                            <div class="card-back-barcode">
-                                <div class="barcode-lines">
-                                    <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-                                </div><span class="barcode-text">STORYBOARD-AI · 005</span>
-                            </div>
-                            <div class="card-strip bottom">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="feature-card card">
-                    <div class="card-inner">
-                        <div class="card-front">
-                            <div class="card-strip">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-num">06</div>
-                            </div>
-                            <div class="ticket-film-area" style="background:linear-gradient(135deg,#1f1510,#3a2415)">🎯
-                            </div>
-                            <div class="ticket-stub"><span class="ticket-category">ANALYTICS</span><span
-                                    class="ticket-title">帳號數據精準企劃</span>
-                                <div class="ticket-meta"><span class="ticket-seat">FEATURE C-02</span><span
-                                        class="ticket-number">READ MORE</span></div>
-                            </div>
-                            <div class="card-strip bottom">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                            </div>
-                        </div>
-                        <div class="card-back">
-                            <div class="card-strip">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-num">06</div>
-                            </div>
-                            <div class="card-back-content">
-                                <h3>帳號數據精準企劃</h3>
-                                <p>綁定社群帳號，透過 AI 深度分析觀眾輪廟與歷史數據，為您量身打造最高轉換率的企劃。</p>
-                            </div>
-                            <div class="card-back-barcode">
-                                <div class="barcode-lines">
-                                    <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-                                </div><span class="barcode-text">STORYBOARD-AI · 006</span>
-                            </div>
-                            <div class="card-strip bottom">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="feature-card card">
-                    <div class="card-inner">
-                        <div class="card-front">
-                            <div class="card-strip">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-num">01</div>
-                            </div>
-                            <div class="ticket-film-area" style="background:linear-gradient(135deg,#2a1f0e,#3d2e12)">📝
-                            </div>
-                            <div class="ticket-stub"><span class="ticket-category">TEMPLATE LIBRARY</span><span
-                                    class="ticket-title">熱門爆點模板庫</span>
-                                <div class="ticket-meta"><span class="ticket-seat">FEATURE A-01</span><span
-                                        class="ticket-number">READ MORE</span></div>
-                            </div>
-                            <div class="card-strip bottom">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                            </div>
-                        </div>
-                        <div class="card-back">
-                            <div class="card-strip">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-num">01</div>
-                            </div>
-                            <div class="card-back-content">
-                                <h3>熱門爆點模板庫</h3>
-                                <p>包含超過百種當前最熱門的短影音爆款模板，快速套用不卡關，讓創意瞬間抓住觀眾眼球。</p>
-                            </div>
-                            <div class="card-back-barcode">
-                                <div class="barcode-lines">
-                                    <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-                                </div><span class="barcode-text">STORYBOARD-AI · 001</span>
-                            </div>
-                            <div class="card-strip bottom">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="feature-card card">
-                    <div class="card-inner">
-                        <div class="card-front">
-                            <div class="card-strip">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-num">02</div>
-                            </div>
-                            <div class="ticket-film-area" style="background:linear-gradient(135deg,#1f1510,#3a2415)">🎬
-                            </div>
-                            <div class="ticket-stub"><span class="ticket-category">AI GENERATION</span><span
-                                    class="ticket-title">AI短影音分鏡生成</span>
-                                <div class="ticket-meta"><span class="ticket-seat">FEATURE A-02</span><span
-                                        class="ticket-number">READ MORE</span></div>
-                            </div>
-                            <div class="card-strip bottom">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                            </div>
-                        </div>
-                        <div class="card-back">
-                            <div class="card-strip">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-num">02</div>
-                            </div>
-                            <div class="card-back-content">
-                                <h3>AI短影音分鏡生成</h3>
-                                <p>只要輸入文字腳本，AI即可自動為您生成專業的短影音分鏡圖，大幅縮短前置作業時間。</p>
-                            </div>
-                            <div class="card-back-barcode">
-                                <div class="barcode-lines">
-                                    <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-                                </div><span class="barcode-text">STORYBOARD-AI · 002</span>
-                            </div>
-                            <div class="card-strip bottom">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="feature-card card">
-                    <div class="card-inner">
-                        <div class="card-front">
-                            <div class="card-strip">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-num">03</div>
-                            </div>
-                            <div class="ticket-film-area" style="background:linear-gradient(135deg,#201a08,#3a3010)">✨
-                            </div>
-                            <div class="ticket-stub"><span class="ticket-category">CUSTOMIZATION</span><span
-                                    class="ticket-title">靈活自訂義修改</span>
-                                <div class="ticket-meta"><span class="ticket-seat">FEATURE B-01</span><span
-                                        class="ticket-number">READ MORE</span></div>
-                            </div>
-                            <div class="card-strip bottom">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                            </div>
-                        </div>
-                        <div class="card-back">
-                            <div class="card-strip">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-num">03</div>
-                            </div>
-                            <div class="card-back-content">
-                                <h3>靈活自訂義修改</h3>
-                                <p>生成的分鏡支援細部調整，從運鏡方向到角色表情，讓每個畫面都符合您的完美想像。</p>
-                            </div>
-                            <div class="card-back-barcode">
-                                <div class="barcode-lines">
-                                    <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-                                </div><span class="barcode-text">STORYBOARD-AI · 003</span>
-                            </div>
-                            <div class="card-strip bottom">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="feature-card card">
-                    <div class="card-inner">
-                        <div class="card-front">
-                            <div class="card-strip">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-num">04</div>
-                            </div>
-                            <div class="ticket-film-area" style="background:linear-gradient(135deg,#0e1f15,#1a3326)">🔒
-                            </div>
-                            <div class="ticket-stub"><span class="ticket-category">OFFLINE · SECURE</span><span
-                                    class="ticket-title">本地端離線運算</span>
-                                <div class="ticket-meta"><span class="ticket-seat">FEATURE B-02</span><span
-                                        class="ticket-number">READ MORE</span></div>
-                            </div>
-                            <div class="card-strip bottom">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                            </div>
-                        </div>
-                        <div class="card-back">
-                            <div class="card-strip">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-num">04</div>
-                            </div>
-                            <div class="card-back-content">
-                                <h3>本地端離線運算</h3>
-                                <p>支援完全離線的 NPU 運算，確保未公開的商業機密與原創劇本獲得最高層級的資安保護。</p>
-                            </div>
-                            <div class="card-back-barcode">
-                                <div class="barcode-lines">
-                                    <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-                                </div><span class="barcode-text">STORYBOARD-AI · 004</span>
-                            </div>
-                            <div class="card-strip bottom">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="feature-card card">
-                    <div class="card-inner">
-                        <div class="card-front">
-                            <div class="card-strip">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-num">05</div>
-                            </div>
-                            <div class="ticket-film-area" style="background:linear-gradient(135deg,#170f22,#2a1f3d)">📊
-                            </div>
-                            <div class="ticket-stub"><span class="ticket-category">3D MOCAP</span><span
-                                    class="ticket-title">3D 動作捕捉與參數調整</span>
-                                <div class="ticket-meta"><span class="ticket-seat">FEATURE C-01</span><span
-                                        class="ticket-number">READ MORE</span></div>
-                            </div>
-                            <div class="card-strip bottom">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                            </div>
-                        </div>
-                        <div class="card-back">
-                            <div class="card-strip">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-num">05</div>
-                            </div>
-                            <div class="card-back-content">
-                                <h3>3D 動作捕捉與參數調整</h3>
-                                <p>整合 3D 動作捕捉技術，讓分鏡人物動作更自然，並提供多項專業運鏡參數供進階調整。</p>
-                            </div>
-                            <div class="card-back-barcode">
-                                <div class="barcode-lines">
-                                    <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-                                </div><span class="barcode-text">STORYBOARD-AI · 005</span>
-                            </div>
-                            <div class="card-strip bottom">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="feature-card card">
-                    <div class="card-inner">
-                        <div class="card-front">
-                            <div class="card-strip">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-num">06</div>
-                            </div>
-                            <div class="ticket-film-area" style="background:linear-gradient(135deg,#1f1510,#3a2415)">🎯
-                            </div>
-                            <div class="ticket-stub"><span class="ticket-category">ANALYTICS</span><span
-                                    class="ticket-title">帳號數據精準企劃</span>
-                                <div class="ticket-meta"><span class="ticket-seat">FEATURE C-02</span><span
-                                        class="ticket-number">READ MORE</span></div>
-                            </div>
-                            <div class="card-strip bottom">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                            </div>
-                        </div>
-                        <div class="card-back">
-                            <div class="card-strip">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-num">06</div>
-                            </div>
-                            <div class="card-back-content">
-                                <h3>帳號數據精準企劃</h3>
-                                <p>綁定社群帳號，透過 AI 深度分析觀眾輪廟與歷史數據，為您量身打造最高轉換率的企劃。</p>
-                            </div>
-                            <div class="card-back-barcode">
-                                <div class="barcode-lines">
-                                    <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-                                </div><span class="barcode-text">STORYBOARD-AI · 006</span>
-                            </div>
-                            <div class="card-strip bottom">
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                                <div class="strip-hole"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <h3 class="feature-card-title">AI 短影音分鏡生成</h3>
+                <p class="feature-card-desc">只要輸入文字腳本，AI即可自動為您生成專業的短影音分鏡圖，大幅縮短前置作業時間。</p>
             </div>
-        </div>
+            <!-- 特色卡片 3 -->
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M13.26 3.59997L5.04997 12.29C4.73997 12.62 4.43997 13.27 4.37997 13.72L4.00997 16.96C3.87997 18.13 4.71997 18.93 5.87997 18.73L9.09997 18.18C9.54997 18.1 10.18 17.77 10.49 17.43L18.7 8.73997C20.12 7.23997 20.76 5.52997 18.55 3.43997C16.35 1.36997 14.68 2.09997 13.26 3.59997Z" stroke="currentColor" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"></path> <path d="M11.89 5.05005C12.32 7.81005 14.56 9.92005 17.34 10.2" stroke="currentColor" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"></path> <path d="M3 22H21" stroke="currentColor" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
+                </div>
+                <h3 class="feature-card-title">靈活自訂義修改</h3>
+                <p class="feature-card-desc">生成的分鏡支援細部調整，從運鏡方向到角色表情，讓每個畫面都符合您的完美想像。</p>
+            </div>
         </div>
     </section>
 
@@ -662,7 +128,6 @@
                     <h3>描述故事/場景</h3>
                     <p>輸入你的廣告故事、短影音主題或影片場景。</p>
                 </div>
-                <span class="step-badge">SCENE · SCRIPT</span>
             </div>
             <div class="step-item">
                 <div class="step-num">02</div>
@@ -670,7 +135,6 @@
                     <h3>選擇模板、風格與比例</h3>
                     <p>讓AI自動從熱門爆點模板庫中選擇合適的風格，或從多種視覺風格中選擇，並設定畫面比例（1:1 / 16:9 / 3:2）。</p>
                 </div>
-                <span class="step-badge">STYLE · FORMAT</span>
             </div>
             <div class="step-item">
                 <div class="step-num">03</div>
@@ -678,7 +142,6 @@
                     <h3>生成並匯出分鏡</h3>
                     <p>AI 自動生成完整分鏡草稿，可下載 PDF 或直接分享給客戶。</p>
                 </div>
-                <span class="step-badge">EXPORT · SHARE</span>
             </div>
         </div>
     </section>
@@ -699,7 +162,7 @@
                     <li>✓ 雲端存儲（限制空間）</li>
                     <li>✗ 商業匯出</li>
                 </ul>
-                <a href="#pp" data-navigate="login" class="btn btn-ghost btn-block">免費開始</a>
+                <a data-navigate="login" class="btn btn-ghost btn-block">免費開始</a>
             </div>
             <div class="pricing-card card pricing-card-featured">
                 <div class="plan-badge featured-badge">專業方案</div>
@@ -714,7 +177,7 @@
                     <li>✓ 爆點 HOOK 分析</li>
                     <li>✓ 商業 PDF 匯出</li>
                 </ul>
-                <a href="#pp" data-navigate="login" class="btn btn-primary btn-block">立即訂閱</a>
+                <a data-navigate="login" class="btn btn-primary btn-block">立即訂閱</a>
             </div>
             <div class="pricing-card card">
                 <div class="plan-badge">企業方案</div>
@@ -728,7 +191,7 @@
                     <li>✓ 帳號數據分析</li>
                     <li>✓ 專屬客服支援</li>
                 </ul>
-                <a href="mailto:contact@storyboardai.com" class="btn btn-ghost btn-block">聯絡我們</a>
+                <a class="btn btn-ghost btn-block">聯絡我們</a>
             </div>
         </div>
     </section>
@@ -738,7 +201,7 @@
         <div class="cta-inner">
             <h2>準備好開始了嗎？</h2>
             <p>加入數百位創作者，用 AI 讓分鏡創作更快、更精準</p>
-            <a href="#cc" data-navigate="login" class="btn btn-primary btn-lg">馬上體驗 →</a>
+            <a href="#cta" data-navigate="login" class="btn btn-primary btn-lg">馬上體驗 →</a>
         </div>
     </section>
     </main>
@@ -767,13 +230,6 @@
         <button id="global-toast-undo" class="global-toast-undo-btn">復原</button>
     </div>
 
-    <div class="bg-frame" id="bg-top">
-        <div class="rail" id="rail-top"></div>
-    </div>
-    <div class="bg-frame" id="bg-bottom">
-        <div class="rail" id="rail-bottom"></div>
-
-    </div>
 
     <script src="../js/spa-router.js"></script>
     <script src="../js/sys.js"></script>

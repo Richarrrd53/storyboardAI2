@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Storyboard AI — 影視級智慧分鏡創作工具 (極光藍 Demo)</title>
+    <!-- 引入高品質字型 -->
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;700;800&family=Noto+Serif+TC:wght@600;900&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/landing_demo.css">
+</head>
+<body>
+
+    <!-- 柔和的藍色電影光暈與顆粒背景 -->
+    <div class="ambient-bg">
+        <div class="glow-lens glow-cobalt"></div>
+        <div class="glow-lens glow-cyan"></div>
+        <div class="film-grain"></div>
+    </div>
+
+    <!-- ═══ 導覽列 (Navigation) ═══ -->
+    <nav class="navbar" id="navbar">
+        <a href="#" class="brand-logo">
+            <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <path d="M21 9H3M21 15H3M12 3v18" />
+                <path d="M7 3l3 3M14 3l3 3M7 9l3 3M14 9l3 3M7 15l3 3M14 15l3 3" />
+            </svg>
+            STORYBOARD <span class="accent-text">AI</span>
+        </a>
+        <div class="nav-links">
+            <a href="#features" class="nav-link">功能特色</a>
+            <a href="#interactive-demo" class="nav-link">即時體驗</a>
+            <a href="#pricing" class="nav-link">方案定價</a>
+        </div>
+        <div class="nav-actions">
+            <a href="#" class="btn btn-ghost">登入</a>
+            <a href="#interactive-demo" class="btn btn-primary">免費開始</a>
+        </div>
+    </nav>
+
+    <!-- ═══ 主視覺區 (Hero Section) ═══ -->
+    <header class="hero">
+        <div class="hero-container">
+            <div class="hero-content">
+                <div class="hero-eyebrow">
+                    <span class="badge">✦ 智慧級 AI 影像分鏡引擎</span>
+                </div>
+                <h1 class="hero-title">
+                    靈感，<br>
+                    <span class="gradient-text">一鍵轉換分鏡</span>
+                </h1>
+                <p class="hero-subtitle">
+                    從故事腳本到專業分鏡，一秒生成視覺框架。讓影像創作回歸純粹的創意，享受極簡高效的工作流。
+                </p>
+                <div class="hero-ctas">
+                    <a href="#interactive-demo" class="btn btn-primary btn-lg">
+                        立即生成分鏡
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                            <polyline points="12 5 19 12 12 19"></polyline>
+                        </svg>
+                    </a>
+                    <a href="#features" class="btn btn-secondary btn-lg">產品特色</a>
+                </div>
+            </div>
+
+            <!-- 右側：3D 懸浮底片與分鏡預覽 -->
+            <div class="hero-visual">
+                <div class="film-strip-deck" id="filmStripDeck">
+                    <!-- 第一格分鏡 -->
+                    <div class="film-card" style="--card-rotate: -4deg; --card-translate-x: -20px; z-index: 1;">
+                        <div class="film-card-header">
+                            <div class="sprocket-holes"><span></span><span></span><span></span><span></span></div>
+                            <span class="scene-num">SCENE 01</span>
+                            <div class="sprocket-holes"><span></span><span></span><span></span><span></span></div>
+                        </div>
+                        <div class="film-card-image" style="background: linear-gradient(135deg, #1e293b, #0f172a);">
+                            <div class="film-overlay">ESTABLISHING SHOT</div>
+                            <svg class="placeholder-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+                                <path d="M12 2L2 22h20L12 2z" />
+                                <circle cx="12" cy="13" r="3" />
+                            </svg>
+                        </div>
+                        <div class="film-card-footer">
+                            <h3 class="scene-title">深夜月台</h3>
+                            <p class="scene-desc">冰冷的深藍色調中，一名男子獨自站在月台邊，四周環繞著散落的雨水顆粒。</p>
+                        </div>
+                    </div>
+
+                    <!-- 第二格分鏡 -->
+                    <div class="film-card" style="--card-rotate: 2deg; --card-translate-x: 0px; z-index: 2;">
+                        <div class="film-card-header">
+                            <div class="sprocket-holes"><span></span><span></span><span></span><span></span></div>
+                            <span class="scene-num">SCENE 02</span>
+                            <div class="sprocket-holes"><span></span><span></span><span></span><span></span></div>
+                        </div>
+                        <div class="film-card-image" style="background: linear-gradient(135deg, #0f172a, #020617);">
+                            <div class="film-overlay">CLOSE UP SHOT</div>
+                            <svg class="placeholder-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+                                <path d="M21 21v-2a4 4 0 0 0-3-3.87" />
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                                <path d="M21 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0z" />
+                                <circle cx="9" cy="7" r="4" />
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                            </svg>
+                        </div>
+                        <div class="film-card-footer">
+                            <h3 class="scene-title">特寫：凝視</h3>
+                            <p class="scene-desc">他的眼神專注地望向前方，瞳孔中折射出微弱的冰藍色螢幕光芒。</p>
+                        </div>
+                    </div>
+
+                    <!-- 第三格分鏡 -->
+                    <div class="film-card" style="--card-rotate: 6deg; --card-translate-x: 20px; z-index: 3;">
+                        <div class="film-card-header">
+                            <div class="sprocket-holes"><span></span><span></span><span></span><span></span></div>
+                            <span class="scene-num">SCENE 03</span>
+                            <div class="sprocket-holes"><span></span><span></span><span></span><span></span></div>
+                        </div>
+                        <div class="film-card-image" style="background: linear-gradient(135deg, #1e3a8a, #0f172a);">
+                            <div class="film-overlay">TRACKING SHOT</div>
+                            <svg class="placeholder-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+                                <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+                                <line x1="8" y1="21" x2="16" y2="21" />
+                                <line x1="12" y1="17" x2="12" y2="21" />
+                            </svg>
+                        </div>
+                        <div class="film-card-footer">
+                            <h3 class="scene-title">奔馳前行</h3>
+                            <p class="scene-desc">主角向前奔跑，鏡頭平穩跟拍，兩旁的冰藍色燈帶向後飛逝。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ═══ 功能特色區 (Features Section) ═══ -->
+    <section class="features-section" id="features">
+        <div class="section-container">
+            <div class="section-header">
+                <span class="section-tag">Features</span>
+                <h2 class="section-title">為何選擇 Storyboard AI</h2>
+                <p class="section-desc">結合專業編導思維，為你生成精緻一致的科幻冰藍色視覺框架。</p>
+            </div>
+
+            <div class="features-grid">
+                <!-- 特色卡片 1 -->
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                        </svg>
+                    </div>
+                    <h3 class="feature-card-title">熱門爆點模板庫</h3>
+                    <p class="feature-card-desc">整合各大社群平台的爆款節奏模板，快速套用極簡的鏡頭轉場風格。</p>
+                </div>
+                <!-- 特色卡片 2 -->
+                <div class="feature-card highlighted-card">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="5 3 19 12 5 21 5 3" />
+                        </svg>
+                    </div>
+                    <h3 class="feature-card-title">AI 短影音分鏡生成</h3>
+                    <p class="feature-card-desc">只需輸入自然語言故事，AI 自動為你拆解出極富意境的冰藍底片構圖。</p>
+                </div>
+                <!-- 特色卡片 3 -->
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <path d="M12 8v4l3 3" />
+                        </svg>
+                    </div>
+                    <h3 class="feature-card-title">專業規格匯出</h3>
+                    <p class="feature-card-desc">匯出為工業標準 PDF 與 JSON 格式，輕鬆將創意帶入後期工作流程。</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══ 互動體驗區 (Interactive Generator Demo) ═══ -->
+    <section class="interactive-section" id="interactive-demo">
+        <div class="section-container">
+            <div class="section-header">
+                <span class="section-tag">Interactive Demo</span>
+                <h2 class="section-title">分鏡生成即時體驗</h2>
+                <p class="section-desc">在下方輸入你的創意劇本，體驗純淨藍色調的影音生成速度。</p>
+            </div>
+
+            <!-- 生成控制面板 -->
+            <div class="demo-generator-box">
+                <div class="generator-sidebar">
+                    <div class="form-group">
+                        <label class="form-label">輸入故事/劇本</label>
+                        <textarea class="form-textarea" id="promptInput" placeholder="例如：兩個太空人在廢棄太空船中發現一個發光的神祕立方體..."></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">畫幅比例</label>
+                            <div class="ratio-selector">
+                                <button class="ratio-btn active" data-ratio="16:9">16:9 <span>橫屏</span></button>
+                                <button class="ratio-btn" data-ratio="9:16">9:16 <span>直屏</span></button>
+                                <button class="ratio-btn" data-ratio="1:1">1:1 <span>正方</span></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">視覺風格</label>
+                        <select class="form-select" id="styleSelect">
+                            <option value="cinematic">經典極光藍 (Classic Aurora Blue)</option>
+                            <option value="cyberpunk">賽博深藍調 (Cyber Dark Blue)</option>
+                            <option value="vintage">黑白冷冽調 (Vintage Cold)</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary btn-block" id="generateBtn">
+                        <svg class="btn-icon animate-spin" style="display:none;" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="8" stroke-width="3"></circle>
+                        </svg>
+                        <span class="btn-text">🎬 一鍵生成分鏡</span>
+                    </button>
+                </div>
+
+                <!-- 生成結果區 -->
+                <div class="generator-viewer">
+                    <!-- 預設空狀態 -->
+                    <div class="viewer-empty-state" id="viewerEmptyState">
+                        <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+                            <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
+                            <line x1="7" y1="2" x2="7" y2="22"></line>
+                            <line x1="17" y1="2" x2="17" y2="22"></line>
+                            <line x1="2" y1="12" x2="22" y2="12"></line>
+                            <line x1="2" y1="7" x2="7" y2="7"></line>
+                            <line x1="2" y1="17" x2="7" y2="17"></line>
+                            <line x1="17" y1="17" x2="22" y2="17"></line>
+                            <line x1="17" y1="7" x2="22" y2="7"></line>
+                        </svg>
+                        <h3>準備就緒</h3>
+                        <p>在左側設定故事並點擊「一鍵生成」，此處將動態呈現冰藍色系分鏡頁面。</p>
+                    </div>
+
+                    <!-- 讀取掃描特效 -->
+                    <div class="viewer-scanner" id="viewerScanner" style="display: none;">
+                        <div class="scanner-bar"></div>
+                        <div class="scanner-film-strip"></div>
+                        <p class="scanner-status">AI 製片導演正在分析腳本、規劃鏡頭中...</p>
+                    </div>
+
+                    <!-- 分鏡展示格點 -->
+                    <div class="viewer-results-grid" id="viewerResultsGrid" style="display: none;">
+                        <!-- JS 動態插入結果 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>© 2026 Storyboard AI. Designed with Premium Monochromatic Blue Palette.</p>
+    </footer>
+
+    <!-- ═══ 互動腳本 ═══ -->
+    <script>
+        // 導覽列滾動模糊特效
+        window.addEventListener('scroll', () => {
+            const navbar = document.getElementById('navbar');
+            if (window.scrollY > 20) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // 3D 視覺傾斜效果
+        const visualArea = document.querySelector('.hero-visual');
+        const filmCards = document.querySelectorAll('.film-card');
+        
+        visualArea.addEventListener('mousemove', (e) => {
+            const rect = visualArea.getBoundingClientRect();
+            const x = e.clientX - rect.left - rect.width / 2;
+            const y = e.clientY - rect.top - rect.height / 2;
+            
+            const rotateY = (x / rect.width) * 15;
+            const rotateX = -(y / rect.height) * 15;
+
+            filmCards.forEach((card, idx) => {
+                const styleAttr = card.getAttribute('style') || '';
+                const rotMatch = styleAttr.match(/--card-rotate:\s*(-?\d+deg)/);
+                const transMatch = styleAttr.match(/--card-translate-x:\s*(-?\d+px)/);
+                const baseRotate = rotMatch ? parseFloat(rotMatch[1]) : 0;
+                const baseTranslate = transMatch ? parseFloat(transMatch[1]) : 0;
+                const depthOffset = (idx + 1) * 8;
+                card.style.transform = `rotateY(${rotateY + baseRotate}deg) rotateX(${rotateX}deg) translate3d(${baseTranslate}px, ${y * 0.04}px, ${depthOffset}px)`;
+            });
+        });
+
+        visualArea.addEventListener('mouseleave', () => {
+            filmCards.forEach((card) => {
+                const styleAttr = card.getAttribute('style') || '';
+                const rotMatch = styleAttr.match(/--card-rotate:\s*(-?\d+deg)/);
+                const transMatch = styleAttr.match(/--card-translate-x:\s*(-?\d+px)/);
+                const baseRotate = rotMatch ? rotMatch[1] : '0deg';
+                const baseTranslate = transMatch ? transMatch[1] : '0px';
+                card.style.transform = `rotate(${baseRotate}) translateX(${baseTranslate})`;
+            });
+        });
+
+        // 比例選擇器點選
+        const ratioBtns = document.querySelectorAll('.ratio-btn');
+        ratioBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                ratioBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+
+        // 模擬 AI 分鏡生成數據
+        const mockGenerations = {
+            cinematic: [
+                {
+                    scene: "SCENE 01",
+                    camera: "WIDE SHOT (廣角鏡頭)",
+                    title: "巨型方舟",
+                    desc: "在冰冷冰藍的迷霧古老叢林深處，一艘巨大外星飛船發出極光藍色的幽光。",
+                    color: "linear-gradient(135deg, #1e293b, #0f172a)"
+                },
+                {
+                    scene: "SCENE 02",
+                    camera: "MEDIUM CLOSE UP (中特寫)",
+                    title: "面罩反光",
+                    desc: "探險隊長停下腳步，藍色科技面罩上反射出前方飛船艙門開啟時的強烈藍色光柱。",
+                    color: "linear-gradient(135deg, #0f172a, #020617)"
+                },
+                {
+                    scene: "SCENE 03",
+                    camera: "LOW ANGLE SHOT (低角度鏡頭)",
+                    title: "懸浮起飛",
+                    desc: "探險隊長的機械背包噴射出淡藍色噴氣，引導其慢慢懸浮進入巨大而神祕的黑暗艙室中。",
+                    color: "linear-gradient(135deg, #1e3a8a, #0f172a)"
+                }
+            ],
+            cyberpunk: [
+                {
+                    scene: "SCENE 01",
+                    camera: "EXTREME WIDE SHOT (大廣角)",
+                    title: "不夜之城",
+                    desc: "高聳入雲的摩天大樓群被滿天藍色全息投影籠罩，巨型發光標誌在雨霧中穿行。",
+                    color: "linear-gradient(135deg, #172554, #020617)"
+                },
+                {
+                    scene: "SCENE 02",
+                    camera: "OVER THE SHOULDER (過肩鏡頭)",
+                    title: "終端追蹤",
+                    desc: "駭客靠在斑駁的水泥護欄上，眼前浮現出多個半透明的科技藍色代碼視窗。",
+                    color: "linear-gradient(135deg, #0f172a, #020617)"
+                },
+                {
+                    scene: "SCENE 03",
+                    camera: "DUTCH ANGLE (傾斜鏡頭)",
+                    title: "駭客出擊",
+                    desc: "目標藍色浮空車失控撞向巨型廣告牌，濺起漫天藍色火花，鏡頭劇烈震動。",
+                    color: "linear-gradient(135deg, #1e3a8a, #090d16)"
+                }
+            ],
+            vintage: [
+                {
+                    scene: "SCENE 01",
+                    camera: "LONG SHOT (遠景)",
+                    title: "霧港月台",
+                    desc: "冷色調膠捲質感。深夜的蒸汽火車站月台被濃霧包圍，一名戴禮帽的男子孤獨站立。",
+                    color: "linear-gradient(135deg, #1e293b, #0f172a)"
+                },
+                {
+                    scene: "SCENE 02",
+                    camera: "EXTREME CLOSE UP (特寫)",
+                    title: "懷錶指針",
+                    desc: "男子拉開大衣看著指針正滴答走向午夜十二點，微弱的月台燈光打在他緊繃的面部。",
+                    color: "linear-gradient(135deg, #0f172a, #020617)"
+                },
+                {
+                    scene: "SCENE 03",
+                    camera: "POV SHOT (主觀鏡頭)",
+                    title: "黑色列車",
+                    desc: "一輛黑色的古老蒸汽機車撕裂濃霧呼嘯進站，強烈的車頭探照燈直射鏡頭，一片眩光。",
+                    color: "linear-gradient(135deg, #1e3a8a, #0f172a)"
+                }
+            ]
+        };
+
+        const generateBtn = document.getElementById('generateBtn');
+        const promptInput = document.getElementById('promptInput');
+        const styleSelect = document.getElementById('styleSelect');
+        const emptyState = document.getElementById('viewerEmptyState');
+        const scanner = document.getElementById('viewerScanner');
+        const resultsGrid = document.getElementById('viewerResultsGrid');
+
+        generateBtn.addEventListener('click', () => {
+            const promptText = promptInput.value.trim();
+            if (!promptText) {
+                alert('請輸入一些創意故事腳本！');
+                return;
+            }
+
+            const spinner = generateBtn.querySelector('.animate-spin');
+            const btnText = generateBtn.querySelector('.btn-text');
+            spinner.style.display = 'inline-block';
+            btnText.innerText = ' 正在拆解分鏡...';
+            generateBtn.disabled = true;
+
+            emptyState.style.display = 'none';
+            resultsGrid.style.display = 'none';
+            scanner.style.display = 'flex';
+
+            setTimeout(() => {
+                const selectedStyle = styleSelect.value;
+                const scenes = mockGenerations[selectedStyle] || mockGenerations.cinematic;
+                const activeRatio = document.querySelector('.ratio-btn.active').getAttribute('data-ratio');
+
+                resultsGrid.innerHTML = '';
+                scenes.forEach((item) => {
+                    const sceneHtml = `
+                        <div class="result-film-card">
+                            <div class="result-header">
+                                <div class="film-holes"><span></span><span></span><span></span></div>
+                                <span class="res-scene-num">${item.scene}</span>
+                                <div class="film-holes"><span></span><span></span><span></span></div>
+                            </div>
+                            <div class="result-image-box ${activeRatio === '9:16' ? 'ratio-9-16' : activeRatio === '1:1' ? 'ratio-1-1' : 'ratio-16-9'}" style="background: ${item.color};">
+                                <div class="res-camera-tag">${item.camera}</div>
+                                <div class="res-glare"></div>
+                                <svg class="res-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                    <path d="M15 10l5 5-5 5V10z" />
+                                    <rect x="2" y="5" width="13" height="14" rx="2" />
+                                </svg>
+                            </div>
+                            <div class="result-meta">
+                                <h4>${item.title}</h4>
+                                <p>${item.desc}</p>
+                            </div>
+                        </div>
+                    `;
+                    resultsGrid.innerHTML += sceneHtml;
+                });
+
+                spinner.style.display = 'none';
+                btnText.innerText = '🎬 一鍵生成分鏡';
+                generateBtn.disabled = false;
+                scanner.style.display = 'none';
+                resultsGrid.style.display = 'grid';
+            }, 1800);
+        });
+    </script>
+</body>
+</html>

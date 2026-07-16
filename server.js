@@ -642,7 +642,7 @@ app.post('/api/templates', async (req, res) => {
 
 
 // SPA catch-all — redirect routes to main.html
-const spaRoutes = ['/dashboard', '/login', '/register', '/generate', '/analyze', '/analysis', '/history', '/template', '/project/:id'];
+const spaRoutes = ['/dashboard', '/projects', '/login', '/register', '/generate', '/analyze', '/analysis', '/history', '/template', '/project/:id'];
 spaRoutes.forEach(route => {
     app.get(route, (req, res) => {
         res.sendFile(path.join(process.cwd(), 'public', 'main.html'));

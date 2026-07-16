@@ -3,33 +3,33 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@900&family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Noto+Serif+TC:wght@200..900&family=Noto+Serif:ital,wght@0,100..900;1,100..900&display=swap');
 
 :root {
-    --primary: #bea665;
-    --primary-light: #eec480;
-    --primary-soft: #FDF9EE;
-    --peach: #D86B49;
-    --peach-light: #E48D73;
-    --yellow-warm: #F4D37A;
-    --lavender: #4A423A;
-    --lavender-light: #6E6458;
+    --primary: #2563eb;
+    --primary-light: #60a5fa;
+    --primary-soft: rgba(37, 99, 235, 0.08);
+    --peach: #0ea5e9;
+    --peach-light: #38bdf8;
+    --yellow-warm: #bae6fd;
+    --lavender: #1e293b;
+    --lavender-light: #334155;
     --white: #FFFFFF;
-    --off-white: #EBE6D8;
-    --text-dark: #3A322C;
-    --text-mid: #685E53;
-    --text-light: #948A7D;
-    --card-bg: #F5F2E9;
-    --card-border: #DCD4C6;
-    --shadow-soft: 0 8px 30px rgba(42, 35, 30, 0.15);
-    --shadow-card: 0 4px 15px rgba(42, 35, 30, 0.08);
-    --radius-sm: 4px;
-    --radius-md: 12px;
-    --radius-lg: 16px;
-    --radius-xl: 24px;
+    --off-white: #f8fafc;
+    --text-dark: #0f172a;
+    --text-mid: #475569;
+    --text-light: #94a3b8;
+    --card-bg: #ffffff;
+    --card-border: #e2e8f0;
+    --shadow-soft: 0 8px 30px rgba(15, 23, 42, 0.04);
+    --shadow-card: 0 12px 30px rgba(15, 23, 42, 0.06);
+    --radius-sm: 8px;
+    --radius-md: 16px;
+    --radius-lg: 24px;
+    --radius-xl: 40px;
     --font-display: "Noto Serif TC", serif;
     --font-body: "Noto Sans TC", sans-serif;
-    --bg-dark: #262320;
+    --bg-dark: #0f172a;
 }
 
-*{
+* {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
@@ -44,11 +44,11 @@ html {
 body {
     font-family: var(--font-body);
     color: var(--text-dark);
-    background: var(--bg-dark);
+    background: var(--off-white);
     scrollbar-width: none;
 }
 
-body, html{
+body, html {
     width: 100%;
     height: 100vh;
 }
@@ -62,24 +62,10 @@ body, html{
     width: 100%;
     height: 100%;
     background-color: var(--off-white);
-    background-image: 
-        linear-gradient(45deg, rgba(0,0,0,0.02) 25%, transparent 25%, transparent 75%, rgba(0,0,0,0.02) 75%, rgba(0,0,0,0.02)),
-        linear-gradient(45deg, rgba(0,0,0,0.02) 25%, transparent 25%, transparent 75%, rgba(0,0,0,0.02) 75%, rgba(0,0,0,0.02));
     background-size: 60px 60px;
     background-position: 0 0, 30px 30px;
     left: 0;
     top: 0;
-    animation: BG 2s linear infinite;
-}
-
-@keyframes BG {
-    from{
-        background-position: 0 0, 30px 30px;
-    }
-    to{
-        background-position: 30px 30px, 60px 60px;
-    }
-    
 }
 
 .bgDots {
@@ -90,9 +76,10 @@ body, html{
     font-family: var(--font-display);
     font-weight: 800;
     letter-spacing: -0.02em;
-    color: var(--off-white);
+    color: var(--text-dark);
     font-size: clamp(0.8rem, 1.5vw, 1.25rem);
     text-decoration: none;
+    margin-left: 5vw;
 }
 
 .brand-logo span {
@@ -111,7 +98,13 @@ p {
     line-height: 1.6;
 }
 
+main{
+    transition: all 0.5s cubic-bezier(.4,0,.2,1);
+}
+
 .btn {
+    position: relative;
+    overflow: hidden;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -119,77 +112,72 @@ p {
     font-family: var(--font-body);
     font-weight: 700;
     font-size: 0.95rem;
-    border-radius: var(--radius-sm);
-    border: none;
+    border-radius: 50px; /* 膠囊形狀 */
+    border: 1px solid transparent;
     cursor: pointer;
-    transition: all 0.15s cubic-bezier(0, 0, 0.58, 1);
+    transition: all 0.3s cubic-bezier(.4,0,.2,1);
     text-decoration: none;
     white-space: nowrap;
 }
 
-.btn:hover{
-    transform: translateY(0.2vh);
-}
-
 .btn:active {
-    transform: translateY(0.6vh);
-
+    transform: scale(0.95);
 }
 
 .btn-primary {
-    background: var(--primary-light);
-    border: 2px solid var(--text-dark);
-    color: var(--text-dark);
+    background: linear-gradient(135deg, var(--primary-light), var(--primary)); /* 淺藍到深藍漸層 */
+    color: var(--white);
     padding: 12px 28px;
-    box-shadow: 
-                0 0.6vh 0px var(--text-dark),
-                inset 0 0.2vh 0px rgba(255, 255, 255, 0.5);
     z-index: 10;
-}
-
-.btn-primary:hover {
-    box-shadow: 0 0.4vh 0px var(--text-dark);
-}
-
-.btn-primary:active {
-    box-shadow: 0 0vh px var(--text-dark);
-
 }
 
 
 .btn-ghost {
-    background: var(--white);
-    color: var(--text-light);
-    border: 2px solid var(--card-border);
-    box-shadow: 0 0.6vh 0 var(--card-border);
+    background: rgba(183,191,217,.1);
     backdrop-filter: blur(6px);
+    color: var(--text-muted);
+    border: 1px solid var(--card-border);
 }
 
-.btn-ghost:hover {
-    box-shadow: 0 0.4vh 0 var(--card-border);
-}
-
-.btn-ghost:active {
-    box-shadow: 0 0 0 var(--card-border);
-}
 
 .btn-outline {
-    background: var(--white);
+    background: transparent;
     color: var(--text-dark);
     padding: 12px 28px;
-    border: 2px solid var(--text-dark);
-    box-shadow: 0 0.6vh 0px var(--text-dark);
+    border: 1px solid var(--border-color);
 }
 
-.btn-outline:hover{
-    box-shadow: 0 0.4vh 0px var(--text-dark);
+
+/* ✨ 全域膠囊按鈕的滑過光線掃描特效 (Sweep Shine) */
+.btn::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -150%;
+    width: 60px;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.35) 50%,
+        rgba(255, 255, 255, 0) 100%
+    );
+    transform: skewX(-25deg);
+    transition: none;
 }
 
-.btn-outline:active {
-    box-shadow: 0 0px 0px var(--text-dark);
-
+.btn:hover::after {
+    animation: shineSweepGlobal 0.85s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
+@keyframes shineSweepGlobal {
+    0% {
+        left: -150%;
+    }
+    100% {
+        left: 150%;
+    }
+}
 
 .btn-sm {
     padding: 8px 18px;
@@ -244,10 +232,10 @@ p {
 .anim-delay-2 { animation-delay: 0.2s; }
 .anim-delay-3 { animation-delay: 0.3s; }
 
-::-webkit-scrollbar { width: 2px; }
+::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-    background: var(--text-dark);
+    background: var(--primary-soft);
     border-radius: 10px;
 }
 
@@ -498,7 +486,7 @@ p {
     pointer-events: none;
     opacity: 0;
     filter: blur(10px);
-    transition: opacity 0.4s ease, filter 0.4s ease;
+    transition: all .4s cubic-bezier(.4,0,.2,1);
 }
 
 .transition-loader-overlay.active {
@@ -520,22 +508,22 @@ p {
     width: 100px;
     height: 100px;
     overflow: visible;
-    color: var(--primary-light);
+    color: var(--primary);
     animation: loaderCardPulse 2.4s ease-in-out infinite;
 }
 
 .transition-loader-text-el {
     font-family: var(--font-body);
     font-size: 1.15rem;
-    color: var(--primary-soft);
+    color: var(--text-dark);
     margin-top: 24px;
     letter-spacing: 0.12em;
     font-weight: 700;
     transition: opacity 0.5s ease, filter 0.5s ease;
     opacity: 1;
     filter: blur(0px);
-    text-shadow: 0 0 10px rgba(0, 0, 0, 0.95), 0 0 20px rgba(238, 196, 128, 0.45);
     text-align: center;
+    z-index: 1000;
 }
 
 .transition-loader-text-el.blur-out {
@@ -562,7 +550,7 @@ p {
     margin-right: 1vh;
     margin-left: auto;
     background-color: var(--bg-dark);
-    border: 1px solid rgba(190, 166, 101, 0.5);
+    border: 1px solid rgba(226, 232, 240, 0.5);
     border-radius: 999px;
     width: 2.5vh;
     height: 2.5vh;
@@ -846,4 +834,16 @@ p {
     width: 20px;
     height: 14px;
     border-radius: 3px;
+}
+
+.dashboard-layout #spa-dash-loader {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: auto;
+  height: auto;
+  background: transparent;
+  backdrop-filter: none;
+  z-index: 10;
 }

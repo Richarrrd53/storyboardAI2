@@ -363,20 +363,6 @@
       if (showAllBtn) showAllBtn.style.display = 'none';
       if (recTag) recTag.style.display = 'none';
       _allStylesVisible = false;
-
-      const railBottom = document.getElementById("rail-bottom");
-      const railTop = document.getElementById("rail-top");
-      const nums = window.innerWidth/28;
-      for (let i = 0; i < nums; i++){
-          const railHole = document.createElement('div');
-          railHole.classList.add('rail-hole');
-          railBottom.appendChild(railHole);
-      }
-      for (let i = 0; i < nums; i++){
-          const railHole = document.createElement('div');
-          railHole.classList.add('rail-hole');
-          railTop.appendChild(railHole);
-      }
       onStoryInput();
       resetHeight();
       initTemplates();

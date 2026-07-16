@@ -6,8 +6,17 @@ body {
   font-size: 1.5vh;
 }
 
-.nav-links{
+.nav-links {
   display: none;
+}
+
+.auth-main {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .auth-container {
@@ -27,11 +36,13 @@ body {
   align-items: center;
   justify-content: start;
   gap: 0.5vh;
-  background: var(--text-dark);
+  background: rgba(15, 23, 42, 0.05);
+  /* 輕灰藍背景 */
   border-radius: 100vh;
   padding: 0.5vh;
   width: 30vh;
   z-index: 1;
+  border: 1px solid var(--card-border);
 }
 
 .auth-tab {
@@ -42,8 +53,8 @@ body {
   border: 0;
   font-family: var(--font-body);
   font-size: clamp(0.6rem, 1.2vw, 0.9rem);
-  font-weight: 600;
-  color: var(--white);
+  font-weight: 700;
+  color: var(--text-muted);
   background: transparent;
   cursor: pointer;
   transition: all 0.2s;
@@ -53,77 +64,66 @@ body {
   justify-content: center;
 }
 
-.auth-tab span{
+.auth-tab span {
   z-index: 2;
 }
 
-.auth-tab:hover{
+.auth-tab:hover {
   scale: 1.05;
-  opacity: 0.8;
+  color: var(--text-dark);
 }
 
-.auth-tab:active{
+.auth-tab:active {
   scale: 0.95;
 }
 
-.auth-tab.active:hover{
+.auth-tab.active:hover {
   scale: 1;
   opacity: 1;
 }
 
-.auth-tab.active:active{
+.auth-tab.active:active {
   scale: 1;
 }
 
-.auth-tab::before{
+.auth-tab::before {
   content: '';
   position: absolute;
   border-radius: 100vh;
   width: 100%;
   height: 100%;
-  background: var(--white);
+  background: linear-gradient(135deg, var(--primary-light), var(--primary));
+  /* 藍色漸層 */
   opacity: 0;
   z-index: 1;
 }
 
-.auth-tab.active::before{
+.auth-tab.active::before {
   opacity: 1;
-  animation: select 0.3s cubic-bezier(.33,1.53,.69,.99);
+  animation: select 0.3s cubic-bezier(.33, 1.53, .69, .99);
 }
 
 @keyframes select {
   0% {
     transform: scale(0.5);
   }
+
   100% {
     transform: scale(1);
   }
 }
 
-.auth-tab::after{
-  content: '';
-  position: absolute;
-  border-radius: 100vh;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(45deg, transparent 30%, rgb(255, 186, 8) 50%, transparent 70%);
-  background-size: 400% 100%;
-  background-position: right;
-  transition: none;
-}
-
-.auth-tab.active::after{
-  background-position: left;
-  transition: all .5s cubic-bezier(.4,0,.2,1);
-  z-index: 3;
-  animation: select 0.3s cubic-bezier(.33,1.53,.69,.99);
+.auth-tab::after {
+  display: none;
+  /* 移除原本的高對比黃色底 */
 }
 
 .auth-tab.active {
-  color: var(--text-dark);
+  color: var(--white);
 }
+
 /* --- Panel --- */
-.auth-inner{
+.auth-inner {
   position: relative;
   width: 100%;
   background-color: transparent;
@@ -134,18 +134,20 @@ body {
   justify-content: start;
   transform-style: preserve-3d;
 }
+
 .auth-panel {
   width: 100%;
   background-color: transparent;
   animation: scaleIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
-  border: 0;
+  border: 1px solid var(--card-border);
   overflow: hidden;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
 }
 
-.panel-back{
+.panel-back {
   position: absolute;
   transform: rotateY(180deg);
   pointer-events: none;
@@ -155,7 +157,7 @@ body {
   padding: 3.6vh 3.6vh;
   max-height: 47.8vh;
   overflow-y: scroll;
-  
+
   background-color: var(--white);
 }
 
@@ -165,7 +167,7 @@ body {
   backface-visibility: hidden;
 }
 
-.content-flex{
+.content-flex {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -180,9 +182,10 @@ body {
 
 .auth-strip {
   height: 5vh;
-  background-color: #3a3228;
+  background-color: var(--bg-dark);
+  /* 深石板藍電影膠捲 */
   background-size: auto;
-  border-bottom: 2px dashed rgba(190, 166, 101, 0.5);
+  border-bottom: 2px dashed rgba(226, 232, 240, 0.2);
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -193,14 +196,15 @@ body {
 
 .auth-strip.bottom {
   border: 0;
-  border-top: 2px dashed rgba(190, 166, 101, 0.5);
+  border-top: 2px dashed rgba(226, 232, 240, 0.2);
 }
 
 .strip-hole {
   width: 6%;
   height: 50%;
-  background-color: var(--bg-dark);
-  border: 1px solid rgba(190, 166, 101, 0.5);
+  background-color: var(--off-white);
+  /* 齒輪孔露出白底 */
+  border: 1px solid rgba(226, 232, 240, 0.3);
   border-radius: 0.6vh;
 }
 
@@ -208,9 +212,9 @@ body {
   font-family: monospace;
   font-size: (0.8rem, 0.5vw, 1rem);
   font-weight: 700;
-  color: var(--primary);
+  color: var(--primary-light);
   letter-spacing: 0.1em;
-  opacity: 0.7;
+  opacity: 0.8;
   margin-right: 2.5vh;
   margin-left: auto;
 }
@@ -237,32 +241,34 @@ body {
   align-items: center;
   justify-content: start;
   gap: 0.5vh;
-  border: 2px solid var(--card-border);
-  border-radius: 1.5vh;
-  transition: all 0.5s cubic-bezier(.4, 0, .2, 1);
-
+  border: 1px solid var(--card-border);
+  border-radius: 50px;
+  /* 膠囊形狀輸入框 */
+  transition: all 0.3s cubic-bezier(.4, 0, .2, 1);
   overflow: hidden;
 }
 
-.form-group:hover {
-  border-color: var(--text-dark);
-  box-shadow: 0 0 0.5vh var(--text-light);
+.form-group:hover,
+.form-group:focus-within {
+  border-color: var(--primary-light);
+  box-shadow: 0 0 0 3px var(--primary-soft);
 }
 
 .form-group .icon {
   width: 4vh;
   height: 4vh;
-  margin-left: 1vh;
+  margin-left: 1.5vh;
   background-color: var(--off-white);
-  border-radius: 1vh;
+  border-radius: 50%;
+  /* 膠囊按鈕與圓形圖示搭配 */
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .form-group .icon img {
-  width: 2.5vh;
-  height: 2.5vh;
+  width: 2.2vh;
+  height: 2.2vh;
 }
 
 
@@ -277,7 +283,7 @@ body {
   background: transparent;
   border: 0;
   outline: none;
-  transition: all 0.3s cubic-bezier(.4,0,.2,1);
+  transition: all 0.3s cubic-bezier(.4, 0, .2, 1);
   font-family: monospace;
   font-weight: bold;
 }
@@ -315,7 +321,7 @@ body {
   gap: 0.2vh;
 }
 
-.form-row .input-field{
+.form-row .input-field {
   width: 70%;
 }
 
@@ -326,18 +332,18 @@ body {
   cursor: pointer;
   font-size: 1rem;
   padding: 4px;
-  transition: all .5s cubic-bezier(.33,1.53,.69,.99);
+  transition: all .5s cubic-bezier(.33, 1.53, .69, .99);
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.input-icon-btn:hover{
+.input-icon-btn:hover {
   scale: 1.1;
 }
 
-.input-icon-btn:active{
+.input-icon-btn:active {
   scale: 0.9;
 }
 
@@ -346,57 +352,58 @@ body {
   height: 3vh;
 }
 
-.input-show-eye{
+.input-show-eye {
   position: absolute;
   mask: url("#inputShowMask1");
   mask-composite: subtract;
 }
 
-.input-show-slash{
+.input-show-slash {
   position: absolute;
   rotate: 45deg;
   transform: translateY(0px);
   height: 3.535vh;
   width: 3.535vh;
-  transition: all 0.6s cubic-bezier(.4,0,.2,1);
+  transition: all 0.6s cubic-bezier(.4, 0, .2, 1);
 }
-#inputShow1{
+
+#inputShow1 {
   mask: url("#inputShowMask1");
 }
 
-#inputShow2{
+#inputShow2 {
   mask: url("#inputShowMask2");
 }
 
-#inputShow3{
+#inputShow3 {
   mask: url("#inputShowMask3");
 }
 
-.input-show-mask{
+.input-show-mask {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-#inputShowMask12{
+#inputShowMask12 {
   position: absolute;
   transform: translatex(2.5vh) rotate(45deg);
-  transition: all 0.6s cubic-bezier(.4,0,.2,1);
+  transition: all 0.6s cubic-bezier(.4, 0, .2, 1);
 }
 
-#inputShowMask22{
+#inputShowMask22 {
   position: absolute;
   transform: translatex(2.5vh) rotate(45deg);
-  transition: all 0.6s cubic-bezier(.4,0,.2,1);
+  transition: all 0.6s cubic-bezier(.4, 0, .2, 1);
 }
 
-#inputShowMask32{
+#inputShowMask32 {
   position: absolute;
   transform: translatex(2.5vh) rotate(45deg);
-  transition: all 0.6s cubic-bezier(.4,0,.2,1);
+  transition: all 0.6s cubic-bezier(.4, 0, .2, 1);
 }
 
-#showBtn1{
+#showBtn1 {
   margin-left: 44vh;
 
 }
@@ -483,7 +490,7 @@ body {
   font-size: 0.875rem;
   font-weight: 600;
   opacity: 1;
-  transition: all 0.5s cubic-bezier(.31,.01,.66,-0.59);
+  transition: all 0.5s cubic-bezier(.31, .01, .66, -0.59);
   box-shadow: 0 10px 10px rgba(0, 0, 0, 0.2);
   pointer-events: none;
   white-space: nowrap;

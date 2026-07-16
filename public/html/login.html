@@ -10,168 +10,164 @@
 </head>
 
 <body>
+    <main id="page-main" class="auth-main">
 
-    <div class="gradient-bg">
-        <div class="gradient-blob-yellow"></div>
-    </div>
-
-    <!-- Brand -->
-    <a href="../html/index.html" class="auth-brand brand-logo">STORYBOARD <span>AI</span></a>
-
-    <div class="auth-container">
-
-        <!-- Tabs -->
-        <div class="auth-tabs">
-            <button class="auth-tab active" id="tab-login" onclick="switchTab('login')"><span>登入</span></button>
-            <button class="auth-tab" id="tab-register" onclick="switchTab('register')"><span>免費註冊</span></button>
-            <!-- <div class="tab-selector"></div> -->
-        </div>
-        <div class="auth-inner" id="auth-inner">
-            <!-- Login Form -->
-            <div class="auth-panel card anim-fadeInUp" id="panel-login">
-                <div class="auth-strip">
-                    <div class="strip-hole"></div>
-                    <div class="strip-hole"></div>
-                    <div class="strip-hole"></div>
-                    <div class="strip-title"># LOGIN</div>
-                </div>
-                <div class="auth-content" id="auth-content-1">
-                    <div class="content-flex">
-
-                        <div class="auth-header">
-                            <h2>歡迎回來！</h2>
-                            <p>登入以開始/繼續創作您的短影音</p>
-                        </div>
-            
-                        <div class="form-group">
-                            <div class="icon">
-                                <img src="../icon/at-sign.svg" alt="">
-                            </div>
-                            <input type="email" class="input-field input-field-rect" placeholder="your@email.com" id="login-email" />
-                        </div>
-                        <div class="form-group">
-                            <div class="icon">
-                                <img src="../icon/key.svg" alt="">
-                            </div>
-                            <input type="password" class="input-field" placeholder="••••••••" id="login-password" />
-                            <button class="input-icon-btn icon" id="showBtn1" onclick="togglePwd('login-password', 1)">
-                                <img src="../icon/showControl.svg" alt="" class="input-show-eye" id="inputShow1">
-                                <img src="../icon/showSlash.svg" alt="" class="input-show-slash" id="inputShow12">
-                                <svg version="1.1" id="showslash1" data-name="圖層 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60">
-                                    <defs>
-                                        <mask id="inputShowMask1" class="input-show-mask" data-name="圖層 1">
-                                            <rect x="0" y="0" width="2.5vh" height="2.5vh" rx="0.1vh" ry="0.1vh" fill="#ffffff"/>
-                                            <rect class="cls-1" id="inputShowMask12" x="0" y="0" width="0.2vh" height="3.535vh" rx="0.1vh" ry="0.1vh" fill="#000000"/>
-                                        </mask>
-                                    </defs>
-                                </svg>
-                            </button>
-                        </div>
-                        <a class="form-forgot">忘記密碼？</a>
-            
-                        <button class="btn btn-primary" onclick="handleLogin()"
-                            style="margin-top:8px; border-radius:var(--radius-sm);">
-                            登入
-                        </button>
-            
-                        <p class="auth-switch">還沒有帳號？<a onclick="switchTab('register')" style="cursor:pointer;">免費註冊</a></p>
-                    </div>
-                </div>
-                <div class="auth-strip bottom">
-                    <div class="strip-hole"></div>
-                    <div class="strip-hole"></div>
-                    <div class="strip-hole"></div>
-                </div>
-            </div>
+        <div class="auth-container">
     
-            <!-- Register Form -->
-            <div class="auth-panel panel-back card " id="panel-register">
-                <div class="auth-strip">
-                    <div class="strip-hole"></div>
-                    <div class="strip-hole"></div>
-                    <div class="strip-hole"></div>
-                    <div class="strip-title"># REGISTER</div>
-                </div>
-                <div class="auth-content" id="auth-content-2">
-                    <div class="content-flex">
-
-                        <div class="auth-header">
-                            <h2>建立帳號</h2>
-                            <p>免費開始創作您的短影音</p>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <div class="icon">
-                                    <img src="../icon/user.svg" alt="">
-                                </div>
-                                <input type="text" class="input-field input-field-rect" placeholder="@username" id="register-username" />
+            <!-- Tabs -->
+            <div class="auth-tabs">
+                <button class="auth-tab active" id="tab-login" onclick="switchTab('login')"><span>登入</span></button>
+                <button class="auth-tab" id="tab-register" onclick="switchTab('register')"><span>免費註冊</span></button>
+                <!-- <div class="tab-selector"></div> -->
+            </div>
+            <div class="auth-inner" id="auth-inner">
+                <!-- Login Form -->
+                <div class="auth-panel card anim-fadeInUp" id="panel-login">
+                    <div class="auth-strip">
+                        <div class="strip-hole"></div>
+                        <div class="strip-hole"></div>
+                        <div class="strip-hole"></div>
+                        <div class="strip-title"># LOGIN</div>
+                    </div>
+                    <div class="auth-content" id="auth-content-1">
+                        <div class="content-flex">
+    
+                            <div class="auth-header">
+                                <h2>歡迎回來！</h2>
+                                <p>登入以開始/繼續創作您的短影音</p>
                             </div>
+                
                             <div class="form-group">
                                 <div class="icon">
                                     <img src="../icon/at-sign.svg" alt="">
                                 </div>
-                                <input type="email" class="input-field input-field-rect" placeholder="your@email.com" id="register-email" />
+                                <input type="email" class="input-field input-field-rect" placeholder="your@email.com" id="login-email" />
                             </div>
-                        </div>
-                        <div class="form-group">
-                            <div class="icon">
-                                <img src="../icon/key.svg" alt="">
+                            <div class="form-group">
+                                <div class="icon">
+                                    <img src="../icon/key.svg" alt="">
+                                </div>
+                                <input type="password" class="input-field" placeholder="••••••••" id="login-password" />
+                                <button class="input-icon-btn icon" id="showBtn1" onclick="togglePwd('login-password', 1)">
+                                    <img src="../icon/showControl.svg" alt="" class="input-show-eye" id="inputShow1">
+                                    <img src="../icon/showSlash.svg" alt="" class="input-show-slash" id="inputShow12">
+                                    <svg version="1.1" id="showslash1" data-name="圖層 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60">
+                                        <defs>
+                                            <mask id="inputShowMask1" class="input-show-mask" data-name="圖層 1">
+                                                <rect x="0" y="0" width="2.5vh" height="2.5vh" rx="0.1vh" ry="0.1vh" fill="#ffffff"/>
+                                                <rect class="cls-1" id="inputShowMask12" x="0" y="0" width="0.2vh" height="3.535vh" rx="0.1vh" ry="0.1vh" fill="#000000"/>
+                                            </mask>
+                                        </defs>
+                                    </svg>
+                                </button>
                             </div>
-                            <input type="password" class="input-field" placeholder="至少 8 個字元" id="register-password" />
-                            <button class="input-icon-btn icon" id="showBtn2" onclick="togglePwd('register-password', 2)">
-                                <img src="../icon/showControl.svg" alt="" class="input-show-eye" id="inputShow2">
-                                <img src="../icon/showSlash.svg" alt="" class="input-show-slash" id="inputShow22">
-                                <svg version="1.1" id="showslash2" data-name="圖層 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60">
-                                    <defs>
-                                        <mask id="inputShowMask2" class="input-show-mask" data-name="圖層 1">
-                                            <rect x="0" y="0" width="2.5vh" height="2.5vh" rx="0.1vh" ry="0.1vh" fill="#ffffff"/>
-                                            <rect class="cls-1" id="inputShowMask22" x="0" y="0" width="0.2vh" height="3.535vh" rx="0.1vh" ry="0.1vh" fill="#000000"/>
-                                        </mask>
-                                    </defs>
-                                </svg>
+                            <a class="form-forgot">忘記密碼？</a>
+                
+                            <button class="btn btn-primary" onclick="handleLogin()"
+                                style="margin-top:8px;">
+                                登入
                             </button>
+                
+                            <p class="auth-switch">還沒有帳號？<a onclick="switchTab('register')" style="cursor:pointer;">免費註冊</a></p>
                         </div>
-            
-                        <div class="form-group">
-                            <div class="icon">
-                                <img src="../icon/key.svg" alt="">
-                            </div>
-                            <input type="password" class="input-field" placeholder="請再輸入一次密碼..." id="register-password-2" />
-                            <button class="input-icon-btn icon" id="showBtn3" onclick="togglePwd('register-password-2', 3)">
-                                <img src="../icon/showControl.svg" alt="" class="input-show-eye" id="inputShow3">
-                                <img src="../icon/showSlash.svg" alt="" class="input-show-slash" id="inputShow32">
-                                <svg version="1.1" id="showslash3" data-name="圖層 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60">
-                                    <defs>
-                                        <mask id="inputShowMask3" class="input-show-mask" data-name="圖層 1">
-                                            <rect x="0" y="0" width="2.5vh" height="2.5vh" rx="0.1vh" ry="0.1vh" fill="#ffffff"/>
-                                            <rect class="cls-1" id="inputShowMask32" x="0" y="0" width="0.2vh" height="3.535vh" rx="0.1vh" ry="0.1vh" fill="#000000"/>
-                                        </mask>
-                                    </defs>
-                                </svg>
-                            </button>
-                        </div>
-            
-                        <button class="btn btn-primary btn-block" onclick="handleRegister()"
-                            style="margin-top:8px; border-radius:var(--radius-sm);">
-                            建立帳號 →
-                        </button>
-                        <p class="terms-note">點擊即代表你同意我們的<a>服務條款</a>與<a>隱私政策</a></p>
-                        <p class="auth-switch">已有帳號？<a onclick="switchTab('login')" style="cursor:pointer;">登入</a></p>
+                    </div>
+                    <div class="auth-strip bottom">
+                        <div class="strip-hole"></div>
+                        <div class="strip-hole"></div>
+                        <div class="strip-hole"></div>
                     </div>
                 </div>
-                <div class="auth-strip bottom">
-                    <div class="strip-hole"></div>
-                    <div class="strip-hole"></div>
-                    <div class="strip-hole"></div>
+        
+                <!-- Register Form -->
+                <div class="auth-panel panel-back card " id="panel-register">
+                    <div class="auth-strip">
+                        <div class="strip-hole"></div>
+                        <div class="strip-hole"></div>
+                        <div class="strip-hole"></div>
+                        <div class="strip-title"># REGISTER</div>
+                    </div>
+                    <div class="auth-content" id="auth-content-2">
+                        <div class="content-flex">
+    
+                            <div class="auth-header">
+                                <h2>建立帳號</h2>
+                                <p>免費開始創作您的短影音</p>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <div class="icon">
+                                        <img src="../icon/user.svg" alt="">
+                                    </div>
+                                    <input type="text" class="input-field input-field-rect" placeholder="@username" id="register-username" />
+                                </div>
+                                <div class="form-group">
+                                    <div class="icon">
+                                        <img src="../icon/at-sign.svg" alt="">
+                                    </div>
+                                    <input type="email" class="input-field input-field-rect" placeholder="your@email.com" id="register-email" />
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="icon">
+                                    <img src="../icon/key.svg" alt="">
+                                </div>
+                                <input type="password" class="input-field" placeholder="至少 8 個字元" id="register-password" />
+                                <button class="input-icon-btn icon" id="showBtn2" onclick="togglePwd('register-password', 2)">
+                                    <img src="../icon/showControl.svg" alt="" class="input-show-eye" id="inputShow2">
+                                    <img src="../icon/showSlash.svg" alt="" class="input-show-slash" id="inputShow22">
+                                    <svg version="1.1" id="showslash2" data-name="圖層 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60">
+                                        <defs>
+                                            <mask id="inputShowMask2" class="input-show-mask" data-name="圖層 1">
+                                                <rect x="0" y="0" width="2.5vh" height="2.5vh" rx="0.1vh" ry="0.1vh" fill="#ffffff"/>
+                                                <rect class="cls-1" id="inputShowMask22" x="0" y="0" width="0.2vh" height="3.535vh" rx="0.1vh" ry="0.1vh" fill="#000000"/>
+                                            </mask>
+                                        </defs>
+                                    </svg>
+                                </button>
+                            </div>
+                
+                            <div class="form-group">
+                                <div class="icon">
+                                    <img src="../icon/key.svg" alt="">
+                                </div>
+                                <input type="password" class="input-field" placeholder="請再輸入一次密碼..." id="register-password-2" />
+                                <button class="input-icon-btn icon" id="showBtn3" onclick="togglePwd('register-password-2', 3)">
+                                    <img src="../icon/showControl.svg" alt="" class="input-show-eye" id="inputShow3">
+                                    <img src="../icon/showSlash.svg" alt="" class="input-show-slash" id="inputShow32">
+                                    <svg version="1.1" id="showslash3" data-name="圖層 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60">
+                                        <defs>
+                                            <mask id="inputShowMask3" class="input-show-mask" data-name="圖層 1">
+                                                <rect x="0" y="0" width="2.5vh" height="2.5vh" rx="0.1vh" ry="0.1vh" fill="#ffffff"/>
+                                                <rect class="cls-1" id="inputShowMask32" x="0" y="0" width="0.2vh" height="3.535vh" rx="0.1vh" ry="0.1vh" fill="#000000"/>
+                                            </mask>
+                                        </defs>
+                                    </svg>
+                                </button>
+                            </div>
+                
+                            <button class="btn btn-primary btn-block" onclick="handleRegister()"
+                                style="margin-top:8px;">
+                                建立帳號 →
+                            </button>
+                            <p class="terms-note">點擊即代表你同意我們的<a>服務條款</a>與<a>隱私政策</a></p>
+                            <p class="auth-switch">已有帳號？<a onclick="switchTab('login')" style="cursor:pointer;">登入</a></p>
+                        </div>
+                    </div>
+                    <div class="auth-strip bottom">
+                        <div class="strip-hole"></div>
+                        <div class="strip-hole"></div>
+                        <div class="strip-hole"></div>
+                    </div>
                 </div>
             </div>
+    
         </div>
+        
+            <!-- Toast -->
+            <div class="toast" id="toast"></div>
+    </main>
 
-    </div>
-
-    <!-- Toast -->
-    <div class="toast" id="toast"></div>
-
+    
     <script src="../js/auth.js"></script>
     <script src="../js/sys.js"></script>
 </body>

@@ -13,122 +13,122 @@
 
     <!-- Dynamic BG -->
     <div id="BG">
-        <div class="bgDots" id="bgDot1"
-            style="width:600px;height:600px;left:-100px;top:-100px;filter:blur(120px);opacity:0.35;"></div>
-        <div class="bgDots" id="bgDot2"
-            style="width:500px;height:500px;right:-80px;top:60px;filter:blur(120px);opacity:0.28;"></div>
-        <div class="bgDots" id="bgDot4"
-            style="width:400px;height:400px;left:30%;bottom:-60px;filter:blur(100px);opacity:0.22;"></div>
-        <div id="bgMask"></div>
 
     </div>
 
     <!-- ═══ TOPBAR ═══ -->
-    <header class="topbar">
-        <div class="top-left">
-            <a href="./dashboard.html" class="top-logo brand-logo">STORYBOARD
-                <span>AI</span>
+    <header class="sidebar" id="dash-sidebar">
+        <div class="side-header">
+            <a class="side-logo brand-logo" id="side-logo">
+                <span>LOGO</span>
+                <div class="logo-text">Storyboard<span>AI</span></div>
+                <label class="side-burger" id="burger-container" for="burger">
+                    <input type="checkbox" id="burger">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </label>
             </a>
         </div>
 
-        <nav class="top-nav">
-            <a href="./dashboard.html" class="top-link active" title="我的專案">
-                <img src="../icon/folder-blur.svg" alt="" style="z-index: 2; opacity: 0;">
+        <nav class="side-body">
+            <a href="../dashboard" class="side-link" id="nav-home" title="首頁">
+                <img src="../icon/home-blur.svg" alt="" style="z-index: 2; opacity: 1;">
+                <span>首頁</span>
                 <div class="link-glow"></div>
             </a>
-            <a href="./generate.html" class="top-link" title="生成分鏡">
-                <img src="../icon/plus-blur.svg" alt="" style="z-index: 2; opacity: 0;">
+            <div class="side-nav-group" id="nav-projects-group">
+                <div class="side-link-row">
+                    <a href="../projects" class="side-link" id="nav-projects" title="專案">
+                        <img src="../icon/folder-blur.svg" alt="" style="z-index: 2; opacity: 1;">
+                        <span>專案</span>
+                        <div class="link-glow"></div>
+                    </a>
+                    <button class="sub-list-toggle" id="projects-toggle-btn" title="展開/收疊專案" type="button">
+                        <svg class="toggle-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                            <line x1="12" y1="5" x2="12" y2="19" class="toggle-vertical-line"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="side-sub-list" id="sidebar-projects-list">
+                    <a href="../generate" class="sub-link new-project-sub-link" title="新建專案">
+                        <span class="sub-text">+ 新建專案</span>
+                    </a>
+                </div>
+            </div>
+            <a href="../history" class="side-link" id="nav-history" title="資源回收桶">
+                <img src="../icon/trash-blur.svg" alt="" style="z-index: 2; opacity: 1;">
+                <span>資源回收桶</span>
                 <div class="link-glow"></div>
             </a>
-            <a href="./history.html" class="top-link" title="歷史專案">
-                <img src="../icon/history-blur.svg" alt="" style="z-index: 2; opacity: 0;">
-                <div class="link-glow"></div>
-            </a>
-            <a href="./template.html" class="top-link" title="爆點模板庫">
-                <img src="../icon/search-blur.svg" alt="" style="z-index: 2; opacity: 0;">
-                <div class="link-glow"></div>
-            </a>
-            <a class="top-link" title="數據分析">
-                <img src="../icon/chart-blur.svg" alt="" style="z-index: 2; opacity: 0;">
+            <a href="../template" class="side-link" id="nav-template" title="爆點模板庫">
+                <img src="../icon/search-blur.svg" alt="" style="z-index: 2; opacity: 1;">
+                <span>爆點模板庫</span>
                 <div class="link-glow"></div>
             </a>
         </nav>
 
-        <div class="top-right">
+        <div class="side-footer">
             <div class="top-avatar" id="top-avatar">黃</div>
         </div>
     </header>
-    <nav class="mobile-bottom-nav">
-        <div class="link-group">
-            <a href="./dashboard.html" class="top-link active" title="我的專案">
-                <img src="../icon/folder-blur.svg" alt="">
-                <div class="link-glow"></div>
-            </a>
-            <p class="link-title">我的專案</p>
-        </div>
-        <div class="link-group">
-            <a href="./generate.html" class="top-link" title="生成分鏡">
-                <img src="../icon/plus-blur.svg" alt="">
-                <div class="link-glow"></div>
-            </a>
-            <p class="link-title">生成分鏡</p>
-        </div>
-        <div class="link-group">
-            <a href="./history.html" class="top-link" title="歷史專案">
-                <img src="../icon/history-blur.svg" alt="">
-                <div class="link-glow"></div>
-            </a>
-            <p class="link-title">歷史專案</p>
-        </div>
-        <div class="link-group">
-            <a href="./template.html" class="top-link" title="爆點模板庫">
-                <img src="../icon/search-blur.svg" alt="">
-                <div class="link-glow"></div>
-            </a>
-            <p class="link-title">爆點模板庫</p>
-        </div>
-        <div class="link-group">
-            <a class="top-link" title="數據分析">
-                <img src="../icon/chart-blur.svg" alt="">
-                <div class="link-glow"></div>
-            </a>
-            <p class="link-title">數據分析</p>
-        </div>
-    </nav>
 
     <!-- ═══ MAIN CONTENT ═══ -->
-    <main class="dash-main">
+    <main id="page-main" class="dash-main home-main">
+        <!-- Welcome Section -->
+        <section class="home-welcome anim-fadeInUp">
+            <h1 class="welcome-title">歡迎回來，<span id="home-user-name">創作者</span> ✦</h1>
+            <p class="welcome-subtitle">今天想創作什麼樣的分鏡故事呢？</p>
+        </section>
 
-        <!-- Hero Input Section -->
-        
-        <!-- Project Management Section -->
-        <section class="projects-management anim-fadeInUp">
+        <!-- Quick Start Cards -->
+        <section class="home-quickstart anim-fadeInUp anim-delay-1">
+            <div class="quickstart-grid">
+                <div class="quickstart-card generate-card" onclick="spaNavigate('generate')">
+                    <div class="card-icon">
+                        <img src="../icon/plus-focus.svg" alt="Generate">
+                    </div>
+                    <div class="card-content">
+                        <h3>新建分鏡</h3>
+                        <p>輸入故事腳本，一鍵智慧生成分鏡畫面與動態描述</p>
+                    </div>
+                    <div class="card-arrow">→</div>
+                </div>
+                <div class="quickstart-card template-card" onclick="spaNavigate('template')">
+                    <div class="card-icon">
+                        <img src="../icon/search-focus.svg" alt="Template">
+                    </div>
+                    <div class="card-content">
+                        <h3>爆點模板庫</h3>
+                        <p>瀏覽與套用當前最熱門的短影音分鏡腳本模板</p>
+                    </div>
+                    <div class="card-arrow">→</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Recent Projects Section -->
+        <section class="projects-management anim-fadeInUp anim-delay-2" style="margin-top: 40px;">
             <div class="projects-header">
-                <h1 class="projects-title">我的專案</h1>
-                <a class="new-project-btn" onclick="spaNavigate('generate')">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                <h2 class="projects-title" style="font-size: 1.5rem;">最近編輯專案</h2>
+                <a onclick="spaNavigate('projects')" style="cursor: pointer; display: flex; align-items: center; gap: 5px; color: var(--primary); text-decoration: none; font-weight: 600; font-size: 0.95rem;">
+                    查看所有專案
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="9 18 15 12 9 6"></polyline>
                     </svg>
-                    新增專案
                 </a>
             </div>
             
-            <div class="projects-grid" id="projects-grid">
-                <!-- Projects will be dynamically rendered here -->
+            <div class="projects-grid" id="recent-projects-grid">
+                <!-- Recent projects will be dynamically rendered here -->
+                <div class="projects-empty">
+                    <h3>載入中...</h3>
+                </div>
             </div>
         </section>
-</div>
-
     </main>
 
-    <div class="bg-frame" id="bg-top">
-        <div class="rail" id="rail-top"></div>
-    </div>
-    <div class="bg-frame" id="bg-bottom">
-        <div class="rail" id="rail-bottom"></div>
-
-    </div>
 
 
     <!-- User Tooltip Panel -->
