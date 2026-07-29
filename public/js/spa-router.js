@@ -2347,18 +2347,6 @@ async function ensureSharedLayout(signal) {
     if(burgerContainer && sideLogo){
       burger = burger || document.getElementById("burger");
       if (!burger.checked){
-        sideLogo.addEventListener('mouseenter', () => {
-          burgerContainer.style.opacity = 1;
-          burgerContainer.style.filter = 'blur(0)';
-          sideLogo.children[0].style.opacity = 0;
-          sideLogo.children[0].style.filter = 'blur(10px)';
-        });
-        sideLogo.addEventListener('mouseleave', () => {
-          burgerContainer.style.opacity = 0;
-          burgerContainer.style.filter = 'blur(10px)';
-          sideLogo.children[0].style.opacity = 1;
-          sideLogo.children[0].style.filter = 'blur(0px)';
-        });
         burger.addEventListener('change', () => {
           const m = document.getElementById('page-main');
           if(burger.checked){
@@ -2606,32 +2594,10 @@ async function ensureSharedLayout(signal) {
       sidebar.style.width = '260px';
       if (m) m.style.margin = '1vh 1vh 1vh calc(2vh + 260px)';
       sidebar.classList.add('open');
-      
-      const burgerContainer = document.getElementById("burger-container");
-      if (burgerContainer) {
-        burgerContainer.style.opacity = '1';
-        burgerContainer.style.filter = 'blur(0)';
-      }
-      const sideLogo = document.getElementById("side-logo");
-      if (sideLogo && sideLogo.children[0]) {
-        sideLogo.children[0].style.opacity = '0';
-        sideLogo.children[0].style.filter = 'blur(10px)';
-      }
     } else {
       sidebar.style.width = '60px';
       if (m) m.style.margin = '1vh 1vh 1vh calc(2vh + 60px)';
       sidebar.classList.remove('open');
-      
-      const burgerContainer = document.getElementById("burger-container");
-      if (burgerContainer) {
-        burgerContainer.style.opacity = '0';
-        burgerContainer.style.filter = 'blur(10px)';
-      }
-      const sideLogo = document.getElementById("side-logo");
-      if (sideLogo && sideLogo.children[0]) {
-        sideLogo.children[0].style.opacity = '1';
-        sideLogo.children[0].style.filter = 'blur(0px)';
-      }
     }
   }
 
