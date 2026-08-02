@@ -1466,7 +1466,29 @@ ${vars.map(v => `${v}: <值>`).join('\n')}
       // 3. 重設頁面狀態與載入模板
       resetAll();
 
-      // 4. 重新初始化數學曲線載入器（處理 SPA 頁面切換腳本快取）
+      // 4. 如果是從 AI Dock Panel 轉移過來的提示詞，自動帶入並送出
+      if (window.aiDockSubmittedPrompt) {
+          const submittedData = window.aiDockSubmittedPrompt;
+          window.aiDockSubmittedPrompt = null;
+          if (storyInput && submittedData.story) {
+              storyInput.value = submittedData.story;
+              onStoryInput();
+              if (submittedData.styleIndex !== undefined) {
+                  state.styleIndex = submittedData.styleIndex;
+              }
+              if (submittedData.ratio) {
+                  state.ratio = submittedData.ratio;
+                  document.querySelectorAll('.ratio-chip').forEach(chip => {
+                      chip.classList.toggle('active', chip.dataset.ratio === submittedData.ratio);
+                  });
+              }
+              setTimeout(() => {
+                  submitStory();
+              }, 100);
+          }
+      }
+
+      // 5. 重新初始化數學曲線載入器（處理 SPA 頁面切換腳本快取）
       if (typeof window.initMathCurveLoader === 'function') {
           window.initMathCurveLoader();
       }

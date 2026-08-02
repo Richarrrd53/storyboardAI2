@@ -2998,3 +2998,173 @@ table {
 }
 
 /* Fixes for open/closed sidebar sublist styling and link margin - removed display:none to allow smooth folding transitions */
+
+/* ══════════════════════════════════════════════════════════════
+   AI DOCK PANEL & PILL BUTTON SYSTEM
+   ══════════════════════════════════════════════════════════════ */
+
+.dashboard-layout #page-main {
+    transition: margin-right 0.5s cubic-bezier(.33,1.53,.69,.99),
+                margin-left 0.5s cubic-bezier(.33,1.53,.69,.99),
+                width 0.6s cubic-bezier(.33,1.53,.69,.99),
+                min-width 0.6s cubic-bezier(.33,1.53,.69,.99),
+                opacity 0.6s ease,
+                padding 0.6s ease,
+                border-radius 0.6s ease !important;
+}
+
+@media (min-width: 1024px) {
+    body.dashboard-layout.ai-dock-active #page-main {
+        margin-right: calc(1vh + 400px + 1vh) !important;
+    }
+}
+
+.dashboard-layout #page-main.collapsing-for-ai {
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    opacity: 0 !important;
+    margin-left: calc(2vh + 60px) !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    border-radius: var(--radius-xl) !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+}
+
+.ai-dock-panel {
+    position: fixed;
+    top: 1vh;
+    right: 1vh;
+    width: 400px;
+    height: 98vh;
+    z-index: 880;
+    padding: 50px;
+    background: var(--off-white, #f4f6f8);
+    border-radius: var(--radius-xl);
+    box-shadow: none !important;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+    transform: translateX(calc(100% + 20px));
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.5s cubic-bezier(.33,1.53,.69,.99),
+                opacity 0.4s ease,
+                left 0.6s cubic-bezier(.33,1.53,.69,.99),
+                right 0.6s cubic-bezier(.33,1.53,.69,.99),
+                width 0.6s cubic-bezier(.33,1.53,.69,.99);
+}
+
+.ai-dock-panel.show {
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.ai-dock-panel.expanding-to-full {
+    left: calc(2vh + 60px) !important;
+    right: 1vh !important;
+    width: auto !important;
+    z-index: 950 !important;
+    border-radius: var(--radius-xl) !important;
+}
+
+.ai-dock-top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.ai-dock-top-title {
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--text-dark, #2b2b36);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ai-dock-close-btn {
+    background: rgba(0, 0, 0, 0.05);
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+}
+
+.ai-dock-close-btn:hover {
+    background: rgba(255, 94, 94, 0.15);
+    color: #ff4747;
+    transform: rotate(90deg);
+}
+
+.ai-dock-mount-point {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.ai-pill-btn {
+    position: fixed;
+    right: 28px;
+    bottom: 32px;
+    z-index: 890;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 22px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #1e1e2d 0%, #322659 100%);
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 0.92rem;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22), 0 2px 8px rgba(0, 0, 0, 0.12);
+    cursor: pointer;
+    transform: scale(0);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+                opacity 0.3s ease,
+                box-shadow 0.3s ease;
+}
+
+.ai-pill-btn.show {
+    transform: scale(1);
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.ai-pill-btn:hover {
+    transform: scale(1.06) translateY(-2px);
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(93, 58, 155, 0.3);
+}
+
+.ai-pill-btn:active {
+    transform: scale(0.96) translateY(0);
+}
+
+.ai-pill-spark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ffc5e8, #7c4dff);
+    color: #1e1e2d;
+    font-size: 0.75rem;
+    font-weight: bold;
+}

@@ -1258,8 +1258,270 @@ async function ensureSharedLayout(signal) {
     }
   }
 
+  injectCSS('/css/generate.css').catch(() => {});
+  injectCSS('/css/math-curve-loader.css').catch(() => {});
+  ensureAIDockDOM();
   await initSharedLayoutLogic(signal);
 }
+
+  let aiDockPanel = null;
+  let aiPillBtn = null;
+  let aiDockUserClosed = false;
+  let selectedDockStyleIndex = 0;
+  let selectedDockRatio = '橫向16:9';
+  let isAISubmitting = false;
+
+  function ensureAIDockDOM() {
+    if (document.getElementById('ai-dock-panel')) {
+      aiDockPanel = document.getElementById('ai-dock-panel');
+      aiPillBtn = document.getElementById('ai-pill-btn');
+      return;
+    }
+
+    aiDockPanel = document.createElement('aside');
+    aiDockPanel.id = 'ai-dock-panel';
+    aiDockPanel.className = 'ai-dock-panel';
+    aiDockPanel.innerHTML = `
+      <div class="ai-dock-top-bar">
+        <div class="ai-dock-top-title">
+          <span style="color: var(--primary);">✦</span> AI 創作助手
+        </div>
+        <button class="ai-dock-close-btn" id="ai-dock-close" title="關閉" type="button">✕</button>
+      </div>
+      <div class="ai-dock-mount-point" id="ai-dock-mount-point">
+        <div class="ai-dock-loader" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; min-height: 250px; gap: 16px; color: var(--primary);">
+            <div style="width: 100px; height: 100px;">
+                <svg class="loader math-loader-svg" viewBox="0 0 100 100" fill="none" aria-hidden="true" style="width: 100%; height: 100%; display: block;">
+                    <g class="math-loader-group">
+                        <path class="math-loader-path" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" opacity="0.1"></path>
+                    </g>
+                    <g class="math-loader-sucked"></g>
+                </svg>
+            </div>
+            <span style="font-weight: 600; font-size: 0.9rem; color: var(--text-mid);">AI 對話載入中...</span>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(aiDockPanel);
+
+    aiPillBtn = document.createElement('button');
+    aiPillBtn.id = 'ai-pill-btn';
+    aiPillBtn.className = 'ai-pill-btn';
+    aiPillBtn.type = 'button';
+    aiPillBtn.innerHTML = `
+      <span class="ai-pill-spark">✦</span>
+      <span>AI 創作</span>
+    `;
+    document.body.appendChild(aiPillBtn);
+
+    if (typeof window.initMathCurveLoader === 'function') {
+      window.initMathCurveLoader();
+    }
+
+    fetchPageDoc('/html/generate.html').then(doc => {
+      const composeCard = doc.querySelector('#phase-compose') || doc.querySelector('.compose-card');
+      const mountPoint = aiDockPanel.querySelector('#ai-dock-mount-point');
+      if (mountPoint && composeCard) {
+        mountPoint.innerHTML = '';
+        const clonedCard = composeCard.cloneNode(true);
+        clonedCard.querySelectorAll('button').forEach(b => {
+          if (!b.type) b.type = 'button';
+        });
+        mountPoint.appendChild(clonedCard);
+        initAIDockMountedGenerateLogic();
+      }
+    }).catch(err => console.error("Failed to load generate.html into AI dock", err));
+
+    bindAIDockEvents();
+  }
+
+  function initAIDockMountedGenerateLogic() {
+    if (!aiDockPanel) return;
+
+    const textarea = aiDockPanel.querySelector('#story-input');
+    const sendBtn = aiDockPanel.querySelector('#compose-send');
+    const suggChips = aiDockPanel.querySelectorAll('.sugg-chip');
+    const styleChipsRow = aiDockPanel.querySelector('#style-chips-row');
+    const ratioChips = aiDockPanel.querySelectorAll('.ratio-chip');
+
+    const STYLES_DATA = [
+      { name: '預設風格', dot: '#7fba7a' },
+      { name: '電影風格', dot: '#2a2a3a' },
+      { name: '二次元風格', dot: '#ffc5e8' },
+      { name: 'Cyberpunk風格', dot: '#6200ea' },
+      { name: '美式寫實風格', dot: '#c49a2a' },
+      { name: '90s 復古風格', dot: '#f44336' },
+      { name: '水彩插畫風格', dot: '#b8d4ff' },
+      { name: '極簡室內風格', dot: '#eceff1' }
+    ];
+
+    if (styleChipsRow && styleChipsRow.children.length === 0) {
+      STYLES_DATA.forEach((st, idx) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `opt-chip style-chip ${idx === 0 ? 'active' : ''}`;
+        btn.innerHTML = `<span class="style-dot" style="background:${st.dot}"></span>${st.name}`;
+        btn.addEventListener('click', () => {
+          styleChipsRow.querySelectorAll('.style-chip').forEach(c => c.classList.remove('active'));
+          btn.classList.add('active');
+          selectedDockStyleIndex = idx;
+        });
+        styleChipsRow.appendChild(btn);
+      });
+    }
+
+    if (textarea) {
+      textarea.addEventListener('input', () => {
+        if (sendBtn) {
+          sendBtn.disabled = !textarea.value.trim();
+        }
+      });
+      textarea.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          if (textarea.value.trim()) {
+            handleAIDockSubmit();
+          }
+        }
+      });
+    }
+
+    if (sendBtn) {
+      sendBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (textarea && textarea.value.trim()) {
+          handleAIDockSubmit();
+        }
+      });
+    }
+
+    suggChips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        if (textarea) {
+          textarea.value = chip.textContent.trim();
+          if (sendBtn) sendBtn.disabled = false;
+          textarea.focus();
+        }
+      });
+    });
+
+    ratioChips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        ratioChips.forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        selectedDockRatio = chip.dataset.ratio || '橫向16:9';
+      });
+    });
+  }
+
+  function bindAIDockEvents() {
+    if (!aiDockPanel || !aiPillBtn) return;
+
+    const closeBtn = aiDockPanel.querySelector('#ai-dock-close');
+
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        aiDockUserClosed = true;
+        aiDockPanel.classList.remove('show');
+        document.body.classList.remove('ai-dock-active');
+        
+        const m = document.getElementById('page-main');
+        if (m) {
+          m.style.marginRight = '1vh';
+        }
+
+        if (currentPage !== 'generate') {
+          aiPillBtn.classList.add('show');
+        }
+      });
+    }
+
+    aiPillBtn.addEventListener('click', () => {
+      aiDockUserClosed = false;
+      expandSidebar(false);
+      
+      aiPillBtn.classList.remove('show');
+      aiDockPanel.classList.add('show');
+      document.body.classList.add('ai-dock-active');
+
+      const m = document.getElementById('page-main');
+      if (m && window.innerWidth >= 1024) {
+        m.style.marginRight = 'calc(1vh + 400px + 1vh)';
+      }
+
+      const textarea = aiDockPanel.querySelector('#story-input');
+      if (textarea) textarea.focus();
+    });
+
+    window.addEventListener('resize', () => {
+      if (currentPage === 'dashboard') {
+        updateAIDockState('dashboard');
+      }
+    });
+  }
+
+  async function handleAIDockSubmit() {
+    if (isAISubmitting) return;
+    const storyInput = aiDockPanel ? aiDockPanel.querySelector('#story-input') : null;
+    const promptText = storyInput ? storyInput.value.trim() : '';
+    if (!promptText) return;
+
+    isAISubmitting = true;
+
+    window.aiDockSubmittedPrompt = {
+      story: promptText,
+      styleIndex: selectedDockStyleIndex,
+      ratio: selectedDockRatio
+    };
+
+    await navigate('generate');
+    isAISubmitting = false;
+  }
+
+  function updateAIDockState(page) {
+    ensureAIDockDOM();
+    if (!aiDockPanel || !aiPillBtn) return;
+
+    const sidebar = document.getElementById('dash-sidebar') || dashboardSidebar;
+    const isSidebarOpen = sidebar && sidebar.classList.contains('open');
+
+    if (page === 'generate') {
+      aiDockPanel.classList.remove('show');
+      aiPillBtn.classList.remove('show');
+      document.body.classList.remove('ai-dock-active');
+      const m = document.getElementById('page-main');
+      if (m) m.style.marginRight = '1vh';
+    } else if (page === 'dashboard') {
+      aiDockUserClosed = false;
+      if (isSidebarOpen || window.innerWidth < 1024) {
+        aiDockPanel.classList.remove('show');
+        aiPillBtn.classList.add('show');
+        document.body.classList.remove('ai-dock-active');
+        const m = document.getElementById('page-main');
+        if (m) m.style.marginRight = '1vh';
+      } else {
+        expandSidebar(false);
+        aiDockPanel.classList.add('show');
+        aiPillBtn.classList.remove('show');
+        document.body.classList.add('ai-dock-active');
+        const m = document.getElementById('page-main');
+        if (m) m.style.marginRight = 'calc(1vh + 400px + 1vh)';
+      }
+    } else {
+      if (aiDockPanel.classList.contains('show') && !isSidebarOpen) {
+        aiPillBtn.classList.remove('show');
+        document.body.classList.add('ai-dock-active');
+        const m = document.getElementById('page-main');
+        if (m && window.innerWidth >= 1024) m.style.marginRight = 'calc(1vh + 400px + 1vh)';
+      } else {
+        aiDockPanel.classList.remove('show');
+        aiPillBtn.classList.add('show');
+        document.body.classList.remove('ai-dock-active');
+        const m = document.getElementById('page-main');
+        if (m) m.style.marginRight = '1vh';
+      }
+    }
+  }
 
   async function initSharedLayoutLogic(signal) {
     updateRailHoles();
@@ -2496,13 +2758,13 @@ async function ensureSharedLayout(signal) {
     },
 
     dashboard: {
-      css: ['/css/dashboard.css'],
+      css: ['/css/dashboard.css', '/css/generate.css', '/css/math-curve-loader.css'],
       js: ['/js/generate-prefill-path.js'],
       render: (o, signal) => renderDashboard(signal)
     },
 
     projects: {
-      css: ['/css/dashboard.css'],
+      css: ['/css/dashboard.css', '/css/generate.css', '/css/math-curve-loader.css'],
       js: ['/js/generate-prefill-path.js'],
       render: (o, signal) => renderProjectsPage(signal)
     },
@@ -2514,19 +2776,19 @@ async function ensureSharedLayout(signal) {
     },
 
     history: {
-      css: ['/css/dashboard.css'],
+      css: ['/css/dashboard.css', '/css/generate.css', '/css/math-curve-loader.css'],
       js: ['/js/generate-prefill-path.js'],
       render: (o, signal) => renderHistory(signal)
     },
 
     template: {
-      css: ['/css/dashboard.css', '/css/template.css'],
+      css: ['/css/dashboard.css', '/css/template.css', '/css/generate.css', '/css/math-curve-loader.css'],
       js: ['/js/generate-prefill-path.js', '/js/template-timeline.js', '/js/template.js'],
       render: (o, signal) => renderTemplate(signal)
     },
 
     project: {
-      css: ['/css/dashboard.css'],
+      css: ['/css/dashboard.css', '/css/generate.css', '/css/math-curve-loader.css'],
       js: ['/js/prompt-translate.js'],
       render: (o, signal) => renderProject(o?.id || o, signal)
     }
@@ -2592,12 +2854,31 @@ async function ensureSharedLayout(signal) {
     burger.checked = expand;
     if (expand) {
       sidebar.style.width = '260px';
-      if (m) m.style.margin = '1vh 1vh 1vh calc(2vh + 260px)';
+      if (m) {
+        m.style.marginLeft = 'calc(2vh + 260px)';
+        m.style.marginRight = '1vh';
+      }
       sidebar.classList.add('open');
+      if (aiDockPanel) {
+        aiDockPanel.classList.remove('show');
+        document.body.classList.remove('ai-dock-active');
+        if (currentPage !== 'dashboard' && currentPage !== 'generate') {
+          if (aiPillBtn) aiPillBtn.classList.add('show');
+        }
+      }
     } else {
       sidebar.style.width = '60px';
-      if (m) m.style.margin = '1vh 1vh 1vh calc(2vh + 60px)';
+      if (m) {
+        m.style.marginLeft = 'calc(2vh + 60px)';
+      }
       sidebar.classList.remove('open');
+      if (currentPage === 'dashboard' && !aiDockUserClosed && window.innerWidth >= 1024) {
+        if (aiDockPanel) aiDockPanel.classList.add('show');
+        document.body.classList.add('ai-dock-active');
+        if (m) m.style.marginRight = 'calc(1vh + 400px + 1vh)';
+      } else if (m) {
+        m.style.marginRight = '1vh';
+      }
     }
   }
 
@@ -2875,6 +3156,7 @@ async function ensureSharedLayout(signal) {
       }
 
       updateSidebarActive(page);
+      updateAIDockState(page);
     } else {
       document.body.classList.remove('dashboard-layout');
       if (page === 'login' || page === 'register') {
@@ -2940,6 +3222,35 @@ async function ensureSharedLayout(signal) {
     signal.addEventListener('abort', cleanupTransitionLoader);
 
     const isDashboardTransition = isDashboardPage(currentPage) && isDashboardPage(page);
+    const isAIDockVisible = aiDockPanel && aiDockPanel.classList.contains('show');
+
+    if (page === 'generate' && isAIDockVisible) {
+      const pageMain = document.getElementById('page-main');
+      if (pageMain) pageMain.classList.add('collapsing-for-ai');
+      aiDockPanel.classList.add('expanding-to-full');
+      if (aiPillBtn) aiPillBtn.classList.remove('show');
+
+      await new Promise(resolve => setTimeout(resolve, 600));
+
+      await renderGenerate(opts, signal);
+
+      if (pageMain) pageMain.classList.remove('collapsing-for-ai');
+      aiDockPanel.classList.remove('expanding-to-full', 'show');
+      document.body.classList.remove('ai-dock-active');
+
+      if (typeof window.initGeneratePage === 'function') {
+        window.initGeneratePage();
+      }
+
+      updateSidebarActive('generate');
+      updateAIDockState('generate');
+
+      currentPage = 'generate';
+      currentOpts = opts;
+      currentNavController = null;
+      isTransitioning = false;
+      return;
+    }
 
     const contentEl = getOrCreateContentContainer();
 
@@ -2987,6 +3298,7 @@ async function ensureSharedLayout(signal) {
           document.body.classList.add('dashboard-layout');
           showDashTopbar();
           updateSidebarActive(page);
+      updateAIDockState(page);
         }
         const cssPromises = def.css.map(href => injectCSS(href));
         await Promise.all(cssPromises);
@@ -3036,6 +3348,7 @@ async function ensureSharedLayout(signal) {
         document.body.classList.remove('auth-layout');
         showDashTopbar();
         updateSidebarActive(page);
+      updateAIDockState(page);
       } else if (page === 'landing') {
         document.body.classList.remove('dashboard-layout');
         document.body.classList.remove('auth-layout');
