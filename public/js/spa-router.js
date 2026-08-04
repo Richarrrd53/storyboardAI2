@@ -1329,6 +1329,7 @@ async function ensureSharedLayout(signal) {
         });
         mountPoint.appendChild(clonedCard);
         initAIDockMountedGenerateLogic();
+        updateAIDockState(currentPage || 'dashboard');
       }
     }).catch(err => console.error("Failed to load generate.html into AI dock", err));
 
@@ -1343,6 +1344,9 @@ async function ensureSharedLayout(signal) {
     const suggChips = aiDockPanel.querySelectorAll('.sugg-chip');
     const styleChipsRow = aiDockPanel.querySelector('#style-chips-row');
     const ratioChips = aiDockPanel.querySelectorAll('.ratio-chip');
+    const genBtn = aiDockPanel.querySelector('.options-gen-btn');
+    const skipBtn = aiDockPanel.querySelector('.options-skip-btn');
+    const backBtn = aiDockPanel.querySelector('.options-back-btn');
 
     const STYLES_DATA = [
       { name: '預設風格', dot: '#7fba7a' },
@@ -1412,6 +1416,42 @@ async function ensureSharedLayout(signal) {
         selectedDockRatio = chip.dataset.ratio || '橫向16:9';
       });
     });
+
+    if (genBtn) {
+      genBtn.addEventListener('click', () => {
+        const text = textarea ? textarea.value.trim() : '';
+        window.aiDockSubmittedPrompt = {
+          story: text,
+          styleIndex: selectedDockStyleIndex,
+          ratio: selectedDockRatio
+        };
+        navigate('template');
+      });
+    }
+
+    if (skipBtn) {
+      skipBtn.addEventListener('click', () => {
+        const text = textarea ? textarea.value.trim() : '';
+        window.aiDockSubmittedPrompt = {
+          story: text,
+          styleIndex: selectedDockStyleIndex,
+          ratio: selectedDockRatio
+        };
+        navigate('generate', { force: true });
+      });
+    }
+
+    if (backBtn) {
+      backBtn.addEventListener('click', () => {
+        if (textarea) textarea.classList.remove('locked');
+        const composeCard = aiDockPanel.querySelector('#compose-card') || aiDockPanel.querySelector('.compose-card');
+        const composeOptions = aiDockPanel.querySelector('#compose-options') || aiDockPanel.querySelector('.compose-options');
+        const suggRow = aiDockPanel.querySelector('#suggestion-row') || aiDockPanel.querySelector('.suggestion-row');
+        if (composeCard) composeCard.classList.remove('expanded');
+        if (composeOptions) composeOptions.classList.remove('open');
+        if (suggRow) suggRow.classList.remove('hidden');
+      });
+    }
   }
 
   function bindAIDockEvents() {
@@ -1422,7 +1462,7 @@ async function ensureSharedLayout(signal) {
     if (closeBtn) {
       closeBtn.addEventListener('click', () => {
         aiDockUserClosed = true;
-        aiDockPanel.classList.remove('show');
+        aiDockPanel.classList.add('hidden');
         document.body.classList.remove('ai-dock-active');
         
         const m = document.getElementById('page-main');
@@ -1441,7 +1481,7 @@ async function ensureSharedLayout(signal) {
       expandSidebar(false);
       
       aiPillBtn.classList.remove('show');
-      aiDockPanel.classList.add('show');
+      aiDockPanel.classList.remove('hidden');
       document.body.classList.add('ai-dock-active');
 
       const m = document.getElementById('page-main');
@@ -1462,20 +1502,80 @@ async function ensureSharedLayout(signal) {
 
   async function handleAIDockSubmit() {
     if (isAISubmitting) return;
-    const storyInput = aiDockPanel ? aiDockPanel.querySelector('#story-input') : null;
-    const promptText = storyInput ? storyInput.value.trim() : '';
+    const textarea = aiDockPanel ? aiDockPanel.querySelector('#story-input') : null;
+    const promptText = textarea ? textarea.value.trim() : '';
     if (!promptText) return;
 
     isAISubmitting = true;
 
-    window.aiDockSubmittedPrompt = {
-      story: promptText,
-      styleIndex: selectedDockStyleIndex,
-      ratio: selectedDockRatio
-    };
+    const isAIDockVisible = aiDockPanel && !aiDockPanel.classList.contains('hidden');
 
-    await navigate('generate');
-    isAISubmitting = false;
+    if (isAIDockVisible) {
+      // 1. 觸發容器向左擴展與 page-main max-width 縮小歸零動畫 (0~600ms)
+      const pageMain = document.getElementById('page-main');
+      if (pageMain) pageMain.classList.add('collapsing-for-ai');
+      aiDockPanel.classList.remove('hidden');
+      aiDockPanel.classList.add('expanding-to-full');
+      if (aiPillBtn) aiPillBtn.classList.remove('show');
+
+      // 2. 更新 URL Path 為 /generate 與側邊欄 Active 標籤，不清空與載入全頁面 HTML
+      if (window.history && window.history.pushState) {
+        window.history.pushState({ page: 'generate' }, '', '/generate');
+      }
+      if (window.parent && window.parent !== window) {
+        window.parent.history.replaceState(null, '', '/generate');
+      }
+      updateSidebarActive('generate');
+      currentPage = 'generate';
+
+      // 3. 在 AI 容器內部展開「選擇風格頁面/選項面板」
+      const composeCard = aiDockPanel.querySelector('#compose-card') || aiDockPanel.querySelector('.compose-card');
+      const composeOptions = aiDockPanel.querySelector('#compose-options') || aiDockPanel.querySelector('.compose-options');
+      const suggRow = aiDockPanel.querySelector('#suggestion-row') || aiDockPanel.querySelector('.suggestion-row');
+      const aiResponseText = aiDockPanel.querySelector('#ai-response-text');
+      const aiResponseCursor = aiDockPanel.querySelector('#ai-response-cursor');
+      const optionsHint = aiDockPanel.querySelector('#options-hint');
+      const storyLabel = aiDockPanel.querySelector('#options-story-label');
+      const echoEl = aiDockPanel.querySelector('#options-echo');
+
+      if (textarea) textarea.classList.add('locked');
+      if (suggRow) suggRow.classList.add('hidden');
+      if (composeCard) composeCard.classList.add('expanded');
+      if (composeOptions) composeOptions.classList.add('open');
+
+      if (echoEl) echoEl.textContent = promptText;
+
+      if (aiResponseText) {
+        aiResponseText.textContent = '';
+        if (aiResponseCursor) aiResponseCursor.style.opacity = '1';
+        if (optionsHint) optionsHint.style.opacity = '1';
+        if (storyLabel) storyLabel.style.opacity = '1';
+        if (echoEl) echoEl.style.opacity = '1';
+
+        const fullText = "✦ 有需要幫你調整風格嗎？";
+        let idx = 0;
+        const typeTimer = setInterval(() => {
+          if (idx < fullText.length) {
+            aiResponseText.textContent += fullText.charAt(idx);
+            idx++;
+          } else {
+            clearInterval(typeTimer);
+            if (aiResponseCursor) aiResponseCursor.style.opacity = '0';
+          }
+        }, 30);
+      }
+
+      isAISubmitting = false;
+      return;
+    } else {
+      window.aiDockSubmittedPrompt = {
+        story: promptText,
+        styleIndex: selectedDockStyleIndex,
+        ratio: selectedDockRatio
+      };
+      await navigate('generate');
+      isAISubmitting = false;
+    }
   }
 
   function updateAIDockState(page) {
@@ -1484,41 +1584,71 @@ async function ensureSharedLayout(signal) {
 
     const sidebar = document.getElementById('dash-sidebar') || dashboardSidebar;
     const isSidebarOpen = sidebar && sidebar.classList.contains('open');
+    const pageMain = document.getElementById('page-main');
+
+    // 內容保護與自動恢復機制
+    const mountPoint = aiDockPanel.querySelector('#ai-dock-mount-point');
+    if (mountPoint && mountPoint.children.length === 0) {
+      fetchPageDoc('/html/generate.html').then(doc => {
+        const composeCard = doc.querySelector('#phase-compose') || doc.querySelector('.compose-card');
+        if (mountPoint && composeCard) {
+          mountPoint.innerHTML = '';
+          const clonedCard = composeCard.cloneNode(true);
+          clonedCard.querySelectorAll('button').forEach(b => {
+            if (!b.type) b.type = 'button';
+          });
+          mountPoint.appendChild(clonedCard);
+          initAIDockMountedGenerateLogic();
+        }
+      }).catch(err => console.error("Failed to restore AI dock content", err));
+    }
 
     if (page === 'generate') {
-      aiDockPanel.classList.remove('show');
-      aiPillBtn.classList.remove('show');
-      document.body.classList.remove('ai-dock-active');
-      const m = document.getElementById('page-main');
-      if (m) m.style.marginRight = '1vh';
+      expandSidebar(false);
+      if (isAISubmitting || (aiDockPanel && aiDockPanel.classList.contains('expanding-to-full'))) {
+        aiDockPanel.classList.remove('hidden');
+        aiDockPanel.classList.add('expanding-to-full');
+        aiPillBtn.classList.remove('show');
+        document.body.classList.add('ai-dock-active');
+        if (pageMain) pageMain.classList.add('collapsing-for-ai');
+      } else {
+        if (pageMain) pageMain.classList.remove('collapsing-for-ai');
+        aiDockPanel.classList.add('hidden');
+        aiDockPanel.classList.remove('expanding-to-full');
+        aiPillBtn.classList.add('show');
+        document.body.classList.remove('ai-dock-active');
+        if (pageMain) pageMain.style.marginRight = '1vh';
+      }
     } else if (page === 'dashboard') {
       aiDockUserClosed = false;
+      if (pageMain) pageMain.classList.remove('collapsing-for-ai');
+      aiDockPanel.classList.remove('expanding-to-full');
+
       if (isSidebarOpen || window.innerWidth < 1024) {
-        aiDockPanel.classList.remove('show');
+        aiDockPanel.classList.add('hidden');
         aiPillBtn.classList.add('show');
         document.body.classList.remove('ai-dock-active');
-        const m = document.getElementById('page-main');
-        if (m) m.style.marginRight = '1vh';
+        if (pageMain) pageMain.style.marginRight = '1vh';
       } else {
         expandSidebar(false);
-        aiDockPanel.classList.add('show');
+        aiDockPanel.classList.remove('hidden');
         aiPillBtn.classList.remove('show');
         document.body.classList.add('ai-dock-active');
-        const m = document.getElementById('page-main');
-        if (m) m.style.marginRight = 'calc(1vh + 400px + 1vh)';
+        if (pageMain) pageMain.style.marginRight = 'calc(1vh + 460px + 1vh)';
       }
     } else {
-      if (aiDockPanel.classList.contains('show') && !isSidebarOpen) {
+      if (pageMain) pageMain.classList.remove('collapsing-for-ai');
+      aiDockPanel.classList.remove('expanding-to-full');
+
+      if (!aiDockPanel.classList.contains('hidden') && !isSidebarOpen && !aiDockUserClosed && window.innerWidth >= 1024) {
         aiPillBtn.classList.remove('show');
         document.body.classList.add('ai-dock-active');
-        const m = document.getElementById('page-main');
-        if (m && window.innerWidth >= 1024) m.style.marginRight = 'calc(1vh + 400px + 1vh)';
+        if (pageMain && window.innerWidth >= 1024) pageMain.style.marginRight = 'calc(1vh + 460px + 1vh)';
       } else {
-        aiDockPanel.classList.remove('show');
+        aiDockPanel.classList.add('hidden');
         aiPillBtn.classList.add('show');
         document.body.classList.remove('ai-dock-active');
-        const m = document.getElementById('page-main');
-        if (m) m.style.marginRight = '1vh';
+        if (pageMain) pageMain.style.marginRight = '1vh';
       }
     }
   }
@@ -2608,21 +2738,13 @@ async function ensureSharedLayout(signal) {
 
     if(burgerContainer && sideLogo){
       burger = burger || document.getElementById("burger");
-      if (!burger.checked){
+      if (burger && !burger.dataset.bound) {
+        burger.dataset.bound = 'true';
         burger.addEventListener('change', () => {
-          const m = document.getElementById('page-main');
-          if(burger.checked){
-            dashboardSidebar.style.width = '260px';
-            m.style.margin = '1vh 1vh 1vh calc(2vh + 260px)';
-            dashboardSidebar.classList.add('open');
-          }
-          else{
-            dashboardSidebar.style.width = '60px';
-            m.style.margin = '1vh 1vh 1vh calc(2vh + 60px)';
-            dashboardSidebar.classList.remove('open');
-          }
+          expandSidebar(burger.checked);
         });
-      }else{
+      }
+      if (burgerContainer) {
         burgerContainer.style.opacity = 1;
         burgerContainer.style.filter = 'blur(0)';
       }
@@ -2860,7 +2982,7 @@ async function ensureSharedLayout(signal) {
       }
       sidebar.classList.add('open');
       if (aiDockPanel) {
-        aiDockPanel.classList.remove('show');
+        aiDockPanel.classList.add('hidden');
         document.body.classList.remove('ai-dock-active');
         if (currentPage !== 'dashboard' && currentPage !== 'generate') {
           if (aiPillBtn) aiPillBtn.classList.add('show');
@@ -2873,9 +2995,9 @@ async function ensureSharedLayout(signal) {
       }
       sidebar.classList.remove('open');
       if (currentPage === 'dashboard' && !aiDockUserClosed && window.innerWidth >= 1024) {
-        if (aiDockPanel) aiDockPanel.classList.add('show');
+        if (aiDockPanel) aiDockPanel.classList.remove('hidden');
         document.body.classList.add('ai-dock-active');
-        if (m) m.style.marginRight = 'calc(1vh + 400px + 1vh)';
+        if (m) m.style.marginRight = 'calc(1vh + 460px + 1vh)';
       } else if (m) {
         m.style.marginRight = '1vh';
       }
@@ -3222,35 +3344,6 @@ async function ensureSharedLayout(signal) {
     signal.addEventListener('abort', cleanupTransitionLoader);
 
     const isDashboardTransition = isDashboardPage(currentPage) && isDashboardPage(page);
-    const isAIDockVisible = aiDockPanel && aiDockPanel.classList.contains('show');
-
-    if (page === 'generate' && isAIDockVisible) {
-      const pageMain = document.getElementById('page-main');
-      if (pageMain) pageMain.classList.add('collapsing-for-ai');
-      aiDockPanel.classList.add('expanding-to-full');
-      if (aiPillBtn) aiPillBtn.classList.remove('show');
-
-      await new Promise(resolve => setTimeout(resolve, 600));
-
-      await renderGenerate(opts, signal);
-
-      if (pageMain) pageMain.classList.remove('collapsing-for-ai');
-      aiDockPanel.classList.remove('expanding-to-full', 'show');
-      document.body.classList.remove('ai-dock-active');
-
-      if (typeof window.initGeneratePage === 'function') {
-        window.initGeneratePage();
-      }
-
-      updateSidebarActive('generate');
-      updateAIDockState('generate');
-
-      currentPage = 'generate';
-      currentOpts = opts;
-      currentNavController = null;
-      isTransitioning = false;
-      return;
-    }
 
     const contentEl = getOrCreateContentContainer();
 

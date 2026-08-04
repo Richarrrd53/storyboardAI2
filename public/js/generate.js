@@ -1215,6 +1215,7 @@ ${vars.map(v => `${v}: <值>`).join('\n')}
   }
 
   async function saveProjectToDatabase() {
+      if (!window.spaAuth || !window.spaAuth.isLoggedIn()) {
           console.log("ℹ️ 使用者未登入，跳過自動儲存分鏡至資料庫。");
           return;
       }

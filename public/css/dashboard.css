@@ -19,7 +19,7 @@ body {
     border-radius: var(--radius-xl);
     height: 98vh;
     overflow: hidden;
-    transition: all 0.5s cubic-bezier(.33,1.53,.69,.99);
+    transition: all 0.5s cubic-bezier(.4,0,.2,1);
 }
 
 .dashboard-layout #page-main.is-generating {
@@ -40,7 +40,7 @@ body {
     z-index: 900;
     border-radius: 999px;
     background: transparent;
-    transition: all 0.5s cubic-bezier(.33,1.53,.69,.99);
+    transition: all 0.5s cubic-bezier(.4,0,.2,1);
 }
 
 .side-header {
@@ -71,7 +71,7 @@ body {
     filter: blur(0px);
     opacity: 1;
     margin-top: 110px;
-    transition: 0.5s cubic-bezier(.33,1.53,.69,.99);
+    transition: 0.5s cubic-bezier(.4,0,.2,1);
 }
 
 .side-burger:active{
@@ -2632,7 +2632,7 @@ table {
 .sidebar-action-wrap {
     padding: 0;
     margin: 16px 0 24px;
-    transition: padding 0.5s cubic-bezier(.33,1.53,.69,.99), margin 0.5s cubic-bezier(.33,1.53,.69,.99);
+    transition: padding 0.5s cubic-bezier(.4,0,.2,1), margin 0.5s cubic-bezier(.4,0,.2,1);
     transform: translateX(-50%);
 }
 
@@ -2650,7 +2650,7 @@ table {
     font-size: 0.95rem;
     cursor: pointer;
     box-shadow: 0 8px 20px rgba(37, 99, 235, 0.18);
-    transition: all 0.5s cubic-bezier(.33,1.53,.69,.99);
+    transition: all 0.5s cubic-bezier(.4,0,.2,1);
     overflow: hidden;
     width: 100%;
 }
@@ -2674,7 +2674,7 @@ table {
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    transition: transform 0.5s cubic-bezier(.33,1.53,.69,.99);
+    transition: transform 0.5s cubic-bezier(.4,0,.2,1);
 }
 
 .sidebar-btn-primary:hover .btn-icon {
@@ -3000,44 +3000,42 @@ table {
 /* Fixes for open/closed sidebar sublist styling and link margin - removed display:none to allow smooth folding transitions */
 
 /* ══════════════════════════════════════════════════════════════
-   AI DOCK PANEL & PILL BUTTON SYSTEM
+   AI DOCK PANEL & SPLIT WINDOW WORKSPACE SYSTEM (REWRITTEN)
    ══════════════════════════════════════════════════════════════ */
 
-.dashboard-layout #page-main {
-    transition: margin-right 0.5s cubic-bezier(.33,1.53,.69,.99),
-                margin-left 0.5s cubic-bezier(.33,1.53,.69,.99),
-                width 0.6s cubic-bezier(.33,1.53,.69,.99),
-                min-width 0.6s cubic-bezier(.33,1.53,.69,.99),
-                opacity 0.6s ease,
-                padding 0.6s ease,
-                border-radius 0.6s ease !important;
+#page-main {
+    transition: max-width 0.85s cubic-bezier(.4,0,.2,1),
+                opacity 0.85s ease,
+                margin-left 0.85s cubic-bezier(.4,0,.2,1),
+                margin-right 0.85s cubic-bezier(.4,0,.2,1),
+                padding 0.85s ease;
+    max-width: 100vw;
 }
 
-@media (min-width: 1024px) {
-    body.dashboard-layout.ai-dock-active #page-main {
-        margin-right: calc(1vh + 400px + 1vh) !important;
-    }
+body.dashboard-layout.ai-dock-active #page-main {
+    margin-right: calc(1vh + 460px + 1vh) !important;
 }
 
-.dashboard-layout #page-main.collapsing-for-ai {
-    width: 0 !important;
-    min-width: 0 !important;
+body.dashboard-layout #page-main.collapsing-for-ai {
     max-width: 0 !important;
+    width: 0 !important;
     opacity: 0 !important;
-    margin-left: calc(2vh + 60px) !important;
-    margin-right: 0 !important;
     padding-left: 0 !important;
     padding-right: 0 !important;
+    margin-left: calc(2vh + 60px) !important;
+    margin-right: 0 !important;
     border-radius: var(--radius-xl) !important;
     overflow: hidden !important;
     pointer-events: none !important;
 }
 
+/* Default Docked Mode: Visible on the right side by default! */
 .ai-dock-panel {
     position: fixed;
     top: 1vh;
     right: 1vh;
-    width: 400px;
+    left: calc(100vw - 460px - 1vh) !important;
+    width: 460px !important;
     height: 98vh;
     z-index: 880;
     padding: 50px;
@@ -3048,28 +3046,32 @@ table {
     flex-direction: column;
     overflow-y: auto;
     overflow-x: hidden;
-    transform: translateX(calc(100% + 20px));
-    opacity: 0;
-    pointer-events: none;
-    transition: transform 0.5s cubic-bezier(.33,1.53,.69,.99),
-                opacity 0.4s ease,
-                left 0.6s cubic-bezier(.33,1.53,.69,.99),
-                right 0.6s cubic-bezier(.33,1.53,.69,.99),
-                width 0.6s cubic-bezier(.33,1.53,.69,.99);
-}
-
-.ai-dock-panel.show {
     transform: translateX(0);
     opacity: 1;
     pointer-events: auto;
+    transition: left 0.85s cubic-bezier(.4,0,.2,1),
+                width 0.85s cubic-bezier(.4,0,.2,1),
+                transform 0.65s cubic-bezier(.4,0,.2,1),
+                opacity 0.5s ease;
 }
 
+/* Explicit Hidden Mode when closed by user or sidebar open */
+.ai-dock-panel.hidden {
+    transform: translateX(calc(100% + 480px)) !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* Fullscreen Expanded Mode when in generate route */
 .ai-dock-panel.expanding-to-full {
     left: calc(2vh + 60px) !important;
     right: 1vh !important;
-    width: auto !important;
+    width: calc(100vw - (2vh + 60px) - 1vh) !important;
     z-index: 950 !important;
     border-radius: var(--radius-xl) !important;
+    transform: translateX(0) !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
 }
 
 .ai-dock-top-bar {
@@ -3077,6 +3079,20 @@ table {
     align-items: center;
     justify-content: space-between;
     margin-bottom: 20px;
+    height: auto;
+    opacity: 1;
+    filter: blur(0);
+    pointer-events: auto;
+    transition: opacity 0.4s ease, filter 0.4s ease, margin-bottom 0.4s ease, height 0.4s ease;
+}
+
+.ai-dock-panel.expanding-to-full .ai-dock-top-bar {
+    opacity: 0 !important;
+    filter: blur(5px) !important;
+    pointer-events: none !important;
+    margin-bottom: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
 }
 
 .ai-dock-top-title {
@@ -3089,24 +3105,27 @@ table {
 }
 
 .ai-dock-close-btn {
-    background: rgba(0, 0, 0, 0.05);
-    border: none;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #666;
-    font-size: 0.95rem;
-    transition: all 0.2s ease;
+    background: rgba(0, 0, 0, 0.06) !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 50% !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: var(--text-dark, #333) !important;
+    font-size: 1rem !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+    transition: all 0.25s ease !important;
 }
 
 .ai-dock-close-btn:hover {
-    background: rgba(255, 94, 94, 0.15);
-    color: #ff4747;
-    transform: rotate(90deg);
+    background: rgba(255, 94, 94, 0.18) !important;
+    color: #ff4747 !important;
+    border-color: rgba(255, 94, 94, 0.3) !important;
+    transform: rotate(90deg) scale(1.1) !important;
 }
 
 .ai-dock-mount-point {
