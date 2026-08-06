@@ -3116,6 +3116,22 @@ body.dashboard-layout #page-main.collapsing-for-ai {
     opacity: 1 !important;
     pointer-events: auto !important;
     transform: translateX(0) !important;
+    transition: top 0.75s cubic-bezier(0.38, 1.21, 0.69, 0.99),
+        left 0.75s cubic-bezier(0.38, 1.21, 0.69, 0.99),
+        right 0.75s cubic-bezier(0.38, 1.21, 0.69, 0.99),
+        width 0.75s cubic-bezier(0.38, 1.21, 0.69, 0.99),
+        height 0.75s cubic-bezier(0.38, 1.21, 0.69, 0.99),
+        padding 0.5s ease,
+        border-radius 0.75s cubic-bezier(0.38, 1.21, 0.69, 0.99),
+        transform 0.75s cubic-bezier(0.38, 1.21, 0.69, 0.99),
+        opacity 0.4s ease !important;
+}
+
+/* When sidebar is open on generate page (expanding-to-full), dock shifts right to make room for 260px sidebar */
+#dash-sidebar.open ~ .ai-dock-panel.expanding-to-full,
+body.sidebar-open .ai-dock-panel.expanding-to-full {
+    left: calc(2vh + 260px) !important;
+    width: calc(100vw - (2vh + 260px) - 1vh) !important;
 }
 
 .ai-dock-top-bar {

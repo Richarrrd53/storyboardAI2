@@ -2648,6 +2648,10 @@ async function ensureSharedLayout(signal) {
           a.dataset.spaBound = 'true';
           a.addEventListener('click', e => {
             e.preventDefault();
+            const sidebar = document.getElementById('dash-sidebar') || dashboardSidebar;
+            if (sidebar && sidebar.contains(a) && page !== 'projects' && page !== 'project') {
+              expandSidebar(false);
+            }
             navigate(page);
           });
           a.addEventListener('pointerenter', () => {
@@ -2851,6 +2855,7 @@ async function ensureSharedLayout(signal) {
 
     burger.checked = expand;
     if (expand) {
+      document.body.classList.add('sidebar-open');
       sidebar.style.width = '260px';
       if (m) {
         m.style.marginLeft = 'calc(2vh + 260px)';
@@ -2862,6 +2867,9 @@ async function ensureSharedLayout(signal) {
           aiDockPanel.classList.remove('hidden');
           aiDockPanel.classList.add('pushed-out');
           if (aiPillBtn) aiPillBtn.classList.remove('show');
+        } else if (currentPage === 'generate') {
+          aiDockPanel.classList.remove('hidden', 'pushed-out');
+          if (aiPillBtn) aiPillBtn.classList.remove('show');
         } else {
           aiDockPanel.classList.add('hidden');
           aiDockPanel.classList.remove('pushed-out');
@@ -2872,6 +2880,7 @@ async function ensureSharedLayout(signal) {
         document.body.classList.remove('ai-dock-active');
       }
     } else {
+      document.body.classList.remove('sidebar-open');
       sidebar.style.width = '60px';
       if (m) {
         m.style.marginLeft = 'calc(2vh + 60px)';
