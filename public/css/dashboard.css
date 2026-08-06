@@ -3050,21 +3050,23 @@ body.dashboard-layout #page-main.collapsing-for-ai {
     overflow-x: hidden;
     opacity: 1;
     pointer-events: auto;
-    transition: top 0.75s cubic-bezier(0.16, 1, 0.3, 1),
-        left 0.75s cubic-bezier(0.16, 1, 0.3, 1),
-        right 0.75s cubic-bezier(0.16, 1, 0.3, 1),
-        width 0.75s cubic-bezier(0.16, 1, 0.3, 1),
-        height 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+    transform: translateX(0);
+    transition: top 0.75s cubic-bezier(0.38, 1.21, 0.69, 0.99),
+        left 0.75s cubic-bezier(0.38, 1.21, 0.69, 0.99),
+        right 0.75s cubic-bezier(0.38, 1.21, 0.69, 0.99),
+        width 0.75s cubic-bezier(0.38, 1.21, 0.69, 0.99),
+        height 0.75s cubic-bezier(0.38, 1.21, 0.69, 0.99),
         padding 0.5s ease,
-        border-radius 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+        border-radius 0.75s cubic-bezier(0.38, 1.21, 0.69, 0.99),
+        transform 0.75s cubic-bezier(0.38, 1.21, 0.69, 0.99),
         opacity 0.4s ease;
 }
 
 /* Explicit Hidden Mode: Morph directly into Pill Button bounds & radius */
 .ai-dock-panel.hidden {
     top: calc(100vh - 36px - 54px) !important;
-    right: 28px !important;
-    left: calc(100vw - 28px - 180px) !important;
+    right: 36px !important;
+    left: calc(100vw - 36px - 180px) !important;
     width: 180px !important;
     height: 54px !important;
     padding: 0 !important;
@@ -3072,14 +3074,28 @@ body.dashboard-layout #page-main.collapsing-for-ai {
     opacity: 0 !important;
     pointer-events: none !important;
     overflow: hidden !important;
-    transition: top 0.75s cubic-bezier(0.38,1.21,.69,.99),
-        left 0.75s cubic-bezier(0.38,1.21,.69,.99),
-        right 0.75s cubic-bezier(0.38,1.21,.69,.99),
-        width 0.75s cubic-bezier(0.38,1.21,.69,.99),
-        height 0.75s cubic-bezier(0.38,1.21,.69,.99),
+    transform: translateX(0) !important;
+    transition: top 0.75s cubic-bezier(0.33,1.17,.69,.99),
+        left 0.75s cubic-bezier(0.33,1.17,.69,.99),
+        right 0.75s cubic-bezier(0.33,1.17,.69,.99),
+        width 0.75s cubic-bezier(0.33,1.17,.69,.99),
+        height 0.75s cubic-bezier(0.33,1.17,.69,.99),
         padding 0.5s ease,
-        border-radius 0.75s cubic-bezier(0.38,1.21,.69,.99),
+        border-radius 0.75s cubic-bezier(0.33,1.17,.69,.99),
+        transform 0.75s cubic-bezier(0.33,1.17,.69,.99),
         opacity 0.4s ease;
+}
+
+/* Explicit Pushed Out Mode (Right displacement when sidebar opens on home page) */
+.ai-dock-panel.pushed-out {
+    transform: translateX(calc(100% + 40px)) !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+.ai-dock-panel.pushed-out ~ .ai-pill-btn {
+    opacity: 0 !important;
+    pointer-events: none !important;
 }
 
 /* Zero padding mode during generation to eliminate inner card margin gaps */
@@ -3099,6 +3115,7 @@ body.dashboard-layout #page-main.collapsing-for-ai {
     border-radius: var(--radius-xl) !important;
     opacity: 1 !important;
     pointer-events: auto !important;
+    transform: translateX(0) !important;
 }
 
 .ai-dock-top-bar {
@@ -3174,7 +3191,19 @@ body.dashboard-layout #page-main.collapsing-for-ai {
     font-size: 1rem !important;
     font-weight: 700 !important;
     line-height: 1 !important;
-    transition: all 0.25s ease !important;
+    opacity: 1;
+    filter: blur(0px);
+    transform: scale(1);
+    pointer-events: auto;
+    transition: opacity 0.4s ease, filter 0.4s ease, transform 0.4s ease, background 0.25s ease, border-color 0.25s ease !important;
+}
+
+/* Hide minimize / close button on home page with opacity + blur transition */
+.ai-dock-panel.on-home-page .ai-dock-close-btn {
+    opacity: 0 !important;
+    filter: blur(5px) !important;
+    transform: scale(0.85) !important;
+    pointer-events: none !important;
 }
 
 .ai-dock-close-btn:hover {
@@ -3237,8 +3266,10 @@ body.dashboard-layout #page-main.collapsing-for-ai {
     gap: 8px;
     padding: 0 20px;
     border-radius: 27px;
-    background: #ffffff;
-    color: var(--primary);
+    background: linear-gradient(135deg, var(--lavender), var(--bg-dark), var(--primary), var(--primary-light));
+    background-size: 250% 100%;
+    background-position: left;
+    color: #ffffff;
     font-weight: 700;
     font-size: 0.95rem;
     border: none;
@@ -3246,12 +3277,12 @@ body.dashboard-layout #page-main.collapsing-for-ai {
     opacity: 0;
     pointer-events: none;
     transform: scale(1) translateY(0);
-    transition: top 0.75s cubic-bezier(0.16, 1, 0.3, 1),
-        left 0.75s cubic-bezier(0.16, 1, 0.3, 1),
-        right 0.75s cubic-bezier(0.16, 1, 0.3, 1),
-        width 0.75s cubic-bezier(0.16, 1, 0.3, 1),
-        height 0.75s cubic-bezier(0.16, 1, 0.3, 1),
-        border-radius 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+    transition: top 0.75s cubic-bezier(0.38, 1.21, 0.69, 0.99),
+        left 0.75s cubic-bezier(0.38, 1.21, 0.69, 0.99),
+        right 0.75s cubic-bezier(0.38, 1.21, 0.69, 0.99),
+        width 0.75s cubic-bezier(0.38, 1.21, 0.69, 0.99),
+        height 0.75s cubic-bezier(0.38, 1.21, 0.69, 0.99),
+        border-radius 0.75s cubic-bezier(0.38, 1.21, 0.69, 0.99),
         background 0.35s ease,
         color 0.35s ease,
         border-color 0.35s ease,
@@ -3298,37 +3329,43 @@ body.dashboard-layout #page-main.collapsing-for-ai {
     width: 100% !important;
     height: 100% !important;
     border-radius: 999px;
-    filter: blur(2px);
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
     padding: 5px;
-    transition: all 0.75s ease;
+    transition: opacity 0.4s ease, filter 0.4s ease;
     pointer-events: none !important;
-
 }
 
-
-.ai-pill-btn:not(.show) .ai-pill-btn-glow{
-    opacity: 0;
-    filter: blur(10px);
+.ai-pill-btn.show .ai-pill-btn-glow {
+    opacity: 1 !important;
+    filter: blur(0px) !important;
+    transition: opacity 0.4s ease 0.7s, filter 0.4s ease 0.7s !important;
 }
 
-.ai-pill-btn:hover .ai-pill-btn-glow{
-    opacity: 0;
-    filter: blur(10px);
+.ai-pill-btn:not(.show) .ai-pill-btn-glow {
+    opacity: 0 !important;
+    filter: blur(10px) !important;
+    transition: opacity 0.1s ease 0s, filter 0.1s ease 0s !important;
 }
 
-.ai-pill-btn:active .ai-pill-btn-glow{
-    opacity: 0;
-    filter: blur(10px);
+.ai-pill-btn:hover .ai-pill-btn-glow {
+    opacity: 0 !important;
+    filter: blur(10px) !important;
+    transition: opacity 0.1s ease 0s, filter 0.1s ease 0s !important;
+}
+
+.ai-pill-btn:active .ai-pill-btn-glow {
+    opacity: 0 !important;
+    filter: blur(10px) !important;
+    transition: opacity 0.1s ease 0s, filter 0.1s ease 0s !important;
 }
 
 .ai-pill-btn-glow::before {
     content: '';
     display: block;
-    width: 190px;
-    height: 190px;
+    width: 200px;
+    height: 200px;
     background-image: conic-gradient(
         transparent 0deg,
         var(--yellow-warm) 10deg,
@@ -3368,12 +3405,12 @@ body.dashboard-layout #page-main.collapsing-for-ai {
     border-radius: 27px !important;
     opacity: 1 !important;
     pointer-events: auto !important;
-    transition: top 0.75s cubic-bezier(0.38,1.21,.69,.99),
-        left 0.75s cubic-bezier(0.38,1.21,.69,.99),
-        right 0.75s cubic-bezier(0.38,1.21,.69,.99),
-        width 0.75s cubic-bezier(0.38,1.21,.69,.99),
-        height 0.75s cubic-bezier(0.38,1.21,.69,.99),
-        border-radius 0.75s cubic-bezier(0.38,1.21,.69,.99),
+    transition: top 0.75s cubic-bezier(0.33,1.17,.69,.99),
+        left 0.75s cubic-bezier(0.33,1.17,.69,.99),
+        right 0.75s cubic-bezier(0.33,1.17,.69,.99),
+        width 0.75s cubic-bezier(0.33,1.17,.69,.99),
+        height 0.75s cubic-bezier(0.33,1.17,.69,.99),
+        border-radius 0.75s cubic-bezier(0.33,1.17,.69,.99),
         background 0.35s ease,
         color 0.35s ease,
         border-color 0.35s ease,

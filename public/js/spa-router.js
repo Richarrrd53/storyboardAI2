@@ -1468,7 +1468,7 @@ async function ensureSharedLayout(signal) {
 
     if (!isDashboardPage(page)) {
       aiDockPanel.classList.add('hidden');
-      aiDockPanel.classList.remove('expanding-to-full');
+      aiDockPanel.classList.remove('expanding-to-full', 'pushed-out', 'on-home-page');
       aiPillBtn.classList.remove('show');
       document.body.classList.remove('ai-dock-active');
       const pageMain = document.getElementById('page-main');
@@ -1479,13 +1479,21 @@ async function ensureSharedLayout(signal) {
       return;
     }
 
+    const isHomePage = (page === 'dashboard');
+    if (isHomePage) {
+      aiDockPanel.classList.add('on-home-page');
+      aiDockUserClosed = false;
+    } else {
+      aiDockPanel.classList.remove('on-home-page');
+    }
+
     const sidebar = document.getElementById('dash-sidebar') || dashboardSidebar;
     const isSidebarOpen = sidebar && sidebar.classList.contains('open');
     const pageMain = document.getElementById('page-main');
 
     if (page === 'generate') {
       expandSidebar(false);
-      aiDockPanel.classList.remove('hidden');
+      aiDockPanel.classList.remove('hidden', 'pushed-out');
       aiDockPanel.classList.add('expanding-to-full');
       aiPillBtn.classList.remove('show');
       document.body.classList.add('ai-dock-active');
@@ -1494,17 +1502,33 @@ async function ensureSharedLayout(signal) {
       if (pageMain) pageMain.classList.remove('collapsing-for-ai');
       aiDockPanel.classList.remove('expanding-to-full');
 
-      if (aiDockUserClosed || isSidebarOpen || window.innerWidth < 1024) {
-        aiDockPanel.classList.add('hidden');
-        aiPillBtn.classList.add('show');
-        document.body.classList.remove('ai-dock-active');
-        if (pageMain) pageMain.style.marginRight = '1vh';
+      if (isHomePage) {
+        if (isSidebarOpen || window.innerWidth < 1024) {
+          aiDockPanel.classList.remove('hidden');
+          aiDockPanel.classList.add('pushed-out');
+          aiPillBtn.classList.remove('show');
+          document.body.classList.remove('ai-dock-active');
+          if (pageMain) pageMain.style.marginRight = '1vh';
+        } else {
+          aiDockPanel.classList.remove('hidden', 'pushed-out');
+          aiPillBtn.classList.remove('show');
+          document.body.classList.add('ai-dock-active');
+          if (pageMain && window.innerWidth >= 1024) pageMain.style.marginRight = 'calc(1vh + 460px + 1vh)';
+        }
       } else {
-        expandSidebar(false);
-        aiDockPanel.classList.remove('hidden');
-        aiPillBtn.classList.remove('show');
-        document.body.classList.add('ai-dock-active');
-        if (pageMain && window.innerWidth >= 1024) pageMain.style.marginRight = 'calc(1vh + 460px + 1vh)';
+        aiDockPanel.classList.remove('pushed-out');
+        if (aiDockUserClosed || isSidebarOpen || window.innerWidth < 1024) {
+          aiDockPanel.classList.add('hidden');
+          aiPillBtn.classList.add('show');
+          document.body.classList.remove('ai-dock-active');
+          if (pageMain) pageMain.style.marginRight = '1vh';
+        } else {
+          expandSidebar(false);
+          aiDockPanel.classList.remove('hidden');
+          aiPillBtn.classList.remove('show');
+          document.body.classList.add('ai-dock-active');
+          if (pageMain && window.innerWidth >= 1024) pageMain.style.marginRight = 'calc(1vh + 460px + 1vh)';
+        }
       }
     }
   }
@@ -2834,11 +2858,18 @@ async function ensureSharedLayout(signal) {
       }
       sidebar.classList.add('open');
       if (aiDockPanel) {
-        aiDockPanel.classList.add('hidden');
-        document.body.classList.remove('ai-dock-active');
-        if (currentPage !== 'generate') {
-          if (aiPillBtn) aiPillBtn.classList.add('show');
+        if (currentPage === 'dashboard') {
+          aiDockPanel.classList.remove('hidden');
+          aiDockPanel.classList.add('pushed-out');
+          if (aiPillBtn) aiPillBtn.classList.remove('show');
+        } else {
+          aiDockPanel.classList.add('hidden');
+          aiDockPanel.classList.remove('pushed-out');
+          if (currentPage !== 'generate') {
+            if (aiPillBtn) aiPillBtn.classList.add('show');
+          }
         }
+        document.body.classList.remove('ai-dock-active');
       }
     } else {
       sidebar.style.width = '60px';
@@ -2846,14 +2877,24 @@ async function ensureSharedLayout(signal) {
         m.style.marginLeft = 'calc(2vh + 60px)';
       }
       sidebar.classList.remove('open');
-      if (currentPage !== 'generate' && isDashboardPage(currentPage) && !aiDockUserClosed && window.innerWidth >= 1024) {
-        if (aiDockPanel) aiDockPanel.classList.remove('hidden');
+      if (currentPage === 'dashboard') {
+        if (aiDockPanel) {
+          aiDockPanel.classList.remove('hidden', 'pushed-out');
+        }
+        if (aiPillBtn) aiPillBtn.classList.remove('show');
+        document.body.classList.add('ai-dock-active');
+        if (m && window.innerWidth >= 1024) m.style.marginRight = 'calc(1vh + 460px + 1vh)';
+      } else if (currentPage !== 'generate' && isDashboardPage(currentPage) && !aiDockUserClosed && window.innerWidth >= 1024) {
+        if (aiDockPanel) {
+          aiDockPanel.classList.remove('hidden', 'pushed-out');
+        }
         if (aiPillBtn) aiPillBtn.classList.remove('show');
         document.body.classList.add('ai-dock-active');
         if (m) m.style.marginRight = 'calc(1vh + 460px + 1vh)';
       } else {
         if (aiDockPanel && (aiDockUserClosed || window.innerWidth < 1024)) {
           aiDockPanel.classList.add('hidden');
+          aiDockPanel.classList.remove('pushed-out');
           if (aiPillBtn && currentPage !== 'generate' && isDashboardPage(currentPage)) {
             aiPillBtn.classList.add('show');
           }
