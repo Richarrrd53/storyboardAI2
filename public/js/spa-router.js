@@ -1271,6 +1271,28 @@ async function ensureSharedLayout(signal) {
   let selectedDockRatio = '橫向16:9';
   let isAISubmitting = false;
 
+  window.expandAIDockToFull = function() {
+    navigate('generate');
+  };
+
+  window.updateGlobalPillProgress = function(pct, isGenerating) {
+    const pillBtn = document.getElementById('ai-pill-btn');
+    const progressFill = document.getElementById('ai-pill-progress-fill');
+    const pillText = document.getElementById('ai-pill-text');
+    
+    if (!pillBtn) return;
+
+    if (isGenerating) {
+      pillBtn.classList.add('is-generating');
+      if (progressFill) progressFill.style.width = Math.min(100, Math.max(0, pct)) + '%';
+      if (pillText) pillText.textContent = `✦ 生成中 ${Math.round(pct)}%`;
+    } else {
+      pillBtn.classList.remove('is-generating');
+      if (progressFill) progressFill.style.width = '0%';
+      if (pillText) pillText.textContent = '立刻創建新分鏡';
+    }
+  };
+
   function ensureAIDockDOM() {
     if (document.getElementById('ai-dock-panel')) {
       aiDockPanel = document.getElementById('ai-dock-panel');
@@ -1286,7 +1308,10 @@ async function ensureSharedLayout(signal) {
         <div class="ai-dock-top-title">
           <span style="color: var(--primary);">✦</span> AI 創作助手
         </div>
-        <button class="ai-dock-close-btn" id="ai-dock-close" title="關閉" type="button">✕</button>
+        <div style="display:flex; align-items:center;">
+          <button class="ai-dock-stop-btn" id="ai-dock-stop-btn" title="中斷生成" style="display:none;" type="button">■</button>
+          <button class="ai-dock-close-btn" id="ai-dock-close" title="最小化" type="button">✕</button>
+        </div>
       </div>
       <div class="ai-dock-mount-point" id="ai-dock-mount-point">
         <div class="ai-dock-loader" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; min-height: 250px; gap: 16px; color: var(--primary);">
@@ -1309,26 +1334,31 @@ async function ensureSharedLayout(signal) {
     aiPillBtn.className = 'ai-pill-btn';
     aiPillBtn.type = 'button';
     aiPillBtn.innerHTML = `
-      <span class="ai-pill-spark">✦</span>
-      <span>AI 創作</span>
+      <div class="ai-pill-btn-glow"></div>
+      <div class="ai-pill-progress-fill" id="ai-pill-progress-fill"></div>
+      <svg class="ai-pill-plus-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+      <span class="ai-pill-text" id="ai-pill-text">立刻創建新分鏡</span>
     `;
     document.body.appendChild(aiPillBtn);
+
+    injectScripts(['/js/math-curve-loader.js', '/js/token-manager.js', '/js/prompt-translate.js', '/js/generate.js']).catch(() => {});
 
     if (typeof window.initMathCurveLoader === 'function') {
       window.initMathCurveLoader();
     }
 
     fetchPageDoc('/html/generate.html').then(doc => {
-      const composeCard = doc.querySelector('#phase-compose') || doc.querySelector('.compose-card');
       const mountPoint = aiDockPanel.querySelector('#ai-dock-mount-point');
-      if (mountPoint && composeCard) {
-        mountPoint.innerHTML = '';
-        const clonedCard = composeCard.cloneNode(true);
-        clonedCard.querySelectorAll('button').forEach(b => {
+      const genMain = doc.querySelector('#page-main.gen-main') || doc.querySelector('main');
+      if (mountPoint && genMain) {
+        mountPoint.innerHTML = genMain.innerHTML;
+        mountPoint.querySelectorAll('button').forEach(b => {
           if (!b.type) b.type = 'button';
         });
-        mountPoint.appendChild(clonedCard);
-        initAIDockMountedGenerateLogic();
+
+        if (typeof window.initGeneratePage === 'function') {
+          window.initGeneratePage();
+        }
         updateAIDockState(currentPage || 'dashboard');
       }
     }).catch(err => console.error("Failed to load generate.html into AI dock", err));
@@ -1336,133 +1366,51 @@ async function ensureSharedLayout(signal) {
     bindAIDockEvents();
   }
 
-  function initAIDockMountedGenerateLogic() {
-    if (!aiDockPanel) return;
+  function bindAIDockEvents() {
+    if (!aiDockPanel || !aiPillBtn) return;
 
-    const textarea = aiDockPanel.querySelector('#story-input');
-    const sendBtn = aiDockPanel.querySelector('#compose-send');
-    const suggChips = aiDockPanel.querySelectorAll('.sugg-chip');
-    const styleChipsRow = aiDockPanel.querySelector('#style-chips-row');
-    const ratioChips = aiDockPanel.querySelectorAll('.ratio-chip');
-    const genBtn = aiDockPanel.querySelector('.options-gen-btn');
-    const skipBtn = aiDockPanel.querySelector('.options-skip-btn');
-    const backBtn = aiDockPanel.querySelector('.options-back-btn');
+    const closeBtn = aiDockPanel.querySelector('#ai-dock-close');
+    const stopBtn = aiDockPanel.querySelector('#ai-dock-stop-btn');
 
-    const STYLES_DATA = [
-      { name: '預設風格', dot: '#7fba7a' },
-      { name: '電影風格', dot: '#2a2a3a' },
-      { name: '二次元風格', dot: '#ffc5e8' },
-      { name: 'Cyberpunk風格', dot: '#6200ea' },
-      { name: '美式寫實風格', dot: '#c49a2a' },
-      { name: '90s 復古風格', dot: '#f44336' },
-      { name: '水彩插畫風格', dot: '#b8d4ff' },
-      { name: '極簡室內風格', dot: '#eceff1' }
-    ];
-
-    if (styleChipsRow && styleChipsRow.children.length === 0) {
-      STYLES_DATA.forEach((st, idx) => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = `opt-chip style-chip ${idx === 0 ? 'active' : ''}`;
-        btn.innerHTML = `<span class="style-dot" style="background:${st.dot}"></span>${st.name}`;
-        btn.addEventListener('click', () => {
-          styleChipsRow.querySelectorAll('.style-chip').forEach(c => c.classList.remove('active'));
-          btn.classList.add('active');
-          selectedDockStyleIndex = idx;
-        });
-        styleChipsRow.appendChild(btn);
-      });
-    }
-
-    if (textarea) {
-      textarea.addEventListener('input', () => {
-        if (sendBtn) {
-          sendBtn.disabled = !textarea.value.trim();
-        }
-      });
-      textarea.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-          e.preventDefault();
-          if (textarea.value.trim()) {
-            handleAIDockSubmit();
+    if (stopBtn) {
+      stopBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof window.abortGenerationFromUI === 'function') {
+          await window.abortGenerationFromUI();
+        } else {
+          const confirmAbort = await confirm(
+            '是否停止生成分鏡？',
+            '中斷後現有產出進度將無法恢復。',
+            'danger',
+            '停止生成'
+          );
+          if (confirmAbort) {
+            if (typeof window.abortStoryboardGeneration === 'function') {
+              window.abortStoryboardGeneration();
+            }
+            window.isGeneratingStoryboard = false;
+            if (typeof window.updateGlobalPillProgress === 'function') {
+              window.updateGlobalPillProgress(100, false);
+            }
+            if (typeof window.resetAll === 'function') {
+              window.resetAll();
+            } else if (typeof window.showPhase === 'function') {
+              window.showPhase('phase-compose');
+            }
+            if (typeof window.showSpaToast === 'function') {
+              window.showSpaToast('已停止生成分鏡，已重置為初始狀態');
+            }
           }
         }
       });
     }
 
-    if (sendBtn) {
-      sendBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        if (textarea && textarea.value.trim()) {
-          handleAIDockSubmit();
-        }
-      });
-    }
-
-    suggChips.forEach(chip => {
-      chip.addEventListener('click', () => {
-        if (textarea) {
-          textarea.value = chip.textContent.trim();
-          if (sendBtn) sendBtn.disabled = false;
-          textarea.focus();
-        }
-      });
-    });
-
-    ratioChips.forEach(chip => {
-      chip.addEventListener('click', () => {
-        ratioChips.forEach(c => c.classList.remove('active'));
-        chip.classList.add('active');
-        selectedDockRatio = chip.dataset.ratio || '橫向16:9';
-      });
-    });
-
-    if (genBtn) {
-      genBtn.addEventListener('click', () => {
-        const text = textarea ? textarea.value.trim() : '';
-        window.aiDockSubmittedPrompt = {
-          story: text,
-          styleIndex: selectedDockStyleIndex,
-          ratio: selectedDockRatio
-        };
-        navigate('template');
-      });
-    }
-
-    if (skipBtn) {
-      skipBtn.addEventListener('click', () => {
-        const text = textarea ? textarea.value.trim() : '';
-        window.aiDockSubmittedPrompt = {
-          story: text,
-          styleIndex: selectedDockStyleIndex,
-          ratio: selectedDockRatio
-        };
-        navigate('generate', { force: true });
-      });
-    }
-
-    if (backBtn) {
-      backBtn.addEventListener('click', () => {
-        if (textarea) textarea.classList.remove('locked');
-        const composeCard = aiDockPanel.querySelector('#compose-card') || aiDockPanel.querySelector('.compose-card');
-        const composeOptions = aiDockPanel.querySelector('#compose-options') || aiDockPanel.querySelector('.compose-options');
-        const suggRow = aiDockPanel.querySelector('#suggestion-row') || aiDockPanel.querySelector('.suggestion-row');
-        if (composeCard) composeCard.classList.remove('expanded');
-        if (composeOptions) composeOptions.classList.remove('open');
-        if (suggRow) suggRow.classList.remove('hidden');
-      });
-    }
-  }
-
-  function bindAIDockEvents() {
-    if (!aiDockPanel || !aiPillBtn) return;
-
-    const closeBtn = aiDockPanel.querySelector('#ai-dock-close');
-
     if (closeBtn) {
       closeBtn.addEventListener('click', () => {
         aiDockUserClosed = true;
         aiDockPanel.classList.add('hidden');
+        aiDockPanel.classList.remove('expanding-to-full');
         document.body.classList.remove('ai-dock-active');
         
         const m = document.getElementById('page-main');
@@ -1470,9 +1418,10 @@ async function ensureSharedLayout(signal) {
           m.style.marginRight = '1vh';
         }
 
-        if (currentPage !== 'generate') {
-          aiPillBtn.classList.add('show');
+        if (currentPage === 'generate') {
+          navigate('dashboard');
         }
+        aiPillBtn.classList.add('show');
       });
     }
 
@@ -1482,15 +1431,20 @@ async function ensureSharedLayout(signal) {
       
       aiPillBtn.classList.remove('show');
       aiDockPanel.classList.remove('hidden');
-      document.body.classList.add('ai-dock-active');
 
-      const m = document.getElementById('page-main');
-      if (m && window.innerWidth >= 1024) {
-        m.style.marginRight = 'calc(1vh + 400px + 1vh)';
+      if (currentPage === 'generate') {
+        aiDockPanel.classList.add('expanding-to-full');
+        document.body.classList.add('ai-dock-active');
+      } else {
+        document.body.classList.add('ai-dock-active');
+        const m = document.getElementById('page-main');
+        if (m && window.innerWidth >= 1024) {
+          m.style.marginRight = 'calc(1vh + 460px + 1vh)';
+        }
       }
 
       const textarea = aiDockPanel.querySelector('#story-input');
-      if (textarea) textarea.focus();
+      if (textarea && !textarea.value) textarea.focus();
     });
 
     window.addEventListener('resize', () => {
@@ -1498,84 +1452,6 @@ async function ensureSharedLayout(signal) {
         updateAIDockState('dashboard');
       }
     });
-  }
-
-  async function handleAIDockSubmit() {
-    if (isAISubmitting) return;
-    const textarea = aiDockPanel ? aiDockPanel.querySelector('#story-input') : null;
-    const promptText = textarea ? textarea.value.trim() : '';
-    if (!promptText) return;
-
-    isAISubmitting = true;
-
-    const isAIDockVisible = aiDockPanel && !aiDockPanel.classList.contains('hidden');
-
-    if (isAIDockVisible) {
-      // 1. 觸發容器向左擴展與 page-main max-width 縮小歸零動畫 (0~600ms)
-      const pageMain = document.getElementById('page-main');
-      if (pageMain) pageMain.classList.add('collapsing-for-ai');
-      aiDockPanel.classList.remove('hidden');
-      aiDockPanel.classList.add('expanding-to-full');
-      if (aiPillBtn) aiPillBtn.classList.remove('show');
-
-      // 2. 更新 URL Path 為 /generate 與側邊欄 Active 標籤，不清空與載入全頁面 HTML
-      if (window.history && window.history.pushState) {
-        window.history.pushState({ page: 'generate' }, '', '/generate');
-      }
-      if (window.parent && window.parent !== window) {
-        window.parent.history.replaceState(null, '', '/generate');
-      }
-      updateSidebarActive('generate');
-      currentPage = 'generate';
-
-      // 3. 在 AI 容器內部展開「選擇風格頁面/選項面板」
-      const composeCard = aiDockPanel.querySelector('#compose-card') || aiDockPanel.querySelector('.compose-card');
-      const composeOptions = aiDockPanel.querySelector('#compose-options') || aiDockPanel.querySelector('.compose-options');
-      const suggRow = aiDockPanel.querySelector('#suggestion-row') || aiDockPanel.querySelector('.suggestion-row');
-      const aiResponseText = aiDockPanel.querySelector('#ai-response-text');
-      const aiResponseCursor = aiDockPanel.querySelector('#ai-response-cursor');
-      const optionsHint = aiDockPanel.querySelector('#options-hint');
-      const storyLabel = aiDockPanel.querySelector('#options-story-label');
-      const echoEl = aiDockPanel.querySelector('#options-echo');
-
-      if (textarea) textarea.classList.add('locked');
-      if (suggRow) suggRow.classList.add('hidden');
-      if (composeCard) composeCard.classList.add('expanded');
-      if (composeOptions) composeOptions.classList.add('open');
-
-      if (echoEl) echoEl.textContent = promptText;
-
-      if (aiResponseText) {
-        aiResponseText.textContent = '';
-        if (aiResponseCursor) aiResponseCursor.style.opacity = '1';
-        if (optionsHint) optionsHint.style.opacity = '1';
-        if (storyLabel) storyLabel.style.opacity = '1';
-        if (echoEl) echoEl.style.opacity = '1';
-
-        const fullText = "✦ 有需要幫你調整風格嗎？";
-        let idx = 0;
-        const typeTimer = setInterval(() => {
-          if (idx < fullText.length) {
-            aiResponseText.textContent += fullText.charAt(idx);
-            idx++;
-          } else {
-            clearInterval(typeTimer);
-            if (aiResponseCursor) aiResponseCursor.style.opacity = '0';
-          }
-        }, 30);
-      }
-
-      isAISubmitting = false;
-      return;
-    } else {
-      window.aiDockSubmittedPrompt = {
-        story: promptText,
-        styleIndex: selectedDockStyleIndex,
-        ratio: selectedDockRatio
-      };
-      await navigate('generate');
-      isAISubmitting = false;
-    }
   }
 
   function updateAIDockState(page) {
@@ -1586,45 +1462,18 @@ async function ensureSharedLayout(signal) {
     const isSidebarOpen = sidebar && sidebar.classList.contains('open');
     const pageMain = document.getElementById('page-main');
 
-    // 內容保護與自動恢復機制
-    const mountPoint = aiDockPanel.querySelector('#ai-dock-mount-point');
-    if (mountPoint && mountPoint.children.length === 0) {
-      fetchPageDoc('/html/generate.html').then(doc => {
-        const composeCard = doc.querySelector('#phase-compose') || doc.querySelector('.compose-card');
-        if (mountPoint && composeCard) {
-          mountPoint.innerHTML = '';
-          const clonedCard = composeCard.cloneNode(true);
-          clonedCard.querySelectorAll('button').forEach(b => {
-            if (!b.type) b.type = 'button';
-          });
-          mountPoint.appendChild(clonedCard);
-          initAIDockMountedGenerateLogic();
-        }
-      }).catch(err => console.error("Failed to restore AI dock content", err));
-    }
-
     if (page === 'generate') {
       expandSidebar(false);
-      if (isAISubmitting || (aiDockPanel && aiDockPanel.classList.contains('expanding-to-full'))) {
-        aiDockPanel.classList.remove('hidden');
-        aiDockPanel.classList.add('expanding-to-full');
-        aiPillBtn.classList.remove('show');
-        document.body.classList.add('ai-dock-active');
-        if (pageMain) pageMain.classList.add('collapsing-for-ai');
-      } else {
-        if (pageMain) pageMain.classList.remove('collapsing-for-ai');
-        aiDockPanel.classList.add('hidden');
-        aiDockPanel.classList.remove('expanding-to-full');
-        aiPillBtn.classList.add('show');
-        document.body.classList.remove('ai-dock-active');
-        if (pageMain) pageMain.style.marginRight = '1vh';
-      }
-    } else if (page === 'dashboard') {
-      aiDockUserClosed = false;
+      aiDockPanel.classList.remove('hidden');
+      aiDockPanel.classList.add('expanding-to-full');
+      aiPillBtn.classList.remove('show');
+      document.body.classList.add('ai-dock-active');
+      if (pageMain) pageMain.classList.add('collapsing-for-ai');
+    } else {
       if (pageMain) pageMain.classList.remove('collapsing-for-ai');
       aiDockPanel.classList.remove('expanding-to-full');
 
-      if (isSidebarOpen || window.innerWidth < 1024) {
+      if (aiDockUserClosed || isSidebarOpen || window.innerWidth < 1024) {
         aiDockPanel.classList.add('hidden');
         aiPillBtn.classList.add('show');
         document.body.classList.remove('ai-dock-active');
@@ -1634,21 +1483,7 @@ async function ensureSharedLayout(signal) {
         aiDockPanel.classList.remove('hidden');
         aiPillBtn.classList.remove('show');
         document.body.classList.add('ai-dock-active');
-        if (pageMain) pageMain.style.marginRight = 'calc(1vh + 460px + 1vh)';
-      }
-    } else {
-      if (pageMain) pageMain.classList.remove('collapsing-for-ai');
-      aiDockPanel.classList.remove('expanding-to-full');
-
-      if (!aiDockPanel.classList.contains('hidden') && !isSidebarOpen && !aiDockUserClosed && window.innerWidth >= 1024) {
-        aiPillBtn.classList.remove('show');
-        document.body.classList.add('ai-dock-active');
         if (pageMain && window.innerWidth >= 1024) pageMain.style.marginRight = 'calc(1vh + 460px + 1vh)';
-      } else {
-        aiDockPanel.classList.add('hidden');
-        aiPillBtn.classList.add('show');
-        document.body.classList.remove('ai-dock-active');
-        if (pageMain) pageMain.style.marginRight = '1vh';
       }
     }
   }
@@ -2056,13 +1891,9 @@ async function ensureSharedLayout(signal) {
   }
 
   async function renderGenerate(opts, signal) {
-    const doc = await fetchPageDoc('/html/generate.html', signal);
-    if (signal?.aborted) return;
-
     const m = initMain();
     m.className = 'spa-gen-wrap';
-
-    cloneMainContent(doc, m);
+    m.innerHTML = '';
 
     await ensureSharedLayout(signal);
 
@@ -3144,26 +2975,7 @@ async function ensureSharedLayout(signal) {
       }
     }
 
-    if (window.isGeneratingStoryboard) {
-      const confirmLeave = await confirm(
-        '是否要中斷目前生成進度並離開？',
-        '離開後目前正在產出的分鏡與畫面將會遺失。',
-        'danger',
-        '離開'
-      );
-      if (!confirmLeave) {
-        if (currentPage) {
-          const prevHash = getHashForPage(currentPage, currentOpts);
-          window.location.hash = prevHash;
-        }
-        return;
-      } else {
-        window.isGeneratingStoryboard = false;
-        if (typeof window.abortStoryboardGeneration === 'function') {
-          window.abortStoryboardGeneration();
-        }
-      }
-    }
+    // 背景持續生成，允許頁面切換無縫過渡
 
     if (isDashboardPage(page) && !spaAuth.isLoggedIn()) {
       navigate('login', { force: true });
@@ -3424,9 +3236,7 @@ async function ensureSharedLayout(signal) {
         window._landingKill = null;
       }
 
-      if (page === 'generate' && typeof window.initGeneratePage === 'function') {
-        window.initGeneratePage();
-      } else if (page === 'landing' && typeof window.initLandingPage === 'function') {
+      if (page === 'landing' && typeof window.initLandingPage === 'function') {
         prefetchAuthResources();
         if (typeof window.initLandingLogic === 'function') {
           window.initLandingLogic();

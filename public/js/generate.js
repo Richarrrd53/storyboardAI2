@@ -154,6 +154,11 @@
       
       if (barEl) barEl.style.width = pct + '%';
       if (pctEl) pctEl.textContent = pct + '%';
+
+      if (typeof window.updateGlobalPillProgress === 'function') {
+          window.updateGlobalPillProgress(pct, true);
+      }
+
       const subMessages = {
           0: '分析故事語意，拆解場景節奏',
           1: '識別人物、場景與情感節點',
@@ -173,6 +178,18 @@
           el.offsetHeight;
           el.style.animation = '';
           el.classList.add('active');
+      }
+
+      const aiDockPanel = document.getElementById('ai-dock-panel');
+      const stopBtn = document.getElementById('ai-dock-stop-btn');
+      if (aiDockPanel) {
+          if (id === 'phase-generating') {
+              aiDockPanel.classList.add('in-generation-phase');
+              if (stopBtn) stopBtn.style.display = 'flex';
+          } else {
+              aiDockPanel.classList.remove('in-generation-phase');
+              if (stopBtn) stopBtn.style.display = 'none';
+          }
       }
 
       const pageMain = document.getElementById('page-main');
@@ -297,6 +314,10 @@
       const story = storyInput.value.trim();
       if (!story) return;
       state.story = story;
+
+      if (typeof window.expandAIDockToFull === 'function') {
+          window.expandAIDockToFull();
+      }
 
       const echoEl = document.getElementById('options-echo');
       const hintEl = document.getElementById('options-hint');
@@ -889,6 +910,9 @@
           window.isGeneratingStoryboard = false;
           window.abortStoryboardGeneration = null;
           activeGenController = null;
+          if (typeof window.updateGlobalPillProgress === 'function') {
+              window.updateGlobalPillProgress(100, false);
+          }
       }
   }
 
@@ -1079,6 +1103,9 @@ ${rawPrompts.map((_, i) => `${i + 1}. [Optimized English prompt for shot ${i + 1
           window.isGeneratingStoryboard = false;
           window.abortStoryboardGeneration = null;
           activeGenController = null;
+          if (typeof window.updateGlobalPillProgress === 'function') {
+              window.updateGlobalPillProgress(100, false);
+          }
       }
   }
 
@@ -1452,7 +1479,7 @@ ${vars.map(v => `${v}: <值>`).join('\n')}
       storyInput = document.getElementById('story-input');
       inputArea = document.getElementById('compose-input-area');
 
-      // 2. 重新為新節點綁定監聽器（因為舊的已經隨 DOM 銷毀了）
+      // 2. 重新為新節點綁定監聽器
       if (storyInput) {
           storyInput.addEventListener('keydown', e => {
               if (e.key === 'Enter' && !e.shiftKey && !storyInput.classList.contains('locked')) {
@@ -1461,11 +1488,30 @@ ${vars.map(v => `${v}: <值>`).join('\n')}
                   storyInput.blur();
               }
           });
-          storyInput.addEventListener('input', () => { resetHeight(); adjustHeight(); });
+          storyInput.addEventListener('input', () => {
+              onStoryInput();
+          });
       }
 
-      // 3. 重設頁面狀態與載入模板
-      resetAll();
+      document.querySelectorAll('.sugg-chip').forEach(chip => {
+          chip.onclick = (e) => {
+              e.preventDefault();
+              fillSugg(chip);
+          };
+      });
+
+      const sendBtn = document.getElementById('compose-send');
+      if (sendBtn) {
+          sendBtn.onclick = (e) => {
+              e.preventDefault();
+              if (storyInput && storyInput.value.trim()) {
+                  submitStory();
+              }
+          };
+      }
+
+      // 3. 載入模板
+      initTemplates();
 
       // 4. 如果是從 AI Dock Panel 轉移過來的提示詞，自動帶入並送出
       if (window.aiDockSubmittedPrompt) {
@@ -1599,11 +1645,26 @@ ${vars.map(v => `${v}: <值>`).join('\n')}
       startTemplateGenerate();
   }
 
-  function backToTemplateOrCompose() {
-      if (window.preselectedTemplateId) {
-          showPhase('phase-compose');
-      } else {
-          showPhase('phase-template');
+  async function abortGenerationFromUI() {
+      const confirmAbort = await confirm(
+          '是否停止生成分鏡？',
+          '中斷後現有產出進度將無法恢復。',
+          'danger',
+          '停止生成'
+      );
+      if (confirmAbort) {
+          if (typeof window.abortStoryboardGeneration === 'function') {
+              window.abortStoryboardGeneration();
+          }
+          window.isGeneratingStoryboard = false;
+          if (typeof window.updateGlobalPillProgress === 'function') {
+              window.updateGlobalPillProgress(100, false);
+          }
+          stopLoadingTicker();
+          resetAll();
+          if (typeof window.showSpaToast === 'function') {
+              window.showSpaToast('已停止生成分鏡，已重置為初始狀態');
+          }
       }
   }
 
@@ -1626,5 +1687,6 @@ ${vars.map(v => `${v}: <值>`).join('\n')}
   window.clearSelectedTemplate = clearSelectedTemplate;
   window.backToTemplateOrCompose = backToTemplateOrCompose;
   window.confirmVariablesAndGenerate = confirmVariablesAndGenerate;
+  window.abortGenerationFromUI = abortGenerationFromUI;
 
 })();
