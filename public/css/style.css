@@ -41,6 +41,10 @@ html {
     scrollbar-width: none;
 }
 
+*::selection{
+    background: var(--primary-soft);
+}
+
 body {
     font-family: var(--font-body);
     color: var(--text-dark);
@@ -666,7 +670,7 @@ main{
     position: absolute;
     z-index: 1500;
     width: 170px;
-    background: #FAF8F2;
+    background: var(--off-white);
     border: none;
     border-radius: var(--radius-md);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);

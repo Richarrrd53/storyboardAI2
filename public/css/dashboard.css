@@ -3042,10 +3042,8 @@ body.dashboard-layout #page-main.collapsing-for-ai {
     width: 460px !important;
     height: 98vh;
     z-index: 880;
-    padding: 40px 36px;
     background: var(--off-white, #f4f6f8);
     border-radius: var(--radius-xl);
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08) !important;
     display: flex;
     flex-direction: column;
     overflow-y: auto;
@@ -3073,8 +3071,15 @@ body.dashboard-layout #page-main.collapsing-for-ai {
     border-radius: 27px !important;
     opacity: 0 !important;
     pointer-events: none !important;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22) !important;
     overflow: hidden !important;
+    transition: top 0.75s cubic-bezier(0.38,1.21,.69,.99),
+        left 0.75s cubic-bezier(0.38,1.21,.69,.99),
+        right 0.75s cubic-bezier(0.38,1.21,.69,.99),
+        width 0.75s cubic-bezier(0.38,1.21,.69,.99),
+        height 0.75s cubic-bezier(0.38,1.21,.69,.99),
+        padding 0.5s ease,
+        border-radius 0.75s cubic-bezier(0.38,1.21,.69,.99),
+        opacity 0.4s ease;
 }
 
 /* Zero padding mode during generation to eliminate inner card margin gaps */
@@ -3101,8 +3106,7 @@ body.dashboard-layout #page-main.collapsing-for-ai {
     top: 0;
     z-index: 100;
     background: var(--off-white, #f4f6f8);
-    padding-top: 4px;
-    padding-bottom: 12px;
+    padding: 24px 24px;
     margin-bottom: 12px;
     display: flex;
     align-items: center;
@@ -3177,11 +3181,11 @@ body.dashboard-layout #page-main.collapsing-for-ai {
     background: rgba(255, 94, 94, 0) !important;
     color: var(--text-dark) !important;
     border-color: rgba(255, 94, 94, 0) !important;
-    transform: scale(1.1) !important;
+    transform: scale(0.9) !important;
 }
 
 .ai-dock-close-btn:active {
-    transform: scale(1) !important;
+    transform: scale(0.8) !important;
 }
 
 .ai-dock-stop-btn {
@@ -3237,7 +3241,7 @@ body.dashboard-layout #page-main.collapsing-for-ai {
     color: var(--primary);
     font-weight: 700;
     font-size: 0.95rem;
-    border: 1.5px solid transparent;
+    border: none;
     cursor: pointer;
     opacity: 0;
     pointer-events: none;
@@ -3254,26 +3258,56 @@ body.dashboard-layout #page-main.collapsing-for-ai {
         transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
         box-shadow 0.35s ease,
         opacity 0.4s ease;
+    overflow: visible;
+}
+
+.ai-pill-btn-glow-container {
+    width: 190px !important;
+    height: 64px !important;
+    border-radius: 999px;
+    position: absolute;
+    top: -5px;
+    left: -5px;
+    pointer-events: none !important;
+    
+    -webkit-mask-image: 
+        radial-gradient(circle at 32px 32px, #ffffff 0px, #ffffff 27px, transparent 32px),
+        radial-gradient(circle at 32px 32px, #ffffff 0px, #ffffff 27px, transparent 32px),
+        linear-gradient(to bottom, transparent 0px, #ffffff 5px, #ffffff 59px, transparent 64px);
+
+    mask-image: 
+        radial-gradient(circle at 32px 32px, #ffffff 0px, #ffffff 27px, transparent 32px),
+        radial-gradient(circle at 32px 32px, #ffffff 0px, #ffffff 27px, transparent 32px),
+        linear-gradient(to bottom, transparent 0px, #ffffff 5px, #ffffff 59px, transparent 64px);
+
+    -webkit-mask-position: left center, right center, center center;
+    mask-position: left center, right center, center center;
+
+    -webkit-mask-size: 64px 64px, 64px 64px, calc(100% - 64px) 100%;
+    mask-size: 64px 64px, 64px 64px, calc(100% - 64px) 100%;
+
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
 }
 
 .ai-pill-btn-glow {
     position: absolute;
-    top: -5px;
-    left: -5px;
+    top: 0;
+    left: 0;
     z-index: -2;
-    width: 190px !important;
-    height: 64px !important;
-    overflow: hidden;
+    width: 100% !important;
+    height: 100% !important;
     border-radius: 999px;
     filter: blur(2px);
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
     padding: 5px;
-    transition: all 0.35s ease;
+    transition: all 0.75s ease;
     pointer-events: none !important;
 
 }
+
 
 .ai-pill-btn:not(.show) .ai-pill-btn-glow{
     opacity: 0;
@@ -3295,11 +3329,13 @@ body.dashboard-layout #page-main.collapsing-for-ai {
     display: block;
     width: 190px;
     height: 190px;
-    background-image: conic-gradient(rgba(0, 0, 0, 0),
-            var(--primary-light),
-            rgba(0, 0, 0, 0) 30%,
-            rgba(0, 0, 0, 0) 50%,
-            rgba(0, 0, 0, 0) 60%);
+    background-image: conic-gradient(
+        transparent 0deg,
+        var(--yellow-warm) 10deg,
+        var(--primary-light) 100deg,
+        transparent 130deg,
+        transparent 360deg
+    );
     animation: glow-loop 2s infinite;
     position: absolute;
     top: 50%;
@@ -3308,14 +3344,14 @@ body.dashboard-layout #page-main.collapsing-for-ai {
     pointer-events: none !important;
 }
 
-
 @keyframes glow-loop {
-    from {
+    0% {
         transform: translate(-50%, -50%) rotate(0deg);
+        filter: hue-rotate(0deg);
     }
-
-    to {
+    100% {
         transform: translate(-50%, -50%) rotate(360deg);
+        filter: hue-rotate(360deg);
     }
 }
 
@@ -3325,7 +3361,9 @@ body.dashboard-layout #page-main.collapsing-for-ai {
     left: calc(100vw - 36px - 180px) !important;
     width: 180px !important;
     height: 54px !important;
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%) !important;
+    background: linear-gradient(135deg, var(--lavender), var(--bg-dark), var(--primary), var(--primary-light)) !important;
+    background-size: 250% 100% !important;
+    background-position: left !important;
     color: #ffffff !important;
     border-radius: 27px !important;
     opacity: 1 !important;
@@ -3345,10 +3383,10 @@ body.dashboard-layout #page-main.collapsing-for-ai {
 }
 
 .ai-pill-btn.show:hover {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%) !important;
+    background: linear-gradient(135deg, var(--lavender), var(--bg-dark), var(--primary), var(--primary-light)) !important;
+    background-size: 250% 100% !important;
+    background-position: right !important;
     color: #ffffff !important;
-    border-color: transparent !important;
-    animation: none !important;
     transform: scale(1.05) translateY(0px) !important;
 }
 

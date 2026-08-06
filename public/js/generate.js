@@ -25,6 +25,20 @@
   let storyInput = null;
   let inputArea = null;
 
+  function getStoryInput() {
+      if (!storyInput || !document.body.contains(storyInput)) {
+          storyInput = document.getElementById('story-input');
+      }
+      return storyInput;
+  }
+
+  function getInputArea() {
+      if (!inputArea || !document.body.contains(inputArea)) {
+          inputArea = document.getElementById('compose-input-area');
+      }
+      return inputArea;
+  }
+
   // ── 1. State ──
   const state = {
       story: '',
@@ -203,20 +217,27 @@
   }
 
   function onStoryInput() {
-      const val = storyInput.value.trim();
+      const input = getStoryInput();
+      if (!input) return;
+      const val = input.value.trim();
       const btn = document.getElementById('compose-send');
-      const hasText = val.length > 0;
-      btn.setAttribute('data-active', hasText ? 'true' : 'false');
-      btn.disabled = !hasText;
+      if (btn) {
+          const hasText = val.length > 0;
+          btn.setAttribute('data-active', hasText ? 'true' : 'false');
+          btn.disabled = !hasText;
+      }
       state.story = val;
       resetHeight();
       adjustHeight();
   }
 
   function fillSugg(btn) {
-      storyInput.value = btn.textContent;
-      onStoryInput();
-      storyInput.focus();
+      const input = getStoryInput();
+      if (input) {
+          input.value = btn.textContent;
+          onStoryInput();
+          input.focus();
+      }
   }
 
   const AI_RESPONSE_TEMPLATES = [
@@ -1445,25 +1466,29 @@ ${vars.map(v => `${v}: <值>`).join('\n')}
   function delay(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
   function adjustHeight() {
-      if (!storyInput) return; // 安全檢查
-      if (storyInput.style.height <= storyInput.scrollHeight) {
-          storyInput.style.height = '79px';
-          inputArea.style.height = '119px';
+      const input = getStoryInput();
+      const area = getInputArea();
+      if (!input || !area) return; // 安全檢查
+      if (input.style.height <= input.scrollHeight) {
+          input.style.height = '79px';
+          area.style.height = '119px';
       } else {
-          storyInput.style.height = 'auto';
-          storyInput.style.height = Math.min(storyInput.scrollHeight, 686) + 'px';
-          inputArea.style.height = Math.min(storyInput.scrollHeight + 40, 726) + 'px';
+          input.style.height = 'auto';
+          input.style.height = Math.min(input.scrollHeight, 686) + 'px';
+          area.style.height = Math.min(input.scrollHeight + 40, 726) + 'px';
       }
   }
 
   function resetHeight() {
-      if (!storyInput || !inputArea) return; // 安全檢查
-      storyInput.style.height = '127px';
-      inputArea.style.height = '127px';
+      const input = getStoryInput();
+      const area = getInputArea();
+      if (!input || !area) return; // 安全檢查
+      input.style.height = '127px';
+      area.style.height = '127px';
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-      const ta = document.getElementById('story-input');
+      const ta = getStoryInput();
       if (ta) {
           ta.addEventListener('keydown', e => {
               if (e.key === 'Enter' && !e.shiftKey && !ta.classList.contains('locked')) {
@@ -1476,11 +1501,12 @@ ${vars.map(v => `${v}: <值>`).join('\n')}
 
   function initGeneratePage() {
       // 1. 每次進頁面，重新抓取當前最新的 DOM 節點
-      storyInput = document.getElementById('story-input');
-      inputArea = document.getElementById('compose-input-area');
+      storyInput = getStoryInput();
+      inputArea = getInputArea();
 
       // 2. 重新為新節點綁定監聽器
-      if (storyInput) {
+      if (storyInput && !storyInput.dataset.bound) {
+          storyInput.dataset.bound = 'true';
           storyInput.addEventListener('keydown', e => {
               if (e.key === 'Enter' && !e.shiftKey && !storyInput.classList.contains('locked')) {
                   e.preventDefault();
@@ -1504,7 +1530,8 @@ ${vars.map(v => `${v}: <值>`).join('\n')}
       if (sendBtn) {
           sendBtn.onclick = (e) => {
               e.preventDefault();
-              if (storyInput && storyInput.value.trim()) {
+              const input = getStoryInput();
+              if (input && input.value.trim()) {
                   submitStory();
               }
           };
@@ -1517,8 +1544,9 @@ ${vars.map(v => `${v}: <值>`).join('\n')}
       if (window.aiDockSubmittedPrompt) {
           const submittedData = window.aiDockSubmittedPrompt;
           window.aiDockSubmittedPrompt = null;
-          if (storyInput && submittedData.story) {
-              storyInput.value = submittedData.story;
+          const input = getStoryInput();
+          if (input && submittedData.story) {
+              input.value = submittedData.story;
               onStoryInput();
               if (submittedData.styleIndex !== undefined) {
                   state.styleIndex = submittedData.styleIndex;

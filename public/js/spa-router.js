@@ -1310,7 +1310,9 @@ async function ensureSharedLayout(signal) {
         </div>
         <div style="display:flex; align-items:center;">
           <button class="ai-dock-stop-btn" id="ai-dock-stop-btn" title="中斷生成" style="display:none;" type="button">■</button>
-          <button class="ai-dock-close-btn" id="ai-dock-close" title="最小化" type="button">✕</button>
+          <button class="ai-dock-close-btn" id="ai-dock-close" title="最小化" type="button">
+          <svg width="64px" height="64px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracurrentColorerCarrier" stroke-linecurrentcap="round" stroke-linejoin="round"></g><g id="SVGRepo_icurrentColoronCarrier"> <g id="Arrow / Shrink"> <path id="VecurrentColortor" d="M5 14H10V19M19 10H14V5" stroke="currentColor" stroke-width="2" stroke-linecurrentcap="round" stroke-linejoin="round"></path> </g> </g></svg>
+          </button>
         </div>
       </div>
       <div class="ai-dock-mount-point" id="ai-dock-mount-point">
@@ -1334,7 +1336,9 @@ async function ensureSharedLayout(signal) {
     aiPillBtn.className = 'ai-pill-btn';
     aiPillBtn.type = 'button';
     aiPillBtn.innerHTML = `
-      <div class="ai-pill-btn-glow"></div>
+      <div class="ai-pill-btn-glow-container">
+        <div class="ai-pill-btn-glow"></div>
+      </div>
       <div class="ai-pill-progress-fill" id="ai-pill-progress-fill"></div>
       <svg class="ai-pill-plus-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
       <span class="ai-pill-text" id="ai-pill-text">立刻創建新分鏡</span>
@@ -1443,13 +1447,17 @@ async function ensureSharedLayout(signal) {
         }
       }
 
+      if (typeof window.initGeneratePage === 'function') {
+        window.initGeneratePage();
+      }
+
       const textarea = aiDockPanel.querySelector('#story-input');
       if (textarea && !textarea.value) textarea.focus();
     });
 
     window.addEventListener('resize', () => {
-      if (currentPage === 'dashboard') {
-        updateAIDockState('dashboard');
+      if (isDashboardPage(currentPage)) {
+        updateAIDockState(currentPage);
       }
     });
   }
@@ -1457,6 +1465,19 @@ async function ensureSharedLayout(signal) {
   function updateAIDockState(page) {
     ensureAIDockDOM();
     if (!aiDockPanel || !aiPillBtn) return;
+
+    if (!isDashboardPage(page)) {
+      aiDockPanel.classList.add('hidden');
+      aiDockPanel.classList.remove('expanding-to-full');
+      aiPillBtn.classList.remove('show');
+      document.body.classList.remove('ai-dock-active');
+      const pageMain = document.getElementById('page-main');
+      if (pageMain) {
+        pageMain.classList.remove('collapsing-for-ai');
+        pageMain.style.marginRight = '';
+      }
+      return;
+    }
 
     const sidebar = document.getElementById('dash-sidebar') || dashboardSidebar;
     const isSidebarOpen = sidebar && sidebar.classList.contains('open');
@@ -2815,7 +2836,7 @@ async function ensureSharedLayout(signal) {
       if (aiDockPanel) {
         aiDockPanel.classList.add('hidden');
         document.body.classList.remove('ai-dock-active');
-        if (currentPage !== 'dashboard' && currentPage !== 'generate') {
+        if (currentPage !== 'generate') {
           if (aiPillBtn) aiPillBtn.classList.add('show');
         }
       }
@@ -2825,12 +2846,20 @@ async function ensureSharedLayout(signal) {
         m.style.marginLeft = 'calc(2vh + 60px)';
       }
       sidebar.classList.remove('open');
-      if (currentPage === 'dashboard' && !aiDockUserClosed && window.innerWidth >= 1024) {
+      if (currentPage !== 'generate' && isDashboardPage(currentPage) && !aiDockUserClosed && window.innerWidth >= 1024) {
         if (aiDockPanel) aiDockPanel.classList.remove('hidden');
+        if (aiPillBtn) aiPillBtn.classList.remove('show');
         document.body.classList.add('ai-dock-active');
         if (m) m.style.marginRight = 'calc(1vh + 460px + 1vh)';
-      } else if (m) {
-        m.style.marginRight = '1vh';
+      } else {
+        if (aiDockPanel && (aiDockUserClosed || window.innerWidth < 1024)) {
+          aiDockPanel.classList.add('hidden');
+          if (aiPillBtn && currentPage !== 'generate' && isDashboardPage(currentPage)) {
+            aiPillBtn.classList.add('show');
+          }
+          document.body.classList.remove('ai-dock-active');
+        }
+        if (m) m.style.marginRight = '1vh';
       }
     }
   }
