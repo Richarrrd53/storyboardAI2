@@ -3886,7 +3886,7 @@ body.page-generate .ai-pill-btn:not(.show),
         transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-radius 0.35s ease !important;
     }
 
-    /* Floating Bottom Nav Container - Liquid Elastic Interaction Target */
+    /* Floating Bottom Nav Container - Frosted Acrylic / Translucent Resin Material */
     .mobile-bottom-nav {
         display: flex !important;
         position: fixed !important;
@@ -3897,15 +3897,23 @@ body.page-generate .ai-pill-btn:not(.show),
         margin: 0 auto !important;
         height: var(--mobile-nav-height, 64px) !important;
         max-height: calc(100dvh - 20px) !important;
-        background: var(--mobile-nav-bg, rgba(255, 255, 255, 0.88)) !important;
-        backdrop-filter: blur(20px) saturate(180%) !important;
-        -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
-        border: var(--mobile-nav-border, 1.5px solid rgba(255, 255, 255, 0.8)) !important;
-        border-radius: var(--mobile-nav-radius, 32px) !important;
-        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12), 0 2px 8px rgba(15, 23, 42, 0.04) !important;
+        /* 不是完全透明的玻璃，而是偏乳白霧面，上亮下暗體積漸層 */
+        background: var(--mobile-nav-bg, linear-gradient(180deg, rgba(255, 255, 255, 0.88) 0%, rgba(242, 242, 236, 0.78) 100%)) !important;
+        /* 低強度 backdrop blur + 柔和環境色飽和度與微增亮度滲透 */
+        backdrop-filter: blur(10px) saturate(120%) brightness(1.06) !important;
+        -webkit-backdrop-filter: blur(10px) saturate(120%) brightness(1.06) !important;
+        /* 淡白色邊界高光 */
+        border: var(--mobile-nav-border, 1px solid rgba(255, 255, 255, 0.7)) !important;
+        border-radius: var(--mobile-nav-radius, var(--radius-pill, 999px)) !important;
+        /* 柔和外陰影 + 內側頂部白色高光 + 內側底部暗部陰影（厚度感） */
+        box-shadow:
+            0 14px 32px rgba(0, 0, 0, 0.13),
+            0 2px 8px rgba(0, 0, 0, 0.04),
+            inset 0 1.5px 2px rgba(255, 255, 255, 0.92),
+            inset 0 -2px 4px rgba(120, 120, 110, 0.06) !important;
         align-items: center !important;
         justify-content: space-around !important;
-        padding: 0 8px !important;
+        padding: 0 10px !important;
         z-index: 10000 !important;
         user-select: none !important;
         -webkit-user-select: none !important;
@@ -3915,22 +3923,34 @@ body.page-generate .ai-pill-btn:not(.show),
         transform-origin: center center;
     }
 
-    /* Floating Selection Indicator - Follows finger with soft magnetic link snapping */
+    /* 表面高光膜 (Surface Sheen Film) */
+    .mobile-bottom-nav::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0) 55%);
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    /* Floating Selection Indicator - Soft Tactile Grooved Capsule on Resin Surface */
     .mobile-nav__indicator {
         display: block !important;
         position: absolute !important;
         left: 0 !important;
-        top: 8px !important;
-        bottom: 8px !important;
-        width: 52px !important;
-        background: rgba(37, 99, 235, 0.095) !important;
-        border: 1px solid rgba(37, 99, 235, 0.16) !important;
-        border-radius: 20px !important;
+        top: 13px !important;
+        height: 38px !important;
+        width: 56px !important;
+        background: rgba(37, 99, 235, 0.12) !important;
+        border: none !important;
+        border-radius: var(--radius-pill, 999px) !important;
+        box-shadow: none !important;
         pointer-events: none !important;
         z-index: 1 !important;
         opacity: 0;
         will-change: transform, opacity;
-        transition: opacity 0.2s ease;
+        transition: opacity 0.2s ease, transform 0.18s cubic-bezier(0.2, 0.9, 0.3, 1);
     }
 
     .mobile-nav__indicator.is-active {
@@ -3939,6 +3959,10 @@ body.page-generate .ai-pill-btn:not(.show),
 
     .mobile-nav__indicator.is-settling {
         transition: transform 0.24s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.2s ease !important;
+    }
+
+    .mobile-nav__indicator.is-pressed {
+        transform: scale(1.12);
     }
 
     /* Nav Items */
@@ -3955,7 +3979,7 @@ body.page-generate .ai-pill-btn:not(.show),
         border: none;
         outline: none;
         text-decoration: none;
-        color: var(--color-text-secondary, #64748b);
+        color: #64748b;
         cursor: pointer;
         z-index: 2;
         padding: 0;
@@ -3992,7 +4016,7 @@ body.page-generate .ai-pill-btn:not(.show),
         stroke: currentColor;
         pointer-events: none;
         touch-action: none;
-        transition: stroke 0.2s ease, stroke-width 0.2s ease;
+        transition: stroke 0.2s ease, stroke-width 0.2s ease, fill 0.2s ease;
     }
 
     .mobile-nav__label {
@@ -4005,21 +4029,29 @@ body.page-generate .ai-pill-btn:not(.show),
         transition: color 0.2s ease, transform 0.2s ease;
     }
 
-    /* Active & Magnetic Hover Nav Item */
+    /* Active & Magnetic Hover Nav Item - Primary Brand Blue */
     .mobile-nav__item.active,
     .mobile-nav__item.snap-target {
-        color: var(--color-brand-primary, #2563eb);
+        color: var(--color-brand-primary, #2563eb) !important;
     }
 
     .mobile-nav__item.active .mobile-nav__svg,
     .mobile-nav__item.snap-target .mobile-nav__svg {
         stroke-width: 2.35px;
+        stroke: var(--color-brand-primary, #2563eb) !important;
+    }
+
+    .mobile-nav__item.active .mobile-nav__svg[data-fill="true"],
+    .mobile-nav__item.snap-target .mobile-nav__svg[data-fill="true"],
+    .mobile-nav__item.active .mobile-nav__svg.icon-fill-target,
+    .mobile-nav__item.snap-target .mobile-nav__svg.icon-fill-target {
+        fill: var(--color-brand-primary, #2563eb) !important;
     }
 
     .mobile-nav__item.active .mobile-nav__label,
     .mobile-nav__item.snap-target .mobile-nav__label {
         font-weight: 700;
-        color: var(--color-brand-primary, #2563eb);
+        color: var(--color-brand-primary, #2563eb) !important;
     }
 
     .mobile-nav__item.snap-target {
@@ -4041,6 +4073,7 @@ body.page-generate .ai-pill-btn:not(.show),
         cursor: pointer;
     }
 
+    /* Desktop Standby Dark Blue & Blue Gradient Circular Button (No border, no shadow) */
     .mob-circle-btn {
         position: relative;
         display: flex;
@@ -4048,32 +4081,76 @@ body.page-generate .ai-pill-btn:not(.show),
         justify-content: center;
         width: 54px;
         height: 54px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #2b2b36 0%, #181824 45%, #5d3a9b 75%, #7c4dff 100%);
-        color: #ffffff;
+        border-radius: 50% !important;
+        background: linear-gradient(135deg, #0b1329 0%, #172554 35%, #1d4ed8 75%, #3b82f6 100%) !important;
+        backdrop-filter: blur(8px) saturate(120%) brightness(1.06) !important;
+        -webkit-backdrop-filter: blur(8px) saturate(120%) brightness(1.06) !important;
+        border: none !important;
+        color: #ffffff !important;
         font-weight: 700;
-        box-shadow: 0 8px 24px rgba(93, 58, 155, 0.45), 0 2px 8px rgba(0, 0, 0, 0.25);
-        border: 1.5px solid rgba(255, 255, 255, 0.65);
+        box-shadow: none !important;
         cursor: pointer;
-        transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+        transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         overflow: visible;
         user-select: none;
         -webkit-user-select: none;
     }
 
+    /* 圓形按鈕表面高光膜 */
+    .mob-circle-btn::before {
+        display: none !important;
+    }
+
+    .mob-circle-plus {
+        font-size: 1.85rem;
+        line-height: 1;
+        font-weight: 400;
+        color: #ffffff !important;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transform: translateY(-1px);
+        position: relative;
+        z-index: 2;
+        -webkit-text-fill-color: #ffffff;
+    }
+
+    .mob-circle-plus-svg {
+        width: 22px;
+        height: 22px;
+        stroke: #ffffff !important;
+        stroke-width: 2.5;
+        position: relative;
+        z-index: 2;
+    }
+
+    .mob-circle-spark {
+        font-size: 1.85rem;
+        line-height: 1;
+        font-weight: 400;
+        color: #ffffff !important;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transform: translateY(-1px);
+        position: relative;
+        z-index: 2;
+        -webkit-text-fill-color: #ffffff;
+    }
+
     .mob-circle-btn:active,
     .mob-circle-btn.snap-hover {
-        transform: scale(1.14) translateY(-2px) !important;
-        border-color: #ffffff !important;
-        box-shadow: 0 10px 30px rgba(124, 77, 255, 0.8), 0 0 20px rgba(255, 197, 232, 0.6) !important;
+        transform: scale(1.12) translateY(-2px) !important;
+        border: none !important;
+        box-shadow: none !important;
     }
 
     .mobile-nav__item--create.active .mob-circle-btn {
-        border-color: #ffffff;
-        box-shadow: 0 8px 28px rgba(124, 77, 255, 0.7), 0 0 16px rgba(255, 197, 232, 0.5);
+        border: none !important;
+        box-shadow: none !important;
     }
 
-    /* Rotating Conic Glow Aura (Signature AI Capsule Glow) */
+    /* Rotating Conic Glow Aura - Diluted pastel colors & slower animation */
     .mob-circle-glow-container {
         width: 64px;
         height: 64px;
@@ -4106,12 +4183,13 @@ body.page-generate .ai-pill-btn:not(.show),
         height: 110px;
         background-image: conic-gradient(
             transparent 0deg,
-            #ffc5e8 15deg,
-            #7c4dff 100deg,
-            transparent 140deg,
+            rgba(191, 219, 254, 0.45) 20deg,
+            rgba(147, 197, 253, 0.5) 70deg,
+            rgba(196, 181, 253, 0.4) 110deg,
+            transparent 150deg,
             transparent 360deg
         );
-        animation: glow-loop 2.4s linear infinite;
+        animation: glow-loop 7.5s linear infinite;
         position: absolute;
         top: 50%;
         left: 50%;

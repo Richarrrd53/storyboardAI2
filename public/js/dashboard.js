@@ -4,6 +4,10 @@
   let lastToggleTime = 0;
   let lastOpenTime = 0;
 
+  function isMobileView() {
+    return window.matchMedia('(max-width: 768px), (max-width: 767px) and (orientation: portrait), (max-width: 480px)').matches;
+  }
+
   function getBackgroundDepthTargets() {
     const targets = [];
     const pageMain = document.getElementById('page-main');
@@ -14,6 +18,7 @@
   }
 
   function setBackgroundDepthProgress(progress) {
+    if (!isMobileView()) return;
     // progress: 1 = fully open (scale 0.95), 0 = fully closed (scale 1.0)
     const bgTargets = getBackgroundDepthTargets();
     const scale = (1.0 - progress * 0.05).toFixed(4);
@@ -27,6 +32,7 @@
   }
 
   function animateBackgroundDepth(isOpen, duration = 0.32) {
+    if (!isMobileView()) return;
     const bgTargets = getBackgroundDepthTargets();
     bgTargets.forEach(el => {
       el.style.setProperty('transition', `transform ${duration}s cubic-bezier(0.16, 1, 0.3, 1), border-radius ${duration}s ease`, 'important');
@@ -73,6 +79,27 @@
     lastToggleTime = now;
     if (shouldOpen) {
       lastOpenTime = now;
+    }
+
+    const mobile = isMobileView();
+
+    // 電腦版保持原樣：只切換 active class，不改寫 inline transform，不呼叫下測面板與 page-main 縮小動畫
+    if (!mobile) {
+      panel.style.removeProperty('display');
+      panel.style.removeProperty('transform');
+      panel.style.removeProperty('transition');
+      if (backdrop) {
+        backdrop.classList.remove('active');
+        backdrop.style.removeProperty('opacity');
+        backdrop.style.removeProperty('backdrop-filter');
+        backdrop.style.removeProperty('-webkit-backdrop-filter');
+      }
+      if (shouldOpen) {
+        panel.classList.add('active');
+      } else {
+        panel.classList.remove('active');
+      }
+      return;
     }
 
     if (!panel.dataset.dragBound) {
@@ -137,6 +164,7 @@
     let panelHeight = 360;
 
     panel.addEventListener('pointerdown', (e) => {
+      if (!isMobileView()) return;
       if (!panel.classList.contains('active')) return;
       const isHandle = !!e.target.closest('.user-panel-handle');
       const isHeader = !!e.target.closest('.up-header');
@@ -288,7 +316,7 @@
 
     const maxDx = 18;
     const maxDy = 12;
-    const indicatorWidth = 52;
+    const indicatorWidth = 56;
 
     const items = Array.from(mobNav.querySelectorAll('.mobile-nav__item'));
     const indicator = mobNav.querySelector('.mobile-nav__indicator');
@@ -388,19 +416,19 @@
       lastSnappedItem = currentTargetItem;
       highlightTargetItem(currentTargetItem);
 
-      // 按下即動：只要有點擊到 link 就觸發 selector 移動過來
+      // 按下即動：只要有點擊到 link 就觸發 selector 移動過來，手指點擊時放大
       if (indicator && currentTargetItem && cachedNavRect) {
-        indicator.classList.add('is-settling', 'is-active');
+        indicator.classList.add('is-settling', 'is-active', 'is-pressed');
         if (!currentTargetItem.classList.contains('mobile-nav__item--create')) {
           const tMetric = cachedMetrics.find(m => m.item === currentTargetItem);
           const targetCenterX = tMetric ? tMetric.centerX : (currentTargetItem.getBoundingClientRect().left + currentTargetItem.getBoundingClientRect().width / 2);
           const finalOffset = targetCenterX - cachedNavRect.left - indicatorWidth / 2;
           curIndicatorX = Math.max(4, Math.min(cachedNavRect.width - indicatorWidth - 4, finalOffset));
-          indicator.style.transform = `translate3d(${curIndicatorX.toFixed(2)}px, 0, 0)`;
+          indicator.style.transform = `translate3d(${curIndicatorX.toFixed(2)}px, 0, 0) scale(1.12)`;
           indicator.style.opacity = '1';
         } else {
           indicator.style.opacity = '0';
-          indicator.classList.remove('is-active');
+          indicator.classList.remove('is-active', 'is-pressed');
         }
       }
 
@@ -462,7 +490,7 @@
           targetIndX = Math.max(4, Math.min(cachedNavRect.width - indicatorWidth - 4, targetIndX));
 
           curIndicatorX += (targetIndX - curIndicatorX) * 0.36;
-          indicator.style.transform = `translate3d(${curIndicatorX.toFixed(2)}px, 0, 0)`;
+          indicator.style.transform = `translate3d(${curIndicatorX.toFixed(2)}px, 0, 0) scale(1.12)`;
 
           if (closestMetric.isCreate) {
             const distToCenter = Math.abs(fingerRelX - closestCenterRelX);
@@ -512,12 +540,13 @@
 
       if (indicator && releasedTargetItem && cachedNavRect) {
         indicator.classList.add('is-settling', 'is-active');
+        indicator.classList.remove('is-pressed');
         if (!releasedTargetItem.classList.contains('mobile-nav__item--create')) {
           const tMetric = cachedMetrics.find(m => m.item === releasedTargetItem);
           const targetCenterX = tMetric ? tMetric.centerX : (releasedTargetItem.getBoundingClientRect().left + releasedTargetItem.getBoundingClientRect().width / 2);
           const finalOffset = targetCenterX - cachedNavRect.left - indicatorWidth / 2;
           curIndicatorX = Math.max(4, Math.min(cachedNavRect.width - indicatorWidth - 4, finalOffset));
-          indicator.style.transform = `translate3d(${curIndicatorX.toFixed(2)}px, 0, 0)`;
+          indicator.style.transform = `translate3d(${curIndicatorX.toFixed(2)}px, 0, 0) scale(1)`;
           indicator.style.opacity = '1';
         } else {
           indicator.style.opacity = '0';
@@ -694,9 +723,9 @@
         const itemRect = activeItem.getBoundingClientRect();
         const navRect = mobNav.getBoundingClientRect();
         if (navRect.width > 0 && itemRect.width > 0) {
-          const offset = (itemRect.left - navRect.left) + (itemRect.width - 52) / 2;
+          const offset = (itemRect.left - navRect.left) + (itemRect.width - 56) / 2;
           indicator.classList.add('is-settling', 'is-active');
-          indicator.style.transform = `translate3d(${offset.toFixed(2)}px, 0, 0)`;
+          indicator.style.transform = `translate3d(${offset.toFixed(2)}px, 0, 0) scale(1)`;
           indicator.style.opacity = '1';
         }
       } else {
@@ -718,6 +747,22 @@
         window.toggleUserPanel();
       };
     }
+
+    window.addEventListener('resize', () => {
+      if (!isMobileView()) {
+        const bgTargets = getBackgroundDepthTargets();
+        bgTargets.forEach(el => {
+          el.classList.remove('bg-depth-scaled', 'bg-depth-animating');
+          el.style.removeProperty('transform');
+          el.style.removeProperty('border-radius');
+          el.style.removeProperty('overflow');
+        });
+        const panel = document.getElementById('user-panel') || document.getElementById('spa-user-panel');
+        if (panel) {
+          panel.style.removeProperty('transform');
+        }
+      }
+    });
   }
 
   if (document.readyState === 'loading') {

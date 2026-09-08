@@ -41,18 +41,27 @@
   --input-radius-pill:           var(--radius-pill);
   --input-radius-rect:           var(--radius-sm);
 
+  /* ── Frosted Acrylic / Translucent Resin Floating Surface Tokens ── */
+  --surface-floating-bg:         linear-gradient(180deg, rgba(255, 255, 255, 0.88) 0%, rgba(242, 242, 236, 0.78) 100%);
+  --surface-floating-border:     1px solid rgba(255, 255, 255, 0.7);
+  --surface-floating-blur:       blur(9px) saturate(120%) brightness(1.06);
+  --surface-floating-shadow:     0 14px 32px rgba(0, 0, 0, 0.13), 0 2px 8px rgba(0, 0, 0, 0.04);
+  --surface-floating-highlight:  inset 0 1.5px 2px rgba(255, 255, 255, 0.92), inset 0 -2px 4px rgba(120, 120, 110, 0.06);
+  --surface-floating-circle-bg:  radial-gradient(circle at 38% 26%, rgba(255, 255, 255, 0.98) 0%, rgba(246, 246, 240, 0.88) 55%, rgba(232, 232, 224, 0.78) 100%);
+  --surface-floating-circle-shadow: 0 10px 24px rgba(0, 0, 0, 0.13), 0 2px 6px rgba(0, 0, 0, 0.04), inset 0 2px 3.5px rgba(255, 255, 255, 0.95), inset 0 -2px 4.5px rgba(120, 120, 110, 0.08);
+
   /* ── Mobile Portrait Floating Bottom Nav Tokens ── */
   --mobile-nav-height:           64px;
-  --mobile-nav-radius:           28px;
+  --mobile-nav-radius:           var(--radius-pill);
   --mobile-nav-gap:              var(--space-1);
-  --mobile-nav-padding:          6px 12px;
-  --mobile-nav-bg:               rgba(255, 255, 255, 0.88);
-  --mobile-nav-border:           1px solid rgba(255, 255, 255, 0.65);
-  --mobile-nav-shadow:           var(--elevation-3);
+  --mobile-nav-padding:          0 10px;
+  --mobile-nav-bg:               var(--surface-floating-bg);
+  --mobile-nav-border:           var(--surface-floating-border);
+  --mobile-nav-shadow:           var(--surface-floating-shadow);
   --mobile-nav-item-size:        48px;
   --mobile-nav-indicator-size:   44px;
-  --mobile-nav-create-size:      60px;
-  --mobile-nav-create-offset-y:  -18px;
+  --mobile-nav-create-size:      54px;
+  --mobile-nav-create-offset-y:  -16px;
 
   /* ── AI Dock & Floating Pill Tokens ── */
   --ai-dock-width:               380px;
