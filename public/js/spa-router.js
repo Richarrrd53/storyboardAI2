@@ -1247,41 +1247,42 @@ function initLoginLogic(showRegister) {
     };
   }
 
-  async function ensureUserPanelDOM(signal) {
+  function ensureUserPanelDOM() {
     let panel = document.getElementById('spa-user-panel') || document.getElementById('user-panel') || dashboardUserPanel;
     let backdrop = document.getElementById('spa-user-panel-backdrop') || document.querySelector('.user-panel-backdrop');
 
-    if (!panel || !backdrop) {
-      let doc = null;
-      try {
-        doc = await fetchPageDoc('/html/dashboard.html', signal);
-      } catch (_) {}
+    if (!backdrop) {
+      backdrop = document.createElement('div');
+      backdrop.className = 'user-panel-backdrop';
+      backdrop.id = 'spa-user-panel-backdrop';
+      document.body.appendChild(backdrop);
+    }
 
-      if (doc) {
-        if (!backdrop && !document.getElementById('spa-user-panel-backdrop')) {
-          const upBackdrop = doc.querySelector('.user-panel-backdrop');
-          if (upBackdrop) {
-            backdrop = upBackdrop.cloneNode(true);
-          } else {
-            backdrop = document.createElement('div');
-            backdrop.className = 'user-panel-backdrop';
-          }
-          backdrop.id = 'spa-user-panel-backdrop';
-          document.body.appendChild(backdrop);
-        }
-
-        if (!panel && !document.getElementById('spa-user-panel')) {
-          const up = doc.querySelector('.user-panel');
-          if (up) {
-            panel = up.cloneNode(true);
-          } else {
-            panel = document.createElement('div');
-            panel.className = 'user-panel';
-          }
-          panel.id = 'spa-user-panel';
-          document.body.appendChild(panel);
-        }
-      }
+    if (!panel) {
+      panel = document.createElement('div');
+      panel.className = 'user-panel';
+      panel.id = 'spa-user-panel';
+      panel.innerHTML = `
+        <div class="user-panel-handle" aria-hidden="true"></div>
+        <div class="up-header">
+            <div class="up-avatar">黃</div>
+            <div>
+                <p class="up-name">創作者</p>
+                <p class="up-email">creator@storyboard.ai</p>
+            </div>
+            <div class="up-plan">Free</div>
+        </div>
+        <div class="up-divide"></div>
+        <div class="up-body">
+            <a class="up-btn"><img src="../icon/profile.svg" alt=""><span>個人檔案</span></a>
+            <a class="up-btn"><img src="../icon/upgrade.svg" alt=""><span>升級方案</span></a>
+            <a href="../history" class="up-btn" id="up-recycle-bin"><img src="../icon/trash-blur.svg" alt=""><span>資源回收桶</span></a>
+            <a class="up-btn"><img src="../icon/setting.svg" alt=""><span>設定</span></a>
+        </div>
+        <div class="up-divide"></div>
+        <a href="../html/login.html" class="up-btn up-logout"><img src="../icon/logout.svg" alt=""><span>登出</span></a>
+      `;
+      document.body.appendChild(panel);
     }
 
     if (panel) {
@@ -1295,6 +1296,7 @@ function initLoginLogic(showRegister) {
     }
 
     initUserPanelGestures();
+    return { panel, backdrop };
   }
 
   async function ensureSharedLayout(signal) {
@@ -1703,6 +1705,7 @@ function initLoginLogic(showRegister) {
 
   let lastToggleTime = 0;
   window.toggleUserPanel = function(open) {
+    ensureUserPanelDOM();
     const panel = document.getElementById('spa-user-panel') || document.getElementById('user-panel') || dashboardUserPanel;
     const backdrop = document.getElementById('spa-user-panel-backdrop') || document.querySelector('.user-panel-backdrop');
     if (!panel) return;
@@ -1721,17 +1724,20 @@ function initLoginLogic(showRegister) {
     }
 
     if (shouldOpen) {
+      panel.style.removeProperty('display');
       panel.classList.add('active');
       panel.style.removeProperty('transform');
       panel.style.setProperty('transform', 'translate3d(0, 0, 0)', 'important');
       panel.style.transition = '';
       if (backdrop) {
+        backdrop.style.removeProperty('display');
         backdrop.classList.add('active');
         backdrop.style.opacity = '';
         backdrop.style.backdropFilter = '';
         backdrop.style.webkitBackdropFilter = '';
         backdrop.style.transition = '';
       }
+      updateMobileBottomNavActive('profile');
     } else {
       panel.classList.remove('active');
       panel.style.removeProperty('transform');
@@ -1744,6 +1750,7 @@ function initLoginLogic(showRegister) {
         backdrop.style.webkitBackdropFilter = '';
         backdrop.style.transition = '';
       }
+      updateMobileBottomNavActive(targetPage || currentPage);
     }
   };
 
@@ -1772,11 +1779,11 @@ function initLoginLogic(showRegister) {
     let panelHeight = 360;
 
     panel.addEventListener('pointerdown', (e) => {
-      if (!panel.classList.contains('active') || window.innerWidth > 768) return;
+      if (!panel.classList.contains('active')) return;
       const isHandle = !!e.target.closest('.user-panel-handle');
       const isHeader = !!e.target.closest('.up-header');
       const rect = panel.getBoundingClientRect();
-      const isTopZone = (e.clientY - rect.top) < 75;
+      const isTopZone = (e.clientY - rect.top) < 85;
       const isInteractive = !!e.target.closest('a, button, input');
 
       if (!isHandle && (!isTopZone || isInteractive)) return;
@@ -1805,8 +1812,8 @@ function initLoginLogic(showRegister) {
       if (e.cancelable) e.preventDefault();
 
       const rawDy = e.clientY - startY;
-      // 跟手向下移動：向上拉微阻尼，向下拉 1:1 即時跟手
-      curDy = rawDy >= 0 ? rawDy : rawDy * 0.18;
+      // 向上拖動時完全不位移，向下拉 1:1 即時跟手
+      curDy = Math.max(0, rawDy);
 
       const now = performance.now();
       const dt = Math.max(1, now - lastTime);
@@ -2225,7 +2232,6 @@ function initLoginLogic(showRegister) {
       const targetItem = releasedTargetItem;
       if (targetItem.id === 'mob-nav-profile') {
         window.toggleUserPanel();
-        updateMobileBottomNavActive(targetPage || currentPage);
       } else if (targetItem.id === 'mob-nav-generate') {
         navigate('generate');
       } else {
@@ -2305,11 +2311,14 @@ function initLoginLogic(showRegister) {
 
     if (isNavInteracting) return;
 
+    const panel = document.getElementById('spa-user-panel') || document.getElementById('user-panel') || dashboardUserPanel;
+    const isProfileActive = page === 'profile' || (panel && panel.classList.contains('active'));
+
     let activeMainPage = page;
-    if (!activeMainPage || (activeMainPage === currentPage && targetPage)) {
-      activeMainPage = targetPage;
+    if (!activeMainPage || activeMainPage === 'profile' || (activeMainPage === currentPage && targetPage)) {
+      activeMainPage = targetPage || currentPage;
     }
-    if (!activeMainPage) {
+    if (!activeMainPage || activeMainPage === 'profile') {
       activeMainPage = currentPage || 'dashboard';
     }
     if (activeMainPage === 'project') {
@@ -2319,13 +2328,18 @@ function initLoginLogic(showRegister) {
     const items = mobNav.querySelectorAll('.mobile-nav__item');
     let activeItem = null;
     items.forEach(item => {
-      const href = item.getAttribute('href') || '';
-      const isGenerate = activeMainPage === 'generate' && (href.includes('generate') || item.id === 'mob-nav-generate');
-      const isDashboard = activeMainPage === 'dashboard' && (href.includes('dashboard') || item.id === 'mob-nav-home');
-      const isProjects = activeMainPage === 'projects' && (href.includes('projects') || item.id === 'mob-nav-projects');
-      const isTemplate = activeMainPage === 'template' && (href.includes('template') || item.id === 'mob-nav-template');
+      let isActive = false;
+      if (isProfileActive) {
+        isActive = (item.id === 'mob-nav-profile');
+      } else {
+        const href = item.getAttribute('href') || '';
+        const isGenerate = activeMainPage === 'generate' && (href.includes('generate') || item.id === 'mob-nav-generate');
+        const isDashboard = activeMainPage === 'dashboard' && (href.includes('dashboard') || item.id === 'mob-nav-home');
+        const isProjects = activeMainPage === 'projects' && (href.includes('projects') || item.id === 'mob-nav-projects');
+        const isTemplate = activeMainPage === 'template' && (href.includes('template') || item.id === 'mob-nav-template');
+        isActive = isGenerate || isDashboard || isProjects || isTemplate;
+      }
 
-      const isActive = isGenerate || isDashboard || isProjects || isTemplate;
       if (isActive) {
         item.classList.add('active');
         item.setAttribute('aria-selected', 'true');

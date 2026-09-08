@@ -3527,7 +3527,9 @@ body.page-generate .ai-pill-btn:not(.show),
    Floating Capsule + Organic Jelly Motion Interaction
    ============================================================ */
 
-.mobile-bottom-nav {
+.mobile-bottom-nav,
+.user-panel-backdrop,
+.user-panel-handle {
     display: none;
 }
 
@@ -3787,6 +3789,25 @@ body.page-generate .ai-pill-btn:not(.show),
         gap: 16px !important;
     }
 
+    /* Semi-transparent scrim backdrop behind mobile bottom sheet */
+    .user-panel-backdrop {
+        display: block !important;
+        position: fixed !important;
+        inset: 0 !important;
+        background: rgba(15, 23, 42, 0.45) !important;
+        backdrop-filter: blur(4px) !important;
+        -webkit-backdrop-filter: blur(4px) !important;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        z-index: 10040 !important; /* Above bottom nav (10000), below user-panel (10050) */
+    }
+
+    .user-panel-backdrop.active {
+        opacity: 1 !important;
+        pointer-events: auto !important;
+    }
+
     /* Transform User Panel into Mobile Bottom Sheet */
     .user-panel {
         position: fixed !important;
@@ -3797,9 +3818,9 @@ body.page-generate .ai-pill-btn:not(.show),
         max-width: 100% !important;
         border-radius: 28px 28px 0 0 !important;
         box-shadow: 0 -10px 40px rgba(15, 23, 42, 0.22) !important;
-        transform: translateY(100%) !important;
+        transform: translateY(100%);
         scale: 1 !important;
-        padding: 24px 20px calc(env(safe-area-inset-bottom, 20px) + 24px) 20px !important;
+        padding: 16px 20px calc(env(safe-area-inset-bottom, 20px) + 20px) 20px !important;
         transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease !important;
         z-index: 10050 !important; /* Strictly higher than .mobile-bottom-nav (10000) */
         background: var(--glass-bg-modal, rgba(255, 255, 255, 0.96)) !important;
@@ -3809,6 +3830,35 @@ body.page-generate .ai-pill-btn:not(.show),
         border-bottom: none !important;
         opacity: 0;
         pointer-events: none;
+        touch-action: none !important;
+        will-change: transform;
+    }
+
+    /* Drag Handle at the top of the mobile bottom sheet */
+    .user-panel-handle {
+        display: block !important;
+        position: relative !important;
+        width: 38px !important;
+        height: 4.5px !important;
+        background: rgba(148, 163, 184, 0.42) !important;
+        border-radius: 3px !important;
+        margin: 0 auto 14px auto !important;
+        touch-action: none !important;
+        cursor: grab !important;
+        transition: background 0.2s ease, transform 0.2s ease !important;
+    }
+
+    .user-panel-handle::after {
+        content: '';
+        position: absolute;
+        inset: -14px -28px;
+        touch-action: none;
+    }
+
+    .user-panel-handle:active {
+        cursor: grabbing !important;
+        background: rgba(100, 116, 139, 0.6) !important;
+        transform: scaleY(1.15) !important;
     }
 
     .user-panel.active {
@@ -3849,9 +3899,30 @@ body.page-generate .ai-pill-btn:not(.show),
         transform-origin: center center;
     }
 
-    /* Selection Indicator - Direct tab display, no cross-item moving process */
+    /* Floating Selection Indicator - Follows finger with soft magnetic link snapping */
     .mobile-nav__indicator {
-        display: none !important;
+        display: block !important;
+        position: absolute !important;
+        left: 0 !important;
+        top: 8px !important;
+        bottom: 8px !important;
+        width: 52px !important;
+        background: rgba(37, 99, 235, 0.095) !important;
+        border: 1px solid rgba(37, 99, 235, 0.16) !important;
+        border-radius: 20px !important;
+        pointer-events: none !important;
+        z-index: 1 !important;
+        opacity: 0;
+        will-change: transform, opacity;
+        transition: opacity 0.2s ease;
+    }
+
+    .mobile-nav__indicator.is-active {
+        opacity: 1 !important;
+    }
+
+    .mobile-nav__indicator.is-settling {
+        transition: transform 0.24s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.2s ease !important;
     }
 
     /* Nav Items */
@@ -3882,25 +3953,6 @@ body.page-generate .ai-pill-btn:not(.show),
         touch-action: none;
         transition: color 0.2s ease, transform 0.15s ease;
         will-change: transform;
-    }
-
-    /* Tab Selector Pill - Directly rendered on active / snapped tab item (No sliding movement across tabs) */
-    .mobile-nav__item:not(.mobile-nav__item--create)::before {
-        content: '';
-        position: absolute;
-        inset: 6px 3px;
-        background: rgba(37, 99, 235, 0.095);
-        border: 1px solid rgba(37, 99, 235, 0.16);
-        border-radius: 18px;
-        opacity: 0;
-        pointer-events: none;
-        z-index: 0;
-        transition: opacity 0.14s ease;
-    }
-
-    .mobile-nav__item.active:not(.mobile-nav__item--create)::before,
-    .mobile-nav__item.snap-target:not(.mobile-nav__item--create)::before {
-        opacity: 1;
     }
 
     .mobile-nav__item:focus-visible {

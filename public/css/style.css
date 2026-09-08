@@ -280,7 +280,7 @@ main{
 }
 
 .sys-bg {
-    position: fixed; top: 0; left: 0; z-index: var(--layer-system);
+    position: fixed; top: 0; left: 0; z-index: var(--layer-system, 20000) !important;
     width: 100vw;
     height: 100vh;
     background: rgba(15, 23, 42, 0.45);

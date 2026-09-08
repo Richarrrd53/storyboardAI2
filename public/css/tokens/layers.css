@@ -14,6 +14,6 @@
   --layer-dock:     500; /* Floating AI Dock & Pill Button */
   --layer-overlay:  600; /* Scrim overlays & cinematic black masks */
   --layer-modal:    700; /* Modal windows, preview drawers */
-  --layer-toast:    800; /* Floating toasts & undo alerts */
-  --layer-system:   900; /* Critical system alert & crash handlers */
+  --layer-toast:    800;   /* Floating toasts & undo alerts */
+  --layer-system:   20000; /* Critical system alert & crash handlers */
 }

@@ -163,8 +163,12 @@
 
 
 
+    <!-- Mobile User Panel Scrim Backdrop -->
+    <div class="user-panel-backdrop" id="spa-user-panel-backdrop"></div>
+
     <!-- User Tooltip Panel -->
     <div class="user-panel" id="user-panel">
+        <div class="user-panel-handle" aria-hidden="true"></div>
         <div class="up-header">
             <div class="up-avatar">黃</div>
             <div>
@@ -186,6 +190,7 @@
 
     <!-- Mobile Portrait Floating Bottom Navigation -->
     <nav class="mobile-bottom-nav" id="spa-mobile-nav" aria-label="行動版底部導航" role="tablist" draggable="false">
+        <div class="mobile-nav__indicator" id="mobile-nav-indicator" aria-hidden="true"></div>
         <a href="../dashboard" class="mobile-nav__item active" id="mob-nav-home" role="tab" aria-selected="true" aria-label="首頁" draggable="false">
             <div class="mobile-nav__icon-wrap">
                 <svg class="mobile-nav__svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -241,14 +246,19 @@
     <script src="../js/sys.js"></script>
     <script>
         function launchGenerate() {
-            const story = document.getElementById('dash-story').value.trim();
-            const ratio = document.getElementById('dash-ratio').value;
-            const styleIdx = document.getElementById('dash-style').value;
+            const storyInput = document.getElementById('dash-story');
+            if (!storyInput) {
+                window.location.href = './generate.html';
+                return;
+            }
+            const story = storyInput.value.trim();
+            const ratio = document.getElementById('dash-ratio')?.value || '16:9';
+            const styleIdx = document.getElementById('dash-style')?.value || '0';
 
             if (!story) {
-                document.getElementById('dash-story').focus();
-                document.querySelector('.idea-box').classList.add('shake');
-                setTimeout(() => document.querySelector('.idea-box').classList.remove('shake'), 600);
+                storyInput.focus();
+                document.querySelector('.idea-box')?.classList.add('shake');
+                setTimeout(() => document.querySelector('.idea-box')?.classList.remove('shake'), 600);
                 return;
             }
 
@@ -260,21 +270,56 @@
             window.location.href = './generate.html';
         }
 
-        document.getElementById('dash-story').addEventListener('keydown', function (e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
+        const dashStory = document.getElementById('dash-story');
+        if (dashStory) {
+            dashStory.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    launchGenerate();
+                }
+            });
+        }
+
+        const topAvatar = document.getElementById('top-avatar');
+        if (topAvatar) {
+            topAvatar.addEventListener('click', function (e) {
+                e.stopPropagation();
+                if (typeof window.toggleUserPanel === 'function') {
+                    window.toggleUserPanel();
+                } else {
+                    const panel = document.getElementById('user-panel') || document.getElementById('spa-user-panel');
+                    const backdrop = document.getElementById('spa-user-panel-backdrop');
+                    if (panel) panel.classList.toggle('active');
+                    if (backdrop && panel) backdrop.classList.toggle('active', panel.classList.contains('active'));
+                }
+            });
+        }
+
+        const backdropEl = document.getElementById('spa-user-panel-backdrop');
+        if (backdropEl) {
+            backdropEl.addEventListener('click', (e) => {
                 e.preventDefault();
-                launchGenerate();
+                e.stopPropagation();
+                if (typeof window.toggleUserPanel === 'function') {
+                    window.toggleUserPanel(false);
+                } else {
+                    const panel = document.getElementById('user-panel') || document.getElementById('spa-user-panel');
+                    if (panel) panel.classList.remove('active');
+                    backdropEl.classList.remove('active');
+                }
+            });
+        }
+
+        document.addEventListener('click', (e) => {
+            if (e && e.target && e.target.closest('#user-panel, #spa-user-panel, #top-avatar, #spa-mobile-nav, .mobile-bottom-nav')) return;
+            if (typeof window.toggleUserPanel === 'function') {
+                window.toggleUserPanel(false);
+            } else {
+                const panel = document.getElementById('user-panel') || document.getElementById('spa-user-panel');
+                if (panel) panel.classList.remove('active');
+                const backdrop = document.getElementById('spa-user-panel-backdrop');
+                if (backdrop) backdrop.classList.remove('active');
             }
-        });
-
-        document.getElementById('top-avatar').addEventListener('click', function (e) {
-            e.stopPropagation();
-            const panel = document.getElementById('user-panel');
-            panel.classList.toggle('active');
-        });
-
-        document.addEventListener('click', () => {
-            document.getElementById('user-panel').classList.remove('active');
         });
     </script>
 </body>
