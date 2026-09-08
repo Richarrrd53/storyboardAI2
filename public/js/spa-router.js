@@ -140,10 +140,21 @@
         body: JSON.stringify({ email, password })
       });
       if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || '登入失敗');
+        let errorMsg = '登入失敗';
+        try {
+          const errorData = await res.json();
+          errorMsg = errorData.error || errorMsg;
+        } catch {
+          errorMsg = `伺服器回應異常 (${res.status} ${res.statusText})`;
+        }
+        throw new Error(errorMsg);
       }
-      const data = await res.json();
+      let data;
+      try {
+        data = await res.json();
+      } catch {
+        throw new Error('伺服器回傳非預期的資料格式，請稍後再試');
+      }
       localStorage.setItem(AUTH_TOKEN_KEY, data.token);
       window.clearSpaCache();
       return data;
@@ -179,8 +190,12 @@
           return { valid: true, error: true };
         }
 
-        const data = await res.json();
-        return { valid: true, user: data.user };
+        try {
+          const data = await res.json();
+          return { valid: true, user: data.user };
+        } catch {
+          return { valid: true, error: true };
+        }
       } catch (e) {
         if (e.name === 'AbortError') return { valid: true, aborted: true };
         return { valid: true, error: true };
@@ -203,7 +218,12 @@
 
           if (!res.ok) return [];
 
-          const data = await res.json();
+          let data;
+          try {
+            data = await res.json();
+          } catch {
+            return [];
+          }
           const projects = data.projects || [];
 
           projects.forEach(p => {
@@ -1198,10 +1218,21 @@ function initLoginLogic(showRegister) {
           body: JSON.stringify({ name, email, password: pass })
         });
         if (!res.ok) {
-          const errorData = await res.json();
-          throw new Error(errorData.error || '註冊失敗');
+          let errorMsg = '註冊失敗';
+          try {
+            const errorData = await res.json();
+            errorMsg = errorData.error || errorMsg;
+          } catch {
+            errorMsg = `伺服器回應異常 (${res.status} ${res.statusText})`;
+          }
+          throw new Error(errorMsg);
         }
-        const data = await res.json();
+        let data;
+        try {
+          data = await res.json();
+        } catch {
+          throw new Error('伺服器回傳非預期的資料格式，請稍後再試');
+        }
         showToast('註冊成功！已為您自動登入。');
         localStorage.setItem(AUTH_TOKEN_KEY, data.token);
         navigate('dashboard');
@@ -1216,54 +1247,88 @@ function initLoginLogic(showRegister) {
     };
   }
 
-async function ensureSharedLayout(signal) {
-  dashboardSidebar = dashboardSidebar || document.getElementById('dash-sidebar');
-  dashboardTopbar = dashboardTopbar || document.getElementById('spa-topbar');
-  mobileBottomNav = mobileBottomNav || document.getElementById('spa-mobile-nav');
-  dashboardUserPanel = dashboardUserPanel || document.getElementById('spa-user-panel');
+  async function ensureUserPanelDOM(signal) {
+    let panel = document.getElementById('spa-user-panel') || document.getElementById('user-panel') || dashboardUserPanel;
+    let backdrop = document.getElementById('spa-user-panel-backdrop') || document.querySelector('.user-panel-backdrop');
 
-  
+    if (!panel || !backdrop) {
+      let doc = null;
+      try {
+        doc = await fetchPageDoc('/html/dashboard.html', signal);
+      } catch (_) {}
 
-  if (!dashboardSidebar || !dashboardTopbar) {
-    const doc = await fetchPageDoc('/html/dashboard.html', signal);
-    if (signal?.aborted) return;
+      if (doc) {
+        if (!backdrop && !document.getElementById('spa-user-panel-backdrop')) {
+          const upBackdrop = doc.querySelector('.user-panel-backdrop');
+          if (upBackdrop) {
+            backdrop = upBackdrop.cloneNode(true);
+          } else {
+            backdrop = document.createElement('div');
+            backdrop.className = 'user-panel-backdrop';
+          }
+          backdrop.id = 'spa-user-panel-backdrop';
+          document.body.appendChild(backdrop);
+        }
 
-    const sidebar = doc.querySelector('aside.sidebar') || doc.querySelector('.sidebar');
-    if (sidebar && !document.getElementById('dash-sidebar')) {
-      dashboardSidebar = sidebar.cloneNode(true);
-      dashboardSidebar.id = 'dash-sidebar';
-      document.body.appendChild(dashboardSidebar);
+        if (!panel && !document.getElementById('spa-user-panel')) {
+          const up = doc.querySelector('.user-panel');
+          if (up) {
+            panel = up.cloneNode(true);
+          } else {
+            panel = document.createElement('div');
+            panel.className = 'user-panel';
+          }
+          panel.id = 'spa-user-panel';
+          document.body.appendChild(panel);
+        }
+      }
     }
 
-    const topbar = doc.querySelector('header.topbar') || doc.querySelector('.topbar');
-    if (topbar && !document.getElementById('spa-topbar')) {
-      dashboardTopbar = topbar.cloneNode(true);
-      dashboardTopbar.id = 'spa-topbar';
-      document.body.appendChild(dashboardTopbar);
+    if (panel) {
+      dashboardUserPanel = panel;
+      if (!panel.querySelector('.user-panel-handle')) {
+        const handle = document.createElement('div');
+        handle.className = 'user-panel-handle';
+        handle.setAttribute('aria-hidden', 'true');
+        panel.prepend(handle);
+      }
     }
 
-    const mobNav = doc.querySelector('.mobile-bottom-nav');
-    if (mobNav && !document.getElementById('spa-mobile-nav')) {
-      mobileBottomNav = mobNav.cloneNode(true);
-      mobileBottomNav.id = 'spa-mobile-nav';
-      document.body.appendChild(mobileBottomNav);
-    }
-
-    const up = doc.querySelector('.user-panel');
-    if (up && !document.getElementById('spa-user-panel')) {
-      const upEl = up.cloneNode(true);
-      upEl.id = 'spa-user-panel';
-      dashboardUserPanel = upEl;
-      document.body.appendChild(upEl);
-    }
+    initUserPanelGestures();
   }
 
-  injectCSS('/css/generate.css').catch(() => {});
-  injectCSS('/css/math-curve-loader.css').catch(() => {});
-  ensureAIDockDOM();
-  ensureMobileBottomNavDOM();
-  await initSharedLayoutLogic(signal);
-}
+  async function ensureSharedLayout(signal) {
+    dashboardSidebar = dashboardSidebar || document.getElementById('dash-sidebar');
+    dashboardTopbar = dashboardTopbar || document.getElementById('spa-topbar');
+    mobileBottomNav = mobileBottomNav || document.getElementById('spa-mobile-nav');
+    dashboardUserPanel = dashboardUserPanel || document.getElementById('spa-user-panel') || document.getElementById('user-panel');
+
+    if (!dashboardSidebar || !dashboardTopbar) {
+      const doc = await fetchPageDoc('/html/dashboard.html', signal);
+      if (signal?.aborted) return;
+
+      const sidebar = doc.querySelector('aside.sidebar') || doc.querySelector('.sidebar');
+      if (sidebar && !document.getElementById('dash-sidebar')) {
+        dashboardSidebar = sidebar.cloneNode(true);
+        dashboardSidebar.id = 'dash-sidebar';
+        document.body.appendChild(dashboardSidebar);
+      }
+
+      const topbar = doc.querySelector('header.topbar') || doc.querySelector('.topbar');
+      if (topbar && !document.getElementById('spa-topbar')) {
+        dashboardTopbar = topbar.cloneNode(true);
+        dashboardTopbar.id = 'spa-topbar';
+        document.body.appendChild(dashboardTopbar);
+      }
+    }
+
+    injectCSS('/css/generate.css').catch(() => {});
+    injectCSS('/css/math-curve-loader.css').catch(() => {});
+    ensureAIDockDOM();
+    ensureMobileBottomNavDOM();
+    await ensureUserPanelDOM(signal);
+    await initSharedLayoutLogic(signal);
+  }
 
   let aiDockPanel = null;
   let aiPillBtn = null;
@@ -1580,6 +1645,7 @@ async function ensureSharedLayout(signal) {
       mobNav.setAttribute('role', 'tablist');
       mobNav.setAttribute('draggable', 'false');
       mobNav.innerHTML = `
+        <div class="mobile-nav__indicator" id="mobile-nav-indicator" aria-hidden="true"></div>
         <a href="../dashboard" class="mobile-nav__item active" id="mob-nav-home" role="tab" aria-selected="true" aria-label="首頁" draggable="false">
             <div class="mobile-nav__icon-wrap">
                 <svg class="mobile-nav__svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1635,8 +1701,196 @@ async function ensureSharedLayout(signal) {
     initMobileBottomNavGestures();
   }
 
+  let lastToggleTime = 0;
+  window.toggleUserPanel = function(open) {
+    const panel = document.getElementById('spa-user-panel') || document.getElementById('user-panel') || dashboardUserPanel;
+    const backdrop = document.getElementById('spa-user-panel-backdrop') || document.querySelector('.user-panel-backdrop');
+    if (!panel) return;
+
+    const isCurrentlyActive = panel.classList.contains('active');
+    const shouldOpen = typeof open === 'boolean' ? open : !isCurrentlyActive;
+
+    const now = Date.now();
+    if (typeof open !== 'boolean' && now - lastToggleTime < 250) {
+      return; // Debounce rapid double-taps
+    }
+    lastToggleTime = now;
+
+    if (!panel.dataset.dragBound) {
+      initUserPanelGestures();
+    }
+
+    if (shouldOpen) {
+      panel.classList.add('active');
+      panel.style.removeProperty('transform');
+      panel.style.setProperty('transform', 'translate3d(0, 0, 0)', 'important');
+      panel.style.transition = '';
+      if (backdrop) {
+        backdrop.classList.add('active');
+        backdrop.style.opacity = '';
+        backdrop.style.backdropFilter = '';
+        backdrop.style.webkitBackdropFilter = '';
+        backdrop.style.transition = '';
+      }
+    } else {
+      panel.classList.remove('active');
+      panel.style.removeProperty('transform');
+      panel.style.transform = '';
+      panel.style.transition = '';
+      if (backdrop) {
+        backdrop.classList.remove('active');
+        backdrop.style.opacity = '';
+        backdrop.style.backdropFilter = '';
+        backdrop.style.webkitBackdropFilter = '';
+        backdrop.style.transition = '';
+      }
+    }
+  };
+
+  function initUserPanelGestures() {
+    const panel = document.getElementById('spa-user-panel') || document.getElementById('user-panel') || dashboardUserPanel;
+    const backdrop = document.getElementById('spa-user-panel-backdrop') || document.querySelector('.user-panel-backdrop');
+    if (!panel || panel.dataset.dragBound) return;
+    panel.dataset.dragBound = 'true';
+
+    if (backdrop && !backdrop.dataset.bound) {
+      backdrop.dataset.bound = 'true';
+      backdrop.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        window.toggleUserPanel(false);
+      });
+    }
+
+    let startY = 0;
+    let lastY = 0;
+    let lastTime = 0;
+    let curDy = 0;
+    let vy = 0;
+    let isDraggingPanel = false;
+    let activePointerId = null;
+    let panelHeight = 360;
+
+    panel.addEventListener('pointerdown', (e) => {
+      if (!panel.classList.contains('active') || window.innerWidth > 768) return;
+      const isHandle = !!e.target.closest('.user-panel-handle');
+      const isHeader = !!e.target.closest('.up-header');
+      const rect = panel.getBoundingClientRect();
+      const isTopZone = (e.clientY - rect.top) < 75;
+      const isInteractive = !!e.target.closest('a, button, input');
+
+      if (!isHandle && (!isTopZone || isInteractive)) return;
+
+      isDraggingPanel = true;
+      activePointerId = e.pointerId;
+      startY = e.clientY;
+      lastY = e.clientY;
+      lastTime = performance.now();
+      curDy = 0;
+      vy = 0;
+      panelHeight = panel.getBoundingClientRect().height || 360;
+
+      panel.style.setProperty('transition', 'none', 'important');
+      if (backdrop) backdrop.style.setProperty('transition', 'none', 'important');
+
+      window.addEventListener('pointermove', onPanelPointerMove, { passive: false });
+      window.addEventListener('pointerup', onPanelPointerUp);
+      window.addEventListener('pointercancel', onPanelPointerUp);
+
+      try { panel.setPointerCapture(e.pointerId); } catch (_) {}
+    });
+
+    function onPanelPointerMove(e) {
+      if (!isDraggingPanel || (activePointerId !== null && e.pointerId !== activePointerId)) return;
+      if (e.cancelable) e.preventDefault();
+
+      const rawDy = e.clientY - startY;
+      // 跟手向下移動：向上拉微阻尼，向下拉 1:1 即時跟手
+      curDy = rawDy >= 0 ? rawDy : rawDy * 0.18;
+
+      const now = performance.now();
+      const dt = Math.max(1, now - lastTime);
+      vy = (e.clientY - lastY) / dt;
+      lastY = e.clientY;
+      lastTime = now;
+
+      panel.style.setProperty('transform', `translate3d(0, ${curDy.toFixed(1)}px, 0)`, 'important');
+
+      if (backdrop) {
+        const ratio = Math.max(0, Math.min(1, curDy / panelHeight));
+        const progress = Math.max(0, 1 - ratio);
+        backdrop.style.setProperty('opacity', progress.toFixed(3), 'important');
+        const blurVal = (progress * 4).toFixed(2);
+        backdrop.style.setProperty('backdrop-filter', `blur(${blurVal}px)`, 'important');
+        backdrop.style.setProperty('-webkit-backdrop-filter', `blur(${blurVal}px)`, 'important');
+      }
+    }
+
+    function onPanelPointerUp(e) {
+      if (!isDraggingPanel) return;
+      if (activePointerId !== null && e && e.pointerId !== activePointerId) return;
+
+      window.removeEventListener('pointermove', onPanelPointerMove);
+      window.removeEventListener('pointerup', onPanelPointerUp);
+      window.removeEventListener('pointercancel', onPanelPointerUp);
+      try {
+        if (activePointerId !== null && panel.hasPointerCapture(activePointerId)) {
+          panel.releasePointerCapture(activePointerId);
+        }
+      } catch (_) {}
+
+      isDraggingPanel = false;
+      activePointerId = null;
+
+      // 到達 30% 以上的位移距離時收起，或帶有明顯向下速度時收起
+      const ratio = curDy / panelHeight;
+      const shouldDismiss = ratio >= 0.30 || vy > 0.38;
+
+      if (shouldDismiss) {
+        // 透過下拉力道加速：vy 越大，收起速度越快（duration 越短）
+        const remainingRatio = Math.max(0.1, 1 - ratio);
+        const velocityBonus = Math.min(0.18, Math.max(0, vy * 0.075));
+        const duration = Math.max(0.10, Math.min(0.28, (0.24 * remainingRatio) - velocityBonus));
+
+        panel.style.setProperty('transition', `transform ${duration.toFixed(2)}s cubic-bezier(0.12, 0.9, 0.25, 1), opacity ${duration.toFixed(2)}s ease`, 'important');
+        panel.style.setProperty('transform', 'translate3d(0, 100%, 0)', 'important');
+
+        if (backdrop) {
+          backdrop.style.setProperty('transition', `opacity ${duration.toFixed(2)}s ease, backdrop-filter ${duration.toFixed(2)}s ease, -webkit-backdrop-filter ${duration.toFixed(2)}s ease`, 'important');
+          backdrop.style.setProperty('opacity', '0', 'important');
+          backdrop.style.setProperty('backdrop-filter', 'blur(0px)', 'important');
+          backdrop.style.setProperty('-webkit-backdrop-filter', 'blur(0px)', 'important');
+        }
+
+        setTimeout(() => {
+          window.toggleUserPanel(false);
+        }, duration * 1000);
+      } else {
+        panel.style.setProperty('transition', 'transform 0.26s cubic-bezier(0.16, 1, 0.3, 1)', 'important');
+        panel.style.setProperty('transform', 'translate3d(0, 0, 0)', 'important');
+
+        if (backdrop) {
+          backdrop.style.setProperty('transition', 'opacity 0.26s ease, backdrop-filter 0.26s ease, -webkit-backdrop-filter 0.26s ease', 'important');
+          backdrop.style.setProperty('opacity', '1', 'important');
+          backdrop.style.setProperty('backdrop-filter', 'blur(4px)', 'important');
+          backdrop.style.setProperty('-webkit-backdrop-filter', 'blur(4px)', 'important');
+        }
+
+        setTimeout(() => {
+          panel.style.removeProperty('transition');
+          if (backdrop) {
+            backdrop.style.removeProperty('transition');
+            backdrop.style.removeProperty('backdrop-filter');
+            backdrop.style.removeProperty('-webkit-backdrop-filter');
+          }
+        }, 260);
+      }
+    }
+  }
+
   let navSpringRaf = null;
   let isNavInteracting = false;
+  let justHandledPointerNav = false;
 
   function initMobileBottomNavGestures() {
     const mobNav = document.getElementById('spa-mobile-nav') || mobileBottomNav;
@@ -1653,15 +1907,18 @@ async function ensureSharedLayout(signal) {
     let isCancelled = false;
     let currentTargetItem = null;
     let lastSnappedItem = null;
-    let justHandledPointerNav = false;
     let cachedMetrics = [];
     let cachedNavRect = null;
     let failsafeTimer = null;
+    let curIndicatorX = 0;
+    let pressStartTime = 0;
 
     const maxDx = 18;
     const maxDy = 12;
+    const indicatorWidth = 52;
 
     const items = Array.from(mobNav.querySelectorAll('.mobile-nav__item'));
+    const indicator = mobNav.querySelector('.mobile-nav__indicator');
 
     mobNav.addEventListener('dragstart', (e) => e.preventDefault());
     items.forEach(it => it.setAttribute('draggable', 'false'));
@@ -1709,14 +1966,14 @@ async function ensureSharedLayout(signal) {
       }
     }
 
-    function findClosestItem(clientX) {
-      let closest = null;
+    function findClosestMetric(clientX) {
+      let closest = cachedMetrics[0] || null;
       let minXDist = Infinity;
       for (const m of cachedMetrics) {
         const d = Math.abs(clientX - m.centerX);
         if (d < minXDist) {
           minXDist = d;
-          closest = m.item;
+          closest = m;
         }
       }
       return closest;
@@ -1748,17 +2005,35 @@ async function ensureSharedLayout(signal) {
       curDx = 0;
       curDy = 0;
       isCancelled = false;
-
-      curScaleX = 0.978;
-      curScaleY = 0.978;
-
-      mobNav.style.transition = 'none';
-      mobNav.style.transform = `translate3d(0px, 0px, 0) scale(${curScaleX.toFixed(4)}, ${curScaleY.toFixed(4)})`;
+      pressStartTime = performance.now();
 
       cacheMetrics();
-      currentTargetItem = findClosestItem(e.clientX);
+      const closestMetric = findClosestMetric(e.clientX);
+      currentTargetItem = closestMetric ? closestMetric.item : null;
       lastSnappedItem = currentTargetItem;
       highlightTargetItem(currentTargetItem);
+
+      // Initialize indicator follow coordinate
+      if (indicator) {
+        indicator.classList.remove('is-settling');
+        const activeItem = mobNav.querySelector('.mobile-nav__item.active:not(.mobile-nav__item--create)');
+        if (activeItem && cachedNavRect) {
+          const ar = activeItem.getBoundingClientRect();
+          curIndicatorX = (ar.left - cachedNavRect.left) + (ar.width - indicatorWidth) / 2;
+        } else {
+          curIndicatorX = e.clientX - cachedNavRect.left - indicatorWidth / 2;
+        }
+        indicator.style.transform = `translate3d(${curIndicatorX.toFixed(2)}px, 0, 0)`;
+        indicator.classList.add('is-active');
+        indicator.style.opacity = '1';
+      }
+
+      // Smooth soft micro-enlargement (scale: 1.026) instead of shrink
+      curScaleX = 1.026;
+      curScaleY = 1.026;
+
+      mobNav.style.transition = 'transform 0.16s cubic-bezier(0.2, 0.9, 0.3, 1)';
+      mobNav.style.transform = `translate3d(0px, 0px, 0) scale(${curScaleX.toFixed(4)}, ${curScaleY.toFixed(4)})`;
 
       window.addEventListener('pointermove', onPointerMove, { passive: false });
       window.addEventListener('pointerup', onPointerUp);
@@ -1783,6 +2058,8 @@ async function ensureSharedLayout(signal) {
         e.preventDefault();
       }
 
+      mobNav.style.transition = 'none';
+
       const rawDx = e.clientX - startX;
       const rawDy = e.clientY - startY;
 
@@ -1795,7 +2072,8 @@ async function ensureSharedLayout(signal) {
         }
       } else {
         isCancelled = false;
-        const closest = findClosestItem(e.clientX);
+        const closestMetric = findClosestMetric(e.clientX);
+        const closest = closestMetric ? closestMetric.item : null;
         if (closest && closest !== currentTargetItem) {
           currentTargetItem = closest;
           if (currentTargetItem !== lastSnappedItem) {
@@ -1806,16 +2084,45 @@ async function ensureSharedLayout(signal) {
           }
           highlightTargetItem(currentTargetItem);
         }
+
+        // Follow finger with soft magnetic link attraction
+        if (indicator && cachedNavRect && closestMetric) {
+          indicator.classList.remove('is-settling');
+          const fingerRelX = e.clientX - cachedNavRect.left - indicatorWidth / 2;
+          const closestCenterRelX = closestMetric.centerX - cachedNavRect.left - indicatorWidth / 2;
+          const distX = fingerRelX - closestCenterRelX;
+          let targetIndX = fingerRelX - distX * 0.35;
+          targetIndX = Math.max(4, Math.min(cachedNavRect.width - indicatorWidth - 4, targetIndX));
+
+          curIndicatorX += (targetIndX - curIndicatorX) * 0.36;
+          indicator.style.transform = `translate3d(${curIndicatorX.toFixed(2)}px, 0, 0)`;
+
+          if (closestMetric.isCreate) {
+            const distToCenter = Math.abs(fingerRelX - closestCenterRelX);
+            indicator.style.opacity = Math.min(1, Math.max(0, (distToCenter - 14) / 24)).toFixed(2);
+          } else {
+            indicator.style.opacity = '1';
+          }
+        }
       }
 
       curDx = Math.sign(rawDx) * maxDx * (1 - 1 / (1 + (Math.abs(rawDx) * 0.16) / maxDx));
       curDy = Math.sign(rawDy) * maxDy * (1 - 1 / (1 + (Math.abs(rawDy) * 0.16) / maxDy));
 
-      const xDist = Math.abs(rawDx);
-      const xThresholdDist = Math.max(0, xDist - 4);
-      const xStretchRatio = Math.min(1, xThresholdDist / maxDx);
-      curScaleX = 0.978 + xStretchRatio * 0.04;
-      curScaleY = 0.978;
+      // Directional vertical stretch (threshold: |rawDy| > 8px) - X-axis stretch removed
+      let edgeStretchY = 0;
+      let originY = 'center';
+      if (Math.abs(rawDy) > 8) {
+        edgeStretchY = Math.min(0.045, (Math.abs(rawDy) - 8) * 0.0035);
+        originY = rawDy > 0 ? 'top' : 'bottom';
+      }
+
+      mobNav.style.transformOrigin = `center ${originY}`;
+
+      const elapsed = performance.now() - pressStartTime;
+      const baseScale = 1.0 + 0.026 * Math.min(1, elapsed / 140);
+      curScaleX = baseScale;
+      curScaleY = baseScale + edgeStretchY;
 
       mobNav.style.transform = `translate3d(${curDx.toFixed(2)}px, ${curDy.toFixed(2)}px, 0) scale(${curScaleX.toFixed(4)}, ${curScaleY.toFixed(4)})`;
     }
@@ -1839,16 +2146,37 @@ async function ensureSharedLayout(signal) {
       isNavInteracting = false;
       activePointerId = null;
 
+      // Indicator smooth settling into link center without bouncing
+      if (indicator && releasedTargetItem && cachedNavRect) {
+        indicator.classList.add('is-settling');
+        if (!releasedTargetItem.classList.contains('mobile-nav__item--create')) {
+          const tMetric = cachedMetrics.find(m => m.item === releasedTargetItem);
+          if (tMetric) {
+            const finalOffset = tMetric.centerX - cachedNavRect.left - indicatorWidth / 2;
+            indicator.style.transform = `translate3d(${finalOffset.toFixed(2)}px, 0, 0)`;
+            indicator.style.opacity = '1';
+          }
+        } else {
+          indicator.style.opacity = '0';
+          indicator.classList.remove('is-active');
+        }
+      }
+
+      // Overshoot Rebound for large displacement
+      const dragDist = Math.hypot(curDx, curDy);
+      const isLargeDisplacement = dragDist > 5.0; // Lowered from 9 to 5.0
+
       let curX = curDx;
       let curY = curDy;
       let sX = curScaleX;
       let sY = curScaleY;
-      let vx = 0;
-      let vy = 0;
+      let vx = isLargeDisplacement ? -Math.sign(curX) * Math.max(36, Math.min(65, Math.abs(curX) * 4)) : 0;
+      let vy = isLargeDisplacement ? -Math.sign(curY) * Math.max(26, Math.min(50, Math.abs(curY) * 3.5)) : 0;
       let vsX = 0;
       let vsY = 0;
-      const posStiffness = 320;
-      const posDamping = 21;
+
+      const posStiffness = isLargeDisplacement ? 380 : 320;
+      const posDamping = isLargeDisplacement ? 12.5 : 24;
       const scaleStiffness = 360;
       const scaleDamping = 22;
       let lastTime = performance.now();
@@ -1873,13 +2201,14 @@ async function ensureSharedLayout(signal) {
 
         mobNav.style.transform = `translate3d(${curX.toFixed(2)}px, ${curY.toFixed(2)}px, 0) scale(${sX.toFixed(4)}, ${sY.toFixed(4)})`;
 
-        const isPosActive = Math.hypot(curX, curY) > 0.2 || Math.hypot(vx, vy) > 2;
+        const isPosActive = Math.hypot(curX, curY) > 0.18 || Math.hypot(vx, vy) > 2;
         const isScaleActive = Math.hypot(sX - 1.0, sY - 1.0) > 0.001 || Math.hypot(vsX, vsY) > 0.05;
 
         if (isPosActive || isScaleActive) {
           navSpringRaf = requestAnimationFrame(springStep);
         } else {
           mobNav.style.transform = '';
+          mobNav.style.transformOrigin = 'center center';
           navSpringRaf = null;
         }
       }
@@ -1895,8 +2224,7 @@ async function ensureSharedLayout(signal) {
 
       const targetItem = releasedTargetItem;
       if (targetItem.id === 'mob-nav-profile') {
-        const panel = document.getElementById('spa-user-panel') || dashboardUserPanel;
-        if (panel) panel.classList.toggle('active');
+        window.toggleUserPanel();
         updateMobileBottomNavActive(targetPage || currentPage);
       } else if (targetItem.id === 'mob-nav-generate') {
         navigate('generate');
@@ -1920,16 +2248,19 @@ async function ensureSharedLayout(signal) {
     }
 
     mobNav.addEventListener('pointerdown', onPointerDown);
+    mobNav.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
 
     items.forEach((item) => {
       item.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
+
         if (justHandledPointerNav) return;
 
         if (item.id === 'mob-nav-profile') {
-          const panel = document.getElementById('spa-user-panel') || dashboardUserPanel;
-          if (panel) panel.classList.toggle('active');
+          window.toggleUserPanel();
         } else if (item.id === 'mob-nav-generate') {
           navigate('generate');
         } else {
@@ -1986,6 +2317,7 @@ async function ensureSharedLayout(signal) {
     }
 
     const items = mobNav.querySelectorAll('.mobile-nav__item');
+    let activeItem = null;
     items.forEach(item => {
       const href = item.getAttribute('href') || '';
       const isGenerate = activeMainPage === 'generate' && (href.includes('generate') || item.id === 'mob-nav-generate');
@@ -1997,16 +2329,35 @@ async function ensureSharedLayout(signal) {
       if (isActive) {
         item.classList.add('active');
         item.setAttribute('aria-selected', 'true');
+        activeItem = item;
       } else {
         item.classList.remove('active');
         item.setAttribute('aria-selected', 'false');
       }
     });
+
+    const indicator = mobNav.querySelector('.mobile-nav__indicator');
+    if (indicator) {
+      if (activeItem && !activeItem.classList.contains('mobile-nav__item--create')) {
+        const itemRect = activeItem.getBoundingClientRect();
+        const navRect = mobNav.getBoundingClientRect();
+        if (navRect.width > 0 && itemRect.width > 0) {
+          const offset = (itemRect.left - navRect.left) + (itemRect.width - 52) / 2;
+          indicator.classList.add('is-settling', 'is-active');
+          indicator.style.transform = `translate3d(${offset.toFixed(2)}px, 0, 0)`;
+          indicator.style.opacity = '1';
+        }
+      } else {
+        indicator.classList.remove('is-active');
+        indicator.style.opacity = '0';
+      }
+    }
   }
 
   async function initSharedLayoutLogic(signal) {
     updateRailHoles();
     initMobileBottomNavGestures();
+    initUserPanelGestures();
     updateMobileBottomNavActive(targetPage || currentPage);
 
     const avatar = document.getElementById('top-avatar') || dashboardTopbar?.querySelector('#top-avatar');
@@ -2047,7 +2398,7 @@ async function ensureSharedLayout(signal) {
     if (avatar && panel) {
       avatar.onclick = e => {
         e.stopPropagation();
-        panel.classList.toggle('active');
+        window.toggleUserPanel();
       };
     }
 
@@ -2056,6 +2407,7 @@ async function ensureSharedLayout(signal) {
       logout.dataset.spaBound = 'true';
       logout.addEventListener('click', async e => {
         e.preventDefault();
+        window.toggleUserPanel(false);
         const isConfirmed = await confirm('是否確定登出？', '登出後將清除快取並返回首頁。', 'danger', '登出');
         if (isConfirmed) {
           spaAuth.logout();
@@ -2349,8 +2701,10 @@ async function ensureSharedLayout(signal) {
     }
 
     if (avatar && panel) {
-      avatar.onclick = e => { e.stopPropagation(); panel.classList.toggle('active'); };
-      document.addEventListener('click', () => panel.classList.remove('active'), { once: false });
+      avatar.onclick = e => {
+        e.stopPropagation();
+        window.toggleUserPanel();
+      };
     }
 
     const logout = panel?.querySelector('.up-logout');
@@ -3946,15 +4300,32 @@ async function ensureSharedLayout(signal) {
     document.body.appendChild(loader);
   }
 
+  document.addEventListener('click', (e) => {
+    const profileBtn = e.target.closest('#mob-nav-profile');
+    if (profileBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!justHandledPointerNav) {
+        window.toggleUserPanel();
+      }
+    }
+  }, true);
+
   document.addEventListener('DOMContentLoaded', async () => {
     initDashboardLoader();
 
     document.addEventListener('click', (e) => {
-      const panel = document.getElementById('spa-user-panel');
+      if (justHandledPointerNav) return;
+      if (e.target.closest('#spa-mobile-nav, .mobile-bottom-nav')) return;
+      const panel = document.getElementById('spa-user-panel') || document.getElementById('user-panel') || dashboardUserPanel;
       const avatar = document.getElementById('top-avatar') || (typeof dashboardTopbar !== 'undefined' && dashboardTopbar ? dashboardTopbar.querySelector('#top-avatar') : null);
       if (panel && panel.classList.contains('active')) {
-        if (!e.target.closest('#spa-user-panel') && !e.target.closest('#top-avatar') && (!avatar || !avatar.contains(e.target)) && !e.target.closest('#mob-nav-profile')) {
-          panel.classList.remove('active');
+        if (!e.target.closest('#spa-user-panel, #user-panel') && !e.target.closest('#top-avatar') && (!avatar || !avatar.contains(e.target)) && !e.target.closest('#mob-nav-profile')) {
+          if (typeof window.toggleUserPanel === 'function') {
+            window.toggleUserPanel(false);
+          } else {
+            panel.classList.remove('active');
+          }
         }
       }
     });

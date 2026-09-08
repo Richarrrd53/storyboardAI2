@@ -57,20 +57,42 @@ const { GoogleGenAI } = require('@google/genai');
 
 const app = express();
 
+// Vercel Serverless URL 相容中介層
+app.use((req, res, next) => {
+    // 1. 若 Vercel 將請求重寫至 /api/index.js，從 header 還原原始要求路徑
+    if (req.url.startsWith('/api/index.js') || req.url === '/api') {
+        const original = req.headers['x-matched-path'] || req.headers['x-forwarded-uri'] || req.originalUrl;
+        if (original && !original.includes('index.js')) {
+            req.url = original;
+        }
+    }
+    // 2. 若由 Vercel 或其他 proxy 轉發時遺失 /api 前綴，自動補充
+    if (!req.url.startsWith('/api') && req.url !== '/' && !req.url.startsWith('/public') && !req.url.startsWith('/css') && !req.url.startsWith('/js') && !req.url.startsWith('/images') && !req.url.startsWith('/html') && !req.url.startsWith('/video') && !req.url.startsWith('/icon')) {
+        if (req.url.startsWith('/auth') || req.url.startsWith('/projects') || req.url.startsWith('/ask-gemini') || req.url.startsWith('/get-templates') || req.url.startsWith('/templates')) {
+            req.url = '/api' + (req.url.startsWith('/') ? req.url : '/' + req.url);
+        }
+    }
+    next();
+});
 
 const googleCLoudProjectId = process.env.GOOGLE_CLOUD_PROJECT_ID;
 const location = "global";
 
-if (!googleCLoudProjectId) {
-    console.error("❌ 錯誤：找不到 GOOGLE_CLOUD_PROJECT_ID。");
+let genAIInstance = null;
+function getGenAI() {
+    if (!genAIInstance) {
+        const projectId = process.env.GOOGLE_CLOUD_PROJECT_ID || googleCLoudProjectId;
+        if (!projectId) {
+            throw new Error("找不到 GOOGLE_CLOUD_PROJECT_ID 環境變數。請在 Vercel 或 .env 中設定。");
+        }
+        genAIInstance = new GoogleGenAI({
+            vertexai: true,
+            project: projectId,
+            location: location,
+        });
+    }
+    return genAIInstance;
 }
-
-const genAI = new GoogleGenAI({
-    vertexai: true,
-    project: googleCLoudProjectId,
-    location: location,
-});
-
 
 app.get('/', (req, res) => {
     const filePath = path.join(process.cwd(), 'public', 'main.html');
@@ -559,7 +581,8 @@ app.post('/api/ask-gemini', async (req, res) => {
     try {
         const contents = [{ text: question }];
 
-        const response = await genAI.models.generateContent({
+        const ai = getGenAI();
+        const response = await ai.models.generateContent({
             model: selectedConfig.model,
             contents: contents,
             config: selectedConfig.config,
@@ -640,6 +663,23 @@ app.post('/api/templates', async (req, res) => {
     }
 });
 
+// API 404 攔截：確保任何未匹配的 /api/* 請求永遠回傳 JSON，絕不回傳 Express 預設的 HTML 錯誤頁
+app.use('/api', (req, res) => {
+    res.status(404).json({
+        error: `找不到 API 端點: ${req.method} ${req.originalUrl || req.url}`
+    });
+});
+
+// API 全域錯誤處理：捕捉任何未捕獲的例外並回傳 JSON
+app.use((err, req, res, next) => {
+    if (req.url.startsWith('/api') || req.originalUrl?.startsWith('/api')) {
+        console.error('⚠️ API 內部錯誤:', err);
+        return res.status(err.status || 500).json({
+            error: err.message || '伺服器內部錯誤'
+        });
+    }
+    next(err);
+});
 
 // SPA catch-all — redirect routes to main.html
 const spaRoutes = ['/dashboard', '/projects', '/login', '/register', '/generate', '/analyze', '/analysis', '/history', '/template', '/project/:id'];
@@ -648,8 +688,8 @@ spaRoutes.forEach(route => {
         res.sendFile(path.join(process.cwd(), 'public', 'main.html'));
     });
 });
-if (process.env.NODE_ENV !== 'production') {
-    const PORT = 3000;
+if (require.main === module) {
+    const PORT = process.env.PORT || 3000;
     app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
 }
 
