@@ -1,0 +1,29 @@
+/* ============================================================
+   STORYBOARD AI DESIGN SYSTEM v3.0
+   Sizing & Touch Target System
+   ============================================================ */
+
+:root {
+  /* ── Form Controls & Action Heights ── */
+  --control-height-sm: 36px;
+  --control-height-md: 44px;
+  --control-height-lg: 52px;
+
+  /* ── Accessibility Touch Targets (WCAG 2.5.5 / 2.5.8) ── */
+  --touch-target-desktop: 40px;
+  --touch-target-mobile:  44px;
+
+  /* ── Iconography Standards ── */
+  --icon-size-xs: 16px;
+  --icon-size-sm: 20px;
+  --icon-size-md: 24px;
+  --icon-size-lg: 32px;
+  --icon-stroke-thin: 1.5px;
+  --icon-stroke-base: 2px;
+  --icon-stroke-bold: 2.5px;
+
+  /* ── Avatar Standards ── */
+  --avatar-size-sm: 32px;
+  --avatar-size-md: 40px;
+  --avatar-size-lg: 52px;
+}

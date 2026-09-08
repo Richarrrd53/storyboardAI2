@@ -1261,6 +1261,7 @@ async function ensureSharedLayout(signal) {
   injectCSS('/css/generate.css').catch(() => {});
   injectCSS('/css/math-curve-loader.css').catch(() => {});
   ensureAIDockDOM();
+  ensureMobileBottomNavDOM();
   await initSharedLayoutLogic(signal);
 }
 
@@ -1280,16 +1281,44 @@ async function ensureSharedLayout(signal) {
     const progressFill = document.getElementById('ai-pill-progress-fill');
     const pillText = document.getElementById('ai-pill-text');
     
-    if (!pillBtn) return;
+    if (pillBtn) {
+      if (isGenerating) {
+        pillBtn.classList.add('is-generating');
+        if (progressFill) progressFill.style.width = Math.min(100, Math.max(0, pct)) + '%';
+        if (pillText) pillText.textContent = `✦ 生成中 ${Math.round(pct)}%`;
+      } else {
+        pillBtn.classList.remove('is-generating');
+        if (progressFill) progressFill.style.width = '0%';
+        if (pillText) pillText.textContent = '立刻創建新分鏡';
+      }
+    }
 
-    if (isGenerating) {
-      pillBtn.classList.add('is-generating');
-      if (progressFill) progressFill.style.width = Math.min(100, Math.max(0, pct)) + '%';
-      if (pillText) pillText.textContent = `✦ 生成中 ${Math.round(pct)}%`;
-    } else {
-      pillBtn.classList.remove('is-generating');
-      if (progressFill) progressFill.style.width = '0%';
-      if (pillText) pillText.textContent = '立刻創建新分鏡';
+    const mobCircle = document.getElementById('mob-nav-circle-wrap') || document.getElementById('mob-nav-capsule-wrap');
+    const mobProgressFill = document.getElementById('mob-circle-progress-fill') || document.getElementById('mob-pill-progress-fill');
+    const mobCircleSpark = mobCircle ? mobCircle.querySelector('.mob-circle-spark') : null;
+    const mobCircleText = document.getElementById('mob-circle-text') || document.getElementById('mob-pill-text');
+    const mobItem = document.getElementById('mob-nav-generate');
+
+    if (mobCircle) {
+      if (isGenerating) {
+        mobCircle.classList.add('is-generating');
+        if (mobItem) mobItem.classList.add('is-generating');
+        if (mobProgressFill) mobProgressFill.style.width = Math.min(100, Math.max(0, pct)) + '%';
+        if (mobCircleSpark) mobCircleSpark.style.display = 'none';
+        if (mobCircleText) {
+          mobCircleText.style.display = 'inline-block';
+          mobCircleText.textContent = `${Math.round(pct)}%`;
+        }
+      } else {
+        mobCircle.classList.remove('is-generating');
+        if (mobItem) mobItem.classList.remove('is-generating');
+        if (mobProgressFill) mobProgressFill.style.width = '0%';
+        if (mobCircleSpark) mobCircleSpark.style.display = '';
+        if (mobCircleText) {
+          mobCircleText.style.display = 'none';
+          mobCircleText.textContent = '';
+        }
+      }
     }
   };
 
@@ -1491,6 +1520,8 @@ async function ensureSharedLayout(signal) {
     const isSidebarOpen = sidebar && sidebar.classList.contains('open');
     const pageMain = document.getElementById('page-main');
 
+    const isMobile = window.innerWidth <= 768 || (window.innerWidth <= 1024 && window.matchMedia('(orientation: portrait)').matches);
+
     if (page === 'generate') {
       expandSidebar(false);
       aiDockPanel.classList.remove('hidden', 'pushed-out');
@@ -1502,7 +1533,13 @@ async function ensureSharedLayout(signal) {
       if (pageMain) pageMain.classList.remove('collapsing-for-ai');
       aiDockPanel.classList.remove('expanding-to-full');
 
-      if (isHomePage) {
+      if (isMobile) {
+        aiDockPanel.classList.add('hidden');
+        aiDockPanel.classList.remove('pushed-out');
+        aiPillBtn.classList.remove('show');
+        document.body.classList.remove('ai-dock-active');
+        if (pageMain) pageMain.style.marginRight = '0';
+      } else if (isHomePage) {
         if (isSidebarOpen || window.innerWidth < 1024) {
           aiDockPanel.classList.remove('hidden');
           aiDockPanel.classList.add('pushed-out');
@@ -1533,8 +1570,444 @@ async function ensureSharedLayout(signal) {
     }
   }
 
+  function ensureMobileBottomNavDOM() {
+    let mobNav = document.getElementById('spa-mobile-nav') || mobileBottomNav;
+    if (!mobNav) {
+      mobNav = document.createElement('nav');
+      mobNav.className = 'mobile-bottom-nav';
+      mobNav.id = 'spa-mobile-nav';
+      mobNav.setAttribute('aria-label', '行動版底部導航');
+      mobNav.setAttribute('role', 'tablist');
+      mobNav.setAttribute('draggable', 'false');
+      mobNav.innerHTML = `
+        <a href="../dashboard" class="mobile-nav__item active" id="mob-nav-home" role="tab" aria-selected="true" aria-label="首頁" draggable="false">
+            <div class="mobile-nav__icon-wrap">
+                <svg class="mobile-nav__svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+            </div>
+            <span class="mobile-nav__label">首頁</span>
+        </a>
+        <a href="../projects" class="mobile-nav__item" id="mob-nav-projects" role="tab" aria-selected="false" aria-label="分鏡" draggable="false">
+            <div class="mobile-nav__icon-wrap">
+                <svg class="mobile-nav__svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                </svg>
+            </div>
+            <span class="mobile-nav__label">分鏡</span>
+        </a>
+        <a href="../generate" class="mobile-nav__item mobile-nav__item--create" id="mob-nav-generate" role="tab" aria-selected="false" aria-label="新建分鏡" draggable="false">
+            <div class="mob-circle-btn" id="mob-nav-circle-wrap">
+                <div class="mob-circle-glow-container">
+                    <div class="mob-circle-glow"></div>
+                </div>
+                <div class="mob-circle-progress-fill" id="mob-circle-progress-fill"></div>
+                <div class="mob-circle-inner">
+                    <span class="mob-circle-spark">✦</span>
+                    <span class="mob-circle-text" id="mob-circle-text" style="display:none;"></span>
+                </div>
+            </div>
+        </a>
+        <a href="../template" class="mobile-nav__item" id="mob-nav-template" role="tab" aria-selected="false" aria-label="模板" draggable="false">
+            <div class="mobile-nav__icon-wrap">
+                <svg class="mobile-nav__svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="3" y1="9" x2="21" y2="9"></line>
+                    <line x1="9" y1="21" x2="9" y2="9"></line>
+                </svg>
+            </div>
+            <span class="mobile-nav__label">模板</span>
+        </a>
+        <button type="button" class="mobile-nav__item" id="mob-nav-profile" role="tab" aria-selected="false" aria-label="我的設定" draggable="false">
+            <div class="mobile-nav__icon-wrap">
+                <svg class="mobile-nav__svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+            </div>
+            <span class="mobile-nav__label">我的</span>
+        </button>
+      `;
+      document.body.appendChild(mobNav);
+      mobileBottomNav = mobNav;
+    }
+    initMobileBottomNavGestures();
+  }
+
+  let navSpringRaf = null;
+  let isNavInteracting = false;
+
+  function initMobileBottomNavGestures() {
+    const mobNav = document.getElementById('spa-mobile-nav') || mobileBottomNav;
+    if (!mobNav || mobNav.dataset.gesturesBound) return;
+    mobNav.dataset.gesturesBound = 'true';
+
+    let activePointerId = null;
+    let startX = 0;
+    let startY = 0;
+    let curDx = 0;
+    let curDy = 0;
+    let curScaleX = 1.0;
+    let curScaleY = 1.0;
+    let isCancelled = false;
+    let currentTargetItem = null;
+    let lastSnappedItem = null;
+    let justHandledPointerNav = false;
+    let cachedMetrics = [];
+    let cachedNavRect = null;
+    let failsafeTimer = null;
+
+    const maxDx = 18;
+    const maxDy = 12;
+
+    const items = Array.from(mobNav.querySelectorAll('.mobile-nav__item'));
+
+    mobNav.addEventListener('dragstart', (e) => e.preventDefault());
+    items.forEach(it => it.setAttribute('draggable', 'false'));
+
+    function cacheMetrics() {
+      cachedNavRect = mobNav.getBoundingClientRect();
+      cachedMetrics = items.map(it => {
+        const r = it.getBoundingClientRect();
+        return {
+          item: it,
+          id: it.id,
+          centerX: r.left + r.width / 2,
+          isCreate: it.classList.contains('mobile-nav__item--create')
+        };
+      });
+    }
+
+    function clearSnapHover() {
+      items.forEach(it => it.classList.remove('snap-target'));
+      const circleBtn = mobNav.querySelector('.mob-circle-btn');
+      if (circleBtn) {
+        circleBtn.classList.remove('snap-hover');
+      }
+    }
+
+    function highlightTargetItem(targetItem) {
+      if (!targetItem) {
+        clearSnapHover();
+        return;
+      }
+      items.forEach(it => {
+        if (it === targetItem) {
+          it.classList.add('snap-target');
+        } else {
+          it.classList.remove('snap-target');
+        }
+      });
+      const circleBtn = mobNav.querySelector('.mob-circle-btn');
+      if (circleBtn) {
+        if (targetItem.classList.contains('mobile-nav__item--create')) {
+          circleBtn.classList.add('snap-hover');
+        } else {
+          circleBtn.classList.remove('snap-hover');
+        }
+      }
+    }
+
+    function findClosestItem(clientX) {
+      let closest = null;
+      let minXDist = Infinity;
+      for (const m of cachedMetrics) {
+        const d = Math.abs(clientX - m.centerX);
+        if (d < minXDist) {
+          minXDist = d;
+          closest = m.item;
+        }
+      }
+      return closest;
+    }
+
+    function cleanupWindowListeners() {
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointercancel', onPointerCancel);
+      mobNav.removeEventListener('lostpointercapture', onPointerCancel);
+      if (failsafeTimer) {
+        clearTimeout(failsafeTimer);
+        failsafeTimer = null;
+      }
+    }
+
+    function onPointerDown(e) {
+      if (e.button !== 0 && e.pointerType === 'mouse') return;
+
+      if (navSpringRaf) {
+        cancelAnimationFrame(navSpringRaf);
+        navSpringRaf = null;
+      }
+
+      isNavInteracting = true;
+      activePointerId = e.pointerId;
+      startX = e.clientX;
+      startY = e.clientY;
+      curDx = 0;
+      curDy = 0;
+      isCancelled = false;
+
+      curScaleX = 0.978;
+      curScaleY = 0.978;
+
+      mobNav.style.transition = 'none';
+      mobNav.style.transform = `translate3d(0px, 0px, 0) scale(${curScaleX.toFixed(4)}, ${curScaleY.toFixed(4)})`;
+
+      cacheMetrics();
+      currentTargetItem = findClosestItem(e.clientX);
+      lastSnappedItem = currentTargetItem;
+      highlightTargetItem(currentTargetItem);
+
+      window.addEventListener('pointermove', onPointerMove, { passive: false });
+      window.addEventListener('pointerup', onPointerUp);
+      window.addEventListener('pointercancel', onPointerCancel);
+      mobNav.addEventListener('lostpointercapture', onPointerCancel);
+
+      try {
+        mobNav.setPointerCapture(e.pointerId);
+      } catch (_) {}
+
+      failsafeTimer = setTimeout(() => {
+        if (isNavInteracting) {
+          onPointerRelease(null, true);
+        }
+      }, 4000);
+    }
+
+    function onPointerMove(e) {
+      if (!isNavInteracting || (activePointerId !== null && e.pointerId !== activePointerId)) return;
+
+      if (e.cancelable && e.pointerType !== 'mouse') {
+        e.preventDefault();
+      }
+
+      const rawDx = e.clientX - startX;
+      const rawDy = e.clientY - startY;
+
+      if (cachedNavRect && (e.clientY < cachedNavRect.top - 65 || e.clientY > cachedNavRect.bottom + 65)) {
+        if (!isCancelled) {
+          isCancelled = true;
+          currentTargetItem = null;
+          clearSnapHover();
+          updateMobileBottomNavActive(targetPage || currentPage);
+        }
+      } else {
+        isCancelled = false;
+        const closest = findClosestItem(e.clientX);
+        if (closest && closest !== currentTargetItem) {
+          currentTargetItem = closest;
+          if (currentTargetItem !== lastSnappedItem) {
+            lastSnappedItem = currentTargetItem;
+            if (typeof navigator !== 'undefined' && navigator.vibrate) {
+              try { navigator.vibrate(8); } catch (_) {}
+            }
+          }
+          highlightTargetItem(currentTargetItem);
+        }
+      }
+
+      curDx = Math.sign(rawDx) * maxDx * (1 - 1 / (1 + (Math.abs(rawDx) * 0.16) / maxDx));
+      curDy = Math.sign(rawDy) * maxDy * (1 - 1 / (1 + (Math.abs(rawDy) * 0.16) / maxDy));
+
+      const xDist = Math.abs(rawDx);
+      const xThresholdDist = Math.max(0, xDist - 4);
+      const xStretchRatio = Math.min(1, xThresholdDist / maxDx);
+      curScaleX = 0.978 + xStretchRatio * 0.04;
+      curScaleY = 0.978;
+
+      mobNav.style.transform = `translate3d(${curDx.toFixed(2)}px, ${curDy.toFixed(2)}px, 0) scale(${curScaleX.toFixed(4)}, ${curScaleY.toFixed(4)})`;
+    }
+
+    function onPointerRelease(e, forceCancel = false) {
+      if (!isNavInteracting) return;
+      if (!forceCancel && activePointerId !== null && e && e.pointerId !== activePointerId) return;
+
+      const releasedTargetItem = currentTargetItem;
+      const releaseCancelled = forceCancel || isCancelled;
+
+      try {
+        if (activePointerId !== null && mobNav.hasPointerCapture(activePointerId)) {
+          mobNav.releasePointerCapture(activePointerId);
+        }
+      } catch (_) {}
+
+      cleanupWindowListeners();
+      clearSnapHover();
+
+      isNavInteracting = false;
+      activePointerId = null;
+
+      let curX = curDx;
+      let curY = curDy;
+      let sX = curScaleX;
+      let sY = curScaleY;
+      let vx = 0;
+      let vy = 0;
+      let vsX = 0;
+      let vsY = 0;
+      const posStiffness = 320;
+      const posDamping = 21;
+      const scaleStiffness = 360;
+      const scaleDamping = 22;
+      let lastTime = performance.now();
+
+      function springStep(now) {
+        const dt = Math.min(0.032, (now - lastTime) / 1000);
+        lastTime = now;
+
+        const ax = -posStiffness * curX - posDamping * vx;
+        const ay = -posStiffness * curY - posDamping * vy;
+        vx += ax * dt;
+        vy += ay * dt;
+        curX += vx * dt;
+        curY += vy * dt;
+
+        const asX = -scaleStiffness * (sX - 1.0) - scaleDamping * vsX;
+        const asY = -scaleStiffness * (sY - 1.0) - scaleDamping * vsY;
+        vsX += asX * dt;
+        vsY += asY * dt;
+        sX += vsX * dt;
+        sY += vsY * dt;
+
+        mobNav.style.transform = `translate3d(${curX.toFixed(2)}px, ${curY.toFixed(2)}px, 0) scale(${sX.toFixed(4)}, ${sY.toFixed(4)})`;
+
+        const isPosActive = Math.hypot(curX, curY) > 0.2 || Math.hypot(vx, vy) > 2;
+        const isScaleActive = Math.hypot(sX - 1.0, sY - 1.0) > 0.001 || Math.hypot(vsX, vsY) > 0.05;
+
+        if (isPosActive || isScaleActive) {
+          navSpringRaf = requestAnimationFrame(springStep);
+        } else {
+          mobNav.style.transform = '';
+          navSpringRaf = null;
+        }
+      }
+      navSpringRaf = requestAnimationFrame(springStep);
+
+      if (releaseCancelled || !releasedTargetItem) {
+        updateMobileBottomNavActive(targetPage || currentPage);
+        return;
+      }
+
+      justHandledPointerNav = true;
+      setTimeout(() => { justHandledPointerNav = false; }, 300);
+
+      const targetItem = releasedTargetItem;
+      if (targetItem.id === 'mob-nav-profile') {
+        const panel = document.getElementById('spa-user-panel') || dashboardUserPanel;
+        if (panel) panel.classList.toggle('active');
+        updateMobileBottomNavActive(targetPage || currentPage);
+      } else if (targetItem.id === 'mob-nav-generate') {
+        navigate('generate');
+      } else {
+        const href = targetItem.getAttribute('href') || '';
+        let targetRoute = 'dashboard';
+        if (href.includes('generate')) targetRoute = 'generate';
+        else if (href.includes('projects')) targetRoute = 'projects';
+        else if (href.includes('template')) targetRoute = 'template';
+        else if (href.includes('history')) targetRoute = 'history';
+        navigate(targetRoute);
+      }
+    }
+
+    function onPointerUp(e) {
+      onPointerRelease(e, false);
+    }
+
+    function onPointerCancel(e) {
+      onPointerRelease(e, true);
+    }
+
+    mobNav.addEventListener('pointerdown', onPointerDown);
+
+    items.forEach((item) => {
+      item.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (justHandledPointerNav) return;
+
+        if (item.id === 'mob-nav-profile') {
+          const panel = document.getElementById('spa-user-panel') || dashboardUserPanel;
+          if (panel) panel.classList.toggle('active');
+        } else if (item.id === 'mob-nav-generate') {
+          navigate('generate');
+        } else {
+          const href = item.getAttribute('href') || '';
+          let targetRoute = 'dashboard';
+          if (href.includes('generate')) targetRoute = 'generate';
+          else if (href.includes('projects')) targetRoute = 'projects';
+          else if (href.includes('template')) targetRoute = 'template';
+          else if (href.includes('history')) targetRoute = 'history';
+          navigate(targetRoute);
+        }
+      });
+    });
+
+    if (window.visualViewport && !mobNav.dataset.viewportBound) {
+      mobNav.dataset.viewportBound = 'true';
+      const initialHeight = window.visualViewport.height;
+
+      window.visualViewport.addEventListener('resize', () => {
+        const currentHeight = window.visualViewport.height;
+        const isKeyboardOpen = (initialHeight - currentHeight) > 150;
+        if (isKeyboardOpen) {
+          mobNav.style.transform = 'translateY(120%)';
+          mobNav.style.opacity = '0';
+          mobNav.style.pointerEvents = 'none';
+        } else {
+          mobNav.style.transform = '';
+          mobNav.style.opacity = '';
+          mobNav.style.pointerEvents = '';
+        }
+      });
+    }
+
+    window.addEventListener('resize', () => {
+      updateMobileBottomNavActive(targetPage || currentPage);
+    });
+  }
+
+  function updateMobileBottomNavActive(page) {
+    const mobNav = document.getElementById('spa-mobile-nav') || mobileBottomNav;
+    if (!mobNav) return;
+
+    if (isNavInteracting) return;
+
+    let activeMainPage = page;
+    if (!activeMainPage || (activeMainPage === currentPage && targetPage)) {
+      activeMainPage = targetPage;
+    }
+    if (!activeMainPage) {
+      activeMainPage = currentPage || 'dashboard';
+    }
+    if (activeMainPage === 'project') {
+      activeMainPage = 'projects';
+    }
+
+    const items = mobNav.querySelectorAll('.mobile-nav__item');
+    items.forEach(item => {
+      const href = item.getAttribute('href') || '';
+      const isGenerate = activeMainPage === 'generate' && (href.includes('generate') || item.id === 'mob-nav-generate');
+      const isDashboard = activeMainPage === 'dashboard' && (href.includes('dashboard') || item.id === 'mob-nav-home');
+      const isProjects = activeMainPage === 'projects' && (href.includes('projects') || item.id === 'mob-nav-projects');
+      const isTemplate = activeMainPage === 'template' && (href.includes('template') || item.id === 'mob-nav-template');
+
+      const isActive = isGenerate || isDashboard || isProjects || isTemplate;
+      if (isActive) {
+        item.classList.add('active');
+        item.setAttribute('aria-selected', 'true');
+      } else {
+        item.classList.remove('active');
+        item.setAttribute('aria-selected', 'false');
+      }
+    });
+  }
+
   async function initSharedLayoutLogic(signal) {
     updateRailHoles();
+    initMobileBottomNavGestures();
+    updateMobileBottomNavActive(targetPage || currentPage);
 
     const avatar = document.getElementById('top-avatar') || dashboardTopbar?.querySelector('#top-avatar');
     const panel = document.getElementById('spa-user-panel');
@@ -2886,7 +3359,16 @@ async function ensureSharedLayout(signal) {
         m.style.marginLeft = 'calc(2vh + 60px)';
       }
       sidebar.classList.remove('open');
-      if (currentPage === 'dashboard') {
+      const isMobile = window.innerWidth <= 768 || (window.innerWidth <= 1024 && window.matchMedia('(orientation: portrait)').matches);
+      if (isMobile) {
+        if (aiDockPanel && currentPage !== 'generate') {
+          aiDockPanel.classList.add('hidden');
+          aiDockPanel.classList.remove('pushed-out');
+        }
+        if (aiPillBtn) aiPillBtn.classList.remove('show');
+        document.body.classList.remove('ai-dock-active');
+        if (m) m.style.marginRight = '0';
+      } else if (currentPage === 'dashboard') {
         if (aiDockPanel) {
           aiDockPanel.classList.remove('hidden', 'pushed-out');
         }
@@ -2964,6 +3446,7 @@ async function ensureSharedLayout(signal) {
     }
 
     updateSidebarProjects();
+    updateMobileBottomNavActive(page);
   }
 
   function updateSidebarProjects() {
@@ -3098,6 +3581,7 @@ async function ensureSharedLayout(signal) {
 
     targetPage = page;
     targetOpts = opts;
+    updateMobileBottomNavActive(page);
 
     const mySeq = ++navSeq;
 
@@ -3349,8 +3833,9 @@ async function ensureSharedLayout(signal) {
         dashboardTopbar.style.display = isDashboardPage(page) ? '' : 'none';
       }
 
-      if (mobileBottomNav) {
-        mobileBottomNav.style.display = isDashboardPage(page) ? '' : 'none';
+      const mobNav = document.getElementById('spa-mobile-nav') || mobileBottomNav;
+      if (mobNav) {
+        mobNav.style.display = isDashboardPage(page) ? '' : 'none';
       }
 
       const userPanel = document.getElementById('spa-user-panel');
@@ -3468,7 +3953,7 @@ async function ensureSharedLayout(signal) {
       const panel = document.getElementById('spa-user-panel');
       const avatar = document.getElementById('top-avatar') || (typeof dashboardTopbar !== 'undefined' && dashboardTopbar ? dashboardTopbar.querySelector('#top-avatar') : null);
       if (panel && panel.classList.contains('active')) {
-        if (!e.target.closest('#spa-user-panel') && !e.target.closest('#top-avatar') && (!avatar || !avatar.contains(e.target))) {
+        if (!e.target.closest('#spa-user-panel') && !e.target.closest('#top-avatar') && (!avatar || !avatar.contains(e.target)) && !e.target.closest('#mob-nav-profile')) {
           panel.classList.remove('active');
         }
       }

@@ -1,0 +1,35 @@
+/* ============================================================
+   STORYBOARD AI DESIGN SYSTEM v3.0
+   Blur & Glass Recipe System (Icy Glassmorphism)
+   ============================================================ */
+
+:root {
+  /* ── Raw Blur Tokens ── */
+  --blur-none:      0px;
+  --blur-subtle:    6px;
+  --blur-base:      12px;
+  --blur-nav:       20px;
+  --blur-glass:     24px;
+  --blur-modal:     28px;
+  --blur-cinematic: 50px;
+
+  /* ── Icy Glass Recipe: Navigation Header ── */
+  --glass-nav-bg:     rgba(255, 255, 255, 0.75);
+  --glass-nav-blur:   blur(var(--blur-nav));
+  --glass-nav-border: 1px solid rgba(255, 255, 255, 0.55);
+
+  /* ── Icy Glass Recipe: Floating Mobile Nav & Toolbars ── */
+  --glass-floating-bg:     rgba(255, 255, 255, 0.88);
+  --glass-floating-blur:   blur(var(--blur-nav));
+  --glass-floating-border: 1px solid rgba(255, 255, 255, 0.65);
+
+  /* ── Icy Glass Recipe: Compose Card & Inset Surfaces ── */
+  --glass-card-bg:     rgba(255, 255, 255, 0.92);
+  --glass-card-blur:   blur(var(--blur-glass));
+  --glass-card-border: 1.5px solid rgba(255, 255, 255, 0.95);
+
+  /* ── Icy Glass Recipe: Modal Dialogues ── */
+  --glass-modal-bg:     rgba(255, 255, 255, 0.95);
+  --glass-modal-blur:   blur(var(--blur-modal));
+  --glass-modal-border: 1.5px solid rgba(255, 255, 255, 0.95);
+}

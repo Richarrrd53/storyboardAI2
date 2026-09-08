@@ -1,0 +1,64 @@
+/* ============================================================
+   STORYBOARD AI DESIGN SYSTEM v3.0
+   Master Design Tokens Aggregator
+   ============================================================ */
+
+/* ── 1. Layer 1: Primitive Tokens ── */
+@import url('./tokens/primitives.css');
+
+/* ── 2. Layer 2: Semantic Tokens ── */
+@import url('./tokens/colors.css');
+
+/* ── 3. Foundations & Scales ── */
+@import url('./tokens/typography.css');
+@import url('./tokens/spacing.css');
+@import url('./tokens/sizing.css');
+@import url('./tokens/radius.css');
+@import url('./tokens/border.css');
+@import url('./tokens/shadow.css');
+@import url('./tokens/blur.css');
+@import url('./tokens/opacity.css');
+@import url('./tokens/layout.css');
+@import url('./tokens/breakpoint.css');
+@import url('./tokens/layers.css');
+@import url('./tokens/motion.css');
+
+/* ── 4. Layer 3: Component Tokens ── */
+@import url('./tokens/components.css');
+
+/* ============================================================
+   LEGACY FALLBACK LAYER (Backward Compatibility Layer)
+   Maps old variable names to new semantic tokens to prevent
+   visual regression during component-by-component migration.
+   ============================================================ */
+:root {
+  /* Brand Legacy Aliases */
+  --primary:         var(--color-brand-primary);
+  --primary-light:   var(--color-brand-primary-light);
+  --primary-soft:    var(--color-brand-primary-soft);
+
+  /* Deprecated Color-name Aliases */
+  --peach:           var(--color-brand-accent);
+  --peach-light:     var(--color-brand-accent-light);
+  --yellow-warm:     var(--color-brand-accent-soft);
+  --lavender:        var(--color-surface-film);
+  --lavender-light:  var(--color-surface-film-subtle);
+
+  /* Typography Legacy Aliases */
+  --text-dark:       var(--color-text-primary);
+  --text-mid:        var(--color-text-secondary);
+  --text-light:      var(--color-text-muted);
+  --text-muted:      var(--color-text-tertiary);
+
+  /* Surfaces & Borders Legacy Aliases */
+  --card-bg:         var(--color-surface-primary);
+  --card-border:     var(--color-border-default);
+  --bg-dark:         var(--color-surface-film);
+  --off-white:       var(--color-bg-page);
+  --shadow-soft:     var(--elevation-1);
+  --shadow-card:     var(--elevation-1);
+
+  /* Font Aliases */
+  --font-display:    var(--font-family-display);
+  --font-body:       var(--font-family-body);
+}

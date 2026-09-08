@@ -1,0 +1,19 @@
+/* ============================================================
+   STORYBOARD AI DESIGN SYSTEM v3.0
+   Z-Index Layer Stacking System
+   Standardized 10-tier Z-Index Tokens
+   ============================================================ */
+
+:root {
+  --layer-base:     0;   /* Normal canvas flow & background elements */
+  --layer-content:  10;  /* Cards, grids, interactive content */
+  --layer-sticky:   100; /* Sticky project headers, track rulers */
+  --layer-nav:      200; /* Sidebar header, topbar, mobile bottom nav */
+  --layer-dropdown: 300; /* Select menus, action dropdowns */
+  --layer-popover:  400; /* User panel popover, rich tooltips */
+  --layer-dock:     500; /* Floating AI Dock & Pill Button */
+  --layer-overlay:  600; /* Scrim overlays & cinematic black masks */
+  --layer-modal:    700; /* Modal windows, preview drawers */
+  --layer-toast:    800; /* Floating toasts & undo alerts */
+  --layer-system:   900; /* Critical system alert & crash handlers */
+}

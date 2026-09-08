@@ -1,6 +1,7 @@
 /* ============================================
   STORYBOARD AI — Auth Styles
   ============================================ */
+@import url('./tokens.css');
 
 body {
   font-size: 1.5vh;

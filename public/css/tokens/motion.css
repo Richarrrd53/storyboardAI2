@@ -1,0 +1,50 @@
+/* ============================================================
+   STORYBOARD AI DESIGN SYSTEM v3.0
+   Motion & Animation System (Cinematic + Organic Jelly Physics)
+   ============================================================ */
+
+:root {
+  /* ── Duration Tokens ── */
+  --motion-duration-instant: 120ms; /* Button press, toggle switch */
+  --motion-duration-fast:    200ms; /* Hover lift, chip select */
+  --motion-duration-base:    300ms; /* Dropdown, toast, card state */
+  --motion-duration-medium:  500ms; /* Sidebar morph, modal enter */
+  --motion-duration-slow:    800ms; /* 3D Card flip, system dialog */
+  --motion-duration-ambient: 12s;   /* Background ambient breathing */
+
+  /* ── Easing Curve Tokens ── */
+  --motion-ease-standard:    cubic-bezier(.4, 0, .2, 1);            /* Natural Material */
+  --motion-ease-decelerate:  cubic-bezier(0.16, 1, 0.3, 1);         /* Fluid Enter */
+  --motion-ease-accelerate:  cubic-bezier(0.4, 0, 1, 1);            /* Quick Exit */
+  --motion-ease-spring:      cubic-bezier(.33, 1.53, .69, .99);     /* Expressive Bounce */
+  --motion-ease-anticipate:  cubic-bezier(.31, .01, .66, -0.59);    /* Anticipation Exit */
+  --motion-ease-jelly:       cubic-bezier(0.34, 1.56, 0.64, 1);     /* Organic Fluid Return */
+
+  /* ── Organic Jelly Motion Tokens (Mobile Touch Physics) ── */
+  --motion-jelly-press-duration:   120ms;
+  --motion-jelly-release-duration: 420ms;
+  --motion-jelly-scale-press-x:    1.06;
+  --motion-jelly-scale-press-y:    0.94;
+  --motion-jelly-stretch-max:      1.16;
+  --motion-jelly-drag-x:           8px;
+  --motion-jelly-drag-y:           4px;
+  --motion-jelly-resistance:       0.2;
+
+  /* ── Spatial Distances ── */
+  --motion-distance-lift:     -4px;
+  --motion-distance-slide-sm: 12px;
+  --motion-distance-slide-md: 24px;
+  --motion-distance-slide-lg: 48px;
+}
+
+/* ── Global prefers-reduced-motion Reset ── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

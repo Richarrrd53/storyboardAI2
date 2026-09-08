@@ -2,6 +2,7 @@
    STORYBOARD AI — Template Library Redesign Styles
    Apple Music / Roon Style Browser + Video Timeline Editor
    ============================================ */
+@import url('./tokens.css');
 
 :root {
   /* AI Analysis Color Palette */
@@ -707,7 +708,7 @@
 }
 
 .track-header-cell {
-  width: 160px;
+  width: 175px;
   flex-shrink: 0;
   background: #15151e;
   padding: 12px 16px;
@@ -715,8 +716,9 @@
   font-weight: 700;
   display: flex;
   align-items: center;
-  border-right: 1px solid rgba(255, 255, 255, 0.05);
-  color: #a0a0b0;
+  gap: 8px;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  color: #e2e8f0;
 }
 
 .track-content-cell {

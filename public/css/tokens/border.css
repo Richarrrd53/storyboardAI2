@@ -1,0 +1,19 @@
+/* ============================================================
+   STORYBOARD AI DESIGN SYSTEM v3.0
+   Border & Focus Ring System
+   ============================================================ */
+
+:root {
+  --border-width-hairline: 0.5px;
+  --border-width-thin:     1px;
+  --border-width-base:     1.5px;
+  --border-width-thick:    2px;
+  --border-width-heavy:    3px;
+
+  /* ── Universal Accessible Focus Ring (WCAG 2.4.7 / 2.4.11) ── */
+  --focus-ring-color:      var(--blue-400);
+  --focus-ring-width:      2px;
+  --focus-ring-offset:     2px;
+  --focus-ring-shadow:     0 0 0 var(--focus-ring-width) var(--white), 
+                           0 0 0 calc(var(--focus-ring-width) + var(--focus-ring-offset)) var(--focus-ring-color);
+}

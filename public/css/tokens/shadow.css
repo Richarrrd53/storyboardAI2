@@ -1,0 +1,18 @@
+/* ============================================================
+   STORYBOARD AI DESIGN SYSTEM v3.0
+   Elevation & Shadow System
+   ============================================================ */
+
+:root {
+  --elevation-0: none;
+  --elevation-1: 0 4px 14px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.03); /* Rest Card */
+  --elevation-2: 0 12px 28px rgba(15, 23, 42, 0.08), 0 4px 10px rgba(15, 23, 42, 0.04); /* Hover Card */
+  --elevation-3: 0 16px 40px rgba(15, 23, 42, 0.12), 0 6px 14px rgba(15, 23, 42, 0.06); /* Dropdown, AI Dock, Mobile Nav */
+  --elevation-4: 0 24px 64px rgba(15, 23, 42, 0.16), 0 10px 24px rgba(15, 23, 42, 0.08); /* Modal Dialogue */
+  --elevation-overlay: 0 32px 100px rgba(15, 23, 42, 0.25); /* System Prompt / Lightbox */
+
+  /* ── Accent Glow Shadows ── */
+  --shadow-brand-glow: 0 4px 20px rgba(37, 99, 235, 0.28);
+  --shadow-toast:      0 10px 30px rgba(37, 99, 235, 0.12);
+  --shadow-inner-soft: inset 0 2px 4px rgba(0, 0, 0, 0.04);
+}

@@ -1,0 +1,31 @@
+/* ============================================================
+   STORYBOARD AI DESIGN SYSTEM v3.0
+   Layout Grid & Container System
+   ============================================================ */
+
+:root {
+  /* ── Max Container Widths ── */
+  --container-xl: 1440px;
+  --container-lg: 1200px;
+  --container-md: 960px;
+  --container-sm: 640px;
+  --container-xs: 480px;
+
+  /* ── Layout Gutters ── */
+  --layout-gutter-desktop: var(--space-8);  /* 32px */
+  --layout-gutter-tablet:  var(--space-6);  /* 24px */
+  --layout-gutter-mobile:  var(--space-4);  /* 16px */
+
+  /* ── Component Grid Gaps ── */
+  --grid-gap-desktop: var(--space-6);       /* 24px */
+  --grid-gap-tablet:  var(--space-4);       /* 16px */
+  --grid-gap-mobile:  var(--space-3);       /* 12px */
+
+  /* ── Sidebar Width Constraints ── */
+  --sidebar-width-collapsed: 60px;
+  --sidebar-width-expanded:  260px;
+
+  /* ── Safe Area Spacers ── */
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-top:    env(safe-area-inset-top, 0px);
+}

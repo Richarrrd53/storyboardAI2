@@ -1,0 +1,13 @@
+/* ============================================================
+   STORYBOARD AI DESIGN SYSTEM v3.0
+   Responsive Breakpoints System
+   Standard Breakpoint Constants (480, 768, 1024, 1200, 1440)
+   ============================================================ */
+
+:root {
+  --breakpoint-sm:   480px;  /* Small Phone / Phablet */
+  --breakpoint-md:   768px;  /* Tablet Portrait (Mobile Navigation Threshold) */
+  --breakpoint-lg:   1024px; /* Tablet Landscape / Netbook */
+  --breakpoint-xl:   1200px; /* Standard Desktop */
+  --breakpoint-2xl:  1440px; /* High-res Desktop Cinema */
+}

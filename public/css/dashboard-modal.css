@@ -292,9 +292,9 @@
     border: 2.5px solid transparent;
     animation: spin 1.3s linear infinite;
 }
-.sr1 { border-top-color: var(--purple-light); }
-.sr2 { inset:10px; border-top-color:var(--peach);       animation-duration:0.9s;  animation-direction:reverse; }
-.sr3 { inset:20px; border-top-color:var(--yellow-warm); animation-duration:1.7s; }
+.sr1 { border-top-color: var(--color-brand-primary); }
+.sr2 { inset:10px; border-top-color:var(--color-brand-accent);       animation-duration:0.9s;  animation-direction:reverse; }
+.sr3 { inset:20px; border-top-color:var(--color-brand-accent-soft); animation-duration:1.7s; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .gloading-text { flex:1; display:flex; flex-direction:column; gap:10px; }

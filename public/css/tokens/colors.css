@@ -1,0 +1,76 @@
+/* ============================================================
+   STORYBOARD AI DESIGN SYSTEM v3.0
+   Layer 2: Semantic Color Tokens
+   Role-based, Meaningful Color Abstractions
+   ============================================================ */
+
+:root {
+  /* ── 1. Typography / Text Roles ── */
+  --color-text-primary:    var(--slate-900); /* High contrast titles & core text */
+  --color-text-secondary:  var(--slate-600); /* Readable descriptions (contrast > 7:1) */
+  --color-text-tertiary:   var(--slate-500); /* Auxiliary info (contrast > 4.6:1) */
+  --color-text-muted:      var(--slate-400); /* Placeholders & inactive indicators */
+  --color-text-disabled:   var(--slate-300); /* Disabled labels */
+  --color-text-inverse:    var(--white);     /* Text on dark surfaces/buttons */
+  --color-text-brand:      var(--blue-600);  /* Brand links & active highlighted text */
+  --color-text-accent:     var(--sky-500);   /* Sky cyan highlights */
+  --color-text-gold:       var(--gold-500);  /* Cinematic gold metadata */
+  --color-text-danger:     var(--red-500);   /* Destructive actions & error notices */
+  --color-text-success:    var(--emerald-600);
+
+  /* ── 2. Background & Surface Roles ── */
+  --color-bg-page:              var(--slate-50);  /* Global cold light page canvas */
+  --color-bg-subtle:            var(--slate-100); /* Light secondary section fill */
+  --color-surface-primary:       var(--white);     /* Pure card & container surface */
+  --color-surface-secondary:     var(--slate-50);  /* Inset wells & table header rows */
+  --color-surface-elevated:      var(--white);     /* Popovers, menus & modals */
+  --color-surface-overlay:       rgba(15, 23, 42, 0.45); /* Backdrop modal scrim */
+  --color-surface-selected:      rgba(37, 99, 235, 0.08); /* 8% brand blue fill */
+  --color-surface-disabled:      var(--slate-100);
+  --color-surface-film:          var(--slate-900); /* Physical 35mm filmstrip body */
+  --color-surface-film-subtle:   var(--slate-800);
+  --color-surface-skeleton:      #e9e9f2;          /* Skeleton loader base */
+
+  /* ── 3. Border & Divider Roles ── */
+  --color-border-default:   var(--slate-200); /* Standard card & divider line */
+  --color-border-subtle:    rgba(226, 232, 240, 0.7);
+  --color-border-strong:    var(--slate-300); /* Input boundaries & focused cards */
+  --color-border-focus:     var(--blue-400);  /* Focused active elements */
+  --color-border-selected:  var(--blue-600);  /* Selected item active ring */
+  --color-border-danger:    var(--red-400);
+  --color-border-success:   var(--emerald-500);
+
+  /* ── 4. Action / Interactive Roles ── */
+  --color-action-primary-default:   var(--blue-600);
+  --color-action-primary-hover:     var(--blue-700);
+  --color-action-primary-active:    var(--blue-800);
+  --color-action-primary-disabled:  var(--slate-300);
+
+  --color-action-secondary-default: var(--slate-100);
+  --color-action-secondary-hover:   var(--slate-200);
+  --color-action-secondary-active:  var(--slate-300);
+
+  --color-action-danger-default:    var(--red-500);
+  --color-action-danger-hover:      var(--red-600);
+  --color-action-danger-active:     var(--red-700);
+
+  /* ── 5. Status & Feedback Roles ── */
+  --color-status-success:     var(--emerald-500);
+  --color-status-success-bg:  var(--emerald-50);
+  --color-status-warning:     var(--amber-500);
+  --color-status-warning-bg:  var(--amber-50);
+  --color-status-error:       var(--red-500);
+  --color-status-error-bg:    var(--red-50);
+  --color-status-info:        var(--sky-500);
+  --color-status-info-bg:     var(--sky-50);
+
+  /* ── 6. Brand Identity Preservation ── */
+  --color-brand-primary:        var(--blue-600);
+  --color-brand-primary-light:  var(--blue-400);
+  --color-brand-primary-soft:   rgba(37, 99, 235, 0.08);
+  --color-brand-accent:         var(--sky-500);
+  --color-brand-accent-light:   var(--sky-400);
+  --color-brand-accent-soft:    var(--sky-200);
+  --color-brand-film:           var(--slate-900);
+  --color-brand-gold:           var(--gold-500);
+}

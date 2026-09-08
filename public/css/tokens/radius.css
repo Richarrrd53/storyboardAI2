@@ -1,0 +1,15 @@
+/* ============================================================
+   STORYBOARD AI DESIGN SYSTEM v3.0
+   Corner Radius System
+   ============================================================ */
+
+:root {
+  --radius-xs:     4px;   /* Micro badges & tags */
+  --radius-sm:     8px;   /* Small cards, film holes, tooltips */
+  --radius-md:     16px;  /* Standard cards, popovers, dropdowns */
+  --radius-lg:     24px;  /* Modal dialogue, quick widgets */
+  --radius-xl:     32px;  /* Large floating panels & bottom nav */
+  --radius-2xl:    40px;  /* Main workspace window & hero capsule */
+  --radius-pill:   999px; /* Buttons, search bar, tags, tabs */
+  --radius-circle: 50%;   /* Avatar, round icon buttons */
+}

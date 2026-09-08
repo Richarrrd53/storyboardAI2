@@ -197,7 +197,7 @@ body{
     height: 500px;
     right: 5%;
     bottom: -5%;
-    background-color: var(--peach); /* 冰藍色 */
+    background-color: var(--color-brand-accent); /* 冰藍色 */
     animation: floatGlowHero 8s infinite alternate-reverse ease-in-out;
 }
 
