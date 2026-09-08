@@ -1704,6 +1704,57 @@ function initLoginLogic(showRegister) {
   }
 
   let lastToggleTime = 0;
+  let lastOpenTime = 0;
+
+  function getBackgroundDepthTargets() {
+    const targets = [];
+    const pageMain = document.getElementById('page-main');
+    if (pageMain) targets.push(pageMain);
+    const aiDock = document.getElementById('ai-dock-panel') || document.querySelector('.ai-dock-panel');
+    if (aiDock) targets.push(aiDock);
+    return targets;
+  }
+
+  function setBackgroundDepthProgress(progress) {
+    // progress: 1 = fully open (scale 0.95), 0 = fully closed (scale 1.0)
+    const bgTargets = getBackgroundDepthTargets();
+    const scale = (1.0 - progress * 0.05).toFixed(4);
+    const radius = (progress * 18).toFixed(1) + 'px';
+    bgTargets.forEach(el => {
+      el.classList.remove('bg-depth-animating');
+      el.style.setProperty('transform', `scale(${scale})`, 'important');
+      el.style.setProperty('border-radius', `${radius} ${radius} 0 0`, 'important');
+      el.style.setProperty('overflow', 'hidden', 'important');
+    });
+  }
+
+  function animateBackgroundDepth(isOpen, duration = 0.32) {
+    const bgTargets = getBackgroundDepthTargets();
+    bgTargets.forEach(el => {
+      el.style.setProperty('transition', `transform ${duration}s cubic-bezier(0.16, 1, 0.3, 1), border-radius ${duration}s ease`, 'important');
+      if (isOpen) {
+        el.classList.add('bg-depth-scaled');
+        el.style.setProperty('transform', 'scale(0.95)', 'important');
+        el.style.setProperty('border-radius', '18px 18px 0 0', 'important');
+        el.style.setProperty('overflow', 'hidden', 'important');
+      } else {
+        el.classList.remove('bg-depth-scaled');
+        el.style.setProperty('transform', 'scale(1)', 'important');
+        el.style.setProperty('border-radius', '0px', 'important');
+      }
+    });
+    setTimeout(() => {
+      bgTargets.forEach(el => {
+        el.style.removeProperty('transition');
+        if (!isOpen) {
+          el.style.removeProperty('transform');
+          el.style.removeProperty('border-radius');
+          el.style.removeProperty('overflow');
+        }
+      });
+    }, duration * 1000);
+  }
+
   window.toggleUserPanel = function(open) {
     ensureUserPanelDOM();
     const panel = document.getElementById('spa-user-panel') || document.getElementById('user-panel') || dashboardUserPanel;
@@ -1714,10 +1765,18 @@ function initLoginLogic(showRegister) {
     const shouldOpen = typeof open === 'boolean' ? open : !isCurrentlyActive;
 
     const now = Date.now();
-    if (typeof open !== 'boolean' && now - lastToggleTime < 250) {
+    // 關鍵防護：若剛在 380ms 內打開面板，或剛透過底部導航指標點擊觸發，禁止任何外部點擊或合成事件將其關閉
+    if (!shouldOpen && (now - lastOpenTime < 380 || (window.__justHandledPointerNav && now - window.__justHandledPointerNav < 380))) {
+      return;
+    }
+
+    if (typeof open !== 'boolean' && now - lastToggleTime < 280) {
       return; // Debounce rapid double-taps
     }
     lastToggleTime = now;
+    if (shouldOpen) {
+      lastOpenTime = now;
+    }
 
     if (!panel.dataset.dragBound) {
       initUserPanelGestures();
@@ -1737,6 +1796,7 @@ function initLoginLogic(showRegister) {
         backdrop.style.webkitBackdropFilter = '';
         backdrop.style.transition = '';
       }
+      animateBackgroundDepth(true, 0.35);
       updateMobileBottomNavActive('profile');
     } else {
       panel.classList.remove('active');
@@ -1750,6 +1810,7 @@ function initLoginLogic(showRegister) {
         backdrop.style.webkitBackdropFilter = '';
         backdrop.style.transition = '';
       }
+      animateBackgroundDepth(false, 0.32);
       updateMobileBottomNavActive(targetPage || currentPage);
     }
   };
@@ -1823,14 +1884,18 @@ function initLoginLogic(showRegister) {
 
       panel.style.setProperty('transform', `translate3d(0, ${curDy.toFixed(1)}px, 0)`, 'important');
 
+      const ratio = Math.max(0, Math.min(1, curDy / panelHeight));
+      const progress = Math.max(0, 1 - ratio);
+
       if (backdrop) {
-        const ratio = Math.max(0, Math.min(1, curDy / panelHeight));
-        const progress = Math.max(0, 1 - ratio);
         backdrop.style.setProperty('opacity', progress.toFixed(3), 'important');
         const blurVal = (progress * 4).toFixed(2);
         backdrop.style.setProperty('backdrop-filter', `blur(${blurVal}px)`, 'important');
         backdrop.style.setProperty('-webkit-backdrop-filter', `blur(${blurVal}px)`, 'important');
       }
+
+      // 1:1 即時跟手縮放背景層級空間感
+      setBackgroundDepthProgress(progress);
     }
 
     function onPanelPointerUp(e) {
@@ -1869,6 +1934,8 @@ function initLoginLogic(showRegister) {
           backdrop.style.setProperty('-webkit-backdrop-filter', 'blur(0px)', 'important');
         }
 
+        animateBackgroundDepth(false, duration);
+
         setTimeout(() => {
           window.toggleUserPanel(false);
         }, duration * 1000);
@@ -1882,6 +1949,8 @@ function initLoginLogic(showRegister) {
           backdrop.style.setProperty('backdrop-filter', 'blur(4px)', 'important');
           backdrop.style.setProperty('-webkit-backdrop-filter', 'blur(4px)', 'important');
         }
+
+        animateBackgroundDepth(true, 0.26);
 
         setTimeout(() => {
           panel.style.removeProperty('transition');
@@ -1990,7 +2059,6 @@ function initLoginLogic(showRegister) {
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
       window.removeEventListener('pointercancel', onPointerCancel);
-      mobNav.removeEventListener('lostpointercapture', onPointerCancel);
       if (failsafeTimer) {
         clearTimeout(failsafeTimer);
         failsafeTimer = null;
@@ -2004,6 +2072,8 @@ function initLoginLogic(showRegister) {
         cancelAnimationFrame(navSpringRaf);
         navSpringRaf = null;
       }
+      mobNav.style.transform = '';
+      mobNav.style.transition = 'none';
 
       isNavInteracting = true;
       activePointerId = e.pointerId;
@@ -2014,25 +2084,27 @@ function initLoginLogic(showRegister) {
       isCancelled = false;
       pressStartTime = performance.now();
 
+      const directItem = e.target ? e.target.closest('.mobile-nav__item') : null;
       cacheMetrics();
       const closestMetric = findClosestMetric(e.clientX);
-      currentTargetItem = closestMetric ? closestMetric.item : null;
+      currentTargetItem = directItem || (closestMetric ? closestMetric.item : null);
       lastSnappedItem = currentTargetItem;
       highlightTargetItem(currentTargetItem);
 
-      // Initialize indicator follow coordinate
-      if (indicator) {
-        indicator.classList.remove('is-settling');
-        const activeItem = mobNav.querySelector('.mobile-nav__item.active:not(.mobile-nav__item--create)');
-        if (activeItem && cachedNavRect) {
-          const ar = activeItem.getBoundingClientRect();
-          curIndicatorX = (ar.left - cachedNavRect.left) + (ar.width - indicatorWidth) / 2;
+      // 按下即動：只要有點擊到 link 就觸發 selector 移動過來
+      if (indicator && currentTargetItem && cachedNavRect) {
+        indicator.classList.add('is-settling', 'is-active');
+        if (!currentTargetItem.classList.contains('mobile-nav__item--create')) {
+          const tMetric = cachedMetrics.find(m => m.item === currentTargetItem);
+          const targetCenterX = tMetric ? tMetric.centerX : (currentTargetItem.getBoundingClientRect().left + currentTargetItem.getBoundingClientRect().width / 2);
+          const finalOffset = targetCenterX - cachedNavRect.left - indicatorWidth / 2;
+          curIndicatorX = Math.max(4, Math.min(cachedNavRect.width - indicatorWidth - 4, finalOffset));
+          indicator.style.transform = `translate3d(${curIndicatorX.toFixed(2)}px, 0, 0)`;
+          indicator.style.opacity = '1';
         } else {
-          curIndicatorX = e.clientX - cachedNavRect.left - indicatorWidth / 2;
+          indicator.style.opacity = '0';
+          indicator.classList.remove('is-active');
         }
-        indicator.style.transform = `translate3d(${curIndicatorX.toFixed(2)}px, 0, 0)`;
-        indicator.classList.add('is-active');
-        indicator.style.opacity = '1';
       }
 
       // Smooth soft micro-enlargement (scale: 1.026) instead of shrink
@@ -2045,11 +2117,6 @@ function initLoginLogic(showRegister) {
       window.addEventListener('pointermove', onPointerMove, { passive: false });
       window.addEventListener('pointerup', onPointerUp);
       window.addEventListener('pointercancel', onPointerCancel);
-      mobNav.addEventListener('lostpointercapture', onPointerCancel);
-
-      try {
-        mobNav.setPointerCapture(e.pointerId);
-      } catch (_) {}
 
       failsafeTimer = setTimeout(() => {
         if (isNavInteracting) {
@@ -2094,7 +2161,9 @@ function initLoginLogic(showRegister) {
 
         // Follow finger with soft magnetic link attraction
         if (indicator && cachedNavRect && closestMetric) {
-          indicator.classList.remove('is-settling');
+          if (Math.hypot(rawDx, rawDy) > 4) {
+            indicator.classList.remove('is-settling');
+          }
           const fingerRelX = e.clientX - cachedNavRect.left - indicatorWidth / 2;
           const closestCenterRelX = closestMetric.centerX - cachedNavRect.left - indicatorWidth / 2;
           const distX = fingerRelX - closestCenterRelX;
@@ -2139,13 +2208,11 @@ function initLoginLogic(showRegister) {
       if (!forceCancel && activePointerId !== null && e && e.pointerId !== activePointerId) return;
 
       const releasedTargetItem = currentTargetItem;
-      const releaseCancelled = forceCancel || isCancelled;
-
-      try {
-        if (activePointerId !== null && mobNav.hasPointerCapture(activePointerId)) {
-          mobNav.releasePointerCapture(activePointerId);
-        }
-      } catch (_) {}
+      // If forceCancel happened without significant displacement (< 10px),
+      // it was likely an interrupted tap or touch slop artifact from the mobile browser,
+      // so we do NOT treat it as an intentional cancel!
+      const isActuallyCancelled = isCancelled || (forceCancel && Math.hypot(curDx, curDy) >= 10);
+      const releaseCancelled = isActuallyCancelled || !releasedTargetItem;
 
       cleanupWindowListeners();
       clearSnapHover();
@@ -2155,19 +2222,20 @@ function initLoginLogic(showRegister) {
 
       // Indicator smooth settling into link center without bouncing
       if (indicator && releasedTargetItem && cachedNavRect) {
-        indicator.classList.add('is-settling');
+        indicator.classList.add('is-settling', 'is-active');
         if (!releasedTargetItem.classList.contains('mobile-nav__item--create')) {
           const tMetric = cachedMetrics.find(m => m.item === releasedTargetItem);
-          if (tMetric) {
-            const finalOffset = tMetric.centerX - cachedNavRect.left - indicatorWidth / 2;
-            indicator.style.transform = `translate3d(${finalOffset.toFixed(2)}px, 0, 0)`;
-            indicator.style.opacity = '1';
-          }
+          const targetCenterX = tMetric ? tMetric.centerX : (releasedTargetItem.getBoundingClientRect().left + releasedTargetItem.getBoundingClientRect().width / 2);
+          const finalOffset = targetCenterX - cachedNavRect.left - indicatorWidth / 2;
+          curIndicatorX = Math.max(4, Math.min(cachedNavRect.width - indicatorWidth - 4, finalOffset));
+          indicator.style.transform = `translate3d(${curIndicatorX.toFixed(2)}px, 0, 0)`;
+          indicator.style.opacity = '1';
         } else {
           indicator.style.opacity = '0';
           indicator.classList.remove('is-active');
         }
       }
+
 
       // Overshoot Rebound for large displacement
       const dragDist = Math.hypot(curDx, curDy);
@@ -2221,13 +2289,14 @@ function initLoginLogic(showRegister) {
       }
       navSpringRaf = requestAnimationFrame(springStep);
 
-      if (releaseCancelled || !releasedTargetItem) {
+      if (releaseCancelled) {
         updateMobileBottomNavActive(targetPage || currentPage);
         return;
       }
 
+      window.__justHandledPointerNav = Date.now();
       justHandledPointerNav = true;
-      setTimeout(() => { justHandledPointerNav = false; }, 300);
+      setTimeout(() => { justHandledPointerNav = false; }, 450);
 
       const targetItem = releasedTargetItem;
       if (targetItem.id === 'mob-nav-profile') {
@@ -2263,7 +2332,7 @@ function initLoginLogic(showRegister) {
         e.preventDefault();
         e.stopPropagation();
 
-        if (justHandledPointerNav) return;
+        if (justHandledPointerNav || (window.__justHandledPointerNav && Date.now() - window.__justHandledPointerNav < 450)) return;
 
         if (item.id === 'mob-nav-profile') {
           window.toggleUserPanel();
@@ -2285,7 +2354,7 @@ function initLoginLogic(showRegister) {
       mobNav.dataset.viewportBound = 'true';
       const initialHeight = window.visualViewport.height;
 
-      window.visualViewport.addEventListener('resize', () => {
+      const onViewportChange = () => {
         const currentHeight = window.visualViewport.height;
         const isKeyboardOpen = (initialHeight - currentHeight) > 150;
         if (isKeyboardOpen) {
@@ -2297,7 +2366,10 @@ function initLoginLogic(showRegister) {
           mobNav.style.opacity = '';
           mobNav.style.pointerEvents = '';
         }
-      });
+      };
+
+      window.visualViewport.addEventListener('resize', onViewportChange);
+      window.visualViewport.addEventListener('scroll', onViewportChange);
     }
 
     window.addEventListener('resize', () => {
@@ -4319,7 +4391,7 @@ function initLoginLogic(showRegister) {
     if (profileBtn) {
       e.preventDefault();
       e.stopPropagation();
-      if (!justHandledPointerNav) {
+      if (!justHandledPointerNav && (!window.__justHandledPointerNav || Date.now() - window.__justHandledPointerNav >= 450)) {
         window.toggleUserPanel();
       }
     }
@@ -4329,7 +4401,7 @@ function initLoginLogic(showRegister) {
     initDashboardLoader();
 
     document.addEventListener('click', (e) => {
-      if (justHandledPointerNav) return;
+      if (justHandledPointerNav || (window.__justHandledPointerNav && Date.now() - window.__justHandledPointerNav < 450)) return;
       if (e.target.closest('#spa-mobile-nav, .mobile-bottom-nav')) return;
       const panel = document.getElementById('spa-user-panel') || document.getElementById('user-panel') || dashboardUserPanel;
       const avatar = document.getElementById('top-avatar') || (typeof dashboardTopbar !== 'undefined' && dashboardTopbar ? dashboardTopbar.querySelector('#top-avatar') : null);

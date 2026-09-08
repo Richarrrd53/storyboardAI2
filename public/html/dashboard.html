@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>Dashboard — Storyboard AI</title>
     <link rel="stylesheet" href="../css/style.css" />
     <link rel="stylesheet" href="../css/dashboard.css" />
@@ -311,6 +311,7 @@
         }
 
         document.addEventListener('click', (e) => {
+            if (window.__justHandledPointerNav && (Date.now() - window.__justHandledPointerNav) < 450) return;
             if (e && e.target && e.target.closest('#user-panel, #spa-user-panel, #top-avatar, #spa-mobile-nav, .mobile-bottom-nav')) return;
             if (typeof window.toggleUserPanel === 'function') {
                 window.toggleUserPanel(false);

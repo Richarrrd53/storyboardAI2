@@ -3871,16 +3871,32 @@ body.page-generate .ai-pill-btn:not(.show),
         z-index: 10050 !important;
     }
 
+    /* Mobile User Panel Background Spatial Depth (iOS Sheet Effect) */
+    #page-main,
+    .ai-dock-panel {
+        transform-origin: center top !important;
+        will-change: transform, border-radius;
+    }
+    .bg-depth-scaled {
+        transform: scale(0.95) !important;
+        border-radius: 18px 18px 0 0 !important;
+        overflow: hidden !important;
+    }
+    .bg-depth-animating {
+        transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-radius 0.35s ease !important;
+    }
+
     /* Floating Bottom Nav Container - Liquid Elastic Interaction Target */
     .mobile-bottom-nav {
         display: flex !important;
         position: fixed !important;
         left: 16px !important;
         right: 16px !important;
-        bottom: calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+        bottom: calc(10px + env(safe-area-inset-bottom, 0px)) !important;
         max-width: 440px !important;
         margin: 0 auto !important;
         height: var(--mobile-nav-height, 64px) !important;
+        max-height: calc(100dvh - 20px) !important;
         background: var(--mobile-nav-bg, rgba(255, 255, 255, 0.88)) !important;
         backdrop-filter: blur(20px) saturate(180%) !important;
         -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
@@ -3967,11 +3983,15 @@ body.page-generate .ai-pill-btn:not(.show),
         justify-content: center;
         width: 28px;
         height: 28px;
+        pointer-events: none;
+        touch-action: none;
         transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 
     .mobile-nav__svg {
         stroke: currentColor;
+        pointer-events: none;
+        touch-action: none;
         transition: stroke 0.2s ease, stroke-width 0.2s ease;
     }
 
@@ -3980,6 +4000,8 @@ body.page-generate .ai-pill-btn:not(.show),
         font-weight: 600;
         line-height: 1;
         letter-spacing: -0.01em;
+        pointer-events: none;
+        touch-action: none;
         transition: color 0.2s ease, transform 0.2s ease;
     }
 
