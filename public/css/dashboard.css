@@ -3956,7 +3956,7 @@ body.page-generate .ai-pill-btn:not(.show),
         z-index: 1 !important;
         opacity: 0;
         will-change: transform, opacity;
-        transition: opacity 0.2s ease, transform 0.18s cubic-bezier(0.2, 0.9, 0.3, 1);
+        transition: opacity 0.2s ease, transform 0.18s cubic-bezier(0.2, 0.9, 0.3, 1), background 0.18s cubic-bezier(0.2, 0.9, 0.3, 1);
         transform-origin: center center;
     }
 
@@ -3970,6 +3970,7 @@ body.page-generate .ai-pill-btn:not(.show),
 
     .mobile-nav__indicator.is-pressed {
         transform: scale(1.3);
+        background: rgba(0, 0, 0, 0.1) !important;
     }
 
     /* Mobile Nav Dual Tracks (Base & Liquid-Clipped Focus Track) */
@@ -4097,7 +4098,13 @@ body.page-generate .ai-pill-btn:not(.show),
 
     .mobile-nav__item.active .mobile-nav__svg,
     .mobile-nav__item.snap-target .mobile-nav__svg {
-        stroke: currentColor;
+        stroke-width: 2px;
+        stroke: #64748b;
+    }
+
+    .mobile-nav__item.snap-target .mobile-nav__svg {
+        color: var(--color-brand-primary, #2563eb) !important;
+        stroke-width: 0;
     }
 
     .mobile-nav__item.active .mobile-nav__svg[data-fill="true"],
@@ -4107,9 +4114,11 @@ body.page-generate .ai-pill-btn:not(.show),
         fill: var(--color-brand-primary, #2563eb) !important;
     }
 
-    .mobile-nav__item.active .mobile-nav__label,
+    .mobile-nav__item.active .mobile-nav__label{
+        color: #64748b;
+    }
+
     .mobile-nav__item.snap-target .mobile-nav__label {
-        font-weight: 700;
         color: var(--color-brand-primary, #2563eb) !important;
     }
 
