@@ -365,10 +365,10 @@
         const scaledW = selW * scale;
         const scaledH = selH * scale;
 
-        const top = Math.max(0, centerY - scaledH / 2);
-        const bottom = Math.max(0, navH - (centerY + scaledH / 2));
-        const left = Math.max(0, centerX - scaledW / 2);
-        const right = Math.max(0, navW - (centerX + scaledW / 2));
+        const top = centerY - scaledH / 2;
+        const bottom = navH - (centerY + scaledH / 2);
+        const left = centerX - scaledW / 2;
+        const right = navW - (centerX + scaledW / 2);
 
         const clipValue = `inset(${top.toFixed(2)}px ${right.toFixed(2)}px ${bottom.toFixed(2)}px ${left.toFixed(2)}px round 999px)`;
         focusTrack.style.clipPath = clipValue;

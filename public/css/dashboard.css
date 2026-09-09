@@ -4000,7 +4000,7 @@ body.page-generate .ai-pill-btn:not(.show),
         clip-path: var(--nav-clip-path, inset(0 100% 0 0 round 999px));
         -webkit-clip-path: var(--nav-clip-path, inset(0 100% 0 0 round 999px));
         will-change: clip-path, -webkit-clip-path;
-        transition: clip-path 0.18s cubic-bezier(0.2, 0.9, 0.3, 1), -webkit-clip-path 0.18s cubic-bezier(0.2, 0.9, 0.3, 1), opacity 0.2s ease;
+        transition: none !important;
     }
 
     .mobile-nav__track--focus.is-settling {
@@ -4008,22 +4008,24 @@ body.page-generate .ai-pill-btn:not(.show),
     }
 
     .mobile-nav__track--focus .mobile-nav__item {
-        color: var(--color-brand-primary, #2563eb) !important;
+        color: #0f172a !important;
         pointer-events: none !important;
     }
 
     .mobile-nav__track--focus .mobile-nav__label {
-        color: var(--color-brand-primary, #2563eb) !important;
-        font-weight: 700 !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
     }
 
     .mobile-nav__track--focus .mobile-nav__svg {
-        color: var(--color-brand-primary, #2563eb) !important;
+        color: #0f172a !important;
+        pointer-events: none !important;
     }
 
     .mobile-nav__track--focus .mobile-nav__svg--focus path[fill="currentColor"],
     .mobile-nav__track--focus .mobile-nav__svg--focus circle[fill="currentColor"] {
-        fill: var(--color-brand-primary, #2563eb) !important;
+        fill: #0f172a !important;
     }
 
     /* Nav Items */
@@ -4090,40 +4092,31 @@ body.page-generate .ai-pill-btn:not(.show),
         transition: color 0.2s ease, transform 0.2s ease;
     }
 
-    /* Active & Magnetic Hover Nav Item - Primary Brand Blue */
+    /* Active & Magnetic Hover Nav Item */
     .mobile-nav__item.active,
     .mobile-nav__item.snap-target {
         color: var(--color-brand-primary, #2563eb) !important;
     }
 
+    /* Base link icons: ALWAYS remain original grey (#64748b), even when link is active */
+    .mobile-nav__item .mobile-nav__svg,
     .mobile-nav__item.active .mobile-nav__svg,
     .mobile-nav__item.snap-target .mobile-nav__svg {
-        stroke-width: 2px;
-        stroke: #64748b;
+        color: #64748b !important;
+        stroke: #64748b !important;
+        stroke-width: 1.8px;
     }
 
-    .mobile-nav__item.snap-target .mobile-nav__svg {
-        color: var(--color-brand-primary, #2563eb) !important;
-        stroke-width: 0;
-    }
-
-    .mobile-nav__item.active .mobile-nav__svg[data-fill="true"],
-    .mobile-nav__item.snap-target .mobile-nav__svg[data-fill="true"],
+    .mobile-nav__item .mobile-nav__svg.icon-fill-target,
     .mobile-nav__item.active .mobile-nav__svg.icon-fill-target,
     .mobile-nav__item.snap-target .mobile-nav__svg.icon-fill-target {
-        fill: var(--color-brand-primary, #2563eb) !important;
+        fill: #64748b !important;
     }
 
-    .mobile-nav__item.active .mobile-nav__label{
-        color: #64748b;
-    }
-
+    /* Active & Snap Target Text Label - Primary Brand Blue */
+    .mobile-nav__item.active .mobile-nav__label,
     .mobile-nav__item.snap-target .mobile-nav__label {
         color: var(--color-brand-primary, #2563eb) !important;
-    }
-
-    .mobile-nav__item.snap-target {
-        transform: scale(1.08);
     }
 
     /* Center CTA: Dock Minimized Circular Button in Bottom Nav */
