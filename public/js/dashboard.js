@@ -292,6 +292,7 @@
   let navSpringRaf = null;
   let isNavInteracting = false;
   let justHandledPointerNav = false;
+  let updateMobNavVisual = null;
 
   function initMobileBottomNavGestures() {
     const mobNav = document.querySelector('.mobile-bottom-nav');
@@ -316,13 +317,66 @@
 
     const maxDx = 18;
     const maxDy = 12;
-    const indicatorWidth = 56;
+    const insetX = parseFloat(getComputedStyle(mobNav).getPropertyValue('--nav-selector-inset-x')) || 5;
+    const insetY = parseFloat(getComputedStyle(mobNav).getPropertyValue('--nav-selector-inset-y')) || 5;
+    let indicatorWidth = parseFloat(getComputedStyle(mobNav).getPropertyValue('--nav-selector-width')) || 64;
 
-    const items = Array.from(mobNav.querySelectorAll('.mobile-nav__item'));
+    const items = Array.from(mobNav.querySelectorAll('.mobile-nav__track--base .mobile-nav__item')).length
+      ? Array.from(mobNav.querySelectorAll('.mobile-nav__track--base .mobile-nav__item'))
+      : Array.from(mobNav.querySelectorAll('.mobile-nav__item:not(.mobile-nav__item--focus)'));
     const indicator = mobNav.querySelector('.mobile-nav__indicator');
 
     mobNav.addEventListener('dragstart', (e) => e.preventDefault());
     items.forEach(it => it.setAttribute('draggable', 'false'));
+
+    function updateIndicatorVisual(x, scale = 1.0, isSettling = false, opacity = 1.0) {
+      if (!indicator || !mobNav) return;
+      const focusTrack = mobNav.querySelector('.mobile-nav__track--focus');
+      if (isSettling) {
+        indicator.classList.add('is-settling');
+        if (focusTrack) focusTrack.classList.add('is-settling');
+      } else {
+        indicator.classList.remove('is-settling');
+        if (focusTrack) focusTrack.classList.remove('is-settling');
+      }
+
+      const opacityStr = opacity.toString();
+      indicator.style.opacity = opacityStr;
+      if (focusTrack) focusTrack.style.opacity = opacityStr;
+
+      indicator.style.transform = `translate3d(${x.toFixed(2)}px, 0, 0) scale(${scale.toFixed(4)})`;
+
+      if (focusTrack) {
+        if (opacity <= 0.01) {
+          const hiddenClip = 'inset(0 100% 0 0 round 999px)';
+          focusTrack.style.clipPath = hiddenClip;
+          focusTrack.style.webkitClipPath = hiddenClip;
+          mobNav.style.setProperty('--nav-clip-path', hiddenClip);
+          return;
+        }
+
+        const navW = cachedNavRect ? cachedNavRect.width : mobNav.getBoundingClientRect().width;
+        const navH = cachedNavRect ? cachedNavRect.height : (mobNav.getBoundingClientRect().height || 64);
+        const selW = indicatorWidth;
+        const selH = navH - (insetY * 2);
+        const centerY = insetY + selH / 2;
+        const centerX = x + selW / 2;
+
+        const scaledW = selW * scale;
+        const scaledH = selH * scale;
+
+        const top = Math.max(0, centerY - scaledH / 2);
+        const bottom = Math.max(0, navH - (centerY + scaledH / 2));
+        const left = Math.max(0, centerX - scaledW / 2);
+        const right = Math.max(0, navW - (centerX + scaledW / 2));
+
+        const clipValue = `inset(${top.toFixed(2)}px ${right.toFixed(2)}px ${bottom.toFixed(2)}px ${left.toFixed(2)}px round 999px)`;
+        focusTrack.style.clipPath = clipValue;
+        focusTrack.style.webkitClipPath = clipValue;
+        mobNav.style.setProperty('--nav-clip-path', clipValue);
+      }
+    }
+    updateMobNavVisual = updateIndicatorVisual;
 
     function cacheMetrics() {
       cachedNavRect = mobNav.getBoundingClientRect();
@@ -335,7 +389,18 @@
           isCreate: it.classList.contains('mobile-nav__item--create')
         };
       });
+
+      if (cachedMetrics.length >= 1 && cachedNavRect && cachedNavRect.width > 0) {
+        const c0 = cachedMetrics[0].centerX - cachedNavRect.left;
+        const calcW = Math.round(2 * (c0 - insetX));
+        if (calcW > 40 && calcW < 120) {
+          indicatorWidth = calcW;
+          indicator.style.width = `${indicatorWidth}px`;
+          mobNav.style.setProperty('--nav-selector-width', `${indicatorWidth}px`);
+        }
+      }
     }
+    window.addEventListener('resize', cacheMetrics);
 
     function clearSnapHover() {
       items.forEach(it => it.classList.remove('snap-target'));
@@ -416,19 +481,18 @@
       lastSnappedItem = currentTargetItem;
       highlightTargetItem(currentTargetItem);
 
-      // 按下即動：只要有點擊到 link 就觸發 selector 移動過來，手指點擊時放大
+      // 按下即動：只要有點擊到 link 就觸發 selector 移動過來，手指點擊時放大至 1.3 倍
       if (indicator && currentTargetItem && cachedNavRect) {
-        indicator.classList.add('is-settling', 'is-active', 'is-pressed');
+        indicator.classList.add('is-active', 'is-pressed');
         if (!currentTargetItem.classList.contains('mobile-nav__item--create')) {
           const tMetric = cachedMetrics.find(m => m.item === currentTargetItem);
           const targetCenterX = tMetric ? tMetric.centerX : (currentTargetItem.getBoundingClientRect().left + currentTargetItem.getBoundingClientRect().width / 2);
           const finalOffset = targetCenterX - cachedNavRect.left - indicatorWidth / 2;
-          curIndicatorX = Math.max(4, Math.min(cachedNavRect.width - indicatorWidth - 4, finalOffset));
-          indicator.style.transform = `translate3d(${curIndicatorX.toFixed(2)}px, 0, 0) scale(1.12)`;
-          indicator.style.opacity = '1';
+          curIndicatorX = Math.max(insetX, Math.min(cachedNavRect.width - indicatorWidth - insetX, finalOffset));
+          updateIndicatorVisual(curIndicatorX, 1.3, true, 1.0);
         } else {
-          indicator.style.opacity = '0';
           indicator.classList.remove('is-active', 'is-pressed');
+          updateIndicatorVisual(curIndicatorX, 1.3, true, 0.0);
         }
       }
 
@@ -487,17 +551,16 @@
           const closestCenterRelX = closestMetric.centerX - cachedNavRect.left - indicatorWidth / 2;
           const distX = fingerRelX - closestCenterRelX;
           let targetIndX = fingerRelX - distX * 0.35;
-          targetIndX = Math.max(4, Math.min(cachedNavRect.width - indicatorWidth - 4, targetIndX));
+          targetIndX = Math.max(insetX, Math.min(cachedNavRect.width - indicatorWidth - insetX, targetIndX));
 
           curIndicatorX += (targetIndX - curIndicatorX) * 0.36;
-          indicator.style.transform = `translate3d(${curIndicatorX.toFixed(2)}px, 0, 0) scale(1.12)`;
 
+          let targetOpacity = 1;
           if (closestMetric.isCreate) {
             const distToCenter = Math.abs(fingerRelX - closestCenterRelX);
-            indicator.style.opacity = Math.min(1, Math.max(0, (distToCenter - 14) / 24)).toFixed(2);
-          } else {
-            indicator.style.opacity = '1';
+            targetOpacity = Math.min(1, Math.max(0, (distToCenter - 14) / 24));
           }
+          updateIndicatorVisual(curIndicatorX, 1.3, false, targetOpacity);
         }
       }
 
@@ -539,18 +602,17 @@
       activePointerId = null;
 
       if (indicator && releasedTargetItem && cachedNavRect) {
-        indicator.classList.add('is-settling', 'is-active');
+        indicator.classList.add('is-active');
         indicator.classList.remove('is-pressed');
         if (!releasedTargetItem.classList.contains('mobile-nav__item--create')) {
           const tMetric = cachedMetrics.find(m => m.item === releasedTargetItem);
           const targetCenterX = tMetric ? tMetric.centerX : (releasedTargetItem.getBoundingClientRect().left + releasedTargetItem.getBoundingClientRect().width / 2);
           const finalOffset = targetCenterX - cachedNavRect.left - indicatorWidth / 2;
-          curIndicatorX = Math.max(4, Math.min(cachedNavRect.width - indicatorWidth - 4, finalOffset));
-          indicator.style.transform = `translate3d(${curIndicatorX.toFixed(2)}px, 0, 0) scale(1)`;
-          indicator.style.opacity = '1';
+          curIndicatorX = Math.max(insetX, Math.min(cachedNavRect.width - indicatorWidth - insetX, finalOffset));
+          updateIndicatorVisual(curIndicatorX, 1.0, true, 1.0);
         } else {
-          indicator.style.opacity = '0';
           indicator.classList.remove('is-active');
+          updateIndicatorVisual(curIndicatorX, 1.0, true, 0.0);
         }
       }
 
@@ -696,7 +758,9 @@
     const panel = document.getElementById('user-panel') || document.getElementById('spa-user-panel');
     const isProfileActive = page === 'profile' || (panel && panel.classList.contains('active'));
 
-    const items = mobNav.querySelectorAll('.mobile-nav__item');
+    const items = Array.from(mobNav.querySelectorAll('.mobile-nav__track--base .mobile-nav__item')).length
+      ? Array.from(mobNav.querySelectorAll('.mobile-nav__track--base .mobile-nav__item'))
+      : Array.from(mobNav.querySelectorAll('.mobile-nav__item:not(.mobile-nav__item--focus)'));
     let activeItem = null;
     items.forEach(item => {
       let isActive = false;
@@ -722,15 +786,27 @@
       if (activeItem && !activeItem.classList.contains('mobile-nav__item--create')) {
         const itemRect = activeItem.getBoundingClientRect();
         const navRect = mobNav.getBoundingClientRect();
+        const insetX = parseFloat(getComputedStyle(mobNav).getPropertyValue('--nav-selector-inset-x')) || 5;
+        const currentIndicatorWidth = parseFloat(indicator.style.width) || parseFloat(getComputedStyle(mobNav).getPropertyValue('--nav-selector-width')) || 64;
         if (navRect.width > 0 && itemRect.width > 0) {
-          const offset = (itemRect.left - navRect.left) + (itemRect.width - 56) / 2;
-          indicator.classList.add('is-settling', 'is-active');
-          indicator.style.transform = `translate3d(${offset.toFixed(2)}px, 0, 0) scale(1)`;
-          indicator.style.opacity = '1';
+          const itemCenterX = itemRect.left + itemRect.width / 2;
+          const targetOffset = itemCenterX - navRect.left - currentIndicatorWidth / 2;
+          const finalOffset = Math.max(insetX, Math.min(navRect.width - currentIndicatorWidth - insetX, targetOffset));
+          indicator.classList.add('is-active');
+          if (updateMobNavVisual) {
+            updateMobNavVisual(finalOffset, 1.0, true, 1.0);
+          } else {
+            indicator.style.transform = `translate3d(${finalOffset.toFixed(2)}px, 0, 0) scale(1)`;
+            indicator.style.opacity = '1';
+          }
         }
       } else {
         indicator.classList.remove('is-active');
-        indicator.style.opacity = '0';
+        if (updateMobNavVisual) {
+          updateMobNavVisual(0, 1.0, true, 0.0);
+        } else {
+          indicator.style.opacity = '0';
+        }
       }
     }
   }

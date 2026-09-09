@@ -3627,7 +3627,7 @@ body.page-generate .ai-pill-btn:not(.show),
         min-height: 100vh !important;
         border-radius: 0 !important;
         overflow-y: visible !important;
-        padding: 18px 16px calc(var(--mobile-nav-height, 64px) + env(safe-area-inset-bottom, 16px) + 36px) 16px !important;
+        padding: 18px 16px calc(var(--mobile-nav-height, 64px) + env(safe-area-inset-bottom, 14px) + 50px) 16px !important;
     }
 
     /* Welcome Section Typography & Spacing */
@@ -3887,33 +3887,39 @@ body.page-generate .ai-pill-btn:not(.show),
     }
 
     /* Floating Bottom Nav Container - Frosted Acrylic / Translucent Resin Material */
+    :root {
+        --nav-selector-inset-x: 5px;
+        --nav-selector-inset-y: 5px;
+        --nav-selector-width: 64px;
+    }
+
     .mobile-bottom-nav {
         display: flex !important;
         position: fixed !important;
         left: 16px !important;
         right: 16px !important;
-        bottom: calc(10px + env(safe-area-inset-bottom, 0px)) !important;
+        bottom: calc(22px + env(safe-area-inset-bottom, 14px)) !important;
         max-width: 440px !important;
         margin: 0 auto !important;
         height: var(--mobile-nav-height, 64px) !important;
         max-height: calc(100dvh - 20px) !important;
-        /* 不是完全透明的玻璃，而是偏乳白霧面，上亮下暗體積漸層 */
-        background: var(--mobile-nav-bg, linear-gradient(180deg, rgba(255, 255, 255, 0.88) 0%, rgba(242, 242, 236, 0.78) 100%)) !important;
+        /* 透度提升：背景更透，保留微霧面玻璃質感 */
+        background: var(--mobile-nav-bg, linear-gradient(180deg, rgba(255, 255, 255, 0.62) 0%, rgba(245, 245, 240, 0.45) 100%)) !important;
         /* 低強度 backdrop blur + 柔和環境色飽和度與微增亮度滲透 */
-        backdrop-filter: blur(10px) saturate(120%) brightness(1.06) !important;
-        -webkit-backdrop-filter: blur(10px) saturate(120%) brightness(1.06) !important;
-        /* 淡白色邊界高光 */
-        border: var(--mobile-nav-border, 1px solid rgba(255, 255, 255, 0.7)) !important;
+        backdrop-filter: blur(12px) saturate(125%) brightness(1.04) !important;
+        -webkit-backdrop-filter: blur(12px) saturate(125%) brightness(1.04) !important;
+        /* 淡白色微邊界高光 */
+        border: var(--mobile-nav-border, 1px solid rgba(255, 255, 255, 0.65)) !important;
         border-radius: var(--mobile-nav-radius, var(--radius-pill, 999px)) !important;
-        /* 柔和外陰影 + 內側頂部白色高光 + 內側底部暗部陰影（厚度感） */
+        /* 柔和外陰影 + 內側頂部白色高光 + 內側底部暗部陰影 */
         box-shadow:
-            0 14px 32px rgba(0, 0, 0, 0.13),
-            0 2px 8px rgba(0, 0, 0, 0.04),
-            inset 0 1.5px 2px rgba(255, 255, 255, 0.92),
-            inset 0 -2px 4px rgba(120, 120, 110, 0.06) !important;
+            0 12px 30px rgba(0, 0, 0, 0.1),
+            0 2px 8px rgba(0, 0, 0, 0.03),
+            inset 0 1px 1.5px rgba(255, 255, 255, 0.85),
+            inset 0 -1.5px 3px rgba(120, 120, 110, 0.05) !important;
         align-items: center !important;
         justify-content: space-around !important;
-        padding: 0 10px !important;
+        padding: 0 !important;
         z-index: 10000 !important;
         user-select: none !important;
         -webkit-user-select: none !important;
@@ -3929,20 +3935,20 @@ body.page-generate .ai-pill-btn:not(.show),
         position: absolute;
         inset: 0;
         border-radius: inherit;
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0) 55%);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 55%);
         pointer-events: none;
         z-index: 0;
     }
 
-    /* Floating Selection Indicator - Soft Tactile Grooved Capsule on Resin Surface */
+    /* Floating Selection Indicator - Translucent Black Grooved Capsule */
     .mobile-nav__indicator {
         display: block !important;
         position: absolute !important;
         left: 0 !important;
-        top: 13px !important;
-        height: 38px !important;
-        width: 56px !important;
-        background: rgba(37, 99, 235, 0.12) !important;
+        top: var(--nav-selector-inset-y, 5px) !important;
+        height: calc(100% - (var(--nav-selector-inset-y, 5px) * 2)) !important;
+        width: var(--nav-selector-width, 64px) !important;
+        background: rgba(0, 0, 0, 0.03) !important;
         border: none !important;
         border-radius: var(--radius-pill, 999px) !important;
         box-shadow: none !important;
@@ -3951,6 +3957,7 @@ body.page-generate .ai-pill-btn:not(.show),
         opacity: 0;
         will-change: transform, opacity;
         transition: opacity 0.2s ease, transform 0.18s cubic-bezier(0.2, 0.9, 0.3, 1);
+        transform-origin: center center;
     }
 
     .mobile-nav__indicator.is-active {
@@ -3962,7 +3969,60 @@ body.page-generate .ai-pill-btn:not(.show),
     }
 
     .mobile-nav__indicator.is-pressed {
-        transform: scale(1.12);
+        transform: scale(1.3);
+    }
+
+    /* Mobile Nav Dual Tracks (Base & Liquid-Clipped Focus Track) */
+    .mobile-nav__track {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-around !important;
+        width: 100% !important;
+        height: 100% !important;
+        padding: 0 10px !important;
+        box-sizing: border-box !important;
+    }
+
+    .mobile-nav__track--base {
+        position: relative !important;
+        z-index: 2 !important;
+    }
+
+    .mobile-nav__track--focus {
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        z-index: 3 !important;
+        pointer-events: none !important;
+        clip-path: var(--nav-clip-path, inset(0 100% 0 0 round 999px));
+        -webkit-clip-path: var(--nav-clip-path, inset(0 100% 0 0 round 999px));
+        will-change: clip-path, -webkit-clip-path;
+        transition: clip-path 0.18s cubic-bezier(0.2, 0.9, 0.3, 1), -webkit-clip-path 0.18s cubic-bezier(0.2, 0.9, 0.3, 1), opacity 0.2s ease;
+    }
+
+    .mobile-nav__track--focus.is-settling {
+        transition: clip-path 0.24s cubic-bezier(0.25, 1, 0.5, 1), -webkit-clip-path 0.24s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.2s ease !important;
+    }
+
+    .mobile-nav__track--focus .mobile-nav__item {
+        color: var(--color-brand-primary, #2563eb) !important;
+        pointer-events: none !important;
+    }
+
+    .mobile-nav__track--focus .mobile-nav__label {
+        color: var(--color-brand-primary, #2563eb) !important;
+        font-weight: 700 !important;
+    }
+
+    .mobile-nav__track--focus .mobile-nav__svg {
+        color: var(--color-brand-primary, #2563eb) !important;
+    }
+
+    .mobile-nav__track--focus .mobile-nav__svg--focus path[fill="currentColor"],
+    .mobile-nav__track--focus .mobile-nav__svg--focus circle[fill="currentColor"] {
+        fill: var(--color-brand-primary, #2563eb) !important;
     }
 
     /* Nav Items */
@@ -4037,8 +4097,7 @@ body.page-generate .ai-pill-btn:not(.show),
 
     .mobile-nav__item.active .mobile-nav__svg,
     .mobile-nav__item.snap-target .mobile-nav__svg {
-        stroke-width: 2.35px;
-        stroke: var(--color-brand-primary, #2563eb) !important;
+        stroke: currentColor;
     }
 
     .mobile-nav__item.active .mobile-nav__svg[data-fill="true"],
@@ -4152,27 +4211,22 @@ body.page-generate .ai-pill-btn:not(.show),
 
     /* Rotating Conic Glow Aura - Diluted pastel colors & slower animation */
     .mob-circle-glow-container {
-        width: 64px;
-        height: 64px;
-        border-radius: 50%;
         position: absolute;
-        top: -5px;
-        left: -5px;
+        inset: -3px;
+        border-radius: 50%;
         pointer-events: none !important;
         overflow: hidden;
     }
 
     .mob-circle-glow {
         position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
+        inset: 0;
         border-radius: 50%;
+        box-sizing: border-box;
+        padding: 3px;
         -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
         -webkit-mask-composite: xor;
         mask-composite: exclude;
-        padding: 3px;
         pointer-events: none !important;
     }
 

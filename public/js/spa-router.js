@@ -1648,55 +1648,101 @@ function initLoginLogic(showRegister) {
       mobNav.setAttribute('draggable', 'false');
       mobNav.innerHTML = `
         <div class="mobile-nav__indicator" id="mobile-nav-indicator" aria-hidden="true"></div>
-        <a href="../dashboard" class="mobile-nav__item active" id="mob-nav-home" role="tab" aria-selected="true" aria-label="首頁" draggable="false">
-            <div class="mobile-nav__icon-wrap">
-                <svg class="mobile-nav__svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M3 9.5L12 3L21 9.5V20C21 20.5523 20.5523 21 20 21H4C3.44772 21 3 20.5523 3 20V9.5Z"></path>
-                    <path d="M9 21V12H15V21"></path>
-                </svg>
-            </div>
-            <span class="mobile-nav__label">首頁</span>
-        </a>
-        <a href="../projects" class="mobile-nav__item" id="mob-nav-projects" role="tab" aria-selected="false" aria-label="分鏡" draggable="false">
-            <div class="mobile-nav__icon-wrap">
-                <svg class="mobile-nav__svg icon-fill-target" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-                    <path fill-rule="evenodd" clip-rule="evenodd" d="M6.85929 1.25001C6.88904 1.25001 6.91919 1.25002 6.94976 1.25002L6.98675 1.25001C7.33818 1.24999 7.56433 1.24998 7.78542 1.27065C8.68728 1.35499 9.54516 1.69531 10.2586 2.25002H16.5C16.5196 2.25002 16.5389 2.25001 16.5579 2.25001C16.9666 2.24994 17.2449 2.2499 17.4895 2.2821C19.1722 2.50364 20.4964 3.82779 20.7179 5.51054C20.7263 5.57397 20.7325 5.63966 20.737 5.70931C21.0145 5.83579 21.2715 5.99934 21.5077 6.21185C21.6061 6.30032 21.6997 6.39394 21.7882 6.49231C22.3165 7.07965 22.5422 7.79459 22.648 8.63601C22.75 9.4479 22.75 10.4741 22.75 11.747V14.0564C22.75 15.8942 22.75 17.3498 22.5969 18.489C22.4393 19.6615 22.1071 20.6104 21.3588 21.3588C20.6104 22.1071 19.6615 22.4393 18.489 22.5969C17.3498 22.75 15.8942 22.75 14.0564 22.75H9.94361C8.10584 22.75 6.65021 22.75 5.51099 22.5969C4.33857 22.4393 3.38962 22.1071 2.64126 21.3588C1.8929 20.6104 1.56078 19.6615 1.40315 18.489C1.24999 17.3498 1.25 15.8942 1.25002 14.0564L1.25002 6.94976C1.25002 6.91919 1.25001 6.88904 1.25001 6.85929C1.2499 6.06338 1.24982 5.55685 1.33237 5.11935C1.6949 3.19788 3.19788 1.6949 5.11935 1.33237C5.55685 1.24982 6.06338 1.2499 6.85929 1.25001ZM19.1474 5.32768C18.8895 4.5029 18.1732 3.88506 17.2937 3.76927C17.1598 3.75163 16.9883 3.75002 16.5 3.75002H11.8113C12.4542 4.38908 12.7459 4.65598 13.0768 4.84005C13.2948 4.96134 13.526 5.05713 13.766 5.12552C14.1793 5.24333 14.6324 5.25002 15.8284 5.25002L16.253 5.25002C17.4153 5.25 18.3718 5.24999 19.1474 5.32768ZM6.94976 2.75002C6.03312 2.75002 5.67873 2.75329 5.39746 2.80636C4.08277 3.05441 3.05441 4.08277 2.80636 5.39746C2.75329 5.67873 2.75002 6.03312 2.75002 6.94976V14C2.75002 15.9068 2.75161 17.2615 2.88978 18.2892C3.02504 19.2953 3.27871 19.8749 3.70192 20.2981C4.12513 20.7213 4.70478 20.975 5.71087 21.1103C6.73853 21.2484 8.0932 21.25 10 21.25H14C15.9068 21.25 17.2615 21.2484 18.2892 21.1103C19.2953 20.975 19.8749 20.7213 20.2981 20.2981C20.7213 19.8749 20.975 19.2953 21.1103 18.2892C21.2484 17.2615 21.25 15.9068 21.25 14V11.7979C21.25 10.4621 21.2486 9.5305 21.1597 8.82312C21.0731 8.13448 20.9141 7.76356 20.6729 7.49539C20.6198 7.43637 20.5637 7.3802 20.5046 7.32712C20.2365 7.08592 19.8656 6.92692 19.1769 6.84034C18.4695 6.75141 17.538 6.75002 16.2021 6.75002H15.8284C15.7912 6.75002 15.7545 6.75002 15.7182 6.75003C14.6702 6.75025 13.9944 6.75038 13.3548 6.56806C13.0041 6.46811 12.6661 6.32811 12.3475 6.15083C11.7663 5.82747 11.2885 5.3495 10.5476 4.60833C10.522 4.58265 10.496 4.55666 10.4697 4.53035L9.91943 3.98009C9.63616 3.69682 9.52778 3.58951 9.41731 3.49793C8.91403 3.08073 8.29664 2.825 7.64576 2.76413C7.50289 2.75077 7.35038 2.75002 6.94976 2.75002ZM12.25 10C12.25 9.5858 12.5858 9.25002 13 9.25002H18C18.4142 9.25002 18.75 9.5858 18.75 10C18.75 10.4142 18.4142 10.75 18 10.75H13C12.5858 10.75 12.25 10.4142 12.25 10Z"></path>
-                </svg>
-            </div>
-            <span class="mobile-nav__label">分鏡</span>
-        </a>
-        <a href="../generate" class="mobile-nav__item mobile-nav__item--create" id="mob-nav-generate" role="tab" aria-selected="false" aria-label="新建分鏡" draggable="false">
-            <div class="mob-circle-btn" id="mob-nav-circle-wrap">
-                <div class="mob-circle-glow-container">
-                    <div class="mob-circle-glow"></div>
+
+        <!-- Base Track (Normal / Unselected Blur Icons) -->
+        <div class="mobile-nav__track mobile-nav__track--base">
+            <a href="../dashboard" class="mobile-nav__item active" id="mob-nav-home" role="tab" aria-selected="true" aria-label="首頁" draggable="false">
+                <div class="mobile-nav__icon-wrap">
+                    <svg class="mobile-nav__svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 9.5L12 3L21 9.5V20C21 20.5523 20.5523 21 20 21H4C3.44772 21 3 20.5523 3 20V9.5Z"></path>
+                        <path d="M9 21V12H15V21"></path>
+                    </svg>
                 </div>
-                <div class="mob-circle-progress-fill" id="mob-circle-progress-fill"></div>
-                <div class="mob-circle-inner">
-                    <span class="mob-circle-plus">+</span>
-                    <span class="mob-circle-text" id="mob-circle-text" style="display:none;"></span>
+                <span class="mobile-nav__label">首頁</span>
+            </a>
+            <a href="../projects" class="mobile-nav__item" id="mob-nav-projects" role="tab" aria-selected="false" aria-label="分鏡" draggable="false">
+                <div class="mobile-nav__icon-wrap">
+                    <svg class="mobile-nav__svg icon-fill-target" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                        <path fill-rule="evenodd" clip-rule="evenodd" d="M6.85929 1.25001C6.88904 1.25001 6.91919 1.25002 6.94976 1.25002L6.98675 1.25001C7.33818 1.24999 7.56433 1.24998 7.78542 1.27065C8.68728 1.35499 9.54516 1.69531 10.2586 2.25002H16.5C16.5196 2.25002 16.5389 2.25001 16.5579 2.25001C16.9666 2.24994 17.2449 2.2499 17.4895 2.2821C19.1722 2.50364 20.4964 3.82779 20.7179 5.51054C20.7263 5.57397 20.7325 5.63966 20.737 5.70931C21.0145 5.83579 21.2715 5.99934 21.5077 6.21185C21.6061 6.30032 21.6997 6.39394 21.7882 6.49231C22.3165 7.07965 22.5422 7.79459 22.648 8.63601C22.75 9.4479 22.75 10.4741 22.75 11.747V14.0564C22.75 15.8942 22.75 17.3498 22.5969 18.489C22.4393 19.6615 22.1071 20.6104 21.3588 21.3588C20.6104 22.1071 19.6615 22.4393 18.489 22.5969C17.3498 22.75 15.8942 22.75 14.0564 22.75H9.94361C8.10584 22.75 6.65021 22.75 5.51099 22.5969C4.33857 22.4393 3.38962 22.1071 2.64126 21.3588C1.8929 20.6104 1.56078 19.6615 1.40315 18.489C1.24999 17.3498 1.25 15.8942 1.25002 14.0564L1.25002 6.94976C1.25002 6.91919 1.25001 6.88904 1.25001 6.85929C1.2499 6.06338 1.24982 5.55685 1.33237 5.11935C1.6949 3.19788 3.19788 1.6949 5.11935 1.33237C5.55685 1.24982 6.06338 1.2499 6.85929 1.25001ZM19.1474 5.32768C18.8895 4.5029 18.1732 3.88506 17.2937 3.76927C17.1598 3.75163 16.9883 3.75002 16.5 3.75002H11.8113C12.4542 4.38908 12.7459 4.65598 13.0768 4.84005C13.2948 4.96134 13.526 5.05713 13.766 5.12552C14.1793 5.24333 14.6324 5.25002 15.8284 5.25002L16.253 5.25002C17.4153 5.25 18.3718 5.24999 19.1474 5.32768ZM6.94976 2.75002C6.03312 2.75002 5.67873 2.75329 5.39746 2.80636C4.08277 3.05441 3.05441 4.08277 2.80636 5.39746C2.75329 5.67873 2.75002 6.03312 2.75002 6.94976V14C2.75002 15.9068 2.75161 17.2615 2.88978 18.2892C3.02504 19.2953 3.27871 19.8749 3.70192 20.2981C4.12513 20.7213 4.70478 20.975 5.71087 21.1103C6.73853 21.2484 8.0932 21.25 10 21.25H14C15.9068 21.25 17.2615 21.2484 18.2892 21.1103C19.2953 20.975 19.8749 20.7213 20.2981 20.2981C20.7213 19.8749 20.975 19.2953 21.1103 18.2892C21.2484 17.2615 21.25 15.9068 21.25 14V11.7979C21.25 10.4621 21.2486 9.5305 21.1597 8.82312C21.0731 8.13448 20.9141 7.76356 20.6729 7.49539C20.6198 7.43637 20.5637 7.3802 20.5046 7.32712C20.2365 7.08592 19.8656 6.92692 19.1769 6.84034C18.4695 6.75141 17.538 6.75002 16.2021 6.75002H15.8284C15.7912 6.75002 15.7545 6.75002 15.7182 6.75003C14.6702 6.75025 13.9944 6.75038 13.3548 6.56806C13.0041 6.46811 12.6661 6.32811 12.3475 6.15083C11.7663 5.82747 11.2885 5.3495 10.5476 4.60833C10.522 4.58265 10.496 4.55666 10.4697 4.53035L9.91943 3.98009C9.63616 3.69682 9.52778 3.58951 9.41731 3.49793C8.91403 3.08073 8.29664 2.825 7.64576 2.76413C7.50289 2.75077 7.35038 2.75002 6.94976 2.75002ZM12.25 10C12.25 9.5858 12.5858 9.25002 13 9.25002H18C18.4142 9.25002 18.75 9.5858 18.75 10C18.75 10.4142 18.4142 10.75 18 10.75H13C12.5858 10.75 12.25 10.4142 12.25 10Z"></path>
+                    </svg>
                 </div>
+                <span class="mobile-nav__label">分鏡</span>
+            </a>
+            <a href="../generate" class="mobile-nav__item mobile-nav__item--create" id="mob-nav-generate" role="tab" aria-selected="false" aria-label="新建分鏡" draggable="false">
+                <div class="mob-circle-btn" id="mob-nav-circle-wrap">
+                    <div class="mob-circle-glow-container">
+                        <div class="mob-circle-glow"></div>
+                    </div>
+                    <div class="mob-circle-progress-fill" id="mob-circle-progress-fill"></div>
+                    <div class="mob-circle-inner">
+                        <span class="mob-circle-plus">+</span>
+                        <span class="mob-circle-text" id="mob-circle-text" style="display:none;"></span>
+                    </div>
+                </div>
+            </a>
+            <a href="../template" class="mobile-nav__item" id="mob-nav-template" role="tab" aria-selected="false" aria-label="模板" draggable="false">
+                <div class="mobile-nav__icon-wrap">
+                    <svg class="mobile-nav__svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 12C3 4.5885 4.5885 3 12 3C19.4115 3 21 4.5885 21 12C21 19.4115 19.4115 21 12 21C4.5885 21 3 19.4115 3 12Z"></path>
+                        <path d="M14 14L16 16"></path>
+                        <path d="M15 11.5C15 13.433 13.433 15 11.5 15C9.567 15 8 13.433 8 11.5C8 9.567 9.567 8 11.5 8C13.433 8 15 9.567 15 11.5Z"></path>
+                    </svg>
+                </div>
+                <span class="mobile-nav__label">模板</span>
+            </a>
+            <button type="button" class="mobile-nav__item" id="mob-nav-profile" role="tab" aria-selected="false" aria-label="我的設定" draggable="false">
+                <div class="mobile-nav__icon-wrap">
+                    <svg class="mobile-nav__svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="9" r="3"></circle>
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M17.9691 20C17.81 17.1085 16.9247 15 11.9999 15C7.07521 15 6.18991 17.1085 6.03076 20"></path>
+                    </svg>
+                </div>
+                <span class="mobile-nav__label">我的</span>
+            </button>
+        </div>
+
+        <!-- Focus Track (Focus Icons Masked Dynamically by Selector Clip-Path) -->
+        <div class="mobile-nav__track mobile-nav__track--focus" aria-hidden="true">
+            <div class="mobile-nav__item mobile-nav__item--focus">
+                <div class="mobile-nav__icon-wrap">
+                    <svg class="mobile-nav__svg mobile-nav__svg--focus" width="22" height="22" viewBox="0 0 24 24" fill="none">
+                        <path d="M3 9.5L12 3L21 9.5V20C21 20.5523 20.5523 21 20 21H4C3.44772 21 3 20.5523 3 20V9.5Z" fill="currentColor"></path>
+                        <path d="M9 21V12H15V21" fill="#fff" stroke="#fff" stroke-width="1"></path>
+                    </svg>
+                </div>
+                <span class="mobile-nav__label">首頁</span>
             </div>
-        </a>
-        <a href="../template" class="mobile-nav__item" id="mob-nav-template" role="tab" aria-selected="false" aria-label="模板" draggable="false">
-            <div class="mobile-nav__icon-wrap">
-                <svg class="mobile-nav__svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M3 12C3 4.5885 4.5885 3 12 3C19.4115 3 21 4.5885 21 12C21 19.4115 19.4115 21 12 21C4.5885 21 3 19.4115 3 12Z"></path>
-                    <path d="M14 14L16 16"></path>
-                    <path d="M15 11.5C15 13.433 13.433 15 11.5 15C9.567 15 8 13.433 8 11.5C8 9.567 9.567 8 11.5 8C13.433 8 15 9.567 15 11.5Z"></path>
-                </svg>
+            <div class="mobile-nav__item mobile-nav__item--focus">
+                <div class="mobile-nav__icon-wrap">
+                    <svg class="mobile-nav__svg mobile-nav__svg--focus" width="22" height="22" viewBox="0 0 24 24" fill="none">
+                        <path d="M2 6.94975C2 6.06722 2 5.62595 2.06935 5.25839C2.37464 3.64031 3.64031 2.37464 5.25839 2.06935C5.62595 2 6.06722 2 6.94975 2C7.33642 2 7.52976 2 7.71557 2.01738C8.51665 2.09229 9.27652 2.40704 9.89594 2.92051C10.0396 3.03961 10.1763 3.17633 10.4497 3.44975L11 4C11.8158 4.81578 12.2237 5.22367 12.7121 5.49543C12.9804 5.64471 13.2651 5.7626 13.5604 5.84678C14.0979 6 14.6747 6 15.8284 6H16.2021C18.8345 6 20.1506 6 21.0062 6.76946C21.0849 6.84024 21.1598 6.91514 21.2305 6.99383C22 7.84935 22 9.16554 22 11.7979V14C22 17.7712 22 19.6569 20.8284 20.8284C19.6569 22 17.7712 22 14 22H10C6.22876 22 4.34315 22 3.17157 20.8284C2 19.6569 2 17.7712 2 14V6.94975Z" fill="currentColor"></path>
+                        <path fill-rule="evenodd" clip-rule="evenodd" d="M12.25 10C12.25 9.58579 12.5858 9.25 13 9.25H18C18.4142 9.25 18.75 9.58579 18.75 10C18.75 10.4142 18.4142 10.75 18 10.75H13C12.5858 10.75 12.25 10.4142 12.25 10Z" fill="#fff"></path>
+                        <path d="M16.9856 3.02094C16.8321 3 16.6492 3 16.2835 3H12L12.3699 3.38312C13.0359 4.07299 13.2919 4.33051 13.5877 4.50096C13.7594 4.5999 13.9415 4.67804 14.1304 4.73383C14.4559 4.82993 14.8128 4.83538 15.7546 4.83538L16.089 4.83538C17.0914 4.83536 17.8995 4.83535 18.5389 4.91862C18.6984 4.93939 18.8521 4.96582 19 5C18.8144 3.96313 18.0043 3.15985 16.9856 3.02094Z" fill="currentColor"></path>
+                    </svg>
+                </div>
+                <span class="mobile-nav__label">分鏡</span>
             </div>
-            <span class="mobile-nav__label">模板</span>
-        </a>
-        <button type="button" class="mobile-nav__item" id="mob-nav-profile" role="tab" aria-selected="false" aria-label="我的設定" draggable="false">
-            <div class="mobile-nav__icon-wrap">
-                <svg class="mobile-nav__svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="9" r="3"></circle>
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <path d="M17.9691 20C17.81 17.1085 16.9247 15 11.9999 15C7.07521 15 6.18991 17.1085 6.03076 20"></path>
-                </svg>
+            <div class="mobile-nav__item mobile-nav__item--create" style="visibility:hidden; pointer-events:none;"></div>
+            <div class="mobile-nav__item mobile-nav__item--focus">
+                <div class="mobile-nav__icon-wrap">
+                    <svg class="mobile-nav__svg mobile-nav__svg--focus" width="22" height="22" viewBox="0 0 24 24" fill="none">
+                        <path fill-rule="evenodd" clip-rule="evenodd" d="M7.25007 2.38782C8.54878 2.0992 10.1243 2 12 2C13.8757 2 15.4512 2.0992 16.7499 2.38782C18.06 2.67897 19.1488 3.176 19.9864 4.01358C20.824 4.85116 21.321 5.94002 21.6122 7.25007C21.9008 8.54878 22 10.1243 22 12C22 13.8757 21.9008 15.4512 21.6122 16.7499C21.321 18.06 20.824 19.1488 19.9864 19.9864C19.1488 20.824 18.06 21.321 16.7499 21.6122C15.4512 21.9008 13.8757 22 12 22C10.1243 22 8.54878 21.9008 7.25007 21.6122C5.94002 21.321 4.85116 20.824 4.01358 19.9864C3.176 19.1488 2.67897 18.06 2.38782 16.7499C2.0992 15.4512 2 13.8757 2 12C2 10.1243 2.0992 8.54878 2.38782 7.25007C2.67897 5.94002 3.176 4.85116 4.01358 4.01358C4.85116 3.176 5.94002 2.67897 7.25007 2.38782ZM9 11.5C9 10.1193 10.1193 9 11.5 9C12.8807 9 14 10.1193 14 11.5C14 12.8807 12.8807 14 11.5 14C10.1193 14 9 12.8807 9 11.5ZM11.5 7C9.01472 7 7 9.01472 7 11.5C7 13.9853 9.01472 16 11.5 16C12.3805 16 13.202 15.7471 13.8957 15.31L15.2929 16.7071C15.6834 17.0976 16.3166 17.0976 16.7071 16.7071C17.0976 16.3166 17.0976 15.6834 16.7071 15.2929L15.31 13.8957C15.7471 13.202 16 12.3805 16 11.5C16 9.01472 13.9853 7 11.5 7Z" fill="currentColor"></path>
+                    </svg>
+                </div>
+                <span class="mobile-nav__label">模板</span>
             </div>
-            <span class="mobile-nav__label">我的</span>
-        </button>
+            <div class="mobile-nav__item mobile-nav__item--focus">
+                <div class="mobile-nav__icon-wrap">
+                    <svg class="mobile-nav__svg mobile-nav__svg--focus" width="22" height="22" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" fill="currentColor"></circle>
+                        <circle cx="12" cy="9" r="3.2" fill="#fff"></circle>
+                        <path d="M17.9691 20C17.81 17.1085 16.9247 15 11.9999 15C7.07521 15 6.18991 17.1085 6.03076 20" fill="#fff"></path>
+                    </svg>
+                </div>
+                <span class="mobile-nav__label">我的</span>
+            </div>
+        </div>
       `;
       document.body.appendChild(mobNav);
       mobileBottomNav = mobNav;
@@ -1996,6 +2042,7 @@ function initLoginLogic(showRegister) {
   let navSpringRaf = null;
   let isNavInteracting = false;
   let justHandledPointerNav = false;
+  let updateMobNavVisual = null;
 
   function initMobileBottomNavGestures() {
     const mobNav = document.getElementById('spa-mobile-nav') || mobileBottomNav;
@@ -2020,13 +2067,66 @@ function initLoginLogic(showRegister) {
 
     const maxDx = 18;
     const maxDy = 12;
-    const indicatorWidth = 56;
+    const insetX = parseFloat(getComputedStyle(mobNav).getPropertyValue('--nav-selector-inset-x')) || 5;
+    const insetY = parseFloat(getComputedStyle(mobNav).getPropertyValue('--nav-selector-inset-y')) || 5;
+    let indicatorWidth = parseFloat(getComputedStyle(mobNav).getPropertyValue('--nav-selector-width')) || 64;
 
-    const items = Array.from(mobNav.querySelectorAll('.mobile-nav__item'));
+    const items = Array.from(mobNav.querySelectorAll('.mobile-nav__track--base .mobile-nav__item')).length
+      ? Array.from(mobNav.querySelectorAll('.mobile-nav__track--base .mobile-nav__item'))
+      : Array.from(mobNav.querySelectorAll('.mobile-nav__item:not(.mobile-nav__item--focus)'));
     const indicator = mobNav.querySelector('.mobile-nav__indicator');
 
     mobNav.addEventListener('dragstart', (e) => e.preventDefault());
     items.forEach(it => it.setAttribute('draggable', 'false'));
+
+    function updateIndicatorVisual(x, scale = 1.0, isSettling = false, opacity = 1.0) {
+      if (!indicator || !mobNav) return;
+      const focusTrack = mobNav.querySelector('.mobile-nav__track--focus');
+      if (isSettling) {
+        indicator.classList.add('is-settling');
+        if (focusTrack) focusTrack.classList.add('is-settling');
+      } else {
+        indicator.classList.remove('is-settling');
+        if (focusTrack) focusTrack.classList.remove('is-settling');
+      }
+
+      const opacityStr = opacity.toString();
+      indicator.style.opacity = opacityStr;
+      if (focusTrack) focusTrack.style.opacity = opacityStr;
+
+      indicator.style.transform = `translate3d(${x.toFixed(2)}px, 0, 0) scale(${scale.toFixed(4)})`;
+
+      if (focusTrack) {
+        if (opacity <= 0.01) {
+          const hiddenClip = 'inset(0 100% 0 0 round 999px)';
+          focusTrack.style.clipPath = hiddenClip;
+          focusTrack.style.webkitClipPath = hiddenClip;
+          mobNav.style.setProperty('--nav-clip-path', hiddenClip);
+          return;
+        }
+
+        const navW = cachedNavRect ? cachedNavRect.width : mobNav.getBoundingClientRect().width;
+        const navH = cachedNavRect ? cachedNavRect.height : (mobNav.getBoundingClientRect().height || 64);
+        const selW = indicatorWidth;
+        const selH = navH - (insetY * 2);
+        const centerY = insetY + selH / 2;
+        const centerX = x + selW / 2;
+
+        const scaledW = selW * scale;
+        const scaledH = selH * scale;
+
+        const top = Math.max(0, centerY - scaledH / 2);
+        const bottom = Math.max(0, navH - (centerY + scaledH / 2));
+        const left = Math.max(0, centerX - scaledW / 2);
+        const right = Math.max(0, navW - (centerX + scaledW / 2));
+
+        const clipValue = `inset(${top.toFixed(2)}px ${right.toFixed(2)}px ${bottom.toFixed(2)}px ${left.toFixed(2)}px round 999px)`;
+        focusTrack.style.clipPath = clipValue;
+        focusTrack.style.webkitClipPath = clipValue;
+        mobNav.style.setProperty('--nav-clip-path', clipValue);
+      }
+    }
+    updateMobNavVisual = updateIndicatorVisual;
 
     function cacheMetrics() {
       cachedNavRect = mobNav.getBoundingClientRect();
@@ -2039,7 +2139,18 @@ function initLoginLogic(showRegister) {
           isCreate: it.classList.contains('mobile-nav__item--create')
         };
       });
+
+      if (cachedMetrics.length >= 1 && cachedNavRect && cachedNavRect.width > 0) {
+        const c0 = cachedMetrics[0].centerX - cachedNavRect.left;
+        const calcW = Math.round(2 * (c0 - insetX));
+        if (calcW > 40 && calcW < 120) {
+          indicatorWidth = calcW;
+          indicator.style.width = `${indicatorWidth}px`;
+          mobNav.style.setProperty('--nav-selector-width', `${indicatorWidth}px`);
+        }
+      }
     }
+    window.addEventListener('resize', cacheMetrics);
 
     function clearSnapHover() {
       items.forEach(it => it.classList.remove('snap-target'));
@@ -2120,19 +2231,18 @@ function initLoginLogic(showRegister) {
       lastSnappedItem = currentTargetItem;
       highlightTargetItem(currentTargetItem);
 
-      // 按下即動：只要有點擊到 link 就觸發 selector 移動過來，手指點擊時放大
+      // 按下即動：只要有點擊到 link 就觸發 selector 移動過來，手指點擊時放大至 1.3 倍
       if (indicator && currentTargetItem && cachedNavRect) {
-        indicator.classList.add('is-settling', 'is-active', 'is-pressed');
+        indicator.classList.add('is-active', 'is-pressed');
         if (!currentTargetItem.classList.contains('mobile-nav__item--create')) {
           const tMetric = cachedMetrics.find(m => m.item === currentTargetItem);
           const targetCenterX = tMetric ? tMetric.centerX : (currentTargetItem.getBoundingClientRect().left + currentTargetItem.getBoundingClientRect().width / 2);
           const finalOffset = targetCenterX - cachedNavRect.left - indicatorWidth / 2;
-          curIndicatorX = Math.max(4, Math.min(cachedNavRect.width - indicatorWidth - 4, finalOffset));
-          indicator.style.transform = `translate3d(${curIndicatorX.toFixed(2)}px, 0, 0) scale(1.12)`;
-          indicator.style.opacity = '1';
+          curIndicatorX = Math.max(insetX, Math.min(cachedNavRect.width - indicatorWidth - insetX, finalOffset));
+          updateIndicatorVisual(curIndicatorX, 1.3, true, 1.0);
         } else {
-          indicator.style.opacity = '0';
           indicator.classList.remove('is-active', 'is-pressed');
+          updateIndicatorVisual(curIndicatorX, 1.3, true, 0.0);
         }
       }
 
@@ -2197,17 +2307,16 @@ function initLoginLogic(showRegister) {
           const closestCenterRelX = closestMetric.centerX - cachedNavRect.left - indicatorWidth / 2;
           const distX = fingerRelX - closestCenterRelX;
           let targetIndX = fingerRelX - distX * 0.35;
-          targetIndX = Math.max(4, Math.min(cachedNavRect.width - indicatorWidth - 4, targetIndX));
+          targetIndX = Math.max(insetX, Math.min(cachedNavRect.width - indicatorWidth - insetX, targetIndX));
 
           curIndicatorX += (targetIndX - curIndicatorX) * 0.36;
-          indicator.style.transform = `translate3d(${curIndicatorX.toFixed(2)}px, 0, 0) scale(1.12)`;
 
+          let targetOpacity = 1;
           if (closestMetric.isCreate) {
             const distToCenter = Math.abs(fingerRelX - closestCenterRelX);
-            indicator.style.opacity = Math.min(1, Math.max(0, (distToCenter - 14) / 24)).toFixed(2);
-          } else {
-            indicator.style.opacity = '1';
+            targetOpacity = Math.min(1, Math.max(0, (distToCenter - 14) / 24));
           }
+          updateIndicatorVisual(curIndicatorX, 1.3, false, targetOpacity);
         }
       }
 
@@ -2251,18 +2360,17 @@ function initLoginLogic(showRegister) {
 
       // Indicator smooth settling into link center without bouncing
       if (indicator && releasedTargetItem && cachedNavRect) {
-        indicator.classList.add('is-settling', 'is-active');
+        indicator.classList.add('is-active');
         indicator.classList.remove('is-pressed');
         if (!releasedTargetItem.classList.contains('mobile-nav__item--create')) {
           const tMetric = cachedMetrics.find(m => m.item === releasedTargetItem);
           const targetCenterX = tMetric ? tMetric.centerX : (releasedTargetItem.getBoundingClientRect().left + releasedTargetItem.getBoundingClientRect().width / 2);
           const finalOffset = targetCenterX - cachedNavRect.left - indicatorWidth / 2;
-          curIndicatorX = Math.max(4, Math.min(cachedNavRect.width - indicatorWidth - 4, finalOffset));
-          indicator.style.transform = `translate3d(${curIndicatorX.toFixed(2)}px, 0, 0) scale(1)`;
-          indicator.style.opacity = '1';
+          curIndicatorX = Math.max(insetX, Math.min(cachedNavRect.width - indicatorWidth - insetX, finalOffset));
+          updateIndicatorVisual(curIndicatorX, 1.0, true, 1.0);
         } else {
-          indicator.style.opacity = '0';
           indicator.classList.remove('is-active');
+          updateIndicatorVisual(curIndicatorX, 1.0, true, 0.0);
         }
       }
 
@@ -2427,7 +2535,9 @@ function initLoginLogic(showRegister) {
       activeMainPage = 'projects';
     }
 
-    const items = mobNav.querySelectorAll('.mobile-nav__item');
+    const items = Array.from(mobNav.querySelectorAll('.mobile-nav__track--base .mobile-nav__item')).length
+      ? Array.from(mobNav.querySelectorAll('.mobile-nav__track--base .mobile-nav__item'))
+      : Array.from(mobNav.querySelectorAll('.mobile-nav__item:not(.mobile-nav__item--focus)'));
     let activeItem = null;
     items.forEach(item => {
       let isActive = false;
@@ -2457,15 +2567,27 @@ function initLoginLogic(showRegister) {
       if (activeItem && !activeItem.classList.contains('mobile-nav__item--create')) {
         const itemRect = activeItem.getBoundingClientRect();
         const navRect = mobNav.getBoundingClientRect();
+        const insetX = parseFloat(getComputedStyle(mobNav).getPropertyValue('--nav-selector-inset-x')) || 5;
+        const currentIndicatorWidth = parseFloat(indicator.style.width) || parseFloat(getComputedStyle(mobNav).getPropertyValue('--nav-selector-width')) || 64;
         if (navRect.width > 0 && itemRect.width > 0) {
-          const offset = (itemRect.left - navRect.left) + (itemRect.width - 56) / 2;
-          indicator.classList.add('is-settling', 'is-active');
-          indicator.style.transform = `translate3d(${offset.toFixed(2)}px, 0, 0) scale(1)`;
-          indicator.style.opacity = '1';
+          const itemCenterX = itemRect.left + itemRect.width / 2;
+          const targetOffset = itemCenterX - navRect.left - currentIndicatorWidth / 2;
+          const finalOffset = Math.max(insetX, Math.min(navRect.width - currentIndicatorWidth - insetX, targetOffset));
+          indicator.classList.add('is-active');
+          if (updateMobNavVisual) {
+            updateMobNavVisual(finalOffset, 1.0, true, 1.0);
+          } else {
+            indicator.style.transform = `translate3d(${finalOffset.toFixed(2)}px, 0, 0) scale(1)`;
+            indicator.style.opacity = '1';
+          }
         }
       } else {
         indicator.classList.remove('is-active');
-        indicator.style.opacity = '0';
+        if (updateMobNavVisual) {
+          updateMobNavVisual(0, 1.0, true, 0.0);
+        } else {
+          indicator.style.opacity = '0';
+        }
       }
     }
   }
