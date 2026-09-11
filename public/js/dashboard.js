@@ -774,8 +774,6 @@
       const initialHeight = window.visualViewport.height;
 
       const onViewportChange = () => {
-        const currentHeight = window.visualViewport.height;
-        const isKeyboardOpen = (initialHeight - currentHeight) > 150;
         const isQuickComposeActive = document.body.classList.contains('ai-quick-compose-active') ||
           (window.AICreationController && window.AICreationController.surfaceState === 'quick-compose');
 
@@ -783,16 +781,18 @@
           mobNav.style.opacity = '1';
           mobNav.style.pointerEvents = 'auto';
 
-          const keyboardOffset = Math.max(0, window.innerHeight - (window.visualViewport.height + (window.visualViewport.offsetTop || 0)));
+          if (window.scrollY !== 0 && window.matchMedia('(max-width: 768px)').matches) {
+            window.scrollTo(0, 0);
+          }
+
+          const lift = Math.max(0, window.innerHeight - window.visualViewport.height);
           const qcContainer = document.getElementById('quick-creation-container');
 
-          if (isKeyboardOpen || keyboardOffset > 80) {
+          if (lift > 80) {
             document.body.classList.add('ai-keyboard-open');
-            if (keyboardOffset > 80) {
-              mobNav.style.transform = `translate3d(0, -${keyboardOffset}px, 0)`;
-              if (qcContainer) {
-                qcContainer.style.transform = `translate3d(-50%, -${keyboardOffset}px, 0)`;
-              }
+            mobNav.style.transform = `translate3d(0, -${lift}px, 0)`;
+            if (qcContainer) {
+              qcContainer.style.transform = `translate3d(-50%, -${lift}px, 0)`;
             }
           } else {
             document.body.classList.remove('ai-keyboard-open');
@@ -803,6 +803,8 @@
           }
         } else {
           document.body.classList.remove('ai-keyboard-open');
+          const currentHeight = window.visualViewport.height;
+          const isKeyboardOpen = (initialHeight - currentHeight) > 150;
           if (isKeyboardOpen) {
             mobNav.style.transform = 'translateY(120%)';
             mobNav.style.opacity = '0';
@@ -816,7 +818,14 @@
       };
 
       window.visualViewport.addEventListener('resize', onViewportChange);
-      window.visualViewport.addEventListener('scroll', onViewportChange);
+      window.visualViewport.addEventListener('scroll', () => {
+        onViewportChange();
+        if (document.body.classList.contains('ai-quick-compose-active') && window.matchMedia('(max-width: 768px)').matches) {
+          if (window.visualViewport.offsetTop > 0) {
+            window.scrollTo(0, 0);
+          }
+        }
+      });
     }
   }
 

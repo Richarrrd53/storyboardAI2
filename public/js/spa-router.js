@@ -1463,6 +1463,18 @@ function initLoginLogic(showRegister) {
       this.previousRoute = currentPage || 'dashboard';
       this.previousScrollY = window.scrollY || document.documentElement.scrollTop || 0;
 
+      if (isMobileView()) {
+        document.documentElement.classList.add('ai-quick-compose-locked');
+        document.body.classList.add('ai-quick-compose-locked');
+        document.body.style.position = 'fixed';
+        document.body.style.top = `-${this.previousScrollY}px`;
+        document.body.style.left = '0';
+        document.body.style.right = '0';
+        document.body.style.width = '100%';
+        document.body.style.height = '100%';
+        document.body.style.overflow = 'hidden';
+      }
+
       const layer = document.getElementById('ai-creation-layer');
       const capsule = document.getElementById('global-create-capsule');
 
@@ -1533,6 +1545,21 @@ function initLoginLogic(showRegister) {
         qcContainer.style.transform = '';
       }
 
+      // Restore mobile body scroll lock
+      if (document.body.style.position === 'fixed') {
+        const savedY = this.previousScrollY || 0;
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.left = '';
+        document.body.style.right = '';
+        document.body.style.width = '';
+        document.body.style.height = '';
+        document.body.style.overflow = '';
+        document.documentElement.classList.remove('ai-quick-compose-locked');
+        document.body.classList.remove('ai-quick-compose-locked');
+        window.scrollTo(0, savedY);
+      }
+
       // Phase 1: Start reverse morph — capsule shrinks from expanded → collapsed button
       document.body.classList.remove('ai-quick-compose-active');
       document.body.classList.add('ai-quick-compose-closing');
@@ -1584,6 +1611,20 @@ function initLoginLogic(showRegister) {
 
       this.surfaceState = 'workspace';
       document.body.classList.remove('ai-quick-compose-active');
+
+      if (document.body.style.position === 'fixed') {
+        const savedY = this.previousScrollY || 0;
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.left = '';
+        document.body.style.right = '';
+        document.body.style.width = '';
+        document.body.style.height = '';
+        document.body.style.overflow = '';
+        document.documentElement.classList.remove('ai-quick-compose-locked');
+        document.body.classList.remove('ai-quick-compose-locked');
+        window.scrollTo(0, savedY);
+      }
 
       const layer = document.getElementById('ai-creation-layer');
       const capsule = document.getElementById('global-create-capsule');
@@ -1914,6 +1955,14 @@ function initLoginLogic(showRegister) {
     const qcInput = document.getElementById('qc-story-input');
     const qcSendBtn = document.getElementById('qc-send-btn');
     if (qcInput) {
+      qcInput.addEventListener('focus', () => {
+        if (isMobileView()) {
+          window.scrollTo(0, 0);
+          setTimeout(() => {
+            window.scrollTo(0, 0);
+          }, 50);
+        }
+      });
       qcInput.addEventListener('input', () => {
         const val = qcInput.value.trim();
         if (qcSendBtn) qcSendBtn.disabled = !val;
@@ -2951,8 +3000,6 @@ function initLoginLogic(showRegister) {
       const initialHeight = window.visualViewport.height;
 
       const onViewportChange = () => {
-        const currentHeight = window.visualViewport.height;
-        const isKeyboardOpen = (initialHeight - currentHeight) > 150;
         const isQuickComposeActive = document.body.classList.contains('ai-quick-compose-active') ||
           (window.AICreationController && window.AICreationController.surfaceState === 'quick-compose');
 
@@ -2960,16 +3007,18 @@ function initLoginLogic(showRegister) {
           mobNav.style.opacity = '1';
           mobNav.style.pointerEvents = 'auto';
 
-          const keyboardOffset = Math.max(0, window.innerHeight - (window.visualViewport.height + (window.visualViewport.offsetTop || 0)));
+          if (isMobileView() && window.scrollY !== 0) {
+            window.scrollTo(0, 0);
+          }
+
+          const lift = Math.max(0, window.innerHeight - window.visualViewport.height);
           const qcContainer = document.getElementById('quick-creation-container');
 
-          if (isKeyboardOpen || keyboardOffset > 80) {
+          if (lift > 80) {
             document.body.classList.add('ai-keyboard-open');
-            if (keyboardOffset > 80) {
-              mobNav.style.transform = `translate3d(0, -${keyboardOffset}px, 0)`;
-              if (qcContainer) {
-                qcContainer.style.transform = `translate3d(-50%, -${keyboardOffset}px, 0)`;
-              }
+            mobNav.style.transform = `translate3d(0, -${lift}px, 0)`;
+            if (qcContainer) {
+              qcContainer.style.transform = `translate3d(-50%, -${lift}px, 0)`;
             }
           } else {
             document.body.classList.remove('ai-keyboard-open');
@@ -2980,6 +3029,8 @@ function initLoginLogic(showRegister) {
           }
         } else {
           document.body.classList.remove('ai-keyboard-open');
+          const currentHeight = window.visualViewport.height;
+          const isKeyboardOpen = (initialHeight - currentHeight) > 150;
           if (isKeyboardOpen) {
             mobNav.style.transform = 'translateY(120%)';
             mobNav.style.opacity = '0';
@@ -2993,7 +3044,14 @@ function initLoginLogic(showRegister) {
       };
 
       window.visualViewport.addEventListener('resize', onViewportChange);
-      window.visualViewport.addEventListener('scroll', onViewportChange);
+      window.visualViewport.addEventListener('scroll', () => {
+        onViewportChange();
+        if (document.body.classList.contains('ai-quick-compose-active') && isMobileView()) {
+          if (window.visualViewport.offsetTop > 0) {
+            window.scrollTo(0, 0);
+          }
+        }
+      });
     }
 
     window.addEventListener('resize', () => {
