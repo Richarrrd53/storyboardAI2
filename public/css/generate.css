@@ -3207,18 +3207,18 @@
         z-index: 10010 !important;
     }
 
-    /* Mobile Backdrop: Desktop-grade directional frosted gradient blur (Blue-Gray Tint + 5-8% Primary Blue Glow) */
+    /* Mobile Backdrop: Desktop-grade directional frosted gradient blur (Height increased by >65%) */
     .ai-focus-field {
         position: fixed !important;
         inset: 0 !important;
         z-index: 10010 !important;
         background:
-            radial-gradient(circle 420px at 50% calc(100% - 60px), rgba(37, 99, 235, 0.065) 0%, rgba(59, 130, 246, 0.035) 38%, rgba(147, 197, 253, 0.01) 68%, transparent 100%),
-            linear-gradient(180deg, rgba(248, 250, 253, 0.60) 0%, rgba(240, 244, 250, 0.78) 50%, rgba(232, 240, 250, 0.90) 100%) !important;
-        backdrop-filter: blur(20px) !important;
-        -webkit-backdrop-filter: blur(20px) !important;
-        mask-image: radial-gradient(ellipse 130% 90% at 50% 100%, black 28%, rgba(0, 0, 0, 0.75) 58%, rgba(0, 0, 0, 0.18) 82%, transparent 100%) !important;
-        -webkit-mask-image: radial-gradient(ellipse 130% 90% at 50% 100%, black 28%, rgba(0, 0, 0, 0.75) 58%, rgba(0, 0, 0, 0.18) 82%, transparent 100%) !important;
+            radial-gradient(circle 700px at 50% calc(100% - 60px), rgba(37, 99, 235, 0.08) 0%, rgba(59, 130, 246, 0.045) 42%, rgba(147, 197, 253, 0.015) 75%, transparent 100%),
+            linear-gradient(180deg, rgba(248, 250, 253, 0.15) 0%, rgba(244, 247, 252, 0.60) 25%, rgba(240, 244, 250, 0.82) 55%, rgba(232, 240, 250, 0.94) 100%) !important;
+        backdrop-filter: blur(22px) !important;
+        -webkit-backdrop-filter: blur(22px) !important;
+        mask-image: radial-gradient(ellipse 150% 150% at 50% 100%, black 45%, rgba(0, 0, 0, 0.85) 68%, rgba(0, 0, 0, 0.25) 90%, transparent 100%) !important;
+        -webkit-mask-image: radial-gradient(ellipse 150% 150% at 50% 100%, black 45%, rgba(0, 0, 0, 0.85) 68%, rgba(0, 0, 0, 0.25) 90%, transparent 100%) !important;
         opacity: 0;
         pointer-events: none !important;
         transition: opacity 320ms cubic-bezier(0.16, 1, 0.3, 1) !important;
@@ -3248,18 +3248,17 @@
         opacity: 1 !important;
         pointer-events: none !important; /* Click/drag penetration to bottom nav for slide-to-select */
         z-index: 10 !important;
-        background: linear-gradient(135deg, #0b1329 0%, #172554 35%, #1d4ed8 75%, #3b82f6 100%) !important;
-        backdrop-filter: blur(8px) saturate(120%) brightness(1.06) !important;
-        -webkit-backdrop-filter: blur(8px) saturate(120%) brightness(1.06) !important;
-        border: none !important;
-        box-shadow: none !important;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.58) 0%, rgba(243, 246, 252, 0.42) 100%) !important;
+        backdrop-filter: blur(8px) saturate(120%) brightness(1.03) !important;
+        -webkit-backdrop-filter: blur(8px) saturate(120%) brightness(1.03) !important;
+        border: 0.75px solid rgba(255, 255, 255, 0.55) !important;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(15, 23, 42, 0.03), inset 0 1px 1.2px rgba(255, 255, 255, 0.9), inset 0 -1px 2px rgba(148, 163, 184, 0.06) !important;
         overflow: hidden;
         cursor: pointer;
         transition: width 560ms cubic-bezier(0.16, 1, 0.3, 1),
                     max-width 560ms cubic-bezier(0.16, 1, 0.3, 1),
                     height 560ms cubic-bezier(0.16, 1, 0.3, 1),
                     border-radius 560ms cubic-bezier(0.16, 1, 0.3, 1),
-                    background 380ms ease,
                     border-color 400ms ease,
                     box-shadow 460ms ease,
                     transform 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
@@ -3280,8 +3279,11 @@
         transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
     }
 
+    /* Mobile Capsule Button Face (Blue gradient sliding smoothly to light-blue on hover/selector snap) */
     .ai-unified-capsule .capsule-btn-face {
-        background: transparent !important;
+        background: linear-gradient(135deg, var(--color-surface-film, #0f172a), var(--bg-dark, #1e293b), var(--interactive-primary, #2563eb), var(--primary-light, #60a5fa)) !important;
+        background-size: 250% 100% !important;
+        background-position: left !important;
         display: flex !important;
         position: absolute;
         inset: 0;
@@ -3295,7 +3297,19 @@
         border-radius: 999px !important;
         overflow: hidden !important;
         pointer-events: none !important;
-        transition: opacity 220ms 120ms ease, transform 280ms 120ms cubic-bezier(0.16, 1, 0.3, 1), filter 220ms 120ms ease !important;
+        transition: opacity 380ms cubic-bezier(0.16, 1, 0.3, 1),
+                    transform 380ms cubic-bezier(0.16, 1, 0.3, 1),
+                    filter 320ms ease,
+                    background-position 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+
+    /* Selector hovered / center snapped state: shifts background smoothly to right (light blue) */
+    .mobile-nav__item--create.snap-target .ai-unified-capsule:not(.is-expanded) .capsule-btn-face,
+    .mobile-nav__item--create.selector-hovered .ai-unified-capsule:not(.is-expanded) .capsule-btn-face,
+    .ai-unified-capsule:not(.is-expanded).snap-hover .capsule-btn-face,
+    .ai-unified-capsule:not(.is-expanded).selector-hovered .capsule-btn-face,
+    .ai-unified-capsule:not(.is-expanded).is-hovered .capsule-btn-face {
+        background-position: right !important;
     }
 
     /* Conic Glow Aura on mobile button */
@@ -3383,6 +3397,10 @@
         transition: opacity 160ms ease, filter 160ms ease !important;
     }
 
+    .capsule-input-face .qc-textarea {
+        font-size: 16px !important; /* 16px strictly prevents iOS Safari viewport zoom bug on focus */
+    }
+
     /* Mobile Expanded: morphs horizontally from center of #mob-nav-generate to full bottom-nav width */
     .mobile-nav__item--create .ai-unified-capsule.is-expanded,
     .ai-unified-capsule.is-expanded {
@@ -3427,13 +3445,15 @@
         transition: opacity 260ms 140ms ease, filter 260ms 140ms ease !important;
     }
 
-    /* In expanded state: button face smoothly dissolves into acrylic input */
+    /* In expanded state: button face smoothly dissolves into acrylic input color (blue-to-glass color morph) */
     .ai-unified-capsule.is-expanded .capsule-btn-face {
         opacity: 0 !important;
-        transform: scale(0.8) !important;
-        filter: blur(4px) !important;
+        transform: scale(0.92) !important;
+        filter: blur(5px) !important;
         pointer-events: none !important;
-        transition: opacity 220ms ease, transform 280ms cubic-bezier(0.16, 1, 0.3, 1), filter 220ms ease !important;
+        transition: opacity 380ms cubic-bezier(0.16, 1, 0.3, 1),
+                    transform 420ms cubic-bezier(0.16, 1, 0.3, 1),
+                    filter 380ms ease !important;
     }
 
     .ai-unified-capsule.is-expanded .ai-pill-btn-glow-container {
@@ -3451,6 +3471,13 @@
         max-width: 440px !important;
         pointer-events: auto !important;
         touch-action: none !important;
+        transition: transform 260ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* When mobile keyboard opens: hide intro chips to prevent crowding & displacement */
+    body.ai-keyboard-open .quick-creation-container .qc-intro,
+    body.ai-keyboard-open .quick-creation-container .qc-suggestion-row {
+        display: none !important;
     }
 
     .quick-creation-container .qc-card {

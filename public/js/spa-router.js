@@ -1503,7 +1503,6 @@ function initLoginLogic(showRegister) {
         if (sendBtn) {
           sendBtn.disabled = !qcInput.value.trim();
         }
-        setTimeout(() => qcInput.focus(), 520);
       }
     },
 
@@ -1516,8 +1515,22 @@ function initLoginLogic(showRegister) {
       const capsule = document.getElementById('global-create-capsule');
       const qcInput = document.getElementById('qc-story-input');
 
-      if (qcInput && window.CreationSessionStore && window.CreationSessionStore.draft) {
-        window.CreationSessionStore.draft.story = qcInput.value;
+      if (qcInput) {
+        qcInput.blur();
+        if (window.CreationSessionStore && window.CreationSessionStore.draft) {
+          window.CreationSessionStore.draft.story = qcInput.value;
+        }
+      }
+
+      document.body.classList.remove('ai-keyboard-open');
+
+      const mobNav = document.getElementById('spa-mobile-nav') || mobileBottomNav;
+      if (mobNav) {
+        mobNav.style.transform = '';
+      }
+      const qcContainer = document.getElementById('quick-creation-container');
+      if (qcContainer) {
+        qcContainer.style.transform = '';
       }
 
       // Phase 1: Start reverse morph — capsule shrinks from expanded → collapsed button
@@ -2055,7 +2068,7 @@ function initLoginLogic(showRegister) {
                 </div>
                 <span class="mobile-nav__label">分鏡</span>
             </a>
-            <a href="../generate" class="mobile-nav__item mobile-nav__item--create" id="mob-nav-generate" role="tab" aria-selected="false" aria-label="新建分鏡" draggable="false"></a>
+            <button type="button" class="mobile-nav__item mobile-nav__item--create" id="mob-nav-generate" role="tab" aria-selected="false" aria-label="新建分鏡" draggable="false"></button>
             <a href="../template" class="mobile-nav__item" id="mob-nav-template" role="tab" aria-selected="false" aria-label="模板" draggable="false">
                 <div class="mobile-nav__icon-wrap">
                     <svg class="mobile-nav__svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -2563,10 +2576,12 @@ function initLoginLogic(showRegister) {
     window.addEventListener('resize', cacheMetrics);
 
     function clearSnapHover() {
-      items.forEach(it => it.classList.remove('snap-target'));
-      const circleBtn = mobNav.querySelector('.mob-circle-btn');
+      items.forEach(it => {
+        it.classList.remove('snap-target', 'selector-hovered', 'is-hovered');
+      });
+      const circleBtn = mobNav.querySelector('.mob-circle-btn') || document.getElementById('global-create-capsule');
       if (circleBtn) {
-        circleBtn.classList.remove('snap-hover');
+        circleBtn.classList.remove('snap-hover', 'selector-hovered', 'is-hovered');
       }
     }
 
@@ -2579,15 +2594,18 @@ function initLoginLogic(showRegister) {
         if (it === targetItem) {
           it.classList.add('snap-target');
         } else {
-          it.classList.remove('snap-target');
+          it.classList.remove('snap-target', 'selector-hovered', 'is-hovered');
         }
       });
-      const circleBtn = mobNav.querySelector('.mob-circle-btn');
+      const circleBtn = mobNav.querySelector('.mob-circle-btn') || document.getElementById('global-create-capsule');
+      const isCreate = targetItem.classList.contains('mobile-nav__item--create') || targetItem.id === 'mob-nav-generate';
       if (circleBtn) {
-        if (targetItem.classList.contains('mobile-nav__item--create')) {
-          circleBtn.classList.add('snap-hover');
+        if (isCreate) {
+          circleBtn.classList.add('snap-hover', 'selector-hovered', 'is-hovered');
+          targetItem.classList.add('selector-hovered', 'is-hovered');
         } else {
-          circleBtn.classList.remove('snap-hover');
+          circleBtn.classList.remove('snap-hover', 'selector-hovered', 'is-hovered');
+          targetItem.classList.remove('selector-hovered', 'is-hovered');
         }
       }
     }
@@ -2841,11 +2859,9 @@ function initLoginLogic(showRegister) {
         if (window.AICreationController) {
           if (window.AICreationController.surfaceState === 'quick-compose') {
             window.AICreationController.closeQuickCompose();
-          } else if (window.AICreationController.surfaceState === 'closed') {
+          } else {
             window.AICreationController.openQuickCompose();
           }
-        } else {
-          navigate('generate');
         }
       } else {
         const href = targetItem.getAttribute('href') || '';
@@ -2870,6 +2886,22 @@ function initLoginLogic(showRegister) {
     mobNav.addEventListener('click', (e) => {
       e.stopPropagation();
     });
+
+    const mobGenItem = mobNav.querySelector('#mob-nav-generate');
+    if (mobGenItem) {
+      mobGenItem.addEventListener('pointerenter', () => {
+        const cap = document.getElementById('global-create-capsule');
+        if (cap && !cap.classList.contains('is-expanded')) {
+          cap.classList.add('selector-hovered', 'is-hovered');
+        }
+      });
+      mobGenItem.addEventListener('pointerleave', () => {
+        const cap = document.getElementById('global-create-capsule');
+        if (cap && !isNavInteracting) {
+          cap.classList.remove('selector-hovered', 'is-hovered');
+        }
+      });
+    }
 
     items.forEach((item) => {
       item.addEventListener('click', (e) => {
@@ -2898,11 +2930,9 @@ function initLoginLogic(showRegister) {
           if (window.AICreationController) {
             if (window.AICreationController.surfaceState === 'quick-compose') {
               window.AICreationController.closeQuickCompose();
-            } else if (window.AICreationController.surfaceState === 'closed') {
+            } else {
               window.AICreationController.openQuickCompose();
             }
-          } else {
-            navigate('generate');
           }
         } else {
           const href = item.getAttribute('href') || '';
@@ -2923,14 +2953,42 @@ function initLoginLogic(showRegister) {
       const onViewportChange = () => {
         const currentHeight = window.visualViewport.height;
         const isKeyboardOpen = (initialHeight - currentHeight) > 150;
-        if (isKeyboardOpen) {
-          mobNav.style.transform = 'translateY(120%)';
-          mobNav.style.opacity = '0';
-          mobNav.style.pointerEvents = 'none';
+        const isQuickComposeActive = document.body.classList.contains('ai-quick-compose-active') ||
+          (window.AICreationController && window.AICreationController.surfaceState === 'quick-compose');
+
+        if (isQuickComposeActive) {
+          mobNav.style.opacity = '1';
+          mobNav.style.pointerEvents = 'auto';
+
+          const keyboardOffset = Math.max(0, window.innerHeight - (window.visualViewport.height + (window.visualViewport.offsetTop || 0)));
+          const qcContainer = document.getElementById('quick-creation-container');
+
+          if (isKeyboardOpen || keyboardOffset > 80) {
+            document.body.classList.add('ai-keyboard-open');
+            if (keyboardOffset > 80) {
+              mobNav.style.transform = `translate3d(0, -${keyboardOffset}px, 0)`;
+              if (qcContainer) {
+                qcContainer.style.transform = `translate3d(-50%, -${keyboardOffset}px, 0)`;
+              }
+            }
+          } else {
+            document.body.classList.remove('ai-keyboard-open');
+            mobNav.style.transform = '';
+            if (qcContainer) {
+              qcContainer.style.transform = 'translateX(-50%)';
+            }
+          }
         } else {
-          mobNav.style.transform = '';
-          mobNav.style.opacity = '';
-          mobNav.style.pointerEvents = '';
+          document.body.classList.remove('ai-keyboard-open');
+          if (isKeyboardOpen) {
+            mobNav.style.transform = 'translateY(120%)';
+            mobNav.style.opacity = '0';
+            mobNav.style.pointerEvents = 'none';
+          } else {
+            mobNav.style.transform = '';
+            mobNav.style.opacity = '';
+            mobNav.style.pointerEvents = '';
+          }
         }
       };
 

@@ -4169,7 +4169,10 @@ body.sidebar-open .ai-dock-panel.expanding-to-full {
         transition: transform 380ms cubic-bezier(0.16, 1, 0.3, 1), opacity 320ms ease !important;
     }
 
-    /* Quick Compose active: bottom nav background & borders fade smoothly, keeping DOM & transforms active */
+    /* Quick Compose active: lock body scroll and fade bottom nav chrome */
+    body.ai-quick-compose-active {
+        overflow: hidden !important;
+    }
     body.ai-quick-compose-active .mobile-bottom-nav {
         background: transparent !important;
         border-color: transparent !important;
