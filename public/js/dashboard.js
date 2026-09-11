@@ -781,8 +781,16 @@
           mobNav.style.opacity = '1';
           mobNav.style.pointerEvents = 'auto';
 
-          if (window.scrollY !== 0 && window.matchMedia('(max-width: 768px)').matches) {
-            window.scrollTo(0, 0);
+          if (window.matchMedia('(max-width: 768px)').matches) {
+            if (window.scrollY !== 0 || (document.documentElement && document.documentElement.scrollTop !== 0)) {
+              window.scrollTo(0, 0);
+              if (document.documentElement) document.documentElement.scrollTop = 0;
+            }
+            if (window.parent && window.parent !== window) {
+              try {
+                if (window.parent.scrollY !== 0) window.parent.scrollTo(0, 0);
+              } catch (e) {}
+            }
           }
 
           const lift = Math.max(0, window.innerHeight - window.visualViewport.height);
@@ -795,10 +803,12 @@
               qcContainer.style.transform = `translate3d(-50%, -${lift}px, 0)`;
             }
           } else {
-            document.body.classList.remove('ai-keyboard-open');
             mobNav.style.transform = '';
             if (qcContainer) {
               qcContainer.style.transform = 'translateX(-50%)';
+            }
+            if (document.activeElement !== document.getElementById('qc-story-input')) {
+              document.body.classList.remove('ai-keyboard-open');
             }
           }
         } else {
@@ -821,11 +831,24 @@
       window.visualViewport.addEventListener('scroll', () => {
         onViewportChange();
         if (document.body.classList.contains('ai-quick-compose-active') && window.matchMedia('(max-width: 768px)').matches) {
-          if (window.visualViewport.offsetTop > 0) {
-            window.scrollTo(0, 0);
-          }
+          window.scrollTo(0, 0);
+          if (document.documentElement) document.documentElement.scrollTop = 0;
         }
       });
+
+      window.addEventListener('scroll', () => {
+        if (document.body.classList.contains('ai-quick-compose-active') && window.matchMedia('(max-width: 768px)').matches) {
+          if (window.scrollY !== 0 || (document.documentElement && document.documentElement.scrollTop !== 0)) {
+            window.scrollTo(0, 0);
+            if (document.documentElement) document.documentElement.scrollTop = 0;
+          }
+          if (window.parent && window.parent !== window) {
+            try {
+              if (window.parent.scrollY !== 0) window.parent.scrollTo(0, 0);
+            } catch (e) {}
+          }
+        }
+      }, { passive: false });
     }
   }
 

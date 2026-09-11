@@ -2578,18 +2578,24 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #ffc5e8, #7c4dff);
-    color: #1e1e2d;
-    font-size: 0.75rem;
-    font-weight: bold;
+    width: auto;
+    height: auto;
+    background: transparent !important;
+    box-shadow: none !important;
+    border-radius: 0;
+    color: #ffffff;
     flex-shrink: 0;
 }
 
 .ai-spark-desktop {
-    display: inline;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    font-weight: 500;
+    line-height: 1;
+    color: #ffffff;
+    transform: translateY(-0.5px);
 }
 
 .ai-spark-mobile {

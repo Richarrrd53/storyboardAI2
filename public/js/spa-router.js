@@ -1381,14 +1381,14 @@ function initLoginLogic(showRegister) {
         gct.classList.remove('is-generating');
         if (gctProgressFill) gctProgressFill.style.width = '0%';
         if (pct >= 100) {
-          if (gctText) gctText.textContent = '✦ 分鏡已完成';
+          if (gctText) gctText.textContent = '分鏡已完成';
           window.triggerCapsulePulse();
         } else {
           const draftStory = window.CreationSessionStore?.draft?.story || '';
           if (draftStory.trim().length > 0) {
-            if (gctText) gctText.textContent = '✦ 繼續創作';
+            if (gctText) gctText.textContent = '繼續創作';
           } else {
-            if (gctText) gctText.textContent = '✦ 新增分鏡';
+            if (gctText) gctText.textContent = '新增分鏡';
           }
         }
       }
@@ -1471,7 +1471,7 @@ function initLoginLogic(showRegister) {
         document.body.style.left = '0';
         document.body.style.right = '0';
         document.body.style.width = '100%';
-        document.body.style.height = '100%';
+        document.body.style.height = `calc(100% + ${this.previousScrollY}px)`;
         document.body.style.overflow = 'hidden';
       }
 
@@ -1811,7 +1811,7 @@ function initLoginLogic(showRegister) {
         <div class="capsule-btn-face" id="global-create-trigger" role="button" tabindex="0" aria-label="新增分鏡">
           <div class="ai-pill-btn-glow-container"><div class="ai-pill-btn-glow"></div></div>
           <div class="ai-pill-progress-fill" id="gct-progress-fill"></div>
-          <span class="ai-pill-spark mob-circle-spark"><span class="ai-spark-desktop">✦</span><span class="ai-spark-mobile">+</span></span>
+          <span class="ai-pill-spark mob-circle-spark"><span class="ai-spark-desktop">+</span><span class="ai-spark-mobile">+</span></span>
           <span class="mob-circle-text" id="mob-circle-text" style="display:none;"></span>
           <span class="ai-pill-text" id="gct-text">新增分鏡</span>
         </div>
@@ -1955,12 +1955,36 @@ function initLoginLogic(showRegister) {
     const qcInput = document.getElementById('qc-story-input');
     const qcSendBtn = document.getElementById('qc-send-btn');
     if (qcInput) {
+      const resetAllScroll = () => {
+        window.scrollTo(0, 0);
+        if (document.documentElement) document.documentElement.scrollTop = 0;
+        if (document.body) document.body.scrollTop = 0;
+        if (window.parent && window.parent !== window) {
+          try {
+            window.parent.scrollTo(0, 0);
+            if (window.parent.document.documentElement) window.parent.document.documentElement.scrollTop = 0;
+            if (window.parent.document.body) window.parent.document.body.scrollTop = 0;
+          } catch (e) {}
+        }
+      };
+
       qcInput.addEventListener('focus', () => {
         if (isMobileView()) {
-          window.scrollTo(0, 0);
+          document.body.classList.add('ai-keyboard-open');
+          resetAllScroll();
+          requestAnimationFrame(resetAllScroll);
+          setTimeout(resetAllScroll, 30);
+          setTimeout(resetAllScroll, 100);
+          setTimeout(resetAllScroll, 250);
+        }
+      });
+      qcInput.addEventListener('blur', () => {
+        if (isMobileView()) {
           setTimeout(() => {
-            window.scrollTo(0, 0);
-          }, 50);
+            if (document.activeElement !== qcInput) {
+              document.body.classList.remove('ai-keyboard-open');
+            }
+          }, 100);
         }
       });
       qcInput.addEventListener('input', () => {
@@ -3007,8 +3031,16 @@ function initLoginLogic(showRegister) {
           mobNav.style.opacity = '1';
           mobNav.style.pointerEvents = 'auto';
 
-          if (isMobileView() && window.scrollY !== 0) {
-            window.scrollTo(0, 0);
+          if (isMobileView()) {
+            if (window.scrollY !== 0 || (document.documentElement && document.documentElement.scrollTop !== 0)) {
+              window.scrollTo(0, 0);
+              if (document.documentElement) document.documentElement.scrollTop = 0;
+            }
+            if (window.parent && window.parent !== window) {
+              try {
+                if (window.parent.scrollY !== 0) window.parent.scrollTo(0, 0);
+              } catch (e) {}
+            }
           }
 
           const lift = Math.max(0, window.innerHeight - window.visualViewport.height);
@@ -3021,10 +3053,12 @@ function initLoginLogic(showRegister) {
               qcContainer.style.transform = `translate3d(-50%, -${lift}px, 0)`;
             }
           } else {
-            document.body.classList.remove('ai-keyboard-open');
             mobNav.style.transform = '';
             if (qcContainer) {
               qcContainer.style.transform = 'translateX(-50%)';
+            }
+            if (document.activeElement !== document.getElementById('qc-story-input')) {
+              document.body.classList.remove('ai-keyboard-open');
             }
           }
         } else {
@@ -3047,11 +3081,24 @@ function initLoginLogic(showRegister) {
       window.visualViewport.addEventListener('scroll', () => {
         onViewportChange();
         if (document.body.classList.contains('ai-quick-compose-active') && isMobileView()) {
-          if (window.visualViewport.offsetTop > 0) {
-            window.scrollTo(0, 0);
-          }
+          window.scrollTo(0, 0);
+          if (document.documentElement) document.documentElement.scrollTop = 0;
         }
       });
+
+      window.addEventListener('scroll', () => {
+        if (document.body.classList.contains('ai-quick-compose-active') && isMobileView()) {
+          if (window.scrollY !== 0 || (document.documentElement && document.documentElement.scrollTop !== 0)) {
+            window.scrollTo(0, 0);
+            if (document.documentElement) document.documentElement.scrollTop = 0;
+          }
+          if (window.parent && window.parent !== window) {
+            try {
+              if (window.parent.scrollY !== 0) window.parent.scrollTo(0, 0);
+            } catch (e) {}
+          }
+        }
+      }, { passive: false });
     }
 
     window.addEventListener('resize', () => {
