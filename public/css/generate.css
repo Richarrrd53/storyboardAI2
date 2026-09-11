@@ -2519,15 +2519,15 @@
     transform: translateY(12px) scale(0.92) !important;
 }
 
-/* Expanded state: morphing to input bar (3D Matte Acrylic) */
+/* Expanded state: morphing to input bar (3D Matte Acrylic - Thickest Plate) */
 .ai-unified-capsule.is-expanded {
     width: clamp(380px, 42vw, 540px);
     height: 52px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.58) 0%, rgba(243, 246, 252, 0.42) 100%) !important;
-    backdrop-filter: blur(8px) saturate(120%) brightness(1.03) !important;
-    -webkit-backdrop-filter: blur(8px) saturate(120%) brightness(1.03) !important;
-    border: 0.75px solid rgba(255, 255, 255, 0.55) !important;
-    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(15, 23, 42, 0.03), inset 0 1px 1.2px rgba(255, 255, 255, 0.9), inset 0 -1px 2px rgba(148, 163, 184, 0.06) !important;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.60) 0%, rgba(243, 246, 252, 0.44) 100%) !important;
+    backdrop-filter: blur(12px) saturate(125%) brightness(1.03) !important;
+    -webkit-backdrop-filter: blur(12px) saturate(125%) brightness(1.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.70) !important;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(15, 23, 42, 0.03), inset 0 1.5px 2px rgba(255, 255, 255, 0.95), inset 0 -1.5px 2.5px rgba(148, 163, 184, 0.10) !important;
     cursor: default;
     transform: none !important;
 }
@@ -2536,7 +2536,7 @@
 .ai-unified-capsule.is-expanded:hover,
 .ai-unified-capsule.is-expanded:focus-within {
     border-color: rgba(255, 255, 255, 0.92) !important;
-    box-shadow: 0 10px 28px rgba(37, 99, 235, 0.09), 0 2px 8px rgba(15, 23, 42, 0.04), inset 0 1px 1.8px rgba(255, 255, 255, 1.0), inset 0 -1px 2px rgba(148, 163, 184, 0.08) !important;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.10), 0 2px 8px rgba(15, 23, 42, 0.04), inset 0 1.8px 2px rgba(255, 255, 255, 1.0), inset 0 -1px 2px rgba(148, 163, 184, 0.08) !important;
 }
 
 /* Capsule Button Face (Blue gradient surface that crossfades into acrylic) */
@@ -2663,7 +2663,7 @@
     border-color: rgba(255, 255, 255, 0.92) !important;
     outline: 0 !important;
     outline: none !important;
-    box-shadow: 0 10px 28px rgba(37, 99, 235, 0.09), 0 2px 8px rgba(15, 23, 42, 0.04), inset 0 1px 1.8px rgba(255, 255, 255, 1.0), inset 0 -1px 2px rgba(148, 163, 184, 0.08) !important;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.10), 0 2px 8px rgba(15, 23, 42, 0.04), inset 0 1.8px 2px rgba(255, 255, 255, 1.0), inset 0 -1px 2px rgba(148, 163, 184, 0.08) !important;
 }
 
 .capsule-input-face .qc-textarea,
@@ -2711,35 +2711,69 @@
     transition-delay: 0s;
 }
 
-/* ── 3. Directional Frosted Focus Field (Subtle Blue-Gray Tint & 5-8% Primary Blue Radial Glow) ── */
+/* ── 3. Directional Frosted Focus Field (Multi-tiered Radial Depth & Background-Size Bloom) ── */
 .ai-focus-field {
     position: fixed;
     inset: 0;
     z-index: 40;
-    /* Layer 1: Soft 5-8% Primary Blue Radial Glow centered at Composer */
-    /* Layer 2: Ultra-low saturation Blue-Gray Tint (cold-white to subtle slate-blue) */
-    background:
-        radial-gradient(circle 520px at calc(100% - 220px) calc(100% - 140px), rgba(37, 99, 235, 0.065) 0%, rgba(59, 130, 246, 0.038) 35%, rgba(147, 197, 253, 0.012) 65%, transparent 100%),
-        linear-gradient(135deg, rgba(248, 250, 253, 0.60) 0%, rgba(240, 244, 250, 0.78) 55%, rgba(232, 240, 250, 0.90) 100%);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    /* Closer to bottom-right composer: stronger blur, frost & tint; decaying toward top-left to restore original dashboard */
-    mask-image: radial-gradient(circle at calc(100% - 180px) calc(100% - 140px), black 18%, rgba(0, 0, 0, 0.75) 42%, rgba(0, 0, 0, 0.20) 66%, transparent 88%);
-    -webkit-mask-image: radial-gradient(circle at calc(100% - 180px) calc(100% - 140px), black 18%, rgba(0, 0, 0, 0.75) 42%, rgba(0, 0, 0, 0.20) 66%, transparent 88%);
+    /* Layer 1: Soft subtle primary blue glow radiating from bottom-right */
+    /* Layer 2: Ultra-low saturation light blue-gray tint hierarchy */
+    background-image:
+        radial-gradient(circle 850px at 100% 100%,
+            rgba(37, 99, 235, 0.065) 0%,
+            rgba(59, 130, 246, 0.038) 35%,
+            rgba(147, 197, 253, 0.015) 65%,
+            transparent 100%),
+        linear-gradient(135deg,
+            rgba(248, 250, 253, 0.60) 0%,
+            rgba(240, 244, 250, 0.78) 55%,
+            rgba(232, 240, 250, 0.90) 100%);
+    background-position: 100% 100%, 100% 100%;
+    background-repeat: no-repeat, no-repeat;
+    background-size: 100% 100%, 100% 100%;
+    /* 4-tier distinct frosted optical blur falloff hierarchy (Full viewport feathered mask, NO hard edges) */
+    mask-image: radial-gradient(circle 130vmax at calc(100% - 110px) calc(100% - 50px),
+        #000000 0%,
+        #000000 24%,
+        rgba(0, 0, 0, 0.86) 42%,
+        rgba(0, 0, 0, 0.52) 64%,
+        rgba(0, 0, 0, 0.18) 84%,
+        transparent 98%);
+    -webkit-mask-image: radial-gradient(circle 130vmax at calc(100% - 110px) calc(100% - 50px),
+        #000000 0%,
+        #000000 24%,
+        rgba(0, 0, 0, 0.86) 42%,
+        rgba(0, 0, 0, 0.52) 64%,
+        rgba(0, 0, 0, 0.18) 84%,
+        transparent 98%);
+    backdrop-filter: blur(0.05px);
+    -webkit-backdrop-filter: blur(0.05px);
     opacity: 0;
     pointer-events: none;
-    transition: opacity 320ms cubic-bezier(0.16, 1, 0.3, 1);
+    transition: backdrop-filter 450ms cubic-bezier(0.16, 1, 0.3, 1),
+                -webkit-backdrop-filter 450ms cubic-bezier(0.16, 1, 0.3, 1),
+                background-size 450ms cubic-bezier(0.16, 1, 0.3, 1),
+                opacity 320ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .ai-creation-layer.state-quick-compose .ai-focus-field {
     opacity: 1;
     pointer-events: auto;
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
+    background-size: 180% 180%, 180% 180%;
 }
 
 .ai-creation-layer.state-closing .ai-focus-field {
     opacity: 0;
     pointer-events: none;
-    transition: opacity 240ms ease;
+    backdrop-filter: blur(0.05px);
+    -webkit-backdrop-filter: blur(0.05px);
+    background-size: 100% 100%, 100% 100%;
+    transition: backdrop-filter 280ms ease,
+                -webkit-backdrop-filter 280ms ease,
+                background-size 280ms ease,
+                opacity 240ms ease;
 }
 
 /* ── 4. Quick Creation Floating Container (Anchored above the Capsule) ── */
@@ -2893,26 +2927,46 @@
 }
 
 .qc-close-btn {
-    background: rgba(255, 255, 255, 0.75);
-    border: 1px solid rgba(226, 232, 240, 0.85);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    color: var(--color-text-muted, #94a3b8);
     width: 32px;
     height: 32px;
     border-radius: 50%;
+    /* Thinnest 3D matte acrylic (thickness hierarchy: input > sugg-chip > close-btn) */
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.20) 0%, rgba(243, 246, 252, 0.10) 100%);
+    backdrop-filter: blur(5px) saturate(108%);
+    -webkit-backdrop-filter: blur(5px) saturate(108%);
+    /* Very thin 0.5px border with micro-bevel rim highlight, minimal outer shadow */
+    border: 0.5px solid rgba(255, 255, 255, 0.35);
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.02), inset 0 0.6px 0.8px rgba(255, 255, 255, 0.60), inset 0 -0.4px 0.6px rgba(148, 163, 184, 0.03);
+    /* Dark gray X */
+    color: #475569;
+    font-size: 0.85rem;
+    font-weight: 600;
+    line-height: 1;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 200ms ease;
+    outline: none !important;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: all 200ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .qc-close-btn:hover {
-    background: #ffffff;
-    border-color: #cbd5e1;
-    color: var(--color-text-primary, #0f172a);
-    transform: scale(1.06);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.38) 0%, rgba(243, 246, 252, 0.22) 100%);
+    border-color: rgba(255, 255, 255, 0.65);
+    color: #1e293b;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04), inset 0 0.8px 1px rgba(255, 255, 255, 0.75), inset 0 -0.5px 0.8px rgba(148, 163, 184, 0.04);
+    transform: scale(1.05);
+}
+
+/* Click shrinks and compresses inward */
+.qc-close-btn:active {
+    transform: scale(0.85);
+    transition: all 70ms ease;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.14) 0%, rgba(243, 246, 252, 0.06) 100%);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.02), inset 0 0.4px 0.6px rgba(255, 255, 255, 0.50);
 }
 
 .qc-intro {
@@ -2936,7 +2990,7 @@
     line-height: 1.45;
 }
 
-/* Quick Suggestion Chips */
+/* Quick Suggestion Chips (Medium 3D Acrylic: input > sugg-chip > close-btn) */
 .qc-suggestion-row {
     display: flex;
     flex-direction: column;
@@ -2960,43 +3014,50 @@
 }
 
 .qc-sugg-chip {
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.48) 0%, rgba(245, 248, 253, 0.32) 100%) !important;
-    backdrop-filter: blur(6px) saturate(115%) brightness(1.02) !important;
-    -webkit-backdrop-filter: blur(6px) saturate(115%) brightness(1.02) !important;
-    border: 0.5px solid rgba(255, 255, 255, 0.52) !important;
+    /* Medium 3D matte acrylic plate */
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.24) 0%, rgba(245, 248, 253, 0.14) 100%) !important;
+    backdrop-filter: blur(8px) saturate(112%) !important;
+    -webkit-backdrop-filter: blur(8px) saturate(112%) !important;
+    border: 0.75px solid rgba(255, 255, 255, 0.45) !important;
     border-radius: 999px !important;
-    color: var(--color-brand-primary, #2563eb) !important;
+    color: #64748b !important;
     padding: 7px 16px;
     font-size: 0.82rem;
-    font-weight: 600;
+    font-weight: 500;
     cursor: pointer;
-    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04), inset 0 0.8px 1px rgba(255, 255, 255, 0.85) !important;
+    box-shadow: inset 0 1px 1.2px rgba(255, 255, 255, 0.75), inset 0 -0.8px 1.2px rgba(148, 163, 184, 0.06) !important;
     transition: all 200ms cubic-bezier(0.16, 1, 0.3, 1);
     user-select: none;
     -webkit-user-select: none;
 }
 
 .qc-sugg-chip:hover {
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.72) 0%, rgba(245, 248, 253, 0.52) 100%) !important;
-    border-color: rgba(255, 255, 255, 0.85) !important;
-    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.12), inset 0 1px 1.2px #ffffff !important;
-    transform: translateY(-2px) scale(1.02);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.40) 0%, rgba(245, 248, 253, 0.24) 100%) !important;
+    border-color: rgba(255, 255, 255, 0.70) !important;
+    box-shadow: inset 0 1.2px 1.5px rgba(255, 255, 255, 0.85), inset 0 -1px 1.5px rgba(148, 163, 184, 0.07) !important;
+    color: #334155 !important;
+    transform: translateY(-1px);
 }
 
 .qc-sugg-chip:active {
+    background: rgba(255, 255, 255, 0.18) !important;
     transform: scale(0.97);
+    box-shadow: inset 0 0.8px 1px rgba(255, 255, 255, 0.65) !important;
 }
 
 .qc-sugg-chip.qc-sugg-more-trigger {
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.38) 0%, rgba(245, 248, 253, 0.24) 100%) !important;
-    border-color: rgba(255, 255, 255, 0.45) !important;
-    color: var(--color-text-secondary, #64748b) !important;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0%, rgba(245, 248, 253, 0.10) 100%) !important;
+    border: 0.75px solid rgba(255, 255, 255, 0.36) !important;
+    border-radius: 999px !important;
+    color: #94a3b8 !important;
+    box-shadow: inset 0 0.8px 1px rgba(255, 255, 255, 0.60), inset 0 -0.6px 1px rgba(148, 163, 184, 0.04) !important;
 }
 
 .qc-sugg-chip.qc-sugg-more-trigger:hover {
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.65) 0%, rgba(245, 248, 253, 0.45) 100%) !important;
-    border-color: rgba(255, 255, 255, 0.8) !important;
-    color: var(--color-text-primary, #0f172a) !important;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.34) 0%, rgba(245, 248, 253, 0.20) 100%) !important;
+    border-color: rgba(255, 255, 255, 0.60) !important;
+    box-shadow: inset 0 1px 1.2px rgba(255, 255, 255, 0.75), inset 0 -0.8px 1.2px rgba(148, 163, 184, 0.05) !important;
+    color: #475569 !important;
 }
 
 .qc-sugg-tray {
@@ -3213,20 +3274,19 @@
         z-index: 10010 !important;
     }
 
-    /* Mobile Backdrop: Desktop-grade directional frosted gradient blur (Height increased by >65%) */
+    /* Mobile Backdrop: Desktop-grade directional frosted gradient blur */
     .ai-focus-field {
         position: fixed !important;
         inset: 0 !important;
         z-index: 10010 !important;
-        background:
-            radial-gradient(circle 700px at 50% calc(100% - 60px), rgba(37, 99, 235, 0.08) 0%, rgba(59, 130, 246, 0.045) 42%, rgba(147, 197, 253, 0.015) 75%, transparent 100%),
-            linear-gradient(180deg, rgba(248, 250, 253, 0.15) 0%, rgba(244, 247, 252, 0.60) 25%, rgba(240, 244, 250, 0.82) 55%, rgba(232, 240, 250, 0.94) 100%) !important;
+        background: radial-gradient(circle 700px at 50% calc(100% - 60px), rgba(37, 99, 235, 0.08) 0%, rgba(59, 130, 246, 0.045) 42%, rgba(147, 197, 253, 0.015) 75%, transparent 100%), linear-gradient(180deg, rgba(248, 250, 253, 0.15) 0%, rgba(244, 247, 252, 0.60) 25%, rgba(240, 244, 250, 0.82) 55%, rgba(232, 240, 250, 0.94) 100%) !important;
         backdrop-filter: blur(22px) !important;
         -webkit-backdrop-filter: blur(22px) !important;
         mask-image: radial-gradient(ellipse 150% 150% at 50% 100%, black 45%, rgba(0, 0, 0, 0.85) 68%, rgba(0, 0, 0, 0.25) 90%, transparent 100%) !important;
         -webkit-mask-image: radial-gradient(ellipse 150% 150% at 50% 100%, black 45%, rgba(0, 0, 0, 0.85) 68%, rgba(0, 0, 0, 0.25) 90%, transparent 100%) !important;
         opacity: 0;
         pointer-events: none !important;
+        transform: none !important;
         transition: opacity 320ms cubic-bezier(0.16, 1, 0.3, 1) !important;
     }
 
@@ -3234,6 +3294,12 @@
         opacity: 1 !important;
         pointer-events: auto !important;
         touch-action: none;
+    }
+
+    .ai-creation-layer.state-closing .ai-focus-field {
+        opacity: 0 !important;
+        pointer-events: none !important;
+        transition: opacity 240ms ease !important;
     }
 
     /* Mobile Unified Capsule: mounted inside .mobile-nav__item--create as an integral part of bottom nav.
@@ -3422,11 +3488,11 @@
         max-width: 440px !important;
         height: 54px !important;
         border-radius: 999px !important;
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.58) 0%, rgba(243, 246, 252, 0.42) 100%) !important;
-        backdrop-filter: blur(8px) saturate(120%) brightness(1.03) !important;
-        -webkit-backdrop-filter: blur(8px) saturate(120%) brightness(1.03) !important;
-        border: 0.75px solid rgba(255, 255, 255, 0.55) !important;
-        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(15, 23, 42, 0.03), inset 0 1px 1.2px rgba(255, 255, 255, 0.9), inset 0 -1px 2px rgba(148, 163, 184, 0.06) !important;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.60) 0%, rgba(243, 246, 252, 0.44) 100%) !important;
+        backdrop-filter: blur(12px) saturate(125%) brightness(1.03) !important;
+        -webkit-backdrop-filter: blur(12px) saturate(125%) brightness(1.03) !important;
+        border: 1px solid rgba(255, 255, 255, 0.70) !important;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(15, 23, 42, 0.03), inset 0 1.5px 2px rgba(255, 255, 255, 0.95), inset 0 -1.5px 2.5px rgba(148, 163, 184, 0.10) !important;
         z-index: 50 !important;
         cursor: default;
     }
@@ -3441,7 +3507,7 @@
     .ai-unified-capsule.is-expanded:hover,
     .ai-unified-capsule.is-expanded:focus-within {
         border-color: rgba(255, 255, 255, 0.92) !important;
-        box-shadow: 0 10px 28px rgba(37, 99, 235, 0.09), 0 2px 8px rgba(15, 23, 42, 0.04), inset 0 1px 1.8px rgba(255, 255, 255, 1.0), inset 0 -1px 2px rgba(148, 163, 184, 0.08) !important;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, 0.10), 0 2px 8px rgba(15, 23, 42, 0.04), inset 0 1.8px 2px rgba(255, 255, 255, 1.0), inset 0 -1px 2px rgba(148, 163, 184, 0.08) !important;
     }
 
     .ai-unified-capsule.is-expanded .capsule-input-face {
