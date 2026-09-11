@@ -1343,7 +1343,57 @@ function initLoginLogic(showRegister) {
     navigate('generate');
   };
 
+  window.updateCapsuleText = function(text) {
+    const gctText = document.getElementById('gct-text');
+    if (gctText && text) {
+      gctText.textContent = text;
+    }
+    const pillText = document.getElementById('ai-pill-text');
+    if (pillText && text) {
+      pillText.textContent = text;
+    }
+  };
+
+  window.triggerCapsulePulse = function() {
+    const trigger = document.getElementById('global-create-trigger') || document.getElementById('ai-pill-btn');
+    if (trigger) {
+      trigger.classList.remove('glow-pulse');
+      requestAnimationFrame(() => {
+        trigger.classList.add('glow-pulse');
+        setTimeout(() => {
+          trigger.classList.remove('glow-pulse');
+        }, 1800);
+      });
+    }
+  };
+
   window.updateGlobalPillProgress = function(pct, isGenerating) {
+    const gct = document.getElementById('global-create-trigger');
+    const gctProgressFill = document.getElementById('gct-progress-fill');
+    const gctText = document.getElementById('gct-text');
+
+    if (gct) {
+      if (isGenerating) {
+        gct.classList.add('is-generating');
+        if (gctProgressFill) gctProgressFill.style.width = Math.min(100, Math.max(0, pct)) + '%';
+        if (gctText) gctText.textContent = `✦ 正在規劃… ${Math.round(pct)}%`;
+      } else {
+        gct.classList.remove('is-generating');
+        if (gctProgressFill) gctProgressFill.style.width = '0%';
+        if (pct >= 100) {
+          if (gctText) gctText.textContent = '✦ 分鏡已完成';
+          window.triggerCapsulePulse();
+        } else {
+          const draftStory = window.CreationSessionStore?.draft?.story || '';
+          if (draftStory.trim().length > 0) {
+            if (gctText) gctText.textContent = '✦ 繼續創作';
+          } else {
+            if (gctText) gctText.textContent = '✦ 新增分鏡';
+          }
+        }
+      }
+    }
+
     const pillBtn = document.getElementById('ai-pill-btn');
     const progressFill = document.getElementById('ai-pill-progress-fill');
     const pillText = document.getElementById('ai-pill-text');
@@ -1352,16 +1402,25 @@ function initLoginLogic(showRegister) {
       if (isGenerating) {
         pillBtn.classList.add('is-generating');
         if (progressFill) progressFill.style.width = Math.min(100, Math.max(0, pct)) + '%';
-        if (pillText) pillText.textContent = `✦ 生成中 ${Math.round(pct)}%`;
+        if (pillText) pillText.textContent = `✦ 正在規劃… ${Math.round(pct)}%`;
       } else {
         pillBtn.classList.remove('is-generating');
         if (progressFill) progressFill.style.width = '0%';
-        if (pillText) pillText.textContent = '立刻創建新分鏡';
+        if (pct >= 100) {
+          if (pillText) pillText.textContent = '✦ 分鏡已完成';
+        } else {
+          const draftStory = window.CreationSessionStore?.draft?.story || '';
+          if (draftStory.trim().length > 0) {
+            if (pillText) pillText.textContent = '✦ 繼續創作';
+          } else {
+            if (pillText) pillText.textContent = '✦ AI 創作';
+          }
+        }
       }
     }
 
-    const mobCircle = document.getElementById('mob-nav-circle-wrap') || document.getElementById('mob-nav-capsule-wrap');
-    const mobProgressFill = document.getElementById('mob-circle-progress-fill') || document.getElementById('mob-pill-progress-fill');
+    const mobCircle = document.getElementById('global-create-capsule') || document.getElementById('mob-nav-circle-wrap') || document.getElementById('mob-nav-capsule-wrap');
+    const mobProgressFill = document.getElementById('gct-progress-fill') || document.getElementById('mob-circle-progress-fill') || document.getElementById('mob-pill-progress-fill');
     const mobCircleSpark = mobCircle ? mobCircle.querySelector('.mob-circle-spark') : null;
     const mobCircleText = document.getElementById('mob-circle-text') || document.getElementById('mob-pill-text');
     const mobItem = document.getElementById('mob-nav-generate');
@@ -1389,57 +1448,338 @@ function initLoginLogic(showRegister) {
     }
   };
 
-  function ensureAIDockDOM() {
-    if (document.getElementById('ai-dock-panel')) {
-      aiDockPanel = document.getElementById('ai-dock-panel');
-      aiPillBtn = document.getElementById('ai-pill-btn');
+  // ── Global Creation Controller (Spec Item 36-39) ──
+  window.AICreationController = {
+    surfaceState: 'closed', // 'closed' | 'quick-compose' | 'transitioning' | 'workspace'
+    previousRoute: null,
+    previousScrollY: 0,
+    originRect: null,
+    lastOpenTime: 0,
+
+    openQuickCompose() {
+      if (this.surfaceState === 'workspace') return;
+      this.surfaceState = 'quick-compose';
+      this.lastOpenTime = Date.now();
+      this.previousRoute = currentPage || 'dashboard';
+      this.previousScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+
+      const layer = document.getElementById('ai-creation-layer');
+      const capsule = document.getElementById('global-create-capsule');
+
+      if (capsule) {
+        capsule.classList.remove('is-expanded');
+        void capsule.offsetWidth;
+        if (!isMobileView()) {
+          capsule.style.opacity = '1';
+          capsule.style.pointerEvents = 'auto';
+        }
+      }
+
+      document.body.classList.remove('ai-quick-compose-closing');
+      document.body.classList.add('ai-quick-compose-active');
+
+      if (layer) {
+        layer.classList.remove('state-closed', 'state-closing', 'state-workspace', 'state-transitioning');
+        layer.classList.add('state-quick-compose');
+      }
+
+      // Trigger width expansion morph (circle/pill → expanded capsule)
+      if (capsule) {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            if (this.surfaceState === 'quick-compose') {
+              capsule.classList.add('is-expanded');
+            }
+          });
+        });
+      }
+
+      const qcInput = document.getElementById('qc-story-input');
+      const sendBtn = document.getElementById('qc-send-btn');
+      if (qcInput) {
+        if (window.CreationSessionStore && window.CreationSessionStore.draft && window.CreationSessionStore.draft.story) {
+          qcInput.value = window.CreationSessionStore.draft.story;
+        }
+        if (sendBtn) {
+          sendBtn.disabled = !qcInput.value.trim();
+        }
+        setTimeout(() => qcInput.focus(), 520);
+      }
+    },
+
+    closeQuickCompose() {
+      if (this.surfaceState !== 'quick-compose') return;
+      if (Date.now() - (this.lastOpenTime || 0) < 300) return;
+      this.surfaceState = 'closing';
+
+      const layer = document.getElementById('ai-creation-layer');
+      const capsule = document.getElementById('global-create-capsule');
+      const qcInput = document.getElementById('qc-story-input');
+
+      if (qcInput && window.CreationSessionStore && window.CreationSessionStore.draft) {
+        window.CreationSessionStore.draft.story = qcInput.value;
+      }
+
+      // Phase 1: Start reverse morph — capsule shrinks from expanded → collapsed button
+      document.body.classList.remove('ai-quick-compose-active');
+      document.body.classList.add('ai-quick-compose-closing');
+
+      if (capsule) {
+        capsule.classList.remove('is-expanded');
+      }
+
+      if (layer) {
+        layer.classList.remove('state-quick-compose');
+        layer.classList.add('state-closing');
+      }
+
+      // Smoothly glide mobile bottom nav selector back to original tab
+      const restoreRoute = this.previousRoute || currentPage || 'dashboard';
+      if (typeof updateMobileBottomNavActive === 'function') {
+        updateMobileBottomNavActive(restoreRoute);
+      }
+
+      // Phase 2: After morph-back completes (560ms matches CSS transition duration),
+      // clean up state and restore natural styles without hiding desktop button
+      setTimeout(() => {
+        if (this.surfaceState === 'closing') {
+          this.surfaceState = 'closed';
+          document.body.classList.remove('ai-quick-compose-closing');
+          if (layer) {
+            layer.classList.remove('state-closing', 'state-workspace', 'state-transitioning');
+            layer.classList.add('state-closed');
+          }
+
+          // Restore natural CSS styling — NEVER leave opacity: 0 on desktop or mobile
+          if (capsule) {
+            capsule.style.opacity = '';
+            capsule.style.pointerEvents = '';
+          }
+        }
+      }, 580);
+    },
+
+    submitToWorkspace() {
+      const qcInput = document.getElementById('qc-story-input');
+      const story = (qcInput ? qcInput.value.trim() : '') || (window.CreationSessionStore?.draft?.story || '');
+      if (!story) return;
+
+      if (window.CreationSessionStore) {
+        window.CreationSessionStore.story = story;
+        window.CreationSessionStore.draft.story = story;
+      }
+
+      this.surfaceState = 'workspace';
+      document.body.classList.remove('ai-quick-compose-active');
+
+      const layer = document.getElementById('ai-creation-layer');
+      const capsule = document.getElementById('global-create-capsule');
+
+      if (capsule) {
+        capsule.classList.remove('is-expanded');
+        capsule.classList.add('hidden-by-workspace');
+      }
+
+      if (layer) {
+        layer.classList.remove('state-closed', 'state-quick-compose');
+        layer.classList.add('state-transitioning');
+        setTimeout(() => {
+          layer.classList.remove('state-transitioning');
+          layer.classList.add('state-workspace');
+          document.body.classList.add('ai-workspace-active');
+        }, 220);
+      }
+
+      const storyInput = document.getElementById('story-input');
+      if (storyInput) {
+        storyInput.value = story;
+        if (typeof window.onStoryInput === 'function') {
+          window.onStoryInput();
+        }
+      }
+
+      if (typeof window.submitStory === 'function') {
+        window.submitStory();
+      }
+    },
+
+    openWorkspaceDirectly() {
+      this.previousRoute = currentPage || 'dashboard';
+      this.previousScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+      this.surfaceState = 'workspace';
+      document.body.classList.remove('ai-quick-compose-active');
+
+      const layer = document.getElementById('ai-creation-layer');
+      const capsule = document.getElementById('global-create-capsule');
+
+      if (capsule) {
+        capsule.classList.remove('is-expanded');
+        capsule.classList.add('hidden-by-workspace');
+      }
+
+      if (layer) {
+        layer.classList.remove('state-closed', 'state-quick-compose', 'state-transitioning');
+        layer.classList.add('state-workspace');
+        document.body.classList.add('ai-workspace-active');
+      }
+    },
+
+    closeWorkspace() {
+      this.surfaceState = 'closed';
+      document.body.classList.remove('ai-quick-compose-active');
+
+      const layer = document.getElementById('ai-creation-layer');
+      const capsule = document.getElementById('global-create-capsule');
+
+      if (layer) {
+        layer.classList.remove('state-quick-compose', 'state-workspace', 'state-transitioning');
+        layer.classList.add('state-closed');
+        document.body.classList.remove('ai-workspace-active');
+      }
+
+      if (capsule) {
+        capsule.classList.remove('hidden-by-workspace', 'is-expanded');
+        capsule.style.opacity = '';
+        capsule.style.pointerEvents = '';
+      }
+
+      if (this.previousScrollY) {
+        window.scrollTo({ top: this.previousScrollY, behavior: 'instant' });
+      }
+
+      const restoreRoute = this.previousRoute && this.previousRoute !== 'generate' ? this.previousRoute : (currentPage || 'dashboard');
+      if (typeof updateMobileBottomNavActive === 'function') {
+        updateMobileBottomNavActive(restoreRoute);
+      }
+
+      if (currentPage === 'generate') {
+        navigate(restoreRoute);
+      }
+    }
+  };
+
+  let globalCreateTrigger = null;
+  let aiCreationLayer = null;
+
+  function ensureAICreationLayerDOM() {
+    if (document.getElementById('ai-creation-layer')) {
+      globalCreateTrigger = document.getElementById('global-create-trigger');
+      aiCreationLayer = document.getElementById('ai-creation-layer');
+      aiDockPanel = aiCreationLayer;
+      aiPillBtn = document.getElementById('global-create-capsule') || globalCreateTrigger;
       return;
     }
 
-    aiDockPanel = document.createElement('aside');
-    aiDockPanel.id = 'ai-dock-panel';
-    aiDockPanel.className = 'ai-dock-panel';
-    aiDockPanel.innerHTML = `
-      <div class="ai-dock-top-bar">
-        <div class="ai-dock-top-title">
-          <span style="color: var(--primary);">✦</span> AI 創作助手
+    // 1. Persistent Global AI Creation Layer Shell
+    aiCreationLayer = document.createElement('div');
+    aiCreationLayer.id = 'ai-creation-layer';
+    aiCreationLayer.className = 'ai-creation-layer state-closed';
+    aiCreationLayer.innerHTML = `
+      <!-- Directional Frosted Focus Field (Smaller tightened blur) -->
+      <div class="ai-focus-field" id="ai-focus-field"></div>
+
+      <!-- Quick Creation Floating Content (Sequentially floats up above capsule) -->
+      <div class="quick-creation-container" id="quick-creation-container">
+        <div class="qc-card">
+          <div class="qc-header">
+            <div class="qc-brand">
+              <span class="qc-sparkle">✦</span>
+              <span class="qc-title">Storyboard AI</span>
+            </div>
+            <button class="qc-close-btn" id="qc-close-btn" type="button" title="關閉 (Esc)" aria-label="關閉">✕</button>
+          </div>
+
+          <div class="qc-intro">
+            <h3 class="qc-greeting">今天想創作什麼？</h3>
+            <p class="qc-sub">描述故事或創作靈感，AI 將為您打造專業分鏡</p>
+          </div>
+
+          <div class="qc-suggestion-row" id="qc-suggestion-row">
+            <span class="qc-sugg-label">靈感推薦：</span>
+            <div class="qc-sugg-chips-list">
+              <button type="button" class="qc-sugg-chip" onclick="fillQuickSugg(this)">蘋果牛奶廣告</button>
+              <button type="button" class="qc-sugg-chip" onclick="fillQuickSugg(this)">旅遊短影音</button>
+              <button type="button" class="qc-sugg-chip qc-sugg-more-trigger" id="qc-sugg-more-trigger" onclick="toggleQuickMoreSuggestions(event)">＋更多</button>
+              <div class="qc-sugg-tray" id="qc-sugg-tray" style="display: none;">
+                <button type="button" class="qc-sugg-chip" onclick="fillQuickSugg(this)">運動服品牌形象</button>
+                <button type="button" class="qc-sugg-chip" onclick="fillQuickSugg(this)">美食餐廳探店介紹</button>
+                <button type="button" class="qc-sugg-chip" onclick="fillQuickSugg(this)">科技產品發表預告</button>
+              </div>
+            </div>
+          </div>
         </div>
-        <div style="display:flex; align-items:center;">
-          <button class="ai-dock-stop-btn" id="ai-dock-stop-btn" title="中斷生成" style="display:none;" type="button">■</button>
-          <button class="ai-dock-close-btn" id="ai-dock-close" title="最小化" type="button">
-          <svg width="64px" height="64px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracurrentColorerCarrier" stroke-linecurrentcap="round" stroke-linejoin="round"></g><g id="SVGRepo_icurrentColoronCarrier"> <g id="Arrow / Shrink"> <path id="VecurrentColortor" d="M5 14H10V19M19 10H14V5" stroke="currentColor" stroke-width="2" stroke-linecurrentcap="round" stroke-linejoin="round"></path> </g> </g></svg>
+      </div>
+
+      <!-- Fullscreen Creation Workspace -->
+      <div class="creation-workspace" id="creation-workspace">
+        <div class="workspace-header">
+          <div class="workspace-nav">
+            <button class="workspace-back-btn" id="workspace-back-btn" type="button">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+              <span id="workspace-back-text">返回頁面</span>
+            </button>
+            <div class="workspace-brand-badge">
+              <span>✦ Storyboard AI Workspace</span>
+            </div>
+          </div>
+          <div class="workspace-actions">
+            <button class="ai-dock-stop-btn" id="workspace-stop-btn" title="中斷生成" style="display:none;" type="button">■ 停止生成</button>
+            <button class="workspace-close-btn" id="workspace-close-btn" title="關閉工作區 (返回原頁)" type="button">✕</button>
+          </div>
+        </div>
+        <div class="workspace-content" id="workspace-content">
+          <div class="ai-dock-loader" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; min-height: 250px; gap: 16px; color: var(--primary);">
+            <div style="width: 100px; height: 100px;">
+              <svg class="loader math-loader-svg" viewBox="0 0 100 100" fill="none" aria-hidden="true" style="width: 100%; height: 100%; display: block;">
+                <g class="math-loader-group">
+                  <path class="math-loader-path" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" opacity="0.1"></path>
+                </g>
+                <g class="math-loader-sucked"></g>
+              </svg>
+            </div>
+            <span style="font-weight: 600; font-size: 0.9rem; color: var(--text-mid);">AI 創作工作區載入中...</span>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(aiCreationLayer);
+
+    // 2. Persistent Unified Morphing Capsule (Trigger Button & Input Face as One)
+    let capsule = document.getElementById('global-create-capsule');
+    if (!capsule) {
+      capsule = document.createElement('div');
+      capsule.id = 'global-create-capsule';
+      capsule.className = 'ai-unified-capsule mob-circle-btn';
+      capsule.innerHTML = `
+        <!-- Button Face -->
+        <div class="capsule-btn-face" id="global-create-trigger" role="button" tabindex="0" aria-label="新增分鏡">
+          <div class="ai-pill-btn-glow-container"><div class="ai-pill-btn-glow"></div></div>
+          <div class="ai-pill-progress-fill" id="gct-progress-fill"></div>
+          <span class="ai-pill-spark mob-circle-spark"><span class="ai-spark-desktop">✦</span><span class="ai-spark-mobile">+</span></span>
+          <span class="mob-circle-text" id="mob-circle-text" style="display:none;"></span>
+          <span class="ai-pill-text" id="gct-text">新增分鏡</span>
+        </div>
+
+        <!-- Input Face -->
+        <div class="capsule-input-face" id="qc-composer-area">
+          <textarea id="qc-story-input" class="qc-textarea" placeholder="描述故事或創作方向... ✦" rows="1"></textarea>
+          <button class="qc-send-btn" id="qc-send-btn" type="button" disabled aria-label="發送故事">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M14.2199 21.63C13.0399 21.63 11.3699 20.8 10.0499 16.83L9.32988 14.67L7.16988 13.95C3.20988 12.63 2.37988 10.96 2.37988 9.78001C2.37988 8.61001 3.20988 6.93001 7.16988 5.60001L15.6599 2.77001C17.7799 2.06001 19.5499 2.27001 20.6399 3.35001C21.7299 4.43001 21.9399 6.21001 21.2299 8.33001L18.3999 16.82C17.0699 20.8 15.3999 21.63 14.2199 21.63Z" />
+            </svg>
           </button>
         </div>
-      </div>
-      <div class="ai-dock-mount-point" id="ai-dock-mount-point">
-        <div class="ai-dock-loader" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; min-height: 250px; gap: 16px; color: var(--primary);">
-            <div style="width: 100px; height: 100px;">
-                <svg class="loader math-loader-svg" viewBox="0 0 100 100" fill="none" aria-hidden="true" style="width: 100%; height: 100%; display: block;">
-                    <g class="math-loader-group">
-                        <path class="math-loader-path" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" opacity="0.1"></path>
-                    </g>
-                    <g class="math-loader-sucked"></g>
-                </svg>
-            </div>
-            <span style="font-weight: 600; font-size: 0.9rem; color: var(--text-mid);">AI 對話載入中...</span>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(aiDockPanel);
+      `;
+      document.body.appendChild(capsule);
+    }
 
-    aiPillBtn = document.createElement('button');
-    aiPillBtn.id = 'ai-pill-btn';
-    aiPillBtn.className = 'ai-pill-btn';
-    aiPillBtn.type = 'button';
-    aiPillBtn.innerHTML = `
-      <div class="ai-pill-btn-glow-container">
-        <div class="ai-pill-btn-glow"></div>
-      </div>
-      <div class="ai-pill-progress-fill" id="ai-pill-progress-fill"></div>
-      <svg class="ai-pill-plus-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-      <span class="ai-pill-text" id="ai-pill-text">立刻創建新分鏡</span>
-    `;
-    document.body.appendChild(aiPillBtn);
+    mountAICreationCapsule();
+
+    globalCreateTrigger = document.getElementById('global-create-trigger');
+    aiDockPanel = aiCreationLayer;
+    aiPillBtn = capsule;
 
     injectScripts(['/js/math-curve-loader.js', '/js/token-manager.js', '/js/prompt-translate.js', '/js/generate.js']).catch(() => {});
 
@@ -1448,30 +1788,172 @@ function initLoginLogic(showRegister) {
     }
 
     fetchPageDoc('/html/generate.html').then(doc => {
-      const mountPoint = aiDockPanel.querySelector('#ai-dock-mount-point');
+      const mountPoint = document.getElementById('workspace-content');
       const genMain = doc.querySelector('#page-main.gen-main') || doc.querySelector('main');
       if (mountPoint && genMain) {
         mountPoint.innerHTML = genMain.innerHTML;
         mountPoint.querySelectorAll('button').forEach(b => {
           if (!b.type) b.type = 'button';
         });
-
         if (typeof window.initGeneratePage === 'function') {
           window.initGeneratePage();
         }
-        updateAIDockState(currentPage || 'dashboard');
       }
-    }).catch(err => console.error("Failed to load generate.html into AI dock", err));
+    }).catch(err => console.error("Failed to load generate.html into Creation Workspace", err));
 
-    bindAIDockEvents();
+    bindAICreationEvents();
   }
 
-  function bindAIDockEvents() {
-    if (!aiDockPanel || !aiPillBtn) return;
+  function bindAICreationEvents() {
+    const trigger = document.getElementById('global-create-trigger');
+    const capsule = document.getElementById('global-create-capsule');
 
-    const closeBtn = aiDockPanel.querySelector('#ai-dock-close');
-    const stopBtn = aiDockPanel.querySelector('#ai-dock-stop-btn');
+    if (capsule) {
+      capsule.addEventListener('click', (e) => {
+        if (!capsule.classList.contains('is-expanded')) {
+          if (!isMobileView()) {
+            e.preventDefault();
+            e.stopPropagation();
+            window.AICreationController.openQuickCompose();
+          }
+        } else {
+          e.stopPropagation();
+        }
+      });
+    }
 
+    // Quick Compose Close
+    const qcCloseBtn = document.getElementById('qc-close-btn');
+    if (qcCloseBtn) {
+      qcCloseBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        window.AICreationController.closeQuickCompose();
+      });
+    }
+
+    // Prevent drag / gesture penetration from quick creation container into background objects
+    const qcContainer = document.getElementById('quick-creation-container');
+    if (qcContainer) {
+      ['pointerdown', 'mousedown'].forEach(evt => {
+        qcContainer.addEventListener(evt, (e) => {
+          e.stopPropagation();
+        });
+      });
+      ['pointermove', 'touchmove', 'mousemove'].forEach(evt => {
+        qcContainer.addEventListener(evt, (e) => {
+          e.stopPropagation();
+          if (e.cancelable && evt === 'touchmove') e.preventDefault();
+        }, { passive: false });
+      });
+      qcContainer.addEventListener('wheel', (e) => {
+        e.stopPropagation();
+      });
+    }
+
+    // Focus Field click outside & prevent background drag through focus field
+    const focusField = document.getElementById('ai-focus-field');
+    if (focusField) {
+      focusField.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (Date.now() - (window.AICreationController.lastOpenTime || 0) < 450) return;
+        if (window.__justHandledPointerNav && (Date.now() - window.__justHandledPointerNav < 450)) return;
+        window.AICreationController.closeQuickCompose();
+      });
+      focusField.addEventListener('touchmove', (e) => {
+        e.stopPropagation();
+        if (e.cancelable) e.preventDefault();
+      }, { passive: false });
+      focusField.addEventListener('pointermove', (e) => {
+        e.stopPropagation();
+      });
+    }
+
+    if (capsule) {
+      ['pointerdown', 'mousedown', 'touchstart'].forEach(evt => {
+        capsule.addEventListener(evt, (e) => {
+          if (capsule.classList.contains('is-expanded')) {
+            e.stopPropagation();
+          }
+        });
+      });
+      ['pointermove', 'touchmove', 'mousemove'].forEach(evt => {
+        capsule.addEventListener(evt, (e) => {
+          if (capsule.classList.contains('is-expanded')) {
+            e.stopPropagation();
+            if (e.cancelable && evt === 'touchmove') e.preventDefault();
+          }
+        }, { passive: false });
+      });
+    }
+
+    aiCreationLayer.addEventListener('click', (e) => {
+      if (window.AICreationController.surfaceState === 'quick-compose') {
+        if (!e.target.closest('#global-create-capsule, #quick-creation-container')) {
+          e.preventDefault();
+          window.AICreationController.closeQuickCompose();
+        }
+      }
+    });
+
+    // Quick story input typing & enter submit
+    const qcInput = document.getElementById('qc-story-input');
+    const qcSendBtn = document.getElementById('qc-send-btn');
+    if (qcInput) {
+      qcInput.addEventListener('input', () => {
+        const val = qcInput.value.trim();
+        if (qcSendBtn) qcSendBtn.disabled = !val;
+        if (window.CreationSessionStore && window.CreationSessionStore.draft) {
+          window.CreationSessionStore.draft.story = qcInput.value;
+        }
+      });
+      qcInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          if (qcInput.value.trim()) {
+            window.AICreationController.submitToWorkspace();
+          }
+        }
+      });
+    }
+
+    if (qcSendBtn) {
+      qcSendBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.AICreationController.submitToWorkspace();
+      });
+    }
+
+    // Workspace Back & Close
+    const wsBackBtn = document.getElementById('workspace-back-btn');
+    const wsCloseBtn = document.getElementById('workspace-close-btn');
+    if (wsBackBtn) {
+      wsBackBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.AICreationController.closeWorkspace();
+      });
+    }
+    if (wsCloseBtn) {
+      wsCloseBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.AICreationController.closeWorkspace();
+      });
+    }
+
+    // Esc key close
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if (window.AICreationController.surfaceState === 'quick-compose') {
+          window.AICreationController.closeQuickCompose();
+        } else if (window.AICreationController.surfaceState === 'workspace') {
+          window.AICreationController.closeWorkspace();
+        }
+      }
+    });
+
+    // Workspace Stop Generation
+    const stopBtn = document.getElementById('workspace-stop-btn');
     if (stopBtn) {
       stopBtn.addEventListener('click', async (e) => {
         e.preventDefault();
@@ -1505,136 +1987,41 @@ function initLoginLogic(showRegister) {
         }
       });
     }
-
-    if (closeBtn) {
-      closeBtn.addEventListener('click', () => {
-        aiDockUserClosed = true;
-        aiDockPanel.classList.add('hidden');
-        aiDockPanel.classList.remove('expanding-to-full');
-        document.body.classList.remove('ai-dock-active');
-        
-        const m = document.getElementById('page-main');
-        if (m) {
-          m.style.marginRight = '1vh';
-        }
-
-        if (currentPage === 'generate') {
-          navigate('dashboard');
-        }
-        aiPillBtn.classList.add('show');
-      });
-    }
-
-    aiPillBtn.addEventListener('click', () => {
-      aiDockUserClosed = false;
-      expandSidebar(false);
-      
-      aiPillBtn.classList.remove('show');
-      aiDockPanel.classList.remove('hidden');
-
-      if (currentPage === 'generate') {
-        aiDockPanel.classList.add('expanding-to-full');
-        document.body.classList.add('ai-dock-active');
-      } else {
-        document.body.classList.add('ai-dock-active');
-        const m = document.getElementById('page-main');
-        if (m && window.innerWidth >= 1024) {
-          m.style.marginRight = 'calc(1vh + 460px + 1vh)';
-        }
-      }
-
-      if (typeof window.initGeneratePage === 'function') {
-        window.initGeneratePage();
-      }
-
-      const textarea = aiDockPanel.querySelector('#story-input');
-      if (textarea && !textarea.value) textarea.focus();
-    });
-
-    window.addEventListener('resize', () => {
-      if (isDashboardPage(currentPage)) {
-        updateAIDockState(currentPage);
-      }
-    });
   }
 
-  function updateAIDockState(page) {
-    ensureAIDockDOM();
-    if (!aiDockPanel || !aiPillBtn) return;
+  function updateAICreationLayerState(page) {
+    ensureAICreationLayerDOM();
+    if (!globalCreateTrigger || !aiCreationLayer) return;
 
-    if (!isDashboardPage(page)) {
-      aiDockPanel.classList.add('hidden');
-      aiDockPanel.classList.remove('expanding-to-full', 'pushed-out', 'on-home-page');
-      aiPillBtn.classList.remove('show');
-      document.body.classList.remove('ai-dock-active');
-      const pageMain = document.getElementById('page-main');
-      if (pageMain) {
-        pageMain.classList.remove('collapsing-for-ai');
-        pageMain.style.marginRight = '';
+    const isDashboard = isDashboardPage(page);
+
+    if (!isDashboard) {
+      globalCreateTrigger.style.display = 'none';
+      if (window.AICreationController.surfaceState !== 'closed') {
+        window.AICreationController.closeWorkspace();
+        window.AICreationController.closeQuickCompose();
       }
       return;
     }
 
-    const isHomePage = (page === 'dashboard');
-    if (isHomePage) {
-      aiDockPanel.classList.add('on-home-page');
-      aiDockUserClosed = false;
-    } else {
-      aiDockPanel.classList.remove('on-home-page');
-    }
-
-    const sidebar = document.getElementById('dash-sidebar') || dashboardSidebar;
-    const isSidebarOpen = sidebar && sidebar.classList.contains('open');
-    const pageMain = document.getElementById('page-main');
-
-    const isMobile = window.innerWidth <= 768 || (window.innerWidth <= 1024 && window.matchMedia('(orientation: portrait)').matches);
+    // On Dashboard pages, ensure trigger is visible
+    globalCreateTrigger.style.display = '';
 
     if (page === 'generate') {
-      expandSidebar(false);
-      aiDockPanel.classList.remove('hidden', 'pushed-out');
-      aiDockPanel.classList.add('expanding-to-full');
-      aiPillBtn.classList.remove('show');
-      document.body.classList.add('ai-dock-active');
-      if (pageMain) pageMain.classList.add('collapsing-for-ai');
-    } else {
-      if (pageMain) pageMain.classList.remove('collapsing-for-ai');
-      aiDockPanel.classList.remove('expanding-to-full');
-
-      if (isMobile) {
-        aiDockPanel.classList.add('hidden');
-        aiDockPanel.classList.remove('pushed-out');
-        aiPillBtn.classList.remove('show');
-        document.body.classList.remove('ai-dock-active');
-        if (pageMain) pageMain.style.marginRight = '0';
-      } else if (isHomePage) {
-        if (isSidebarOpen || window.innerWidth < 1024) {
-          aiDockPanel.classList.remove('hidden');
-          aiDockPanel.classList.add('pushed-out');
-          aiPillBtn.classList.remove('show');
-          document.body.classList.remove('ai-dock-active');
-          if (pageMain) pageMain.style.marginRight = '1vh';
-        } else {
-          aiDockPanel.classList.remove('hidden', 'pushed-out');
-          aiPillBtn.classList.remove('show');
-          document.body.classList.add('ai-dock-active');
-          if (pageMain && window.innerWidth >= 1024) pageMain.style.marginRight = 'calc(1vh + 460px + 1vh)';
-        }
-      } else {
-        aiDockPanel.classList.remove('pushed-out');
-        if (aiDockUserClosed || isSidebarOpen || window.innerWidth < 1024) {
-          aiDockPanel.classList.add('hidden');
-          aiPillBtn.classList.add('show');
-          document.body.classList.remove('ai-dock-active');
-          if (pageMain) pageMain.style.marginRight = '1vh';
-        } else {
-          expandSidebar(false);
-          aiDockPanel.classList.remove('hidden');
-          aiPillBtn.classList.remove('show');
-          document.body.classList.add('ai-dock-active');
-          if (pageMain && window.innerWidth >= 1024) pageMain.style.marginRight = 'calc(1vh + 460px + 1vh)';
-        }
+      // If user navigated directly to 'generate'
+      if (window.AICreationController.surfaceState === 'closed') {
+        window.AICreationController.openQuickCompose();
       }
     }
+  }
+
+  // Backward compatibility aliases
+  function ensureAIDockDOM() {
+    ensureAICreationLayerDOM();
+  }
+
+  function updateAIDockState(page) {
+    updateAICreationLayerState(page);
   }
 
   function ensureMobileBottomNavDOM() {
@@ -1668,18 +2055,7 @@ function initLoginLogic(showRegister) {
                 </div>
                 <span class="mobile-nav__label">分鏡</span>
             </a>
-            <a href="../generate" class="mobile-nav__item mobile-nav__item--create" id="mob-nav-generate" role="tab" aria-selected="false" aria-label="新建分鏡" draggable="false">
-                <div class="mob-circle-btn" id="mob-nav-circle-wrap">
-                    <div class="mob-circle-glow-container">
-                        <div class="mob-circle-glow"></div>
-                    </div>
-                    <div class="mob-circle-progress-fill" id="mob-circle-progress-fill"></div>
-                    <div class="mob-circle-inner">
-                        <span class="mob-circle-plus">+</span>
-                        <span class="mob-circle-text" id="mob-circle-text" style="display:none;"></span>
-                    </div>
-                </div>
-            </a>
+            <a href="../generate" class="mobile-nav__item mobile-nav__item--create" id="mob-nav-generate" role="tab" aria-selected="false" aria-label="新建分鏡" draggable="false"></a>
             <a href="../template" class="mobile-nav__item" id="mob-nav-template" role="tab" aria-selected="false" aria-label="模板" draggable="false">
                 <div class="mobile-nav__icon-wrap">
                     <svg class="mobile-nav__svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1750,8 +2126,32 @@ function initLoginLogic(showRegister) {
       document.body.appendChild(mobNav);
       mobileBottomNav = mobNav;
     }
+    mountAICreationCapsule();
     initMobileBottomNavGestures();
   }
+
+  function mountAICreationCapsule() {
+    const capsule = document.getElementById('global-create-capsule');
+    if (!capsule) return;
+    const isMobile = isMobileView();
+    if (isMobile) {
+      const mobGen = document.getElementById('mob-nav-generate');
+      if (mobGen) {
+        const oldWrap = mobGen.querySelector('#mob-nav-circle-wrap');
+        if (oldWrap) {
+          oldWrap.remove();
+        }
+        if (capsule.parentElement !== mobGen) {
+          mobGen.appendChild(capsule);
+        }
+      }
+    } else {
+      if (capsule.parentElement !== document.body) {
+        document.body.appendChild(capsule);
+      }
+    }
+  }
+  window.addEventListener('resize', mountAICreationCapsule);
 
   let lastToggleTime = 0;
   let lastOpenTime = 0;
@@ -1764,8 +2164,6 @@ function initLoginLogic(showRegister) {
     const targets = [];
     const pageMain = document.getElementById('page-main');
     if (pageMain) targets.push(pageMain);
-    const aiDock = document.getElementById('ai-dock-panel') || document.querySelector('.ai-dock-panel');
-    if (aiDock) targets.push(aiDock);
     return targets;
   }
 
@@ -2151,6 +2549,15 @@ function initLoginLogic(showRegister) {
           indicator.style.width = `${indicatorWidth}px`;
           mobNav.style.setProperty('--nav-selector-width', `${indicatorWidth}px`);
         }
+
+        const mobBtn = mobNav.querySelector('#mob-nav-circle-wrap') || mobNav.querySelector('.mob-circle-btn');
+        if (mobBtn) {
+          const br = mobBtn.getBoundingClientRect();
+          if (br && br.width > 0) {
+            window.__mobBtnRestingBottomPx = Math.max(0, Math.round(window.innerHeight - br.bottom));
+            document.documentElement.style.setProperty('--mob-btn-bottom', `${window.__mobBtnRestingBottomPx}px`);
+          }
+        }
       }
     }
     window.addEventListener('resize', cacheMetrics);
@@ -2234,19 +2641,14 @@ function initLoginLogic(showRegister) {
       lastSnappedItem = currentTargetItem;
       highlightTargetItem(currentTargetItem);
 
-      // 按下即動：只要有點擊到 link 就觸發 selector 移動過來，手指點擊時放大至 1.3 倍
+      // 按下即動：只要有點擊到 link 就觸發 selector 移動過來，手指點擊時微反饋 (scale 1.05)
       if (indicator && currentTargetItem && cachedNavRect) {
         indicator.classList.add('is-active', 'is-pressed');
-        if (!currentTargetItem.classList.contains('mobile-nav__item--create')) {
-          const tMetric = cachedMetrics.find(m => m.item === currentTargetItem);
-          const targetCenterX = tMetric ? tMetric.centerX : (currentTargetItem.getBoundingClientRect().left + currentTargetItem.getBoundingClientRect().width / 2);
-          const finalOffset = targetCenterX - cachedNavRect.left - indicatorWidth / 2;
-          curIndicatorX = Math.max(insetX, Math.min(cachedNavRect.width - indicatorWidth - insetX, finalOffset));
-          updateIndicatorVisual(curIndicatorX, 1.3, true, 1.0);
-        } else {
-          indicator.classList.remove('is-active', 'is-pressed');
-          updateIndicatorVisual(curIndicatorX, 1.3, true, 0.0);
-        }
+        const tMetric = cachedMetrics.find(m => m.item === currentTargetItem);
+        const targetCenterX = tMetric ? tMetric.centerX : (currentTargetItem.getBoundingClientRect().left + currentTargetItem.getBoundingClientRect().width / 2);
+        const finalOffset = targetCenterX - cachedNavRect.left - indicatorWidth / 2;
+        curIndicatorX = Math.max(insetX, Math.min(cachedNavRect.width - indicatorWidth - insetX, finalOffset));
+        updateIndicatorVisual(curIndicatorX, 1.05, true, 1.0);
       }
 
       // Smooth soft micro-enlargement (scale: 1.026) instead of shrink
@@ -2288,10 +2690,12 @@ function initLoginLogic(showRegister) {
         }
       } else {
         isCancelled = false;
+        // Finger movement tracking closest target item
         const closestMetric = findClosestMetric(e.clientX);
-        const closest = closestMetric ? closestMetric.item : null;
-        if (closest && closest !== currentTargetItem) {
-          currentTargetItem = closest;
+        const newTargetItem = closestMetric ? closestMetric.item : null;
+
+        if (newTargetItem !== currentTargetItem) {
+          currentTargetItem = newTargetItem;
           if (currentTargetItem !== lastSnappedItem) {
             lastSnappedItem = currentTargetItem;
             if (typeof navigator !== 'undefined' && navigator.vibrate) {
@@ -2301,7 +2705,7 @@ function initLoginLogic(showRegister) {
           highlightTargetItem(currentTargetItem);
         }
 
-        // Follow finger with soft magnetic link attraction
+        // Follow finger with soft magnetic link attraction across all items including create button
         if (indicator && cachedNavRect && closestMetric) {
           if (Math.hypot(rawDx, rawDy) > 4) {
             indicator.classList.remove('is-settling');
@@ -2314,12 +2718,8 @@ function initLoginLogic(showRegister) {
 
           curIndicatorX += (targetIndX - curIndicatorX) * 0.36;
 
-          let targetOpacity = 1;
-          if (closestMetric.isCreate) {
-            const distToCenter = Math.abs(fingerRelX - closestCenterRelX);
-            targetOpacity = Math.min(1, Math.max(0, (distToCenter - 14) / 24));
-          }
-          updateIndicatorVisual(curIndicatorX, 1.3, false, targetOpacity);
+          indicator.classList.add('is-active');
+          updateIndicatorVisual(curIndicatorX, 1.05, false, 1.0);
         }
       }
 
@@ -2365,16 +2765,11 @@ function initLoginLogic(showRegister) {
       if (indicator && releasedTargetItem && cachedNavRect) {
         indicator.classList.add('is-active');
         indicator.classList.remove('is-pressed');
-        if (!releasedTargetItem.classList.contains('mobile-nav__item--create')) {
-          const tMetric = cachedMetrics.find(m => m.item === releasedTargetItem);
-          const targetCenterX = tMetric ? tMetric.centerX : (releasedTargetItem.getBoundingClientRect().left + releasedTargetItem.getBoundingClientRect().width / 2);
-          const finalOffset = targetCenterX - cachedNavRect.left - indicatorWidth / 2;
-          curIndicatorX = Math.max(insetX, Math.min(cachedNavRect.width - indicatorWidth - insetX, finalOffset));
-          updateIndicatorVisual(curIndicatorX, 1.0, true, 1.0);
-        } else {
-          indicator.classList.remove('is-active');
-          updateIndicatorVisual(curIndicatorX, 1.0, true, 0.0);
-        }
+        const tMetric = cachedMetrics.find(m => m.item === releasedTargetItem);
+        const targetCenterX = tMetric ? tMetric.centerX : (releasedTargetItem.getBoundingClientRect().left + releasedTargetItem.getBoundingClientRect().width / 2);
+        const finalOffset = targetCenterX - cachedNavRect.left - indicatorWidth / 2;
+        curIndicatorX = Math.max(insetX, Math.min(cachedNavRect.width - indicatorWidth - insetX, finalOffset));
+        updateIndicatorVisual(curIndicatorX, 1.0, true, 1.0);
       }
 
 
@@ -2443,7 +2838,15 @@ function initLoginLogic(showRegister) {
       if (targetItem.id === 'mob-nav-profile') {
         window.toggleUserPanel();
       } else if (targetItem.id === 'mob-nav-generate') {
-        navigate('generate');
+        if (window.AICreationController) {
+          if (window.AICreationController.surfaceState === 'quick-compose') {
+            window.AICreationController.closeQuickCompose();
+          } else if (window.AICreationController.surfaceState === 'closed') {
+            window.AICreationController.openQuickCompose();
+          }
+        } else {
+          navigate('generate');
+        }
       } else {
         const href = targetItem.getAttribute('href') || '';
         let targetRoute = 'dashboard';
@@ -2478,7 +2881,29 @@ function initLoginLogic(showRegister) {
         if (item.id === 'mob-nav-profile') {
           window.toggleUserPanel();
         } else if (item.id === 'mob-nav-generate') {
-          navigate('generate');
+          if (indicator) {
+            indicator.classList.add('is-active');
+            const itemRect = item.getBoundingClientRect();
+            const navRect = mobNav.getBoundingClientRect();
+            const targetCenterX = itemRect.left + itemRect.width / 2;
+            const finalOffset = targetCenterX - navRect.left - indicatorWidth / 2;
+            updateIndicatorVisual(finalOffset, 1.05, true, 1.0);
+            mobNav.style.transition = 'transform 0.16s cubic-bezier(0.2, 0.9, 0.3, 1)';
+            mobNav.style.transform = 'translate3d(0px, 0px, 0) scale(1.026, 1.026)';
+            setTimeout(() => {
+              mobNav.style.transform = '';
+              updateIndicatorVisual(finalOffset, 1.0, true, 1.0);
+            }, 160);
+          }
+          if (window.AICreationController) {
+            if (window.AICreationController.surfaceState === 'quick-compose') {
+              window.AICreationController.closeQuickCompose();
+            } else if (window.AICreationController.surfaceState === 'closed') {
+              window.AICreationController.openQuickCompose();
+            }
+          } else {
+            navigate('generate');
+          }
         } else {
           const href = item.getAttribute('href') || '';
           let targetRoute = 'dashboard';
@@ -2567,7 +2992,7 @@ function initLoginLogic(showRegister) {
 
     const indicator = mobNav.querySelector('.mobile-nav__indicator');
     if (indicator) {
-      if (activeItem && !activeItem.classList.contains('mobile-nav__item--create')) {
+      if (activeItem) {
         const itemRect = activeItem.getBoundingClientRect();
         const navRect = mobNav.getBoundingClientRect();
         const insetX = parseFloat(getComputedStyle(mobNav).getPropertyValue('--nav-selector-inset-x')) || 5;
@@ -2677,7 +3102,9 @@ function initLoginLogic(showRegister) {
     const parsed = parseRouteFromHash(window.location.hash);
     if (parsed.page === 'project' || parsed.page === 'projects') {
       localStorage.setItem('sidebar_projects_expanded', 'true');
-      expandSidebar(true);
+      if (window.innerWidth > 1024) {
+        expandSidebar(true);
+      }
       const subList = document.getElementById('sidebar-projects-list') || dashboardSidebar?.querySelector('#sidebar-projects-list');
       const navProjectsGroup = document.getElementById('nav-projects-group') || dashboardSidebar?.querySelector('#nav-projects-group');
       if (subList) subList.classList.add('expanded');
@@ -3020,16 +3447,26 @@ function initLoginLogic(showRegister) {
   }
 
   async function renderGenerate(opts, signal) {
+    const doc = await fetchPageDoc('/html/generate.html', signal);
+    if (signal?.aborted) return;
+
     const m = initMain();
     m.className = 'spa-gen-wrap';
-    m.innerHTML = '';
-
+    cloneMainContent(doc, m);
     await ensureSharedLayout(signal);
 
     if (opts && opts.templateId) {
       window.preselectedTemplateId = opts.templateId;
     } else {
       window.preselectedTemplateId = null;
+    }
+
+    if (typeof window.initGeneratePage === 'function') {
+      window.initGeneratePage();
+    }
+
+    if (window.AICreationController) {
+      window.AICreationController.openWorkspaceDirectly();
     }
   }
 
@@ -3932,8 +4369,14 @@ function initLoginLogic(showRegister) {
   }
 
   function expandSidebar(expand = true) {
+    if (window.innerWidth <= 1024) {
+      document.body.classList.remove('sidebar-open');
+      const burger = document.getElementById("burger");
+      if (burger) burger.checked = false;
+      return;
+    }
+
     const burger = document.getElementById("burger");
-    const m = document.getElementById('page-main');
     const sidebar = document.getElementById('dash-sidebar') || dashboardSidebar;
     if (!burger || !sidebar) return;
 
@@ -3941,69 +4384,11 @@ function initLoginLogic(showRegister) {
     if (expand) {
       document.body.classList.add('sidebar-open');
       sidebar.style.width = '260px';
-      if (m) {
-        m.style.marginLeft = 'calc(2vh + 260px)';
-        m.style.marginRight = '1vh';
-      }
       sidebar.classList.add('open');
-      if (aiDockPanel) {
-        if (currentPage === 'dashboard') {
-          aiDockPanel.classList.remove('hidden');
-          aiDockPanel.classList.add('pushed-out');
-          if (aiPillBtn) aiPillBtn.classList.remove('show');
-        } else if (currentPage === 'generate') {
-          aiDockPanel.classList.remove('hidden', 'pushed-out');
-          if (aiPillBtn) aiPillBtn.classList.remove('show');
-        } else {
-          aiDockPanel.classList.add('hidden');
-          aiDockPanel.classList.remove('pushed-out');
-          if (currentPage !== 'generate') {
-            if (aiPillBtn) aiPillBtn.classList.add('show');
-          }
-        }
-        document.body.classList.remove('ai-dock-active');
-      }
     } else {
       document.body.classList.remove('sidebar-open');
       sidebar.style.width = '60px';
-      if (m) {
-        m.style.marginLeft = 'calc(2vh + 60px)';
-      }
       sidebar.classList.remove('open');
-      const isMobile = window.innerWidth <= 768 || (window.innerWidth <= 1024 && window.matchMedia('(orientation: portrait)').matches);
-      if (isMobile) {
-        if (aiDockPanel && currentPage !== 'generate') {
-          aiDockPanel.classList.add('hidden');
-          aiDockPanel.classList.remove('pushed-out');
-        }
-        if (aiPillBtn) aiPillBtn.classList.remove('show');
-        document.body.classList.remove('ai-dock-active');
-        if (m) m.style.marginRight = '0';
-      } else if (currentPage === 'dashboard') {
-        if (aiDockPanel) {
-          aiDockPanel.classList.remove('hidden', 'pushed-out');
-        }
-        if (aiPillBtn) aiPillBtn.classList.remove('show');
-        document.body.classList.add('ai-dock-active');
-        if (m && window.innerWidth >= 1024) m.style.marginRight = 'calc(1vh + 460px + 1vh)';
-      } else if (currentPage !== 'generate' && isDashboardPage(currentPage) && !aiDockUserClosed && window.innerWidth >= 1024) {
-        if (aiDockPanel) {
-          aiDockPanel.classList.remove('hidden', 'pushed-out');
-        }
-        if (aiPillBtn) aiPillBtn.classList.remove('show');
-        document.body.classList.add('ai-dock-active');
-        if (m) m.style.marginRight = 'calc(1vh + 460px + 1vh)';
-      } else {
-        if (aiDockPanel && (aiDockUserClosed || window.innerWidth < 1024)) {
-          aiDockPanel.classList.add('hidden');
-          aiDockPanel.classList.remove('pushed-out');
-          if (aiPillBtn && currentPage !== 'generate' && isDashboardPage(currentPage)) {
-            aiPillBtn.classList.add('show');
-          }
-          document.body.classList.remove('ai-dock-active');
-        }
-        if (m) m.style.marginRight = '1vh';
-      }
     }
   }
 
@@ -4136,6 +4521,16 @@ function initLoginLogic(showRegister) {
       pageMain.style.padding = '';
     }
 
+    if (page === 'generate') {
+      const contentEl = getOrCreateContentContainer();
+      if (contentEl) {
+        contentEl.style.transition = 'opacity 180ms ease, filter 180ms ease, transform 180ms ease';
+        contentEl.style.opacity = '0';
+        contentEl.style.filter = 'blur(12px)';
+        contentEl.style.transform = 'scale(0.98)';
+      }
+    }
+
     // 當從登入/註冊頁面登入進入 Dashboard 時，若先前為展開狀態，自動將其收回（在 mask 遮罩期間完成）
     if ((currentPage === 'login' || currentPage === 'register') && isDashboardPage(page)) {
       if (localStorage.getItem('sidebar_projects_expanded') === 'true') {
@@ -4253,10 +4648,12 @@ function initLoginLogic(showRegister) {
       const userPanel = document.getElementById('spa-user-panel');
       if (userPanel) userPanel.style.display = '';
 
-      // 進入專案頁面時，自動展開側邊欄與專案子清單
+      // 進入專案頁面時，自動展開側邊欄與專案子清單 (僅限桌面版)
       if (page === 'project' || page === 'projects') {
         localStorage.setItem('sidebar_projects_expanded', 'true');
-        expandSidebar(true);
+        if (window.innerWidth > 1024) {
+          expandSidebar(true);
+        }
         const subList = document.getElementById('sidebar-projects-list') || dashboardSidebar?.querySelector('#sidebar-projects-list');
         const navProjectsGroup = document.getElementById('nav-projects-group') || dashboardSidebar?.querySelector('#nav-projects-group');
         if (subList) subList.classList.add('expanded');
@@ -4335,10 +4732,11 @@ function initLoginLogic(showRegister) {
 
     if (isDashboardTransition) {
       if (contentEl) {
+        contentEl.style.transition = 'opacity 180ms ease, filter 180ms ease';
         contentEl.style.opacity = '0';
-        contentEl.style.filter = 'blur(15px)';
+        contentEl.style.filter = 'blur(12px)';
       }
-      await rafDelay(300);
+      await rafDelay(page === 'generate' ? 140 : 250);
       
       showLoaderTimer = setTimeout(() => {
         loaderShowing = true;
@@ -4467,6 +4865,7 @@ function initLoginLogic(showRegister) {
 
       if (isDashboardTransition) {
         if (contentEl) {
+          contentEl.style.transition = 'opacity 250ms ease, filter 250ms ease';
           contentEl.style.opacity = '1';
           contentEl.style.filter = 'blur(0px)';
         }
@@ -4479,7 +4878,10 @@ function initLoginLogic(showRegister) {
       }
 
       if (contentEl) {
-        contentEl.style.removeProperty('filter');
+        setTimeout(() => {
+          contentEl.style.removeProperty('filter');
+          contentEl.style.removeProperty('transition');
+        }, 280);
       }
 
       if (signal.aborted || mySeq !== navSeq) return;

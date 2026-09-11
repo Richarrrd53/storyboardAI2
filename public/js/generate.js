@@ -39,16 +39,56 @@
       return inputArea;
   }
 
-  // ── 1. State ──
-  const state = {
+  // ── 1. Creation Session Store & Decoupled State Architecture ──
+  const CreationSessionStore = {
       story: '',
       styleIndex: 0,
       ratio: '橫向16:9',
       useTemplate: false,
       selectedTemplate: null,
       resolvedVariables: {},
-      finalPrompts: []
+      finalPrompts: [],
+      stage: 'idea',
+      generationStatus: 'idle',
+      storyboardData: null,
+      error: null,
+      draft: {
+          story: '',
+          styleIndex: 0,
+          ratio: '橫向16:9',
+          selectedTemplate: null
+      }
   };
+  window.CreationSessionStore = CreationSessionStore;
+
+  // Backward compatible alias
+  const state = CreationSessionStore;
+
+  // Presentation State (Explicit Separation: Surface State vs Creation Stage)
+  const assistantState = {
+      surfaceState: 'closed', // 'closed' | 'quick-compose' | 'transitioning' | 'workspace'
+      creationStage: 'idea',  // 'idea' | 'direction' | 'structure' | 'generating' | 'storyboard'
+      sessionActive: false,
+      draft: CreationSessionStore.draft
+  };
+  window.assistantState = assistantState;
+
+  function setCreationStage(stage) {
+      assistantState.creationStage = stage;
+      const crumbs = document.querySelectorAll('.stage-crumb');
+      const order = ['idea', 'direction', 'structure', 'storyboard'];
+      const targetIdx = order.indexOf(stage);
+      crumbs.forEach(c => {
+          const s = c.id.replace('stage-crumb-', '');
+          const idx = order.indexOf(s);
+          c.classList.toggle('active', s === stage);
+          c.classList.toggle('completed', idx < targetIdx);
+      });
+      if (typeof window.updateCapsuleText === 'function') {
+          window.updateCapsuleText();
+      }
+  }
+  window.setCreationStage = setCreationStage;
 
   let TEMPLATES = [];
   async function getTemplates() {
@@ -84,15 +124,16 @@
   }
 
   const STYLES = [
-      { name: '預設風格', dot: '#7fba7a', desc: '自然清新', prompt: "natural lighting, high resolution, clean composition, soft focus background" },
-      { name: '電影風格', dot: '#2a2a3a', desc: '戲劇光影', prompt: "anamorphic lens, cinematic lighting, 8k resolution, deep shadows, professional color grading, film noir vibes" },
-      { name: '二次元風格', dot: '#ffc5e8', desc: '熱門手遊感', prompt: "mihoyo style, genshin impact aesthetic, cel-shaded, vibrant anime colors, expressive lighting, high-quality 3D render look" },
-      { name: 'Cyberpunk風格', dot: '#6200ea', desc: '霓虹未來', prompt: "neon palette, high contrast, futuristic street, rain-slicked pavement, volumetric fog, cyberpunk 2077 aesthetic" },
-      { name: '美式寫實風格', dot: '#c49a2a', desc: '溫暖金調', prompt: "professional photography, golden hour, sun-drenched, shallow depth of field, sharp details, Kodak Portra 400 look" },
-      { name: '90s 復古風格', dot: '#f44336', desc: '懷舊膠卷', prompt: "90s VHS aesthetic, vintage film grain, light leaks, chromatic aberration, retro colors, nostalgic atmosphere" },
-      { name: '水彩插畫風格', dot: '#b8d4ff', desc: '柔和藝術', prompt: "delicate watercolor painting, ink wash, dreamy atmosphere, paper texture, hand-drawn illustration" },
-      { name: '極簡室內風格', dot: '#eceff1', desc: '侘寂高級感', prompt: "minimalist aesthetic, soft natural light, Wabi-sabi style, high-end interior design photography, neutral tones" }
+      { name: '預設風格', dot: '#7fba7a', desc: '自然清新', gradient: 'linear-gradient(135deg, #a8ff78, #78ffd6)', icon: '🍃', prompt: "natural lighting, high resolution, clean composition, soft focus background" },
+      { name: '電影風格', dot: '#2a2a3a', desc: '戲劇光影', gradient: 'linear-gradient(135deg, #232526, #414345)', icon: '🎬', prompt: "anamorphic lens, cinematic lighting, 8k resolution, deep shadows, professional color grading, film noir vibes" },
+      { name: '二次元風格', dot: '#ffc5e8', desc: '熱門手遊感', gradient: 'linear-gradient(135deg, #ff9a9e, #fecfef)', icon: '✨', prompt: "mihoyo style, genshin impact aesthetic, cel-shaded, vibrant anime colors, expressive lighting, high-quality 3D render look" },
+      { name: 'Cyberpunk風格', dot: '#6200ea', desc: '霓虹未來', gradient: 'linear-gradient(135deg, #654ea3, #eaafc8)', icon: '⚡', prompt: "neon palette, high contrast, futuristic street, rain-slicked pavement, volumetric fog, cyberpunk 2077 aesthetic" },
+      { name: '美式寫實風格', dot: '#c49a2a', desc: '溫暖金調', gradient: 'linear-gradient(135deg, #f7971e, #ffd200)', icon: '🌅', prompt: "professional photography, golden hour, sun-drenched, shallow depth of field, sharp details, Kodak Portra 400 look" },
+      { name: '90s 復古風格', dot: '#f44336', desc: '懷舊膠卷', gradient: 'linear-gradient(135deg, #cb2d3e, #ef473a)', icon: '📼', prompt: "90s VHS aesthetic, vintage film grain, light leaks, chromatic aberration, retro colors, nostalgic atmosphere" },
+      { name: '水彩插畫風格', dot: '#b8d4ff', desc: '柔和藝術', gradient: 'linear-gradient(135deg, #89f7fe, #66a6ff)', icon: '🎨', prompt: "delicate watercolor painting, ink wash, dreamy atmosphere, paper texture, hand-drawn illustration" },
+      { name: '極簡室內風格', dot: '#eceff1', desc: '侘寂高級感', gradient: 'linear-gradient(135deg, #e0eafc, #cfdef3)', icon: '🏛️', prompt: "minimalist aesthetic, soft natural light, Wabi-sabi style, high-end interior design photography, neutral tones" }
   ];
+
 
   const LOADING_STEPS_FREE = [
       { pct: 0, messages: ['正在努力讀懂你的精彩故事喔 ✨', '拼命拆解場景節奏中... 🏄', '悄悄思考故事的最強結構... 💭'] },
@@ -194,15 +235,16 @@
           el.classList.add('active');
       }
 
-      const aiDockPanel = document.getElementById('ai-dock-panel');
-      const stopBtn = document.getElementById('ai-dock-stop-btn');
-      if (aiDockPanel) {
+      const aiLayer = document.getElementById('ai-creation-layer') || document.getElementById('ai-dock-panel');
+      const stopBtn = document.getElementById('workspace-stop-btn') || document.getElementById('ai-dock-stop-btn');
+      if (stopBtn) {
+          stopBtn.style.display = (id === 'phase-generating') ? 'inline-flex' : 'none';
+      }
+      if (aiLayer) {
           if (id === 'phase-generating') {
-              aiDockPanel.classList.add('in-generation-phase');
-              if (stopBtn) stopBtn.style.display = 'flex';
+              aiLayer.classList.add('in-generation-phase');
           } else {
-              aiDockPanel.classList.remove('in-generation-phase');
-              if (stopBtn) stopBtn.style.display = 'none';
+              aiLayer.classList.remove('in-generation-phase');
           }
       }
 
@@ -221,10 +263,14 @@
       if (!input) return;
       const val = input.value.trim();
       const btn = document.getElementById('compose-send');
+      const card = document.getElementById('compose-card');
+      const hasText = val.length > 0;
       if (btn) {
-          const hasText = val.length > 0;
           btn.setAttribute('data-active', hasText ? 'true' : 'false');
           btn.disabled = !hasText;
+      }
+      if (card) {
+          card.classList.toggle('has-content', hasText);
       }
       state.story = val;
       resetHeight();
@@ -296,83 +342,147 @@
   function buildStyleChips() {
       const row = document.getElementById('style-chips-row');
       const showAllBtn = document.getElementById('style-show-all-btn');
-      const recTag = document.getElementById('style-rec-tag');
-      if (row.childElementCount > 0) return;
+      if (!row) return;
+      row.innerHTML = '';
 
       const recIndices = detectRecommendedStyles(state.story);
       state.styleIndex = recIndices[0];
 
       STYLES.forEach((s, i) => {
-          const btn = document.createElement('button');
+          const btn = document.createElement('div');
           const isRec = recIndices.includes(i);
-          btn.className = 'opt-chip style-chip' + (i === state.styleIndex ? ' active' : '');
+          const isTopRec = (i === recIndices[0]);
+          btn.className = 'visual-style-card' + (i === state.styleIndex ? ' active' : '');
           btn.dataset.styleIndex = i;
-          btn.innerHTML = `<span class="style-chip-dot" style="background:${s.dot}"></span>${s.name}${isRec && i === recIndices[0] ? ' <span class="chip-rec-badge">推薦</span>' : ''}`;
-          btn.onclick = () => {
+          btn.setAttribute('role', 'radio');
+          btn.setAttribute('aria-checked', i === state.styleIndex ? 'true' : 'false');
+          btn.setAttribute('tabindex', '0');
+          btn.innerHTML = `
+              <div class="style-card-thumb" style="background: ${s.gradient}; color: #ffffff;">
+                  <span style="font-size: 1.25rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25));">${s.icon}</span>
+                  ${isTopRec ? '<span class="style-rec-badge">★ AI 推薦</span>' : ''}
+              </div>
+              <div class="style-card-title">${s.name}</div>
+              <div class="style-card-desc">${s.desc}</div>
+          `;
+          const selectThisStyle = () => {
               state.styleIndex = i;
-              document.querySelectorAll('.style-chip').forEach(c => c.classList.remove('active'));
+              document.querySelectorAll('.visual-style-card').forEach(c => {
+                  c.classList.remove('active');
+                  c.setAttribute('aria-checked', 'false');
+              });
               btn.classList.add('active');
+              btn.setAttribute('aria-checked', 'true');
           };
-          if (!isRec) btn.style.display = 'none';
+          btn.onclick = selectThisStyle;
+          btn.onkeydown = (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  selectThisStyle();
+              }
+          };
+          if (!isRec && !_allStylesVisible) btn.style.display = 'none';
           row.appendChild(btn);
       });
 
-      if (recIndices.length < STYLES.length) {
+      if (recIndices.length < STYLES.length && !_allStylesVisible && showAllBtn) {
           showAllBtn.style.display = 'inline-flex';
-          recTag.style.display = 'inline';
       }
-      _allStylesVisible = false;
   }
 
   function showAllStyles() {
       _allStylesVisible = true;
-      document.querySelectorAll('.style-chip').forEach(btn => { btn.style.display = 'inline-flex'; });
+      document.querySelectorAll('.visual-style-card').forEach(btn => { btn.style.display = 'flex'; });
       const showAllBtn = document.getElementById('style-show-all-btn');
       if (showAllBtn) showAllBtn.style.display = 'none';
   }
 
+  function toggleMoreSuggestions(e) {
+      if (e) { e.preventDefault(); e.stopPropagation(); }
+      const tray = document.getElementById('sugg-tray');
+      const trigger = document.getElementById('sugg-more-trigger');
+      if (!tray) return;
+      const isOpen = tray.style.display !== 'none';
+      tray.style.display = isOpen ? 'none' : 'flex';
+      if (trigger) trigger.textContent = isOpen ? '＋更多' : '收起 －';
+  }
+  window.toggleMoreSuggestions = toggleMoreSuggestions;
+
+  function fillQuickSugg(chip) {
+      if (!chip) return;
+      const text = chip.textContent.trim();
+      const qcInput = document.getElementById('qc-story-input');
+      const sendBtn = document.getElementById('qc-send-btn');
+      if (qcInput) {
+          qcInput.value = text;
+          CreationSessionStore.draft.story = text;
+          if (sendBtn) sendBtn.disabled = false;
+          qcInput.focus();
+      }
+  }
+  window.fillQuickSugg = fillQuickSugg;
+
+  function toggleQuickMoreSuggestions(e) {
+      if (e) { e.preventDefault(); e.stopPropagation(); }
+      const tray = document.getElementById('qc-sugg-tray');
+      const trigger = document.getElementById('qc-sugg-more-trigger');
+      if (!tray) return;
+      const isOpen = tray.style.display !== 'none';
+      tray.style.display = isOpen ? 'none' : 'flex';
+      if (trigger) trigger.textContent = isOpen ? '＋更多' : '收起 －';
+  }
+  window.toggleQuickMoreSuggestions = toggleQuickMoreSuggestions;
+
   function submitStory() {
-      const story = storyInput.value.trim();
+      const input = getStoryInput();
+      const story = (input ? input.value.trim() : '') || (CreationSessionStore.draft.story ? CreationSessionStore.draft.story.trim() : '');
       if (!story) return;
       state.story = story;
+      assistantState.draft.story = story;
+      assistantState.sessionActive = true;
+      assistantState.surfaceState = 'workspace';
+      setCreationStage('direction');
 
-      if (typeof window.expandAIDockToFull === 'function') {
+      if (window.AICreationController && typeof window.AICreationController.openWorkspaceDirectly === 'function') {
+          window.AICreationController.openWorkspaceDirectly();
+      } else if (typeof window.expandAIDockToFull === 'function') {
           window.expandAIDockToFull();
       }
 
       const echoEl = document.getElementById('options-echo');
-      const hintEl = document.getElementById('options-hint');
-      const labelEl = document.getElementById('options-story-label');
+      const headlineEl = document.getElementById('docked-idle-headline');
       const responseText = document.getElementById('ai-response-text');
-      const responseLine = document.getElementById('ai-response-line');
       const cursorEl = document.getElementById('ai-response-cursor');
 
-      echoEl.textContent = story.length > 40 ? story.slice(0, 40) + '…' : story;
-      echoEl.style.opacity = '0';
-      hintEl.style.opacity = '0';
-      labelEl.style.opacity = '0';
+      if (headlineEl) headlineEl.style.display = 'none';
 
-      storyInput.classList.add('locked');
-      document.getElementById('compose-card').classList.add('expanded');
-      document.getElementById('compose-options').classList.add('open');
-      document.getElementById('compose-input-area').classList.add('hidden');
-      document.getElementById('suggestion-row').classList.add('hidden');
+      if (echoEl) {
+          echoEl.textContent = `故事：「${story.length > 40 ? story.slice(0, 40) + '…' : story}」`;
+      }
+
+      input.classList.add('locked');
+      const composeCard = document.getElementById('compose-card');
+      const composeOptions = document.getElementById('compose-options');
+      const inputArea = document.getElementById('compose-input-area');
+      const suggRow = document.getElementById('suggestion-row');
+
+      if (composeCard) composeCard.classList.add('expanded');
+      if (composeOptions) composeOptions.classList.add('open');
+      if (inputArea) inputArea.classList.add('hidden');
+      if (suggRow) suggRow.classList.add('hidden');
+      const phaseCompose = document.getElementById('phase-compose');
+      if (phaseCompose) phaseCompose.classList.add('has-options');
       resetHeight();
 
       const aiText = getAiResponseText(story);
       buildStyleChips();
       setTimeout(() => {
-          typewriterEffect(responseText, aiText, cursorEl, () => {
-              hintEl.style.transition = 'opacity 0.5s';
-              labelEl.style.transition = 'opacity 0.5s';
-              echoEl.style.transition = 'opacity 0.5s';
-              setTimeout(() => {
-                  hintEl.style.opacity = '1';
-                  labelEl.style.opacity = '1';
-                  echoEl.style.opacity = '1';
-              }, 200);
-          });
-      }, 320);
+          if (responseText && cursorEl) {
+              typewriterEffect(responseText, aiText, cursorEl, () => {
+                  if (echoEl) echoEl.style.opacity = '1';
+              });
+          }
+      }, 300);
   }
 
   function selectRatioOpt(btn) {
@@ -381,13 +491,52 @@
       btn.classList.add('active');
   }
 
+  function confirmDirectionAndAdvance() {
+      // Advance to story structure phase (Spec Item 39-40)
+      setCreationStage('structure');
+      showPhase('phase-structure');
+  }
+  window.confirmDirectionAndAdvance = confirmDirectionAndAdvance;
+
+  function backToDirection() {
+      setCreationStage('direction');
+      showPhase('phase-compose');
+  }
+  window.backToDirection = backToDirection;
+
+  function startGenerationFromStructure() {
+      setCreationStage('generating');
+      startGenerate();
+  }
+  window.startGenerationFromStructure = startGenerationFromStructure;
+
   function resetCompose() {
-      document.getElementById('compose-card').classList.remove('expanded');
-      document.getElementById('compose-options').classList.remove('open');
-      document.getElementById('suggestion-row').classList.remove('hidden');
-      document.getElementById('compose-input-area').classList.remove('hidden');
-      storyInput.classList.remove('locked');
-      adjustHeight();
+      setCreationStage('idea');
+      assistantState.surfaceState = 'docked-idle';
+      const composeCard = document.getElementById('compose-card');
+      const composeOptions = document.getElementById('compose-options');
+      const suggRow = document.getElementById('suggestion-row');
+      const inputArea = document.getElementById('compose-input-area');
+      const headlineEl = document.getElementById('docked-idle-headline');
+      const input = getStoryInput();
+
+      if (composeCard) {
+          composeCard.classList.remove('expanded');
+          if (!input || !input.value.trim()) {
+              composeCard.classList.remove('has-content');
+          }
+      }
+      if (composeOptions) composeOptions.classList.remove('open');
+      if (suggRow) suggRow.classList.remove('hidden');
+      if (inputArea) inputArea.classList.remove('hidden');
+      if (headlineEl) headlineEl.style.display = '';
+      const phaseCompose = document.getElementById('phase-compose');
+      if (phaseCompose) phaseCompose.classList.remove('has-options');
+      if (input) {
+          input.classList.remove('locked');
+          adjustHeight();
+          input.focus();
+      }
   }
 
   let isHorizon = (window.innerWidth < window.innerHeight);
@@ -406,39 +555,64 @@
       window.generatedStoryCams = [];
       window.generatedPrompts = [];
 
-      storyInput.value = '';
-      storyInput.classList.remove('locked');
-      document.getElementById('compose-card').classList.remove('expanded');
-      document.getElementById('compose-options').classList.remove('open');
-      document.getElementById('compose-input-area').classList.remove('hidden');
-      document.getElementById('suggestion-row').classList.remove('hidden');
-      document.getElementById('style-chips-row').innerHTML = '';
-      document.querySelectorAll('.ratio-chip').forEach((c, i) => c.classList.toggle('active', i === 0));
-      document.getElementById('result-template-badge').style.display = 'none';
+      assistantState.creationStage = 'idea';
+      assistantState.sessionActive = false;
+      assistantState.draft = { story: '', styleIndex: 0, ratio: '橫向16:9', selectedTemplate: null };
+      setCreationStage('idea');
+
+      const input = getStoryInput();
+      if (input) {
+          input.value = '';
+          input.classList.remove('locked');
+      }
+
+      const composeCard = document.getElementById('compose-card');
+      const composeOptions = document.getElementById('compose-options');
+      const inputArea = document.getElementById('compose-input-area');
+      const suggRow = document.getElementById('suggestion-row');
+      const headlineEl = document.getElementById('docked-idle-headline');
+
+      if (composeCard) {
+          composeCard.classList.remove('expanded');
+          composeCard.classList.remove('has-content');
+          composeCard.classList.remove('focused');
+      }
+      if (composeOptions) composeOptions.classList.remove('open');
+      if (inputArea) inputArea.classList.remove('hidden');
+      if (suggRow) suggRow.classList.remove('hidden');
+      if (headlineEl) headlineEl.style.display = '';
+      const phaseComposeAll = document.getElementById('phase-compose');
+      if (phaseComposeAll) phaseComposeAll.classList.remove('has-options');
+
+      const styleRow = document.getElementById('style-chips-row');
+      if (styleRow) styleRow.innerHTML = '';
+
+      document.querySelectorAll('.ratio-chip').forEach((c, i) => c.classList.toggle('active', i === 1));
+      const resBadge = document.getElementById('result-template-badge');
+      if (resBadge) resBadge.style.display = 'none';
 
       const banner = document.getElementById('template-preselect-banner');
       if (banner) banner.style.display = 'none';
-      document.getElementById('storyboard-grid').innerHTML = '';
+
+      const grid = document.getElementById('storyboard-grid');
+      if (grid) grid.innerHTML = '';
+
       const rtEl = document.getElementById('ai-response-text');
       const rcEl = document.getElementById('ai-response-cursor');
-      const hintEl = document.getElementById('options-hint');
-      const labelEl = document.getElementById('options-story-label');
       const echoEl = document.getElementById('options-echo');
       if (rtEl) rtEl.textContent = '';
       if (rcEl) rcEl.style.opacity = '0';
-      if (hintEl) hintEl.style.opacity = '0';
-      if (labelEl) labelEl.style.opacity = '0';
       if (echoEl) echoEl.style.opacity = '0';
+
       const showAllBtn = document.getElementById('style-show-all-btn');
-      const recTag = document.getElementById('style-rec-tag');
       if (showAllBtn) showAllBtn.style.display = 'none';
-      if (recTag) recTag.style.display = 'none';
       _allStylesVisible = false;
       onStoryInput();
       resetHeight();
       initTemplates();
       showPhase('phase-compose');
   }
+
 
   async function proceedToTemplate() {
       if (state.selectedTemplate) {
@@ -1466,25 +1640,13 @@ ${vars.map(v => `${v}: <值>`).join('\n')}
   function delay(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
   function adjustHeight() {
-      const input = getStoryInput();
-      const area = getInputArea();
-      if (!input || !area) return; // 安全檢查
-      if (input.style.height <= input.scrollHeight) {
-          input.style.height = '79px';
-          area.style.height = '119px';
-      } else {
-          input.style.height = 'auto';
-          input.style.height = Math.min(input.scrollHeight, 686) + 'px';
-          area.style.height = Math.min(input.scrollHeight + 40, 726) + 'px';
-      }
+      // 移除 focus 展開機制，維持乾淨俐落高度
   }
 
   function resetHeight() {
       const input = getStoryInput();
-      const area = getInputArea();
-      if (!input || !area) return; // 安全檢查
-      input.style.height = '127px';
-      area.style.height = '127px';
+      if (!input) return;
+      input.style.height = '';
   }
 
   document.addEventListener('DOMContentLoaded', () => {
@@ -1507,6 +1669,17 @@ ${vars.map(v => `${v}: <值>`).join('\n')}
       // 2. 重新為新節點綁定監聽器
       if (storyInput && !storyInput.dataset.bound) {
           storyInput.dataset.bound = 'true';
+          storyInput.addEventListener('focus', () => {
+              // 聚焦時不展開高度，維持正常單行高度
+          });
+          storyInput.addEventListener('blur', () => {
+              const card = document.getElementById('compose-card');
+              if (!storyInput.value.trim()) {
+                  if (card) {
+                      card.classList.remove('has-content');
+                  }
+              }
+          });
           storyInput.addEventListener('keydown', e => {
               if (e.key === 'Enter' && !e.shiftKey && !storyInput.classList.contains('locked')) {
                   e.preventDefault();
@@ -1519,7 +1692,7 @@ ${vars.map(v => `${v}: <值>`).join('\n')}
           });
       }
 
-      document.querySelectorAll('.sugg-chip').forEach(chip => {
+      document.querySelectorAll('.sugg-chip:not(.sugg-more-trigger)').forEach(chip => {
           chip.onclick = (e) => {
               e.preventDefault();
               fillSugg(chip);
@@ -1536,6 +1709,7 @@ ${vars.map(v => `${v}: <值>`).join('\n')}
               }
           };
       }
+
 
       // 3. 載入模板
       initTemplates();
@@ -1716,5 +1890,11 @@ ${vars.map(v => `${v}: <值>`).join('\n')}
   window.backToTemplateOrCompose = backToTemplateOrCompose;
   window.confirmVariablesAndGenerate = confirmVariablesAndGenerate;
   window.abortGenerationFromUI = abortGenerationFromUI;
+  window.confirmDirectionAndAdvance = confirmDirectionAndAdvance;
+  window.backToDirection = backToDirection;
+  window.startGenerationFromStructure = startGenerationFromStructure;
+  window.toggleMoreSuggestions = toggleMoreSuggestions;
+  window.setCreationStage = setCreationStage;
+  window.assistantState = assistantState;
 
 })();

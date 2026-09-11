@@ -12,8 +12,6 @@
     const targets = [];
     const pageMain = document.getElementById('page-main');
     if (pageMain) targets.push(pageMain);
-    const aiDock = document.getElementById('ai-dock-panel') || document.querySelector('.ai-dock-panel');
-    if (aiDock) targets.push(aiDock);
     return targets;
   }
 
@@ -294,10 +292,20 @@
   let justHandledPointerNav = false;
   let updateMobNavVisual = null;
 
+  function mountAICreationCapsule() {
+    const capsule = document.getElementById('global-create-capsule');
+    if (!capsule) return;
+    if (capsule.parentElement !== document.body) {
+      document.body.appendChild(capsule);
+    }
+  }
+  window.addEventListener('resize', mountAICreationCapsule);
+
   function initMobileBottomNavGestures() {
     const mobNav = document.querySelector('.mobile-bottom-nav');
     if (!mobNav || mobNav.dataset.gesturesBound) return;
     mobNav.dataset.gesturesBound = 'true';
+    mountAICreationCapsule();
 
     let activePointerId = null;
     let startX = 0;
@@ -398,6 +406,15 @@
           indicator.style.width = `${indicatorWidth}px`;
           mobNav.style.setProperty('--nav-selector-width', `${indicatorWidth}px`);
         }
+
+        const mobBtn = mobNav.querySelector('#mob-nav-circle-wrap') || mobNav.querySelector('.mob-circle-btn');
+        if (mobBtn) {
+          const br = mobBtn.getBoundingClientRect();
+          if (br && br.width > 0) {
+            window.__mobBtnRestingBottomPx = Math.max(0, Math.round(window.innerHeight - br.bottom));
+            document.documentElement.style.setProperty('--mob-btn-bottom', `${window.__mobBtnRestingBottomPx}px`);
+          }
+        }
       }
     }
     window.addEventListener('resize', cacheMetrics);
@@ -481,19 +498,14 @@
       lastSnappedItem = currentTargetItem;
       highlightTargetItem(currentTargetItem);
 
-      // 按下即動：只要有點擊到 link 就觸發 selector 移動過來，手指點擊時放大至 1.3 倍
+      // 按下即動：只要有點擊到 link 就觸發 selector 移動過來，手指點擊時微反饋 (scale 1.05)
       if (indicator && currentTargetItem && cachedNavRect) {
         indicator.classList.add('is-active', 'is-pressed');
-        if (!currentTargetItem.classList.contains('mobile-nav__item--create')) {
-          const tMetric = cachedMetrics.find(m => m.item === currentTargetItem);
-          const targetCenterX = tMetric ? tMetric.centerX : (currentTargetItem.getBoundingClientRect().left + currentTargetItem.getBoundingClientRect().width / 2);
-          const finalOffset = targetCenterX - cachedNavRect.left - indicatorWidth / 2;
-          curIndicatorX = Math.max(insetX, Math.min(cachedNavRect.width - indicatorWidth - insetX, finalOffset));
-          updateIndicatorVisual(curIndicatorX, 1.3, true, 1.0);
-        } else {
-          indicator.classList.remove('is-active', 'is-pressed');
-          updateIndicatorVisual(curIndicatorX, 1.3, true, 0.0);
-        }
+        const tMetric = cachedMetrics.find(m => m.item === currentTargetItem);
+        const targetCenterX = tMetric ? tMetric.centerX : (currentTargetItem.getBoundingClientRect().left + currentTargetItem.getBoundingClientRect().width / 2);
+        const finalOffset = targetCenterX - cachedNavRect.left - indicatorWidth / 2;
+        curIndicatorX = Math.max(insetX, Math.min(cachedNavRect.width - indicatorWidth - insetX, finalOffset));
+        updateIndicatorVisual(curIndicatorX, 1.05, true, 1.0);
       }
 
       curScaleX = 1.026;
@@ -555,12 +567,8 @@
 
           curIndicatorX += (targetIndX - curIndicatorX) * 0.36;
 
-          let targetOpacity = 1;
-          if (closestMetric.isCreate) {
-            const distToCenter = Math.abs(fingerRelX - closestCenterRelX);
-            targetOpacity = Math.min(1, Math.max(0, (distToCenter - 14) / 24));
-          }
-          updateIndicatorVisual(curIndicatorX, 1.3, false, targetOpacity);
+          indicator.classList.add('is-active');
+          updateIndicatorVisual(curIndicatorX, 1.05, false, 1.0);
         }
       }
 
@@ -604,16 +612,11 @@
       if (indicator && releasedTargetItem && cachedNavRect) {
         indicator.classList.add('is-active');
         indicator.classList.remove('is-pressed');
-        if (!releasedTargetItem.classList.contains('mobile-nav__item--create')) {
-          const tMetric = cachedMetrics.find(m => m.item === releasedTargetItem);
-          const targetCenterX = tMetric ? tMetric.centerX : (releasedTargetItem.getBoundingClientRect().left + releasedTargetItem.getBoundingClientRect().width / 2);
-          const finalOffset = targetCenterX - cachedNavRect.left - indicatorWidth / 2;
-          curIndicatorX = Math.max(insetX, Math.min(cachedNavRect.width - indicatorWidth - insetX, finalOffset));
-          updateIndicatorVisual(curIndicatorX, 1.0, true, 1.0);
-        } else {
-          indicator.classList.remove('is-active');
-          updateIndicatorVisual(curIndicatorX, 1.0, true, 0.0);
-        }
+        const tMetric = cachedMetrics.find(m => m.item === releasedTargetItem);
+        const targetCenterX = tMetric ? tMetric.centerX : (releasedTargetItem.getBoundingClientRect().left + releasedTargetItem.getBoundingClientRect().width / 2);
+        const finalOffset = targetCenterX - cachedNavRect.left - indicatorWidth / 2;
+        curIndicatorX = Math.max(insetX, Math.min(cachedNavRect.width - indicatorWidth - insetX, finalOffset));
+        updateIndicatorVisual(curIndicatorX, 1.0, true, 1.0);
       }
 
       // Overshoot Rebound for displacement > 5.0
@@ -680,6 +683,16 @@
       const targetItem = releasedTargetItem;
       if (targetItem.id === 'mob-nav-profile') {
         window.toggleUserPanel();
+      } else if (targetItem.id === 'mob-nav-generate') {
+        if (window.AICreationController) {
+          if (window.AICreationController.surfaceState === 'quick-compose') {
+            window.AICreationController.closeQuickCompose();
+          } else if (window.AICreationController.surfaceState === 'closed') {
+            window.AICreationController.openQuickCompose();
+          }
+        } else {
+          window.location.href = '../generate';
+        }
       } else {
         const href = targetItem.getAttribute('href');
         if (href) window.location.href = href;
@@ -708,6 +721,30 @@
 
         if (item.id === 'mob-nav-profile') {
           window.toggleUserPanel();
+        } else if (item.id === 'mob-nav-generate') {
+          if (indicator) {
+            indicator.classList.add('is-active');
+            const itemRect = item.getBoundingClientRect();
+            const navRect = mobNav.getBoundingClientRect();
+            const targetCenterX = itemRect.left + itemRect.width / 2;
+            const finalOffset = targetCenterX - navRect.left - indicatorWidth / 2;
+            updateIndicatorVisual(finalOffset, 1.05, true, 1.0);
+            mobNav.style.transition = 'transform 0.16s cubic-bezier(0.2, 0.9, 0.3, 1)';
+            mobNav.style.transform = 'translate3d(0px, 0px, 0) scale(1.026, 1.026)';
+            setTimeout(() => {
+              mobNav.style.transform = '';
+              updateIndicatorVisual(finalOffset, 1.0, true, 1.0);
+            }, 160);
+          }
+          if (window.AICreationController) {
+            if (window.AICreationController.surfaceState === 'quick-compose') {
+              window.AICreationController.closeQuickCompose();
+            } else if (window.AICreationController.surfaceState === 'closed') {
+              window.AICreationController.openQuickCompose();
+            }
+          } else {
+            window.location.href = '../generate';
+          }
         } else {
           const href = item.getAttribute('href');
           if (href) window.location.href = href;
@@ -768,7 +805,11 @@
         isActive = (item.id === 'mob-nav-profile');
       } else {
         const href = item.getAttribute('href') || '';
-        isActive = href.includes('dashboard') || item.id === 'mob-nav-home';
+        const isGenerate = page === 'generate' && (href.includes('generate') || item.id === 'mob-nav-generate');
+        const isProjects = page === 'projects' && (href.includes('projects') || item.id === 'mob-nav-projects');
+        const isTemplate = page === 'template' && (href.includes('template') || item.id === 'mob-nav-template');
+        const isDashboard = (!page || page === 'dashboard') && (href.includes('dashboard') || item.id === 'mob-nav-home');
+        isActive = isGenerate || isProjects || isTemplate || isDashboard;
       }
 
       if (isActive) {
@@ -783,7 +824,7 @@
 
     const indicator = mobNav.querySelector('.mobile-nav__indicator');
     if (indicator) {
-      if (activeItem && !activeItem.classList.contains('mobile-nav__item--create')) {
+      if (activeItem) {
         const itemRect = activeItem.getBoundingClientRect();
         const navRect = mobNav.getBoundingClientRect();
         const insetX = parseFloat(getComputedStyle(mobNav).getPropertyValue('--nav-selector-inset-x')) || 5;

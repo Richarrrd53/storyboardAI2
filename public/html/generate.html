@@ -17,23 +17,42 @@
     <main id="page-main" class="gen-main">
 
         <!-- ══════════════════════════════════
-           PHASE 1 — COMPOSE
+           CREATION STAGE INDICATOR (Spec v3.2)
+        ══════════════════════════════════ -->
+        <div class="creation-stage-indicator" id="creation-stage-indicator">
+            <span class="stage-crumb active" id="stage-crumb-idea">靈感發想</span>
+            <span class="stage-crumb-arrow">›</span>
+            <span class="stage-crumb" id="stage-crumb-direction">創作方向</span>
+            <span class="stage-crumb-arrow">›</span>
+            <span class="stage-crumb" id="stage-crumb-structure">故事結構</span>
+            <span class="stage-crumb-arrow">›</span>
+            <span class="stage-crumb" id="stage-crumb-storyboard">分鏡生成</span>
+        </div>
+
+        <!-- ══════════════════════════════════
+           PHASE 1 — COMPOSE & CREATIVE DIRECTION
         ══════════════════════════════════ -->
         <div class="phase active" id="phase-compose">
+
+            <!-- Docked Idle Headline -->
+            <div class="docked-idle-headline" id="docked-idle-headline">
+                <h3 class="docked-greeting">今天想做什麼分鏡？</h3>
+                <p class="docked-sub">AI 助手已就緒，描述靈感即可生成完整分鏡與畫面</p>
+            </div>
     
             <div class="compose-card card" id="compose-card">
     
                 <!-- Template Select Banner -->
-                <div class="template-preselect-banner" id="template-preselect-banner" style="display: none; align-items: center; justify-content: space-between; padding: 12px 26px; background: rgba(93, 58, 155, 0.08); border-bottom: 1px solid rgba(93, 58, 155, 0.15); color: #5d3a9b; font-weight: 700; font-size: 0.9rem;">
-                    <span>已套用模板：<span id="preselected-template-name" style="color: var(--accent-gold);"></span></span>
-                    <button onclick="clearSelectedTemplate()" style="background: none; border: none; color: #ff5e5e; font-weight: 700; cursor: pointer; padding: 4px 8px; font-size: 0.85rem;">取消套用 ✕</button>
+                <div class="template-preselect-banner" id="template-preselect-banner" style="display: none; align-items: center; justify-content: space-between; padding: 12px 20px; background: rgba(37, 99, 235, 0.08); border-bottom: 1px solid rgba(37, 99, 235, 0.15); color: var(--interactive-primary); font-weight: 700; font-size: 0.88rem;">
+                    <span>已套用模板：<span id="preselected-template-name" style="color: var(--color-brand-gold, #c49a2a);"></span></span>
+                    <button onclick="clearSelectedTemplate()" type="button" style="background: none; border: none; color: #ef4444; font-weight: 700; cursor: pointer; padding: 4px 8px; font-size: 0.82rem;">取消套用 ✕</button>
                 </div>
     
-                <!-- ① Story input area -->
+                <!-- ① Story input area (Slim Composer) -->
                 <div class="compose-input-area" id="compose-input-area">
-                    <textarea id="story-input" class="compose-textarea" placeholder="告訴我你的想法吧，一句話也沒關係 ✦" rows="3"
+                    <textarea id="story-input" class="compose-textarea" placeholder="描述故事或創作方向... ✦" rows="1"
                         oninput="onStoryInput()"></textarea>
-                    <button class="compose-send-btn" id="compose-send" onclick="submitStory()" disabled>
+                    <button class="compose-send-btn" id="compose-send" onclick="submitStory()" disabled aria-label="發送故事">
                         <div class="state state--sent">
                             <div class="icon">
                                 <svg width="1.5em" height="1.5em" viewBox="0 0 24 24" fill="none">
@@ -44,79 +63,157 @@
                             </div>
                         </div>
                     </button>
-                    <p class="story-advanced-title">進階設定</p>
                 </div>
     
-                <!-- ② Options panel -->
+                <!-- ② Creative Direction Panel (formerly 進階設定) -->
                 <div class="compose-options" id="compose-options">
     
                     <div class="options-header">
+                        <div class="direction-badge-line">
+                            <span class="direction-pill-badge">✦ 創作方向</span>
+                        </div>
                         <div class="ai-response-line" id="ai-response-line">
                             <span class="ai-response-dot">✦</span>
                             <span class="ai-response-text" id="ai-response-text"></span>
                             <span class="ai-response-cursor" id="ai-response-cursor">|</span>
                         </div>
-                        <p class="options-hint" id="options-hint">有需要幫你調整風格嗎？</p>
-                        <span class="options-label" id="options-story-label">故事描述</span>
                         <div class="options-story-echo" id="options-echo"></div>
                     </div>
     
-                    <!-- Style row -->
+                    <!-- Visual Style Section (Cards Grid) -->
                     <div class="options-section" id="style-section">
-                        <p class="options-label">風格 <span class="ai-rec-tag" id="style-rec-tag" style="display:none;">AI 推薦</span></p>
-                        <div class="style-chips-row" id="style-chips-row"></div>
-                        <button class="style-show-all-btn" id="style-show-all-btn" onclick="showAllStyles()" style="display:none;">查看全部風格 ↓</button>
+                        <div class="options-section-header">
+                            <span class="options-label">視覺風格</span>
+                            <button class="style-show-all-btn" id="style-show-all-btn" type="button" onclick="showAllStyles()" style="display:none;">查看全部風格 ↓</button>
+                        </div>
+                        <div class="style-cards-grid" id="style-chips-row"></div>
                     </div>
     
-                    <!-- Ratio row -->
+                    <!-- Ratio row (Semantic Ratio Selectors) -->
                     <div class="options-section">
-                        <p class="options-label">畫面比例</p>
+                        <span class="options-label">畫面比例</span>
                         <div class="ratio-chips-row" id="ratio-chips-row">
-                            <button class="opt-chip ratio-chip active" data-ratio="橫向16:9" onclick="selectRatioOpt(this)">
-                                <span class="ratio-icon ratio-icon-16-9"></span>16:9
+                            <button type="button" class="opt-chip ratio-chip" data-ratio="直向9:16" onclick="selectRatioOpt(this)">
+                                <span class="ratio-icon ratio-icon-9-16"></span>
+                                <span class="ratio-num">9:16</span>
+                                <span class="ratio-sub">Shorts / Reels</span>
                             </button>
-                            <button class="opt-chip ratio-chip" data-ratio="直向9:16" onclick="selectRatioOpt(this)">
-                                <span class="ratio-icon ratio-icon-9-16"></span>9:16
+                            <button type="button" class="opt-chip ratio-chip active" data-ratio="橫向16:9" onclick="selectRatioOpt(this)">
+                                <span class="ratio-icon ratio-icon-16-9"></span>
+                                <span class="ratio-num">16:9</span>
+                                <span class="ratio-sub">YouTube / 橫向</span>
                             </button>
-                            <button class="opt-chip ratio-chip" data-ratio="1:1" onclick="selectRatioOpt(this)">
-                                <span class="ratio-icon ratio-icon-1-1"></span>1:1
+                            <button type="button" class="opt-chip ratio-chip" data-ratio="1:1" onclick="selectRatioOpt(this)">
+                                <span class="ratio-icon ratio-icon-1-1"></span>
+                                <span class="ratio-num">1:1</span>
+                                <span class="ratio-sub">IG 方形</span>
                             </button>
-                            <button class="opt-chip ratio-chip" data-ratio="橫向3:2" onclick="selectRatioOpt(this)">
-                                <span class="ratio-icon ratio-icon-3-2"></span>3:2
+                            <button type="button" class="opt-chip ratio-chip" data-ratio="橫向3:2" onclick="selectRatioOpt(this)">
+                                <span class="ratio-icon ratio-icon-3-2"></span>
+                                <span class="ratio-num">3:2</span>
+                                <span class="ratio-sub">經典底片</span>
                             </button>
-                            <button class="opt-chip ratio-chip" data-ratio="直向2:3" onclick="selectRatioOpt(this)">
-                                <span class="ratio-icon ratio-icon-2-3"></span>2:3
+                            <button type="button" class="opt-chip ratio-chip" data-ratio="直向2:3" onclick="selectRatioOpt(this)">
+                                <span class="ratio-icon ratio-icon-2-3"></span>
+                                <span class="ratio-num">2:3</span>
+                                <span class="ratio-sub">直式海報</span>
                             </button>
                         </div>
                     </div>
-    
-                    <!-- Generate CTA -->
-                    <div class="options-cta-row">
-                        <button class="btn btn-outline options-back-btn" onclick="resetCompose()">
-                            ← 重新輸入
-                        </button>
-                        <div style="display:flex;gap:10px;align-items:center;">
-                            <button class="btn btn-outline options-skip-btn" onclick="startGenerate()">
-                                不使用模板繼續 →
-                            </button>
-                            <button class="btn btn-primary options-gen-btn" onclick="proceedToTemplate()">
-                                ✦ 選擇模板
-                            </button>
+
+                    <!-- Template Recommendation Box -->
+                    <div class="options-section" id="template-rec-section">
+                        <div class="template-rec-box">
+                            <div class="template-rec-left">
+                                <span class="tpl-rec-tag">爆點模板</span>
+                                <span class="tpl-rec-title" id="tpl-rec-status-text">✦ AI 已為此故事配對專屬爆點節奏</span>
+                            </div>
+                            <div class="template-rec-right">
+                                <button type="button" class="btn btn-outline btn-sm tpl-action-btn" onclick="proceedToTemplate()">瀏覽模板</button>
+                            </div>
                         </div>
+                    </div>
+    
+                    <!-- Primary CTA Row (Single Primary Action) -->
+                    <div class="options-cta-row">
+                        <button type="button" class="btn btn-ghost options-back-btn" onclick="resetCompose()">
+                            重新描述
+                        </button>
+                        <button type="button" class="btn btn-primary options-gen-btn" onclick="confirmDirectionAndAdvance()">
+                            確認創作方向 →
+                        </button>
                     </div>
     
                 </div>
             </div>
     
-            <!-- Suggestion chips -->
+            <!-- Suggestion chips (Slimmed: 2 visible + ＋更多, line break after label) -->
             <div class="suggestion-row" id="suggestion-row">
-                <button class="sugg-chip" onclick="fillSugg(this)">蘋果牛奶廣告</button>
-                <button class="sugg-chip" onclick="fillSugg(this)">旅遊短影音</button>
-                <button class="sugg-chip" onclick="fillSugg(this)">運動服品牌</button>
-                <button class="sugg-chip" onclick="fillSugg(this)">美食餐廳介紹</button>
-                <button class="sugg-chip" onclick="fillSugg(this)">科技產品發表</button>
+                <span class="sugg-lead-label">試試看：</span>
+                <div class="sugg-chips-list">
+                    <button type="button" class="sugg-chip" onclick="fillSugg(this)">蘋果牛奶廣告</button>
+                    <button type="button" class="sugg-chip" onclick="fillSugg(this)">旅遊短影音</button>
+                    <button type="button" class="sugg-chip sugg-more-trigger" id="sugg-more-trigger" onclick="toggleMoreSuggestions(event)">＋更多</button>
+                    <div class="sugg-tray" id="sugg-tray" style="display: none;">
+                        <button type="button" class="sugg-chip" onclick="fillSugg(this)">運動服品牌</button>
+                        <button type="button" class="sugg-chip" onclick="fillSugg(this)">美食餐廳介紹</button>
+                        <button type="button" class="sugg-chip" onclick="fillSugg(this)">科技產品發表</button>
+                    </div>
+                </div>
             </div>
         </div>
+
+        <!-- ══════════════════════════════════
+           PHASE 1.2 — STORY STRUCTURE PREVIEW
+        ══════════════════════════════════ -->
+        <div class="phase" id="phase-structure">
+            <div class="structure-phase-wrap">
+                <div class="structure-header">
+                    <div>
+                        <div class="direction-confirmed-badge">✓ 創作方向已確認</div>
+                        <h2 class="structure-title">故事結構規劃 <span>✦</span></h2>
+                        <p class="structure-subtitle">AI 已根據創作方向拆解最佳鏡頭敘事節奏</p>
+                    </div>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="backToDirection()">← 調整方向</button>
+                </div>
+
+                <div class="structure-beat-grid" id="structure-beat-grid">
+                    <div class="beat-card" data-beat="hook">
+                        <div class="beat-badge">HOOK</div>
+                        <h4 class="beat-title">黃金前 3 秒吸睛</h4>
+                        <p class="beat-desc">強力視覺衝擊或引人好奇的懸念，迅速留住觀眾注意力。</p>
+                    </div>
+                    <div class="beat-card" data-beat="scene1">
+                        <div class="beat-badge">SCENE 1</div>
+                        <h4 class="beat-title">情境起因與痛點</h4>
+                        <p class="beat-desc">帶出生活真實情境或核心人物動機，建立受眾強烈共鳴。</p>
+                    </div>
+                    <div class="beat-card" data-beat="scene2">
+                        <div class="beat-badge">SCENE 2</div>
+                        <h4 class="beat-title">核心亮點與轉折</h4>
+                        <p class="beat-desc">產品亮相或關鍵轉折發生，視覺動態與節奏同步推向高潮。</p>
+                    </div>
+                    <div class="beat-card" data-beat="scene3">
+                        <div class="beat-badge">SCENE 3</div>
+                        <h4 class="beat-title">情感高潮記憶點</h4>
+                        <p class="beat-desc">強化核心主張與品牌視覺記憶，展現最震撼畫面層次。</p>
+                    </div>
+                    <div class="beat-card" data-beat="cta">
+                        <div class="beat-badge">CTA</div>
+                        <h4 class="beat-title">俐落行動呼籲</h4>
+                        <p class="beat-desc">明確的品牌識別與引導轉化收尾，留下深刻餘韻。</p>
+                    </div>
+                </div>
+
+                <div class="structure-footer">
+                    <button type="button" class="btn btn-outline" onclick="backToDirection()">重新調整</button>
+                    <button type="button" class="btn btn-primary btn-lg" onclick="startGenerationFromStructure()">
+                        ✦ 開始生成分鏡 →
+                    </button>
+                </div>
+            </div>
+        </div>
+
     
         <!-- ══════════════════════════════════
            PHASE 1.5 — TEMPLATE SELECT
