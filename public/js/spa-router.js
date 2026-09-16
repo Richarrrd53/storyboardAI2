@@ -30,30 +30,42 @@
   let activeDisplayProjectsFn = null;
   let activeDisplayHistoryFn = null;
 
-  const SKELETON_CARDS_HTML = Array.from({ length: 3 }).map(() => `
+  const SKELETON_CARDS_HTML = Array.from({ length: 4 }).map(() => `
     <div class="project-card skeleton">
       <div class="card-strip">
-        <div class="strip-hole"></div>
-        <div class="strip-hole"></div>
-        <div class="strip-hole"></div>
-      </div>
-      <div class="project-thumb skeleton-pulse" style="background: #e9e9f2; aspect-ratio: 16 / 9;"></div>
-      <div class="project-info">
-        <div class="skeleton-pulse" style="background: #e9e9f2; height: 1.2rem; border-radius: 4px; width: 70%; margin-bottom: 12px;"></div>
-        <div class="project-meta" style="margin-bottom: 0; display: flex; gap: 12px;">
-          <div class="skeleton-pulse" style="background: #e9e9f2; height: 16px; border-radius: 4px; width: 60px;"></div>
-          <div class="skeleton-pulse" style="background: #e9e9f2; height: 16px; border-radius: 4px; width: 40px;"></div>
+        <div class="strip-holes-group">
+          <div class="strip-hole"></div>
+          <div class="strip-hole"></div>
+          <div class="strip-hole"></div>
         </div>
       </div>
-      <div class="card-strip bottom">
-        <div class="strip-hole"></div>
-        <div class="strip-hole"></div>
-        <div class="strip-hole"></div>
+      <div class="project-thumb skeleton-pulse" style="background: #1e293b; aspect-ratio: 16 / 9;"></div>
+      <div class="project-info">
+        <div class="project-meta-wrap">
+          <div class="skeleton-pulse" style="background: #e2e8f0; height: 1rem; border-radius: 4px; width: 75%; margin-bottom: 8px;"></div>
+          <div class="skeleton-pulse" style="background: #e2e8f0; height: 0.75rem; border-radius: 4px; width: 45%;"></div>
+        </div>
+        <div class="project-card-footer">
+          <div class="skeleton-pulse" style="background: #f1f5f9; height: 32px; width: 84px; border-radius: 8px;"></div>
+        </div>
       </div>
     </div>
   `).join('');
 
   window.htmlMemoryCache = {};
+
+  // Purge any stale page caches from localStorage to ensure always up-to-date HTML
+  try {
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith('spa_page_cache_')) {
+        keysToRemove.push(k);
+      }
+    }
+    keysToRemove.forEach(k => localStorage.removeItem(k));
+  } catch (e) {}
+
   window.spaMaskClose = maskClose;
   window.spaMaskOpen = maskOpen;
   window.spaSeedProjectCache = (projectId, projectData) => { cacheProjectDetails[projectId] = projectData; };
@@ -357,6 +369,85 @@
     }
   }
 
+  function esc(str) {
+    return String(str || '').replace(/[&<>"']/g, m => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[m]));
+  }
+
+  function formatRatioBadge(ratio) {
+    if (!ratio) return '16:9';
+    return ratio;
+  }
+
+  function formatRatioText(ratio) {
+    if (!ratio) return '橫向 16:9';
+    if (ratio === '16:9') return '橫向 16:9';
+    if (ratio === '9:16') return '直向 9:16';
+    if (ratio === '1:1') return '方形 1:1';
+    if (ratio === '4:3') return '橫向 4:3';
+    return ratio;
+  }
+
+  function buildLightFilmCardHTML(p, isHistory = false) {
+    const date = new Date(p.createAt).toLocaleDateString('zh-TW');
+    const shotsCount = p.shotCount || (Array.isArray(p.shots) ? p.shots.length : 0);
+    const ratioBadge = formatRatioBadge(p.ratio);
+    const ratioText = formatRatioText(p.ratio);
+    const titleEsc = String(p.title || '未命名分鏡').replace(/[&<>"']/g, m => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[m]));
+    const styleEsc = p.style ? String(p.style).replace(/[&<>"']/g, m => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[m])) : '';
+
+    const metaInfo = isHistory && styleEsc
+      ? `${date} · ${ratioText} · ${styleEsc}`
+      : `${date} · ${ratioText}`;
+
+    const mainActionLabel = (isHistory || p.is_deleted) ? '還原' : '開啟';
+
+    return `
+      <div class="card-strip">
+        <div class="strip-holes-group">
+          <div class="strip-hole"></div>
+          <div class="strip-hole"></div>
+          <div class="strip-hole"></div>
+        </div>
+      </div>
+      <div class="project-thumb loading" data-src="/api/projects/${p.id}/cover">
+        <div class="thumb-fallback">
+          <div class="fallback-frame">
+            <span class="fallback-clapper">🎬</span>
+            <span class="fallback-status">草稿分鏡</span>
+            <span class="fallback-sub">尚未生成封面</span>
+          </div>
+        </div>
+        <div class="thumb-overlay-badges">
+          <span class="thumb-badge">${ratioBadge}</span>
+          ${shotsCount > 0 ? `<span class="thumb-badge">${shotsCount} 鏡頭</span>` : ''}
+        </div>
+      </div>
+      <div class="project-info">
+        <div class="project-meta-wrap">
+          <div class="project-title" title="${titleEsc}">${titleEsc}</div>
+          <div class="project-meta-line">${metaInfo}</div>
+        </div>
+        <div class="project-card-footer">
+          <div class="project-split-btn">
+            <button class="split-btn-main" type="button" title="${mainActionLabel}分鏡">${mainActionLabel}</button>
+            <div class="split-btn-divider"></div>
+            <button class="split-btn-dropdown" type="button" title="更多選項" aria-label="更多選項">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   function lazyLoadProjectThumbs(container) {
     if (!container) return;
     const thumbs = container.querySelectorAll('.project-thumb.loading');
@@ -370,21 +461,29 @@
         img.alt = 'Cover';
         img.style.width = '100%';
         img.style.height = '100%';
-        img.style.objectFit = 'scale-down';
+        img.style.objectFit = 'cover';
         img.style.opacity = '0';
-        img.style.transition = 'opacity 0.45s ease-in-out';
+        img.style.transition = 'opacity 0.45s ease-in-out, transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)';
         
-        thumb.appendChild(img);
+        const fallback = thumb.querySelector('.thumb-fallback');
+        if (fallback) fallback.style.display = 'none';
+
+        const badges = thumb.querySelector('.thumb-overlay-badges');
+        if (badges) {
+          thumb.insertBefore(img, badges);
+        } else {
+          thumb.appendChild(img);
+        }
+
         requestAnimationFrame(() => {
           img.style.opacity = '1';
           thumb.classList.remove('loading');
         });
       };
       img.onerror = () => {
-        thumb.innerHTML = '🎬';
         thumb.classList.remove('loading');
       };
-      img.src = src;
+      img.src = src.startsWith('/api/') ? src : `/api/projects/${src}/cover`;
     });
   }
 
@@ -637,20 +736,8 @@
     if (window.htmlMemoryCache[url]) {
       return window.htmlMemoryCache[url];
     }
-    const cacheKey = 'spa_page_cache_' + url;
-    const cachedHTML = localStorage.getItem(cacheKey);
-    if (cachedHTML) {
-      const doc = new DOMParser().parseFromString(cachedHTML, 'text/html');
-      window.htmlMemoryCache[url] = doc;
-      return doc;
-    }
     const res = await fetch(url + '?v=' + Date.now(), { signal });
     const html = await res.text();
-    try {
-      localStorage.setItem(cacheKey, html);
-    } catch (e) {
-      console.warn('Failed to cache page doc in localStorage:', e);
-    }
     const doc = new DOMParser().parseFromString(html, 'text/html');
     window.htmlMemoryCache[url] = doc;
     return doc;
@@ -976,7 +1063,99 @@
     }
   }
 
-  function showProjectOptionsDropdown(project, card, optionBtn, isHistoryPage, refreshCallback) {
+  async function renameProject(p, card, refreshCallback) {
+    const newTitle = window.prompt('請輸入新的分鏡名稱：', p.title || '');
+    if (newTitle === null) return;
+    const trimmed = newTitle.trim();
+    if (!trimmed) {
+      alert('分鏡名稱不能為空');
+      return;
+    }
+    if (trimmed === p.title) return;
+
+    try {
+      const token = spaAuth.getToken();
+      const res = await fetch(`/api/projects/${p.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ title: trimmed })
+      });
+      if (res.ok) {
+        p.title = trimmed;
+        window.showSpaToast(`分鏡已更名為「${trimmed}」。`);
+        const updated = await spaAuth.fetchProjects();
+        cacheProjectsList = updated;
+        refreshCallback();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || '重新命名失敗');
+      }
+    } catch (err) {
+      console.error('Failed to rename project', err);
+      alert('重新命名失敗，請稍後再試');
+    }
+  }
+
+  async function duplicateProject(p, card, refreshCallback) {
+    try {
+      window.showSpaToast(`正在複製分鏡「${p.title}」...`);
+      const token = spaAuth.getToken();
+      const res = await fetch(`/api/projects/${p.id}/duplicate`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const updated = await spaAuth.fetchProjects();
+        cacheProjectsList = updated;
+        refreshCallback();
+        window.showSpaToast(`已成功建立「${data.project?.title || p.title + ' (副本)'}」！`);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || '複製分鏡失敗');
+      }
+    } catch (err) {
+      console.error('Failed to duplicate project', err);
+      alert('複製分鏡失敗，請稍後再試');
+    }
+  }
+
+  async function exportProject(p) {
+    try {
+      window.showSpaToast(`正在準備匯出分鏡「${p.title}」...`);
+      const token = spaAuth.getToken();
+      const res = await fetch(`/api/projects/${p.id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (!res.ok) throw new Error('無法取得專案完整資料');
+      const data = await res.json();
+      const projectData = data.project || p;
+      const jsonStr = JSON.stringify(projectData, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const safeTitle = (p.title || 'storyboard').replace(/[\\/:*?"<>|]/g, '_');
+      a.href = url;
+      a.download = `${safeTitle}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      window.showSpaToast(`分鏡「${p.title}」已匯出為 JSON 檔。`);
+    } catch (err) {
+      console.error('Failed to export project', err);
+      alert('匯出失敗，請稍後再試');
+    }
+  }
+
+  function showProjectOptionsDropdown(project, card, anchorEl, isHistoryPage, refreshCallback) {
     const overlay = document.createElement('div');
     overlay.className = 'options-dropdown-overlay';
 
@@ -984,37 +1163,56 @@
     menu.className = 'options-dropdown-menu';
 
     let actionsHtml = '';
-    if (project.is_deleted) {
+    if (project.is_deleted || isHistoryPage) {
       actionsHtml = `
-        <button class="options-dropdown-item restore" id="opt-restore">
+        <button class="options-dropdown-item restore" id="opt-restore" type="button">
           <span class="options-dropdown-item-icon">
-            <img src="../icon/restore.svg">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="1 4 1 10 7 10"></polyline>
+              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+            </svg>
           </span>
           <span>還原分鏡</span>
         </button>
       `;
     } else {
       actionsHtml = `
-        <button class="options-dropdown-item open" id="opt-open">
+        <button class="options-dropdown-item rename" id="opt-rename" type="button">
           <span class="options-dropdown-item-icon">
-            <div class="folder">
-              <div class="front-side">
-                <div class="cover"></div>
-              </div>
-              <div class="back-side">
-                <div class="tip"></div>
-                <div class="cover"></div>
-              </div>
-            </div>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+            </svg>
           </span>
-          <span>開啟分鏡</span>
+          <span>重新命名</span>
         </button>
-        <button class="options-dropdown-item delete" id="opt-delete">
+        <button class="options-dropdown-item duplicate" id="opt-duplicate" type="button">
           <span class="options-dropdown-item-icon">
-            <img class="delete-1" src="../icon/delete-1.svg">
-            <img class="delete-2" src="../icon/delete-2.svg">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
           </span>
-          <span>刪除分鏡</span>
+          <span>複製分鏡</span>
+        </button>
+        <button class="options-dropdown-item export" id="opt-export" type="button">
+          <span class="options-dropdown-item-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+          </span>
+          <span>匯出 JSON</span>
+        </button>
+        <div class="options-dropdown-divider"></div>
+        <button class="options-dropdown-item delete" id="opt-delete" type="button">
+          <span class="options-dropdown-item-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+          </span>
+          <span>移至回收桶</span>
         </button>
       `;
     }
@@ -1023,18 +1221,18 @@
     overlay.appendChild(menu);
     document.body.appendChild(overlay);
 
-    const rect = optionBtn.getBoundingClientRect();
+    const rect = anchorEl.getBoundingClientRect();
     const menuWidth = 170;
-    const gap = 16;
+    const gap = 6;
 
-    let top = rect.top + window.scrollY;
+    let top = rect.bottom + window.scrollY + gap;
+    let left = rect.right + window.scrollX - menuWidth;
+    let transformOrigin = 'top right';
 
-    let left = rect.right + window.scrollX + gap;
-    let transformOrigin = 'top left';
-
-    if (left + menuWidth > window.innerWidth) {
-      left = rect.left + window.scrollX - menuWidth - gap;
-      transformOrigin = 'top right';
+    const menuEstimatedHeight = (project.is_deleted || isHistoryPage) ? 60 : 180;
+    if (rect.bottom + menuEstimatedHeight + gap > window.innerHeight && rect.top - menuEstimatedHeight > 0) {
+      top = rect.top + window.scrollY - menuEstimatedHeight - gap;
+      transformOrigin = 'bottom right';
     }
 
     left = Math.max(10, Math.min(left, window.innerWidth - menuWidth - 10));
@@ -1050,21 +1248,38 @@
 
     const closeDropdown = () => {
       menu.classList.remove('active');
-      menu.style.transition = 
       setTimeout(() => {
         overlay.classList.remove('active');
-      }, 500);
-      setTimeout(() => overlay.remove(), 700);
+      }, 200);
+      setTimeout(() => overlay.remove(), 350);
     };
 
     overlay.addEventListener('click', closeDropdown);
 
-    const openBtn = menu.querySelector('#opt-open');
-    if (openBtn) {
-      openBtn.addEventListener('click', (e) => {
+    const renameBtn = menu.querySelector('#opt-rename');
+    if (renameBtn) {
+      renameBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         closeDropdown();
-        navigate('project', { id: project.id });
+        renameProject(project, card, refreshCallback);
+      });
+    }
+
+    const duplicateBtn = menu.querySelector('#opt-duplicate');
+    if (duplicateBtn) {
+      duplicateBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeDropdown();
+        duplicateProject(project, card, refreshCallback);
+      });
+    }
+
+    const exportBtn = menu.querySelector('#opt-export');
+    if (exportBtn) {
+      exportBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeDropdown();
+        exportProject(project);
       });
     }
 
@@ -1141,8 +1356,8 @@ function initLoginLogic(showRegister) {
 
           inp.type = 'text';
         }, 300);
-        slash.style.transform = "translateY(-5vh)";
-        mask.style.transform = "translate(7.5vh, -5vh) rotate(45deg)";
+        slash.style.transform = "translateY(-36px)";
+        mask.style.transform = "translate(54px, -36px) rotate(45deg)";
       }
       else {
         inp.style.filter = "blur(3px)";
@@ -1151,8 +1366,8 @@ function initLoginLogic(showRegister) {
 
           inp.type = 'password';
         }, 300);
-        slash.style.transform = "translateY(0vh)";
-        mask.style.transform = "translate(2.5vh, 0vh) rotate(45deg)";
+        slash.style.transform = "translateY(0px)";
+        mask.style.transform = "translate(18px, 0px) rotate(45deg)";
       }
     };
 
@@ -1456,8 +1671,68 @@ function initLoginLogic(showRegister) {
     originRect: null,
     lastOpenTime: 0,
 
+    resetQuickComposeVisuals(targetPage) {
+      const activeRoute = targetPage !== undefined ? targetPage : currentPage;
+      const qcContainer = document.getElementById('quick-creation-container');
+      if (qcContainer) {
+        qcContainer.style.removeProperty('opacity');
+        qcContainer.style.removeProperty('transform');
+        qcContainer.style.removeProperty('transition');
+        qcContainer.style.removeProperty('filter');
+        qcContainer.style.removeProperty('pointer-events');
+        qcContainer.style.removeProperty('visibility');
+      }
+
+      const focusField = document.getElementById('ai-focus-field');
+      if (focusField) {
+        focusField.style.removeProperty('opacity');
+        focusField.style.removeProperty('transform');
+        focusField.style.removeProperty('transition');
+        focusField.style.removeProperty('filter');
+        focusField.style.removeProperty('pointer-events');
+        focusField.style.removeProperty('visibility');
+      }
+
+      const capsule = document.getElementById('global-create-capsule');
+      if (capsule) {
+        capsule.style.removeProperty('height');
+        if (activeRoute === 'generate') {
+          capsule.classList.add('hidden-by-workspace');
+          capsule.classList.remove('is-expanded');
+          capsule.style.setProperty('opacity', '0', 'important');
+          capsule.style.setProperty('visibility', 'hidden', 'important');
+          capsule.style.setProperty('pointer-events', 'none', 'important');
+          capsule.style.setProperty('transition', 'none', 'important');
+        } else {
+          capsule.style.removeProperty('opacity');
+          capsule.style.removeProperty('pointer-events');
+          capsule.style.removeProperty('transition');
+          capsule.style.removeProperty('visibility');
+          capsule.style.removeProperty('transform');
+          capsule.style.removeProperty('display');
+          capsule.classList.remove('hidden-by-workspace');
+          capsule.classList.remove('is-expanded');
+        }
+      }
+
+      const qcInput = document.getElementById('qc-story-input');
+      if (qcInput) {
+        qcInput.style.removeProperty('height');
+        qcInput.style.removeProperty('overflow-y');
+      }
+
+      const tray = document.getElementById('qc-sugg-tray');
+      if (tray) {
+        tray.style.display = 'none';
+      }
+    },
+
     openQuickCompose() {
-      if (this.surfaceState === 'workspace') return;
+      if (this.surfaceState === 'workspace' || currentPage === 'generate') return;
+
+      // Clean up any residual inline styles so all elements display normally
+      this.resetQuickComposeVisuals();
+
       this.surfaceState = 'quick-compose';
       this.lastOpenTime = Date.now();
       this.previousRoute = currentPage || 'dashboard';
@@ -1477,13 +1752,18 @@ function initLoginLogic(showRegister) {
 
       const layer = document.getElementById('ai-creation-layer');
       const capsule = document.getElementById('global-create-capsule');
+      const qcInput = document.getElementById('qc-story-input');
+      const sendBtn = document.getElementById('qc-send-btn');
 
-      if (capsule) {
-        capsule.classList.remove('is-expanded');
-        void capsule.offsetWidth;
-        if (!isMobileView()) {
-          capsule.style.opacity = '1';
-          capsule.style.pointerEvents = 'auto';
+      // Populate draft story first so measurement can immediately inspect true content
+      if (qcInput) {
+        if (window.CreationSessionStore && window.CreationSessionStore.draft && window.CreationSessionStore.draft.story) {
+          qcInput.value = window.CreationSessionStore.draft.story;
+        }
+        if (sendBtn) {
+          const hasVal = !!qcInput.value.trim();
+          sendBtn.disabled = !hasVal;
+          sendBtn.setAttribute('data-active', hasVal ? 'true' : 'false');
         }
       }
 
@@ -1495,33 +1775,51 @@ function initLoginLogic(showRegister) {
         layer.classList.add('state-quick-compose');
       }
 
-      // Trigger width expansion morph (circle/pill → expanded capsule)
+      // Expand capsule and coordinate auto-grow across width expansion transition
       if (capsule) {
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            if (this.surfaceState === 'quick-compose') {
-              capsule.classList.add('is-expanded');
-            }
-          });
-        });
-      }
+        capsule.classList.remove('hidden-by-workspace');
+        if (!isMobileView()) {
+          capsule.style.opacity = '1';
+          capsule.style.pointerEvents = 'auto';
+        }
 
-      const qcInput = document.getElementById('qc-story-input');
-      const sendBtn = document.getElementById('qc-send-btn');
-      if (qcInput) {
-        if (window.CreationSessionStore && window.CreationSessionStore.draft && window.CreationSessionStore.draft.story) {
-          qcInput.value = window.CreationSessionStore.draft.story;
+        const syncGrow = () => {
+          if (this.surfaceState === 'quick-compose' && typeof autoGrowQCInput === 'function') {
+            autoGrowQCInput();
+          }
+        };
+
+        if (!capsule.classList.contains('is-expanded')) {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              if (this.surfaceState === 'quick-compose') {
+                capsule.classList.add('is-expanded');
+                syncGrow();
+              }
+            });
+          });
+        } else {
+          syncGrow();
         }
-        if (sendBtn) {
-          sendBtn.disabled = !qcInput.value.trim();
-        }
+
+        // Re-check auto-grow at milestone animation intervals and upon width transition completion
+        setTimeout(syncGrow, 120);
+        setTimeout(syncGrow, 300);
+        setTimeout(syncGrow, 560);
+        const onWidthDone = (e) => {
+          if (e.target === capsule && (e.propertyName === 'width' || e.propertyName === 'max-width')) {
+            capsule.removeEventListener('transitionend', onWidthDone);
+            syncGrow();
+          }
+        };
+        capsule.addEventListener('transitionend', onWidthDone);
       }
     },
 
-    closeQuickCompose() {
-      if (this.surfaceState !== 'quick-compose') return;
-      if (Date.now() - (this.lastOpenTime || 0) < 300) return;
-      this.surfaceState = 'closing';
+    closeQuickCompose(force = false) {
+      if (this.surfaceState !== 'quick-compose' && !force) return;
+      if (!force && Date.now() - (this.lastOpenTime || 0) < 300) return;
+      this.surfaceState = force ? 'closed' : 'closing';
 
       const layer = document.getElementById('ai-creation-layer');
       const capsule = document.getElementById('global-create-capsule');
@@ -1529,12 +1827,18 @@ function initLoginLogic(showRegister) {
 
       if (qcInput) {
         qcInput.blur();
-        if (window.CreationSessionStore && window.CreationSessionStore.draft) {
+        if (window.CreationSessionStore && window.CreationSessionStore.draft && !force) {
           window.CreationSessionStore.draft.story = qcInput.value;
         }
+        qcInput.style.removeProperty('height');
+        qcInput.style.removeProperty('overflow-y');
+      }
+      if (capsule) {
+        capsule.style.removeProperty('height');
       }
 
       document.body.classList.remove('ai-keyboard-open');
+      document.body.classList.remove('ai-quick-compose-active');
 
       const mobNav = document.getElementById('spa-mobile-nav') || mobileBottomNav;
       if (mobNav) {
@@ -1560,8 +1864,32 @@ function initLoginLogic(showRegister) {
         window.scrollTo(0, savedY);
       }
 
+      if (force) {
+        document.body.classList.remove('ai-quick-compose-closing');
+        if (capsule) {
+          capsule.classList.remove('is-expanded');
+          if (currentPage === 'generate') {
+            capsule.classList.add('hidden-by-workspace');
+            capsule.style.opacity = '0';
+            capsule.style.pointerEvents = 'none';
+          } else {
+            capsule.classList.remove('hidden-by-workspace');
+            capsule.style.removeProperty('opacity');
+            capsule.style.removeProperty('pointer-events');
+            capsule.style.removeProperty('visibility');
+            capsule.style.removeProperty('transform');
+            capsule.style.removeProperty('display');
+          }
+        }
+        if (layer) {
+          layer.classList.remove('state-quick-compose', 'state-closing', 'state-workspace', 'state-transitioning');
+          layer.classList.add('state-closed');
+        }
+        this.resetQuickComposeVisuals();
+        return;
+      }
+
       // Phase 1: Start reverse morph — capsule shrinks from expanded → collapsed button
-      document.body.classList.remove('ai-quick-compose-active');
       document.body.classList.add('ai-quick-compose-closing');
 
       if (capsule) {
@@ -1590,130 +1918,381 @@ function initLoginLogic(showRegister) {
             layer.classList.add('state-closed');
           }
 
-          // Restore natural CSS styling — NEVER leave opacity: 0 on desktop or mobile
-          if (capsule) {
-            capsule.style.opacity = '';
-            capsule.style.pointerEvents = '';
-          }
+          // Restore natural styling so next open displays normally
+          this.resetQuickComposeVisuals();
         }
       }, 580);
     },
 
-    submitToWorkspace() {
+    async submitToWorkspace() {
       const qcInput = document.getElementById('qc-story-input');
       const story = (qcInput ? qcInput.value.trim() : '') || (window.CreationSessionStore?.draft?.story || '');
       if (!story) return;
 
       if (window.CreationSessionStore) {
         window.CreationSessionStore.story = story;
-        window.CreationSessionStore.draft.story = story;
+        window.CreationSessionStore.draft.story = '';
+        window.CreationSessionStore.entryMode = 'quick';
+        window.CreationSessionStore.targetPhase = 2;
       }
 
-      this.surfaceState = 'workspace';
-      document.body.classList.remove('ai-quick-compose-active');
+      const isMob = isMobileView();
+      const isReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-      if (document.body.style.position === 'fixed') {
-        const savedY = this.previousScrollY || 0;
-        document.body.style.position = '';
-        document.body.style.top = '';
-        document.body.style.left = '';
-        document.body.style.right = '';
-        document.body.style.width = '';
-        document.body.style.height = '';
-        document.body.style.overflow = '';
-        document.documentElement.classList.remove('ai-quick-compose-locked');
-        document.body.classList.remove('ai-quick-compose-locked');
-        window.scrollTo(0, savedY);
-      }
-
-      const layer = document.getElementById('ai-creation-layer');
+      // 1. Capture origin position of the input box FIRST
+      const composerFace = document.getElementById('qc-composer-area');
       const capsule = document.getElementById('global-create-capsule');
-
-      if (capsule) {
-        capsule.classList.remove('is-expanded');
-        capsule.classList.add('hidden-by-workspace');
-      }
-
-      if (layer) {
-        layer.classList.remove('state-closed', 'state-quick-compose');
-        layer.classList.add('state-transitioning');
-        setTimeout(() => {
-          layer.classList.remove('state-transitioning');
-          layer.classList.add('state-workspace');
-          document.body.classList.add('ai-workspace-active');
-        }, 220);
-      }
-
-      const storyInput = document.getElementById('story-input');
-      if (storyInput) {
-        storyInput.value = story;
-        if (typeof window.onStoryInput === 'function') {
-          window.onStoryInput();
+      const startEl = composerFace || capsule;
+      let startRect = null;
+      if (startEl) {
+        const r = startEl.getBoundingClientRect();
+        if (r.width > 0 && r.height > 0) {
+          startRect = r;
         }
       }
 
-      if (typeof window.submitStory === 'function') {
-        window.submitStory();
+      // 將輸入框的 border radius 設為其高度的一半（最多 28px），避免因自動增高或 999 導致形變過程圓角過大
+      const halfHeightRadius = startRect && startRect.height > 0
+        ? Math.min(28, Math.round(startRect.height / 2))
+        : (isMob ? 27 : 26);
+
+      // 2. Capture target bounding box of #page-main immediately
+      const pageMainEl = document.getElementById('page-main');
+      let targetRect = pageMainEl ? pageMainEl.getBoundingClientRect() : null;
+      let targetRadius = isMob ? `${halfHeightRadius}px` : (pageMainEl ? (window.getComputedStyle(pageMainEl).borderRadius || '24px') : '24px');
+      if (!targetRect || targetRect.width <= 0) {
+        targetRect = {
+          top: 0,
+          left: 0,
+          width: window.innerWidth,
+          height: window.innerHeight
+        };
       }
-    },
 
-    openWorkspaceDirectly() {
-      this.previousRoute = currentPage || 'dashboard';
-      this.previousScrollY = window.scrollY || document.documentElement.scrollTop || 0;
-      this.surfaceState = 'workspace';
-      document.body.classList.remove('ai-quick-compose-active');
-
-      const layer = document.getElementById('ai-creation-layer');
-      const capsule = document.getElementById('global-create-capsule');
-
+      // 3. Force the original capsule and mobile button to hide immediately with ZERO delay
+      const mobGen = document.getElementById('mob-nav-generate');
+      if (mobGen) {
+        mobGen.classList.add('disabled-on-workspace');
+        mobGen.setAttribute('aria-disabled', 'true');
+        mobGen.style.setProperty('pointer-events', 'none', 'important');
+      }
       if (capsule) {
+        capsule.style.setProperty('transition', 'none', 'important');
+        capsule.style.setProperty('opacity', '0', 'important');
+        capsule.style.setProperty('visibility', 'hidden', 'important');
+        capsule.style.setProperty('pointer-events', 'none', 'important');
         capsule.classList.remove('is-expanded');
         capsule.classList.add('hidden-by-workspace');
       }
 
-      if (layer) {
-        layer.classList.remove('state-closed', 'state-quick-compose', 'state-transitioning');
-        layer.classList.add('state-workspace');
-        document.body.classList.add('ai-workspace-active');
+      // 4. Create temporary transition proxy at input box location
+      let proxy = null;
+      if (startRect && !isReduced) {
+        proxy = document.createElement('div');
+        proxy.id = 'qc-transition-proxy';
+        proxy.className = 'qc-transition-proxy' + (isMob ? ' is-mobile' : '');
+        proxy.innerHTML = `
+          <div class="proxy-header-row">
+            <div class="proxy-badge">
+              <span class="proxy-sparkle">✦</span>
+              <span class="proxy-text">${story.length > 32 ? story.slice(0, 32) + '…' : story}</span>
+              <span class="proxy-check">✓</span>
+            </div>
+          </div>
+        `;
+        proxy.style.position = 'fixed';
+        proxy.style.top = `${startRect.top}px`;
+        proxy.style.left = `${startRect.left}px`;
+        proxy.style.width = `${startRect.width}px`;
+        proxy.style.height = `${startRect.height}px`;
+        proxy.style.zIndex = '99999';
+        proxy.style.pointerEvents = 'none';
+        proxy.style.borderRadius = `${halfHeightRadius}px`;
+        proxy.style.boxSizing = 'border-box';
+        document.body.appendChild(proxy);
       }
+
+      // 手機板送出後，bottom nav selector 即刻選定在生成頁籤
+      if (typeof updateMobileBottomNavActive === 'function') {
+        updateMobileBottomNavActive('generate');
+      }
+
+      // 5. Trigger morph to page-main AND QC collapse SIMULTANEOUSLY (QC收合與輸入框形變同時，手機板形變保持原角)
+      const qcContainer = document.getElementById('quick-creation-container');
+      const focusField = document.getElementById('ai-focus-field');
+      const layer = document.getElementById('ai-creation-layer');
+
+      const triggerSynchronizedMorphAndCollapse = () => {
+        // A. Trigger proxy morph to page-main
+        if (proxy && proxy.parentNode) {
+          proxy.style.top = `${targetRect.top}px`;
+          proxy.style.left = `${targetRect.left}px`;
+          proxy.style.width = `${targetRect.width}px`;
+          proxy.style.height = `${targetRect.height}px`;
+          proxy.style.borderRadius = targetRadius;
+          proxy.classList.add('is-expanded-page-main');
+        }
+
+        // B. Trigger QC collapse in the EXACT same frame as input morph
+        this.surfaceState = 'closing';
+        document.body.classList.add('ai-quick-compose-closing');
+
+        if (layer) {
+          layer.classList.remove('state-quick-compose');
+          layer.classList.add('state-closing');
+        }
+
+        if (qcContainer) {
+          qcContainer.style.transition = 'opacity 700ms cubic-bezier(0.16, 1, 0.3, 1), transform 800ms cubic-bezier(0.16, 1, 0.3, 1), filter 700ms ease';
+          qcContainer.style.opacity = '0';
+          qcContainer.style.transform = 'translateY(32px) scale(0.92)';
+          qcContainer.style.filter = 'blur(8px)';
+          qcContainer.style.pointerEvents = 'none';
+        }
+
+        if (focusField) {
+          focusField.style.transition = 'opacity 750ms cubic-bezier(0.16, 1, 0.3, 1), backdrop-filter 750ms ease, -webkit-backdrop-filter 750ms ease';
+          focusField.style.opacity = '0';
+          focusField.style.pointerEvents = 'none';
+        }
+      };
+
+      if (proxy) {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            triggerSynchronizedMorphAndCollapse();
+          });
+        });
+      } else {
+        triggerSynchronizedMorphAndCollapse();
+      }
+
+      if (qcInput) {
+        qcInput.value = '';
+      }
+      const qcSendBtn = document.getElementById('qc-send-btn');
+      if (qcSendBtn) {
+        qcSendBtn.disabled = true;
+        qcSendBtn.setAttribute('data-active', 'false');
+      }
+
+      // 7. Navigate to /generate Phase 2 in background
+      await navigate('generate', { fromQC: true, targetPhase: 2 });
+
+      // 8. 在形變到page-main之後透過透明度消失之後強制將其opacity設為0，讓qc收合時不要穿幫
+      const totalWait = isReduced ? 0 : 880;
+      setTimeout(() => {
+        // Proxy has completed opacity transition to 0: force opacity to 0 and remove
+        if (proxy) {
+          proxy.style.opacity = '0';
+          proxy.style.visibility = 'hidden';
+          proxy.style.pointerEvents = 'none';
+          if (proxy.parentNode) {
+            proxy.remove();
+          }
+        }
+
+        // Force QC elements to stay strictly hidden at opacity: 0 while in workspace (no 穿幫)
+        if (qcContainer) {
+          qcContainer.style.opacity = '0';
+          qcContainer.style.pointerEvents = 'none';
+        }
+        if (focusField) {
+          focusField.style.opacity = '0';
+          focusField.style.pointerEvents = 'none';
+        }
+        if (capsule) {
+          capsule.style.setProperty('transition', 'none', 'important');
+          capsule.style.setProperty('opacity', '0', 'important');
+          capsule.style.setProperty('visibility', 'hidden', 'important');
+          capsule.style.setProperty('pointer-events', 'none', 'important');
+          capsule.classList.remove('is-expanded');
+          capsule.classList.add('hidden-by-workspace');
+        }
+        if (layer) {
+          layer.classList.remove('state-quick-compose', 'state-closing', 'state-workspace', 'state-transitioning');
+          layer.classList.add('state-closed');
+        }
+
+        document.body.classList.remove('ai-quick-compose-active', 'ai-quick-compose-closing', 'ai-keyboard-open');
+        this.surfaceState = 'closed';
+
+        // Ensure workspace page content is active and clear any temporary hidden flags
+        const contentEl = document.getElementById('page-content');
+        if (contentEl) {
+          contentEl.style.transition = 'none';
+          contentEl.style.visibility = 'visible';
+          contentEl.style.opacity = '1';
+          contentEl.style.filter = '';
+          contentEl.classList.remove('qc-transition-hidden');
+        }
+        const wsEl = document.querySelector('.generate-workspace');
+        if (wsEl) {
+          wsEl.style.transition = 'none';
+          wsEl.style.visibility = 'visible';
+          wsEl.style.opacity = '1';
+          wsEl.classList.remove('qc-transition-hidden');
+        }
+      }, totalWait);
     },
 
-    closeWorkspace() {
+    openWorkspaceDirectly() {
+      navigate('generate', { fromSidebar: true, targetPhase: 1 });
+    },
+
+    closeWorkspace(target = 'dashboard') {
       this.surfaceState = 'closed';
-      document.body.classList.remove('ai-quick-compose-active');
-
-      const layer = document.getElementById('ai-creation-layer');
-      const capsule = document.getElementById('global-create-capsule');
-
-      if (layer) {
-        layer.classList.remove('state-quick-compose', 'state-workspace', 'state-transitioning');
-        layer.classList.add('state-closed');
-        document.body.classList.remove('ai-workspace-active');
-      }
-
-      if (capsule) {
-        capsule.classList.remove('hidden-by-workspace', 'is-expanded');
-        capsule.style.opacity = '';
-        capsule.style.pointerEvents = '';
-      }
-
-      if (this.previousScrollY) {
-        window.scrollTo({ top: this.previousScrollY, behavior: 'instant' });
-      }
-
-      const restoreRoute = this.previousRoute && this.previousRoute !== 'generate' ? this.previousRoute : (currentPage || 'dashboard');
-      if (typeof updateMobileBottomNavActive === 'function') {
-        updateMobileBottomNavActive(restoreRoute);
-      }
-
-      if (currentPage === 'generate') {
-        navigate(restoreRoute);
+      if (target && currentPage === 'generate') {
+        navigate(target);
       }
     }
   };
 
   let globalCreateTrigger = null;
   let aiCreationLayer = null;
+
+  function getQCTextareaTargetWidth() {
+    const isMob = isMobileView();
+    const screenW = window.innerWidth || document.documentElement.clientWidth || 390;
+    if (isMob) {
+      const capsuleW = Math.min(screenW - 32, 440);
+      return Math.max(capsuleW - 66, 120);
+    } else {
+      const capsuleW = Math.min(Math.max(screenW * 0.42, 380), 540);
+      return Math.max(capsuleW - 68, 200);
+    }
+  }
+
+  function measureTextareaScrollHeight(textarea, targetWidth) {
+    if (!textarea) return 24;
+    let tester = document.getElementById('qc-height-tester');
+    if (tester && tester.tagName !== 'DIV') {
+      tester.remove();
+      tester = null;
+    }
+    if (!tester) {
+      tester = document.createElement('div');
+      tester.id = 'qc-height-tester';
+      tester.setAttribute('aria-hidden', 'true');
+      tester.tabIndex = -1;
+      tester.style.cssText = 'position:fixed!important;top:-9999px!important;left:-9999px!important;visibility:hidden!important;pointer-events:none!important;z-index:-999!important;overflow:hidden!important;margin:0!important;border:0!important;';
+      document.body.appendChild(tester);
+    }
+
+    const computed = window.getComputedStyle(textarea);
+    tester.style.fontFamily = computed.fontFamily;
+    tester.style.fontSize = computed.fontSize;
+    tester.style.fontWeight = computed.fontWeight;
+    tester.style.lineHeight = computed.lineHeight;
+    tester.style.letterSpacing = computed.letterSpacing;
+    tester.style.wordBreak = 'break-word';
+    tester.style.whiteSpace = 'pre-wrap';
+    tester.style.boxSizing = 'border-box';
+    tester.style.paddingTop = computed.paddingTop;
+    tester.style.paddingBottom = computed.paddingBottom;
+    tester.style.paddingLeft = computed.paddingLeft;
+    tester.style.paddingRight = computed.paddingRight;
+    tester.style.width = `${Math.round(targetWidth)}px`;
+
+    const val = textarea.value || '';
+    tester.textContent = val.endsWith('\n') ? val + ' ' : val;
+
+    return Math.ceil(tester.getBoundingClientRect().height);
+  }
+
+  function autoGrowQCInput() {
+    const qcInput = document.getElementById('qc-story-input');
+    const capsule = document.getElementById('global-create-capsule');
+    if (!qcInput || !capsule) return;
+
+    if (!capsule.classList.contains('is-expanded')) {
+      qcInput.style.removeProperty('height');
+      qcInput.style.removeProperty('overflow-y');
+      capsule.style.removeProperty('height');
+      return;
+    }
+
+    const isMob = isMobileView();
+    const initialCapsuleH = isMob ? 54 : 56;
+    const maxCapsuleH = isMob ? 128 : 148;
+    const padTop = isMob ? 7 : 8;
+    const padBottom = isMob ? 7 : 8;
+    const verticalPadding = padTop + padBottom;
+    const minTextareaH = initialCapsuleH - verticalPadding;
+    const maxTextareaH = maxCapsuleH - verticalPadding;
+
+    const text = qcInput.value;
+
+    if (!text || text.trim() === '') {
+      qcInput.style.setProperty('height', `${minTextareaH}px`, 'important');
+      qcInput.style.overflowY = 'hidden';
+      capsule.style.setProperty('height', `${initialCapsuleH}px`, 'important');
+      return;
+    }
+
+    const targetWidth = getQCTextareaTargetWidth();
+    let scrollH;
+
+    // When the capsule is actively morphing width or not yet fully laid out,
+    // qcInput.clientWidth is artificially narrow. Measure against true target width
+    // using the offscreen tester to strictly prevent false line wrapping on existing story text.
+    if (!qcInput.clientWidth || qcInput.clientWidth < targetWidth - 25) {
+      scrollH = measureTextareaScrollHeight(qcInput, targetWidth);
+    } else {
+      qcInput.style.height = 'auto';
+      scrollH = qcInput.scrollHeight;
+    }
+
+    const targetTextareaH = Math.min(Math.max(scrollH, minTextareaH), maxTextareaH);
+    const targetCapsuleH = Math.min(Math.max(targetTextareaH + verticalPadding, initialCapsuleH), maxCapsuleH);
+
+    qcInput.style.setProperty('height', `${targetTextareaH}px`, 'important');
+    capsule.style.setProperty('height', `${targetCapsuleH}px`, 'important');
+
+    if (scrollH > maxTextareaH) {
+      qcInput.style.overflowY = 'auto';
+    } else {
+      qcInput.style.overflowY = 'hidden';
+    }
+  }
+  window.autoGrowQCInput = autoGrowQCInput;
+
+  window.fillQuickSugg = function(chip) {
+    if (!chip) return;
+    const text = chip.textContent.trim();
+    const input = document.getElementById('qc-story-input');
+    const sendBtn = document.getElementById('qc-send-btn');
+    if (input) {
+      input.value = text;
+      if (sendBtn) {
+        sendBtn.disabled = false;
+        sendBtn.setAttribute('data-active', 'true');
+      }
+      if (window.CreationSessionStore && window.CreationSessionStore.draft) {
+        window.CreationSessionStore.draft.story = text;
+      }
+      input.focus();
+      autoGrowQCInput();
+    }
+  };
+
+  window.toggleQuickMoreSuggestions = function(event) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    const tray = document.getElementById('qc-sugg-tray');
+    const trigger = document.getElementById('qc-sugg-more-trigger');
+    if (!tray) return;
+    const isHidden = (tray.style.display === 'none' || !tray.style.display);
+    if (isHidden) {
+      tray.style.display = 'flex';
+      if (trigger) trigger.textContent = '－更少';
+    } else {
+      tray.style.display = 'none';
+      if (trigger) trigger.textContent = '＋更多';
+    }
+  };
 
   function ensureAICreationLayerDOM() {
     if (document.getElementById('ai-creation-layer')) {
@@ -1763,40 +2342,6 @@ function initLoginLogic(showRegister) {
           </div>
         </div>
       </div>
-
-      <!-- Fullscreen Creation Workspace -->
-      <div class="creation-workspace" id="creation-workspace">
-        <div class="workspace-header">
-          <div class="workspace-nav">
-            <button class="workspace-back-btn" id="workspace-back-btn" type="button">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="15 18 9 12 15 6"></polyline>
-              </svg>
-              <span id="workspace-back-text">返回頁面</span>
-            </button>
-            <div class="workspace-brand-badge">
-              <span>✦ Storyboard AI Workspace</span>
-            </div>
-          </div>
-          <div class="workspace-actions">
-            <button class="ai-dock-stop-btn" id="workspace-stop-btn" title="中斷生成" style="display:none;" type="button">■ 停止生成</button>
-            <button class="workspace-close-btn" id="workspace-close-btn" title="關閉工作區 (返回原頁)" type="button">✕</button>
-          </div>
-        </div>
-        <div class="workspace-content" id="workspace-content">
-          <div class="ai-dock-loader" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; min-height: 250px; gap: 16px; color: var(--primary);">
-            <div style="width: 100px; height: 100px;">
-              <svg class="loader math-loader-svg" viewBox="0 0 100 100" fill="none" aria-hidden="true" style="width: 100%; height: 100%; display: block;">
-                <g class="math-loader-group">
-                  <path class="math-loader-path" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" opacity="0.1"></path>
-                </g>
-                <g class="math-loader-sucked"></g>
-              </svg>
-            </div>
-            <span style="font-weight: 600; font-size: 0.9rem; color: var(--text-mid);">AI 創作工作區載入中...</span>
-          </div>
-        </div>
-      </div>
     `;
     document.body.appendChild(aiCreationLayer);
 
@@ -1819,10 +2364,14 @@ function initLoginLogic(showRegister) {
         <!-- Input Face -->
         <div class="capsule-input-face" id="qc-composer-area">
           <textarea id="qc-story-input" class="qc-textarea" placeholder="描述故事或創作方向... ✦" rows="1"></textarea>
-          <button class="qc-send-btn" id="qc-send-btn" type="button" disabled aria-label="發送故事">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M14.2199 21.63C13.0399 21.63 11.3699 20.8 10.0499 16.83L9.32988 14.67L7.16988 13.95C3.20988 12.63 2.37988 10.96 2.37988 9.78001C2.37988 8.61001 3.20988 6.93001 7.16988 5.60001L15.6599 2.77001C17.7799 2.06001 19.5499 2.27001 20.6399 3.35001C21.7299 4.43001 21.9399 6.21001 21.2299 8.33001L18.3999 16.82C17.0699 20.8 15.3999 21.63 14.2199 21.63Z" />
-            </svg>
+          <button class="qc-send-btn compose-send-btn" id="qc-send-btn" type="button" disabled aria-label="發送故事">
+            <div class="state state--sent">
+              <div class="icon">
+                <svg width="1.5em" height="1.5em" viewBox="0 0 24 24" fill="none">
+                  <path d="M14.2199 21.63C13.0399 21.63 11.3699 20.8 10.0499 16.83L9.32988 14.67L7.16988 13.95C3.20988 12.63 2.37988 10.96 2.37988 9.78001C2.37988 8.61001 3.20988 6.93001 7.16988 5.60001L15.6599 2.77001C17.7799 2.06001 19.5499 2.27001 20.6399 3.35001C21.7299 4.43001 21.9399 6.21001 21.2299 8.33001L18.3999 16.82C17.0699 20.8 15.3999 21.63 14.2199 21.63Z" fill="currentColor"></path>
+                </svg>
+              </div>
+            </div>
           </button>
         </div>
       `;
@@ -1837,24 +2386,6 @@ function initLoginLogic(showRegister) {
 
     injectScripts(['/js/math-curve-loader.js', '/js/token-manager.js', '/js/prompt-translate.js', '/js/generate.js']).catch(() => {});
 
-    if (typeof window.initMathCurveLoader === 'function') {
-      window.initMathCurveLoader();
-    }
-
-    fetchPageDoc('/html/generate.html').then(doc => {
-      const mountPoint = document.getElementById('workspace-content');
-      const genMain = doc.querySelector('#page-main.gen-main') || doc.querySelector('main');
-      if (mountPoint && genMain) {
-        mountPoint.innerHTML = genMain.innerHTML;
-        mountPoint.querySelectorAll('button').forEach(b => {
-          if (!b.type) b.type = 'button';
-        });
-        if (typeof window.initGeneratePage === 'function') {
-          window.initGeneratePage();
-        }
-      }
-    }).catch(err => console.error("Failed to load generate.html into Creation Workspace", err));
-
     bindAICreationEvents();
   }
 
@@ -1864,6 +2395,11 @@ function initLoginLogic(showRegister) {
 
     if (capsule) {
       capsule.addEventListener('click', (e) => {
+        if (currentPage === 'generate' || capsule.classList.contains('hidden-by-workspace')) {
+          e.preventDefault();
+          e.stopPropagation();
+          return;
+        }
         if (!capsule.classList.contains('is-expanded')) {
           if (!isMobileView()) {
             e.preventDefault();
@@ -1955,27 +2491,9 @@ function initLoginLogic(showRegister) {
     const qcInput = document.getElementById('qc-story-input');
     const qcSendBtn = document.getElementById('qc-send-btn');
     if (qcInput) {
-      const resetAllScroll = () => {
-        window.scrollTo(0, 0);
-        if (document.documentElement) document.documentElement.scrollTop = 0;
-        if (document.body) document.body.scrollTop = 0;
-        if (window.parent && window.parent !== window) {
-          try {
-            window.parent.scrollTo(0, 0);
-            if (window.parent.document.documentElement) window.parent.document.documentElement.scrollTop = 0;
-            if (window.parent.document.body) window.parent.document.body.scrollTop = 0;
-          } catch (e) {}
-        }
-      };
-
       qcInput.addEventListener('focus', () => {
         if (isMobileView()) {
           document.body.classList.add('ai-keyboard-open');
-          resetAllScroll();
-          requestAnimationFrame(resetAllScroll);
-          setTimeout(resetAllScroll, 30);
-          setTimeout(resetAllScroll, 100);
-          setTimeout(resetAllScroll, 250);
         }
       });
       qcInput.addEventListener('blur', () => {
@@ -1989,10 +2507,15 @@ function initLoginLogic(showRegister) {
       });
       qcInput.addEventListener('input', () => {
         const val = qcInput.value.trim();
-        if (qcSendBtn) qcSendBtn.disabled = !val;
+        const hasVal = val.length > 0;
+        if (qcSendBtn) {
+          qcSendBtn.disabled = !hasVal;
+          qcSendBtn.setAttribute('data-active', hasVal ? 'true' : 'false');
+        }
         if (window.CreationSessionStore && window.CreationSessionStore.draft) {
           window.CreationSessionStore.draft.story = qcInput.value;
         }
+        autoGrowQCInput();
       });
       qcInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
@@ -2079,13 +2602,18 @@ function initLoginLogic(showRegister) {
     ensureAICreationLayerDOM();
     if (!globalCreateTrigger || !aiCreationLayer) return;
 
+    const capsule = document.getElementById('global-create-capsule');
+    const mobGen = document.getElementById('mob-nav-generate');
     const isDashboard = isDashboardPage(page);
 
     if (!isDashboard) {
       globalCreateTrigger.style.display = 'none';
-      if (window.AICreationController.surfaceState !== 'closed') {
-        window.AICreationController.closeWorkspace();
-        window.AICreationController.closeQuickCompose();
+      if (capsule) {
+        capsule.style.display = 'none';
+      }
+      if (window.AICreationController && window.AICreationController.surfaceState !== 'closed') {
+        window.AICreationController.surfaceState = 'closed';
+        window.AICreationController.closeQuickCompose(true);
       }
       return;
     }
@@ -2094,10 +2622,44 @@ function initLoginLogic(showRegister) {
     globalCreateTrigger.style.display = '';
 
     if (page === 'generate') {
-      // If user navigated directly to 'generate'
-      if (window.AICreationController.surfaceState === 'closed') {
-        window.AICreationController.openQuickCompose();
+      // In /generate, the capsule trigger is hidden by the workspace (do not trigger capsule expansion)
+      if (capsule) {
+        capsule.classList.remove('is-expanded');
+        capsule.classList.add('hidden-by-workspace');
+        capsule.style.setProperty('opacity', '0', 'important');
+        capsule.style.setProperty('visibility', 'hidden', 'important');
+        capsule.style.setProperty('pointer-events', 'none', 'important');
+        capsule.style.setProperty('transition', 'none', 'important');
       }
+      if (mobGen) {
+        mobGen.classList.add('disabled-on-workspace');
+        mobGen.setAttribute('aria-disabled', 'true');
+        mobGen.style.setProperty('pointer-events', 'none', 'important');
+      }
+    } else {
+      // If user navigated away from generate to another dashboard page, reset state & restore capsule
+      if (mobGen) {
+        mobGen.classList.remove('disabled-on-workspace');
+        mobGen.removeAttribute('aria-disabled');
+        mobGen.style.removeProperty('pointer-events');
+      }
+      if (window.AICreationController) {
+        if (window.AICreationController.surfaceState === 'workspace') {
+          window.AICreationController.surfaceState = 'closed';
+        }
+        window.AICreationController.resetQuickComposeVisuals(page);
+      }
+      if (capsule) {
+        capsule.classList.remove('hidden-by-workspace');
+        capsule.classList.remove('is-expanded');
+        capsule.style.removeProperty('opacity');
+        capsule.style.removeProperty('pointer-events');
+        capsule.style.removeProperty('visibility');
+        capsule.style.removeProperty('transform');
+        capsule.style.removeProperty('display');
+        capsule.style.removeProperty('transition');
+      }
+      mountAICreationCapsule();
     }
   }
 
@@ -2168,19 +2730,17 @@ function initLoginLogic(showRegister) {
         <div class="mobile-nav__track mobile-nav__track--focus" aria-hidden="true">
             <div class="mobile-nav__item mobile-nav__item--focus">
                 <div class="mobile-nav__icon-wrap">
-                    <svg class="mobile-nav__svg mobile-nav__svg--focus" width="22" height="22" viewBox="0 0 24 24" fill="none">
-                        <path d="M3 9.5L12 3L21 9.5V20C21 20.5523 20.5523 21 20 21H4C3.44772 21 3 20.5523 3 20V9.5Z" fill="#0f172a"></path>
-                        <path d="M8 21V12.5C8 10.2909 9.79086 8.5 12 8.5C14.2091 8.5 16 10.2909 16 12.5V21H8Z" fill="#fff"></path>
+                    <svg class="mobile-nav__svg mobile-nav__svg--focus" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M3 9.5L12 3L21 9.5V20C21 20.5523 20.5523 21 20 21H15V12H9V21H4C3.44772 21 3 20.5523 3 20V9.5Z"></path>
                     </svg>
                 </div>
                 <span class="mobile-nav__label" style="visibility: hidden;">首頁</span>
             </div>
             <div class="mobile-nav__item mobile-nav__item--focus">
                 <div class="mobile-nav__icon-wrap">
-                    <svg class="mobile-nav__svg mobile-nav__svg--focus" width="22" height="22" viewBox="0 0 24 24" fill="none">
-                        <path d="M2 6.94975C2 6.06722 2 5.62595 2.06935 5.25839C2.37464 3.64031 3.64031 2.37464 5.25839 2.06935C5.62595 2 6.06722 2 6.94975 2C7.33642 2 7.52976 2 7.71557 2.01738C8.51665 2.09229 9.27652 2.40704 9.89594 2.92051C10.0396 3.03961 10.1763 3.17633 10.4497 3.44975L11 4C11.8158 4.81578 12.2237 5.22367 12.7121 5.49543C12.9804 5.64471 13.2651 5.7626 13.5604 5.84678C14.0979 6 14.6747 6 15.8284 6H16.2021C18.8345 6 20.1506 6 21.0062 6.76946C21.0849 6.84024 21.1598 6.91514 21.2305 6.99383C22 7.84935 22 9.16554 22 11.7979V14C22 17.7712 22 19.6569 20.8284 20.8284C19.6569 22 17.7712 22 14 22H10C6.22876 22 4.34315 22 3.17157 20.8284C2 19.6569 2 17.7712 2 14V6.94975Z" fill="#0f172a"></path>
-                        <rect x="6.5" y="8" width="11" height="9" rx="1.5" fill="#fff"></rect>
-                        <path d="M9 11H15M9 13.5H13.5" stroke="#0f172a" stroke-width="1.5" stroke-linecap="round"></path>
+                    <svg class="mobile-nav__svg mobile-nav__svg--focus" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                        <path fill-rule="evenodd" clip-rule="evenodd" d="M2 6.94975C2 6.06722 2 5.62595 2.06935 5.25839C2.37464 3.64031 3.64031 2.37464 5.25839 2.06935C5.62595 2 6.06722 2 6.94975 2C7.33642 2 7.52976 2 7.71557 2.01738C8.51665 2.09229 9.27652 2.40704 9.89594 2.92051C10.0396 3.03961 10.1763 3.17633 10.4497 3.44975L11 4C11.8158 4.81578 12.2237 5.22367 12.7121 5.49543C12.9804 5.64471 13.2651 5.7626 13.5604 5.84678C14.0979 6 14.6747 6 15.8284 6H16.2021C18.8345 6 20.1506 6 21.0062 6.76946C21.0849 6.84024 21.1598 6.91514 21.2305 6.99383C22 7.84935 22 9.16554 22 11.7979V14C22 17.7712 22 19.6569 20.8284 20.8284C19.6569 22 17.7712 22 14 22H10C6.22876 22 4.34315 22 3.17157 20.8284C2 19.6569 2 17.7712 2 14V6.94975ZM13 9.25C12.5858 9.25 12.25 9.58579 12.25 10C12.25 10.4142 12.5858 10.75 13 10.75H18C18.4142 10.75 18.75 10.4142 18.75 10C18.75 9.58579 18.4142 9.25 18 9.25H13Z"></path>
+                        <path d="M16.9856 3.02094C16.8321 3 16.6492 3 16.2835 3H12L12.3699 3.38312C13.0359 4.07299 13.2919 4.33051 13.5877 4.50096C13.7594 4.5999 13.9415 4.67804 14.1304 4.73383C14.4559 4.82993 14.8128 4.83538 15.7546 4.83538L16.089 4.83538C17.0914 4.83536 17.8995 4.83535 18.5389 4.91862C18.6984 4.93939 18.8521 4.96582 19 5C18.8144 3.96313 18.0043 3.15985 16.9856 3.02094Z"></path>
                     </svg>
                 </div>
                 <span class="mobile-nav__label" style="visibility: hidden;">分鏡</span>
@@ -2188,21 +2748,16 @@ function initLoginLogic(showRegister) {
             <div class="mobile-nav__item mobile-nav__item--create" style="visibility:hidden; pointer-events:none;"></div>
             <div class="mobile-nav__item mobile-nav__item--focus">
                 <div class="mobile-nav__icon-wrap">
-                    <svg class="mobile-nav__svg mobile-nav__svg--focus" width="22" height="22" viewBox="0 0 24 24" fill="none">
-                        <path d="M3 12C3 4.5885 4.5885 3 12 3C19.4115 3 21 4.5885 21 12C21 19.4115 19.4115 21 12 21C4.5885 21 3 19.4115 3 12Z" fill="#0f172a"></path>
-                        <circle cx="11.5" cy="11.5" r="4.6" fill="#fff"></circle>
-                        <circle cx="11.5" cy="11.5" r="2.2" fill="#0f172a"></circle>
-                        <path d="M14.5 14.5L18 18" stroke="#fff" stroke-width="2.6" stroke-linecap="round"></path>
+                    <svg class="mobile-nav__svg mobile-nav__svg--focus" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                        <path fill-rule="evenodd" clip-rule="evenodd" d="M7.25007 2.38782C8.54878 2.0992 10.1243 2 12 2C13.8757 2 15.4512 2.0992 16.7499 2.38782C18.06 2.67897 19.1488 3.176 19.9864 4.01358C20.824 4.85116 21.321 5.94002 21.6122 7.25007C21.9008 8.54878 22 10.1243 22 12C22 13.8757 21.9008 15.4512 21.6122 16.7499C21.321 18.06 20.824 19.1488 19.9864 19.9864C19.1488 20.824 18.06 21.321 16.7499 21.6122C15.4512 21.9008 13.8757 22 12 22C10.1243 22 8.54878 21.9008 7.25007 21.6122C5.94002 21.321 4.85116 20.824 4.01358 19.9864C3.176 19.1488 2.67897 18.06 2.38782 16.7499C2.0992 15.4512 2 13.8757 2 12C2 10.1243 2.0992 8.54878 2.38782 7.25007C2.67897 5.94002 3.176 4.85116 4.01358 4.01358C4.85116 3.176 5.94002 2.67897 7.25007 2.38782ZM9 11.5C9 10.1193 10.1193 9 11.5 9C12.8807 9 14 10.1193 14 11.5C14 12.8807 12.8807 14 11.5 14C10.1193 14 9 12.8807 9 11.5ZM11.5 7C9.01472 7 7 9.01472 7 11.5C7 13.9853 9 16 11.5 16C12.3805 16 13.202 15.7471 13.8957 15.31L15.2929 16.7071C15.6834 17.0976 16.3166 17.0976 16.7071 16.7071C17.0976 16.3166 17.0976 15.6834 16.7071 15.2929L15.31 13.8957C15.7471 13.202 16 12.3805 16 11.5C16 9.01472 13.9853 7 11.5 7Z"></path>
                     </svg>
                 </div>
                 <span class="mobile-nav__label" style="visibility: hidden;">模板</span>
             </div>
             <div class="mobile-nav__item mobile-nav__item--focus">
                 <div class="mobile-nav__icon-wrap">
-                    <svg class="mobile-nav__svg mobile-nav__svg--focus" width="22" height="22" viewBox="0 0 24 24" fill="none">
-                        <circle cx="12" cy="12" r="10" fill="#0f172a"></circle>
-                        <circle cx="12" cy="8.5" r="3.6" fill="#fff"></circle>
-                        <path d="M6 19.5C6.6 15.2 9 13.8 12 13.8C15 13.8 17.4 15.2 18 19.5C16.4 20.8 14.3 21.6 12 21.6C9.7 21.6 7.6 20.8 6 19.5Z" fill="#fff"></path>
+                    <svg class="mobile-nav__svg mobile-nav__svg--focus" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                        <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2ZM12 6C10.3431 6 9 7.34315 9 9C9 10.6569 10.3431 12 12 12C13.6569 12 15 10.6569 15 9C15 7.34315 13.6569 6 12 6ZM17.9691 20C17.81 17.1085 16.9247 15 11.9999 15C7.07521 15 6.18991 17.1085 6.03076 20A10 10 0 0 0 17.9691 20Z"></path>
                     </svg>
                 </div>
                 <span class="mobile-nav__label" style="visibility: hidden;">我的</span>
@@ -2235,6 +2790,9 @@ function initLoginLogic(showRegister) {
       if (capsule.parentElement !== document.body) {
         document.body.appendChild(capsule);
       }
+    }
+    if (capsule && capsule.classList.contains('is-expanded') && typeof autoGrowQCInput === 'function') {
+      autoGrowQCInput();
     }
   }
   window.addEventListener('resize', mountAICreationCapsule);
@@ -2717,6 +3275,7 @@ function initLoginLogic(showRegister) {
       mobNav.style.transition = 'none';
 
       isNavInteracting = true;
+      mobNav.classList.add('is-interacting');
       activePointerId = e.pointerId;
       startX = e.clientX;
       startY = e.clientY;
@@ -2850,6 +3409,7 @@ function initLoginLogic(showRegister) {
       clearSnapHover();
 
       isNavInteracting = false;
+      mobNav.classList.remove('is-interacting');
       activePointerId = null;
 
       // Indicator smooth settling into link center without bouncing
@@ -2929,6 +3489,9 @@ function initLoginLogic(showRegister) {
       if (targetItem.id === 'mob-nav-profile') {
         window.toggleUserPanel();
       } else if (targetItem.id === 'mob-nav-generate') {
+        if (currentPage === 'generate' || targetPage === 'generate') {
+          return;
+        }
         if (window.AICreationController) {
           if (window.AICreationController.surfaceState === 'quick-compose') {
             window.AICreationController.closeQuickCompose();
@@ -2938,9 +3501,14 @@ function initLoginLogic(showRegister) {
         }
       } else {
         const href = targetItem.getAttribute('href') || '';
+        if (href.includes('generate')) {
+          if (window.AICreationController) {
+            window.AICreationController.openQuickCompose();
+          }
+          return;
+        }
         let targetRoute = 'dashboard';
-        if (href.includes('generate')) targetRoute = 'generate';
-        else if (href.includes('projects')) targetRoute = 'projects';
+        if (href.includes('projects')) targetRoute = 'projects';
         else if (href.includes('template')) targetRoute = 'template';
         else if (href.includes('history')) targetRoute = 'history';
         navigate(targetRoute);
@@ -2986,6 +3554,9 @@ function initLoginLogic(showRegister) {
         if (item.id === 'mob-nav-profile') {
           window.toggleUserPanel();
         } else if (item.id === 'mob-nav-generate') {
+          if (currentPage === 'generate' || targetPage === 'generate') {
+            return;
+          }
           if (indicator) {
             indicator.classList.add('is-active');
             const itemRect = item.getBoundingClientRect();
@@ -3009,9 +3580,14 @@ function initLoginLogic(showRegister) {
           }
         } else {
           const href = item.getAttribute('href') || '';
+          if (href.includes('generate')) {
+            if (window.AICreationController) {
+              window.AICreationController.openQuickCompose();
+            }
+            return;
+          }
           let targetRoute = 'dashboard';
-          if (href.includes('generate')) targetRoute = 'generate';
-          else if (href.includes('projects')) targetRoute = 'projects';
+          if (href.includes('projects')) targetRoute = 'projects';
           else if (href.includes('template')) targetRoute = 'template';
           else if (href.includes('history')) targetRoute = 'history';
           navigate(targetRoute);
@@ -3030,18 +3606,6 @@ function initLoginLogic(showRegister) {
         if (isQuickComposeActive) {
           mobNav.style.opacity = '1';
           mobNav.style.pointerEvents = 'auto';
-
-          if (isMobileView()) {
-            if (window.scrollY !== 0 || (document.documentElement && document.documentElement.scrollTop !== 0)) {
-              window.scrollTo(0, 0);
-              if (document.documentElement) document.documentElement.scrollTop = 0;
-            }
-            if (window.parent && window.parent !== window) {
-              try {
-                if (window.parent.scrollY !== 0) window.parent.scrollTo(0, 0);
-              } catch (e) {}
-            }
-          }
 
           const lift = Math.max(0, window.innerHeight - window.visualViewport.height);
           const qcContainer = document.getElementById('quick-creation-container');
@@ -3078,27 +3642,7 @@ function initLoginLogic(showRegister) {
       };
 
       window.visualViewport.addEventListener('resize', onViewportChange);
-      window.visualViewport.addEventListener('scroll', () => {
-        onViewportChange();
-        if (document.body.classList.contains('ai-quick-compose-active') && isMobileView()) {
-          window.scrollTo(0, 0);
-          if (document.documentElement) document.documentElement.scrollTop = 0;
-        }
-      });
-
-      window.addEventListener('scroll', () => {
-        if (document.body.classList.contains('ai-quick-compose-active') && isMobileView()) {
-          if (window.scrollY !== 0 || (document.documentElement && document.documentElement.scrollTop !== 0)) {
-            window.scrollTo(0, 0);
-            if (document.documentElement) document.documentElement.scrollTop = 0;
-          }
-          if (window.parent && window.parent !== window) {
-            try {
-              if (window.parent.scrollY !== 0) window.parent.scrollTo(0, 0);
-            } catch (e) {}
-          }
-        }
-      }, { passive: false });
+      window.visualViewport.addEventListener('scroll', onViewportChange);
     }
 
     window.addEventListener('resize', () => {
@@ -3134,13 +3678,18 @@ function initLoginLogic(showRegister) {
       let isActive = false;
       if (isProfileActive) {
         isActive = (item.id === 'mob-nav-profile');
+      } else if (activeMainPage === 'generate') {
+        isActive = (item.id === 'mob-nav-generate' || item.classList.contains('mobile-nav__item--create'));
       } else {
-        const href = item.getAttribute('href') || '';
-        const isGenerate = activeMainPage === 'generate' && (href.includes('generate') || item.id === 'mob-nav-generate');
-        const isDashboard = activeMainPage === 'dashboard' && (href.includes('dashboard') || item.id === 'mob-nav-home');
-        const isProjects = activeMainPage === 'projects' && (href.includes('projects') || item.id === 'mob-nav-projects');
-        const isTemplate = activeMainPage === 'template' && (href.includes('template') || item.id === 'mob-nav-template');
-        isActive = isGenerate || isDashboard || isProjects || isTemplate;
+        if (item.id === 'mob-nav-generate' || item.classList.contains('mobile-nav__item--create')) {
+          isActive = false;
+        } else {
+          const href = item.getAttribute('href') || '';
+          const isDashboard = activeMainPage === 'dashboard' && (href.includes('dashboard') || item.id === 'mob-nav-home');
+          const isProjects = activeMainPage === 'projects' && (href.includes('projects') || item.id === 'mob-nav-projects');
+          const isTemplate = activeMainPage === 'template' && (href.includes('template') || item.id === 'mob-nav-template');
+          isActive = isDashboard || isProjects || isTemplate;
+        }
       }
 
       if (isActive) {
@@ -3299,12 +3848,222 @@ function initLoginLogic(showRegister) {
 
     const recentProjectsGrid = document.getElementById('recent-projects-grid');
     if (recentProjectsGrid) {
+      function formatRelativeTime(dateStr) {
+        if (!dateStr) return '剛剛';
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return '剛剛';
+        const now = new Date();
+        const isToday = d.toDateString() === now.toDateString();
+        const yesterday = new Date(now);
+        yesterday.setDate(now.getDate() - 1);
+        const isYesterday = d.toDateString() === yesterday.toDateString();
+        const pad = n => String(n).padStart(2, '0');
+        const timeStr = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        if (isToday) return `今天 ${timeStr}`;
+        if (isYesterday) return `昨天 ${timeStr}`;
+        return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())}`;
+      }
+
+      function esc(str) {
+        return String(str || '').replace(/[&<>"']/g, m => ({
+          '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[m]));
+      }
+
+      function formatRatioText(ratio) {
+        if (!ratio) return '橫向 16:9';
+        if (ratio === '16:9') return '橫向 16:9';
+        if (ratio === '9:16') return '直向 9:16';
+        if (ratio === '1:1') return '方形 1:1';
+        if (ratio === '4:3') return '橫向 4:3';
+        return ratio;
+      }
+
+      function updateDashboardHero(activeList) {
+        const heroCard = document.getElementById('home-hero-card');
+        if (!heroCard) return;
+
+        if (!activeList || activeList.length === 0) {
+          heroCard.className = 'hero-continue-card hero-empty-state';
+          heroCard.innerHTML = `
+            <div class="hero-continue-main">
+              <div class="hero-badge hero-badge-new">
+                <span class="badge-sparkle">✦</span>
+                <span>靈感啟程</span>
+              </div>
+              <h2 class="hero-card-title">開始你的第一個分鏡</h2>
+              <p class="hero-card-desc">把一個故事想法逐步轉換成完整分鏡、動態描述與畫面構圖。</p>
+              <div class="hero-actions-row">
+                <button class="hero-primary-btn" id="hero-create-btn" type="button">
+                  <span>新增分鏡</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                  </svg>
+                </button>
+                <button class="hero-secondary-btn" id="hero-template-btn" type="button">
+                  探索爆點模板
+                </button>
+              </div>
+            </div>
+            <div class="hero-preview-visual hero-empty-visual">
+              <div class="hero-empty-glow"></div>
+              <div class="hero-empty-clapper">
+                <svg width="68" height="68" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="2" y="6" width="20" height="15" rx="2"></rect>
+                  <path d="m2 11 20 0"></path>
+                  <path d="m5 6 3-3"></path>
+                  <path d="m11 6 3-3"></path>
+                  <path d="m17 6 3-3"></path>
+                </svg>
+              </div>
+            </div>
+          `;
+
+          const createBtn = document.getElementById('hero-create-btn');
+          if (createBtn) {
+            createBtn.onclick = (e) => {
+              e.preventDefault();
+              if (window.AICreationController) {
+                window.AICreationController.openQuickCompose();
+              } else {
+                navigate('generate');
+              }
+            };
+          }
+          const templateBtn = document.getElementById('hero-template-btn');
+          if (templateBtn) {
+            templateBtn.onclick = (e) => {
+              e.preventDefault();
+              navigate('template');
+            };
+          }
+        } else {
+          const latest = activeList[0];
+          const timeStr = formatRelativeTime(latest.updateAt || latest.createAt);
+          const shotsCount = latest.shotCount || (Array.isArray(latest.shots) ? latest.shots.length : 8);
+
+          heroCard.className = 'hero-continue-card';
+          heroCard.innerHTML = `
+            <div class="hero-continue-main">
+              <div class="hero-badge" id="hero-badge">
+                <span class="hero-badge-dot"></span>
+                <span>繼續你的創作</span>
+              </div>
+              <h2 class="hero-card-title" id="hero-project-title" title="${esc(latest.title || '未命名分鏡')}">${esc(latest.title || '未命名分鏡')}</h2>
+              <div class="hero-meta-row" id="hero-meta-row">
+                <span class="hero-meta-item" id="hero-project-time">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                  <span>上次編輯：${timeStr}</span>
+                </span>
+                <span class="hero-meta-dot">•</span>
+                <span class="hero-meta-item" id="hero-project-shots">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
+                    <line x1="7" y1="2" x2="7" y2="22"></line>
+                    <line x1="17" y1="2" x2="17" y2="22"></line>
+                    <line x1="2" y1="12" x2="22" y2="12"></line>
+                  </svg>
+                  <span>目前進度：${shotsCount} 個分鏡</span>
+                </span>
+              </div>
+              <div class="hero-actions-row" id="hero-actions-row">
+                <button class="hero-primary-btn" id="hero-continue-btn" type="button">
+                  <span>繼續編輯</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                  </svg>
+                </button>
+                <a class="hero-secondary-link" id="hero-secondary-link" href="javascript:void(0)">
+                  查看所有分鏡
+                </a>
+              </div>
+            </div>
+            <div class="hero-preview-visual" id="hero-preview-visual">
+              <div class="hero-work-showcase" id="hero-preview-card" style="cursor: pointer;">
+                <div class="hero-showcase-backdrop"></div>
+                <div class="hero-showcase-frame">
+                  <div class="hero-showcase-thumb loading" id="hero-preview-thumb">
+                    <div class="hero-frame-mockup">
+                      <div class="mockup-clapper">🎬</div>
+                      <div class="mockup-title">${esc(latest.title || '分鏡腳本')}</div>
+                      <div class="mockup-sub">${shotsCount} 個分鏡 · ${latest.ratio || '16:9'}</div>
+                    </div>
+                  </div>
+                  <div class="hero-showcase-grid-overlay">
+                    <span class="crosshair-marker tl"></span>
+                    <span class="crosshair-marker tr"></span>
+                    <span class="crosshair-marker bl"></span>
+                    <span class="crosshair-marker br"></span>
+                  </div>
+                  <div class="hero-showcase-meta">
+                    <span class="hero-showcase-pill"><span class="pill-dot"></span>${latest.ratio || '16:9'}</span>
+                    <span class="hero-showcase-scene">Scene 01</span>
+                  </div>
+                </div>
+                <div class="hero-mini-shot-badge">
+                  <span class="mini-shot-icon">🎥</span>
+                  <div class="mini-shot-text">
+                    <span class="mini-shot-label">SHOTS</span>
+                    <span class="mini-shot-val">${shotsCount} 格</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+
+          const continueBtn = document.getElementById('hero-continue-btn');
+          const previewCard = document.getElementById('hero-preview-card');
+          [continueBtn, previewCard].forEach(el => {
+            if (el) {
+              el.onclick = () => {
+                navigate('project', { id: latest.id });
+              };
+              el.addEventListener('pointerenter', () => {
+                prefetchPage('project', { id: latest.id });
+              });
+            }
+          });
+
+          const secondaryLink = document.getElementById('hero-secondary-link');
+          if (secondaryLink) {
+            secondaryLink.onclick = () => {
+              navigate('projects');
+            };
+          }
+
+          // Dedicated cover image loader for hero showcase artwork
+          const showcaseThumb = heroCard.querySelector('#hero-preview-thumb');
+          if (showcaseThumb) {
+            const coverUrl = `/api/projects/${latest.id}/cover`;
+            const coverImg = new Image();
+            coverImg.onload = () => {
+              showcaseThumb.innerHTML = '';
+              coverImg.className = 'showcase-cover-img';
+              coverImg.alt = 'Cover';
+              showcaseThumb.appendChild(coverImg);
+              showcaseThumb.classList.remove('loading');
+            };
+            coverImg.onerror = () => {
+              showcaseThumb.classList.remove('loading');
+            };
+            coverImg.src = coverUrl;
+          }
+        }
+      }
+
       function displayRecentProjects(projects) {
         const activeProjects = (projects || [])
           .filter(p => !p.is_deleted && !pendingDeletions[p.id])
-          .sort((a, b) => new Date(b.createAt) - new Date(a.createAt));
+          .sort((a, b) => new Date(b.updateAt || b.createAt) - new Date(a.updateAt || a.createAt));
         
-        const recentProjects = activeProjects.slice(0, 3);
+        updateDashboardHero(activeProjects);
+
+        const recentProjects = activeProjects.slice(0, 4);
         
         recentProjectsGrid.innerHTML = '';
         if (recentProjects.length === 0) {
@@ -3321,42 +4080,28 @@ function initLoginLogic(showRegister) {
             card.className = 'project-card';
             
             card.onclick = (e) => {
-              if (e.target.closest('.project-option-btn')) return;
+              if (e.target.closest('.project-split-btn')) return;
               navigate('project', { id: p.id });
             };
             card.addEventListener('pointerenter', () => {
               prefetchPage('project', { id: p.id });
             });
 
-            const thumbHTML = `<div class="project-thumb loading" data-src="/api/projects/${p.id}/cover"></div>`;
+            card.innerHTML = buildLightFilmCardHTML(p);
 
-            card.innerHTML = `
-              <div class="card-strip">
-                <div class="strip-hole"></div>
-                <div class="strip-hole"></div>
-                <div class="strip-hole"></div>
-                <button class="project-option-btn" title="分鏡選項" data-id="${p.id}">⋯</button>
-              </div>
-              ${thumbHTML}
-              <div class="project-info">
-                <div class="project-title">${p.title}</div>
-                <div class="project-meta">
-                  <span class="project-tag">${date}</span>
-                  <span class="project-tag">${p.ratio}</span>
-                </div>
-              </div>
-              <div class="card-strip bottom">
-                <div class="strip-hole"></div>
-                <div class="strip-hole"></div>
-                <div class="strip-hole"></div>
-              </div>
-            `;
-
-            const optionBtn = card.querySelector('.project-option-btn');
-            if (optionBtn) {
-              optionBtn.addEventListener('click', (e) => {
+            const splitMainBtn = card.querySelector('.split-btn-main');
+            if (splitMainBtn) {
+              splitMainBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                showProjectOptionsDropdown(p, card, optionBtn, false, () => {
+                navigate('project', { id: p.id });
+              });
+            }
+
+            const splitDropdownBtn = card.querySelector('.split-btn-dropdown');
+            if (splitDropdownBtn) {
+              splitDropdownBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                showProjectOptionsDropdown(p, card, splitDropdownBtn, false, () => {
                   displayRecentProjects(cacheProjectsList);
                   updateSidebarProjects();
                 });
@@ -3443,42 +4188,28 @@ function initLoginLogic(showRegister) {
             card.className = 'project-card';
             
             card.onclick = (e) => {
-              if (e.target.closest('.project-option-btn')) return;
+              if (e.target.closest('.project-split-btn')) return;
               navigate('project', { id: p.id });
             };
             card.addEventListener('pointerenter', () => {
               prefetchPage('project', { id: p.id });
             });
 
-            const thumbHTML = `<div class="project-thumb loading" data-src="/api/projects/${p.id}/cover"></div>`;
+            card.innerHTML = buildLightFilmCardHTML(p);
 
-            card.innerHTML = `
-              <div class="card-strip">
-                <div class="strip-hole"></div>
-                <div class="strip-hole"></div>
-                <div class="strip-hole"></div>
-                <button class="project-option-btn" title="分鏡選項" data-id="${p.id}">⋯</button>
-              </div>
-              ${thumbHTML}
-              <div class="project-info">
-                <div class="project-title">${p.title}</div>
-                <div class="project-meta">
-                  <span class="project-tag">${date}</span>
-                  <span class="project-tag">${p.ratio}</span>
-                </div>
-              </div>
-              <div class="card-strip bottom">
-                <div class="strip-hole"></div>
-                <div class="strip-hole"></div>
-                <div class="strip-hole"></div>
-              </div>
-            `;
-
-            const optionBtn = card.querySelector('.project-option-btn');
-            if (optionBtn) {
-              optionBtn.addEventListener('click', (e) => {
+            const splitMainBtn = card.querySelector('.split-btn-main');
+            if (splitMainBtn) {
+              splitMainBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                showProjectOptionsDropdown(p, card, optionBtn, false, () => {
+                navigate('project', { id: p.id });
+              });
+            }
+
+            const splitDropdownBtn = card.querySelector('.split-btn-dropdown');
+            if (splitDropdownBtn) {
+              splitDropdownBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                showProjectOptionsDropdown(p, card, splitDropdownBtn, false, () => {
                   displayProjects(cacheProjectsList);
                   updateSidebarProjects();
                 });
@@ -3616,7 +4347,9 @@ function initLoginLogic(showRegister) {
     const m = initMain();
     m.className = 'spa-gen-wrap';
     cloneMainContent(doc, m);
+
     await ensureSharedLayout(signal);
+    if (signal?.aborted) return;
 
     if (opts && opts.templateId) {
       window.preselectedTemplateId = opts.templateId;
@@ -3624,12 +4357,14 @@ function initLoginLogic(showRegister) {
       window.preselectedTemplateId = null;
     }
 
-    if (typeof window.initGeneratePage === 'function') {
-      window.initGeneratePage();
+    if (opts && opts.targetPhase) {
+      if (window.CreationSessionStore) {
+        window.CreationSessionStore.targetPhase = opts.targetPhase;
+      }
     }
 
-    if (window.AICreationController) {
-      window.AICreationController.openWorkspaceDirectly();
+    if (typeof window.initGeneratePage === 'function') {
+      window.initGeneratePage();
     }
   }
 
@@ -3669,13 +4404,13 @@ function initLoginLogic(showRegister) {
           if (p.is_deleted) {
             card.className = 'project-card project-card-deleted';
             card.onclick = (e) => {
-              if (e.target.closest('.project-option-btn')) return;
-              alert('此分鏡已被刪除，請點擊右上角「⋯」按鈕並選擇「還原分鏡」進行還原。');
+              if (e.target.closest('.project-split-btn')) return;
+              alert('此分鏡已在回收桶中，請點擊下方「還原」按鈕以還原此分鏡。');
             };
           } else {
             card.className = 'project-card';
             card.onclick = (e) => {
-              if (e.target.closest('.project-option-btn')) return;
+              if (e.target.closest('.project-split-btn')) return;
               navigate('project', { id: p.id });
             };
             card.addEventListener('pointerenter', () => {
@@ -3683,36 +4418,28 @@ function initLoginLogic(showRegister) {
             });
           }
 
-          const thumbHTML = `<div class="project-thumb loading" data-src="${p.id}"></div>`;
+          card.innerHTML = buildLightFilmCardHTML(p, true);
 
-          card.innerHTML = `
-            <div class="card-strip">
-              <div class="strip-hole"></div>
-              <div class="strip-hole"></div>
-              <div class="strip-hole"></div>
-              <button class="project-option-btn" title="分鏡選項" data-id="${p.id}">⋯</button>
-            </div>
-            ${thumbHTML}
-            <div class="project-info">
-              <div class="project-title">${p.title}</div>
-              <div class="project-meta">
-                <span class="project-tag">${date}</span>
-                <span class="project-tag">${p.ratio}</span>
-              </div>
-              <div class="project-date">分鏡風格：${p.style || '未指定'}</div>
-            </div>
-            <div class="card-strip bottom">
-              <div class="strip-hole"></div>
-              <div class="strip-hole"></div>
-              <div class="strip-hole"></div>
-            </div>
-          `;
-
-          const optionBtn = card.querySelector('.project-option-btn');
-          if (optionBtn) {
-            optionBtn.addEventListener('click', (e) => {
+          const splitMainBtn = card.querySelector('.split-btn-main');
+          if (splitMainBtn) {
+            splitMainBtn.addEventListener('click', (e) => {
               e.stopPropagation();
-              showProjectOptionsDropdown(p, card, optionBtn, true, () => {
+              if (p.is_deleted) {
+                restoreProject(p, card, () => {
+                  displayHistory(cacheProjectsList);
+                  updateSidebarProjects();
+                });
+              } else {
+                navigate('project', { id: p.id });
+              }
+            });
+          }
+
+          const splitDropdownBtn = card.querySelector('.split-btn-dropdown');
+          if (splitDropdownBtn) {
+            splitDropdownBtn.addEventListener('click', (e) => {
+              e.stopPropagation();
+              showProjectOptionsDropdown(p, card, splitDropdownBtn, true, () => {
                 displayHistory(cacheProjectsList);
                 updateSidebarProjects();
               });
@@ -4333,10 +5060,11 @@ function initLoginLogic(showRegister) {
           a.addEventListener('click', e => {
             e.preventDefault();
             const sidebar = document.getElementById('dash-sidebar') || dashboardSidebar;
-            if (sidebar && sidebar.contains(a) && page !== 'projects' && page !== 'project') {
+            const fromSidebar = !!(sidebar && sidebar.contains(a));
+            if (fromSidebar && page !== 'projects' && page !== 'project') {
               expandSidebar(false);
             }
-            navigate(page);
+            navigate(page, { fromSidebar });
           });
           a.addEventListener('pointerenter', () => {
             prefetchPage(page);
@@ -4678,20 +5406,17 @@ function initLoginLogic(showRegister) {
   }
 
   async function navigate(page, opts = {}) {
+    if (opts.openQC) {
+      if (window.AICreationController) {
+        window.AICreationController.openQuickCompose();
+      }
+      return;
+    }
+
     const pageMain = document.getElementById('page-main');
     if (pageMain) {
       pageMain.classList.remove('is-generating');
       pageMain.style.padding = '';
-    }
-
-    if (page === 'generate') {
-      const contentEl = getOrCreateContentContainer();
-      if (contentEl) {
-        contentEl.style.transition = 'opacity 180ms ease, filter 180ms ease, transform 180ms ease';
-        contentEl.style.opacity = '0';
-        contentEl.style.filter = 'blur(12px)';
-        contentEl.style.transform = 'scale(0.98)';
-      }
     }
 
     // 當從登入/註冊頁面登入進入 Dashboard 時，若先前為展開狀態，自動將其收回（在 mask 遮罩期間完成）
@@ -4898,8 +5623,13 @@ function initLoginLogic(showRegister) {
         contentEl.style.transition = 'opacity 180ms ease, filter 180ms ease';
         contentEl.style.opacity = '0';
         contentEl.style.filter = 'blur(12px)';
+        if (opts?.fromQC) {
+          contentEl.style.visibility = 'hidden';
+        }
       }
-      await rafDelay(page === 'generate' ? 140 : 250);
+      if (!opts?.fromQC) {
+        await rafDelay(page === 'generate' ? 140 : 250);
+      }
       
       showLoaderTimer = setTimeout(() => {
         loaderShowing = true;
@@ -5028,13 +5758,22 @@ function initLoginLogic(showRegister) {
 
       if (isDashboardTransition) {
         if (contentEl) {
-          contentEl.style.transition = 'opacity 250ms ease, filter 250ms ease';
-          contentEl.style.opacity = '1';
-          contentEl.style.filter = 'blur(0px)';
+          if (opts?.fromQC) {
+            contentEl.style.transition = 'none';
+            contentEl.style.opacity = '1';
+            contentEl.style.visibility = 'visible';
+            contentEl.style.filter = '';
+          } else {
+            contentEl.style.transition = 'opacity 250ms ease, filter 250ms ease';
+            contentEl.style.opacity = '1';
+            contentEl.style.visibility = '';
+            contentEl.style.filter = 'blur(0px)';
+          }
         }
       } else {
         if (contentEl) {
           contentEl.style.opacity = '1';
+          contentEl.style.visibility = '';
           contentEl.style.filter = 'blur(0px)';
         }
         await maskOpen();
@@ -5059,11 +5798,20 @@ function initLoginLogic(showRegister) {
     } finally {
       hideInnerLoader();
       cleanupTransitionLoader();
+      if (contentEl) {
+        contentEl.style.opacity = '1';
+        contentEl.style.visibility = '';
+        contentEl.style.filter = '';
+        contentEl.style.transform = '';
+      }
       if (currentNavController === controller) {
         currentNavController = null;
         isTransitioning = false;
         targetPage = null;
         targetOpts = null;
+      }
+      if (isDashboardPage(page) && page !== 'generate') {
+        updateAIDockState(page);
       }
     }
   }
@@ -5072,11 +5820,21 @@ function initLoginLogic(showRegister) {
     const statePage = e.state?.page;
     const stateId = e.state?.id;
 
+    if (window.AICreationController) {
+      if (window.AICreationController.surfaceState === 'workspace') {
+        window.AICreationController.surfaceState = 'closed';
+      }
+      if (window.AICreationController.surfaceState === 'quick-compose') {
+        window.AICreationController.closeQuickCompose(true);
+      }
+    }
+
     if (statePage) {
       navigate(statePage, {
         id: stateId || undefined,
         noHistory: true,
-        force: true
+        force: true,
+        noOpenQC: true
       });
       return;
     }
@@ -5085,7 +5843,8 @@ function initLoginLogic(showRegister) {
     navigate(parsed.page, {
       ...parsed.opts,
       noHistory: true,
-      force: true
+      force: true,
+      noOpenQC: true
     });
   });
 

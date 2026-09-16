@@ -88,7 +88,7 @@
   --ai-dock-width:                clamp(300px, 21vw, 360px);
   --ai-dock-max-width:            360px;
   --ai-dock-min-width:            290px;
-  --ai-dock-gap:                  1vh;
+  --ai-dock-gap:                  clamp(8px, 1vh, 12px);
   --ai-dock-padding-x:            22px;
   --ai-dock-header-pt:            26px;
 

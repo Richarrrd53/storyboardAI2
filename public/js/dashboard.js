@@ -488,6 +488,7 @@
       mobNav.style.transition = 'none';
 
       isNavInteracting = true;
+      mobNav.classList.add('is-interacting');
       activePointerId = e.pointerId;
       startX = e.clientX;
       startY = e.clientY;
@@ -612,6 +613,7 @@
       clearSnapHover();
 
       isNavInteracting = false;
+      mobNav.classList.remove('is-interacting');
       activePointerId = null;
 
       if (indicator && releasedTargetItem && cachedNavRect) {
@@ -689,6 +691,9 @@
       if (targetItem.id === 'mob-nav-profile') {
         window.toggleUserPanel();
       } else if (targetItem.id === 'mob-nav-generate') {
+        if (window.currentPage === 'generate') {
+          return;
+        }
         if (window.AICreationController) {
           if (window.AICreationController.surfaceState === 'quick-compose') {
             window.AICreationController.closeQuickCompose();
@@ -698,6 +703,12 @@
         }
       } else {
         const href = targetItem.getAttribute('href');
+        if (href && href.includes('generate')) {
+          if (window.AICreationController) {
+            window.AICreationController.openQuickCompose();
+          }
+          return;
+        }
         if (href) window.location.href = href;
       }
     }
@@ -741,6 +752,9 @@
         if (item.id === 'mob-nav-profile') {
           window.toggleUserPanel();
         } else if (item.id === 'mob-nav-generate') {
+          if (window.currentPage === 'generate') {
+            return;
+          }
           if (indicator) {
             indicator.classList.add('is-active');
             const itemRect = item.getBoundingClientRect();
@@ -764,6 +778,12 @@
           }
         } else {
           const href = item.getAttribute('href');
+          if (href && href.includes('generate')) {
+            if (window.AICreationController) {
+              window.AICreationController.openQuickCompose();
+            }
+            return;
+          }
           if (href) window.location.href = href;
         }
       });
@@ -780,18 +800,6 @@
         if (isQuickComposeActive) {
           mobNav.style.opacity = '1';
           mobNav.style.pointerEvents = 'auto';
-
-          if (window.matchMedia('(max-width: 768px)').matches) {
-            if (window.scrollY !== 0 || (document.documentElement && document.documentElement.scrollTop !== 0)) {
-              window.scrollTo(0, 0);
-              if (document.documentElement) document.documentElement.scrollTop = 0;
-            }
-            if (window.parent && window.parent !== window) {
-              try {
-                if (window.parent.scrollY !== 0) window.parent.scrollTo(0, 0);
-              } catch (e) {}
-            }
-          }
 
           const lift = Math.max(0, window.innerHeight - window.visualViewport.height);
           const qcContainer = document.getElementById('quick-creation-container');
@@ -828,27 +836,7 @@
       };
 
       window.visualViewport.addEventListener('resize', onViewportChange);
-      window.visualViewport.addEventListener('scroll', () => {
-        onViewportChange();
-        if (document.body.classList.contains('ai-quick-compose-active') && window.matchMedia('(max-width: 768px)').matches) {
-          window.scrollTo(0, 0);
-          if (document.documentElement) document.documentElement.scrollTop = 0;
-        }
-      });
-
-      window.addEventListener('scroll', () => {
-        if (document.body.classList.contains('ai-quick-compose-active') && window.matchMedia('(max-width: 768px)').matches) {
-          if (window.scrollY !== 0 || (document.documentElement && document.documentElement.scrollTop !== 0)) {
-            window.scrollTo(0, 0);
-            if (document.documentElement) document.documentElement.scrollTop = 0;
-          }
-          if (window.parent && window.parent !== window) {
-            try {
-              if (window.parent.scrollY !== 0) window.parent.scrollTo(0, 0);
-            } catch (e) {}
-          }
-        }
-      }, { passive: false });
+      window.visualViewport.addEventListener('scroll', onViewportChange);
     }
   }
 
@@ -880,13 +868,18 @@
       let isActive = false;
       if (isProfileActive) {
         isActive = (item.id === 'mob-nav-profile');
+      } else if (page === 'generate') {
+        isActive = (item.id === 'mob-nav-generate' || item.classList.contains('mobile-nav__item--create'));
       } else {
-        const href = item.getAttribute('href') || '';
-        const isGenerate = page === 'generate' && (href.includes('generate') || item.id === 'mob-nav-generate');
-        const isProjects = page === 'projects' && (href.includes('projects') || item.id === 'mob-nav-projects');
-        const isTemplate = page === 'template' && (href.includes('template') || item.id === 'mob-nav-template');
-        const isDashboard = (!page || page === 'dashboard') && (href.includes('dashboard') || item.id === 'mob-nav-home');
-        isActive = isGenerate || isProjects || isTemplate || isDashboard;
+        if (item.id === 'mob-nav-generate' || item.classList.contains('mobile-nav__item--create')) {
+          isActive = false;
+        } else {
+          const href = item.getAttribute('href') || '';
+          const isProjects = page === 'projects' && (href.includes('projects') || item.id === 'mob-nav-projects');
+          const isTemplate = page === 'template' && (href.includes('template') || item.id === 'mob-nav-template');
+          const isDashboard = (!page || page === 'dashboard') && (href.includes('dashboard') || item.id === 'mob-nav-home');
+          isActive = isProjects || isTemplate || isDashboard;
+        }
       }
 
       if (isActive) {

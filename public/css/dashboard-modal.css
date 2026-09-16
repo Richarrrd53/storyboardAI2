@@ -44,6 +44,7 @@
     width: 90%;
     max-width: 680px;
     max-height: 88vh;
+    max-height: 88dvh;
     overflow-y: auto;
     overflow-x: hidden;
     scrollbar-width: none;
@@ -71,6 +72,7 @@
     max-width: 96vw;
     width: 96vw;
     max-height: 92vh;
+    max-height: 92dvh;
     border-radius: 24px;
 }
 
@@ -556,6 +558,6 @@
 }
 @media (max-width: 640px) {
     .gmodal-overlay { align-items:flex-end; }
-    .gmodal-panel { width:100%; max-width:100%; border-radius:24px 24px 0 0; max-height:92vh; }
+    .gmodal-panel { width:100%; max-width:100%; border-radius:24px 24px 0 0; max-height:92vh; max-height:92dvh; }
     .gmodal-overlay.result-mode .gmodal-panel { border-radius:16px 16px 0 0; }
 }

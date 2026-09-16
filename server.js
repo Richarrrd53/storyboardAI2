@@ -2,12 +2,17 @@ const express = require('express');
 const path = require('path');
 const fs = require("fs");
 require('dotenv').config();
+require('./lib/google-credentials').normalizeCredentialPath();
 
 const { PrismaClient } = require('@prisma/client');
 const { Pool } = require('pg');
 const { PrismaPg } = require('@prisma/adapter-pg');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const YouTubeCollector = require('./lib/discovery/youtube-collector');
+const { analyzeVideo } = require('./lib/discovery/video-analyzer');
+const { getSkill, listSkills } = require('./lib/discovery/skill-registry');
+const { ApiSettings } = require('./lib/discovery/api-settings');
 
 const pool = new Pool({ 
     connectionString: process.env.DATABASE_URL,
@@ -108,6 +113,129 @@ const publicPath = path.join(process.cwd(), 'public');
 app.use(express.static(publicPath));
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ limit: '100mb', extended: true })); // 增加 URL 編碼限制
+
+const discoverySettings = new ApiSettings();
+const DISCOVERY_PLATFORMS = new Set(['youtube-shorts']);
+const DISCOVERY_TIME_RANGES = new Set(['7', '30', '90', 'all']);
+
+app.use('/api/discovery', (req, res, next) => {
+    res.set('Cache-Control', 'no-store');
+    next();
+});
+
+app.get('/api/discovery/settings', (req, res) => {
+    res.json(discoverySettings.status(discoverySettings.read(req)));
+});
+
+app.post('/api/discovery/settings', async (req, res) => {
+    // Settings affect only this browser. Reject cross-site writes and non-JSON forms.
+    let sameOrigin = true;
+    if (req.headers.origin) {
+        try { sameOrigin = new URL(req.headers.origin).host === req.get('host'); }
+        catch { sameOrigin = false; }
+    }
+    if (!sameOrigin || req.get('sec-fetch-site') === 'cross-site' || !req.is('application/json')) {
+        return res.status(403).json({ error: '請從本站 API 設定頁儲存設定。' });
+    }
+    let next;
+    try { next = discoverySettings.merge(discoverySettings.read(req), req.body); }
+    catch (error) { return res.status(400).json({ error: error.message }); }
+    try {
+        if (req.body.youtubeApiKey?.trim()) {
+            await new YouTubeCollector({ apiKey: next.youtubeApiKey }).request('videos', { part: 'id', id: 'wToeNUwRb_k' });
+        }
+        if (req.body.geminiApiKey?.trim()) {
+            try {
+                await new GoogleGenAI({ vertexai: false, apiKey: next.geminiApiKey }).models.get({
+                    model: process.env.DISCOVERY_GEMINI_MODEL || 'gemini-2.5-flash', config: { httpOptions: { timeout: 20000 } }
+                });
+            } catch { throw new Error('Gemini 連線檢查失敗，請確認 API Key、模型權限與網路連線。'); }
+        }
+        next.savedAt = new Date().toISOString();
+        discoverySettings.write(res, next, req.secure || req.get('x-forwarded-proto') === 'https');
+        res.json(discoverySettings.status(next));
+    } catch (error) {
+        res.status(502).json({ error: error.message.startsWith('YouTube') || error.message.startsWith('Gemini') || error.message.includes('DISCOVERY_SETTINGS_SECRET')
+            ? error.message : '無法儲存 API 設定，請檢查伺服器設定目錄權限並重試。' });
+    }
+});
+
+app.get('/api/discovery/skills', (req, res) => {
+    res.json({ skills: listSkills(), configured: discoverySettings.status(discoverySettings.read(req)).configured,
+        platforms: [{ id: 'youtube-shorts', name: 'YouTube Shorts', available: true },
+            { id: 'tiktok', name: 'TikTok（尚未串接）', available: false },
+            { id: 'instagram-reels', name: 'Instagram Reels（尚未串接）', available: false }] });
+});
+
+app.post('/api/discovery/search', async (req, res) => {
+    try {
+        const {
+            query = '',
+            platform = 'youtube-shorts',
+            skill = 'short-video-template-lab',
+            timeRange = '30',
+            resultLimit = 10
+        } = req.body || {};
+        const normalizedQuery = String(query).trim();
+        const normalizedLimit = Number(resultLimit);
+
+        if (typeof query !== 'string' || !normalizedQuery || normalizedQuery === '#' || normalizedQuery.length > 120 || (normalizedQuery.startsWith('#') && /\s/.test(normalizedQuery))) {
+            return res.status(400).json({ error: '請輸入頻道名稱、@帳號或單一 #hashtag（最多 120 字）。' });
+        }
+        if (!DISCOVERY_PLATFORMS.has(platform)) {
+            return res.status(400).json({ error: '不支援的 platform' });
+        }
+        if (!DISCOVERY_TIME_RANGES.has(String(timeRange))) {
+            return res.status(400).json({ error: '不支援的 timeRange' });
+        }
+        if (!Number.isInteger(normalizedLimit) || normalizedLimit < 1 || normalizedLimit > 20) {
+            return res.status(400).json({ error: 'resultLimit 必須是 1 到 20 的整數' });
+        }
+
+        const selectedSkill = getSkill(skill);
+        if (!selectedSkill) {
+            return res.status(400).json({ error: '找不到指定的 skill' });
+        }
+
+        const keys = discoverySettings.effective(discoverySettings.read(req));
+        const youtubeApiKey = keys.youtubeApiKey || process.env.YOUTUBE_API_KEY;
+        const { videos, channel } = await new YouTubeCollector({ apiKey: youtubeApiKey }).search({
+            query: normalizedQuery,
+            platform,
+            timeRange: String(timeRange),
+            resultLimit: normalizedLimit
+        });
+        const results = videos;
+
+        res.json({
+            query: { query: normalizedQuery, platform, skill, timeRange: String(timeRange), resultLimit: normalizedLimit },
+            results,
+            meta: { collector: 'YouTube Data API', channel, returnedAt: new Date().toISOString(),
+                warning: '依觀看數排序，篩選 180 秒內影片；YouTube API 無法確認是否為直式 Shorts。搜尋最多檢查 200 筆候選，符合條件的影片可能少於指定數量。' }
+        });
+    } catch (error) {
+        res.status(502).json({ error: error.message || '搜尋失敗，請稍後再試。' });
+    }
+});
+
+app.post('/api/discovery/analyze', async (req, res) => {
+    const { videoId, skill: skillId } = req.body || {};
+    const skill = getSkill(skillId);
+    if (typeof videoId !== 'string' || !/^[\w-]{11}$/.test(videoId) || !skill) {
+        return res.status(400).json({ error: '影片 ID 或 SKILL 無效。' });
+    }
+    try {
+        const keys = discoverySettings.effective(discoverySettings.read(req));
+        const defaultClient = typeof getGenAI === 'function' ? getGenAI() : null;
+        const client = (keys.geminiApiKey && !keys.vertexAvailable) ? new GoogleGenAI({ vertexai: false, apiKey: keys.geminiApiKey }) : defaultClient;
+        res.json({ analysis: await analyzeVideo(client, videoId, skill) });
+    } catch (error) {
+        const status = Number(error.status || error.code);
+        res.status(502).json({ error: status === 429
+            ? 'Gemini 配額不足或請求過多，請稍後重試。'
+            : '影片分析失敗：影片可能無法存取、請求逾時，或 Gemini 權限／模型設定有誤。請重試或檢查伺服器設定。' });
+    }
+});
 
 function toTaipeiTZ(date) {
     if (!date) return null;
@@ -271,13 +399,19 @@ app.get('/api/projects', async (req, res) => {
                 style: true,
                 is_deleted: true,
                 createAt: true,
+                updatedAt: true,
+                _count: {
+                    select: { shots: true }
+                }
             },
             orderBy: { createAt: 'desc' }
         });
 
         const formattedProjects = projects.map(p => ({
             ...p,
-            createAt: toTaipeiTZ(p.createAt)
+            shotCount: p._count ? p._count.shots : 0,
+            createAt: toTaipeiTZ(p.createAt),
+            updateAt: toTaipeiTZ(p.updatedAt || p.createAt)
         }));
 
         res.json({ projects: formattedProjects });
@@ -406,6 +540,115 @@ app.post('/api/projects/:id/restore', async (req, res) => {
     } catch (error) {
         console.error('Restore Project Error:', error);
         res.status(500).json({ error: '還原專案失敗' });
+    }
+});
+
+// PATCH update project (e.g. rename title)
+app.patch('/api/projects/:id', async (req, res) => {
+    try {
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ error: '未授權' });
+        }
+        const token = authHeader.split(' ')[1];
+        const decoded = jwt.verify(token, JWT_SECRET);
+        const { id } = req.params;
+        const { title } = req.body;
+
+        if (!title || !title.trim()) {
+            return res.status(400).json({ error: '專案標題為必填' });
+        }
+
+        const project = await prisma.project.findUnique({
+            where: { id }
+        });
+
+        if (!project) return res.status(404).json({ error: '找不到專案' });
+        if (project.authorId !== decoded.id) return res.status(403).json({ error: '沒有權限修改此專案' });
+
+        const updated = await prisma.project.update({
+            where: { id },
+            data: { title: title.trim() }
+        });
+
+        res.json({ message: '專案已成功更新', project: updated });
+    } catch (error) {
+        console.error('Update Project Error:', error);
+        res.status(500).json({ error: '更新專案失敗' });
+    }
+});
+
+// POST duplicate project
+app.post('/api/projects/:id/duplicate', async (req, res) => {
+    try {
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ error: '未授權' });
+        }
+        const token = authHeader.split(' ')[1];
+        const decoded = jwt.verify(token, JWT_SECRET);
+        const { id } = req.params;
+
+        const original = await prisma.project.findUnique({
+            where: { id },
+            include: { shots: true }
+        });
+
+        if (!original) return res.status(404).json({ error: '找不到專案' });
+        if (original.authorId !== decoded.id) return res.status(403).json({ error: '沒有權限複製此專案' });
+
+        // 產生唯一的 shortId
+        let shortId = generateShortId();
+        let exists = await prisma.project.findUnique({ where: { shortId } });
+        let attempts = 0;
+        while (exists && attempts < 5) {
+            shortId = generateShortId();
+            exists = await prisma.project.findUnique({ where: { shortId } });
+            attempts++;
+        }
+
+        const duplicateTitle = `${original.title} (副本)`;
+
+        const newProject = await prisma.project.create({
+            data: {
+                shortId,
+                authorId: decoded.id,
+                title: duplicateTitle,
+                style: original.style || '',
+                ratio: original.ratio || '',
+                cover: original.cover || null,
+                metadata: original.metadata || {},
+                characters: original.characters || {},
+                shots: {
+                    create: (original.shots || []).map((shot) => ({
+                        order: shot.order,
+                        title: shot.title || '',
+                        camera: shot.camera || '',
+                        duration: shot.duration || '3s',
+                        payload: shot.payload || {}
+                    }))
+                }
+            },
+            include: {
+                shots: true
+            }
+        });
+
+        const formattedProject = {
+            ...newProject,
+            createAt: toTaipeiTZ(newProject.createAt),
+            updatedAt: toTaipeiTZ(newProject.updatedAt),
+            shots: (newProject.shots || []).map(s => ({
+                ...s,
+                createAt: toTaipeiTZ(s.createAt),
+                updateAt: toTaipeiTZ(s.updateAt)
+            }))
+        };
+
+        res.json({ message: '專案複製成功', project: formattedProject });
+    } catch (error) {
+        console.error('Duplicate Project Error:', error);
+        res.status(500).json({ error: '複製專案失敗' });
     }
 });
 
@@ -679,6 +922,14 @@ app.use((err, req, res, next) => {
         });
     }
     next(err);
+});
+
+// Discovery pages
+app.get('/discovery', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'public', 'html', 'discovery.html'));
+});
+app.get('/discovery/settings', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'public', 'html', 'discovery-settings.html'));
 });
 
 // SPA catch-all — redirect routes to main.html
