@@ -86,6 +86,7 @@
   - [4.2 快速創作塢 (Quick Compose, QC) 形變動效](#42-快速創作塢-quick-compose-qc-形變動效)
   - [4.3 專案下墜入垃圾桶與 5 秒撤銷動畫 (Drop to Trash & Undo Toast)](#43-專案下墜入垃圾桶與-5-秒撤銷動畫-drop-to-trash--undo-toast)
   - [4.4 電影快門黑幕遮罩 (Black Mask Transition) 與深景深縮放](#44-電影快門黑幕遮罩-black-mask-transition-與深景深縮放)
+  - [4.5 專案卡片 Option 按鈕物理形變動態 (Solid Matte Acrylic Option Morph)](#45-專案卡片-option-按鈕物理形變動態-solid-matte-acrylic-option-morph)
 - [五、核心功能模塊 (Feature Modules)](#五核心功能模塊-feature-modules)
   - [5.1 身份認證與帳號安全模組 (Auth & Security)](#51-身份認證與帳號安全模組-auth--security)
   - [5.2 專案與分鏡管理模組 (Project & Storyboard Management)](#52-專案與分鏡管理模組-project--storyboard-management)
@@ -408,6 +409,52 @@ y(\theta) = 50 + \sin(\theta) \cdot r(\theta) \cdot \text{scale}
 
 ---
 
+### 4.5 專案卡片 Option 按鈕物理形變動態 (Solid Matte Acrylic Option Morph)
+
+為了解決傳統卡片操作將主動作與次要管理擠壓成分離式按鈕（`[開啟 | V]`）所帶來的視覺雜亂與層級模糊痛點，系統將專案卡片右下角解構為**高職責劃分的雙獨立控制組**：主要操作膠囊 `[開啟]`（或 `[還原]`，74×36px）與次要操作圓形按鈕 `( ⋮ )`（36×36px）。點擊 `( ⋮ )` 時，觸發基於物理力學與三次貝茲求解器的**立體磨砂壓克力形變展開動效 (Morph Pipeline)**：
+
+$$\text{Option Button (36px)} \longrightarrow \text{Dot (20px)} \xrightarrow[\text{Quadratic Bézier}]{\text{Parabolic Flight}} \text{Mid-Air Expansion} \longrightarrow \text{Matte Acrylic Menu}$$
+
+#### 1. 統一標準速度曲線與牛頓迭代求解器
+全流程（縮小、位移、展開、圓角過渡、Icon 模糊與凝聚）統一採用 Material 標準加速度曲線：
+$$\text{cubic-bezier}(0.4, 0, 0.2, 1)$$
+JS 底層實作自研牛頓迭代（Newton-Raphson）與二分法高精度求解器 `createCubicBezier(0.4, 0, 0.2, 1)`，徹底消除多段動畫各自起步煞車的斷層停頓感。
+
+#### 2. 二次貝茲拋物線軌跡 (Quadratic Bézier Path)
+小圓在飛行位移時計算真實重力反饋弧線：
+$$B(t) = (1-t)^2 P_0 + 2(1-t)t P_1 + t^2 P_2 \quad (t \in [0, 1])$$
+- **起點 $P_0$**：原按鈕幾何中心點。
+- **終點 $P_2$**：展開選單右下方約 10% 偏移點，保留自右下發起之空間記憶。
+- **控制點 $P_1$**：向上施加約 $18\text{px}$ 的反重力升力弧度：$P_1.y = \min(P_0.y, P_2.y) - 18\text{px}$，使軌跡呈現優雅拋物弧度而非直線生硬平移。
+
+#### 3. 展開連續交疊時序 (Continuous Overlap Timeline, 480ms)
+- **0–70ms**：按鈕立即收束為 20px 小圓，`⋮` 圖示淡出並加入高斯模糊（`blur: 0 → 4px`）。
+- **30–260ms**：小圓在收縮至約 30px 時即提前啟動拋物線滑行（即時反饋，消除等待蓄力感）。
+- **90–350ms（空中形變展開）**：在位移約 28%~30% 處啟動展開；當飛行抵達 50% 弧線中點（145ms）時，面板剛好**展開約 30%**（約 60px 圓角膠囊體），達成「物體在飛行途中漸次舒展」的真實生命感。
+- **290–420ms**：選單選項以 14ms 超緊湊 Stagger 階梯浮現（`blur: 4px → 0`、`opacity: 0 → 1`、`translateY: 4px → 0`）。
+- **350–480ms**：極微幅高阻尼微定型（振幅 $\le 1.010$），無果凍回彈，沉穩吸附鎖定。
+
+#### 4. 高阻尼零跳動收合時序 (Critically-Damped Settle Closing, 440ms)
+- **0–150ms**：面板由外向內收攏為 20px 實心小圓。
+- **20–230ms**：小圓沿反向弧線平滑滑回按鈕中心 $P_{0\text{-target}}$（即時取得觸發按鈕在視口中的最新座標，杜絕任何像素突跳）。
+- **230–440ms（專屬 210ms 原位舒展與圖示重組）**：
+  - 小圓在原位以 `cubic-bezier(.4, 0, .2, 1)` 展開（$20\text{px} \rightarrow 36\text{px}$），使眼睛完整讀取幀動畫，告別「啪一聲彈出」的突兀感。
+  - 當按鈕尺寸恢復至 35%~45%（約 26px）時，`⋮` 圖標同步從內部以模糊狀態凝聚重組（`blur: 4px → 0`、`opacity: 0 → 1`、`scale: 0.7 → 1`），宛如實體內生微粒聚合成型。
+  - 微定型振幅收斂至 $\le 1.004$（保留 20% 份量感，剔除 80% 彈跳），像有質量的亞光壓克力穩妥定型。
+
+#### 5. 立體磨砂壓克力材質與動態貼合規範 (Material & Geometry Spec)
+- **空靈通透質感**：
+  - 漸層底色：`linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(245, 248, 252, 0.64))`。
+  - 超採樣毛玻璃霧化：`backdrop-filter: blur(20px) saturate(160%)`。
+  - 微雕倒角高光：`border: 1px solid rgba(255, 255, 255, 0.85)` 搭配 `inset 0 1px 1px rgba(255, 255, 255, 0.95)`。
+  - 徹底移除厚重外投影（Drop-Shadow），杜絕沉積黑暈，保持懸浮通透。
+- **精準貼合量測 (Hug-Content Measurement)**：
+  透過帶有全量父級樣式的離屏量測容器動態取得真實邊界高度 `measureWrap.getBoundingClientRect().height`，一般專案精準為 **143px**（4 項目 + 1 分隔線）、回收桶歷史專案精準為 **44px**（1 項目還原），徹底根除底端留白贅餘。
+- **全域浮動圖層架構 (Global Fixed Overlay)**：
+  選單本體脫鉤至 `document.body` 頂層，卡片在任何懸停或選單展開期間永久維持 `overflow: hidden; border-radius: 14px;`，徹底告別破壞卡片圓角與膠卷裁切的樣式衝突。
+
+---
+
 ## 五、核心功能模塊 (Feature Modules)
 
 ### 5.1 身份認證與帳號安全模組 (Auth & Security)
@@ -492,10 +539,11 @@ y(\theta) = 50 + \sin(\theta) \cdot r(\theta) \cdot \text{scale}
   - 點擊卡片觸發 `pointerenter` 預取與無縫導航。
 
 ### 6.5 頁面 5：分鏡專案庫與詳情檢視 (`projects.html`)
-- **視覺**：骨架屏佔位、膠卷齒孔卡片、網格排列、下拉功能選單（重命名、複製、匯出、刪除）。
+- **視覺**：骨架屏佔位、膠卷齒孔卡片、網格排列、獨立雙控制操作組（`[開啟]` 膠囊按鈕 + `( ⋮ )` 圓形按鈕）與立體磨砂壓克力 Option Morph 選單（重新命名、複製分鏡、匯出 JSON、刪除分鏡）。
 - **邏輯**：
   - 樂觀隱藏、下墜動效、5 秒撤銷定時器與 `/api/projects/:id` 軟刪除。
-  - 點擊開啟調用 `window.spaNavigate('project', { id })` 載入單一分鏡視圖。
+  - 點擊主要操作膠囊 `[開啟]` 調用 `window.spaNavigate('project', { id })` 載入單一分鏡視圖。
+  - 點擊次要操作圓形按鈕 `( ⋮ )` 觸發全域物理拋物線 Option Morph 選單展開。
 
 ### 6.6 頁面 6：AI 核心分鏡生成工作區 (`generate.html` + `generate.js`)
 - **視覺**：全螢幕創作工作室、Phase 1~4 狀態推進、鏡頭卡片時間軸、即時生圖預覽區。
