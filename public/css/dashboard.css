@@ -1290,9 +1290,8 @@ body {
     box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
     overflow: hidden;
     cursor: pointer;
-    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1),
-                box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1),
-                border-color 0.25s ease;
+    transition: box-shadow 0.22s ease,
+                border-color 0.22s ease;
     display: flex;
     flex-direction: column;
     position: relative;
@@ -1306,19 +1305,16 @@ body {
 
 .project-card.lock:hover {
     border-color: var(--card-border);
-    transform: none;
     box-shadow: none;
 }
 
 .project-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08), 0 2px 8px rgba(37, 99, 235, 0.06);
-    border-color: rgba(147, 197, 253, 0.85);
+    box-shadow: 0 8px 24px rgba(22, 36, 64, 0.08);
+    border-color: rgba(55, 105, 190, 0.22);
 }
 
 .project-card:active {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 14px rgba(15, 23, 42, 0.06);
+    box-shadow: 0 4px 12px rgba(22, 36, 64, 0.06);
 }
 
 /* 1. Slim Film Header (Top only) */
@@ -1376,7 +1372,7 @@ body {
 
 .project-card:hover .project-thumb img,
 .project-card:hover .project-thumb .lazy-thumb {
-    transform: scale(1.035);
+    transform: scale(1.008);
 }
 
 .project-thumb.loading,
@@ -1548,102 +1544,294 @@ body {
     text-overflow: ellipsis;
 }
 
-/* Card Footer & Split Button */
+/* Card Footer & Compact Action -> Expanded Action Surface */
+/* Card Footer & Controls */
 .project-card-footer {
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
     align-items: center;
     margin-top: 10px;
     padding-top: 2px;
+    position: relative;
 }
 
-.project-split-btn {
-    display: inline-flex;
-    align-items: stretch;
-    height: 32px;
-    background: #ffffff;
-    border: 1px solid rgba(226, 232, 240, 0.95);
-    border-radius: 8px;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-    overflow: hidden;
-    box-sizing: border-box;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+.project-card-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
 }
 
-.project-card:hover .project-split-btn {
-    border-color: #cbd5e1;
-    box-shadow: 0 2px 5px rgba(15, 23, 42, 0.06);
-}
-
-.split-btn-main {
+/* Primary CTA Button: [ 開啟 ] (Solid Matte Acrylic Capsule) */
+.project-primary-btn {
+    width: 74px;
+    height: 36px;
+    padding: 0;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 0 12px;
+    border-radius: 999px;
     font-family: inherit;
     font-size: 13px;
     font-weight: 600;
+    color: #1e293b;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(245, 247, 250, 0.88));
+    border: 1px solid rgba(20, 40, 80, 0.08);
+    box-shadow: 0 4px 14px rgba(20, 35, 60, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    cursor: pointer;
+    line-height: 1;
+    white-space: nowrap;
+    box-sizing: border-box;
+    transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.18s ease,
+                background 0.18s ease,
+                color 0.18s ease,
+                border-color 0.18s ease;
+}
+
+.project-primary-btn:hover {
+    background: linear-gradient(180deg, #ffffff, rgba(240, 245, 255, 0.95));
+    border-color: rgba(37, 99, 235, 0.22);
+    color: #1d4ed8;
+    box-shadow: 0 6px 18px rgba(37, 99, 235, 0.12), inset 0 1px 0 #ffffff;
+    transform: translateY(-1px);
+}
+
+.project-primary-btn:active {
+    transform: scale(0.96) translateY(0);
+    box-shadow: 0 2px 6px rgba(20, 35, 60, 0.06);
+}
+
+/* Secondary Option Button: ( ⋮ ) in Card */
+.project-option-btn {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.90), rgba(245, 247, 250, 0.84));
+    border: 1px solid rgba(20, 40, 80, 0.08);
+    box-shadow: 0 4px 12px rgba(20, 35, 60, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #64748b;
+    cursor: pointer;
+    outline: none;
+    box-sizing: border-box;
+    transition: background 0.18s ease,
+                color 0.18s ease,
+                border-color 0.18s ease,
+                box-shadow 0.18s ease;
+}
+
+.project-option-btn:hover {
+    background: linear-gradient(180deg, #ffffff, rgba(242, 246, 252, 0.94));
+    color: #0f172a;
+    border-color: rgba(37, 99, 235, 0.20);
+    box-shadow: 0 4px 14px rgba(20, 35, 60, 0.08), inset 0 1px 0 #ffffff;
+}
+
+.project-option-btn.is-hidden-for-morph {
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+.project-option-btn .option-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 15px;
+    height: 15px;
+    pointer-events: none;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   GLOBAL OPTION MORPH MENU (Button → Dot → Surface)
+   ══════════════════════════════════════════════════════════════ */
+.project-option-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    pointer-events: none;
+    background: transparent;
+}
+
+.project-option-overlay.is-active {
+    pointer-events: auto;
+}
+
+:root {
+    --morph-ease: cubic-bezier(.4, 0, .2, 1);
+}
+
+.global-project-option-menu {
+    position: fixed;
+    box-sizing: border-box;
+    z-index: 10001;
+    overflow: hidden;
+    pointer-events: auto;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(245, 248, 252, 0.64));
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    box-shadow: 0 0 0 1px rgba(20, 40, 80, 0.06), inset 0 1px 1px rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    transform-origin: center center;
+    will-change: width, height, top, left, border-radius, transform;
+}
+
+.global-project-option-menu.is-settled {
+    box-shadow: 0 0 0 1px rgba(20, 40, 80, 0.07), inset 0 1px 1px rgba(255, 255, 255, 0.95);
+}
+
+/* The Morphing Icon (⋮) */
+.global-project-option-menu .morph-icon {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    pointer-events: none;
+    opacity: 1;
+    filter: blur(0);
+    transform: scale(1);
+    transition: opacity 70ms var(--morph-ease), filter 70ms var(--morph-ease), transform 70ms var(--morph-ease);
+}
+
+.global-project-option-menu.is-icon-dissolved .morph-icon {
+    opacity: 0;
+    filter: blur(4px);
+    transform: scale(0.7);
+}
+
+/* Menu Content Container */
+.global-project-option-menu .morph-menu-content {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 7px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    box-sizing: border-box;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 70ms var(--morph-ease);
+}
+
+.global-project-option-menu.is-content-visible .morph-menu-content {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Menu Items (stagger 14ms, blur 4px -> 0, opacity 0 -> 1, translateY 4px -> 0) */
+.global-project-option-menu .morph-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    height: 28px;
+    padding: 0 8px;
+    box-sizing: border-box;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 550;
     color: #334155;
     background: transparent;
     border: none;
     cursor: pointer;
-    line-height: 1;
+    text-align: left;
+    outline: none;
     white-space: nowrap;
-    transition: background-color 0.15s ease, color 0.15s ease;
+    opacity: 0;
+    filter: blur(4px);
+    transform: translateY(4px);
+    transition: opacity 0.14s var(--morph-ease),
+                filter 0.14s var(--morph-ease),
+                transform 0.14s var(--morph-ease),
+                background 0.12s ease,
+                color 0.12s ease;
 }
 
-.split-btn-main:hover {
-    background-color: #f1f5f9;
+.global-project-option-menu.is-content-visible .morph-item {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+}
+
+/* Stagger Delays (14ms intervals) */
+.global-project-option-menu.is-content-visible .morph-item:nth-child(1) { transition-delay: 0ms; }
+.global-project-option-menu.is-content-visible .morph-item:nth-child(2) { transition-delay: 14ms; }
+.global-project-option-menu.is-content-visible .morph-item:nth-child(3) { transition-delay: 28ms; }
+.global-project-option-menu.is-content-visible .morph-divider { transition-delay: 38ms; }
+.global-project-option-menu.is-content-visible .morph-item:nth-child(5) { transition-delay: 48ms; }
+
+/* Closing: items collapse fast */
+.global-project-option-menu.is-items-collapsing .morph-item {
+    opacity: 0 !important;
+    filter: blur(4px) !important;
+    transform: translateY(3px) !important;
+    transition: opacity 50ms ease, filter 50ms ease, transform 50ms ease !important;
+    transition-delay: 0ms !important;
+}
+
+.global-project-option-menu .morph-item:hover {
+    background: rgba(15, 23, 42, 0.06);
     color: #0f172a;
 }
 
-.split-btn-main:active {
-    background-color: #e2e8f0;
+.global-project-option-menu .morph-item:active {
+    transform: scale(0.97);
 }
 
-.split-btn-divider {
-    width: 1px;
-    background-color: #e2e8f0;
-    flex-shrink: 0;
-}
-
-.split-btn-dropdown {
+.global-project-option-menu .morph-item-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 30px;
-    padding: 0;
-    font-family: inherit;
-    color: #64748b;
-    background: transparent;
-    border: none;
-    cursor: pointer;
+    width: 15px;
+    height: 15px;
     flex-shrink: 0;
-    transition: background-color 0.15s ease, color 0.15s ease;
+    color: inherit;
 }
 
-.split-btn-dropdown svg {
-    display: block;
-    transition: transform 0.2s ease;
+.global-project-option-menu .morph-item.delete {
+    color: #e11d48;
 }
 
-.split-btn-dropdown:hover {
-    background-color: #f1f5f9;
-    color: #0f172a;
+.global-project-option-menu .morph-item.delete:hover {
+    background: rgba(239, 68, 68, 0.08);
+    color: #be123c;
 }
 
-.split-btn-dropdown:hover svg {
-    transform: translateY(1px);
+.global-project-option-menu .morph-item.delete:hover .morph-item-icon {
+    color: #be123c;
 }
 
-.split-btn-dropdown:active {
-    background-color: #e2e8f0;
-}
-
-.options-dropdown-divider {
+.global-project-option-menu .morph-divider {
     height: 1px;
     background: rgba(226, 232, 240, 0.85);
-    margin: 4px 6px;
+    margin: 3px 4px;
+    opacity: 0;
+    filter: blur(2px);
+    transform: translateY(3px);
+    transition: opacity 0.12s var(--morph-ease), filter 0.12s var(--morph-ease), transform 0.12s var(--morph-ease);
+}
+
+.global-project-option-menu.is-content-visible .morph-divider {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+}
+
+.global-project-option-menu.is-items-collapsing .morph-divider {
+    opacity: 0 !important;
+    transition: opacity 50ms ease !important;
 }
 
 .project-meta {

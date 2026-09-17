@@ -429,23 +429,615 @@
         </div>
       </div>
       <div class="project-info">
-        <div class="project-meta-wrap">
-          <div class="project-title" title="${titleEsc}">${titleEsc}</div>
-          <div class="project-meta-line">${metaInfo}</div>
-        </div>
+        <div class="project-title" title="${titleEsc}">${titleEsc}</div>
         <div class="project-card-footer">
-          <div class="project-split-btn">
-            <button class="split-btn-main" type="button" title="${mainActionLabel}分鏡">${mainActionLabel}</button>
-            <div class="split-btn-divider"></div>
-            <button class="split-btn-dropdown" type="button" title="更多選項" aria-label="更多選項">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
+          <div class="project-meta-line" title="${metaInfo}">${metaInfo}</div>
+          <div class="project-card-actions">
+            <button class="project-primary-btn" type="button" title="${mainActionLabel}分鏡">${mainActionLabel}</button>
+            <button class="project-option-btn" type="button" title="更多選項" aria-label="更多選項">
+              <span class="option-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                  <circle cx="12" cy="5" r="2.1" />
+                  <circle cx="12" cy="12" r="2.1" />
+                  <circle cx="12" cy="19" r="2.1" />
+                </svg>
+              </span>
             </button>
           </div>
         </div>
       </div>
     `;
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // GLOBAL OPTION MORPH CONTROLLER v4 (Continuous Overlap Standard Morph)
+  // ══════════════════════════════════════════════════════════════
+  let activeMorphSession = null;
+
+  // High-precision cubic-bezier solver for standard Material curve cubic-bezier(.4, 0, .2, 1)
+  function createCubicBezier(x1, y1, x2, y2) {
+    const cx = 3 * x1;
+    const bx = 3 * (x2 - x1) - cx;
+    const ax = 1 - cx - bx;
+
+    const cy = 3 * y1;
+    const by = 3 * (y2 - y1) - cy;
+    const ay = 1 - cy - by;
+
+    function sampleCurveX(t) {
+      return ((ax * t + bx) * t + cx) * t;
+    }
+    function sampleCurveY(t) {
+      return ((ay * t + by) * t + cy) * t;
+    }
+    function sampleCurveDerivativeX(t) {
+      return (3 * ax * t + 2 * bx) * t + cx;
+    }
+
+    function solveCurveX(x) {
+      if (x <= 0) return 0;
+      if (x >= 1) return 1;
+      let t = x;
+      for (let i = 0; i < 8; i++) {
+        const currentX = sampleCurveX(t) - x;
+        if (Math.abs(currentX) < 1e-6) return t;
+        const dX = sampleCurveDerivativeX(t);
+        if (Math.abs(dX) < 1e-6) break;
+        t -= currentX / dX;
+      }
+      let t0 = 0, t1 = 1;
+      t = x;
+      while (t0 < t1) {
+        const currentX = sampleCurveX(t);
+        if (Math.abs(currentX - x) < 1e-6) return t;
+        if (x > currentX) t0 = t;
+        else t1 = t;
+        t = (t1 + t0) / 2;
+      }
+      return t;
+    }
+
+    return function(x) {
+      return sampleCurveY(solveCurveX(x));
+    };
+  }
+
+  const easeStandard = createCubicBezier(0.4, 0, 0.2, 1);
+
+  function getQuadraticBezierPoint(p0, p1, p2, t) {
+    const inv = 1 - t;
+    return {
+      x: inv * inv * p0.x + 2 * inv * t * p1.x + t * t * p2.x,
+      y: inv * inv * p0.y + 2 * inv * t * p1.y + t * t * p2.y
+    };
+  }
+
+  function closeGlobalOptionMorph(onComplete) {
+    if (!activeMorphSession) {
+      if (onComplete) onComplete();
+      return;
+    }
+    const session = activeMorphSession;
+    activeMorphSession = null;
+
+    if (session.rafId) {
+      cancelAnimationFrame(session.rafId);
+      session.rafId = null;
+    }
+
+    const { overlay, menu, morphIcon, triggerBtn, p2, targetBounds } = session;
+    const { targetLeft, targetTop, expandedWidth, expandedHeight } = targetBounds;
+
+    // Recalculate target p0 live from triggerBtn rect to guarantee 100% zero-jump alignment
+    const liveRect = triggerBtn.getBoundingClientRect();
+    const p0_target = {
+      x: liveRect.left + liveRect.width / 2,
+      y: liveRect.top + liveRect.height / 2
+    };
+
+    // Return trajectory control point (gentle upward arc ~14px)
+    const p1_return = {
+      x: (p0_target.x + p2.x) / 2,
+      y: Math.min(p0_target.y, p2.y) - 14
+    };
+
+    const finalCenter = {
+      x: targetLeft + expandedWidth / 2,
+      y: targetTop + expandedHeight / 2
+    };
+
+    menu.classList.remove('is-settled');
+    menu.classList.remove('is-content-visible');
+    menu.classList.add('is-items-collapsing');
+
+    const closeStart = performance.now();
+    const closeTotalDuration = 440; // ms (extended by ~90ms so the Dot -> 36px recovery is clearly visible)
+
+    function stepClose(now) {
+      const elapsed = now - closeStart;
+
+      // 1. Unified Flight Position from p2 to p0_target (20 - 230ms, arrives at center at 230ms)
+      let flightPt;
+      if (elapsed <= 20) {
+        flightPt = p2;
+      } else if (elapsed <= 230) {
+        const fp = (elapsed - 20) / 210;
+        const fEase = easeStandard(fp);
+        flightPt = getQuadraticBezierPoint(p2, p1_return, p0_target, fEase);
+      } else {
+        flightPt = p0_target;
+      }
+
+      // 2. Geometry & Scale
+      let curW, curH, curCenterX, curCenterY, curRadius, curScale = 1;
+
+      if (elapsed < 150) {
+        // Phase A: Surface contracts to 20px dot (0 - 150ms)
+        const cp = elapsed / 150;
+        const cEase = easeStandard(cp);
+        const invEase = 1 - cEase;
+
+        curW = 20 + (expandedWidth - 20) * invEase;
+        curH = 20 + (expandedHeight - 20) * invEase;
+        curRadius = 50 - 33 * invEase;
+
+        curCenterX = flightPt.x + (finalCenter.x - p2.x) * invEase;
+        curCenterY = flightPt.y + (finalCenter.y - p2.y) * invEase;
+
+        morphIcon.style.opacity = '0';
+      } else if (elapsed < 230) {
+        // Phase B: Pure 20px Dot glides the remaining flight path into p0_target (150 - 230ms)
+        curW = 20;
+        curH = 20;
+        curRadius = 50;
+        curCenterX = flightPt.x;
+        curCenterY = flightPt.y;
+
+        morphIcon.style.opacity = '0';
+      } else if (elapsed < closeTotalDuration) {
+        // Phase C: Dot is now at p0_target; dedicate full 210ms (230 - 440ms) to
+        // 20px -> 36px steady growth with synchronized blur-to-clear icon emergence
+        const rp = (elapsed - 230) / 210;
+        const rEase = easeStandard(rp);
+
+        const curSize = 20 + 16 * rEase;
+        curW = curSize;
+        curH = curSize;
+        curRadius = 50;
+        curCenterX = p0_target.x;
+        curCenterY = p0_target.y;
+
+        // Icon emerges when Button is ~35-45% grown (at ~26px), coalescing from inside
+        const iconStart = 0.35;
+        if (rEase <= iconStart) {
+          morphIcon.style.opacity = '0';
+          morphIcon.style.filter = 'blur(4px)';
+          morphIcon.style.transform = 'scale(0.7)';
+        } else {
+          const ip = (rEase - iconStart) / (1 - iconStart);
+          const iEase = easeStandard(ip);
+          morphIcon.style.opacity = iEase.toFixed(2);
+          const blurVal = (4 * (1 - iEase)).toFixed(1);
+          morphIcon.style.filter = blurVal > 0.1 ? `blur(${blurVal}px)` : 'none';
+          morphIcon.style.transform = `scale(${(0.7 + 0.3 * iEase).toFixed(3)})`;
+        }
+
+        // Calm critically-damped settle (<= 1.004)
+        const bump = Math.sin(rEase * Math.PI) * Math.max(0, 1 - 0.5 * rEase);
+        curScale = 1 + 0.004 * bump;
+      } else {
+        // Exact final state at button center
+        curW = 36;
+        curH = 36;
+        curRadius = 50;
+        curCenterX = p0_target.x;
+        curCenterY = p0_target.y;
+        curScale = 1;
+        morphIcon.style.opacity = '1';
+        morphIcon.style.filter = 'none';
+        morphIcon.style.transform = 'scale(1)';
+      }
+
+      menu.style.width = `${curW.toFixed(1)}px`;
+      menu.style.height = `${curH.toFixed(1)}px`;
+      menu.style.left = `${(curCenterX - curW / 2).toFixed(1)}px`;
+      menu.style.top = `${(curCenterY - curH / 2).toFixed(1)}px`;
+      menu.style.borderRadius = curRadius > 45 ? '50%' : `${curRadius.toFixed(1)}%`;
+      menu.style.transform = `scale(${curScale.toFixed(4)})`;
+
+      if (elapsed < closeTotalDuration) {
+        session.rafId = requestAnimationFrame(stepClose);
+        return;
+      }
+
+      // Cleanup: perfectly at p0_target with size 36px and scale 1, zero jump handover!
+      if (triggerBtn) {
+        triggerBtn.classList.remove('is-hidden-for-morph');
+      }
+      if (overlay && overlay.parentNode) {
+        overlay.parentNode.removeChild(overlay);
+      }
+      if (onComplete) onComplete();
+    }
+
+    session.rafId = requestAnimationFrame(stepClose);
+  }
+
+  function openGlobalOptionMorph(triggerBtn, p, card, isHistoryPage, refreshCallback) {
+    if (activeMorphSession) {
+      const wasSame = activeMorphSession.triggerBtn === triggerBtn;
+      closeGlobalOptionMorph(() => {
+        if (!wasSame) {
+          openGlobalOptionMorph(triggerBtn, p, card, isHistoryPage, refreshCallback);
+        }
+      });
+      return;
+    }
+
+    const rect = triggerBtn.getBoundingClientRect();
+    const p0 = {
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2
+    };
+
+    // Create Global Fixed Overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'project-option-overlay is-active';
+
+    const menu = document.createElement('div');
+    menu.className = 'global-project-option-menu';
+    menu.style.width = '36px';
+    menu.style.height = '36px';
+    menu.style.left = `${rect.left}px`;
+    menu.style.top = `${rect.top}px`;
+    menu.style.borderRadius = '50%';
+
+    // Morphing Icon (⋮)
+    const morphIcon = document.createElement('span');
+    morphIcon.className = 'morph-icon';
+    morphIcon.innerHTML = `
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+        <circle cx="12" cy="5" r="2.1" />
+        <circle cx="12" cy="12" r="2.1" />
+        <circle cx="12" cy="19" r="2.1" />
+      </svg>
+    `;
+
+    // Menu Content
+    const menuContent = document.createElement('div');
+    menuContent.className = 'morph-menu-content';
+    if (isHistoryPage || p.is_deleted) {
+      menuContent.innerHTML = `
+        <button class="morph-item restore" type="button" data-action="restore">
+          <span class="morph-item-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="1 4 1 10 7 10"></polyline>
+              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+            </svg>
+          </span>
+          <span>還原分鏡</span>
+        </button>
+      `;
+    } else {
+      menuContent.innerHTML = `
+        <button class="morph-item rename" type="button" data-action="rename">
+          <span class="morph-item-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+            </svg>
+          </span>
+          <span>重新命名</span>
+        </button>
+        <button class="morph-item duplicate" type="button" data-action="duplicate">
+          <span class="morph-item-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </span>
+          <span>複製分鏡</span>
+        </button>
+        <button class="morph-item export" type="button" data-action="export">
+          <span class="morph-item-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+          </span>
+          <span>匯出 JSON</span>
+        </button>
+        <div class="morph-divider"></div>
+        <button class="morph-item delete" type="button" data-action="delete">
+          <span class="morph-item-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+          </span>
+          <span>刪除分鏡</span>
+        </button>
+      `;
+    }
+
+    menu.appendChild(morphIcon);
+    menu.appendChild(menuContent);
+    overlay.appendChild(menu);
+    document.body.appendChild(overlay);
+
+    const isHistory = Boolean(isHistoryPage || p.is_deleted);
+
+    // Measure exact dynamic content height with full parent styles (hug-content)
+    const measureWrap = document.createElement('div');
+    measureWrap.className = 'global-project-option-menu';
+    measureWrap.style.cssText = 'position:fixed; left:-9999px; top:-9999px; width:156px; height:auto; visibility:hidden; opacity:0; pointer-events:none;';
+    const cloneMeasure = menuContent.cloneNode(true);
+    cloneMeasure.style.position = 'static';
+    cloneMeasure.style.opacity = '1';
+    cloneMeasure.style.pointerEvents = 'none';
+    measureWrap.appendChild(cloneMeasure);
+    document.body.appendChild(measureWrap);
+    const expandedHeight = Math.ceil(measureWrap.getBoundingClientRect().height);
+    document.body.removeChild(measureWrap);
+
+    const expandedWidth = 156;
+    let targetTop = rect.bottom - expandedHeight;
+    let targetLeft = rect.right - expandedWidth;
+
+    if (targetTop + expandedHeight > window.innerHeight - 12) {
+      targetTop = window.innerHeight - expandedHeight - 12;
+    }
+    if (targetTop < 12) {
+      targetTop = Math.min(rect.top, window.innerHeight - expandedHeight - 12);
+    }
+    if (targetTop < 12) targetTop = 12;
+    if (targetLeft < 12) targetLeft = 12;
+
+    const targetBounds = { targetLeft, targetTop, expandedWidth, expandedHeight };
+
+    // Target expansion center P2: Biased towards bottom-right by ~10% to preserve spatial origin
+    const p2 = {
+      x: targetLeft + expandedWidth * 0.60,
+      y: targetTop + expandedHeight * 0.60
+    };
+
+    // Parabolic control point P1 with natural ~18px upward lift (light, continuous arc)
+    const p1 = {
+      x: (p0.x + p2.x) / 2 + 4,
+      y: Math.min(p0.y, p2.y) - 18
+    };
+
+    // Final bounding box center
+    const finalCenter = {
+      x: targetLeft + expandedWidth / 2,
+      y: targetTop + expandedHeight / 2
+    };
+
+    // Hide original button in card
+    triggerBtn.classList.add('is-hidden-for-morph');
+
+    const session = {
+      overlay,
+      menu,
+      morphIcon,
+      triggerBtn,
+      p0,
+      p1,
+      p2,
+      finalCenter,
+      targetBounds,
+      rafId: null
+    };
+    activeMorphSession = session;
+
+    // ── CONTINUOUS OVERLAP MORPH ANIMATION (0 - 480ms) ──
+    // 0–70ms: Button starts shrinking (36px -> 20px)
+    // 30–260ms: Dot in flight along Quadratic Bézier arc (dur: 230ms)
+    // 90–350ms: Surface expands in mid-air (starts at ~28% flight progress; at 50% midpoint, it is ~30% expanded!)
+    // 290–420ms: Menu items blur + fade in with 14ms stagger
+    // 350–480ms: Ultra-subtle acrylic inertia settle (scale 1 -> 1.010 -> 1)
+    const openStart = performance.now();
+    let contentTriggered = false;
+
+    function stepOpen(now) {
+      if (activeMorphSession !== session) return;
+
+      const elapsed = now - openStart;
+
+      // 1. Icon dissolves immediately without delay (0 - 70ms)
+      if (elapsed <= 70) {
+        const ip = easeStandard(elapsed / 70);
+        morphIcon.style.opacity = (1 - ip).toFixed(2);
+        morphIcon.style.filter = `blur(${(4 * ip).toFixed(1)}px)`;
+        morphIcon.style.transform = `scale(${(1 - 0.3 * ip).toFixed(3)})`;
+      } else {
+        morphIcon.style.opacity = '0';
+        morphIcon.style.filter = 'blur(4px)';
+      }
+
+      // 2. Flight Position (30 - 260ms, dur: 230ms)
+      let flightPt;
+      if (elapsed < 30) {
+        flightPt = p0;
+      } else if (elapsed <= 260) {
+        const fp = (elapsed - 30) / 230;
+        const fEase = easeStandard(fp);
+        flightPt = getQuadraticBezierPoint(p0, p1, p2, fEase);
+      } else {
+        flightPt = p2;
+      }
+
+      // 3. Geometry (Width, Height, Center, Radius)
+      let curW, curH, curCenterX, curCenterY, curRadius;
+
+      if (elapsed < 80) {
+        // Initial button shrinking phase (36px -> 20px)
+        const sp = easeStandard(elapsed / 80);
+        const shrinkSize = 36 - 16 * sp;
+        curW = shrinkSize;
+        curH = shrinkSize;
+        curCenterX = flightPt.x;
+        curCenterY = flightPt.y;
+        curRadius = 50;
+      } else if (elapsed < 90) {
+        // 20px Dot at start of expansion
+        curW = 20;
+        curH = 20;
+        curCenterX = flightPt.x;
+        curCenterY = flightPt.y;
+        curRadius = 50;
+      } else if (elapsed < 350) {
+        // Surface expands in mid-air (90 - 350ms, dur: 260ms)
+        // Note: At 145ms (flight midpoint, 50% distance), ep = 55/260 ≈ 0.21, eEase ≈ 0.29 (~30% expanded!)
+        const ep = (elapsed - 90) / 260;
+        const eEase = easeStandard(ep);
+
+        curW = 20 + (expandedWidth - 20) * eEase;
+        curH = 20 + (expandedHeight - 20) * eEase;
+        curRadius = 50 - 33 * eEase;
+
+        // Center smoothly drifts towards finalCenter during expansion
+        curCenterX = flightPt.x + (finalCenter.x - p2.x) * eEase;
+        curCenterY = flightPt.y + (finalCenter.y - p2.y) * eEase;
+      } else {
+        // Geometry locked at target bounds
+        curW = expandedWidth;
+        curH = expandedHeight;
+        curCenterX = finalCenter.x;
+        curCenterY = finalCenter.y;
+        curRadius = 17;
+      }
+
+      menu.style.width = `${curW.toFixed(1)}px`;
+      menu.style.height = `${curH.toFixed(1)}px`;
+      menu.style.left = `${(curCenterX - curW / 2).toFixed(1)}px`;
+      menu.style.top = `${(curCenterY - curH / 2).toFixed(1)}px`;
+      menu.style.borderRadius = (curRadius <= 18 || elapsed >= 350) ? '17px' : `${curRadius.toFixed(1)}%`;
+
+      // 4. Trigger Menu Items at ~290ms (~85% of expansion completed)
+      if (elapsed >= 290 && !contentTriggered) {
+        contentTriggered = true;
+        menu.classList.add('is-content-visible');
+      }
+
+      // 5. Ultra-subtle Inertia Settle (350 - 480ms, amplitude 0.010, no bounce)
+      if (elapsed >= 350 && elapsed < 480) {
+        const sp = (elapsed - 350) / 130;
+        const bump = Math.sin(sp * Math.PI) * Math.max(0, 1 - 0.25 * sp);
+        const settleScale = 1 + 0.010 * bump;
+        menu.style.transform = `scale(${settleScale.toFixed(4)})`;
+      } else if (elapsed >= 480) {
+        menu.style.transform = 'scale(1)';
+        menu.classList.add('is-settled');
+        // Stop animation loop cleanly
+        session.rafId = null;
+        return;
+      } else {
+        menu.style.transform = 'scale(1)';
+      }
+
+      session.rafId = requestAnimationFrame(stepOpen);
+    }
+
+    session.rafId = requestAnimationFrame(stepOpen);
+
+    // Event handling: outside click / backdrop
+    overlay.addEventListener('pointerdown', (e) => {
+      if (!menu.contains(e.target)) {
+        e.stopPropagation();
+        closeGlobalOptionMorph();
+      }
+    });
+
+    // Menu item action clicks
+    const items = menu.querySelectorAll('.morph-item');
+    items.forEach(item => {
+      item.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const action = item.dataset.action;
+        closeGlobalOptionMorph(() => {
+          const cb = () => {
+            if (refreshCallback) refreshCallback();
+            updateSidebarProjects();
+          };
+          if (action === 'rename') {
+            renameProject(p, card, cb);
+          } else if (action === 'duplicate') {
+            duplicateProject(p, card, cb);
+          } else if (action === 'export') {
+            exportProject(p);
+          } else if (action === 'delete') {
+            deleteProject(p, card, cb);
+          } else if (action === 'restore') {
+            restoreProject(p, card, cb);
+          }
+        });
+      });
+    });
+  }
+
+  // Global listeners to automatically close option menu on scroll, resize, escape, route change
+  if (!window.__optionMorphGlobalListenersBound) {
+    window.__optionMorphGlobalListenersBound = true;
+    window.addEventListener('scroll', () => {
+      if (activeMorphSession) closeGlobalOptionMorph();
+    }, { passive: true });
+
+    window.addEventListener('resize', () => {
+      if (activeMorphSession) closeGlobalOptionMorph();
+    }, { passive: true });
+
+    window.addEventListener('orientationchange', () => {
+      if (activeMorphSession) closeGlobalOptionMorph();
+    }, { passive: true });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && activeMorphSession) {
+        closeGlobalOptionMorph();
+      }
+    });
+  }
+
+  function setupProjectCardEvents(card, p, isHistoryPage, refreshCallback) {
+    if (p.is_deleted) {
+      card.className = 'project-card project-card-deleted';
+      card.onclick = (e) => {
+        if (e.target.closest('.project-card-actions')) return;
+        alert('此分鏡已在回收桶中，請點擊下方「還原」按鈕以還原此分鏡。');
+      };
+    } else {
+      card.className = 'project-card';
+      card.onclick = (e) => {
+        if (e.target.closest('.project-card-actions')) return;
+        navigate('project', { id: p.id });
+      };
+      card.addEventListener('pointerenter', () => {
+        prefetchPage('project', { id: p.id });
+      });
+    }
+
+    const primaryBtn = card.querySelector('.project-primary-btn');
+    if (primaryBtn) {
+      primaryBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (isHistoryPage || p.is_deleted) {
+          restoreProject(p, card, () => {
+            if (refreshCallback) refreshCallback();
+            updateSidebarProjects();
+          });
+        } else {
+          navigate('project', { id: p.id });
+        }
+      });
+    }
+
+    const optionBtn = card.querySelector('.project-option-btn');
+    if (optionBtn) {
+      optionBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openGlobalOptionMorph(optionBtn, p, card, isHistoryPage, refreshCallback);
+      });
+    }
   }
 
   function lazyLoadProjectThumbs(container) {
@@ -4075,39 +4667,12 @@ function initLoginLogic(showRegister) {
           `;
         } else {
           recentProjects.forEach(p => {
-            const date = new Date(p.createAt).toLocaleDateString('zh-TW');
             const card = document.createElement('div');
-            card.className = 'project-card';
-            
-            card.onclick = (e) => {
-              if (e.target.closest('.project-split-btn')) return;
-              navigate('project', { id: p.id });
-            };
-            card.addEventListener('pointerenter', () => {
-              prefetchPage('project', { id: p.id });
-            });
-
             card.innerHTML = buildLightFilmCardHTML(p);
-
-            const splitMainBtn = card.querySelector('.split-btn-main');
-            if (splitMainBtn) {
-              splitMainBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                navigate('project', { id: p.id });
-              });
-            }
-
-            const splitDropdownBtn = card.querySelector('.split-btn-dropdown');
-            if (splitDropdownBtn) {
-              splitDropdownBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                showProjectOptionsDropdown(p, card, splitDropdownBtn, false, () => {
-                  displayRecentProjects(cacheProjectsList);
-                  updateSidebarProjects();
-                });
-              });
-            }
-
+            setupProjectCardEvents(card, p, false, () => {
+              displayRecentProjects(cacheProjectsList);
+              updateSidebarProjects();
+            });
             recentProjectsGrid.appendChild(card);
           });
           lazyLoadProjectThumbs(recentProjectsGrid);
@@ -4183,39 +4748,12 @@ function initLoginLogic(showRegister) {
           `;
         } else {
           activeProjects.forEach(p => {
-            const date = new Date(p.createAt).toLocaleDateString('zh-TW');
             const card = document.createElement('div');
-            card.className = 'project-card';
-            
-            card.onclick = (e) => {
-              if (e.target.closest('.project-split-btn')) return;
-              navigate('project', { id: p.id });
-            };
-            card.addEventListener('pointerenter', () => {
-              prefetchPage('project', { id: p.id });
-            });
-
             card.innerHTML = buildLightFilmCardHTML(p);
-
-            const splitMainBtn = card.querySelector('.split-btn-main');
-            if (splitMainBtn) {
-              splitMainBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                navigate('project', { id: p.id });
-              });
-            }
-
-            const splitDropdownBtn = card.querySelector('.split-btn-dropdown');
-            if (splitDropdownBtn) {
-              splitDropdownBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                showProjectOptionsDropdown(p, card, splitDropdownBtn, false, () => {
-                  displayProjects(cacheProjectsList);
-                  updateSidebarProjects();
-                });
-              });
-            }
-
+            setupProjectCardEvents(card, p, false, () => {
+              displayProjects(cacheProjectsList);
+              updateSidebarProjects();
+            });
             projectsGrid.appendChild(card);
           });
           lazyLoadProjectThumbs(projectsGrid);
@@ -4398,54 +4936,12 @@ function initLoginLogic(showRegister) {
         `;
       } else {
         visibleProjects.forEach(p => {
-          const date = new Date(p.createAt).toLocaleDateString('zh-TW');
           const card = document.createElement('div');
-          
-          if (p.is_deleted) {
-            card.className = 'project-card project-card-deleted';
-            card.onclick = (e) => {
-              if (e.target.closest('.project-split-btn')) return;
-              alert('此分鏡已在回收桶中，請點擊下方「還原」按鈕以還原此分鏡。');
-            };
-          } else {
-            card.className = 'project-card';
-            card.onclick = (e) => {
-              if (e.target.closest('.project-split-btn')) return;
-              navigate('project', { id: p.id });
-            };
-            card.addEventListener('pointerenter', () => {
-              prefetchPage('project', { id: p.id });
-            });
-          }
-
           card.innerHTML = buildLightFilmCardHTML(p, true);
-
-          const splitMainBtn = card.querySelector('.split-btn-main');
-          if (splitMainBtn) {
-            splitMainBtn.addEventListener('click', (e) => {
-              e.stopPropagation();
-              if (p.is_deleted) {
-                restoreProject(p, card, () => {
-                  displayHistory(cacheProjectsList);
-                  updateSidebarProjects();
-                });
-              } else {
-                navigate('project', { id: p.id });
-              }
-            });
-          }
-
-          const splitDropdownBtn = card.querySelector('.split-btn-dropdown');
-          if (splitDropdownBtn) {
-            splitDropdownBtn.addEventListener('click', (e) => {
-              e.stopPropagation();
-              showProjectOptionsDropdown(p, card, splitDropdownBtn, true, () => {
-                displayHistory(cacheProjectsList);
-                updateSidebarProjects();
-              });
-            });
-          }
-
+          setupProjectCardEvents(card, p, true, () => {
+            displayHistory(cacheProjectsList);
+            updateSidebarProjects();
+          });
           projectsGrid.appendChild(card);
         });
         lazyLoadProjectThumbs(projectsGrid);
@@ -5411,6 +5907,10 @@ function initLoginLogic(showRegister) {
         window.AICreationController.openQuickCompose();
       }
       return;
+    }
+
+    if (activeMorphSession) {
+      closeGlobalOptionMorph();
     }
 
     const pageMain = document.getElementById('page-main');
