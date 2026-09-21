@@ -1226,7 +1226,7 @@ body {
 
 .new-project-btn {
     position: relative;
-    overflow: hidden;
+    overflow: visible;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -1242,6 +1242,7 @@ body {
     cursor: pointer;
     transition: all 0.3s;
     box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+    z-index: 0;
 }
 
 .new-project-btn:hover {
@@ -1254,24 +1255,13 @@ body {
     box-shadow: 0 0px 0px rgba(37, 99, 235, 0.3);
 }
 
-.new-project-btn::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -150%;
-    width: 60px;
-    height: 100%;
-    background: linear-gradient(90deg,
-            rgba(255, 255, 255, 0) 0%,
-            rgba(255, 255, 255, 0.35) 50%,
-            rgba(255, 255, 255, 0) 100%);
-    transform: skewX(-25deg);
-    transition: none;
+/* SVG 與文字需在光暈層之上 */
+.new-project-btn > svg,
+.new-project-btn > *:not(.btn-glow-ambient):not(.btn-glow-container) {
+    position: relative;
+    z-index: 3;
 }
 
-.new-project-btn:hover::after {
-    animation: shineSweepGlobal 0.85s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
 
 .projects-grid {
     display: grid;
@@ -4309,7 +4299,7 @@ body.sidebar-open .ai-dock-panel.expanding-to-full {
     overflow: visible;
 }
 
-.ai-pill-btn-glow-container {
+.legacy-pill-container .ai-pill-btn-glow-container {
     width: calc(100% + 8px) !important;
     height: calc(100% + 8px) !important;
     border-radius: 999px;
@@ -4403,6 +4393,9 @@ body.sidebar-open .ai-dock-panel.expanding-to-full {
     0% {
         transform: translate(-50%, -50%) rotate(0deg);
         filter: hue-rotate(0deg);
+    }
+    50% {
+        filter: hue-rotate(180deg);
     }
     100% {
         transform: translate(-50%, -50%) rotate(360deg);
@@ -4501,6 +4494,101 @@ body.sidebar-open .ai-dock-panel.expanding-to-full {
     position: relative;
     z-index: 2;
     white-space: nowrap !important;
+}
+
+/* ── 彩色旋轉光暈 (復刻自 SE-HTML-class ContactChat.vue) ── */
+/* 外層模糊暈染層 */
+.ai-pill-btn-glow-ambient,
+.new-project-btn .btn-glow-ambient {
+    position: absolute;
+    inset: -4px;
+    border-radius: 28px;
+    pointer-events: none !important;
+    overflow: hidden !important;
+    filter: blur(8px);
+    opacity: 0.85;
+    z-index: 1;
+    /* 收合時延遲 0.48s 等膠囊縮小就位後才優雅亮起 */
+    transition: opacity 0.35s ease 0.48s, filter 0.3s ease;
+}
+
+/* 內層清晰邊框層 */
+.ai-pill-btn-glow-container,
+.new-project-btn .btn-glow-container {
+    position: absolute;
+    inset: -2px;
+    border-radius: 26px;
+    pointer-events: none !important;
+    overflow: hidden !important;
+    z-index: 2;
+    /* 收合時延遲 0.48s 等膠囊縮小就位後才優雅亮起 */
+    transition: opacity 0.35s ease 0.48s;
+}
+
+/* 展開中與收合動畫進行中：光暈立即完全隱藏，0s delay，絕不穿幫 */
+.ai-unified-capsule.is-expanded .ai-pill-btn-glow-ambient,
+.ai-unified-capsule.is-expanded .ai-pill-btn-glow-container,
+.ai-unified-capsule.is-closing .ai-pill-btn-glow-ambient,
+.ai-unified-capsule.is-closing .ai-pill-btn-glow-container,
+body.ai-quick-compose-closing .ai-pill-btn-glow-ambient,
+body.ai-quick-compose-closing .ai-pill-btn-glow-container,
+.ai-unified-capsule.is-expanded .btn-glow-ambient,
+.ai-unified-capsule.is-expanded .btn-glow-container,
+.ai-unified-capsule.is-closing .btn-glow-ambient,
+.ai-unified-capsule.is-closing .btn-glow-container,
+body.ai-quick-compose-closing .btn-glow-ambient,
+body.ai-quick-compose-closing .btn-glow-container,
+.ai-unified-capsule.is-expanded .mob-circle-glow-container,
+.ai-unified-capsule.is-expanded .mob-circle-glow,
+.ai-unified-capsule.is-closing .mob-circle-glow-container,
+.ai-unified-capsule.is-closing .mob-circle-glow,
+body.ai-quick-compose-closing .mob-circle-glow-container,
+body.ai-quick-compose-closing .mob-circle-glow {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    transition: opacity 0.05s ease 0s, visibility 0.05s ease 0s !important;
+}
+
+/* hover 時外層更亮更模糊 */
+#global-create-capsule:not(.is-expanded):not(.is-closing):hover .ai-pill-btn-glow-ambient,
+.new-project-btn:hover .btn-glow-ambient {
+    opacity: 1;
+    filter: blur(10px);
+}
+
+/* 旋轉扇形光束 */
+.ai-pill-btn-glow-rotator,
+.new-project-btn .btn-glow-rotator {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 280px;
+    height: 280px;
+    transform: translate(-50%, -50%);
+    background-image: conic-gradient(
+        from 0deg,
+        transparent 0deg,
+        rgba(56, 189, 248, 0.2) 10deg,
+        rgba(59, 130, 246, 0.75) 35deg,
+        rgba(147, 51, 234, 0.85) 60deg,
+        rgba(236, 72, 153, 0.9) 85deg,
+        rgba(251, 146, 60, 0.95) 105deg,
+        #ffffff 115deg,
+        rgba(52, 211, 153, 0.85) 125deg,
+        transparent 135deg,
+        transparent 360deg
+    );
+    animation: glow-loop 3.2s linear infinite;
+    pointer-events: none !important;
+}
+
+/* new-project-btn 膠囊是 50px 圓角，光暈圓角需對應 */
+.new-project-btn .btn-glow-ambient {
+    border-radius: 54px;
+}
+.new-project-btn .btn-glow-container {
+    border-radius: 52px;
 }
 
 /* ============================================================
@@ -5072,7 +5160,7 @@ body.sidebar-open .ai-dock-panel.expanding-to-full {
     }
 
     .mobile-nav__track--focus .mobile-nav__item {
-        color: #0f172a !important;
+        color: #0b1329 !important;
         pointer-events: none !important;
     }
 
@@ -5084,7 +5172,7 @@ body.sidebar-open .ai-dock-panel.expanding-to-full {
 
     .mobile-nav__track--focus .mobile-nav__svg,
     .mobile-nav__svg--focus {
-        color: #0f172a !important;
+        color: #172554 !important;
         stroke: none !important;
         stroke-width: 0 !important;
         fill: currentColor !important;
@@ -5209,9 +5297,13 @@ body.sidebar-open .ai-dock-panel.expanding-to-full {
     }
 
     /* Active & Snap Target Text Label - Primary Brand Blue */
-    .mobile-nav__item.active .mobile-nav__label,
+    .mobile-bottom-nav:not(.is-interacting) .mobile-nav__item.active .mobile-nav__label,
     .mobile-nav__item.snap-target .mobile-nav__label {
-        color: var(--color-brand-primary, #2563eb) !important;
+        color: #172554 !important;
+    }
+    .mobile-bottom-nav.is-interacting .mobile-nav__item.active:not(.snap-target) .mobile-nav__label{
+        color: #64748b !important;
+
     }
 
     /* Center CTA: Dock Minimized Circular Button in Bottom Nav */
@@ -5341,23 +5433,42 @@ body.sidebar-open .ai-dock-panel.expanding-to-full {
     .mob-circle-glow::before {
         content: '';
         display: block;
-        width: 110px;
-        height: 110px;
+        width: 150px;
+        height: 150px;
         background-image: conic-gradient(
+            from 0deg,
             transparent 0deg,
-            rgba(191, 219, 254, 0.45) 20deg,
-            rgba(147, 197, 253, 0.5) 70deg,
-            rgba(196, 181, 253, 0.4) 110deg,
-            transparent 150deg,
+            rgba(56, 189, 248, 0.2) 10deg,
+            rgba(59, 130, 246, 0.75) 35deg,
+            rgba(147, 51, 234, 0.85) 60deg,
+            rgba(236, 72, 153, 0.9) 85deg,
+            rgba(251, 146, 60, 0.95) 105deg,
+            #ffffff 115deg,
+            rgba(52, 211, 153, 0.85) 125deg,
+            transparent 135deg,
             transparent 360deg
         );
-        animation: glow-loop 7.5s linear infinite;
+        animation: glow-loop 3.2s linear infinite;
         position: absolute;
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
         pointer-events: none !important;
     }
+
+    .ai-unified-capsule.is-expanded .mob-circle-glow-container,
+    .ai-unified-capsule.is-expanded .mob-circle-glow,
+    .ai-unified-capsule.is-closing .mob-circle-glow-container,
+    .ai-unified-capsule.is-closing .mob-circle-glow,
+    body.ai-quick-compose-closing .mob-circle-glow-container,
+    body.ai-quick-compose-closing .mob-circle-glow {
+        opacity: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+        transition: opacity 0.05s ease 0s, visibility 0.05s ease 0s !important;
+    }
+
+
 
     /* Progress fill inside circle */
     .mob-circle-progress-fill {

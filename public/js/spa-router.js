@@ -2467,7 +2467,7 @@ function initLoginLogic(showRegister) {
       if (force) {
         document.body.classList.remove('ai-quick-compose-closing');
         if (capsule) {
-          capsule.classList.remove('is-expanded');
+          capsule.classList.remove('is-expanded', 'is-closing');
           if (currentPage === 'generate') {
             capsule.classList.add('hidden-by-workspace');
             capsule.style.opacity = '0';
@@ -2494,6 +2494,7 @@ function initLoginLogic(showRegister) {
 
       if (capsule) {
         capsule.classList.remove('is-expanded');
+        capsule.classList.add('is-closing');
       }
 
       if (layer) {
@@ -2513,6 +2514,9 @@ function initLoginLogic(showRegister) {
         if (this.surfaceState === 'closing') {
           this.surfaceState = 'closed';
           document.body.classList.remove('ai-quick-compose-closing');
+          if (capsule) {
+            capsule.classList.remove('is-closing');
+          }
           if (layer) {
             layer.classList.remove('state-closing', 'state-workspace', 'state-transitioning');
             layer.classList.add('state-closed');
@@ -2952,9 +2956,16 @@ function initLoginLogic(showRegister) {
       capsule.id = 'global-create-capsule';
       capsule.className = 'ai-unified-capsule mob-circle-btn';
       capsule.innerHTML = `
+        <!-- Conic Glow Aura -->
+        <div class="ai-pill-btn-glow-ambient" aria-hidden="true">
+          <div class="ai-pill-btn-glow-rotator"></div>
+        </div>
+        <div class="ai-pill-btn-glow-container" aria-hidden="true">
+          <div class="ai-pill-btn-glow-rotator"></div>
+        </div>
+
         <!-- Button Face -->
         <div class="capsule-btn-face" id="global-create-trigger" role="button" tabindex="0" aria-label="新增分鏡">
-          <div class="ai-pill-btn-glow-container"><div class="ai-pill-btn-glow"></div></div>
           <div class="ai-pill-progress-fill" id="gct-progress-fill"></div>
           <span class="ai-pill-spark mob-circle-spark"><span class="ai-spark-desktop">+</span><span class="ai-spark-mobile">+</span></span>
           <span class="mob-circle-text" id="mob-circle-text" style="display:none;"></span>

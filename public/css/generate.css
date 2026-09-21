@@ -1263,7 +1263,7 @@
     font-size: 0.9rem;
     border: 0.75px solid rgba(255, 255, 255, 0.55);
     box-shadow: none !important;
-    overflow: hidden;
+    overflow: visible !important;
     cursor: pointer;
     user-select: none;
     -webkit-user-select: none;
@@ -1342,6 +1342,8 @@
     opacity: 1;
     filter: blur(0);
     pointer-events: auto;
+    z-index: 3;
+    overflow: hidden;
     transition: opacity 460ms cubic-bezier(0.16, 1, 0.3, 1),
                 filter 460ms ease,
                 background-position 0.35s ease;
@@ -1410,25 +1412,87 @@
     z-index: 1;
 }
 
-.ai-pill-btn-glow-container {
-    width: calc(100% + 8px) !important;
-    height: calc(100% + 8px) !important;
-    border-radius: 999px;
+.ai-unified-capsule .ai-pill-btn-glow-ambient {
     position: absolute;
-    top: -4px;
-    left: -4px;
+    inset: -4px;
+    border-radius: 28px;
     pointer-events: none !important;
-    overflow: hidden;
+    overflow: hidden !important;
+    filter: blur(8px);
+    opacity: 0.85;
+    z-index: 1;
+    /* 收合時延遲 0.48s 等膠囊完全縮小就位後才優雅亮起 */
+    transition: opacity 0.35s ease 0.48s, filter 0.3s ease;
 }
 
-.ai-pill-btn-glow {
+.ai-unified-capsule .ai-pill-btn-glow-container {
     position: absolute;
-    inset: 0;
-    border-radius: 999px;
-    opacity: 0;
-    transition: opacity 0.3s ease;
+    inset: -2px;
+    border-radius: 26px;
+    pointer-events: none !important;
+    overflow: hidden !important;
+    z-index: 2;
+    /* 收合時延遲 0.48s 等膠囊完全縮小就位後才優雅亮起 */
+    transition: opacity 0.35s ease 0.48s;
 }
 
+.ai-unified-capsule:not(.is-expanded):not(.is-closing):hover .ai-pill-btn-glow-ambient {
+    opacity: 1;
+    filter: blur(10px);
+}
+
+.ai-unified-capsule .ai-pill-btn-glow-rotator {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 280px;
+    height: 280px;
+    transform: translate(-50%, -50%);
+    background-image: conic-gradient(
+        from 0deg,
+        transparent 0deg,
+        rgba(56, 189, 248, 0.2) 10deg,
+        rgba(59, 130, 246, 0.75) 35deg,
+        rgba(147, 51, 234, 0.85) 60deg,
+        rgba(236, 72, 153, 0.9) 85deg,
+        rgba(251, 146, 60, 0.95) 105deg,
+        #ffffff 115deg,
+        rgba(52, 211, 153, 0.85) 125deg,
+        transparent 135deg,
+        transparent 360deg
+    );
+    animation: glow-loop 3.2s cubic-bezier(.4,0,.2,1) infinite;
+    pointer-events: none !important;
+}
+
+/* 展開時、收合動畫進行中、隱藏狀態下：光暈立即完全隱藏，0s delay，絕不穿幫露餡 */
+.ai-unified-capsule.is-expanded .ai-pill-btn-glow-ambient,
+.ai-unified-capsule.is-expanded .ai-pill-btn-glow-container,
+.ai-unified-capsule.is-closing .ai-pill-btn-glow-ambient,
+.ai-unified-capsule.is-closing .ai-pill-btn-glow-container,
+body.ai-quick-compose-closing .ai-pill-btn-glow-ambient,
+body.ai-quick-compose-closing .ai-pill-btn-glow-container,
+.ai-unified-capsule.hidden-by-workspace .ai-pill-btn-glow-ambient,
+.ai-unified-capsule.hidden-by-workspace .ai-pill-btn-glow-container {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    transition: opacity 0.05s ease 0s, visibility 0.05s ease 0s !important;
+}
+
+@keyframes glow-loop {
+    0% {
+        transform: translate(-50%, -50%) rotate(180deg);
+        filter: hue-rotate(0deg);
+    }
+    50% {
+        filter: hue-rotate(180deg);
+    }
+    100% {
+        transform: translate(-50%, -50%) rotate(540deg);
+        filter: hue-rotate(360deg);
+    }
+}
 /* Capsule Input Face */
 .capsule-input-face {
     position: absolute;
@@ -1932,6 +1996,27 @@
     transform: none !important;
 }
 
+.qc-send-btn .icon{
+    transition: all .3s cubic-bezier(.4,0,.2,1);
+}
+
+.qc-send-btn:not(:disabled) .icon{
+    animation: send-icon-in .5s cubic-bezier(.33,1.53,.69,.99);
+}
+
+.qc-send-btn:not(:disabled):hover .icon{
+    transform: rotate(45deg);
+}
+
+@keyframes send-icon-in {
+    from{
+        transform: rotate(-180deg) scale(0);
+    }
+    to{
+        transform: rotate(0) scale(1);
+    }
+}
+
 .qc-send-btn:not(:disabled):hover {
     background: #1d4ed8;
     transform: scale(1.05);
@@ -1999,9 +2084,9 @@
         background: linear-gradient(180deg, rgba(255, 255, 255, 0.58) 0%, rgba(243, 246, 252, 0.42) 100%) !important;
         backdrop-filter: blur(8px) saturate(120%) brightness(1.03) !important;
         -webkit-backdrop-filter: blur(8px) saturate(120%) brightness(1.03) !important;
-        border: 0.75px solid rgba(255, 255, 255, 0.55) !important;
+        border: 0 !important;
         box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(15, 23, 42, 0.03), inset 0 1px 1.2px rgba(255, 255, 255, 0.9), inset 0 -1px 2px rgba(148, 163, 184, 0.06) !important;
-        overflow: hidden;
+        overflow: visible !important;
         cursor: pointer;
         transition: width 560ms cubic-bezier(0.16, 1, 0.3, 1),
                     max-width 560ms cubic-bezier(0.16, 1, 0.3, 1),
@@ -2060,50 +2145,36 @@
         background-position: right !important;
     }
 
-    /* Conic Glow Aura on mobile button */
-    .ai-unified-capsule .ai-pill-btn-glow-container {
-        position: absolute;
-        inset: -3px;
-        width: calc(100% + 6px) !important;
-        height: calc(100% + 6px) !important;
+    /* Conic Glow Aura on mobile create button */
+    .ai-unified-capsule .ai-pill-btn-glow-ambient {
+        inset: -5px;
         border-radius: 999px;
-        pointer-events: none !important;
-        overflow: hidden;
+        filter: blur(8px);
+        opacity: 0.9;
+        transition: opacity 0.35s ease 0.52s, filter 0.3s ease !important;
     }
 
-    .ai-unified-capsule .ai-pill-btn-glow {
-        position: absolute;
-        inset: 0;
-        border-radius: 50%;
-        box-sizing: border-box;
-        padding: 3px;
-        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-        -webkit-mask-composite: xor;
-        mask-composite: exclude;
-        pointer-events: none !important;
+    .ai-unified-capsule .ai-pill-btn-glow-container {
+        inset: -1px;
+        width: auto !important;
+        height: auto !important;
+        border-radius: 999px;
+        transition: opacity 0.35s ease 0.52s !important;
+    }
+
+    .ai-unified-capsule .ai-pill-btn-glow-rotator {
+        width: 132px;
+        height: 132px;
+    }
+
+    .mobile-nav__item--create.snap-target .ai-unified-capsule:not(.is-expanded):not(.is-closing) .ai-pill-btn-glow-ambient,
+    .mobile-nav__item--create.selector-hovered .ai-unified-capsule:not(.is-expanded):not(.is-closing) .ai-pill-btn-glow-ambient,
+    .ai-unified-capsule:not(.is-expanded):not(.is-closing).snap-hover .ai-pill-btn-glow-ambient,
+    .ai-unified-capsule:not(.is-expanded):not(.is-closing).selector-hovered .ai-pill-btn-glow-ambient,
+    .ai-unified-capsule:not(.is-expanded):not(.is-closing).is-hovered .ai-pill-btn-glow-ambient {
         opacity: 1 !important;
+        filter: blur(10px) !important;
     }
-
-    .ai-unified-capsule .ai-pill-btn-glow::before {
-        content: '';
-        display: block;
-        width: 110px;
-        height: 110px;
-        background-image: conic-gradient(
-            transparent 0deg,
-            rgba(191, 219, 254, 0.45) 20deg,
-            rgba(147, 197, 253, 0.5) 70deg,
-            rgba(196, 181, 253, 0.4) 110deg,
-            transparent 150deg,
-            transparent 360deg
-        );
-        animation: glow-loop 7.5s linear infinite;
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-    }
-
     .ai-unified-capsule .capsule-btn-face .ai-pill-text {
         display: none !important;
     }
@@ -2221,9 +2292,16 @@
                     filter 380ms ease !important;
     }
 
-    .ai-unified-capsule.is-expanded .ai-pill-btn-glow-container {
+    .ai-unified-capsule.is-expanded .ai-pill-btn-glow-ambient,
+    .ai-unified-capsule.is-expanded .ai-pill-btn-glow-container,
+    .ai-unified-capsule.is-closing .ai-pill-btn-glow-ambient,
+    .ai-unified-capsule.is-closing .ai-pill-btn-glow-container,
+    body.ai-quick-compose-closing .ai-pill-btn-glow-ambient,
+    body.ai-quick-compose-closing .ai-pill-btn-glow-container {
         opacity: 0 !important;
-        transition: opacity 180ms ease !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+        transition: opacity 0.05s ease 0s, visibility 0.05s ease 0s !important;
     }
 
     .quick-creation-container {
