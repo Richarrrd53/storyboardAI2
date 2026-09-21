@@ -556,12 +556,12 @@
     function stepClose(now) {
       const elapsed = now - closeStart;
 
-      // 1. Unified Flight Position from p2 to p0_target (20 - 230ms, arrives at center at 230ms)
+      // 1. Unified Flight Position from p2 to p0_target (30 - 230ms, arrives at center at 230ms)
       let flightPt;
-      if (elapsed <= 20) {
+      if (elapsed <= 30) {
         flightPt = p2;
       } else if (elapsed <= 230) {
-        const fp = (elapsed - 20) / 210;
+        const fp = (elapsed - 30) / 200;
         const fEase = easeStandard(fp);
         flightPt = getQuadraticBezierPoint(p2, p1_return, p0_target, fEase);
       } else {
@@ -571,9 +571,17 @@
       // 2. Geometry & Scale
       let curW, curH, curCenterX, curCenterY, curRadius, curScale = 1;
 
-      if (elapsed < 150) {
-        // Phase A: Surface contracts to 20px dot (0 - 150ms)
-        const cp = elapsed / 150;
+      if (elapsed < 40) {
+        // Phase A1: Menu items start reverse stagger blur/fade while Surface stays full size
+        curW = expandedWidth;
+        curH = expandedHeight;
+        curRadius = 17;
+        curCenterX = finalCenter.x;
+        curCenterY = finalCenter.y;
+        morphIcon.style.opacity = '0';
+      } else if (elapsed < 180) {
+        // Phase A2: Items reach 60-70% fade; Surface visibly contracts to 20px dot (40 - 180ms, dur: 140ms)
+        const cp = (elapsed - 40) / 140;
         const cEase = easeStandard(cp);
         const invEase = 1 - cEase;
 
@@ -586,7 +594,7 @@
 
         morphIcon.style.opacity = '0';
       } else if (elapsed < 230) {
-        // Phase B: Pure 20px Dot glides the remaining flight path into p0_target (150 - 230ms)
+        // Phase B: Pure 20px Dot glides the remaining flight path into p0_target (180 - 230ms)
         curW = 20;
         curH = 20;
         curRadius = 50;

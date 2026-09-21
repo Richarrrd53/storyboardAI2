@@ -1674,17 +1674,17 @@ body {
     z-index: 10001;
     overflow: hidden;
     pointer-events: auto;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(245, 248, 252, 0.64));
-    border: 1px solid rgba(255, 255, 255, 0.85);
-    box-shadow: 0 0 0 1px rgba(20, 40, 80, 0.06), inset 0 1px 1px rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(20px) saturate(160%);
-    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    background: rgba(255, 255, 255, 0.66);
+    border: 1px solid rgba(96, 120, 155, 0.14);
+    box-shadow: 0 2px 8px rgba(18, 32, 56, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(16px) saturate(130%);
+    -webkit-backdrop-filter: blur(16px) saturate(130%);
     transform-origin: center center;
     will-change: width, height, top, left, border-radius, transform;
 }
 
 .global-project-option-menu.is-settled {
-    box-shadow: 0 0 0 1px rgba(20, 40, 80, 0.07), inset 0 1px 1px rgba(255, 255, 255, 0.95);
+    box-shadow: 0 2px 8px rgba(18, 32, 56, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.72);
 }
 
 /* The Morphing Icon (⋮) */
@@ -1772,14 +1772,23 @@ body {
 .global-project-option-menu.is-content-visible .morph-divider { transition-delay: 38ms; }
 .global-project-option-menu.is-content-visible .morph-item:nth-child(5) { transition-delay: 48ms; }
 
-/* Closing: items collapse fast */
+/* Closing: Reverse Stagger + Soft Blur (re-melt into Surface) */
 .global-project-option-menu.is-items-collapsing .morph-item {
     opacity: 0 !important;
-    filter: blur(4px) !important;
+    filter: blur(3px) !important;
     transform: translateY(3px) !important;
-    transition: opacity 50ms ease, filter 50ms ease, transform 50ms ease !important;
-    transition-delay: 0ms !important;
+    transition: opacity 0.11s var(--morph-ease),
+                filter 0.11s var(--morph-ease),
+                transform 0.11s var(--morph-ease) !important;
 }
+
+/* Reverse Stagger Delays: Delete (child 5) melts first -> Divider -> Export -> Duplicate -> Rename */
+.global-project-option-menu.is-items-collapsing .morph-item:nth-child(5) { transition-delay: 0ms !important; }
+.global-project-option-menu.is-items-collapsing .morph-divider { transition-delay: 14ms !important; }
+.global-project-option-menu.is-items-collapsing .morph-item:nth-child(3) { transition-delay: 26ms !important; }
+.global-project-option-menu.is-items-collapsing .morph-item:nth-child(2) { transition-delay: 38ms !important; }
+.global-project-option-menu.is-items-collapsing .morph-item:nth-child(1) { transition-delay: 50ms !important; }
+.global-project-option-menu.is-items-collapsing .morph-item:only-child { transition-delay: 0ms !important; }
 
 .global-project-option-menu .morph-item:hover {
     background: rgba(15, 23, 42, 0.06);
@@ -1831,7 +1840,10 @@ body {
 
 .global-project-option-menu.is-items-collapsing .morph-divider {
     opacity: 0 !important;
-    transition: opacity 50ms ease !important;
+    filter: blur(2px) !important;
+    transform: translateY(2px) !important;
+    transition: opacity 0.10s var(--morph-ease), filter 0.10s var(--morph-ease), transform 0.10s var(--morph-ease) !important;
+    transition-delay: 14ms !important;
 }
 
 .project-meta {
