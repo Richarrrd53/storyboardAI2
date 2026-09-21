@@ -14,11 +14,93 @@ const CAT_MAP = {
 
 let currentTemplate = null;
 let timelineDuration = 0; // Total duration in seconds
+let currentSourcePlayer = null;
+let currentSourcePlayerType = null;
+let playerSyncFrame = null;
+const TIMELINE_FPS = 30;
+
+function formatEditorTimecode(seconds) {
+  const safeSeconds = Math.max(0, Number(seconds) || 0);
+  const wholeSeconds = Math.floor(safeSeconds);
+  const frames = Math.min(TIMELINE_FPS - 1, Math.floor((safeSeconds - wholeSeconds) * TIMELINE_FPS));
+  const hours = Math.floor(wholeSeconds / 3600);
+  const minutes = Math.floor((wholeSeconds % 3600) / 60);
+  const secs = wholeSeconds % 60;
+  return [hours, minutes, secs, frames].map(value => String(value).padStart(2, '0')).join(':');
+}
+
+function stopPlayerTimelineSync() {
+  if (playerSyncFrame) cancelAnimationFrame(playerSyncFrame);
+  playerSyncFrame = null;
+}
+
+function syncTimelineFromPlayer() {
+  stopPlayerTimelineSync();
+  const update = () => {
+    if (currentSourcePlayerType === 'youtube' && currentSourcePlayer?.getCurrentTime) {
+      const time = currentSourcePlayer.getCurrentTime();
+      if (Number.isFinite(time)) window.seekTimeline(time, { fromPlayer: true });
+      if (currentSourcePlayer.getPlayerState?.() === window.YT?.PlayerState?.PLAYING) playerSyncFrame = requestAnimationFrame(update);
+    }
+  };
+  playerSyncFrame = requestAnimationFrame(update);
+}
+
+function loadYouTubePlayerApi() {
+  if (window.YT?.Player) return Promise.resolve(window.YT);
+  if (window.templateYouTubeApiPromise) return window.templateYouTubeApiPromise;
+  window.templateYouTubeApiPromise = new Promise(resolve => {
+    const previousReady = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = () => {
+      if (typeof previousReady === 'function') previousReady();
+      resolve(window.YT);
+    };
+    if (!document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) {
+      const script = document.createElement('script');
+      script.src = 'https://www.youtube.com/iframe_api';
+      document.head.appendChild(script);
+    }
+  });
+  return window.templateYouTubeApiPromise;
+}
+
+async function mountYouTubePlayer(videoId, title, templateId) {
+  const mount = document.getElementById('detail-source-player');
+  if (!mount) return;
+  try {
+    await loadYouTubePlayerApi();
+    if (!document.getElementById('detail-source-player') || currentTemplate?.id !== templateId) return;
+    currentSourcePlayerType = 'youtube';
+    currentSourcePlayer = new window.YT.Player('detail-source-player', {
+      videoId,
+      playerVars: { rel: 0, playsinline: 1, modestbranding: 1 },
+      events: {
+        onReady: event => event.target.getIframe().setAttribute('title', `${title}原始影片播放器`),
+        onStateChange: event => {
+          if (event.data === window.YT.PlayerState.PLAYING) syncTimelineFromPlayer();
+          else {
+            stopPlayerTimelineSync();
+            const time = event.target.getCurrentTime?.();
+            if (Number.isFinite(time)) window.seekTimeline(time, { fromPlayer: true });
+          }
+        }
+      }
+    });
+  } catch (error) {
+    console.warn('YouTube 播放器初始化失敗', error);
+  }
+}
 
 /**
  * Main entrance to render a template detail
  */
 window.renderTemplateDetailTimeline = function(template, detailContainer) {
+  stopPlayerTimelineSync();
+  if (currentSourcePlayerType === 'youtube' && currentSourcePlayer?.destroy) {
+    try { currentSourcePlayer.destroy(); } catch (_) {}
+  }
+  currentSourcePlayer = null;
+  currentSourcePlayerType = null;
   currentTemplate = template;
   console.log("Rendering immersive timeline for template:", template);
 
@@ -50,10 +132,30 @@ window.renderTemplateDetailTimeline = function(template, detailContainer) {
   if (sourceThumbEl) sourceThumbEl.innerHTML = sourceCover ? `<img src="${sourceCover}" alt="${sourceTitle}封面">` : '<span>NO MEDIA</span>';
   if (programMonitorEl) {
     const fallback = programMonitorEl.querySelector('.nle-monitor-fallback');
-    let image = programMonitorEl.querySelector('.nle-monitor-image');
-    if (image) image.remove();
-    if (sourceCover) {
-      image = document.createElement('img');
+    programMonitorEl.querySelectorAll('.nle-monitor-image, .nle-source-player').forEach(el => el.remove());
+    if (sourceVideoId) {
+      const playerMount = document.createElement('div');
+      playerMount.id = 'detail-source-player';
+      playerMount.className = 'nle-source-player';
+      programMonitorEl.prepend(playerMount);
+      mountYouTubePlayer(sourceVideoId, sourceTitle, template.id);
+      if (fallback) fallback.hidden = true;
+    } else if (sourceUrl && /\.(?:mp4|webm|ogg)(?:[?#]|$)/i.test(sourceUrl)) {
+      const player = document.createElement('video');
+      player.id = 'detail-source-player';
+      player.className = 'nle-source-player';
+      player.src = sourceUrl;
+      player.poster = sourceCover;
+      player.controls = true;
+      player.playsInline = true;
+      currentSourcePlayer = player;
+      currentSourcePlayerType = 'html5';
+      player.addEventListener('timeupdate', () => window.seekTimeline(player.currentTime, { fromPlayer: true }));
+      player.addEventListener('seeking', () => window.seekTimeline(player.currentTime, { fromPlayer: true }));
+      programMonitorEl.prepend(player);
+      if (fallback) fallback.hidden = true;
+    } else if (sourceCover) {
+      const image = document.createElement('img');
       image.className = 'nle-monitor-image';
       image.src = sourceCover;
       image.alt = `${sourceTitle}影片封面`;
@@ -81,7 +183,7 @@ window.renderTemplateDetailTimeline = function(template, detailContainer) {
   timelineDuration = totalSec || 15; // default 15s if no shots
 
   const durationTimecodeEl = document.getElementById('detail-monitor-duration');
-  if (durationTimecodeEl) durationTimecodeEl.textContent = `00:00:${String(timelineDuration).padStart(2, '0')}:00`;
+  if (durationTimecodeEl) durationTimecodeEl.textContent = formatEditorTimecode(timelineDuration);
 
   // Update badges
   document.getElementById('detail-category-badge').textContent = CAT_MAP[template.category] || template.category || '未分類';
@@ -113,6 +215,9 @@ window.renderTemplateDetailTimeline = function(template, detailContainer) {
  * Switch back to browse store grid
  */
 window.backToStoreBrowse = function() {
+  stopPlayerTimelineSync();
+  if (currentSourcePlayerType === 'youtube') currentSourcePlayer?.pauseVideo?.();
+  if (currentSourcePlayerType === 'html5') currentSourcePlayer?.pause?.();
   const storeView = document.getElementById('template-store-view');
   const detailImmersive = document.getElementById('template-detail-immersive');
   if (storeView) storeView.style.display = 'flex';
@@ -217,6 +322,44 @@ function renderSideMetadata(t) {
       document.querySelectorAll('.nle-inspector-page').forEach(page => page.classList.toggle('active', page.dataset.inspectorPage === button.dataset.inspectorTab));
     };
   });
+
+  const storyboardBody = document.getElementById('template-storyboard-body');
+  if (storyboardBody) {
+    storyboardBody.innerHTML = '';
+    const sourceId = t.source?.videoId || t.videoId || '';
+    const cover = t.thumbnail || t.cover || t.source?.thumbnail || (sourceId ? `https://i.ytimg.com/vi/${encodeURIComponent(sourceId)}/hqdefault.jpg` : '');
+    let startTime = 0;
+    (Array.isArray(t.structure) ? t.structure : []).forEach((shot, index) => {
+      const row = document.createElement('tr');
+      const shotStart = startTime;
+      const duration = parseInt(shot.duration) || 3;
+      row.innerHTML = `
+        <td class="script-shot-number">${String(shot.shot || index + 1).padStart(2, '0')}</td>
+        <td class="script-preview-cell">${cover ? `<img src="${cover}" alt="鏡頭 ${index + 1} 來源畫面">` : '<span>NO IMAGE</span>'}</td>
+        <td class="script-action-cell"><strong>${shot.action || '未提供畫面動作'}</strong><small>${t.promptTemplate?.perShot?.[index] || ''}</small></td>
+        <td><span class="script-tech-label">${shot.camera || '—'}</span><small>${shot.angle || '—'}</small></td>
+        <td class="script-duration-cell">${shot.duration || `${duration}s`}</td>
+        <td class="script-purpose-cell"><strong>${translateEmotion(shot.emotion)}</strong><small>${shot.purpose || '—'}</small></td>`;
+      row.onclick = () => {
+        window.seekTimeline(shotStart);
+        showShotInspector(shot, index, shotStart);
+      };
+      storyboardBody.appendChild(row);
+      startTime += duration;
+    });
+    if (!storyboardBody.children.length) storyboardBody.innerHTML = '<tr><td colspan="6" class="script-empty">此模板尚無分鏡資料</td></tr>';
+  }
+
+  const timelineView = document.querySelector('.timeline-scroll-container');
+  const scriptView = document.getElementById('storyboard-script-panel');
+  document.querySelectorAll('[data-editor-view]').forEach(button => {
+    button.onclick = () => {
+      const isTimeline = button.dataset.editorView === 'timeline';
+      document.querySelectorAll('[data-editor-view]').forEach(item => item.classList.toggle('active', item === button));
+      if (timelineView) timelineView.hidden = !isTimeline;
+      if (scriptView) scriptView.hidden = isTimeline;
+    };
+  });
   
   document.getElementById('meta-usecase').textContent = t.useCase || '短影音宣傳、生活/產品Vlog';
   document.getElementById('meta-platforms').textContent = platforms.toUpperCase();
@@ -264,28 +407,43 @@ function renderTimelineWidget(t) {
   conflictContainer.innerHTML = '';
   outroContainer.innerHTML = '';
 
-  // Setup click handler on time ruler for seek playhead
-  rulerTicks.onclick = function(e) {
-    const rect = rulerTicks.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const clickPercent = clickX / rect.width;
-    const targetSeconds = clickPercent * timelineDuration;
-    window.seekTimeline(targetSeconds);
+  const seekFromPointer = (event, cell) => {
+    const rect = cell.getBoundingClientRect();
+    const clickX = Math.max(0, Math.min(rect.width, event.clientX - rect.left));
+    window.seekTimeline((clickX / rect.width) * timelineDuration);
+  };
+
+  // Click and drag scrubbing for frame-accurate positioning.
+  rulerTicks.onpointerdown = event => {
+    rulerTicks.setPointerCapture?.(event.pointerId);
+    seekFromPointer(event, rulerTicks);
+  };
+  rulerTicks.onpointermove = event => {
+    if (event.buttons === 1) seekFromPointer(event, rulerTicks);
   };
 
   // Add click handler to tracks cells too so clicking aligns playhead
   const contentCells = [shotsContainer, hookContainer, narrativeContainer, emotionContainer, qaContainer, conflictContainer, outroContainer];
   contentCells.forEach(cell => {
-    cell.onclick = function(e) {
+    cell.onpointerdown = function(e) {
       // Ignore if clicking on a block itself
       if (e.target !== cell) return;
-      const rect = cell.getBoundingClientRect();
-      const clickX = e.clientX - rect.left;
-      const clickPercent = clickX / rect.width;
-      const targetSeconds = clickPercent * timelineDuration;
-      window.seekTimeline(targetSeconds);
+      seekFromPointer(e, cell);
     };
   });
+
+  const timelineBody = document.getElementById('timeline-editor-body');
+  if (timelineBody) {
+    timelineBody.tabIndex = 0;
+    timelineBody.setAttribute('aria-label', '剪輯時間軸；使用左右方向鍵逐格定位，Shift 加方向鍵移動一秒');
+    timelineBody.onkeydown = event => {
+      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+      event.preventDefault();
+      const current = Number(timelineBody.dataset.currentTime || 0);
+      const step = event.shiftKey ? 1 : 1 / TIMELINE_FPS;
+      window.seekTimeline(current + (event.key === 'ArrowRight' ? step : -step));
+    };
+  }
 
   // 1. Render Ruler Ticks (Every 1 second, labels every 5 seconds)
   for (let i = 0; i <= timelineDuration; i++) {
@@ -315,15 +473,16 @@ function renderTimelineWidget(t) {
 
   shots.forEach((shot, index) => {
     const dur = parseInt(shot.duration) || 3;
+    const shotStart = accumulatedTime;
     const blockWidth = (dur / timelineDuration) * 100;
-    const blockLeft = (accumulatedTime / timelineDuration) * 100;
+    const blockLeft = (shotStart / timelineDuration) * 100;
 
     const block = document.createElement('div');
     block.className = 'timeline-block shot-block';
     block.style.left = `${blockLeft}%`;
     block.style.width = `${blockWidth}%`;
-    block.setAttribute('data-start', accumulatedTime);
-    block.setAttribute('data-end', accumulatedTime + dur);
+    block.setAttribute('data-start', shotStart);
+    block.setAttribute('data-end', shotStart + dur);
     block.setAttribute('data-shot-index', index);
 
     block.innerHTML = `<div>S${String(shot.shot || index + 1).padStart(2, '0')} · ${shot.action || shot.purpose || '未命名鏡頭'}</div>`;
@@ -333,7 +492,7 @@ function renderTimelineWidget(t) {
       e.stopPropagation();
       window.seekTimeline(parseFloat(block.getAttribute('data-start')));
       highlightTimelineBlock(block);
-      showShotInspector(shot, index, accumulatedTime);
+      showShotInspector(shot, index, shotStart);
     };
 
     shotsContainer.appendChild(block);
@@ -552,7 +711,7 @@ function highlightTimelineBlock(blockEl) {
 /**
  * Seek Playhead vertically
  */
-window.seekTimeline = function(seconds) {
+window.seekTimeline = function(seconds, options = {}) {
   if (seconds < 0) seconds = 0;
   if (seconds > timelineDuration) seconds = timelineDuration;
 
@@ -561,18 +720,27 @@ window.seekTimeline = function(seconds) {
 
   const pct = (seconds / timelineDuration) * 100;
   playhead.style.left = `calc(126px + (100% - 126px) * ${pct / 100})`;
+  const timelineBody = document.getElementById('timeline-editor-body');
+  if (timelineBody) timelineBody.dataset.currentTime = String(seconds);
+
+  if (!options.fromPlayer) {
+    if (currentSourcePlayerType === 'youtube' && currentSourcePlayer?.seekTo) {
+      currentSourcePlayer.seekTo(seconds, true);
+    } else if (currentSourcePlayerType === 'html5' && currentSourcePlayer) {
+      currentSourcePlayer.currentTime = seconds;
+    }
+  }
 
   // Format time e.g., 00:03
-  const roundedSec = Math.round(seconds);
+  const roundedSec = Math.floor(seconds);
   const playheadHead = playhead.querySelector('.playhead-head');
   if (playheadHead) {
-    playheadHead.textContent = `00:${roundedSec < 10 ? '0' + roundedSec : roundedSec}`;
+    playheadHead.textContent = formatEditorTimecode(seconds).slice(3);
   }
   const monitorTimecode = document.getElementById('detail-monitor-timecode');
-  if (monitorTimecode) monitorTimecode.textContent = `00:00:${String(roundedSec).padStart(2, '0')}:00`;
+  if (monitorTimecode) monitorTimecode.textContent = formatEditorTimecode(seconds);
 
   // Auto scroll timeline container to keep playhead in view
-  const timelineBody = document.getElementById('timeline-editor-body');
   const scrollContainer = timelineBody?.parentElement;
   if (scrollContainer && timelineBody) {
     const playheadPx = (pct / 100) * timelineBody.clientWidth;
@@ -602,6 +770,8 @@ function setInspectorTheme(themeClass) {
   if (themeClass) {
     panel.classList.add(themeClass);
   }
+  const clipTab = document.querySelector('[data-inspector-tab="clip"]');
+  if (clipTab) clipTab.click();
 }
 
 /**

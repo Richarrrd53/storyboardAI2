@@ -189,13 +189,30 @@
             <p id="detail-template-version">分析版本：—</p>
             <p id="detail-confidence">信心指數：—</p>
           </div>
+          <div class="nle-bin-section" data-bin-page="media">
+            <h6>模板摘要</h6>
+            <dl class="nle-compact-meta">
+              <div><dt>題材</dt><dd id="meta-usecase">—</dd></div>
+              <div><dt>平台</dt><dd id="meta-platforms">—</dd></div>
+              <div><dt>受眾</dt><dd id="meta-audience">—</dd></div>
+              <div><dt>鏡頭</dt><dd id="meta-shotscount">—</dd></div>
+              <div><dt>長度</dt><dd id="meta-duration">—</dd></div>
+            </dl>
+          </div>
+          <div class="nle-bin-section" data-bin-page="media">
+            <h6>AI 成功要素</h6><p id="meta-why-it-works">—</p>
+            <ul class="nle-replicable-list" id="meta-replicable-elements"></ul>
+          </div>
           <div class="nle-bin-section" data-bin-page="prompts" hidden>
             <h6>分鏡生成提示詞</h6>
+            <p class="editor-code-text" id="meta-prompt-base">—</p>
             <div class="nle-prompt-list" id="detail-prompt-list"></div>
+            <dl class="nle-compact-meta"><div><dt>節奏</dt><dd id="meta-rhythm-pattern">—</dd></div><div><dt>運鏡</dt><dd id="meta-camera-control">—</dd></div><div><dt>情緒</dt><dd id="meta-emotion-control">—</dd></div></dl>
           </div>
           <div class="nle-bin-section" data-bin-page="variables" hidden>
             <h6>可替換變數</h6>
             <div class="nle-variable-chips" id="detail-variable-chips"></div>
+            <p id="meta-variables" hidden>—</p>
           </div>
         </aside>
 
@@ -207,14 +224,14 @@
           </div>
           <div class="nle-transport">
             <span id="detail-monitor-timecode">00:00:00:00</span>
-            <div><button type="button" aria-label="上一格">│◀</button><button type="button" aria-label="播放">▶</button><button type="button" aria-label="下一格">▶│</button></div>
+            <div class="source-playback-label">ORIGINAL PLATFORM PLAYBACK</div>
             <span id="detail-monitor-duration">00:00:00:00</span>
           </div>
         </section>
 
         <aside class="nle-panel nle-properties-panel">
           <div class="nle-panel-title"><span>檢查器</span><small>INSPECTOR</small></div>
-          <div class="nle-inspector-tabs" role="tablist"><button class="active" type="button" data-inspector-tab="story">敘事</button><button type="button" data-inspector-tab="marketing">行銷</button><button type="button" data-inspector-tab="output">輸出</button></div>
+          <div class="nle-inspector-tabs" role="tablist"><button class="active" type="button" data-inspector-tab="story">敘事</button><button type="button" data-inspector-tab="marketing">行銷</button><button type="button" data-inspector-tab="output">輸出</button><button type="button" data-inspector-tab="clip">片段</button></div>
           <div class="nle-inspector-page active" data-inspector-page="story">
             <div class="nle-property-group">
               <h5>敘事設定</h5>
@@ -230,6 +247,12 @@
           <div class="nle-inspector-page" data-inspector-page="output">
             <div class="nle-property-group"><h5>序列設定</h5><dl><div><dt>畫面比例</dt><dd>9:16</dd></div><div><dt>解析度</dt><dd>1080 × 1920</dd></div><div><dt>影格率</dt><dd>30 fps</dd></div><div><dt>色彩</dt><dd>Rec.709</dd></div></dl></div>
             <div class="nle-property-group"><h5>目標平台</h5><div class="nle-variable-chips" id="detail-platform-chips"></div></div>
+          </div>
+          <div class="nle-inspector-page" data-inspector-page="clip">
+            <div class="inspector-panel" id="timeline-inspector">
+              <div class="inspector-header"><h4 class="inspector-title" id="inspector-title">選取時間軸片段</h4><span class="inspector-badge" id="inspector-badge">CLIP</span></div>
+              <div class="inspector-body" id="inspector-body-content"><div class="inspector-empty-state"><p>點擊時間軸上的鏡頭或 AI 結構片段，在這裡查看完整內容。</p></div></div>
+            </div>
           </div>
           <div class="nle-property-group nle-collaboration-state">
             <h5>協作狀態</h5><div class="nle-review-status"><i></i><span><b>結構已就緒</b><small>可交接腳本與剪輯</small></span></div>
@@ -250,8 +273,8 @@
             </svg>
             <span>時間軸 · SEQUENCE 01</span>
           </div>
-          <div class="right-info">
-            <span class="info-tip">點擊片段可在下方查看鏡頭與 AI 決策</span>
+          <div class="right-info timeline-view-switcher">
+            <button class="active" type="button" data-editor-view="timeline">時間軸</button><button type="button" data-editor-view="script">分鏡腳本</button>
           </div>
         </div>
 
@@ -330,83 +353,12 @@
 
           </div>
         </div>
-      </div>
-
-      <!-- Inspector (Left) & Metadata Card (Right) -->
-      <div class="detail-bottom-layout">
-        
-        <!-- Left: Inspector panel (updates based on playhead or click) -->
-        <div class="inspector-panel" id="timeline-inspector">
-          <div class="inspector-header">
-            <h4 class="inspector-title" id="inspector-title">請選取時間軸區段</h4>
-            <span class="inspector-badge" id="inspector-badge">讀取中</span>
-          </div>
-          <div class="inspector-body" id="inspector-body-content">
-            <div class="inspector-empty-state">
-              <p>👈 請在上方時間軸軌道中點擊任何一個「分鏡鏡頭」或「AI 結構分析軌道」，此處將以專屬分色呈現該時段的詳細台詞、動作以及 AI 設計手法。</p>
-            </div>
-          </div>
+        <div class="storyboard-script-panel" id="storyboard-script-panel" hidden>
+          <table class="template-storyboard-table">
+            <thead><tr><th>鏡號</th><th>畫面預覽</th><th>故事內容／動作</th><th>景別／角度</th><th>時長</th><th>情緒／目的</th></tr></thead>
+            <tbody id="template-storyboard-body"></tbody>
+          </table>
         </div>
-
-        <!-- Right: Meta Side info -->
-        <div class="metadata-side-panel">
-          <div class="side-panel-section">
-            <h5>模板基本屬性</h5>
-            <table class="meta-table">
-              <tr>
-                <td class="meta-label">適合題材</td>
-                <td class="meta-val" id="meta-usecase">-</td>
-              </tr>
-              <tr>
-                <td class="meta-label">適合平台</td>
-                <td class="meta-val" id="meta-platforms">-</td>
-              </tr>
-              <tr>
-                <td class="meta-label">適合受眾</td>
-                <td class="meta-val" id="meta-audience">-</td>
-              </tr>
-              <tr>
-                <td class="meta-label">鏡頭個數</td>
-                <td class="meta-val" id="meta-shotscount">-</td>
-              </tr>
-              <tr>
-                <td class="meta-label">建議總長</td>
-                <td class="meta-val" id="meta-duration">-</td>
-              </tr>
-              <tr>
-                <td class="meta-label">可替換變數</td>
-                <td class="meta-val" id="meta-variables">-</td>
-              </tr>
-            </table>
-          </div>
-
-          <div class="side-panel-section">
-            <h5>AI 爆點原理解析 (Why it works)</h5>
-            <p class="why-it-works-text" id="meta-why-it-works">-</p>
-          </div>
-
-          <div class="side-panel-section">
-            <h5>生成提示詞基調</h5>
-            <p class="why-it-works-text editor-code-text" id="meta-prompt-base">-</p>
-          </div>
-
-          <div class="side-panel-section">
-            <h5>節奏與控制參數</h5>
-            <table class="meta-table">
-              <tr><td class="meta-label">節奏規律</td><td class="meta-val" id="meta-rhythm-pattern">-</td></tr>
-              <tr><td class="meta-label">運鏡強度</td><td class="meta-val" id="meta-camera-control">-</td></tr>
-              <tr><td class="meta-label">情緒強度</td><td class="meta-val" id="meta-emotion-control">-</td></tr>
-            </table>
-          </div>
-
-          <div class="side-panel-section">
-            <h5>可複製的黃金元素 (Replicable Elements)</h5>
-            <ul class="replicable-list" id="meta-replicable-elements">
-              <!-- rendered dynamically -->
-            </ul>
-          </div>
-        </div>
-
       </div>
     </section>
 
