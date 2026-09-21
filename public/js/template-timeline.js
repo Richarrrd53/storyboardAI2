@@ -5,10 +5,10 @@
 
 // Category mapping helper
 const CAT_MAP = {
-  'product': '商品焦點',
-  'story': '品牌故事',
-  'twist': '反轉爆點',
-  'custom': '自訂模板',
+  'product': '商品廣告',
+  'story': '敘事紀實',
+  'twist': '高留存節奏',
+  'custom': '團隊資產',
   '未分類': '未分類'
 };
 
@@ -36,6 +36,41 @@ window.renderTemplateDetailTimeline = function(template, detailContainer) {
   document.getElementById('detail-template-title').textContent = template.name || template.title || '無標題';
   document.getElementById('detail-template-desc').textContent = template.description || '無描述';
 
+  // Populate source-video surfaces. YouTube templates derive their actual cover
+  // directly from the source video ID; uploaded/custom templates use the stored poster.
+  const sourceUrl = template.videoUrl || template.source?.url || '';
+  const youtubeMatch = sourceUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|shorts\/|embed\/))([\w-]{11})/);
+  const sourceVideoId = template.source?.videoId || template.videoId || youtubeMatch?.[1] || '';
+  const sourceCover = template.thumbnail || template.cover || template.source?.thumbnail ||
+    (sourceVideoId ? `https://i.ytimg.com/vi/${encodeURIComponent(sourceVideoId)}/hqdefault.jpg` : '');
+  const sourceTitle = template.source?.title || template.name || template.title || '來源影片';
+  const sourceChannel = template.source?.channel || (sourceVideoId ? 'YouTube 原始素材' : '自訂素材');
+  const sourceThumbEl = document.getElementById('detail-source-thumb');
+  const programMonitorEl = document.getElementById('detail-program-monitor');
+  if (sourceThumbEl) sourceThumbEl.innerHTML = sourceCover ? `<img src="${sourceCover}" alt="${sourceTitle}封面">` : '<span>NO MEDIA</span>';
+  if (programMonitorEl) {
+    const fallback = programMonitorEl.querySelector('.nle-monitor-fallback');
+    let image = programMonitorEl.querySelector('.nle-monitor-image');
+    if (image) image.remove();
+    if (sourceCover) {
+      image = document.createElement('img');
+      image.className = 'nle-monitor-image';
+      image.src = sourceCover;
+      image.alt = `${sourceTitle}影片封面`;
+      image.onerror = () => image.remove();
+      programMonitorEl.prepend(image);
+      if (fallback) fallback.hidden = true;
+    } else if (fallback) {
+      fallback.hidden = false;
+    }
+  }
+  const sourceTitleEl = document.getElementById('detail-source-title');
+  const sourceChannelEl = document.getElementById('detail-source-channel');
+  if (sourceTitleEl) sourceTitleEl.textContent = sourceTitle;
+  if (sourceChannelEl) sourceChannelEl.textContent = sourceChannel;
+  const sequenceNameEl = document.getElementById('detail-sequence-name');
+  if (sequenceNameEl) sequenceNameEl.textContent = `${(template.name || 'SEQUENCE').slice(0, 22).toUpperCase()} · 9:16`;
+
   // Calculate total duration from shots
   const shots = Array.isArray(template.structure) ? template.structure : [];
   let totalSec = 0;
@@ -44,6 +79,9 @@ window.renderTemplateDetailTimeline = function(template, detailContainer) {
     totalSec += sec;
   });
   timelineDuration = totalSec || 15; // default 15s if no shots
+
+  const durationTimecodeEl = document.getElementById('detail-monitor-duration');
+  if (durationTimecodeEl) durationTimecodeEl.textContent = `00:00:${String(timelineDuration).padStart(2, '0')}:00`;
 
   // Update badges
   document.getElementById('detail-category-badge').textContent = CAT_MAP[template.category] || template.category || '未分類';
@@ -120,13 +158,76 @@ window.triggerTemplateDetail = async function(templateId) {
 function renderSideMetadata(t) {
   const varsList = Array.isArray(t.variables) ? t.variables : [];
   const platforms = Array.isArray(t.platform) ? t.platform.join(', ') : (t.platform || '無限制');
+  const setText = (id, value, fallback = '—') => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value === undefined || value === null || value === '' ? fallback : value;
+  };
+  const setChips = (id, values) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const list = Array.isArray(values) ? values : (values ? [values] : []);
+    el.replaceChildren(...(list.length ? list : ['—']).map(value => {
+      const span = document.createElement('span');
+      span.textContent = value;
+      return span;
+    }));
+  };
+
+  setText('detail-source-views', `觀看次數：${Number(t.source?.views || 0).toLocaleString('zh-TW')}`);
+  setText('detail-template-version', `分析版本：v${t.version || '—'}`);
+  setText('detail-confidence', `信心指數：${Number.isFinite(Number(t.confidence)) ? Math.round(Number(t.confidence) * 100) + '%' : '—'}`);
+  setText('detail-bin-count', String((Array.isArray(t.structure) ? t.structure.length : 0) + 1));
+  setChips('detail-variable-chips', varsList.map(v => `{${v}}`));
+  setChips('detail-target-emotions', t.marketing?.targetEmotion);
+  setChips('detail-platform-chips', Array.isArray(t.platform) ? t.platform.map(p => String(p).toUpperCase()) : t.platform);
+
+  setText('detail-narrative-type', t.narrative?.type);
+  setText('detail-narrative-tone', translateTone(t.narrative?.tone));
+  setText('detail-pace', t.visualFlow?.pace);
+  setText('detail-transition', t.visualFlow?.transitionStyle);
+  setText('detail-narrative-structure', t.narrative?.structure);
+  setText('detail-hook-type', `${t.hook?.type || '—'} · ${t.hook?.position || '—'}`);
+  setText('detail-hook-description', t.hook?.description);
+  setText('detail-marketing-method', t.marketing?.integrationMethod);
+  setText('detail-brand-role', t.marketing?.brandRole);
+  setText('detail-reveal-timing', t.marketing?.revealTiming);
+  setText('detail-persuasion', t.marketing?.persuasionStyle);
+
+  const promptList = document.getElementById('detail-prompt-list');
+  if (promptList) {
+    const prompts = Array.isArray(t.promptTemplate?.perShot) ? t.promptTemplate.perShot : [];
+    promptList.replaceChildren(...(prompts.length ? prompts : ['尚無分鏡提示詞']).map((prompt, index) => {
+      const item = document.createElement('div');
+      item.innerHTML = `<b>${prompts.length ? `S${String(index + 1).padStart(2, '0')}` : '—'}</b><span></span>`;
+      item.querySelector('span').textContent = prompt;
+      return item;
+    }));
+  }
+
+  document.querySelectorAll('.nle-bin-tabs [data-bin-tab]').forEach(button => {
+    button.onclick = () => {
+      document.querySelectorAll('.nle-bin-tabs [data-bin-tab]').forEach(item => item.classList.toggle('active', item === button));
+      document.querySelectorAll('[data-bin-page]').forEach(page => { page.hidden = page.dataset.binPage !== button.dataset.binTab; });
+    };
+  });
+
+  document.querySelectorAll('.nle-inspector-tabs [data-inspector-tab]').forEach(button => {
+    button.onclick = () => {
+      document.querySelectorAll('.nle-inspector-tabs [data-inspector-tab]').forEach(item => item.classList.toggle('active', item === button));
+      document.querySelectorAll('.nle-inspector-page').forEach(page => page.classList.toggle('active', page.dataset.inspectorPage === button.dataset.inspectorTab));
+    };
+  });
   
   document.getElementById('meta-usecase').textContent = t.useCase || '短影音宣傳、生活/產品Vlog';
   document.getElementById('meta-platforms').textContent = platforms.toUpperCase();
   document.getElementById('meta-audience').textContent = t.analysis?.targetAudience || '大眾社群用戶';
   document.getElementById('meta-shotscount').textContent = `${t.shotsCount || (t.structure ? t.structure.length : 0)} 鏡`;
   document.getElementById('meta-duration').textContent = `${timelineDuration} 秒`;
-  document.getElementById('meta-variables').innerHTML = varsList.map(v => `<code style="background:#f0f0f5; color:#5d3a9b; padding:2px 6px; border-radius:4px; margin-right:4px; font-size:0.8rem;">${v}</code>`).join('') || '無變數';
+  document.getElementById('meta-variables').textContent = varsList.length ? varsList.map(v => `{${v}}`).join(' · ') : '無變數';
+  setText('meta-prompt-base', t.promptTemplate?.base);
+  setText('meta-rhythm-pattern', t.visualFlow?.rhythmPattern);
+  setText('meta-camera-control', Array.isArray(t.controls?.cameraIntensity) ? t.controls.cameraIntensity.join(' / ') : t.controls?.cameraIntensity);
+  setText('meta-emotion-control', Array.isArray(t.controls?.emotionIntensity) ? t.controls.emotionIntensity.join(' / ') : t.controls?.emotionIntensity);
 
   document.getElementById('meta-why-it-works').innerHTML = formatTextWithLinks(t.analysis?.whyItWorks || '利用快節奏剪輯與大眾共鳴點開場，輔以視覺細節特寫，加深信任感與轉換效果。');
 
@@ -225,7 +326,8 @@ function renderTimelineWidget(t) {
     block.setAttribute('data-end', accumulatedTime + dur);
     block.setAttribute('data-shot-index', index);
 
-    block.innerHTML = `<div>🎬 鏡頭 ${shot.shot} (${dur}s) | ${shot.camera || 'static'}</div>`;
+    block.innerHTML = `<div>S${String(shot.shot || index + 1).padStart(2, '0')} · ${shot.action || shot.purpose || '未命名鏡頭'}</div>`;
+    block.title = `${shot.camera || 'static'} / ${shot.angle || 'eye-level'} / ${dur}s`;
 
     block.onclick = (e) => {
       e.stopPropagation();
@@ -245,7 +347,7 @@ function renderTimelineWidget(t) {
   hookBlock.className = 'timeline-block ai-block-hook';
   hookBlock.style.left = '0%';
   hookBlock.style.width = `${hookWidth}%`;
-  hookBlock.innerHTML = `🎯 Hook 搶眼開場 (0-${hookDur}s)`;
+  hookBlock.innerHTML = `HOOK · ${t.hook?.type || 'curiosity'}｜${t.hook?.description || `0–${hookDur}s 開場`}`;
   hookBlock.onclick = (e) => {
     e.stopPropagation();
     window.seekTimeline(0);
@@ -266,7 +368,7 @@ function renderTimelineWidget(t) {
   narrBlock.className = 'timeline-block ai-block-narrative';
   narrBlock.style.left = `${narrLeft}%`;
   narrBlock.style.width = `${narrWidth}%`;
-  narrBlock.innerHTML = `🎬 中段敘事結構 (${narrStart}-${narrEnd}s)`;
+  narrBlock.innerHTML = `NARRATIVE · ${t.narrative?.type || 'story'}｜${t.narrative?.structure || `${narrStart}–${narrEnd}s`}`;
   narrBlock.onclick = (e) => {
     e.stopPropagation();
     window.seekTimeline(narrStart);
@@ -284,7 +386,7 @@ function renderTimelineWidget(t) {
   outroBlock.className = 'timeline-block ai-block-outro';
   outroBlock.style.left = `${outroLeft}%`;
   outroBlock.style.width = `${outroWidth}%`;
-  outroBlock.innerHTML = `🏆 尾段品牌印象與 CTA (${outroStart}-${timelineDuration}s)`;
+  outroBlock.innerHTML = `CTA · ${t.marketing?.integrationMethod || 'organic'}｜${t.marketing?.persuasionStyle || 'subtle'}`;
   outroBlock.onclick = (e) => {
     e.stopPropagation();
     window.seekTimeline(outroStart);
@@ -305,7 +407,7 @@ function renderTimelineWidget(t) {
       emoBlock.className = 'timeline-block ai-block-emotion';
       emoBlock.style.left = `${blockLeft}%`;
       emoBlock.style.width = `${blockWidth}%`;
-      emoBlock.innerHTML = `🌊 ${translateEmotion(shot.emotion)}`;
+      emoBlock.innerHTML = `${translateEmotion(shot.emotion)} · S${String(index + 1).padStart(2, '0')}`;
       
       const shotStart = curTime;
       emoBlock.onclick = (e) => {
@@ -339,7 +441,7 @@ function renderTimelineWidget(t) {
       qaBlock.className = 'timeline-block ai-block-qa';
       qaBlock.style.left = `${blockLeft}%`;
       qaBlock.style.width = `${blockWidth}%`;
-      qaBlock.innerHTML = `🗣️ 互動提問鏡頭`;
+      qaBlock.innerHTML = `INTERACTION · S${String(index + 1).padStart(2, '0')}`;
       
       const shotStart = timePointer;
       const actCopy = actionText;
@@ -366,7 +468,7 @@ function renderTimelineWidget(t) {
     qaBlock.className = 'timeline-block ai-block-qa';
     qaBlock.style.left = `${blockLeft}%`;
     qaBlock.style.width = `${blockWidth}%`;
-    qaBlock.innerHTML = `🗣️ 建議互動提問點`;
+    qaBlock.innerHTML = `INTERACTION · 建議提問點`;
     qaBlock.onclick = (e) => {
       e.stopPropagation();
       window.seekTimeline(midStart);
@@ -398,7 +500,7 @@ function renderTimelineWidget(t) {
       confBlock.className = 'timeline-block ai-block-conflict';
       confBlock.style.left = `${blockLeft}%`;
       confBlock.style.width = `${blockWidth}%`;
-      confBlock.innerHTML = `⚡ 視覺/聽覺干擾`;
+      confBlock.innerHTML = `ATTENTION RESET · ${cameraText || angleText || 'CUT'}`;
 
       const shotStart = tPointer;
       const angle = angleText;
@@ -427,7 +529,7 @@ function renderTimelineWidget(t) {
     confBlock.className = 'timeline-block ai-block-conflict';
     confBlock.style.left = `${blockLeft}%`;
     confBlock.style.width = `${blockWidth}%`;
-    confBlock.innerHTML = `⚡ 視覺波動點`;
+    confBlock.innerHTML = `ATTENTION RESET · 建議節奏點`;
     confBlock.onclick = (e) => {
       e.stopPropagation();
       window.seekTimeline(confStart);
@@ -458,7 +560,7 @@ window.seekTimeline = function(seconds) {
   if (!playhead) return;
 
   const pct = (seconds / timelineDuration) * 100;
-  playhead.style.left = `${pct}%`;
+  playhead.style.left = `calc(126px + (100% - 126px) * ${pct / 100})`;
 
   // Format time e.g., 00:03
   const roundedSec = Math.round(seconds);
@@ -466,6 +568,8 @@ window.seekTimeline = function(seconds) {
   if (playheadHead) {
     playheadHead.textContent = `00:${roundedSec < 10 ? '0' + roundedSec : roundedSec}`;
   }
+  const monitorTimecode = document.getElementById('detail-monitor-timecode');
+  if (monitorTimecode) monitorTimecode.textContent = `00:00:${String(roundedSec).padStart(2, '0')}:00`;
 
   // Auto scroll timeline container to keep playhead in view
   const timelineBody = document.getElementById('timeline-editor-body');

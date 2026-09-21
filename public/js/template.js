@@ -82,6 +82,38 @@ function resetNewTemplateModal() {
     if (descInput) descInput.value = '';
 }
 
+function getYouTubeVideoId(url) {
+    const match = String(url || '').match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|shorts\/|embed\/))([\w-]{11})/);
+    return match ? match[1] : '';
+}
+
+function createVideoPoster(file) {
+    return new Promise(resolve => {
+        if (!file) return resolve('');
+        const video = document.createElement('video');
+        const objectUrl = URL.createObjectURL(file);
+        video.muted = true;
+        video.preload = 'metadata';
+        video.onloadeddata = () => { video.currentTime = Math.min(.2, video.duration || .2); };
+        video.onseeked = () => {
+            try {
+                const canvas = document.createElement('canvas');
+                const scale = Math.min(1, 720 / Math.max(video.videoWidth, 1));
+                canvas.width = Math.max(1, Math.round(video.videoWidth * scale));
+                canvas.height = Math.max(1, Math.round(video.videoHeight * scale));
+                canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+                resolve(canvas.toDataURL('image/jpeg', .82));
+            } catch (_) {
+                resolve('');
+            } finally {
+                URL.revokeObjectURL(objectUrl);
+            }
+        };
+        video.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(''); };
+        video.src = objectUrl;
+    });
+}
+
 async function submitNewTemplate() {
     const nameInput = document.getElementById('template-name-input');
     const descInput = document.getElementById('template-description-input');
@@ -115,6 +147,10 @@ async function submitNewTemplate() {
     }
 
     const templateId = 'tpl_' + Math.random().toString(36).substr(2, 9);
+    const youtubeVideoId = templateSelectedVideo.type === 'url' ? getYouTubeVideoId(videoUrl) : '';
+    const thumbnail = youtubeVideoId
+        ? `https://i.ytimg.com/vi/${youtubeVideoId}/hqdefault.jpg`
+        : await createVideoPoster(videoFile);
     const payload = {
         id: templateId,
         name: templateName,
@@ -139,6 +175,14 @@ async function submitNewTemplate() {
         },
         variables: ['character', 'scene', 'emotion'],
         platform: ['shorts'],
+        videoUrl: templateSelectedVideo.type === 'url' ? videoUrl : '',
+        thumbnail,
+        source: {
+            videoId: youtubeVideoId,
+            url: templateSelectedVideo.type === 'url' ? videoUrl : '',
+            title: videoFile?.name || templateName,
+            channel: templateSelectedVideo.type === 'file' ? '上傳素材' : '來源影片'
+        },
         shotsCount: 1,
         structure: [
             {

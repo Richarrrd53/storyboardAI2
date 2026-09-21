@@ -2116,10 +2116,10 @@ async function ensureSharedLayout(signal) {
     }
 
     const CAT_MAP = {
-      'product': '商品焦點',
-      'story': '品牌故事',
-      'twist': '反轉爆點',
-      'custom': '自訂模板',
+      'product': '商品廣告',
+      'story': '敘事紀實',
+      'twist': '高留存節奏',
+      'custom': '團隊資產',
       '未分類': '未分類'
     };
 
@@ -2192,11 +2192,28 @@ async function ensureSharedLayout(signal) {
           duration = `${sumSec}s`;
         }
 
+        const totalSeconds = parseInt(duration) || Math.max(shotCount * 3, 15);
+        const sourceUrl = t.videoUrl || t.source?.url || '';
+        const youtubeMatch = sourceUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|shorts\/|embed\/))([\w-]{11})/);
+        const sourceVideoId = t.source?.videoId || t.videoId || youtubeMatch?.[1] || '';
+        const thumbnail = t.thumbnail || t.cover || t.source?.thumbnail || (sourceVideoId ? `https://i.ytimg.com/vi/${encodeURIComponent(sourceVideoId)}/hqdefault.jpg` : '');
+        const paceLabel = totalSeconds <= 25 ? '快節奏' : totalSeconds <= 50 ? '中快節奏' : '敘事節奏';
+        const statusLabel = t.category === 'custom' ? '團隊草稿' : '已驗證結構';
+        const statusClass = t.category === 'custom' ? 'is-draft' : 'is-ready';
+
         return `
-          <div class="template-card" data-id="${t.id}">
+          <article class="template-card" data-id="${t.id}" tabindex="0" aria-label="預覽 ${t.name || t.title || '無標題'}">
             <div class="template-card-header">
-              <span class="template-card-cat">${CAT_MAP[t.category] || t.category || '未分類'}</span>
-              <span class="template-card-shots">${shotCount} 鏡頭</span>
+              <div class="template-card-kicker">
+                <span class="template-card-cat">${CAT_MAP[t.category] || t.category || '未分類'}</span>
+                <span class="workflow-status ${statusClass}"><i></i>${statusLabel}</span>
+              </div>
+            </div>
+            <div class="template-video-cover ${thumbnail ? '' : 'no-cover'}" aria-label="來源影片封面">
+              ${thumbnail ? `<img src="${thumbnail}" alt="${t.source?.title || t.name || '來源影片'}封面" loading="lazy" onerror="this.parentElement.classList.add('no-cover');this.remove()">` : ''}
+              <span class="cover-source">${sourceVideoId ? 'YOUTUBE' : 'SOURCE VIDEO'}</span>
+              <span class="cover-duration">${duration}</span>
+              <span class="cover-play" aria-hidden="true">▶</span>
             </div>
             <div class="template-card-body">
               <h4>${t.name || t.title || '無標題'}</h4>
@@ -2205,25 +2222,46 @@ async function ensureSharedLayout(signal) {
                 ${tags}
               </div>
             </div>
+            <div class="template-specs" aria-label="剪輯規格">
+              <span><b>${duration}</b> 長度</span>
+              <span><b>${shotCount}</b> 鏡頭</span>
+              <span><b>${paceLabel}</b> 節奏</span>
+            </div>
             <div class="template-card-footer">
-              <div class="platform-badges">
-                ${platforms}
+              <div class="platform-badges" aria-label="適用平台">
+                ${platforms}<span class="aspect-badge">9:16</span>
               </div>
-              <div class="template-card-duration">
-                ⏱️ ${duration}
+              <div class="card-actions">
+                <button type="button" class="card-preview-btn" data-action="preview">查看時間軸</button>
+                <button type="button" class="card-apply-btn" data-action="apply" aria-label="套用 ${t.name || t.title || '模板'}">套用</button>
               </div>
             </div>
-          </div>
+          </article>
         `;
       }).join('');
 
       // Add click listeners to template cards
       gridEl.querySelectorAll('.template-card').forEach(el => {
-        el.addEventListener('click', () => {
+        const openPreview = () => {
           const id = el.dataset.id;
           const template = templates.find(x => x.id === id);
           if (template && window.renderTemplateDetailTimeline) {
             window.renderTemplateDetailTimeline(template, detailImmersiveEl);
+          }
+        };
+        el.addEventListener('click', (event) => {
+          const action = event.target.closest('[data-action]')?.dataset.action;
+          if (action === 'apply') {
+            event.stopPropagation();
+            window.spaNavigate('generate', { templateId: el.dataset.id });
+            return;
+          }
+          openPreview();
+        });
+        el.addEventListener('keydown', (event) => {
+          if ((event.key === 'Enter' || event.key === ' ') && event.target === el) {
+            event.preventDefault();
+            openPreview();
           }
         });
       });
@@ -2243,11 +2281,11 @@ async function ensureSharedLayout(signal) {
         const catDescEl = document.getElementById('current-category-desc');
 
         if (currentCategory === '全部') {
-          if (catTitleEl) catTitleEl.textContent = '熱門推薦爆點結構';
-          if (catDescEl) catDescEl.textContent = '點擊下方卡片，深入查看時間軸軌道設計與 AI 剖析';
+          if (catTitleEl) catTitleEl.textContent = '推薦剪輯序列';
+          if (catDescEl) catDescEl.textContent = '先比較節奏與規格，再進入時間軸查看每個剪輯決策。';
         } else {
-          if (catTitleEl) catTitleEl.textContent = `${CAT_MAP[currentCategory] || currentCategory} 推薦模板`;
-          if (catDescEl) catDescEl.textContent = `專門為 ${CAT_MAP[currentCategory] || currentCategory} 特性精選與優化的爆點結構`;
+          if (catTitleEl) catTitleEl.textContent = `${CAT_MAP[currentCategory] || currentCategory} 序列`;
+          if (catDescEl) catDescEl.textContent = `針對 ${CAT_MAP[currentCategory] || currentCategory} 工作流整理的剪輯結構與製作規格。`;
         }
 
         filterAndDisplay();
