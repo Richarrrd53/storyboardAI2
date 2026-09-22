@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>電影級生成等待動畫 ✦ 測試頁面</title>
+    <!-- Include existing styles -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/generate.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: #121010;
+            font-family: 'Outfit', 'Noto Sans TC', sans-serif;
+            color: var(--off-white);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Black Mask Styles for transition testing */
+        .black-mask {
+            position: fixed;
+            left: 0;
+            width: 100%;
+            height: 50%;
+            background: #121010;
+            z-index: 9999;
+            transition: all 0.3s cubic-bezier(0.76, 0, 0.24, 1);
+        }
+        #black-mask-top {
+            top: -50%;
+            border-bottom: 2px solid var(--primary);
+        }
+        #black-mask-bottom {
+            bottom: -50%;
+            border-top: 2px solid var(--primary);
+        }
+
+        /* Test Trigger Page */
+        .test-trigger-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            z-index: 10;
+            text-align: center;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            backdrop-filter: blur(10px);
+            max-width: 450px;
+        }
+
+        .test-trigger-container h1 {
+            margin: 0;
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--primary);
+            letter-spacing: 1px;
+        }
+
+        .test-trigger-container p {
+            margin: 0;
+            font-size: 0.9rem;
+            color: var(--text-light);
+            line-height: 1.5;
+        }
+
+        .start-btn {
+            background: linear-gradient(135deg, var(--primary) 0%, #b87b31 100%);
+            border: none;
+            padding: 14px 28px;
+            font-size: 1rem;
+            font-weight: 800;
+            color: #121010;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 8px 24px rgba(220, 156, 71, 0.3);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .start-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 12px 30px rgba(220, 156, 71, 0.45);
+        }
+
+        .start-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Math Curve Placeholder styling in case SVG needs sizing */
+        .gen-preview-card {
+            width: 140px;
+            height: 140px;
+            margin-bottom: 20px;
+        }
+        .math-loader-svg {
+            width: 100%;
+            height: 100%;
+            color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Black Masks -->
+    <div class="black-mask" id="black-mask-top"></div>
+    <div class="black-mask" id="black-mask-bottom"></div>
+
+    <!-- 1. Trigger Page -->
+    <div class="test-trigger-container" id="test-trigger-page">
+        <h1>電影級生成動態測試</h1>
+        <p>點擊下方按鈕以啟動模擬生成。這將觸發黑幕閉合轉場、載入電影底片滾動背景、Spotlight 聚焦光源，以及文字光束掃描效果。</p>
+        <button class="start-btn" onclick="startSimulatedGeneration()">✦ 啟動模擬生成</button>
+    </div>
+
+    <!-- 2. Phase Generating (Copy from generate.html) -->
+    <div class="phase" id="phase-generating" style="display: none; width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; opacity: 0; transition: opacity 0.5s ease;">
+        <!-- Corner Filmstrips -->
+        <div class="corner-filmstrip top-left"></div>
+        <div class="corner-filmstrip bottom-right"></div>
+
+        <div class="generating-wrap">
+            <div class="generating-glow"></div>
+            <!-- Top: Math Curve Animation -->
+            <div class="gen-preview-card" id="gen-preview-card">
+                    <svg class="loader math-loader-svg" viewBox="0 0 100 100" fill="none" aria-hidden="true">
+                        <g class="math-loader-group">
+                            <path class="math-loader-path" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                opacity="0.1"></path>
+                        </g>
+                        <g class="math-loader-sucked"></g>
+                    </svg>
+                </div>
+
+            <!-- Middle: Progress Bar & Status Text -->
+            <div class="gen-progress-container" style="width: 100%; max-width: 400px; margin: 10px auto;">
+                <div class="gen-progress-track" style="background: rgba(255,255,255,0.15); height: 6px; border-radius: 3px; overflow: hidden; position: relative;">
+                    <div class="gen-progress-fill" id="gen-progress"></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 0.82rem; font-weight: 700; color: var(--text-light);">
+                    <span class="gen-loading-title" id="loading-title">片場準備中...</span>
+                    <span class="gen-progress-pct" id="gen-progress-text">0%</span>
+                </div>
+            </div>
+
+            <!-- Bottom: Status Machine Steps -->
+            <div class="generation-status-container">
+                <div class="gen-step" id="step-analyze" data-status="pending">
+                    <div class="step-icon-wrap">
+                        <div class="step-icon"></div>
+                    </div>
+                    <div class="step-content">
+                        <div class="step-title">解析故事靈感...</div>
+                        <div class="step-details">正在分析文本結構與核心主旨</div>
+                    </div>
+                </div>
+
+                <div class="gen-step" id="step-structure" data-status="pending">
+                    <div class="step-icon-wrap">
+                        <div class="step-icon"></div>
+                    </div>
+                    <div class="step-content">
+                        <div class="step-title">編排鏡頭結構...</div>
+                        <div class="step-details">正在規劃鏡位、視角與時間軸</div>
+                    </div>
+                </div>
+
+                <div class="gen-step" id="step-prompt" data-status="pending">
+                    <div class="step-icon-wrap">
+                        <div class="step-icon"></div>
+                    </div>
+                    <div class="step-content">
+                        <div class="step-title">繪製分鏡草稿...</div>
+                        <div class="step-details">正在為每個鏡頭注入視覺風格與情緒</div>
+                    </div>
+                </div>
+
+                <div class="gen-step" id="step-render" data-status="pending">
+                    <div class="step-icon-wrap">
+                        <div class="step-icon"></div>
+                    </div>
+                    <div class="step-content">
+                        <div class="step-title">沖洗電影底片...</div>
+                        <div class="step-details">進行最後的影像流暢度優化與膠捲成型</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const maskTop = document.getElementById('black-mask-top');
+        const maskBottom = document.getElementById('black-mask-bottom');
+        const triggerPage = document.getElementById('test-trigger-page');
+        const genPage = document.getElementById('phase-generating');
+        const progressBar = document.getElementById('gen-progress');
+        const progressPct = document.getElementById('gen-progress-text');
+        const loadingTitle = document.getElementById('loading-title');
+
+        // Delay helper
+        const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+        // Mask Transition Controls
+        async function closeMask() {
+            maskTop.style.top = '0';
+            maskBottom.style.bottom = '0';
+            await sleep(350);
+        }
+
+        async function openMask() {
+            maskTop.style.top = '-50%';
+            maskBottom.style.bottom = '-50%';
+            await sleep(350);
+        }
+
+        function updateStep(stepId, status) {
+            const el = document.getElementById(stepId);
+            if (el) {
+                el.dataset.status = status;
+                if (stepId === 'step-prompt' && (status === 'success' || status === 'pending')) {
+                    const titleEl = el.querySelector('.step-title');
+                    if (titleEl) titleEl.textContent = '繪製分鏡草稿...';
+                }
+                if (status === 'active') {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            }
+        }
+
+        function updatePromptStepProgress(completedCount, total) {
+            const el = document.getElementById('step-prompt');
+            if (el) {
+                const titleEl = el.querySelector('.step-title');
+                if (titleEl) {
+                    titleEl.textContent = `繪製分鏡草稿 (${completedCount}/${total})...`;
+                }
+            }
+        }
+
+        function updateProgress(pct, message) {
+            progressBar.style.width = pct + '%';
+            progressPct.textContent = pct + '%';
+            if (message) {
+                loadingTitle.textContent = message;
+            }
+        }
+
+        async function startSimulatedGeneration() {
+            // 1. Close mask to transition
+            await closeMask();
+            
+            // Switch view
+            triggerPage.style.display = 'none';
+            genPage.style.display = 'flex';
+            genPage.style.opacity = '1';
+            
+            // Reset loading UI states
+            updateProgress(0, '初始化模擬生成中...');
+            const steps = ['step-analyze', 'step-structure', 'step-prompt', 'step-render'];
+            steps.forEach(s => updateStep(s, 'pending'));
+            
+            await sleep(100);
+            
+            // 2. Open mask to reveal loading scene
+            await openMask();
+
+            // --- Step 1: Analyze (2 seconds) ---
+            updateStep('step-analyze', 'active');
+            updateProgress(10, '正在分析文本結構與核心主旨...');
+            await sleep(1000);
+            updateProgress(25, '正在識別人物、場景與情感節點...');
+            await sleep(1000);
+            updateStep('step-analyze', 'success');
+
+            // --- Step 2: Structure (2 seconds) ---
+            updateStep('step-structure', 'active');
+            updateProgress(40, '正在編排鏡頭結構與時間軸...');
+            await sleep(1000);
+            updateProgress(50, '配對構圖與運鏡建議...');
+            await sleep(1000);
+            updateStep('step-structure', 'success');
+
+            // --- Step 3: Prompt Drawing (4 seconds, loop through shots) ---
+            updateStep('step-prompt', 'active');
+            updatePromptStepProgress(0, 5);
+            for (let shot = 1; shot <= 5; shot++) {
+                const currentPct = 50 + Math.floor((shot / 5) * 35);
+                updateProgress(currentPct, `正在著色並渲染第 ${shot} 張分鏡畫面...`);
+                updatePromptStepProgress(shot, 5);
+                await sleep(800);
+            }
+            updateStep('step-prompt', 'success');
+
+            // --- Step 4: Rendering/Saving (2 seconds) ---
+            updateStep('step-render', 'active');
+            updateProgress(92, '正在儲存專案至資料庫...');
+            await sleep(1000);
+            updateProgress(100, '備份至雲端，專案建立完成！');
+            await sleep(1000);
+            updateStep('step-render', 'success');
+
+            // Done! Show success message and transition back
+            await sleep(1000);
+        }
+    </script>
+     <script src="./js/math-curve-loader.js"></script>
+</body>
+</html>
