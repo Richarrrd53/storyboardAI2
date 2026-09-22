@@ -66,15 +66,22 @@ const app = express();
 // Vercel Serverless URL 相容中介層
 app.use((req, res, next) => {
     // 1. 若 Vercel 將請求重寫至 /api/index.js，從 header 還原原始要求路徑
-    if (req.url.startsWith('/api/index.js') || req.url === '/api') {
+    const matchedPath = req.headers['x-matched-path'] || req.headers['x-forwarded-uri'];
+    if (matchedPath && !matchedPath.includes('index.js')) {
+        const queryIndex = req.url.indexOf('?');
+        const query = (queryIndex !== -1 && !matchedPath.includes('?')) ? req.url.slice(queryIndex) : '';
+        req.url = matchedPath + query;
+    } else if (req.url.startsWith('/api/index.js') || req.url === '/api' || req.url.startsWith('/index.js')) {
         const original = req.headers['x-matched-path'] || req.headers['x-forwarded-uri'] || req.originalUrl;
         if (original && !original.includes('index.js')) {
-            req.url = original;
+            const queryIndex = req.url.indexOf('?');
+            const query = (queryIndex !== -1 && !original.includes('?')) ? req.url.slice(queryIndex) : '';
+            req.url = original + query;
         }
     }
     // 2. 若由 Vercel 或其他 proxy 轉發時遺失 /api 前綴，自動補充
     if (!req.url.startsWith('/api') && req.url !== '/' && !req.url.startsWith('/public') && !req.url.startsWith('/css') && !req.url.startsWith('/js') && !req.url.startsWith('/images') && !req.url.startsWith('/html') && !req.url.startsWith('/video') && !req.url.startsWith('/icon')) {
-        if (req.url.startsWith('/auth') || req.url.startsWith('/projects') || req.url.startsWith('/ask-gemini') || req.url.startsWith('/get-templates') || req.url.startsWith('/templates')) {
+        if (req.url.startsWith('/auth') || req.url.startsWith('/projects') || req.url.startsWith('/ask-gemini') || req.url.startsWith('/get-templates') || req.url.startsWith('/templates') || req.url.startsWith('/discovery')) {
             req.url = '/api' + (req.url.startsWith('/') ? req.url : '/' + req.url);
         }
     }
@@ -232,7 +239,7 @@ app.post('/api/discovery/analyze', async (req, res) => {
     }
     try {
         const keys = discoverySettings.effective(discoverySettings.read(req));
-        const client = keys.geminiApiKey ? new GoogleGenAI({ vertexai: false, apiKey: keys.geminiApiKey }) : genAI;
+        const client = keys.geminiApiKey ? new GoogleGenAI({ vertexai: false, apiKey: keys.geminiApiKey }) : getGenAI();
         res.json({ analysis: await analyzeVideo(client, videoId, skill) });
     } catch (error) {
         const status = Number(error.status || error.code);
@@ -984,14 +991,8 @@ spaRoutes.forEach(route => {
         res.sendFile(path.join(process.cwd(), 'public', 'main.html'));
     });
 });
-app.get('/discovery', (req, res) => {
-    res.sendFile(path.join(process.cwd(), 'public', 'html', 'discovery.html'));
-});
-app.get('/discovery/settings', (req, res) => {
-    res.sendFile(path.join(process.cwd(), 'public', 'html', 'discovery-settings.html'));
-});
-if (process.env.NODE_ENV !== 'production') {
-    const PORT = 3000;
+if (require.main === module) {
+    const PORT = process.env.PORT || 3000;
     app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
 }
 

@@ -2,20 +2,20 @@
   "version": 2,
   "rewrites": [
     {
+      "source": "/api/(.*)",
+      "destination": "/api/index.js"
+    },
+    {
       "source": "/discovery/settings",
-      "destination": "/server.js"
+      "destination": "/html/discovery-settings.html"
     },
     {
       "source": "/discovery",
-      "destination": "/server.js"
+      "destination": "/html/discovery.html"
     },
     {
-      "source": "/",
+      "source": "/(.*)",
       "destination": "/main.html"
-    },
-    {
-      "source": "/api/(.*)",
-      "destination": "/server.js"
     }
   ]
 }
