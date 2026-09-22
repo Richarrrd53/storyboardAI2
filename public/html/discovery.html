@@ -8,21 +8,33 @@
 </head>
 <body>
     <main class="discovery-shell">
+        <nav class="discovery-nav">
+            <a class="discovery-brand" href="/dashboard"><span>S</span><strong>Storyboard AI</strong></a>
+            <div><a class="nav-link" href="/template">爆點模板庫</a><a class="nav-link" href="/discovery/settings">API 設定</a></div>
+        </nav>
         <header class="discovery-header">
             <a class="back-link" href="/dashboard">← 回到工作台</a>
-            <p class="eyebrow">STORYBOARD AI / DISCOVERY</p>
-            <h1>熱門短影音搜尋與自動分析</h1>
-            <p class="intro">輸入頻道名稱或 #hashtag，選擇平台、SKILL、時間與數量，即可搜尋真實影片並逐支分析畫面與語音。</p>
+            <div class="header-copy">
+                <p class="eyebrow">TREND DISCOVERY / AI ANALYSIS</p>
+                <h1>找到熱門結構，<br><span>轉成你的爆點模板。</span></h1>
+                <p class="intro">搜尋真實短影音、逐支分析畫面與語音，再將值得複製的敘事結構一鍵收進模板庫。</p>
+            </div>
+            <div class="workflow-preview" aria-label="分析工作流程">
+                <div><span>01</span><strong>搜尋</strong><small>頻道或標籤</small></div><i>→</i>
+                <div><span>02</span><strong>分析</strong><small>畫面與語音</small></div><i>→</i>
+                <div><span>03</span><strong>歸類</strong><small>AI 判斷結構</small></div><i>→</i>
+                <div><span>04</span><strong>收藏</strong><small>加入模板庫</small></div>
+            </div>
         </header>
 
         <section class="search-panel" aria-labelledby="search-title">
             <div class="panel-heading">
-                <div><span class="step">01</span><h2 id="search-title">設定搜尋條件</h2></div>
+                <div><span class="step">SEARCH</span><h2 id="search-title">設定搜尋條件</h2></div>
                 <a id="skill-status" class="status-chip settings-link" href="/discovery/settings" aria-label="前往 API 設定">檢查連線設定…</a>
             </div>
             <form id="discovery-form">
-                <label class="field field-wide">頻道名稱或 #hashtag
-                    <input id="query" name="query" type="search" placeholder="頻道名稱、@帳號或 #料理" autocomplete="off" required maxlength="120" aria-describedby="search-help" />
+                <label class="field field-wide">影片網址、頻道或 #hashtag
+                    <input id="query" name="query" type="search" placeholder="YouTube 網址、@帳號或 #料理" autocomplete="off" required maxlength="500" aria-describedby="search-help" />
                 </label>
                 <label class="field">Platform
                     <select id="platform" name="platform">
@@ -42,17 +54,23 @@
                         <option value="all">不限時間</option>
                     </select>
                 </label>
+                <label class="field">影片長度
+                    <select id="maxDuration" name="maxDuration">
+                        <option value="60">60 秒內</option>
+                        <option value="180" selected>180 秒內（Shorts 上限）</option>
+                    </select>
+                </label>
                 <label class="field">影片數量
                     <input id="resultLimit" name="resultLimit" type="number" min="1" max="20" value="5" required step="1" />
                 </label>
                 <button class="search-button" type="submit" disabled><span>搜尋並分析</span><span aria-hidden="true">↗</span></button>
             </form>
-            <p id="search-help" class="search-help">以 # 開頭搜尋 hashtag，其餘搜尋頻道；同名頻道建議使用 @帳號。依觀看數排序，分析最多 20 支、每支 180 秒內的公開影片。</p>
+            <p id="search-help" class="search-help">貼上 YouTube／Shorts 網址可精確讀取單支影片；以 # 開頭搜尋精確 hashtag；其餘搜尋頻道，使用 @帳號或頻道 ID 最準確。頻道資料會直接讀取官方上傳清單。</p>
             <p id="form-message" class="form-message" role="status"></p>
         </section>
 
         <section class="results-section" aria-labelledby="results-title">
-            <div class="results-heading"><div><span class="step">02</span><h2 id="results-title">候選影片</h2></div><span id="result-count" class="result-count">尚未搜尋</span></div>
+            <div class="results-heading"><div><span class="step">RESULTS</span><h2 id="results-title">分析工作台</h2></div><span id="result-count" class="result-count">尚未搜尋</span></div>
             <div id="results" class="results-list" aria-live="polite"><div class="empty-state"><strong>等待你的搜尋條件</strong><span>搜尋後會顯示來源影片、觀看數與附有時間戳的 AI 結構分析。</span></div></div>
         </section>
     </main>

@@ -13,6 +13,7 @@ const YouTubeCollector = require('./lib/discovery/youtube-collector');
 const { analyzeVideo } = require('./lib/discovery/video-analyzer');
 const { getSkill, listSkills } = require('./lib/discovery/skill-registry');
 const { ApiSettings } = require('./lib/discovery/api-settings');
+const { buildTemplateFromDiscovery } = require('./lib/discovery/template-builder');
 
 const pool = new Pool({ 
     connectionString: process.env.DATABASE_URL,
@@ -117,6 +118,7 @@ app.use(express.urlencoded({ limit: '100mb', extended: true })); // 增加 URL �
 const discoverySettings = new ApiSettings();
 const DISCOVERY_PLATFORMS = new Set(['youtube-shorts']);
 const DISCOVERY_TIME_RANGES = new Set(['7', '30', '90', 'all']);
+const DISCOVERY_MAX_DURATIONS = new Set(['60', '180']);
 
 app.use('/api/discovery', (req, res, next) => {
     res.set('Cache-Control', 'no-store');
@@ -174,19 +176,23 @@ app.post('/api/discovery/search', async (req, res) => {
             platform = 'youtube-shorts',
             skill = 'short-video-template-lab',
             timeRange = '30',
+            maxDuration = '180',
             resultLimit = 10
         } = req.body || {};
         const normalizedQuery = String(query).trim();
         const normalizedLimit = Number(resultLimit);
 
-        if (typeof query !== 'string' || !normalizedQuery || normalizedQuery === '#' || normalizedQuery.length > 120 || (normalizedQuery.startsWith('#') && /\s/.test(normalizedQuery))) {
-            return res.status(400).json({ error: '請輸入頻道名稱、@帳號或單一 #hashtag（最多 120 字）。' });
+        if (typeof query !== 'string' || !normalizedQuery || normalizedQuery === '#' || normalizedQuery.length > 500 || (normalizedQuery.startsWith('#') && /\s/.test(normalizedQuery))) {
+            return res.status(400).json({ error: '請輸入影片網址、影片 ID、頻道名稱、@帳號或單一 #hashtag。' });
         }
         if (!DISCOVERY_PLATFORMS.has(platform)) {
             return res.status(400).json({ error: '不支援的 platform' });
         }
         if (!DISCOVERY_TIME_RANGES.has(String(timeRange))) {
             return res.status(400).json({ error: '不支援的 timeRange' });
+        }
+        if (!DISCOVERY_MAX_DURATIONS.has(String(maxDuration))) {
+            return res.status(400).json({ error: 'maxDuration 必須是 60 或 180 秒' });
         }
         if (!Number.isInteger(normalizedLimit) || normalizedLimit < 1 || normalizedLimit > 20) {
             return res.status(400).json({ error: 'resultLimit 必須是 1 到 20 的整數' });
@@ -198,20 +204,20 @@ app.post('/api/discovery/search', async (req, res) => {
         }
 
         const keys = discoverySettings.effective(discoverySettings.read(req));
-        const youtubeApiKey = keys.youtubeApiKey || process.env.YOUTUBE_API_KEY;
-        const { videos, channel } = await new YouTubeCollector({ apiKey: youtubeApiKey }).search({
+        const { videos, channel, diagnostics } = await new YouTubeCollector({ apiKey: keys.youtubeApiKey }).search({
             query: normalizedQuery,
             platform,
             timeRange: String(timeRange),
+            maxDuration: Number(maxDuration),
             resultLimit: normalizedLimit
         });
         const results = videos;
 
         res.json({
-            query: { query: normalizedQuery, platform, skill, timeRange: String(timeRange), resultLimit: normalizedLimit },
+            query: { query: normalizedQuery, platform, skill, timeRange: String(timeRange), maxDuration: Number(maxDuration), resultLimit: normalizedLimit },
             results,
-            meta: { collector: 'YouTube Data API', channel, returnedAt: new Date().toISOString(),
-                warning: '依觀看數排序，篩選 180 秒內影片；YouTube API 無法確認是否為直式 Shorts。搜尋最多檢查 200 筆候選，符合條件的影片可能少於指定數量。' }
+            meta: { collector: 'YouTube Data API', channel, diagnostics, returnedAt: new Date().toISOString(),
+                warning: diagnostics?.limitation || 'YouTube API 無法直接確認影片是否為直式 Shorts。' }
         });
     } catch (error) {
         res.status(502).json({ error: error.message || '搜尋失敗，請稍後再試。' });
@@ -226,14 +232,53 @@ app.post('/api/discovery/analyze', async (req, res) => {
     }
     try {
         const keys = discoverySettings.effective(discoverySettings.read(req));
-        const defaultClient = typeof getGenAI === 'function' ? getGenAI() : null;
-        const client = (keys.geminiApiKey && !keys.vertexAvailable) ? new GoogleGenAI({ vertexai: false, apiKey: keys.geminiApiKey }) : defaultClient;
+        const client = keys.geminiApiKey ? new GoogleGenAI({ vertexai: false, apiKey: keys.geminiApiKey }) : genAI;
         res.json({ analysis: await analyzeVideo(client, videoId, skill) });
     } catch (error) {
         const status = Number(error.status || error.code);
         res.status(502).json({ error: status === 429
             ? 'Gemini 配額不足或請求過多，請稍後重試。'
             : '影片分析失敗：影片可能無法存取、請求逾時，或 Gemini 權限／模型設定有誤。請重試或檢查伺服器設定。' });
+    }
+});
+
+app.post('/api/discovery/add-template', async (req, res) => {
+    let sameOrigin = true;
+    if (req.headers.origin) {
+        try { sameOrigin = new URL(req.headers.origin).host === req.get('host'); }
+        catch { sameOrigin = false; }
+    }
+    if (!sameOrigin || req.get('sec-fetch-site') === 'cross-site' || !req.is('application/json')) {
+        return res.status(403).json({ error: '請從本站的熱門短影音分析頁加入模板。' });
+    }
+    const { video, analysis } = req.body || {};
+    if (!video || typeof video.id !== 'string' || !/^[\w-]{11}$/.test(video.id) || typeof video.title !== 'string' || !video.title.trim()) {
+        return res.status(400).json({ error: '影片資料不完整，無法建立模板。' });
+    }
+    if (!analysis?.sections || !['setup', 'problem', 'solution', 'ending'].every(key => typeof analysis.sections[key]?.text === 'string')) {
+        return res.status(400).json({ error: '請先完成影片分析，再加入模板庫。' });
+    }
+    try {
+        const template = buildTemplateFromDiscovery({
+            id: video.id,
+            title: video.title.slice(0, 200),
+            description: String(video.description || '').slice(0, 5000),
+            creator: String(video.creator || '').slice(0, 200),
+            durationSeconds: Math.min(180, Math.max(1, Number(video.durationSeconds) || 30)),
+            url: String(video.url || ''),
+            thumbnail: String(video.thumbnail || ''),
+            hashtags: Array.isArray(video.hashtags) ? video.hashtags.slice(0, 30).map(tag => String(tag).slice(0, 80)) : [],
+            stats: { views: Number(video.stats?.views || 0) }
+        }, analysis);
+        await prisma.template.upsert({
+            where: { id: template.id },
+            update: { name: template.name, category: template.category, tags: template.tags, description: template.description, content: template, is_custom: true },
+            create: { id: template.id, name: template.name, category: template.category, tags: template.tags, description: template.description, content: template, is_custom: true }
+        });
+        res.json({ success: true, template: { id: template.id, name: template.name, category: template.category, categoryLabel: template.categoryLabel } });
+    } catch (error) {
+        console.error('加入爆點模板庫失敗', error);
+        res.status(500).json({ error: '無法加入爆點模板庫，請稍後重試。' });
     }
 });
 
@@ -939,9 +984,15 @@ spaRoutes.forEach(route => {
         res.sendFile(path.join(process.cwd(), 'public', 'main.html'));
     });
 });
-if (require.main === module) {
-    const PORT = process.env.PORT || 3000;
-    app.listen(PORT, '0.0.0.0', () => console.log(`Server running on http://localhost:${PORT}`));
+app.get('/discovery', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'public', 'html', 'discovery.html'));
+});
+app.get('/discovery/settings', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'public', 'html', 'discovery-settings.html'));
+});
+if (process.env.NODE_ENV !== 'production') {
+    const PORT = 3000;
+    app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
 }
 
 module.exports = app;

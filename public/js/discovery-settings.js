@@ -20,36 +20,19 @@
 
     function render(data) {
         current = data;
-        const fromEnv = data.youtube?.source === 'server' && data.gemini?.source === 'server';
-        status.textContent = data.configured
-            ? (fromEnv ? '已連接環境變數 (.env)' : '已設定完畢')
-            : '尚未完成 API 設定';
+        status.textContent = data.configured ? '已設定完畢' : '尚未完成 API 設定';
         status.className = `status-chip ${data.configured ? 'is-ready' : 'is-pending'}`;
         for (const provider of ['youtube', 'gemini']) {
             const state = data[provider];
             const input = document.getElementById(`${provider}-key`);
             const badge = document.getElementById(`${provider}-status`);
-            if (state.configured) {
-                badge.textContent = state.source === 'server'
-                    ? (provider === 'youtube' ? '已連接 (.env YOUTUBE_API_KEY)' : '已連接 (.env GOOGLE_APPLICATION_CREDENTIALS)')
-                    : '已儲存（瀏覽器）';
-                badge.className = 'provider-status is-ready';
-                input.required = false;
-                input.placeholder = state.source === 'server'
-                    ? `已由伺服器 .env${provider === 'youtube' ? '（YOUTUBE_API_KEY）' : '（GOOGLE_APPLICATION_CREDENTIALS）'}設定`
-                    : '已設定，留空保留；貼上新金鑰可更新';
-            } else {
-                badge.textContent = '待設定';
-                badge.className = 'provider-status';
-                input.required = true;
-                input.placeholder = `貼上 ${provider === 'youtube' ? 'YouTube' : 'Gemini'} API Key`;
-            }
+            badge.textContent = state.configured ? (state.source === 'browser' ? '已儲存' : '沿用伺服器設定') : '待設定';
+            badge.className = `provider-status ${state.configured ? 'is-ready' : ''}`;
+            input.required = !state.configured;
+            input.placeholder = state.configured ? '已設定，留空保留；貼上新金鑰可更新' : `貼上 ${provider === 'youtube' ? 'YouTube' : 'Gemini'} API Key`;
         }
-        document.getElementById('youtube-hint').textContent = data.youtube?.source === 'server'
-            ? '已自動載入 .env 裡的 YOUTUBE_API_KEY，可直接使用；也可手動輸入金鑰覆蓋。'
-            : '請使用已啟用 YouTube Data API v3 的金鑰。';
-        document.getElementById('gemini-hint').textContent = data.gemini?.mode === 'vertex'
-            ? '已自動載入 .env 裡的 GOOGLE_APPLICATION_CREDENTIALS 進行 Vertex AI 認證，可直接使用；也可手動輸入 Gemini API Key 覆蓋。'
+        document.getElementById('gemini-hint').textContent = data.gemini.mode === 'vertex'
+            ? '已使用伺服器的 Google Cloud 認證，可直接沿用；也可填寫 Gemini API Key 切換。'
             : '使用 Google AI Studio 建立的 Gemini API Key。';
         returnLink.hidden = !data.configured;
     }
