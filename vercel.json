@@ -2,6 +2,14 @@
   "version": 2,
   "rewrites": [
     {
+      "source": "/discovery/settings",
+      "destination": "/server.js"
+    },
+    {
+      "source": "/discovery",
+      "destination": "/server.js"
+    },
+    {
       "source": "/",
       "destination": "/main.html"
     },
