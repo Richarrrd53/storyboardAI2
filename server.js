@@ -506,13 +506,18 @@ app.get('/api/projects/:id/cover', async (req, res) => {
 // GET shot image (binary stream endpoint)
 app.get('/api/projects/:projectId/shots/:shotId/image', async (req, res) => {
     try {
-        const { shotId } = req.params;
+        const { projectId, shotId } = req.params;
         const shot = await prisma.shot.findUnique({
             where: { id: shotId },
-            select: { payload: true }
+            select: { payload: true, projectId: true }
         });
 
         if (!shot || !shot.payload || !shot.payload.image) {
+            return res.status(404).send('Not Found');
+        }
+
+        // 驗證 Shot 確實屬於此 Project
+        if (shot.projectId !== projectId) {
             return res.status(404).send('Not Found');
         }
 
@@ -704,6 +709,279 @@ app.post('/api/projects/:id/duplicate', async (req, res) => {
     }
 });
 
+// ——————————————————————————————————————————————
+// Shot 編輯與重新生成 API
+// ——————————————————————————————————————————————
+
+// 共用 Gemini 圖片生成 helper
+async function runGeminiImageGeneration({ question, ratio }) {
+    let targetRatio = '16:9';
+    if (ratio) {
+        if (ratio.includes('16:9')) targetRatio = '16:9';
+        else if (ratio.includes('9:16')) targetRatio = '9:16';
+        else if (ratio.includes('3:2')) targetRatio = '3:2';
+        else if (ratio.includes('2:3')) targetRatio = '2:3';
+        else if (ratio.includes('1:1')) targetRatio = '1:1';
+    }
+
+    const ai = getGenAI();
+    const response = await ai.models.generateContent({
+        model: 'gemini-3.1-flash-image',
+        contents: [{ text: question }],
+        config: {
+            responseModalities: ['TEXT', 'IMAGE'],
+            imageConfig: { aspectRatio: targetRatio, imageSize: '1K' }
+        }
+    });
+
+    const candidate = response.candidates && response.candidates.length > 0 ? response.candidates[0] : null;
+    if (!candidate || !candidate.content || !candidate.content.parts) {
+        throw new Error('Gemini 未回傳圖片');
+    }
+
+    for (const part of candidate.content.parts) {
+        if (part.inlineData) {
+            const imageData = part.inlineData.data;
+            const mimeType = part.inlineData.mimeType || 'image/png';
+            return `data:${mimeType};base64,${imageData}`;
+        }
+    }
+    throw new Error('Gemini 回傳中沒有圖片資料');
+}
+
+// PATCH Shot（編輯鏡頭資料）
+app.patch('/api/projects/:projectId/shots/:shotId', async (req, res) => {
+    try {
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ error: '未授權' });
+        }
+        const token = authHeader.split(' ')[1];
+        const decoded = jwt.verify(token, JWT_SECRET);
+        const { projectId, shotId } = req.params;
+
+        // 驗證 Project 存在且屬於登入使用者
+        const project = await prisma.project.findUnique({ where: { id: projectId } });
+        if (!project) return res.status(404).json({ error: '找不到專案' });
+        if (project.authorId !== decoded.id) return res.status(403).json({ error: '沒有權限修改此專案' });
+
+        // 驗證 Shot 存在且屬於此 Project
+        const shot = await prisma.shot.findUnique({ where: { id: shotId } });
+        if (!shot) return res.status(404).json({ error: '找不到鏡頭' });
+        if (shot.projectId !== projectId) return res.status(404).json({ error: '找不到鏡頭' });
+
+        // Whitelist 可修改欄位
+        const { title, camera, duration, payloadPatch } = req.body;
+        const updateData = {};
+        if (title !== undefined) updateData.title = String(title).trim();
+        if (camera !== undefined) updateData.camera = String(camera).trim();
+        if (duration !== undefined) updateData.duration = String(duration).trim();
+
+        // Payload merge（不覆蓋，只更新指定欄位）
+        if (payloadPatch && typeof payloadPatch === 'object') {
+            const currentPayload = shot.payload || {};
+            const allowedPayloadKeys = ['emotion', 'note', 'shotPrompt', 'finalPrompt', 'cameraDetails', 'image', 'imageHistory'];
+            const patchedPayload = { ...currentPayload };
+            for (const key of allowedPayloadKeys) {
+                if (payloadPatch[key] !== undefined) {
+                    patchedPayload[key] = payloadPatch[key];
+                }
+            }
+            updateData.payload = patchedPayload;
+        }
+
+        // 更新 Shot
+        const updatedShot = await prisma.shot.update({
+            where: { id: shotId },
+            data: updateData
+        });
+
+        // Touch Project.updatedAt
+        const projectUpdateData = { updatedAt: new Date() };
+        if (shot.order === 1 && updateData.payload?.image) {
+            projectUpdateData.cover = updateData.payload.image;
+        }
+        await prisma.project.update({ where: { id: projectId }, data: projectUpdateData });
+
+        // 回傳 Shot（image URL 帶版本號）
+        const versionTs = updatedShot.updateAt ? new Date(updatedShot.updateAt).getTime() : Date.now();
+        const cleanPayload = { ...updatedShot.payload };
+        if (cleanPayload.image && cleanPayload.image.startsWith('data:')) {
+            cleanPayload.image = `/api/projects/${projectId}/shots/${shotId}/image?v=${versionTs}`;
+        }
+
+        res.json({
+            message: '鏡頭已成功更新',
+            shot: {
+                ...updatedShot,
+                payload: cleanPayload,
+                createAt: toTaipeiTZ(updatedShot.createAt),
+                updateAt: toTaipeiTZ(updatedShot.updateAt)
+            }
+        });
+    } catch (error) {
+        console.error('Update Shot Error:', error);
+        res.status(500).json({ error: '更新鏡頭失敗' });
+    }
+});
+
+// POST 重新生成單一鏡頭圖片
+app.post('/api/projects/:projectId/shots/:shotId/regenerate', async (req, res) => {
+    try {
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ error: '未授權' });
+        }
+        const token = authHeader.split(' ')[1];
+        const decoded = jwt.verify(token, JWT_SECRET);
+        const { projectId, shotId } = req.params;
+
+        // 驗證 Project 存在且屬於登入使用者
+        const project = await prisma.project.findUnique({ where: { id: projectId } });
+        if (!project) return res.status(404).json({ error: '找不到專案' });
+        if (project.authorId !== decoded.id) return res.status(403).json({ error: '沒有權限修改此專案' });
+
+        // 驗證 Shot 存在且屬於此 Project
+        const shot = await prisma.shot.findUnique({ where: { id: shotId } });
+        if (!shot) return res.status(404).json({ error: '找不到鏡頭' });
+        if (shot.projectId !== projectId) return res.status(404).json({ error: '找不到鏡頭' });
+
+        // 取得 prompt（body.prompt > payload.finalPrompt > payload.shotPrompt > title）
+        const prompt = req.body.prompt
+            || (shot.payload && shot.payload.finalPrompt)
+            || (shot.payload && shot.payload.shotPrompt)
+            || shot.title
+            || '';
+
+        if (!prompt) {
+            return res.status(400).json({ error: '缺少生圖提示詞' });
+        }
+
+        // 呼叫 Gemini 生成圖片
+        const newImageDataUri = await runGeminiImageGeneration({
+            question: prompt,
+            ratio: project.ratio
+        });
+
+        // 整理歷史版本（最多保存 5 筆）
+        const currentPayload = shot.payload || {};
+        let history = Array.isArray(currentPayload.imageHistory) ? [...currentPayload.imageHistory] : [];
+        if (currentPayload.image && !history.some(h => h.image === currentPayload.image)) {
+            history.unshift({
+                version: history.length + 1,
+                image: currentPayload.image,
+                prompt: currentPayload.finalPrompt || '',
+                createdAt: new Date().toISOString()
+            });
+        }
+        history.unshift({
+            version: history.length + 1,
+            image: newImageDataUri,
+            prompt: req.body.prompt ? prompt : (currentPayload.finalPrompt || prompt),
+            createdAt: new Date().toISOString()
+        });
+        history = history.slice(0, 5);
+
+        // 更新 Shot payload
+        const updatedPayload = {
+            ...currentPayload,
+            image: newImageDataUri,
+            finalPrompt: req.body.prompt ? prompt : (currentPayload.finalPrompt || prompt),
+            imageHistory: history
+        };
+
+        const updatedShot = await prisma.shot.update({
+            where: { id: shotId },
+            data: { payload: updatedPayload }
+        });
+
+        // Touch Project.updatedAt，若是第一鏡也更新 cover
+        const projectUpdateData = { updatedAt: new Date() };
+        if (shot.order === 1) {
+            projectUpdateData.cover = newImageDataUri;
+        }
+        await prisma.project.update({ where: { id: projectId }, data: projectUpdateData });
+
+        // 回傳 updated Shot（image URL 帶版本號）
+        const versionTs = updatedShot.updateAt ? new Date(updatedShot.updateAt).getTime() : Date.now();
+        const cleanPayload = { ...updatedShot.payload };
+        if (cleanPayload.image && cleanPayload.image.startsWith('data:')) {
+            cleanPayload.image = `/api/projects/${projectId}/shots/${shotId}/image?v=${versionTs}`;
+        }
+
+        res.json({
+            message: '鏡頭圖片已重新生成',
+            shot: {
+                ...updatedShot,
+                payload: cleanPayload,
+                createAt: toTaipeiTZ(updatedShot.createAt),
+                updateAt: toTaipeiTZ(updatedShot.updateAt)
+            }
+        });
+    } catch (error) {
+        console.error('Regenerate Shot Error:', error);
+        res.status(500).json({ error: '重新生成圖片失敗: ' + (error.message || '') });
+    }
+});
+
+// POST 最佳化提示詞（根據故事內容與鏡頭語言生成精確生圖 prompt）
+app.post('/api/projects/:projectId/shots/:shotId/optimize-prompt', async (req, res) => {
+    try {
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ error: '未授權' });
+        }
+        const token = authHeader.split(' ')[1];
+        const decoded = jwt.verify(token, JWT_SECRET);
+        const { projectId, shotId } = req.params;
+
+        const project = await prisma.project.findUnique({ where: { id: projectId } });
+        if (!project || project.authorId !== decoded.id) {
+            return res.status(403).json({ error: '無權限' });
+        }
+
+        const shot = await prisma.shot.findUnique({ where: { id: shotId } });
+        if (!shot || shot.projectId !== projectId) {
+            return res.status(404).json({ error: '找不到鏡頭' });
+        }
+
+        const { title, camera, emotion, cameraDetails } = req.body;
+        const shotStory = title || shot.title;
+        const shotCamera = camera || shot.camera;
+        const shotEmotion = emotion || (shot.payload?.emotion || '');
+        const style = project.style || 'Cinematic';
+        const ratio = project.ratio || '16:9';
+
+        const ai = getGenAI();
+        const promptGenRequest = `You are a professional cinematographer and AI image prompt engineer.
+Convert this storyboard shot description into a highly detailed, evocative English image prompt for visual generation.
+- Story/Action: "${shotStory}"
+- Camera / Shot Type: "${shotCamera}"
+- Camera Details: "${JSON.stringify(cameraDetails || {})}"
+- Emotion/Atmosphere: "${shotEmotion}"
+- Style Aesthetic: "${style}"
+- Aspect Ratio: "${ratio}"
+
+Requirements:
+- Output ONLY the English prompt, no explanations, no markdown ticks, no quotation marks.
+- Include cinematic lighting, environment composition, framing, and mood.`;
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash-lite',
+            contents: [{ text: promptGenRequest }]
+        });
+
+        const generatedPrompt = response.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+
+        res.json({
+            prompt: generatedPrompt
+        });
+    } catch (error) {
+        console.error('Optimize Prompt Error:', error);
+        res.status(500).json({ error: 'AI 優化提示詞失敗' });
+    }
+});
+
 // GET single project (with shots and metadata)
 app.get('/api/projects/:id', async (req, res) => {
     try {
@@ -720,6 +998,9 @@ app.get('/api/projects/:id', async (req, res) => {
             include: { shots: true, author: true }
         });
 
+        if (!project) return res.status(404).json({ error: '找不到專案' });
+        if (project.authorId !== decoded.id) return res.status(403).json({ error: '沒有權限存取此專案' });
+
         let cleanCover = project.cover;
         if (cleanCover && cleanCover.startsWith('data:')) {
             cleanCover = `/api/projects/${project.id}/cover`;
@@ -732,8 +1013,9 @@ app.get('/api/projects/:id', async (req, res) => {
             updatedAt: toTaipeiTZ(project.updatedAt),
             shots: (project.shots || []).map(s => {
                 let cleanPayload = { ...s.payload };
+                const versionTs = s.updateAt ? new Date(s.updateAt).getTime() : Date.now();
                 if (cleanPayload.image && cleanPayload.image.startsWith('data:')) {
-                    cleanPayload.image = `/api/projects/${project.id}/shots/${s.id}/image`;
+                    cleanPayload.image = `/api/projects/${project.id}/shots/${s.id}/image?v=${versionTs}`;
                 }
                 return {
                     ...s,

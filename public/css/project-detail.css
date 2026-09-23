@@ -1,0 +1,960 @@
+/* ==========================================================================
+   project-detail.css
+   StoryboardAI — Storyboard Workspace (分鏡專案工作區)
+   相容 dashboard 主系統樣式，修復跑版問題，提供專業級 Inspector 工作面板
+   ========================================================================== */
+
+/* ── 專案工作區外層 ────────────────────────────────── */
+.spa-project-wrap {
+  padding: 0 !important;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.project-workspace {
+  width: 100%;
+  min-height: calc(100vh - 80px);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  background: var(--bg, #fbfbfa);
+  color: var(--text-dark, #1c1917);
+  padding-bottom: 80px;
+}
+
+/* ── 頂部 Sticky 工作區 Header ──────────────────────── */
+.project-workspace-header {
+  position: sticky;
+  top: 0;
+  z-index: 90;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--card-border, #e5e5e0);
+  padding: 16px 28px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.project-workspace-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.project-workspace-title-area {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  flex: 1;
+}
+
+.project-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--card-border, #e5e5e0);
+  background: var(--white, #ffffff);
+  color: var(--text-mid, #78716c);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.project-back-btn:hover {
+  background: var(--off-white, #f5f5f0);
+  color: var(--text-dark, #1c1917);
+  transform: translateX(-2px);
+}
+
+.project-workspace-title-box {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.project-workspace-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--text-dark, #1c1917);
+  margin: 0;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.project-workspace-meta {
+  font-size: 0.8rem;
+  color: var(--text-mid, #78716c);
+}
+
+.project-workspace-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.project-workspace-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--card-border, #e5e5e0);
+  background: var(--white, #ffffff);
+  color: var(--text-dark, #1c1917);
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+}
+
+.project-workspace-btn:hover {
+  background: var(--off-white, #f5f5f0);
+  border-color: #d6d3d1;
+  transform: translateY(-1px);
+}
+
+/* ── 屬性徽章與視圖切換列 ──────────────────────────── */
+.project-workspace-header-sub {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.project-workspace-attrs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.project-attr-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--off-white, #f5f5f0);
+  border: 1px solid var(--card-border, #e5e5e0);
+  color: var(--text-dark, #44403c);
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.project-attr-badge.highlight {
+  background: rgba(37, 99, 235, 0.08);
+  border-color: rgba(37, 99, 235, 0.25);
+  color: #1d4ed8;
+}
+
+/* ── 視圖切換膠囊 (Table vs Film) ─────────────────── */
+.project-workspace-toggle-bar {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: #1c1917;
+  padding: 3px;
+  border-radius: 999px;
+}
+
+.project-workspace-toggle-btn {
+  padding: 5px 14px;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: #a8a29e;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.project-workspace-toggle-btn.active {
+  background: #ffffff;
+  color: #1c1917;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+}
+
+/* ── 內容主區域 ─────────────────────────────────────── */
+.project-workspace-content {
+  padding: 24px 28px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ── 表格模式 (Storyboard Table View) ───────────────── */
+.project-table-container {
+  width: 100%;
+  background: var(--white, #ffffff);
+  border: 1px solid var(--card-border, #e5e5e0);
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+  overflow: hidden;
+}
+
+.project-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.project-table thead th {
+  background: #fafaf9;
+  border-bottom: 1px solid var(--card-border, #e5e5e0);
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--text-mid, #78716c);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-sizing: border-box;
+}
+
+.project-table tbody tr.project-shot-row {
+  border-bottom: 1px solid var(--card-border, #f5f5f0);
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.project-table tbody tr.project-shot-row:last-child {
+  border-bottom: none;
+}
+
+.project-table tbody tr.project-shot-row:hover {
+  background: #fdfdfc;
+}
+
+.project-table tbody tr.project-shot-row.selected {
+  background: rgba(37, 99, 235, 0.05);
+}
+
+.project-table tbody td {
+  padding: 14px 16px;
+  vertical-align: middle;
+  font-size: 0.88rem;
+  color: var(--text-dark, #1c1917);
+  box-sizing: border-box;
+}
+
+/* 欄位寬度定義 */
+.col-th-num    { width: 70px; }
+.col-th-img    { width: 170px; }
+.col-th-story  { width: auto; }
+.col-th-time   { width: 85px; text-align: center; }
+.col-th-note   { width: 160px; }
+.col-th-action { width: 95px; text-align: right; }
+
+.shot-cell-num {
+  font-family: "DM Mono", monospace;
+  font-weight: 800;
+  color: var(--text-mid, #a8a29e);
+  font-size: 0.95rem;
+}
+
+.shot-cell-thumb-wrap {
+  width: 140px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #1c1917;
+  border: 1px solid rgba(0,0,0,0.06);
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.shot-cell-thumb-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.shot-cell-story-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.shot-cell-story-title {
+  font-weight: 700;
+  line-height: 1.45;
+  color: var(--text-dark, #1c1917);
+}
+
+.shot-cell-camera-tags {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.shot-pill-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: #f5f5f4;
+  color: #57534e;
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-family: "DM Mono", monospace;
+}
+
+.shot-cell-time {
+  font-family: "DM Mono", monospace;
+  font-weight: 700;
+  color: #d97706;
+  text-align: center;
+}
+
+.shot-cell-note-text {
+  font-size: 0.82rem;
+  color: #78716c;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.shot-cell-edit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--card-border, #e5e5e0);
+  background: #ffffff;
+  color: var(--text-dark, #44403c);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.shot-cell-edit-btn:hover {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+
+/* ── 膠捲模式 (Filmstrip View) ───────────────────────── */
+.project-film-container {
+  width: 100%;
+  background: #0f0f11;
+  border-radius: 20px;
+  padding: 18px 0;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.18);
+  overflow: hidden;
+}
+
+.project-filmstrip-rail {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 24px;
+  height: 24px;
+  overflow: hidden;
+}
+
+.project-rail-hole {
+  width: 18px;
+  height: 12px;
+  background: #222226;
+  border: 1px solid #333338;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.project-filmstrip-scroll {
+  overflow-x: auto;
+  width: 100%;
+  cursor: grab;
+  user-select: none;
+  scrollbar-width: thin;
+  scrollbar-color: #333338 transparent;
+  padding: 16px 24px;
+  box-sizing: border-box;
+}
+
+.project-filmstrip-scroll:active {
+  cursor: grabbing;
+}
+
+.project-filmstrip-track {
+  display: flex;
+  gap: 20px;
+  width: max-content;
+  align-items: stretch;
+}
+
+.project-film-frame {
+  width: 320px;
+  background: #18181b;
+  border: 1px solid #27272a;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.project-film-frame:hover {
+  transform: translateY(-4px);
+  border-color: #3b82f6;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+
+.project-film-frame.selected {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
+}
+
+.film-sprocket-header {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  gap: 8px;
+  background: #121215;
+  border-bottom: 1px solid #222226;
+}
+
+.film-sprocket-dot {
+  width: 10px;
+  height: 8px;
+  background: #27272a;
+  border-radius: 2px;
+}
+
+.film-frame-number {
+  font-family: "DM Mono", monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #71717a;
+  margin-left: auto;
+}
+
+.film-media-wrap {
+  width: 100%;
+  background: #09090b;
+  position: relative;
+  overflow: hidden;
+}
+
+.film-media-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.film-info-caption {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: #18181b;
+  flex: 1;
+}
+
+.film-caption-story {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #f4f4f5;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.film-caption-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.film-cam-badge {
+  font-family: "DM Mono", monospace;
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #27272a;
+  color: #a1a1aa;
+}
+
+.film-time-badge {
+  font-family: "DM Mono", monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #fbbf24;
+}
+
+/* ── SHOT INSPECTOR / DRAWER (工作區精修抽屜) ────────── */
+.project-editor-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 998;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.project-editor-backdrop.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.project-shot-editor {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 480px;
+  max-width: 100vw;
+  height: 100vh;
+  background: #ffffff;
+  border-left: 1px solid #e2e8f0;
+  box-shadow: -8px 0 36px rgba(0, 0, 0, 0.12);
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+}
+
+.project-shot-editor.open {
+  transform: translateX(0);
+}
+
+.project-shot-editor-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fafaf9;
+}
+
+.project-shot-editor-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.project-shot-editor-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #64748b;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.project-shot-editor-close:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #dc2626;
+}
+
+.project-shot-editor-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* 當前圖片預覽區 */
+.editor-preview-card {
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #09090b;
+  border: 1px solid #27272a;
+  position: relative;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+
+.editor-preview-card img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+}
+
+.editor-preview-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.75);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* 欄位組件 */
+.editor-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.editor-field-label {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.editor-field-input,
+.editor-field-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #0f172a;
+  font-family: inherit;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  transition: all 0.2s ease;
+  resize: vertical;
+}
+
+.editor-field-input:focus,
+.editor-field-textarea:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+/* 拆解的鏡頭語言 (景別、視角、運鏡、時長) */
+.editor-camera-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  background: #f8fafc;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.editor-camera-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.editor-camera-item label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.editor-camera-item input {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  font-size: 0.82rem;
+  color: #0f172a;
+  background: #ffffff;
+}
+
+/* AI 提示詞與操作按鈕 */
+.editor-prompt-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.editor-prompt-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.editor-ai-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #1e293b;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.editor-ai-btn:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.editor-ai-btn.primary {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  color: #ffffff;
+  border: none;
+}
+
+.editor-ai-btn.primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+
+.editor-ai-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 版本歷史切換列表 (Version History) */
+.editor-version-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.editor-version-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.editor-version-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #fafaf9;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.editor-version-item:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.editor-version-item.active {
+  background: rgba(37, 99, 235, 0.08);
+  border-color: #3b82f6;
+}
+
+.version-radio-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.editor-version-item.active .version-radio-dot {
+  border-color: #2563eb;
+}
+
+.editor-version-item.active .version-radio-dot::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #2563eb;
+}
+
+.version-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.version-tag {
+  font-size: 0.72rem;
+  color: #2563eb;
+  font-weight: 600;
+  margin-left: auto;
+}
+
+/* 抽屜底部操作列 */
+.project-shot-editor-footer {
+  padding: 14px 20px;
+  border-top: 1px solid #f1f5f9;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.editor-btn-cancel {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #64748b;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.editor-btn-cancel:hover {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.editor-btn-save {
+  flex: 2;
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.24);
+}
+
+.editor-btn-save:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.editor-btn-save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ── Toast 提示 ─────────────────────────────────────── */
+.project-toast {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: #0f172a;
+  color: #ffffff;
+  padding: 10px 22px;
+  border-radius: 999px;
+  font-size: 0.86rem;
+  font-weight: 600;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 10000;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.project-toast.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.project-toast.success { background: #059669; }
+.project-toast.error   { background: #dc2626; }
+
+/* ── 旋轉載入圈 ─────────────────────────────────────── */
+.project-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: projectSpin 0.7s linear infinite;
+}
+
+@keyframes projectSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── 響應式調整 (Mobile Sheet) ──────────────────────── */
+@media (max-width: 768px) {
+  .project-workspace-header {
+    padding: 12px 16px;
+  }
+
+  .project-workspace-content {
+    padding: 14px 16px;
+  }
+
+  .project-shot-editor {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 92vh;
+    border-left: none;
+    border-top: 1px solid #e2e8f0;
+    border-radius: 20px 20px 0 0;
+    transform: translateY(100%);
+  }
+
+  .project-shot-editor.open {
+    transform: translateY(0);
+  }
+
+  /* 表格在小手機螢幕上橫向滾動保護 */
+  .project-table-container {
+    overflow-x: auto;
+  }
+
+  .project-table {
+    min-width: 680px;
+  }
+}

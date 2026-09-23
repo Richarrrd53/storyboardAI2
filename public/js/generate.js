@@ -640,6 +640,7 @@
       window.generatedStoryTitles = [];
       window.generatedStoryCams = [];
       window.generatedPrompts = [];
+      window.generatedShotData = [];
 
       try {
           if (CreationSessionStore.selectedTemplate) {
@@ -690,12 +691,40 @@
 
           try {
               const res = await askGemini(finalPrompt, 'image');
-              if (res?.image?.length > 0) {
-                  window.generatedImgs[i] = res.image[0];
-                  completedCount++;
-              }
+              const imgSrc = (res?.image?.length > 0) ? res.image[0] : '../icon/error.jpg';
+              window.generatedImgs[i] = imgSrc;
+              if (res?.image?.length > 0) completedCount++;
+              // 寫入 normalized shot data
+              window.generatedShotData[i] = {
+                  order: i + 1,
+                  title: shot.story || `鏡頭 ${i + 1}`,
+                  camera: shot.camera || '',
+                  duration: shot.duration || '3s',
+                  payload: {
+                      image: imgSrc,
+                      emotion: shot.emotion || '',
+                      note: '',
+                      shotPrompt: shot.shotPrompt || '',
+                      finalPrompt: finalPrompt,
+                      characters: shot.characters || []
+                  }
+              };
           } catch (e) {
               console.error(`Image generation failed for shot ${i + 1}`, e);
+              window.generatedShotData[i] = {
+                  order: i + 1,
+                  title: shot.story || `鏡頭 ${i + 1}`,
+                  camera: shot.camera || '',
+                  duration: shot.duration || '3s',
+                  payload: {
+                      image: '../icon/error.jpg',
+                      emotion: shot.emotion || '',
+                      note: '',
+                      shotPrompt: shot.shotPrompt || '',
+                      finalPrompt: finalPrompt,
+                      characters: shot.characters || []
+                  }
+              };
           }
 
           const progress = 50 + (completedCount / total) * 42;
@@ -734,11 +763,39 @@
           const imagePrompt = `${shot.action || ''}, ${CreationSessionStore.story}, ${styleDetail}, ${getRatioPrompt()}`;
           try {
               const res = await askGemini(imagePrompt, 'image');
-              if (res?.image?.length > 0) {
-                  window.generatedImgs[i] = res.image[0];
-              }
+              const imgSrc = (res?.image?.length > 0) ? res.image[0] : '../icon/error.jpg';
+              window.generatedImgs[i] = imgSrc;
+              // 寫入 normalized shot data
+              window.generatedShotData[i] = {
+                  order: i + 1,
+                  title: shot.action || `鏡頭 ${i + 1}`,
+                  camera: shot.camera || 'medium shot',
+                  duration: shot.duration || '3s',
+                  payload: {
+                      image: imgSrc,
+                      emotion: '',
+                      note: '',
+                      shotPrompt: imagePrompt,
+                      finalPrompt: imagePrompt,
+                      characters: []
+                  }
+              };
           } catch (e) {
               console.error(`Template image ${i + 1} failed`, e);
+              window.generatedShotData[i] = {
+                  order: i + 1,
+                  title: shot.action || `鏡頭 ${i + 1}`,
+                  camera: shot.camera || 'medium shot',
+                  duration: shot.duration || '3s',
+                  payload: {
+                      image: '../icon/error.jpg',
+                      emotion: '',
+                      note: '',
+                      shotPrompt: imagePrompt,
+                      finalPrompt: imagePrompt,
+                      characters: []
+                  }
+              };
           }
 
           const progress = 50 + ((i + 1) / total) * 42;
@@ -860,13 +917,23 @@
           const ratio = CreationSessionStore.ratio;
           const cover = window.generatedImgs[0] || null;
 
-          const shots = window.generatedImgs.map((img, i) => ({
-              order: i + 1,
-              title: window.generatedStoryTitles[i] || '',
-              camera: window.generatedStoryCams[i] || '',
-              duration: '3s',
-              payload: { image: img }
-          }));
+          // 使用 normalized generatedShotData，若尚未建立則 fallback 舊邏輯
+          const shots = (window.generatedShotData && window.generatedShotData.length > 0)
+              ? window.generatedShotData
+              : window.generatedImgs.map((img, i) => ({
+                  order: i + 1,
+                  title: window.generatedStoryTitles[i] || '',
+                  camera: window.generatedStoryCams[i] || '',
+                  duration: '3s',
+                  payload: { image: img }
+              }));
+
+          const characters = window.storyboardData?.characters || {};
+          const metadata = {
+              originalStory: CreationSessionStore.story || '',
+              generationMode: CreationSessionStore.selectedTemplate ? 'template' : 'freeform',
+              templateId: CreationSessionStore.selectedTemplate?.id || null
+          };
 
           const token = window.spaAuth.getToken();
           const res = await fetch('/api/projects', {
@@ -875,7 +942,7 @@
                   'Content-Type': 'application/json',
                   'Authorization': `Bearer ${token}`
               },
-              body: JSON.stringify({ title, style, ratio, cover, shots, characters: {}, metadata: {} })
+              body: JSON.stringify({ title, style, ratio, cover, shots, characters, metadata })
           });
           if (!res.ok) return null;
           const json = await res.json();

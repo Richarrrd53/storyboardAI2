@@ -69,6 +69,10 @@
   window.spaMaskClose = maskClose;
   window.spaMaskOpen = maskOpen;
   window.spaSeedProjectCache = (projectId, projectData) => { cacheProjectDetails[projectId] = projectData; };
+  window.spaInvalidateProjectCache = (projectId) => {
+    delete cacheProjectDetails[projectId];
+    cacheProjectsList = null;
+  };
 
   let pendingProjectsPromise = null;
   let pendingTemplatesPromise = null;
@@ -5258,50 +5262,61 @@ function initLoginLogic(showRegister) {
 
     function renderProjectSkeleton(container) {
       container.innerHTML = `
-        <div class="project-detail loading-skeleton">
-          <div class="project-header-sticky">
-            <div class="project-summary">
-              <div>
-                <h2 class="skeleton-text" style="width: 250px; height: 32px; margin: 0;"></h2>
-                <div class="project-meta-row skeleton-text" style="width: 180px; height: 16px; margin-top: 8px;"></div>
+        <div class="project-workspace loading-skeleton">
+          <div class="project-workspace-header">
+            <div class="project-workspace-header-top">
+              <div class="project-workspace-title-area">
+                <button class="project-back-btn" style="pointer-events:none;opacity:0.6;">← 所有專案</button>
+                <div class="project-workspace-title-box">
+                  <div class="skeleton-pulse" style="width: 240px; height: 26px; border-radius: 6px; background:#e2e8f0;"></div>
+                  <div class="skeleton-pulse" style="width: 140px; height: 14px; border-radius: 4px; background:#f1f5f9; margin-top: 6px;"></div>
+                </div>
               </div>
-              <div class="project-attributes">
-                <span class="project-attribute skeleton-text" style="width: 80px; height: 20px; border-radius: 20px;"></span>
-                <span class="project-attribute skeleton-text" style="width: 80px; height: 20px; border-radius: 20px;"></span>
-                <span class="project-attribute skeleton-text" style="width: 60px; height: 20px; border-radius: 20px;"></span>
+              <div class="project-workspace-actions" style="opacity: 0.5; pointer-events: none;">
+                <div class="project-workspace-toggle-bar">
+                  <button class="project-workspace-toggle-btn active">載入中...</button>
+                </div>
               </div>
             </div>
-
-            <div class="view-toggle-container" style="opacity: 0.5; pointer-events: none;">
-              <div class="view-toggle-bar">
-                <button class="toggle-btn active"><span>載入中...</span></button>
+            <div class="project-workspace-header-sub">
+              <div class="project-workspace-attrs">
+                <span class="project-attr-badge skeleton-pulse" style="width: 80px; height: 22px; background:#f1f5f9;"></span>
+                <span class="project-attr-badge skeleton-pulse" style="width: 80px; height: 22px; background:#f1f5f9;"></span>
+                <span class="project-attr-badge skeleton-pulse" style="width: 60px; height: 22px; background:#f1f5f9;"></span>
               </div>
             </div>
           </div>
 
-          <div id="project-table-view" class="view-section visible" style="display: block;">
-            <table class="storyboard-table" style="width:100%; border-collapse: collapse;">
-              <thead>
-                <tr>
-                  <th class="th-cam">鏡頭</th>
-                  <th class="th-img">畫面</th>
-                  <th class="th-title">故事內容 / 動作</th>
-                  <th class="th-time">時長</th>
-                  <th class="th-note">情緒 / 備註</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${[1, 2, 3, 4].map(idx => `
+          <div class="project-workspace-content">
+            <div class="project-table-container">
+              <table class="project-table">
+                <thead>
                   <tr>
-                    <td class="camera-cell"><span class="skeleton-text" style="width: 20px; height: 16px;"></span></td>
-                    <td class="img-cell"><div class="project-view-thumb loading"></div></td>
-                    <td class="title-cell"><span class="skeleton-text" style="width: 80%; height: 16px;"></span></td>
-                    <td class="time-cell"><span class="skeleton-text" style="width: 30px; height: 16px;"></span></td>
-                    <td class="note-cell"><span class="skeleton-text" style="width: 40px; height: 16px;"></span></td>
+                    <th class="col-th-num">鏡頭</th>
+                    <th class="col-th-img">畫面</th>
+                    <th class="col-th-story">故事內容 / 鏡頭語言</th>
+                    <th class="col-th-time">時長</th>
+                    <th class="col-th-note">情緒 / 備註</th>
+                    <th class="col-th-action">操作</th>
                   </tr>
-                `).join('')}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  ${[1, 2, 3, 4].map(idx => `
+                    <tr>
+                      <td class="shot-cell-num">${String(idx).padStart(2, '0')}</td>
+                      <td><div class="shot-cell-thumb-wrap skeleton-pulse" style="aspect-ratio:16/9;background:#e2e8f0;"></div></td>
+                      <td>
+                        <div class="skeleton-pulse" style="width:75%;height:16px;background:#e2e8f0;border-radius:4px;margin-bottom:6px;"></div>
+                        <div class="skeleton-pulse" style="width:40%;height:14px;background:#f1f5f9;border-radius:4px;"></div>
+                      </td>
+                      <td class="shot-cell-time"><div class="skeleton-pulse" style="width:36px;height:16px;background:#f1f5f9;border-radius:4px;margin:auto;"></div></td>
+                      <td><div class="skeleton-pulse" style="width:60px;height:14px;background:#f1f5f9;border-radius:4px;"></div></td>
+                      <td style="text-align:right;"><div class="skeleton-pulse" style="width:60px;height:24px;background:#f1f5f9;border-radius:6px;margin-left:auto;"></div></td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       `;
@@ -5325,6 +5340,7 @@ function initLoginLogic(showRegister) {
         const imageUrl = payload.image || '';
         const order = s.order ?? (index + 1);
         return {
+          id: s.id,
           order,
           title: s.title || '未命名鏡頭',
           camera: s.camera || '未設定',
@@ -5344,176 +5360,170 @@ function initLoginLogic(showRegister) {
 
       if (signal?.aborted) return;
 
+      // ── Table Rows ──────────────────────────────────────────
       let tableRowsHtml = '';
       processedShots.forEach(s => {
+        const thumbHtml = s.imageUrl
+          ? `<div class="shot-cell-thumb-wrap" style="aspect-ratio:${aspectRatio};" data-src="${s.imageUrl}"><div class="project-shot-thumb-skeleton" style="width:140px;aspect-ratio:${aspectRatio};"></div></div>`
+          : `<div class="shot-cell-thumb-wrap" style="aspect-ratio:${aspectRatio};background:#e2e8f0;width:140px;"></div>`;
         tableRowsHtml += `
-          <tr>
-            <td class="camera-cell">${s.order}</td>
-            <td class="img-cell">
-              ${s.imageUrl ? `<div class="project-view-thumb loading" style="aspect-ratio: ${aspectRatio};" data-src="${s.imageUrl}"></div>` : `<div class="placeholder">NO IMAGE</div>`}
+          <tr class="project-shot-row" data-shot-id="${s.id}">
+            <td class="shot-cell-num">${String(s.order).padStart(2, '0')}</td>
+            <td>${thumbHtml}</td>
+            <td>
+              <div class="shot-cell-story-box">
+                <div class="shot-cell-story-title">${s.title}</div>
+                <div class="shot-cell-camera-tags">
+                  <span class="shot-pill-tag">${s.camera}</span>
+                </div>
+              </div>
             </td>
-            <td class="title-cell">${s.title}</td>
-            <td class="time-cell">${s.duration}</td>
-            <td class="note-cell">${s.emotion || '—'}</td>
+            <td class="shot-cell-time">${s.duration}</td>
+            <td>
+              <div class="shot-cell-note-text">${s.emotion || '—'}</div>
+            </td>
+            <td style="text-align:right;">
+              <button class="shot-cell-edit-btn" data-shot-id="${s.id}">✏️ 編輯</button>
+            </td>
           </tr>
         `;
       });
 
-      const holeCount = Math.max(processedShots.length * 3, 20);
+      // ── Film Frames ─────────────────────────────────────────
+      const holeCount = Math.max(processedShots.length * 3, 24);
       let railHolesHtml = '';
       for (let i = 0; i < holeCount; i++) {
-        railHolesHtml += '<div class="rail-hole"></div>';
+        railHolesHtml += '<div class="project-rail-hole"></div>';
       }
 
       let filmFramesHtml = '';
       processedShots.forEach(s => {
+        const imgHtml = s.imageUrl
+          ? `<img src="${s.imageUrl}" alt="Shot ${s.order}" loading="lazy">`
+          : `<div style="width:100%;aspect-ratio:${aspectRatio};background:#1c1917;"></div>`;
         filmFramesHtml += `
-          <div class="film-frame">
-            <div class="sprocket-row">
-              <div class="sprocket"></div><div class="sprocket"></div><div class="sprocket"></div>
-              <span class="frame-num">${String(s.order).padStart(2, '0')}</span>
+          <div class="project-film-frame" data-shot-id="${s.id}">
+            <div class="film-sprocket-header">
+              <div class="film-sprocket-dot"></div>
+              <div class="film-sprocket-dot"></div>
+              <div class="film-sprocket-dot"></div>
+              <span class="film-frame-number">SHOT ${String(s.order).padStart(2, '0')}</span>
             </div>
-            <div class="film-img-wrap">
-              ${s.imageUrl ? `<div class="project-view-thumb loading" style="aspect-ratio: ${aspectRatio};" data-src="${s.imageUrl}"></div>` : `<div class="film-placeholder">NO IMAGE</div>`}
-            </div>
-            <div class="film-caption">
-              <div class="film-caption-title">${s.title}</div>
-              <div class="film-camera">
-                <span class="film-badge">${s.camera}</span>
-                ${s.emotion ? `<div class="film-cam-detail">${s.emotion}</div>` : ''}
+            <div class="film-media-wrap" style="aspect-ratio:${aspectRatio};">${imgHtml}</div>
+            <div class="film-info-caption">
+              <div class="film-caption-story">${s.title}</div>
+              <div class="film-caption-meta">
+                <span class="film-cam-badge">${s.camera}</span>
+                <span class="film-time-badge">${s.duration}</span>
               </div>
             </div>
-            <div class="sprocket-row bottom">
-              <div class="sprocket"></div><div class="sprocket"></div><div class="sprocket"></div>
+            <div class="film-sprocket-header">
+              <div class="film-sprocket-dot"></div>
+              <div class="film-sprocket-dot"></div>
+              <div class="film-sprocket-dot"></div>
             </div>
           </div>
         `;
       });
 
+      // ── Compute total duration ──────────────────────────────
+      let totalSeconds = 0;
+      processedShots.forEach(s => {
+        const match = (s.duration || '').match(/(\d+(\.\d+)?)/);
+        if (match) totalSeconds += parseFloat(match[1]);
+      });
+
+      // ── Full workspace HTML ─────────────────────────────────
       m.innerHTML = `
-        <div class="project-detail">
-          <div class="project-header-sticky">
-            <div class="project-summary">
-              <div>
-                <h2>${p.title}</h2>
-                <div class="project-meta-row">作者: ${p.author?.name || '未知'} • 建立於 ${new Date(p.createAt).toLocaleString('zh-TW')}</div>
+        <div class="project-workspace">
+          <div class="project-workspace-header">
+            <div class="project-workspace-header-top">
+              <div class="project-workspace-title-area">
+                <button class="project-back-btn" id="pd-back-btn">
+                  <span>←</span>
+                  <span>所有專案</span>
+                </button>
+                <div class="project-workspace-title-box">
+                  <h2 class="project-workspace-title">${p.title}</h2>
+                  <div class="project-workspace-meta" id="pd-updated-at">最後編輯：${p.updatedAt ? new Date(p.updatedAt).toLocaleString('zh-TW') : new Date(p.createAt).toLocaleString('zh-TW')}</div>
+                </div>
               </div>
-              <div class="project-attributes">
-                <span class="project-attribute">風格：${p.style || '未指定'}</span>
-                <span class="project-attribute">比例：${p.ratio || '未指定'}</span>
-                <span class="project-attribute">共 ${processedShots.length} 鏡頭</span>
+              <div class="project-workspace-actions">
+                <button class="project-workspace-btn" id="pd-export-json-btn">
+                  <span>📥</span>
+                  <span>匯出分鏡 JSON</span>
+                </button>
+                <div class="project-workspace-toggle-bar">
+                  <button id="pd-view-list" class="project-workspace-toggle-btn active">表格模式</button>
+                  <button id="pd-view-film" class="project-workspace-toggle-btn">膠捲模式</button>
+                </div>
               </div>
             </div>
 
-            <div class="view-toggle-container">
-              <div class="view-toggle-bar">
-                <button id="vbtn-table" class="toggle-btn active"><span>表格模式</span></button>
-                <button id="vbtn-film" class="toggle-btn"><span>膠捲模式</span></button>
+            <div class="project-workspace-header-sub">
+              <div class="project-workspace-attrs">
+                <span class="project-attr-badge">風格：${p.style || '未指定'}</span>
+                <span class="project-attr-badge">比例：${p.ratio || '16:9'}</span>
+                <span class="project-attr-badge highlight" id="pd-shot-count">${processedShots.length} 鏡頭</span>
+                <span class="project-attr-badge highlight" id="pd-total-duration">總長 ${totalSeconds.toFixed(1).replace(/\.0$/, '')}s</span>
               </div>
             </div>
           </div>
 
-          <div id="project-table-view" class="view-section visible" style="display: block;">
-            <table class="storyboard-table" style="width:100%; border-collapse: collapse;">
-              <thead>
-                <tr>
-                  <th class="th-cam">鏡頭</th>
-                  <th class="th-img">畫面</th>
-                  <th class="th-title">故事內容 / 動作</th>
-                  <th class="th-time">時長</th>
-                  <th class="th-note">情緒 / 備註</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${tableRowsHtml || '<tr><td colspan="5" style="text-align:center; padding:24px;">尚無鏡頭資料</td></tr>'}
-              </tbody>
-            </table>
-          </div>
-
-          <div id="project-film-view" class="view-section" style="display: none; width: 100%; overflow: hidden;">
-            <div class="filmstrip-rail" style="display:flex; gap:4px; padding: 10px 0;">${railHolesHtml}</div>
-            <div class="filmstrip-container" style="overflow-x: auto; width: 100%; cursor: grab; user-select: none;">
-              <div class="filmstrip" style="display: flex; gap: 20px; padding: 10px 0; width: max-content;">
-                ${filmFramesHtml || '<div class="film-placeholder">尚無鏡頭資料</div>'}
-              </div>
+          <div class="project-workspace-content">
+            <!-- 表格模式 -->
+            <div id="pd-table-view" class="project-table-container">
+              <table class="project-table">
+                <thead>
+                  <tr>
+                    <th class="col-th-num">鏡頭</th>
+                    <th class="col-th-img">畫面</th>
+                    <th class="col-th-story">故事內容 / 鏡頭語言</th>
+                    <th class="col-th-time">時長</th>
+                    <th class="col-th-note">情緒 / 備註</th>
+                    <th class="col-th-action">操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${tableRowsHtml || '<tr><td colspan="6" style="text-align:center;padding:32px;color:#a8a29e;">尚無鏡頭資料</td></tr>'}
+                </tbody>
+              </table>
             </div>
-            <div class="filmstrip-rail" style="display:flex; gap:4px; padding: 10px 0;">${railHolesHtml}</div>
+
+            <!-- 膠捲模式 -->
+            <div id="pd-film-view" class="project-film-container" style="display:none;">
+              <div class="project-filmstrip-rail">${railHolesHtml}</div>
+              <div class="project-filmstrip-scroll">
+                <div class="project-filmstrip-track">
+                  ${filmFramesHtml || '<div style="padding:32px;color:#71717a;">尚無鏡頭資料</div>'}
+                </div>
+              </div>
+              <div class="project-filmstrip-rail">${railHolesHtml}</div>
+            </div>
           </div>
         </div>
       `;
 
-      const btnTable = m.querySelector('#vbtn-table');
-      const btnFilm = m.querySelector('#vbtn-film');
-      const tableView = m.querySelector('#project-table-view');
-      const filmView = m.querySelector('#project-film-view');
-
-      function switchView(mode) {
-        if (mode === 'table') {
-          btnTable.classList.add('active');
-          btnFilm.classList.remove('active');
-          tableView.style.display = 'block';
-          filmView.style.display = 'none';
-        } else {
-          btnFilm.classList.add('active');
-          btnTable.classList.remove('active');
-          filmView.style.display = 'block';
-          tableView.style.display = 'none';
-        }
-      }
-
-      btnTable.addEventListener('click', () => switchView('table'));
-      btnFilm.addEventListener('click', () => switchView('film'));
-
-      const container = filmView.querySelector('.filmstrip-container');
-      if (container) {
-        container.addEventListener('wheel', (e) => {
-          if (e.deltaX !== 0) return;
-          e.preventDefault();
-
-          container._wheelTarget = (container._wheelTarget ?? container.scrollLeft) + e.deltaY * 2;
-          if (!container._wheelRaf) {
-            container._wheelRaf = requestAnimationFrame(function step() {
-              const diff = container._wheelTarget - container.scrollLeft;
-              if (Math.abs(diff) < 0.5) {
-                container.scrollLeft = container._wheelTarget;
-                container._wheelRaf = null;
-              } else {
-                container.scrollLeft += diff * 0.3;
-                container._wheelRaf = requestAnimationFrame(step);
-              }
-            });
-          }
-        }, { passive: false });
-
-        let isDragging = false;
-        let startX = 0;
-        let startScroll = 0;
-
-        container.addEventListener('pointerdown', (e) => {
-          if (e.button !== 0) return;
-          isDragging = true;
-          startX = e.clientX;
-          startScroll = container.scrollLeft;
-          container._wheelTarget = container.scrollLeft;
-          container.style.cursor = 'grabbing';
-          container.setPointerCapture(e.pointerId);
-        });
-
-        container.addEventListener('pointermove', (e) => {
-          if (!isDragging) return;
-          const dx = e.clientX - startX;
-          container.scrollLeft = startScroll - dx;
-          container._wheelTarget = container.scrollLeft;
-        });
-
-        const stopDrag = () => {
-          isDragging = false;
-          container.style.cursor = 'grab';
+      // ── Lazy load thumbnails ────────────────────────────────
+      m.querySelectorAll('.shot-cell-thumb-wrap[data-src]').forEach(wrap => {
+        const src = wrap.dataset.src;
+        if (!src) return;
+        const img = new Image();
+        img.onload = () => {
+          img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .35s;';
+          img.alt = 'Shot';
+          wrap.innerHTML = '';
+          wrap.appendChild(img);
+          requestAnimationFrame(() => { img.style.opacity = '1'; });
         };
-        container.addEventListener('pointerup', stopDrag);
-        container.addEventListener('pointercancel', stopDrag);
+        img.onerror = () => { wrap.innerHTML = '<div style="width:100%;height:100%;background:#e2e8f0;"></div>'; };
+        img.src = src;
+      });
+
+      // ── Initialise Controller ───────────────────────────────
+      if (typeof window.ProjectDetailController?.init === 'function') {
+        window.ProjectDetailController.init({ root: m, projectId, project: p });
       }
-      lazyLoadProjectViewThumbs(m);
     }
 
     if (cacheProjectDetails[projectId]) {
@@ -5755,8 +5765,8 @@ function initLoginLogic(showRegister) {
     },
 
     project: {
-      css: ['/css/dashboard.css', '/css/generate.css', '/css/math-curve-loader.css'],
-      js: ['/js/prompt-translate.js'],
+      css: ['/css/dashboard.css', '/css/generate.css', '/css/math-curve-loader.css', '/css/project-detail.css'],
+      js: ['/js/prompt-translate.js', '/js/project-detail.js'],
       render: (o, signal) => renderProject(o?.id || o, signal)
     }
   };
