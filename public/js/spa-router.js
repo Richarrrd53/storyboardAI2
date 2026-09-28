@@ -2822,7 +2822,7 @@ async function ensureSharedLayout(signal) {
     },
 
     template: {
-      css: ['/css/dashboard.css', '/css/template.css', '/css/generate.css', '/css/math-curve-loader.css'],
+      css: ['/css/dashboard.css', '/css/template.css', '/css/generate.css', '/css/math-curve-loader.css', '/css/template-detail.css?v=20260926-3'],
       js: ['/js/generate-prefill-path.js', '/js/template-timeline.js', '/js/template.js'],
       render: (o, signal) => renderTemplate(signal)
     },

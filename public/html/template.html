@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="../css/template.css" />
   <link rel="stylesheet" href="../css/generate.css" />
   <link rel="stylesheet" href="../css/math-curve-loader.css" />
+  <link rel="stylesheet" href="../css/template-detail.css?v=20260926-2" />
 </head>
 
 <body>
@@ -135,16 +136,7 @@
          STATE 2: IMMERSIVE TIMELINE & INSPECTOR PANEL (HIDDEN BY DEFAULT)
          ============================================ -->
     <section id="template-detail-immersive" class="template-detail-immersive-container anim-fadeInUp" style="display: none;">
-      <div class="editor-menubar">
-        <div class="editor-brand"><span class="editor-brand-mark">S</span><strong>Storyboard AI</strong><small>EDIT</small></div>
-        <nav class="editor-workspaces" aria-label="工作區">
-          <button type="button">媒體</button><button class="active" type="button">剪輯</button><button type="button">文字</button><button type="button">調色</button><button type="button">音訊</button><button type="button">輸出</button>
-        </nav>
-        <div class="editor-project-state"><i></i><span>自動儲存</span></div>
-      </div>
-      
-      <!-- Back navigation bar -->
-      <div class="detail-back-bar">
+      <div class="editor-menubar" aria-label="模板分析工具列">
         <button class="btn-back-to-store" onclick="backToStoreBrowse()">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <line x1="19" y1="12" x2="5" y2="12"></line>
@@ -152,7 +144,8 @@
           </svg>
           模板庫
         </button>
-        <span class="detail-navigation-path">專案 / <span id="nav-template-name">正在讀取...</span></span>
+        <div class="editor-document-title"><span>VIDEO ANALYSIS</span><strong id="nav-template-name">正在讀取...</strong></div>
+        <button class="btn-apply-template-main" id="btn-apply-template-main">套用模板</button>
       </div>
 
       <!-- Template Title Header -->
@@ -166,12 +159,41 @@
           <h2 class="detail-template-title" id="detail-template-title">載入中...</h2>
           <p class="detail-template-desc" id="detail-template-desc">載入中...</p>
         </div>
-        <div class="detail-header-right">
-          <button class="btn-apply-template-main" id="btn-apply-template-main">
-            套用模板
-          </button>
-        </div>
       </div>
+
+      <!-- Visual analysis overview: glanceable first, details remain in the inspector -->
+      <section class="analysis-command-deck" aria-labelledby="analysis-command-title">
+        <div class="analysis-command-head">
+          <div>
+            <span class="analysis-command-kicker">AI ANALYSIS OVERVIEW</span>
+            <h3 id="analysis-command-title">影片結構儀表板</h3>
+          </div>
+          <p>先掌握節奏與關鍵轉折，再進入監看器及時間軸逐格檢視。</p>
+        </div>
+        <div class="analysis-command-grid">
+          <article class="analysis-score-card" aria-label="分析信心指數">
+            <div class="analysis-score-ring" id="analysis-score-ring" style="--score: 0">
+              <div><strong id="analysis-score-value">—</strong><span>可信度</span></div>
+            </div>
+            <div class="analysis-score-copy"><span>AI CONFIDENCE</span><strong id="analysis-score-label">資料待確認</strong><small>顯示來源模板提供的分析信心值</small></div>
+          </article>
+          <article class="analysis-kpi-panel" aria-label="影片關鍵指標">
+            <div class="analysis-kpi"><span>總長度</span><strong id="analysis-kpi-duration">—</strong><small>SECONDS</small></div>
+            <div class="analysis-kpi"><span>鏡頭數</span><strong id="analysis-kpi-shots">—</strong><small>SHOTS</small></div>
+            <div class="analysis-kpi"><span>平均鏡長</span><strong id="analysis-kpi-average">—</strong><small>PACE</small></div>
+          </article>
+          <article class="analysis-insight-card">
+            <span class="analysis-card-label">核心洞察</span>
+            <p id="analysis-key-insight">正在整理影片的成功要素…</p>
+            <div class="analysis-insight-tags" id="analysis-insight-tags"></div>
+          </article>
+        </div>
+        <article class="analysis-flow-card">
+          <div class="analysis-flow-head"><div><span class="analysis-card-label">RHYTHM MAP</span><strong>鏡頭節奏與敘事階段</strong></div><div class="analysis-flow-legend"><span><i class="is-hook"></i>鉤子</span><span><i class="is-build"></i>鋪陳</span><span><i class="is-payoff"></i>轉折</span><span><i class="is-close"></i>收束</span></div></div>
+          <div class="analysis-rhythm-track" id="analysis-rhythm-track" aria-label="依時長比例顯示的鏡頭結構"></div>
+          <div class="analysis-rhythm-axis"><span>00:00</span><span id="analysis-rhythm-mid">—</span><span id="analysis-rhythm-end">—</span></div>
+        </article>
+      </section>
 
       <!-- NLE workspace: source bin, program monitor and clip inspector -->
       <div class="nle-workspace">
