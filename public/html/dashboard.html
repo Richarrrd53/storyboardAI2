@@ -22,7 +22,7 @@
     <header class="sidebar" id="dash-sidebar">
         <div class="side-header">
             <a class="side-logo brand-logo" id="side-logo">
-                <span>LOGO</span>
+                <img src="../icon/logo/logo.png" alt="LOGO">
                 <div class="logo-text">Storyboard<span>AI</span></div>
                 <label class="side-burger" id="burger-container" for="burger">
                     <input type="checkbox" id="burger">
@@ -88,136 +88,189 @@
 
     <!-- ═══ MAIN CONTENT ═══ -->
     <main id="page-main" class="dash-main home-main">
-        <!-- Welcome Section -->
-        <section class="home-welcome anim-fadeInUp">
-            <h1 class="welcome-title">歡迎回來，<span id="home-user-name">創作者</span> ✦</h1>
-            <h2 class="welcome-subtitle">今天想繼續哪個創作？</h2>
-        </section>
+        <!-- ═══ HEADER / GREETING (FIXED AT TOP OF CONTAINER) ═══ -->
+        <header class="content-header home-header anim-fadeInUp">
+            <div class="home-header-left">
+                <div class="home-brand-mobile mobile-only-flex">
+                    <span class="home-brand-icon">🎬</span>
+                    <span class="home-brand-title">Storyboard <span>AI</span></span>
+                </div>
+                <h1 class="home-greeting-title" id="home-greeting-text">
+                    晚上好，今天想繼續哪個創作？
+                </h1>
+            </div>
+        </header>
 
-        <!-- Featured / Continue / Discovery Surface -->
-        <section class="home-hero-section anim-fadeInUp anim-delay-1">
-            <div class="home-hero-grid">
-                <!-- Left Hero Card: Continue Project / Discovery -->
-                <div class="hero-continue-card" id="home-hero-card">
-                    <div class="hero-continue-main">
-                        <div class="hero-badge" id="hero-badge">
-                            <span class="hero-badge-dot"></span>
-                            <span id="hero-badge-text">繼續你的創作</span>
+        <!-- ═══ SCROLLABLE CONTENT BODY (BELOW HEADER WITH DYNAMIC MASK) ═══ -->
+        <div class="content-body home-body" data-dynamic-mask data-mask-direction="vertical" data-mask-size="36">
+            <!-- ═══ HERO & QUICK ACTIONS ═══ -->
+            <section class="home-hero-section anim-fadeInUp anim-delay-1">
+            <div class="home-hero-layout">
+                <!-- Hero Card -->
+                <div class="home-hero-card" id="home-hero-card">
+                    <div class="hero-card-media">
+                        <img class="hero-bg-img" src="../images/home_hero_banner.png" alt="讓靈感成為看得見的故事" />
+                        <div class="hero-media-scrim"></div>
+                    </div>
+                    <div class="hero-card-body">
+                        <div class="hero-eyebrow">
+                            <span class="hero-sparkle">✦</span>
+                            <span>讓靈感成為看得見的故事</span>
                         </div>
-                        <h2 class="hero-card-title" id="hero-project-title">載入中...</h2>
-                        <div class="hero-meta-row" id="hero-meta-row">
-                            <span class="hero-meta-item" id="hero-project-time">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <polyline points="12 6 12 12 16 14"></polyline>
-                                </svg>
-                                <span id="hero-time-text">上次編輯：--</span>
-                            </span>
-                            <span class="hero-meta-dot">•</span>
-                            <span class="hero-meta-item" id="hero-project-shots">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
-                                    <line x1="7" y1="2" x2="7" y2="22"></line>
-                                    <line x1="17" y1="2" x2="17" y2="22"></line>
-                                    <line x1="2" y1="12" x2="22" y2="12"></line>
-                                </svg>
-                                <span id="hero-shots-text">目前進度：--</span>
-                            </span>
-                        </div>
-                        <div class="hero-actions-row" id="hero-actions-row">
-                            <button class="hero-primary-btn" id="hero-continue-btn" type="button">
-                                <span id="hero-primary-btn-text">繼續編輯</span>
+                        <h2 class="hero-main-title">
+                            <span class="desktop-only-inline">讓靈感成為看得見的故事</span>
+                            <span class="mobile-only-inline">一個更好的故事</span>
+                        </h2>
+                        <p class="hero-sub-title desktop-only-block">
+                            探索模板、案例與短影音創作靈感
+                        </p>
+                        <div class="hero-cta-wrap">
+                            <button class="hero-cta-btn" id="hero-explore-btn" type="button">
+                                <span class="desktop-only-inline">探索靈感</span>
+                                <span class="mobile-only-inline">從這裡開始</span>
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                     <line x1="5" y1="12" x2="19" y2="12"></line>
                                     <polyline points="12 5 19 12 12 19"></polyline>
                                 </svg>
                             </button>
-                            <a class="hero-secondary-link" id="hero-secondary-link" href="javascript:void(0)" onclick="spaNavigate('projects')">
-                                查看所有分鏡
-                            </a>
-                        </div>
-                    </div>
-                    <div class="hero-preview-visual" id="hero-preview-visual">
-                        <div class="hero-work-showcase" id="hero-preview-card" style="cursor: pointer;">
-                            <div class="hero-showcase-backdrop"></div>
-                            <div class="hero-showcase-frame">
-                                <div class="hero-showcase-thumb loading" id="hero-preview-thumb">
-                                    <div class="hero-frame-mockup">
-                                        <div class="mockup-clapper">🎬</div>
-                                        <div class="mockup-title">載入中...</div>
-                                        <div class="mockup-sub">分鏡腳本</div>
-                                    </div>
-                                </div>
-                                <div class="hero-showcase-grid-overlay">
-                                    <span class="crosshair-marker tl"></span>
-                                    <span class="crosshair-marker tr"></span>
-                                    <span class="crosshair-marker bl"></span>
-                                    <span class="crosshair-marker br"></span>
-                                </div>
-                                <div class="hero-showcase-meta">
-                                    <span class="hero-showcase-pill"><span class="pill-dot"></span><span id="hero-preview-ratio">16:9</span></span>
-                                    <span class="hero-showcase-scene">Scene 01</span>
-                                </div>
-                            </div>
-                            <div class="hero-mini-shot-badge">
-                                <span class="mini-shot-icon">🎥</span>
-                                <div class="mini-shot-text">
-                                    <span class="mini-shot-label">SHOTS</span>
-                                    <span class="mini-shot-val" id="hero-mini-shot-val">--</span>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Right Quickstart Grid -->
-                <div class="hero-quick-grid">
-                    <!-- Template Card -->
-                    <div class="quick-widget-card template-widget" onclick="spaNavigate('template')">
-                        <div class="widget-icon">
-                            <img src="../icon/search-focus.svg" alt="Templates">
+                <!-- Desktop Quick Actions (3 vertical entries) -->
+                <div class="home-quick-actions desktop-quick-actions">
+                    <!-- 1. AI 劇本解析 -->
+                    <div class="quick-action-item" id="qa-script-analysis" role="button" tabindex="0">
+                        <div class="qa-item-icon qa-icon-script">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
                         </div>
-                        <div class="widget-content">
-                            <h3>爆點模板庫</h3>
-                            <p>套用最熱門的短影音腳本</p>
+                        <div class="qa-item-content">
+                            <h3 class="qa-item-title">AI 劇本解析</h3>
+                            <p class="qa-item-desc">將故事內容整理、分析與拆解</p>
                         </div>
-                        <div class="widget-arrow">→</div>
+                        <div class="qa-item-arrow">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </div>
                     </div>
-                    
-                    <!-- Recycle Bin Card -->
-                    <div class="quick-widget-card recycle-widget" onclick="spaNavigate('history')">
-                        <div class="widget-icon">
-                            <img src="../icon/trash-focus.svg" alt="Recycle Bin">
+
+                    <!-- 2. 爆點模板 -->
+                    <div class="quick-action-item" id="qa-template-hook" role="button" tabindex="0">
+                        <div class="qa-item-icon qa-icon-flame">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path>
+                            </svg>
                         </div>
-                        <div class="widget-content">
-                            <h3>資源回收桶</h3>
-                            <p>復原或清理軟刪除分鏡</p>
+                        <div class="qa-item-content">
+                            <h3 class="qa-item-title">爆點模板</h3>
+                            <p class="qa-item-desc">尋找適合故事的 Hook 與敘事模板</p>
                         </div>
-                        <div class="widget-arrow">→</div>
+                        <div class="qa-item-arrow">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </div>
                     </div>
+
+                    <!-- 3. 探索分析 -->
+                    <div class="quick-action-item" id="qa-discovery-search" role="button" tabindex="0">
+                        <div class="qa-item-icon qa-icon-radar">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+                            </svg>
+                        </div>
+                        <div class="qa-item-content">
+                            <h3 class="qa-item-title">探索分析</h3>
+                            <p class="qa-item-desc">探索熱門短影音內容與分析結果</p>
+                        </div>
+                        <div class="qa-item-arrow">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mobile Quick Actions (4 circular shortcut icons below Hero) -->
+            <div class="mobile-quick-actions mobile-only-grid">
+                <div class="mob-shortcut-btn" id="mob-shortcut-script" role="button" tabindex="0">
+                    <div class="mob-shortcut-circle">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                        </svg>
+                    </div>
+                    <span class="mob-shortcut-label">AI劇本</span>
+                </div>
+
+                <div class="mob-shortcut-btn" id="mob-shortcut-create" role="button" tabindex="0">
+                    <div class="mob-shortcut-circle mob-shortcut-circle-highlight">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                    </div>
+                    <span class="mob-shortcut-label">分鏡生成</span>
+                </div>
+
+                <div class="mob-shortcut-btn" id="mob-shortcut-template" role="button" tabindex="0">
+                    <div class="mob-shortcut-circle">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path>
+                        </svg>
+                    </div>
+                    <span class="mob-shortcut-label">爆點模板</span>
+                </div>
+
+                <div class="mob-shortcut-btn" id="mob-shortcut-discovery" role="button" tabindex="0">
+                    <div class="mob-shortcut-circle">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+                        </svg>
+                    </div>
+                    <span class="mob-shortcut-label">探索分析</span>
                 </div>
             </div>
         </section>
 
-        <!-- Recent Projects Section -->
-        <section class="projects-management anim-fadeInUp anim-delay-2" style="margin-top: 36px;">
-            <div class="projects-header">
-                <h2 class="projects-title" style="font-size: 1.5rem;">最近編輯分鏡</h2>
-                <a onclick="spaNavigate('projects')" style="cursor: pointer; display: flex; align-items: center; gap: 5px; color: var(--primary); text-decoration: none; font-weight: 600; font-size: 0.95rem;">
-                    查看所有分鏡
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <!-- ═══ 繼續創作 (RECENT PROJECTS) ═══ -->
+        <section class="home-recent-section anim-fadeInUp anim-delay-2">
+            <div class="home-section-header">
+                <div class="home-section-header-left">
+                    <h2 class="home-section-title">繼續創作</h2>
+                    <p class="home-section-subtitle">最近編輯的分鏡</p>
+                </div>
+                <a class="home-section-more" id="home-view-all-projects" href="javascript:void(0)" onclick="spaNavigate('projects')">
+                    <span>查看全部</span>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="9 18 15 12 9 6"></polyline>
                     </svg>
                 </a>
             </div>
-            
-            <div class="projects-grid" id="recent-projects-grid">
-                <!-- Recent projects will be dynamically rendered here -->
-                <div class="projects-empty">
-                    <h3>載入中...</h3>
+
+            <!-- Recent Projects Viewport with Dynamic Gradient Mask -->
+            <div class="home-recent-viewport dynamic-gradient-mask" id="home-recent-viewport" data-dynamic-mask data-mask-direction="horizontal" data-mask-size="28">
+                <div class="home-recent-grid" id="recent-projects-grid">
+                    <!-- Recent projects will be dynamically rendered here -->
+                    <div class="projects-empty">
+                        <h3>載入中...</h3>
+                    </div>
                 </div>
             </div>
         </section>
+        </div>
     </main>
 
 
@@ -332,44 +385,89 @@
         </div>
     </nav>
 
+    <script src="../js/dynamic-mask.js"></script>
     <script src="../js/generate-prefill-path.js"></script>
     <script src="../js/dashboard.js"></script>
     <script src="../js/sys.js"></script>
     <script>
-        function launchGenerate() {
-            const storyInput = document.getElementById('dash-story');
-            if (!storyInput) {
-                window.location.href = './generate.html';
-                return;
-            }
-            const story = storyInput.value.trim();
-            const ratio = document.getElementById('dash-ratio')?.value || '16:9';
-            const styleIdx = document.getElementById('dash-style')?.value || '0';
-
-            if (!story) {
-                storyInput.focus();
-                document.querySelector('.idea-box')?.classList.add('shake');
-                setTimeout(() => document.querySelector('.idea-box')?.classList.remove('shake'), 600);
-                return;
+        // Dynamic greeting calculation
+        (function initHomeGreetings() {
+            const greetingEl = document.getElementById('home-greeting-text');
+            if (greetingEl) {
+                const hour = new Date().getHours();
+                let timeGreet = '晚上好';
+                if (hour >= 5 && hour < 11) timeGreet = '早安';
+                else if (hour >= 11 && hour < 14) timeGreet = '午安';
+                else if (hour >= 14 && hour < 18) timeGreet = '下午好';
+                greetingEl.textContent = `${timeGreet}，今天想繼續哪個創作？`;
             }
 
-            sessionStorage.setItem('sb_story', story);
-            sessionStorage.setItem('sb_ratio', ratio);
-            sessionStorage.setItem('sb_styleIdx', styleIdx);
-            sessionStorage.setItem('sb_skipToStep', '3');
-
-            window.location.href = './generate.html';
-        }
-
-        const dashStory = document.getElementById('dash-story');
-        if (dashStory) {
-            dashStory.addEventListener('keydown', function (e) {
-                if (e.key === 'Enter' && !e.shiftKey) {
+            const exploreBtn = document.getElementById('hero-explore-btn');
+            if (exploreBtn) {
+                exploreBtn.onclick = (e) => {
                     e.preventDefault();
-                    launchGenerate();
+                    if (window.spaNavigate) window.spaNavigate('template');
+                    else window.location.href = './template.html';
+                };
+            }
+
+            const qaScript = document.getElementById('qa-script-analysis');
+            if (qaScript) {
+                qaScript.onclick = () => { window.location.href = '/analyze'; };
+            }
+            const qaTemplate = document.getElementById('qa-template-hook');
+            if (qaTemplate) {
+                qaTemplate.onclick = () => {
+                    if (window.spaNavigate) window.spaNavigate('template');
+                    else window.location.href = './template.html';
+                };
+            }
+            const qaDiscovery = document.getElementById('qa-discovery-search');
+            if (qaDiscovery) {
+                qaDiscovery.onclick = () => { window.location.href = '/discovery'; };
+            }
+
+            const mobScript = document.getElementById('mob-shortcut-script');
+            if (mobScript) {
+                mobScript.onclick = () => { window.location.href = '/analyze'; };
+            }
+            const mobCreate = document.getElementById('mob-shortcut-create');
+            if (mobCreate) {
+                mobCreate.onclick = (e) => {
+                    e.preventDefault();
+                    if (window.AICreationController) {
+                        window.AICreationController.openQuickCompose();
+                    } else if (window.spaNavigate) {
+                        window.spaNavigate('generate');
+                    } else {
+                        window.location.href = './generate.html';
+                    }
+                };
+            }
+            const mobTemplate = document.getElementById('mob-shortcut-template');
+            if (mobTemplate) {
+                mobTemplate.onclick = () => {
+                    if (window.spaNavigate) window.spaNavigate('template');
+                    else window.location.href = './template.html';
+                };
+            }
+            const mobDiscovery = document.getElementById('mob-shortcut-discovery');
+            if (mobDiscovery) {
+                mobDiscovery.onclick = () => { window.location.href = '/discovery'; };
+            }
+
+            // Dynamic Mask System for dashboard
+            if (window.DynamicMaskSystem) {
+                const contentBody = document.querySelector('.content-body') || document.getElementById('page-content');
+                if (contentBody) {
+                    window.DynamicMaskSystem.attach(contentBody, { maskSize: 36, direction: 'vertical' });
                 }
-            });
-        }
+                const recentViewport = document.getElementById('home-recent-viewport');
+                if (recentViewport) {
+                    window.DynamicMaskSystem.attach(recentViewport, { maskSize: 28, direction: 'horizontal' });
+                }
+            }
+        })();
 
         const isMobileScreen = () => window.matchMedia('(max-width: 768px), (max-width: 767px) and (orientation: portrait), (max-width: 480px)').matches;
 

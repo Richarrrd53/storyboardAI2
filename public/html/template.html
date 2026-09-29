@@ -18,7 +18,7 @@
     <!-- ============================================
          STATE 1: APPLE MUSIC / ROON STYLE BROWSE STORE
          ============================================ -->
-    <section id="template-store-view" class="template-store-container anim-fadeInUp">
+    <section id="template-store-view" class="content-body template-store-container anim-fadeInUp" data-dynamic-mask data-mask-direction="vertical" data-mask-size="36">
       
       <!-- Professional editing-suite inspired spotlight -->
       <div class="store-spotlight-banner">
@@ -135,14 +135,6 @@
          STATE 2: IMMERSIVE TIMELINE & INSPECTOR PANEL (HIDDEN BY DEFAULT)
          ============================================ -->
     <section id="template-detail-immersive" class="template-detail-immersive-container anim-fadeInUp" style="display: none;">
-      <div class="editor-menubar">
-        <div class="editor-brand"><span class="editor-brand-mark">S</span><strong>Storyboard AI</strong><small>EDIT</small></div>
-        <nav class="editor-workspaces" aria-label="工作區">
-          <button type="button">媒體</button><button class="active" type="button">剪輯</button><button type="button">文字</button><button type="button">調色</button><button type="button">音訊</button><button type="button">輸出</button>
-        </nav>
-        <div class="editor-project-state"><i></i><span>自動儲存</span></div>
-      </div>
-      
       <!-- Back navigation bar -->
       <div class="detail-back-bar">
         <button class="btn-back-to-store" onclick="backToStoreBrowse()">
@@ -150,215 +142,232 @@
             <line x1="19" y1="12" x2="5" y2="12"></line>
             <polyline points="12 19 5 12 12 5"></polyline>
           </svg>
-          模板庫
+          返回模板庫
         </button>
-        <span class="detail-navigation-path">專案 / <span id="nav-template-name">正在讀取...</span></span>
+        <span class="detail-navigation-path">爆點模板庫 / <span id="nav-template-name">正在讀取...</span></span>
       </div>
 
-      <!-- Template Title Header -->
-      <div class="detail-template-hero-header">
-        <div class="detail-header-left">
-          <div class="detail-badges-row">
-            <span class="badge-cat" id="detail-category-badge">商品焦點</span>
-            <span class="badge-shots" id="detail-shots-count-badge">8 鏡頭</span>
-            <span class="badge-duration" id="detail-duration-badge">38s</span>
+      <div class="detail-page-content-wrapper">
+        <!-- Template Header -->
+        <header class="content-header detail-template-hero-header">
+          <div class="detail-header-left">
+            <div class="detail-badges-row">
+              <span class="badge-cat" id="detail-category-badge">商品焦點</span>
+              <span class="badge-shots" id="detail-shots-count-badge">8 鏡頭</span>
+              <span class="badge-duration" id="detail-duration-badge">38s</span>
+              <span class="badge-tone" id="detail-tone-badge" style="display:none;"></span>
+            </div>
+            <h1 class="detail-template-title" id="detail-template-title">載入中...</h1>
+            <p class="detail-template-summary" id="detail-template-desc">載入中...</p>
+            
+            <!-- Collapsible More Info -->
+            <div class="detail-more-info-wrapper">
+              <button type="button" class="btn-toggle-more-info" id="btn-toggle-more-info" onclick="toggleMoreTemplateInfo()">
+                <span>更多模板資訊</span>
+                <svg class="chevron-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </button>
+              <div class="detail-more-info-panel" id="detail-more-info-panel" hidden>
+                <div class="more-info-grid">
+                  <div class="more-info-col">
+                    <h6>製作規格</h6>
+                    <dl class="compact-meta-list">
+                      <div><dt>題材情境</dt><dd id="meta-usecase">—</dd></div>
+                      <div><dt>目標平台</dt><dd id="meta-platforms">—</dd></div>
+                      <div><dt>目標受眾</dt><dd id="meta-audience">—</dd></div>
+                      <div><dt>剪輯節奏</dt><dd id="meta-pace">—</dd></div>
+                    </dl>
+                  </div>
+                  <div class="more-info-col" id="col-why-it-works">
+                    <h6>AI 爆款要素</h6>
+                    <p id="meta-why-it-works">—</p>
+                    <ul class="meta-replicable-list" id="meta-replicable-elements"></ul>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          <h2 class="detail-template-title" id="detail-template-title">載入中...</h2>
-          <p class="detail-template-desc" id="detail-template-desc">載入中...</p>
-        </div>
-        <div class="detail-header-right">
-          <button class="btn-apply-template-main" id="btn-apply-template-main">
-            套用模板
-          </button>
-        </div>
-      </div>
+          <div class="detail-header-right">
+            <button class="btn-apply-template-main" id="btn-apply-template-main">
+              套用此模板
+            </button>
+          </div>
+        </header>
 
-      <!-- NLE workspace: source bin, program monitor and clip inspector -->
-      <div class="nle-workspace">
-        <aside class="nle-panel nle-media-bin">
-          <div class="nle-panel-title"><span>專案媒體</span><small>MEDIA POOL</small></div>
-          <div class="nle-bin-tabs"><button class="active" type="button" data-bin-tab="media">媒體</button><button type="button" data-bin-tab="prompts">提示詞</button><button type="button" data-bin-tab="variables">變數</button></div>
-          <div class="nle-bin-tree"><span>⌄</span><strong>模板素材</strong><small id="detail-bin-count">1</small></div>
-          <div class="nle-source-item is-selected" data-bin-page="media">
-            <div class="nle-source-thumb" id="detail-source-thumb"></div>
-            <div><strong id="detail-source-title">來源影片</strong><span id="detail-source-channel">原始素材</span></div>
+        <!-- View Mode Toggle -->
+        <div class="view-mode-toggle-bar">
+          <div class="view-mode-toggle" role="tablist">
+            <button type="button" class="toggle-btn active" id="btn-mode-story" onclick="switchDetailViewMode('story')" role="tab" aria-selected="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+              故事檢視
+            </button>
+            <button type="button" class="toggle-btn" id="btn-mode-professional" onclick="switchDetailViewMode('professional')" role="tab" aria-selected="false">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line></svg>
+              專業檢視
+            </button>
           </div>
-          <div class="nle-bin-section" data-bin-page="media">
-            <h6>素材資訊</h6>
-            <p id="detail-source-views">觀看次數：—</p>
-            <p id="detail-template-version">分析版本：—</p>
-            <p id="detail-confidence">信心指數：—</p>
-          </div>
-          <div class="nle-bin-section" data-bin-page="media">
-            <h6>模板摘要</h6>
-            <dl class="nle-compact-meta">
-              <div><dt>題材</dt><dd id="meta-usecase">—</dd></div>
-              <div><dt>平台</dt><dd id="meta-platforms">—</dd></div>
-              <div><dt>受眾</dt><dd id="meta-audience">—</dd></div>
-              <div><dt>鏡頭</dt><dd id="meta-shotscount">—</dd></div>
-              <div><dt>長度</dt><dd id="meta-duration">—</dd></div>
-            </dl>
-          </div>
-          <div class="nle-bin-section" data-bin-page="media">
-            <h6>AI 成功要素</h6><p id="meta-why-it-works">—</p>
-            <ul class="nle-replicable-list" id="meta-replicable-elements"></ul>
-          </div>
-          <div class="nle-bin-section" data-bin-page="prompts" hidden>
-            <h6>分鏡生成提示詞</h6>
-            <p class="editor-code-text" id="meta-prompt-base">—</p>
-            <div class="nle-prompt-list" id="detail-prompt-list"></div>
-            <dl class="nle-compact-meta"><div><dt>節奏</dt><dd id="meta-rhythm-pattern">—</dd></div><div><dt>運鏡</dt><dd id="meta-camera-control">—</dd></div><div><dt>情緒</dt><dd id="meta-emotion-control">—</dd></div></dl>
-          </div>
-          <div class="nle-bin-section" data-bin-page="variables" hidden>
-            <h6>可替換變數</h6>
-            <div class="nle-variable-chips" id="detail-variable-chips"></div>
-            <p id="meta-variables" hidden>—</p>
-          </div>
-        </aside>
+        </div>
 
-        <section class="nle-program-panel">
-          <div class="nle-panel-title"><span>節目監看器</span><small id="detail-sequence-name">SEQUENCE 01</small></div>
-          <div class="nle-program-monitor" id="detail-program-monitor">
-            <div class="nle-monitor-fallback">SOURCE PREVIEW</div>
-            <div class="nle-safe-frame"></div>
-          </div>
-          <div class="nle-transport">
-            <span id="detail-monitor-timecode">00:00:00:00</span>
-            <div class="source-playback-label">ORIGINAL PLATFORM PLAYBACK</div>
-            <span id="detail-monitor-duration">00:00:00:00</span>
+        <!-- Shared Video Player (Center Anchor) -->
+        <section class="shared-video-player-section">
+          <div class="video-player-container">
+            <div class="video-monitor-wrapper" id="detail-program-monitor">
+              <div class="nle-monitor-fallback">SOURCE PREVIEW</div>
+              <div class="nle-safe-frame"></div>
+            </div>
+            <!-- Transport / Player Controls -->
+            <div class="video-player-controls">
+              <button type="button" class="btn-player-playpause" id="btn-player-playpause" title="播放 / 暫停">
+                <svg class="play-icon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                <svg class="pause-icon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="display:none;"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+              </button>
+              <span class="player-time-current" id="detail-monitor-timecode">00:00</span>
+              <div class="player-scrubber-track" id="player-scrubber-track">
+                <div class="player-scrubber-progress" id="player-scrubber-progress"></div>
+                <div class="player-scrubber-thumb" id="player-scrubber-thumb"></div>
+              </div>
+              <span class="player-time-duration" id="detail-monitor-duration">00:00</span>
+            </div>
           </div>
         </section>
 
-        <aside class="nle-panel nle-properties-panel">
-          <div class="nle-panel-title"><span>檢查器</span><small>INSPECTOR</small></div>
-          <div class="nle-inspector-tabs" role="tablist"><button class="active" type="button" data-inspector-tab="story">敘事</button><button type="button" data-inspector-tab="marketing">行銷</button><button type="button" data-inspector-tab="output">輸出</button><button type="button" data-inspector-tab="clip">片段</button></div>
-          <div class="nle-inspector-page active" data-inspector-page="story">
-            <div class="nle-property-group">
-              <h5>敘事設定</h5>
-              <dl><div><dt>類型</dt><dd id="detail-narrative-type">—</dd></div><div><dt>語調</dt><dd id="detail-narrative-tone">—</dd></div><div><dt>節奏</dt><dd id="detail-pace">—</dd></div><div><dt>轉場</dt><dd id="detail-transition">—</dd></div></dl>
+        <!-- Mode Content Area -->
+        <div class="mode-content-container">
+          
+          <!-- MODE 1: NARRATIVE CANVAS (STORY VIEW) -->
+          <section id="view-mode-story" class="narrative-canvas-panel active anim-fadeIn">
+            <div class="canvas-header-block">
+              <div class="canvas-title-wrap">
+                <span class="canvas-badge">故事地圖</span>
+                <h3 class="canvas-headline">這支影片怎麼說故事？</h3>
+              </div>
+              <p class="canvas-subline">節點位置真實呈現時間長度與敘事節奏，點擊任意分鏡可探索關鍵動作並跳轉播放。</p>
             </div>
-            <div class="nle-property-group"><h5>敘事結構</h5><p id="detail-narrative-structure">—</p></div>
-            <div class="nle-property-group"><h5>開場鉤子</h5><div class="nle-hook-card"><span id="detail-hook-type">—</span><p id="detail-hook-description">—</p></div></div>
-          </div>
-          <div class="nle-inspector-page" data-inspector-page="marketing">
-            <div class="nle-property-group"><h5>品牌置入</h5><dl><div><dt>置入方式</dt><dd id="detail-marketing-method">—</dd></div><div><dt>品牌角色</dt><dd id="detail-brand-role">—</dd></div><div><dt>揭露時機</dt><dd id="detail-reveal-timing">—</dd></div><div><dt>說服方式</dt><dd id="detail-persuasion">—</dd></div></dl></div>
-            <div class="nle-property-group"><h5>目標情緒</h5><div class="nle-variable-chips" id="detail-target-emotions"></div></div>
-          </div>
-          <div class="nle-inspector-page" data-inspector-page="output">
-            <div class="nle-property-group"><h5>序列設定</h5><dl><div><dt>畫面比例</dt><dd>9:16</dd></div><div><dt>解析度</dt><dd>1080 × 1920</dd></div><div><dt>影格率</dt><dd>30 fps</dd></div><div><dt>色彩</dt><dd>Rec.709</dd></div></dl></div>
-            <div class="nle-property-group"><h5>目標平台</h5><div class="nle-variable-chips" id="detail-platform-chips"></div></div>
-          </div>
-          <div class="nle-inspector-page" data-inspector-page="clip">
-            <div class="inspector-panel" id="timeline-inspector">
-              <div class="inspector-header"><h4 class="inspector-title" id="inspector-title">選取時間軸片段</h4><span class="inspector-badge" id="inspector-badge">CLIP</span></div>
-              <div class="inspector-body" id="inspector-body-content"><div class="inspector-empty-state"><p>點擊時間軸上的鏡頭或 AI 結構片段，在這裡查看完整內容。</p></div></div>
-            </div>
-          </div>
-          <div class="nle-property-group nle-collaboration-state">
-            <h5>協作狀態</h5><div class="nle-review-status"><i></i><span><b>結構已就緒</b><small>可交接腳本與剪輯</small></span></div>
-          </div>
-        </aside>
-      </div>
 
-      <!-- timeline widget container -->
-      <div class="timeline-editor-wrapper">
-        <div class="timeline-editor-title">
-          <div class="left-label">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-              <line x1="9" y1="3" x2="9" y2="21"></line>
-              <line x1="15" y1="3" x2="15" y2="21"></line>
-              <line x1="3" y1="9" x2="21" y2="9"></line>
-              <line x1="3" y1="15" x2="21" y2="15"></line>
-            </svg>
-            <span>時間軸 · SEQUENCE 01</span>
-          </div>
-          <div class="right-info timeline-view-switcher">
-            <button class="active" type="button" data-editor-view="timeline">時間軸</button><button type="button" data-editor-view="script">分鏡腳本</button>
-          </div>
+            <!-- Narrative Canvas Viewport -->
+            <div class="narrative-canvas-viewport">
+              <div class="narrative-canvas-stage" id="narrative-canvas-stage">
+                <!-- SVG Connections Layer for connectors & branches -->
+                <svg class="canvas-svg-layer" id="canvas-svg-layer" preserveAspectRatio="none"></svg>
+
+                <!-- Stage Labels Layer (Top) -->
+                <div class="canvas-stage-labels-layer" id="canvas-stage-labels-layer"></div>
+
+                <!-- True-time Timeline Track (Center Axis) -->
+                <div class="canvas-axis-track">
+                  <div class="canvas-axis-line"></div>
+                  <div class="canvas-axis-progress" id="canvas-axis-progress"></div>
+                  <!-- Shot Anchor Dots on Axis -->
+                  <div class="canvas-axis-dots" id="canvas-axis-dots"></div>
+                </div>
+
+                <!-- Primary Shot Nodes & Secondary Nodes Layer -->
+                <div class="canvas-nodes-layer" id="canvas-nodes-layer"></div>
+
+                <!-- Selected Shot Expansion Bubble Layer -->
+                <div class="canvas-expansion-layer" id="canvas-expansion-layer"></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- MODE 2: PROFESSIONAL VIEW (INTEGRATED WORKSPACE) -->
+          <section id="view-mode-professional" class="professional-workspace-panel anim-fadeIn" style="display: none;">
+            <div class="timeline-editor-wrapper">
+              <!-- Integrated Toolbar (Filter + Timecode) -->
+              <div class="timeline-editor-toolbar">
+                <div class="toolbar-left">
+                  <span class="toolbar-title">多軌剪輯序列 · 9:16</span>
+                  <div class="track-filter-pills" id="track-filter-pills"></div>
+                </div>
+                <div class="toolbar-right">
+                  <span class="timeline-timecode-display" id="pro-toolbar-timecode">00:00</span>
+                </div>
+              </div>
+
+              <div class="timeline-scroll-container">
+                <div class="timeline-editor-body" id="timeline-editor-body">
+                  <!-- Playhead -->
+                  <div class="timeline-playhead" id="timeline-playhead">
+                    <div class="playhead-head">00:00</div>
+                    <div class="playhead-line"></div>
+                  </div>
+
+                  <!-- Track 1: Time Ruler -->
+                  <div class="timeline-track-row track-ruler-row" data-track="ruler">
+                    <div class="track-header-cell"><b>TC</b><span>時間碼</span></div>
+                    <div class="track-content-cell ruler-ticks" id="ruler-ticks"></div>
+                  </div>
+
+                  <!-- Track 2: Video (Shots) -->
+                  <div class="timeline-track-row track-shots-row" data-track="video">
+                    <div class="track-header-cell"><b>V1</b><span>主畫面</span></div>
+                    <div class="track-content-cell track-shots-container" id="track-shots-container"></div>
+                  </div>
+
+                  <!-- Track 3: Hook -->
+                  <div class="timeline-track-row track-ai-row track-hook-row" data-track="hook">
+                    <div class="track-header-cell ai-coral-header"><b>H1</b><span>開場鉤子</span></div>
+                    <div class="track-content-cell track-ai-container" id="track-hook-container"></div>
+                  </div>
+
+                  <!-- Track 4: Narrative -->
+                  <div class="timeline-track-row track-ai-row track-narrative-row" data-track="narrative">
+                    <div class="track-header-cell ai-purple-header"><b>N1</b><span>敘事節奏</span></div>
+                    <div class="track-content-cell track-ai-container" id="track-narrative-container"></div>
+                  </div>
+
+                  <!-- Track 5: Emotion -->
+                  <div class="timeline-track-row track-ai-row track-emotion-row" data-track="emotion">
+                    <div class="track-header-cell ai-cyan-header"><b>E1</b><span>情緒律動</span></div>
+                    <div class="track-content-cell track-ai-container" id="track-emotion-container"></div>
+                  </div>
+
+                  <!-- Track 6: Q&A / Interaction -->
+                  <div class="timeline-track-row track-ai-row track-qa-row" data-track="qa">
+                    <div class="track-header-cell ai-green-header"><b>Q1</b><span>藏鏡互動</span></div>
+                    <div class="track-content-cell track-ai-container" id="track-qa-container"></div>
+                  </div>
+
+                  <!-- Track 7: Attention Reset / Conflict -->
+                  <div class="timeline-track-row track-ai-row track-conflict-row" data-track="conflict">
+                    <div class="track-header-cell ai-orange-header"><b>FX1</b><span>注意力重置</span></div>
+                    <div class="track-content-cell track-ai-container" id="track-conflict-container"></div>
+                  </div>
+
+                  <!-- Track 8: Outro & CTA -->
+                  <div class="timeline-track-row track-ai-row track-outro-row" data-track="outro">
+                    <div class="track-header-cell ai-gold-header"><b>M1</b><span>品牌／CTA</span></div>
+                    <div class="track-content-cell track-ai-container" id="track-outro-container"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Local Floating Inspector Panel inside Workspace -->
+              <aside class="timeline-local-inspector" id="timeline-local-inspector" hidden>
+                <div class="local-inspector-head">
+                  <div class="inspector-badge-title">
+                    <span class="inspector-badge" id="local-inspector-badge">CLIP</span>
+                    <h5 id="local-inspector-title">片段屬性</h5>
+                  </div>
+                  <button type="button" class="btn-close-local-inspector" onclick="closeInspectorDrawer()" aria-label="關閉檢查器">×</button>
+                </div>
+                <div class="local-inspector-body" id="local-inspector-body"></div>
+              </aside>
+            </div>
+          </section>
+
         </div>
 
-        <div class="timeline-scroll-container">
-          <div class="timeline-editor-body" id="timeline-editor-body">
-            
-            <!-- Playhead (The vertical pointer) -->
-            <div class="timeline-playhead" id="timeline-playhead">
-              <div class="playhead-head">00:00</div>
-              <div class="playhead-line"></div>
-            </div>
-
-            <!-- Track 1: Time Ruler -->
-            <div class="timeline-track-row track-ruler-row">
-              <div class="track-header-cell"><b>TC</b><span>時間碼</span></div>
-              <div class="track-content-cell ruler-ticks" id="ruler-ticks">
-                <!-- Ticks rendered dynamically -->
-              </div>
-            </div>
-
-            <!-- Track 2: Shots Track -->
-            <div class="timeline-track-row track-shots-row">
-              <div class="track-header-cell"><b>V1</b><span>主畫面</span></div>
-              <div class="track-content-cell track-shots-container" id="track-shots-container">
-                <!-- Shots blocks rendered dynamically -->
-              </div>
-            </div>
-
-            <!-- Track 3: Hook Track -->
-            <div class="timeline-track-row track-ai-row track-hook-row">
-              <div class="track-header-cell ai-coral-header"><b>H1</b><span>鉤子</span></div>
-              <div class="track-content-cell track-ai-container" id="track-hook-container">
-                <!-- Hook block rendered dynamically -->
-              </div>
-            </div>
-
-            <!-- Track 4: Narrative Track -->
-            <div class="timeline-track-row track-ai-row track-narrative-row">
-              <div class="track-header-cell ai-purple-header"><b>N1</b><span>敘事</span></div>
-              <div class="track-content-cell track-ai-container" id="track-narrative-container">
-                <!-- Narrative block rendered dynamically -->
-              </div>
-            </div>
-
-            <!-- Track 5: Emotion Track -->
-            <div class="timeline-track-row track-ai-row track-emotion-row">
-              <div class="track-header-cell ai-cyan-header"><b>E1</b><span>情緒</span></div>
-              <div class="track-content-cell track-ai-container" id="track-emotion-container">
-                <!-- Emotion block rendered dynamically -->
-              </div>
-            </div>
-
-            <!-- Track 6: Q&A Track -->
-            <div class="timeline-track-row track-ai-row track-qa-row">
-              <div class="track-header-cell ai-green-header"><b>Q1</b><span>互動</span></div>
-              <div class="track-content-cell track-ai-container" id="track-qa-container">
-                <!-- Q&A block rendered dynamically -->
-              </div>
-            </div>
-
-            <!-- Track 7: Conflict Track -->
-            <div class="timeline-track-row track-ai-row track-conflict-row">
-              <div class="track-header-cell ai-orange-header"><b>FX1</b><span>注意力重置</span></div>
-              <div class="track-content-cell track-ai-container" id="track-conflict-container">
-                <!-- Conflict block rendered dynamically -->
-              </div>
-            </div>
-
-            <!-- Track 8: Outro & Brand Track -->
-            <div class="timeline-track-row track-ai-row track-outro-row">
-              <div class="track-header-cell ai-gold-header"><b>M1</b><span>品牌／CTA</span></div>
-              <div class="track-content-cell track-ai-container" id="track-outro-container">
-                <!-- Outro block rendered dynamically -->
-              </div>
-            </div>
-
+        <!-- Bottom Apply CTA -->
+        <div class="detail-bottom-cta-banner">
+          <div class="cta-banner-text">
+            <h4>喜歡這個爆款剪輯結構嗎？</h4>
+            <p>將此結構直接套用至你的新腳本，AI 會依照此節奏自動規劃每一鏡頭的分鏡提示詞與畫面描述。</p>
           </div>
+          <button class="btn-apply-template-bottom" id="btn-apply-template-bottom">
+            套用此模板
+          </button>
         </div>
-        <div class="storyboard-script-panel" id="storyboard-script-panel" hidden>
-          <table class="template-storyboard-table">
-            <thead><tr><th>鏡號</th><th>畫面預覽</th><th>故事內容／動作</th><th>景別／角度</th><th>時長</th><th>情緒／目的</th></tr></thead>
-            <tbody id="template-storyboard-body"></tbody>
-          </table>
-        </div>
+
       </div>
     </section>
 

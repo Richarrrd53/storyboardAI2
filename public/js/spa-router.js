@@ -4494,180 +4494,128 @@ function initLoginLogic(showRegister) {
         return ratio;
       }
 
-      function updateDashboardHero(activeList) {
-        const heroCard = document.getElementById('home-hero-card');
-        if (!heroCard) return;
+      // Dynamic greeting calculation
+      const greetingEl = document.getElementById('home-greeting-text');
+      if (greetingEl) {
+        const hour = new Date().getHours();
+        let timeGreet = '晚上好';
+        if (hour >= 5 && hour < 11) timeGreet = '早安';
+        else if (hour >= 11 && hour < 14) timeGreet = '午安';
+        else if (hour >= 14 && hour < 18) timeGreet = '下午好';
+        greetingEl.textContent = `${timeGreet}，今天想繼續哪個創作？`;
+      }
 
-        if (!activeList || activeList.length === 0) {
-          heroCard.className = 'hero-continue-card hero-empty-state';
-          heroCard.innerHTML = `
-            <div class="hero-continue-main">
-              <div class="hero-badge hero-badge-new">
-                <span class="badge-sparkle">✦</span>
-                <span>靈感啟程</span>
-              </div>
-              <h2 class="hero-card-title">開始你的第一個分鏡</h2>
-              <p class="hero-card-desc">把一個故事想法逐步轉換成完整分鏡、動態描述與畫面構圖。</p>
-              <div class="hero-actions-row">
-                <button class="hero-primary-btn" id="hero-create-btn" type="button">
-                  <span>新增分鏡</span>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                    <polyline points="12 5 19 12 12 19"></polyline>
-                  </svg>
-                </button>
-                <button class="hero-secondary-btn" id="hero-template-btn" type="button">
-                  探索爆點模板
-                </button>
-              </div>
-            </div>
-            <div class="hero-preview-visual hero-empty-visual">
-              <div class="hero-empty-glow"></div>
-              <div class="hero-empty-clapper">
-                <svg width="68" height="68" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="2" y="6" width="20" height="15" rx="2"></rect>
-                  <path d="m2 11 20 0"></path>
-                  <path d="m5 6 3-3"></path>
-                  <path d="m11 6 3-3"></path>
-                  <path d="m17 6 3-3"></path>
-                </svg>
-              </div>
-            </div>
-          `;
+      // Bind Quick Actions & Hero exploration triggers
+      const exploreBtn = document.getElementById('hero-explore-btn');
+      if (exploreBtn) {
+        exploreBtn.onclick = (e) => {
+          e.preventDefault();
+          navigate('template');
+        };
+      }
 
-          const createBtn = document.getElementById('hero-create-btn');
-          if (createBtn) {
-            createBtn.onclick = (e) => {
-              e.preventDefault();
-              if (window.AICreationController) {
-                window.AICreationController.openQuickCompose();
-              } else {
-                navigate('generate');
-              }
-            };
+      const qaScript = document.getElementById('qa-script-analysis');
+      if (qaScript) {
+        qaScript.onclick = () => { window.location.href = '/analyze'; };
+      }
+      const qaTemplate = document.getElementById('qa-template-hook');
+      if (qaTemplate) {
+        qaTemplate.onclick = () => { navigate('template'); };
+      }
+      const qaDiscovery = document.getElementById('qa-discovery-search');
+      if (qaDiscovery) {
+        qaDiscovery.onclick = () => { window.location.href = '/discovery'; };
+      }
+
+      // Mobile shortcut buttons
+      const mobScript = document.getElementById('mob-shortcut-script');
+      if (mobScript) {
+        mobScript.onclick = () => { window.location.href = '/analyze'; };
+      }
+      const mobCreate = document.getElementById('mob-shortcut-create');
+      if (mobCreate) {
+        mobCreate.onclick = (e) => {
+          e.preventDefault();
+          if (window.AICreationController) {
+            window.AICreationController.openQuickCompose();
+          } else {
+            navigate('generate');
           }
-          const templateBtn = document.getElementById('hero-template-btn');
-          if (templateBtn) {
-            templateBtn.onclick = (e) => {
-              e.preventDefault();
-              navigate('template');
-            };
+        };
+      }
+      const mobTemplate = document.getElementById('mob-shortcut-template');
+      if (mobTemplate) {
+        mobTemplate.onclick = () => { navigate('template'); };
+      }
+      const mobDiscovery = document.getElementById('mob-shortcut-discovery');
+      if (mobDiscovery) {
+        mobDiscovery.onclick = () => { window.location.href = '/discovery'; };
+      }
+
+      // Notification and Avatar
+      const notifyBtn = document.getElementById('home-notify-btn');
+      if (notifyBtn) {
+        notifyBtn.onclick = () => {
+          showToast('目前暫無新通知');
+        };
+      }
+      const homeAvatar = document.getElementById('home-top-avatar');
+      if (homeAvatar) {
+        homeAvatar.onclick = (e) => {
+          e.stopPropagation();
+          if (typeof window.toggleUserPanel === 'function') {
+            window.toggleUserPanel();
           }
-        } else {
-          const latest = activeList[0];
-          const timeStr = formatRelativeTime(latest.updateAt || latest.createAt);
-          const shotsCount = latest.shotCount || (Array.isArray(latest.shots) ? latest.shots.length : 8);
+        };
+      }
 
-          heroCard.className = 'hero-continue-card';
-          heroCard.innerHTML = `
-            <div class="hero-continue-main">
-              <div class="hero-badge" id="hero-badge">
-                <span class="hero-badge-dot"></span>
-                <span>繼續你的創作</span>
-              </div>
-              <h2 class="hero-card-title" id="hero-project-title" title="${esc(latest.title || '未命名分鏡')}">${esc(latest.title || '未命名分鏡')}</h2>
-              <div class="hero-meta-row" id="hero-meta-row">
-                <span class="hero-meta-item" id="hero-project-time">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <polyline points="12 6 12 12 16 14"></polyline>
-                  </svg>
-                  <span>上次編輯：${timeStr}</span>
-                </span>
-                <span class="hero-meta-dot">•</span>
-                <span class="hero-meta-item" id="hero-project-shots">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
-                    <line x1="7" y1="2" x2="7" y2="22"></line>
-                    <line x1="17" y1="2" x2="17" y2="22"></line>
-                    <line x1="2" y1="12" x2="22" y2="12"></line>
-                  </svg>
-                  <span>目前進度：${shotsCount} 個分鏡</span>
-                </span>
-              </div>
-              <div class="hero-actions-row" id="hero-actions-row">
-                <button class="hero-primary-btn" id="hero-continue-btn" type="button">
-                  <span>繼續編輯</span>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                    <polyline points="12 5 19 12 12 19"></polyline>
-                  </svg>
-                </button>
-                <a class="hero-secondary-link" id="hero-secondary-link" href="javascript:void(0)">
-                  查看所有分鏡
-                </a>
-              </div>
-            </div>
-            <div class="hero-preview-visual" id="hero-preview-visual">
-              <div class="hero-work-showcase" id="hero-preview-card" style="cursor: pointer;">
-                <div class="hero-showcase-backdrop"></div>
-                <div class="hero-showcase-frame">
-                  <div class="hero-showcase-thumb loading" id="hero-preview-thumb">
-                    <div class="hero-frame-mockup">
-                      <div class="mockup-clapper">🎬</div>
-                      <div class="mockup-title">${esc(latest.title || '分鏡腳本')}</div>
-                      <div class="mockup-sub">${shotsCount} 個分鏡 · ${latest.ratio || '16:9'}</div>
-                    </div>
-                  </div>
-                  <div class="hero-showcase-grid-overlay">
-                    <span class="crosshair-marker tl"></span>
-                    <span class="crosshair-marker tr"></span>
-                    <span class="crosshair-marker bl"></span>
-                    <span class="crosshair-marker br"></span>
-                  </div>
-                  <div class="hero-showcase-meta">
-                    <span class="hero-showcase-pill"><span class="pill-dot"></span>${latest.ratio || '16:9'}</span>
-                    <span class="hero-showcase-scene">Scene 01</span>
-                  </div>
-                </div>
-                <div class="hero-mini-shot-badge">
-                  <span class="mini-shot-icon">🎥</span>
-                  <div class="mini-shot-text">
-                    <span class="mini-shot-label">SHOTS</span>
-                    <span class="mini-shot-val">${shotsCount} 格</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          `;
+      // Simplified Home Recent Project Card Template (Spec section 9)
+      function buildHomeRecentCardHTML(p) {
+        const timeStr = formatRelativeTime(p.updateAt || p.createAt);
+        const shotsCount = p.shotCount || (Array.isArray(p.shots) ? p.shots.length : 0);
+        const titleEsc = esc(p.title || '未命名分鏡');
+        const ratioBadge = formatRatioBadge(p.ratio);
 
-          const continueBtn = document.getElementById('hero-continue-btn');
-          const previewCard = document.getElementById('hero-preview-card');
-          [continueBtn, previewCard].forEach(el => {
-            if (el) {
-              el.onclick = () => {
-                navigate('project', { id: latest.id });
-              };
-              el.addEventListener('pointerenter', () => {
-                prefetchPage('project', { id: latest.id });
-              });
-            }
+        return `
+          <div class="home-card-thumb loading" data-src="/api/projects/${p.id}/cover">
+            <div class="home-card-fallback">
+              <span class="home-fallback-icon">🎬</span>
+              <span class="home-fallback-title">${titleEsc}</span>
+            </div>
+            <div class="home-card-badge">${ratioBadge}</div>
+          </div>
+          <div class="home-card-info">
+            <h3 class="home-card-title" title="${titleEsc}">${titleEsc}</h3>
+            <div class="home-card-meta">
+              <span>${shotsCount > 0 ? `${shotsCount} 個鏡頭 · ` : ''}${timeStr}</span>
+            </div>
+          </div>
+          <button class="home-card-option-btn" type="button" title="更多選項" aria-label="更多選項">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+              <circle cx="12" cy="5" r="2.1" />
+              <circle cx="12" cy="12" r="2.1" />
+              <circle cx="12" cy="19" r="2.1" />
+            </svg>
+          </button>
+        `;
+      }
+
+      function setupHomeRecentCardEvents(card, p, refreshCallback) {
+        card.className = 'home-project-card';
+        card.onclick = (e) => {
+          if (e.target.closest('.home-card-option-btn')) return;
+          navigate('project', { id: p.id });
+        };
+        card.addEventListener('pointerenter', () => {
+          prefetchPage('project', { id: p.id });
+        });
+
+        const optionBtn = card.querySelector('.home-card-option-btn');
+        if (optionBtn) {
+          optionBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openGlobalOptionMorph(optionBtn, p, card, false, refreshCallback);
           });
-
-          const secondaryLink = document.getElementById('hero-secondary-link');
-          if (secondaryLink) {
-            secondaryLink.onclick = () => {
-              navigate('projects');
-            };
-          }
-
-          // Dedicated cover image loader for hero showcase artwork
-          const showcaseThumb = heroCard.querySelector('#hero-preview-thumb');
-          if (showcaseThumb) {
-            const coverUrl = `/api/projects/${latest.id}/cover`;
-            const coverImg = new Image();
-            coverImg.onload = () => {
-              showcaseThumb.innerHTML = '';
-              coverImg.className = 'showcase-cover-img';
-              coverImg.alt = 'Cover';
-              showcaseThumb.appendChild(coverImg);
-              showcaseThumb.classList.remove('loading');
-            };
-            coverImg.onerror = () => {
-              showcaseThumb.classList.remove('loading');
-            };
-            coverImg.src = coverUrl;
-          }
         }
       }
 
@@ -4675,30 +4623,53 @@ function initLoginLogic(showRegister) {
         const activeProjects = (projects || [])
           .filter(p => !p.is_deleted && !pendingDeletions[p.id])
           .sort((a, b) => new Date(b.updateAt || b.createAt) - new Date(a.updateAt || a.createAt));
-        
-        updateDashboardHero(activeProjects);
 
+        // Take only recent 3 to 4 projects (Spec section 7)
         const recentProjects = activeProjects.slice(0, 4);
-        
+
         recentProjectsGrid.innerHTML = '';
         if (recentProjects.length === 0) {
           recentProjectsGrid.innerHTML = `
-            <div class="projects-empty">
-              <h3>尚無分鏡</h3>
-              <p>點擊上方「新建分鏡」開始建立你的第一個分鏡腳本！</p>
+            <div class="home-empty-recent-card">
+              <div class="home-empty-icon">🎬</div>
+              <h3 class="home-empty-title">尚無最近編輯的分鏡</h3>
+              <p class="home-empty-desc">點擊右下角 QC 創作按鈕，快速記錄你的第一個分鏡創意！</p>
+              <button class="home-empty-qc-btn" type="button" id="home-empty-create-btn">
+                <span>開啟 QC 創作</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              </button>
             </div>
           `;
+          const emptyBtn = document.getElementById('home-empty-create-btn');
+          if (emptyBtn) {
+            emptyBtn.onclick = () => {
+              if (window.AICreationController) window.AICreationController.openQuickCompose();
+              else navigate('generate');
+            };
+          }
         } else {
           recentProjects.forEach(p => {
             const card = document.createElement('div');
-            card.innerHTML = buildLightFilmCardHTML(p);
-            setupProjectCardEvents(card, p, false, () => {
+            card.innerHTML = buildHomeRecentCardHTML(p);
+            setupHomeRecentCardEvents(card, p, () => {
               displayRecentProjects(cacheProjectsList);
               updateSidebarProjects();
             });
             recentProjectsGrid.appendChild(card);
           });
           lazyLoadProjectThumbs(recentProjectsGrid);
+        }
+
+        // Attach and update Dynamic Gradient Mask System
+        if (window.DynamicMaskSystem) {
+          const contentBody = document.querySelector('.home-body') || document.querySelector('.content-body') || document.getElementById('page-content');
+          if (contentBody) {
+            window.DynamicMaskSystem.attach(contentBody, { maskSize: 36, direction: 'vertical' });
+          }
+          const recentViewport = document.getElementById('home-recent-viewport');
+          if (recentViewport) {
+            window.DynamicMaskSystem.attach(recentViewport, { maskSize: 28, direction: 'horizontal' });
+          }
         }
       }
 
@@ -5263,7 +5234,7 @@ function initLoginLogic(showRegister) {
     function renderProjectSkeleton(container) {
       container.innerHTML = `
         <div class="project-workspace loading-skeleton">
-          <div class="project-workspace-header">
+          <div class="content-header project-workspace-header">
             <div class="project-workspace-header-top">
               <div class="project-workspace-title-area">
                 <button class="project-back-btn" style="pointer-events:none;opacity:0.6;">← 所有專案</button>
@@ -5287,7 +5258,7 @@ function initLoginLogic(showRegister) {
             </div>
           </div>
 
-          <div class="project-workspace-content">
+          <div class="content-body project-workspace-content" data-dynamic-mask data-mask-direction="vertical" data-mask-size="36">
             <div class="project-table-container">
               <table class="project-table">
                 <thead>
@@ -5436,7 +5407,7 @@ function initLoginLogic(showRegister) {
       // ── Full workspace HTML ─────────────────────────────────
       m.innerHTML = `
         <div class="project-workspace">
-          <div class="project-workspace-header">
+          <div class="content-header project-workspace-header">
             <div class="project-workspace-header-top">
               <div class="project-workspace-title-area">
                 <button class="project-back-btn" id="pd-back-btn">
@@ -5470,7 +5441,7 @@ function initLoginLogic(showRegister) {
             </div>
           </div>
 
-          <div class="project-workspace-content">
+          <div class="content-body project-workspace-content" data-dynamic-mask data-mask-direction="vertical" data-mask-size="36">
             <!-- 表格模式 -->
             <div id="pd-table-view" class="project-table-container">
               <table class="project-table">
@@ -6379,6 +6350,9 @@ function initLoginLogic(showRegister) {
       }
       if (isDashboardPage(page) && page !== 'generate') {
         updateAIDockState(page);
+      }
+      if (window.DynamicMaskSystem) {
+        window.DynamicMaskSystem.refresh();
       }
     }
   }
