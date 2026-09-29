@@ -187,7 +187,36 @@ async function mountYouTubePlayer(videoId, title, templateId) {
   }
 }
 
-function mountSharedPlayer(template) {
+/**
+ * Main entrance to render a template detail
+ */
+window.renderTemplateDetailTimeline = function(template, detailContainer) {
+  stopPlayerTimelineSync();
+  if (currentSourcePlayerType === 'youtube' && currentSourcePlayer?.destroy) {
+    try { currentSourcePlayer.destroy(); } catch (_) {}
+  }
+  currentSourcePlayer = null;
+  currentSourcePlayerType = null;
+  currentTemplate = template;
+  console.log("Rendering immersive timeline for template:", template);
+
+  // 1. Toggle views
+  const storeView = document.getElementById('template-store-view');
+  const detailImmersive = document.getElementById('template-detail-immersive');
+  document.getElementById('page-main')?.classList.add('is-template-detail-mode');
+  if (storeView) storeView.style.display = 'none';
+  if (detailImmersive) detailImmersive.style.display = 'flex';
+
+  // Scroll to top
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  // 2. Populate metadata headers
+  document.getElementById('nav-template-name').textContent = template.name || template.title || '無標題';
+  document.getElementById('detail-template-title').textContent = template.name || template.title || '無標題';
+  document.getElementById('detail-template-desc').textContent = template.description || '無描述';
+
+  // Populate source-video surfaces. YouTube templates derive their actual cover
+  // directly from the source video ID; uploaded/custom templates use the stored poster.
   const sourceUrl = template.videoUrl || template.source?.url || '';
   const youtubeMatch = sourceUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|shorts\/|embed\/))([\w-]{11})/);
   const sourceVideoId = template.source?.videoId || template.videoId || youtubeMatch?.[1] || '';
@@ -312,16 +341,28 @@ window.renderTemplateDetailTimeline = function(template, detailContainer) {
     const sec = parseInt(s.duration) || 3;
     totalSec += sec;
   });
-  timelineDuration = totalSec || 15;
+  timelineDuration = totalSec || 15; // default 15s if no shots
 
-  // 1. Render Template Header & Metadata
-  renderTemplateHeader(template, shots.length);
+  const durationTimecodeEl = document.getElementById('detail-monitor-duration');
+  if (durationTimecodeEl) durationTimecodeEl.textContent = formatEditorTimecode(timelineDuration);
 
-  // 2. Mount Shared Video Player
-  mountSharedPlayer(template);
+  // Update badges
+  document.getElementById('detail-category-badge').textContent = CAT_MAP[template.category] || template.category || '未分類';
+  document.getElementById('detail-shots-count-badge').textContent = `${template.shotsCount || shots.length} 鏡頭`;
+  document.getElementById('detail-duration-badge').textContent = `${timelineDuration}s`;
 
-  // 3. Render Story View (Default Mode)
-  renderStoryView(template, shots);
+  renderAnalysisOverview(template, shots);
+
+  // Update apply button click behavior
+  const applyBtn = document.getElementById('btn-apply-template-main');
+  if (applyBtn) {
+    applyBtn.onclick = () => {
+      window.spaNavigate('generate', { templateId: template.id });
+    };
+  }
+
+  // 3. Render side overview panel (Right side)
+  renderSideMetadata(template);
 
   // 4. Render Professional View (Timeline & Track Filters)
   renderProfessionalView(template, shots);
@@ -331,61 +372,106 @@ window.renderTemplateDetailTimeline = function(template, detailContainer) {
 
   // 6. Reset Playhead & Timeline to 0s
   window.seekTimeline(0);
+
+  // 6. Highlight first section (Hook) by default in inspector
+  showHookInspector();
 };
 
-/* ==========================================================================
-   TEMPLATE HEADER RENDERING
-   ========================================================================== */
+function renderAnalysisOverview(template, shots) {
+  const rawConfidence = Number(template.confidence);
+  const confidence = Number.isFinite(rawConfidence)
+    ? Math.max(0, Math.min(100, rawConfidence <= 1 ? rawConfidence * 100 : rawConfidence))
+    : null;
+  const ring = document.getElementById('analysis-score-ring');
+  if (ring) ring.style.setProperty('--score', String(confidence ?? 0));
+  const scoreValue = document.getElementById('analysis-score-value');
+  if (scoreValue) scoreValue.textContent = confidence === null ? '—' : `${Math.round(confidence)}%`;
+  const scoreLabel = document.getElementById('analysis-score-label');
+  if (scoreLabel) scoreLabel.textContent = confidence === null ? '未提供信心指數' : confidence >= 80 ? '高可信分析' : confidence >= 60 ? '建議人工複核' : '需要人工確認';
 
-function renderTemplateHeader(t, shotCount) {
-  // Title & Navigation
-  const title = t.name || t.title || '無標題';
-  const navName = document.getElementById('nav-template-name');
-  const headerTitle = document.getElementById('detail-template-title');
-  if (navName) navName.textContent = title;
-  if (headerTitle) headerTitle.textContent = title;
+  const shotCount = shots.length;
+  const average = shotCount ? timelineDuration / shotCount : 0;
+  const durationEl = document.getElementById('analysis-kpi-duration');
+  const shotsEl = document.getElementById('analysis-kpi-shots');
+  const averageEl = document.getElementById('analysis-kpi-average');
+  if (durationEl) durationEl.textContent = `${timelineDuration}s`;
+  if (shotsEl) shotsEl.textContent = String(shotCount);
+  if (averageEl) averageEl.textContent = shotCount ? `${average.toFixed(1)}s` : '—';
 
-  // Summary (Priority: narrative.summary -> description)
-  const summaryText = t.narrative?.summary || t.description || '無描述';
-  const summaryEl = document.getElementById('detail-template-desc');
-  if (summaryEl) summaryEl.textContent = summaryText;
-
-  // Badges
-  const catEl = document.getElementById('detail-category-badge');
-  const shotsEl = document.getElementById('detail-shots-count-badge');
-  const durEl = document.getElementById('detail-duration-badge');
-  const toneEl = document.getElementById('detail-tone-badge');
-
-  if (catEl) catEl.textContent = CAT_MAP[t.category] || t.category || '未分類';
-  if (shotsEl) shotsEl.textContent = `${shotCount} 鏡頭`;
-  if (durEl) durEl.textContent = `${timelineDuration} 秒`;
-  if (toneEl) {
-    if (t.narrative?.tone) {
-      toneEl.textContent = translateTone(t.narrative.tone);
-      toneEl.style.display = 'inline-block';
-    } else {
-      toneEl.style.display = 'none';
-    }
+  const insight = template.analysis?.whyItWorks || template.narrative?.summary || template.description || '尚未提供核心洞察。';
+  const insightEl = document.getElementById('analysis-key-insight');
+  if (insightEl) insightEl.textContent = insight;
+  const tagsEl = document.getElementById('analysis-insight-tags');
+  if (tagsEl) {
+    const tags = Array.isArray(template.analysis?.replicableElements) ? template.analysis.replicableElements.slice(0, 3) : [];
+    tagsEl.replaceChildren(...tags.map((value, index) => {
+      const chip = document.createElement('span');
+      chip.textContent = `${String(index + 1).padStart(2, '0')} ${value}`;
+      return chip;
+    }));
   }
 
-  // Collapsible Secondary Metadata
-  const setText = (id, val, fallback = '—') => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = (val === undefined || val === null || val === '') ? fallback : val;
-  };
+  const rhythmTrack = document.getElementById('analysis-rhythm-track');
+  if (rhythmTrack) {
+    rhythmTrack.replaceChildren();
+    const phases = ['is-hook', 'is-build', 'is-payoff', 'is-close'];
+    shots.forEach((shot, index) => {
+      const duration = Math.max(1, parseInt(shot.duration) || 3);
+      const segment = document.createElement('button');
+      const phaseIndex = Math.min(3, Math.floor(index / Math.max(1, shots.length) * 4));
+      segment.type = 'button';
+      segment.className = `analysis-rhythm-segment ${phases[phaseIndex]}`;
+      segment.style.flexGrow = String(duration);
+      segment.setAttribute('aria-label', `鏡頭 ${index + 1}，${duration} 秒，${shot.purpose || shot.action || '未提供說明'}`);
+      segment.title = `S${String(index + 1).padStart(2, '0')} · ${duration}s · ${shot.purpose || shot.action || '未提供說明'}`;
+      segment.innerHTML = `<b>S${String(index + 1).padStart(2, '0')}</b><span>${duration}s</span>`;
+      segment.onclick = () => {
+        const start = shots.slice(0, index).reduce((sum, item) => sum + (parseInt(item.duration) || 3), 0);
+        window.seekTimeline(start);
+        showShotInspector(shot, index, start);
+      };
+      rhythmTrack.appendChild(segment);
+    });
+    if (!shots.length) {
+      const empty = document.createElement('span');
+      empty.className = 'analysis-rhythm-empty';
+      empty.textContent = '尚無鏡頭節奏資料';
+      rhythmTrack.appendChild(empty);
+    }
+  }
+  const rhythmMid = document.getElementById('analysis-rhythm-mid');
+  const rhythmEnd = document.getElementById('analysis-rhythm-end');
+  if (rhythmMid) rhythmMid.textContent = formatEditorTimecode(timelineDuration / 2).slice(3, 8);
+  if (rhythmEnd) rhythmEnd.textContent = formatEditorTimecode(timelineDuration).slice(3, 8);
+}
 
-  setText('meta-usecase', t.useCase || '短影音宣傳、生活/產品Vlog');
-  setText('meta-platforms', Array.isArray(t.platform) ? t.platform.join(', ').toUpperCase() : (t.platform ? String(t.platform).toUpperCase() : '無限制'));
-  setText('meta-audience', t.analysis?.targetAudience || '大眾社群用戶');
-  setText('meta-pace', t.visualFlow?.pace ? `${t.visualFlow.pace} · ${t.visualFlow?.rhythmPattern || ''}` : '標準節奏');
+/**
+ * Switch back to browse store grid
+ */
+window.backToStoreBrowse = function() {
+  stopPlayerTimelineSync();
+  if (currentSourcePlayerType === 'youtube') currentSourcePlayer?.pauseVideo?.();
+  if (currentSourcePlayerType === 'html5') currentSourcePlayer?.pause?.();
+  const storeView = document.getElementById('template-store-view');
+  const detailImmersive = document.getElementById('template-detail-immersive');
+  document.getElementById('page-main')?.classList.remove('is-template-detail-mode');
+  if (storeView) storeView.style.display = 'flex';
+  if (detailImmersive) detailImmersive.style.display = 'none';
 
-  // AI Success elements
-  const whyItWorks = t.analysis?.whyItWorks;
-  const replicableList = Array.isArray(t.analysis?.replicableElements) ? t.analysis.replicableElements : [];
-  const colWhyItWorks = document.getElementById('col-why-it-works');
+  // Trigger search refilter just in case
+  if (window.filterStoreTemplates) {
+    window.filterStoreTemplates();
+  }
+};
 
-  if (!whyItWorks && replicableList.length === 0) {
-    if (colWhyItWorks) colWhyItWorks.style.display = 'none';
+/**
+ * Handle direct template click from spotlight or external calls
+ */
+window.triggerTemplateDetail = async function(templateId) {
+  // If cache exists in spa-router, we find it. Else fetch it.
+  let templates = [];
+  if (window.cacheTemplatesList) {
+    templates = window.cacheTemplatesList;
   } else {
     if (colWhyItWorks) colWhyItWorks.style.display = 'block';
     setText('meta-why-it-works', whyItWorks || '利用快節奏剪輯與大眾共鳴點開場，輔以視覺細節特寫，加深信任感與轉換效果。');
@@ -409,345 +495,152 @@ function renderTemplateHeader(t, shotCount) {
     } else {
       window.location.href = `generate-template.html?templateId=${encodeURIComponent(t.id)}`;
     }
-  };
-  if (applyMainBtn) applyMainBtn.onclick = onApply;
-  if (applyBottomBtn) applyBottomBtn.onclick = onApply;
-}
-
-window.toggleMoreTemplateInfo = function() {
-  const panel = document.getElementById('detail-more-info-panel');
-  const btn = document.getElementById('btn-toggle-more-info');
-  if (!panel || !btn) return;
-  const isHidden = panel.hidden;
-  panel.hidden = !isHidden;
-  btn.classList.toggle('is-open', isHidden);
-};
-
-/* ==========================================================================
-   VIEW MODE TOGGLE: STORY VIEW vs PROFESSIONAL VIEW
-   ========================================================================== */
-
-window.switchDetailViewMode = function(mode) {
-  currentViewMode = mode === 'professional' ? 'professional' : 'story';
-
-  const btnStory = document.getElementById('btn-mode-story');
-  const btnPro = document.getElementById('btn-mode-professional');
-  const panelStory = document.getElementById('view-mode-story');
-  const panelPro = document.getElementById('view-mode-professional');
-
-  if (btnStory) {
-    btnStory.classList.toggle('active', currentViewMode === 'story');
-    btnStory.setAttribute('aria-selected', currentViewMode === 'story');
-  }
-  if (btnPro) {
-    btnPro.classList.toggle('active', currentViewMode === 'professional');
-    btnPro.setAttribute('aria-selected', currentViewMode === 'professional');
   }
 
-  if (panelStory && panelPro) {
-    if (currentViewMode === 'story') {
-      panelStory.style.display = 'flex';
-      panelPro.style.display = 'none';
-      highlightActiveStoryNode();
-    } else {
-      panelStory.style.display = 'none';
-      panelPro.style.display = 'flex';
-      syncProfessionalPlayhead();
-    }
+  const t = templates.find(x => x.id === templateId);
+  if (t) {
+    window.renderTemplateDetailTimeline(t, document.getElementById('template-detail-immersive'));
+  } else {
+    alert('找不到對應的模板！');
   }
 };
 
-/* ==========================================================================
-   STORY VIEW: NARRATIVE CANVAS (v0.2)
-   ========================================================================== */
-
-const BEGINNER_PURPOSE_LABELS = {
-  'hook': '抓住注意',
-  'setup': '建立情境',
-  'problem': '指出問題',
-  'conflict': '提出問題',
-  'development': '故事發展',
-  'reveal': '揭露答案',
-  'payoff': '給出結論',
-  'twist': '出現反轉',
-  'call_to_action': '引導行動',
-  'cta': '引導行動',
-  'outro': '尾段收尾',
-  'sensory_highlight': '感官亮點',
-  'first_recommendation': '首波推薦',
-  'flavor_description': '細節鋪陳',
-  'complementary_food': '延伸介紹',
-  'dessert_climax': '精彩高潮'
-};
-
-function translateBeginnerPurpose(purpose) {
-  if (!purpose) return '情境展開';
-  const key = String(purpose).toLowerCase().trim();
-  if (BEGINNER_PURPOSE_LABELS[key]) return BEGINNER_PURPOSE_LABELS[key];
-  if (key.includes('hook') || key.includes('開場') || key.includes('注意')) return '抓住注意';
-  if (key.includes('conflict') || key.includes('問題') || key.includes('痛點')) return '提出問題';
-  if (key.includes('reveal') || key.includes('答案') || key.includes('揭曉')) return '揭露答案';
-  if (key.includes('twist') || key.includes('反轉') || key.includes('高潮')) return '精彩高潮';
-  if (key.includes('cta') || key.includes('行動') || key.includes('結尾') || key.includes('outro')) return '引導行動';
-  return purpose;
-}
-
-function translateCamera(cam) {
-  if (!cam) return '固定鏡頭';
-  const map = {
-    'static': '固定鏡頭',
-    'pan': '平移運鏡',
-    'tilt': '上下搖鏡',
-    'zoom-in': '推鏡頭',
-    'zoom-out': '拉鏡頭',
-    'tracking': '跟隨運鏡',
-    'handheld': '手持運鏡',
-    'close-up': '細節特寫',
-    'extreme-close-up': '極特寫',
-    'drone': '空拍航拍'
+/**
+ * Helper to render side metadata panels
+ */
+function renderSideMetadata(t) {
+  const varsList = Array.isArray(t.variables) ? t.variables : [];
+  const platforms = Array.isArray(t.platform) ? t.platform.join(', ') : (t.platform || '無限制');
+  const setText = (id, value, fallback = '—') => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value === undefined || value === null || value === '' ? fallback : value;
   };
-  return map[String(cam).toLowerCase()] || cam;
-}
-
-function translateHook(type) {
-  if (!type) return '開場亮點';
-  const map = {
-    'curiosity': '製造好奇',
-    'shock': '視覺震撼',
-    'question': '引導提問',
-    'action': '動作開場',
-    'problem': '痛點共鳴',
-    'statement': '直接觀點'
+  const setChips = (id, values) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const list = Array.isArray(values) ? values : (values ? [values] : []);
+    el.replaceChildren(...(list.length ? list : ['—']).map(value => {
+      const span = document.createElement('span');
+      span.textContent = value;
+      return span;
+    }));
   };
-  return map[String(type).toLowerCase()] || type;
-}
 
-function renderStoryView(template, shots) {
-  const stage = document.getElementById('narrative-canvas-stage');
-  const stageLabelsLayer = document.getElementById('canvas-stage-labels-layer');
-  const axisDots = document.getElementById('canvas-axis-dots');
-  const nodesLayer = document.getElementById('canvas-nodes-layer');
-  const expansionLayer = document.getElementById('canvas-expansion-layer');
+  setText('detail-source-views', `觀看次數：${Number(t.source?.views || 0).toLocaleString('zh-TW')}`);
+  setText('detail-template-version', `分析版本：v${t.version || '—'}`);
+  setText('detail-confidence', `信心指數：${Number.isFinite(Number(t.confidence)) ? Math.round(Number(t.confidence) * 100) + '%' : '—'}`);
+  setText('detail-bin-count', String((Array.isArray(t.structure) ? t.structure.length : 0) + 1));
+  setChips('detail-variable-chips', varsList.map(v => `{${v}}`));
+  setChips('detail-target-emotions', t.marketing?.targetEmotion);
+  setChips('detail-platform-chips', Array.isArray(t.platform) ? t.platform.map(p => String(p).toUpperCase()) : t.platform);
 
-  if (!stage || !nodesLayer) return;
+  const prompts = Array.isArray(t.promptTemplate?.perShot) ? t.promptTemplate.perShot : [];
+  const hasPrompts = Boolean(t.promptTemplate?.base || prompts.length);
+  const hasVariables = varsList.length > 0;
+  const hasMarketing = Boolean(t.marketing && Object.values(t.marketing).some(value => Array.isArray(value) ? value.length : value));
+  const promptTab = document.querySelector('[data-bin-tab="prompts"]');
+  const variableTab = document.querySelector('[data-bin-tab="variables"]');
+  const marketingTab = document.querySelector('[data-inspector-tab="marketing"]');
+  if (promptTab) promptTab.hidden = !hasPrompts;
+  if (variableTab) variableTab.hidden = !hasVariables;
+  if (marketingTab) marketingTab.hidden = !hasMarketing;
 
-  // Clear previous layers
-  if (stageLabelsLayer) stageLabelsLayer.innerHTML = '';
-  if (axisDots) axisDots.innerHTML = '';
-  nodesLayer.innerHTML = '';
-  if (expansionLayer) expansionLayer.innerHTML = '';
+  setText('detail-narrative-type', t.narrative?.type);
+  setText('detail-narrative-tone', translateTone(t.narrative?.tone));
+  setText('detail-pace', t.visualFlow?.pace);
+  setText('detail-transition', t.visualFlow?.transitionStyle);
+  setText('detail-narrative-structure', t.narrative?.structure);
+  setText('detail-hook-type', `${t.hook?.type || '—'} · ${t.hook?.position || '—'}`);
+  setText('detail-hook-description', t.hook?.description);
+  setText('detail-marketing-method', t.marketing?.integrationMethod);
+  setText('detail-brand-role', t.marketing?.brandRole);
+  setText('detail-reveal-timing', t.marketing?.revealTiming);
+  setText('detail-persuasion', t.marketing?.persuasionStyle);
 
-  // Dynamic min-width to ensure breathing space and horizontal scrolling if needed
-  const dynamicMinWidth = Math.max(960, shots.length * 210);
-  stage.style.minWidth = `${dynamicMinWidth}px`;
+  const promptList = document.getElementById('detail-prompt-list');
+  if (promptList) {
+    promptList.replaceChildren(...(prompts.length ? prompts : ['尚無分鏡提示詞']).map((prompt, index) => {
+      const item = document.createElement('div');
+      item.innerHTML = `<b>${prompts.length ? `S${String(index + 1).padStart(2, '0')}` : '—'}</b><span></span>`;
+      item.querySelector('span').textContent = prompt;
+      return item;
+    }));
+  }
 
-  let accumulatedSec = 0;
-  let prevPurposeLabel = '';
+  document.querySelectorAll('.nle-bin-tabs [data-bin-tab]').forEach(button => {
+    button.onclick = () => {
+      document.querySelectorAll('.nle-bin-tabs [data-bin-tab]').forEach(item => item.classList.toggle('active', item === button));
+      document.querySelectorAll('[data-bin-page]').forEach(page => { page.hidden = page.dataset.binPage !== button.dataset.binTab; });
+    };
+  });
+  document.querySelector('[data-bin-tab="media"]')?.click();
 
-  shots.forEach((shot, index) => {
-    const dur = parseInt(shot.duration) || 3;
-    const startSec = accumulatedSec;
-    const endSec = startSec + dur;
-    const shotNum = String(shot.shot || index + 1).padStart(2, '0');
+  document.querySelectorAll('.nle-inspector-tabs [data-inspector-tab]').forEach(button => {
+    button.onclick = () => {
+      document.querySelectorAll('.nle-inspector-tabs [data-inspector-tab]').forEach(item => item.classList.toggle('active', item === button));
+      document.querySelectorAll('.nle-inspector-page').forEach(page => page.classList.toggle('active', page.dataset.inspectorPage === button.dataset.inspectorTab));
+    };
+  });
+  document.querySelector('[data-inspector-tab="story"]')?.click();
 
-    // Horizontal position on true time timeline (5% to 95%)
-    const leftPct = 5 + (startSec / (timelineDuration || 1)) * 90;
-    const purposeLabel = translateBeginnerPurpose(shot.purpose);
-
-    // 1. Stage Label (Top Layer)
-    if (stageLabelsLayer && (purposeLabel !== prevPurposeLabel || index === 0 || index === shots.length - 1)) {
-      const labelEl = document.createElement('div');
-      labelEl.className = 'canvas-stage-label';
-      labelEl.style.left = `${leftPct}%`;
-      labelEl.innerHTML = `<span>${purposeLabel}</span>`;
-      stageLabelsLayer.appendChild(labelEl);
-      prevPurposeLabel = purposeLabel;
-    }
-
-    // 2. Axis Anchor Dot (Center Line Layer)
-    if (axisDots) {
-      const dotEl = document.createElement('div');
-      dotEl.className = 'axis-anchor-dot';
-      dotEl.id = `axis-dot-${index}`;
-      dotEl.style.left = `${leftPct}%`;
-      dotEl.setAttribute('data-shot-index', index);
-      dotEl.title = `Shot ${shotNum} (${formatEditorTimecode(startSec)})`;
-      dotEl.innerHTML = `<span class="dot-timestamp">${formatEditorTimecode(startSec)}</span>`;
-
-      dotEl.onclick = (e) => {
-        e.stopPropagation();
-        window.seekTimeline(startSec);
-        window.openExpansionBubble(shot, index, startSec, endSec, leftPct);
+  const storyboardBody = document.getElementById('template-storyboard-body');
+  if (storyboardBody) {
+    storyboardBody.innerHTML = '';
+    const sourceId = t.source?.videoId || t.videoId || '';
+    const cover = t.thumbnail || t.cover || t.source?.thumbnail || (sourceId ? `https://i.ytimg.com/vi/${encodeURIComponent(sourceId)}/hqdefault.jpg` : '');
+    let startTime = 0;
+    (Array.isArray(t.structure) ? t.structure : []).forEach((shot, index) => {
+      const row = document.createElement('tr');
+      const shotStart = startTime;
+      const duration = parseInt(shot.duration) || 3;
+      row.innerHTML = `
+        <td class="script-shot-number">${String(shot.shot || index + 1).padStart(2, '0')}</td>
+        <td class="script-preview-cell">${cover ? `<img src="${cover}" alt="鏡頭 ${index + 1} 來源畫面">` : '<span>NO IMAGE</span>'}</td>
+        <td class="script-action-cell"><strong>${shot.action || '未提供畫面動作'}</strong><small>${t.promptTemplate?.perShot?.[index] || ''}</small></td>
+        <td><span class="script-tech-label">${shot.camera || '—'}</span><small>${shot.angle || '—'}</small></td>
+        <td class="script-duration-cell">${shot.duration || `${duration}s`}</td>
+        <td class="script-purpose-cell"><strong>${translateEmotion(shot.emotion)}</strong><small>${shot.purpose || '—'}</small></td>`;
+      row.onclick = () => {
+        window.seekTimeline(shotStart);
+        showShotInspector(shot, index, shotStart);
       };
-      axisDots.appendChild(dotEl);
-    }
-
-    // 3. Primary Shot Node (Cards Layer)
-    const nodeEl = document.createElement('div');
-    nodeEl.className = 'canvas-shot-node';
-    nodeEl.id = `canvas-shot-${index}`;
-    nodeEl.style.left = `${leftPct}%`;
-    nodeEl.setAttribute('data-shot-index', index);
-    nodeEl.setAttribute('data-start', startSec);
-    nodeEl.setAttribute('data-end', endSec);
-
-    // Micro branches (Secondary nodes: hook, emotion, camera)
-    const branches = [];
-    if (index === 0 && template.hook?.type) {
-      branches.push(`<span class="canvas-sec-node branch-hook"><span class="sec-dot"></span>${translateHook(template.hook.type)}</span>`);
-    }
-    if (shot.emotion && shot.emotion !== 'none') {
-      branches.push(`<span class="canvas-sec-node branch-emotion"><span class="sec-dot"></span>${translateEmotion(shot.emotion)}</span>`);
-    }
-    if (shot.camera) {
-      branches.push(`<span class="canvas-sec-node branch-camera"><span class="sec-dot"></span>${translateCamera(shot.camera)}</span>`);
-    }
-
-    const branchesHtml = branches.length > 0 ? `<div class="shot-node-branches">${branches.join('')}</div>` : '';
-
-    nodeEl.innerHTML = `
-      <div class="shot-node-header">
-        <span class="shot-node-title">Shot ${shotNum}</span>
-        <span class="shot-node-dur">${dur}s</span>
-      </div>
-      <div class="shot-node-purpose-tag">${purposeLabel}</div>
-      <div class="shot-node-action-text">${shot.action || '主角展示畫面與內容'}</div>
-      ${branchesHtml}
-    `;
-
-    nodeEl.onclick = (e) => {
-      e.stopPropagation();
-      window.seekTimeline(startSec);
-      window.openExpansionBubble(shot, index, startSec, endSec, leftPct);
-    };
-
-    nodesLayer.appendChild(nodeEl);
-    accumulatedSec += dur;
-  });
-
-  // Click outside bubble closes expansion
-  stage.onclick = (e) => {
-    if (!e.target.closest('.canvas-shot-node') && !e.target.closest('.axis-anchor-dot') && !e.target.closest('.canvas-expansion-bubble')) {
-      window.closeExpandedBubble();
-    }
-  };
-}
-
-window.openExpansionBubble = function(shot, index, startSec, endSec, leftPct) {
-  const expansionLayer = document.getElementById('canvas-expansion-layer');
-  if (!expansionLayer) return;
-
-  selectedItemId = `shot_${index}`;
-
-  // Update selection & dimming states on nodes and dots
-  const shotNodes = document.querySelectorAll('.canvas-shot-node');
-  shotNodes.forEach((node, idx) => {
-    const isSel = idx === index;
-    node.classList.toggle('is-selected', isSel);
-    node.classList.toggle('is-dimmed', !isSel);
-  });
-
-  const dots = document.querySelectorAll('.axis-anchor-dot');
-  dots.forEach((dot, idx) => {
-    dot.classList.toggle('is-selected', idx === index);
-  });
-
-  const dur = endSec - startSec;
-  const shotNum = String(shot.shot || index + 1).padStart(2, '0');
-  const purpose = translateBeginnerPurpose(shot.purpose);
-
-  expansionLayer.innerHTML = `
-    <div class="canvas-expansion-bubble" style="left: ${leftPct}%;">
-      <div class="bubble-head">
-        <div class="bubble-head-title">
-          <strong>Shot ${shotNum}</strong>
-          <span>${formatEditorTimecode(startSec)} – ${formatEditorTimecode(endSec)} (${dur}s)</span>
-        </div>
-        <button type="button" class="btn-close-bubble" onclick="closeExpandedBubble()" aria-label="關閉卡片">×</button>
-      </div>
-      <div class="bubble-body">
-        <div class="bubble-field">
-          <span class="bubble-field-label">分鏡作用 (Purpose)</span>
-          <p class="bubble-field-val"><strong>${purpose}</strong> · ${formatTextWithLinks(shot.purpose || '推進故事與節奏')}</p>
-        </div>
-        <div class="bubble-field">
-          <span class="bubble-field-label">畫面動作 (Action)</span>
-          <p class="bubble-field-val">${formatTextWithLinks(shot.action || '畫面動作進行中')}</p>
-        </div>
-        <div class="bubble-field">
-          <span class="bubble-field-label">拍攝規格 (Specs)</span>
-          <p class="bubble-field-val">運鏡：<strong>${translateCamera(shot.camera)}</strong> · 視角：<strong>${shot.angle || '平視'}</strong> · 情緒：<strong>${translateEmotion(shot.emotion)}</strong></p>
-        </div>
-      </div>
-      <div class="bubble-foot">
-        <button type="button" class="btn-play-segment" onclick="window.playTemplateSegment(${startSec})">
-          ▶ 播放這一段
-        </button>
-      </div>
-    </div>
-  `;
-};
-
-window.closeExpandedBubble = function() {
-  selectedItemId = null;
-  const expansionLayer = document.getElementById('canvas-expansion-layer');
-  if (expansionLayer) expansionLayer.innerHTML = '';
-
-  document.querySelectorAll('.canvas-shot-node').forEach(node => {
-    node.classList.remove('is-selected', 'is-dimmed');
-  });
-
-  document.querySelectorAll('.axis-anchor-dot').forEach(dot => {
-    dot.classList.remove('is-selected');
-  });
-};
-
-window.playTemplateSegment = function(startSec) {
-  window.seekTimeline(startSec);
-  if (currentSourcePlayerType === 'youtube' && currentSourcePlayer?.playVideo) {
-    currentSourcePlayer.playVideo();
-  } else if (currentSourcePlayerType === 'html5' && currentSourcePlayer?.play) {
-    currentSourcePlayer.play();
+      storyboardBody.appendChild(row);
+      startTime += duration;
+    });
+    if (!storyboardBody.children.length) storyboardBody.innerHTML = '<tr><td colspan="6" class="script-empty">此模板尚無分鏡資料</td></tr>';
   }
-};
 
-/* ==========================================================================
-   PROFESSIONAL VIEW: TRACK FILTERS & MULTI-TRACK TIMELINE
-   ========================================================================== */
-
-function renderProfessionalView(template, shots) {
-  // 1. Render Track Filter Pills
-  renderTrackFilters();
-
-  // 2. Render Timeline Tracks
-  renderTimelineWidget(template, shots);
-}
-
-function renderTrackFilters() {
-  const pillsContainer = document.getElementById('track-filter-pills');
-  if (!pillsContainer) return;
-  pillsContainer.innerHTML = '';
-
-  TRACKS_CONFIG.forEach(track => {
-    const pill = document.createElement('label');
-    pill.className = `track-filter-pill ${visibleTracks[track.id] ? 'is-active' : ''}`;
-    pill.innerHTML = `
-      <span class="pill-dot"></span>
-      <input type="checkbox" data-track-id="${track.id}" ${visibleTracks[track.id] ? 'checked' : ''}>
-      ${track.label}
-    `;
-
-    pill.querySelector('input').onchange = e => {
-      const isChecked = e.target.checked;
-      visibleTracks[track.id] = isChecked;
-      pill.classList.toggle('is-active', isChecked);
-      const trackRow = document.querySelector(`.timeline-track-row[data-track="${track.id}"]`);
-      if (trackRow) {
-        trackRow.hidden = !isChecked;
-      }
+  const timelineView = document.querySelector('.timeline-scroll-container');
+  const scriptView = document.getElementById('storyboard-script-panel');
+  document.querySelectorAll('[data-editor-view]').forEach(button => {
+    button.onclick = () => {
+      const isTimeline = button.dataset.editorView === 'timeline';
+      document.querySelectorAll('[data-editor-view]').forEach(item => item.classList.toggle('active', item === button));
+      if (timelineView) timelineView.hidden = !isTimeline;
+      if (scriptView) scriptView.hidden = isTimeline;
     };
+  });
+  
+  document.getElementById('meta-usecase').textContent = t.useCase || '短影音宣傳、生活/產品Vlog';
+  document.getElementById('meta-platforms').textContent = platforms.toUpperCase();
+  document.getElementById('meta-audience').textContent = t.analysis?.targetAudience || '大眾社群用戶';
+  document.getElementById('meta-shotscount').textContent = `${t.shotsCount || (t.structure ? t.structure.length : 0)} 鏡`;
+  document.getElementById('meta-duration').textContent = `${timelineDuration} 秒`;
+  document.getElementById('meta-variables').textContent = varsList.length ? varsList.map(v => `{${v}}`).join(' · ') : '無變數';
+  setText('meta-prompt-base', t.promptTemplate?.base);
+  setText('meta-rhythm-pattern', t.visualFlow?.rhythmPattern);
+  setText('meta-camera-control', Array.isArray(t.controls?.cameraIntensity) ? t.controls.cameraIntensity.join(' / ') : t.controls?.cameraIntensity);
+  setText('meta-emotion-control', Array.isArray(t.controls?.emotionIntensity) ? t.controls.emotionIntensity.join(' / ') : t.controls?.emotionIntensity);
 
-    pillsContainer.appendChild(pill);
+  document.getElementById('meta-why-it-works').innerHTML = formatTextWithLinks(t.analysis?.whyItWorks || '利用快節奏剪輯與大眾共鳴點開場，輔以視覺細節特寫，加深信任感與轉換效果。');
+
+  const replicableUl = document.getElementById('meta-replicable-elements');
+  replicableUl.innerHTML = '';
+  const elements = Array.isArray(t.analysis?.replicableElements) ? t.analysis.replicableElements : ['前置懸念開場', '快節奏畫切換', '價格標註/結尾行動指引'];
+  elements.forEach(el => {
+    const li = document.createElement('li');
+    li.innerHTML = formatTextWithLinks(el);
+    replicableUl.appendChild(li);
   });
 
   // Apply initial track visibility

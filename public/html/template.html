@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="../css/template.css" />
   <link rel="stylesheet" href="../css/generate.css" />
   <link rel="stylesheet" href="../css/math-curve-loader.css" />
+  <link rel="stylesheet" href="../css/template-detail.css?v=20260926-2" />
 </head>
 
 <body>
@@ -135,8 +136,7 @@
          STATE 2: IMMERSIVE TIMELINE & INSPECTOR PANEL (HIDDEN BY DEFAULT)
          ============================================ -->
     <section id="template-detail-immersive" class="template-detail-immersive-container anim-fadeInUp" style="display: none;">
-      <!-- Back navigation bar -->
-      <div class="detail-back-bar">
+      <div class="editor-menubar" aria-label="模板分析工具列">
         <button class="btn-back-to-store" onclick="backToStoreBrowse()">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <line x1="19" y1="12" x2="5" y2="12"></line>
@@ -144,47 +144,82 @@
           </svg>
           返回模板庫
         </button>
-        <span class="detail-navigation-path">爆點模板庫 / <span id="nav-template-name">正在讀取...</span></span>
+        <div class="editor-document-title"><span>VIDEO ANALYSIS</span><strong id="nav-template-name">正在讀取...</strong></div>
+        <button class="btn-apply-template-main" id="btn-apply-template-main">套用模板</button>
       </div>
 
-      <div class="detail-page-content-wrapper">
-        <!-- Template Header -->
-        <header class="content-header detail-template-hero-header">
-          <div class="detail-header-left">
-            <div class="detail-badges-row">
-              <span class="badge-cat" id="detail-category-badge">商品焦點</span>
-              <span class="badge-shots" id="detail-shots-count-badge">8 鏡頭</span>
-              <span class="badge-duration" id="detail-duration-badge">38s</span>
-              <span class="badge-tone" id="detail-tone-badge" style="display:none;"></span>
+      <!-- Template Title Header -->
+      <div class="detail-template-hero-header">
+        <div class="detail-header-left">
+          <div class="detail-badges-row">
+            <span class="badge-cat" id="detail-category-badge">商品焦點</span>
+            <span class="badge-shots" id="detail-shots-count-badge">8 鏡頭</span>
+            <span class="badge-duration" id="detail-duration-badge">38s</span>
+          </div>
+          <h2 class="detail-template-title" id="detail-template-title">載入中...</h2>
+          <p class="detail-template-desc" id="detail-template-desc">載入中...</p>
+        </div>
+      </div>
+
+      <!-- Visual analysis overview: glanceable first, details remain in the inspector -->
+      <section class="analysis-command-deck" aria-labelledby="analysis-command-title">
+        <div class="analysis-command-head">
+          <div>
+            <span class="analysis-command-kicker">AI ANALYSIS OVERVIEW</span>
+            <h3 id="analysis-command-title">影片結構儀表板</h3>
+          </div>
+          <p>先掌握節奏與關鍵轉折，再進入監看器及時間軸逐格檢視。</p>
+        </div>
+        <div class="analysis-command-grid">
+          <article class="analysis-score-card" aria-label="分析信心指數">
+            <div class="analysis-score-ring" id="analysis-score-ring" style="--score: 0">
+              <div><strong id="analysis-score-value">—</strong><span>可信度</span></div>
             </div>
-            <h1 class="detail-template-title" id="detail-template-title">載入中...</h1>
-            <p class="detail-template-summary" id="detail-template-desc">載入中...</p>
-            
-            <!-- Collapsible More Info -->
-            <div class="detail-more-info-wrapper">
-              <button type="button" class="btn-toggle-more-info" id="btn-toggle-more-info" onclick="toggleMoreTemplateInfo()">
-                <span>更多模板資訊</span>
-                <svg class="chevron-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
-              </button>
-              <div class="detail-more-info-panel" id="detail-more-info-panel" hidden>
-                <div class="more-info-grid">
-                  <div class="more-info-col">
-                    <h6>製作規格</h6>
-                    <dl class="compact-meta-list">
-                      <div><dt>題材情境</dt><dd id="meta-usecase">—</dd></div>
-                      <div><dt>目標平台</dt><dd id="meta-platforms">—</dd></div>
-                      <div><dt>目標受眾</dt><dd id="meta-audience">—</dd></div>
-                      <div><dt>剪輯節奏</dt><dd id="meta-pace">—</dd></div>
-                    </dl>
-                  </div>
-                  <div class="more-info-col" id="col-why-it-works">
-                    <h6>AI 爆款要素</h6>
-                    <p id="meta-why-it-works">—</p>
-                    <ul class="meta-replicable-list" id="meta-replicable-elements"></ul>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <div class="analysis-score-copy"><span>AI CONFIDENCE</span><strong id="analysis-score-label">資料待確認</strong><small>顯示來源模板提供的分析信心值</small></div>
+          </article>
+          <article class="analysis-kpi-panel" aria-label="影片關鍵指標">
+            <div class="analysis-kpi"><span>總長度</span><strong id="analysis-kpi-duration">—</strong><small>SECONDS</small></div>
+            <div class="analysis-kpi"><span>鏡頭數</span><strong id="analysis-kpi-shots">—</strong><small>SHOTS</small></div>
+            <div class="analysis-kpi"><span>平均鏡長</span><strong id="analysis-kpi-average">—</strong><small>PACE</small></div>
+          </article>
+          <article class="analysis-insight-card">
+            <span class="analysis-card-label">核心洞察</span>
+            <p id="analysis-key-insight">正在整理影片的成功要素…</p>
+            <div class="analysis-insight-tags" id="analysis-insight-tags"></div>
+          </article>
+        </div>
+        <article class="analysis-flow-card">
+          <div class="analysis-flow-head"><div><span class="analysis-card-label">RHYTHM MAP</span><strong>鏡頭節奏與敘事階段</strong></div><div class="analysis-flow-legend"><span><i class="is-hook"></i>鉤子</span><span><i class="is-build"></i>鋪陳</span><span><i class="is-payoff"></i>轉折</span><span><i class="is-close"></i>收束</span></div></div>
+          <div class="analysis-rhythm-track" id="analysis-rhythm-track" aria-label="依時長比例顯示的鏡頭結構"></div>
+          <div class="analysis-rhythm-axis"><span>00:00</span><span id="analysis-rhythm-mid">—</span><span id="analysis-rhythm-end">—</span></div>
+        </article>
+      </section>
+
+      <!-- NLE workspace: source bin, program monitor and clip inspector -->
+      <div class="nle-workspace">
+        <aside class="nle-panel nle-media-bin">
+          <div class="nle-panel-title"><span>專案媒體</span><small>MEDIA POOL</small></div>
+          <div class="nle-bin-tabs"><button class="active" type="button" data-bin-tab="media">媒體</button><button type="button" data-bin-tab="prompts">提示詞</button><button type="button" data-bin-tab="variables">變數</button></div>
+          <div class="nle-bin-tree"><span>⌄</span><strong>模板素材</strong><small id="detail-bin-count">1</small></div>
+          <div class="nle-source-item is-selected" data-bin-page="media">
+            <div class="nle-source-thumb" id="detail-source-thumb"></div>
+            <div><strong id="detail-source-title">來源影片</strong><span id="detail-source-channel">原始素材</span></div>
+          </div>
+          <div class="nle-bin-section" data-bin-page="media">
+            <h6>素材資訊</h6>
+            <p id="detail-source-views">觀看次數：—</p>
+            <p id="detail-template-version">分析版本：—</p>
+            <p id="detail-confidence">信心指數：—</p>
+          </div>
+          <div class="nle-bin-section" data-bin-page="media">
+            <h6>模板摘要</h6>
+            <dl class="nle-compact-meta">
+              <div><dt>題材</dt><dd id="meta-usecase">—</dd></div>
+              <div><dt>平台</dt><dd id="meta-platforms">—</dd></div>
+              <div><dt>受眾</dt><dd id="meta-audience">—</dd></div>
+              <div><dt>鏡頭</dt><dd id="meta-shotscount">—</dd></div>
+              <div><dt>長度</dt><dd id="meta-duration">—</dd></div>
+            </dl>
           </div>
           <div class="detail-header-right">
             <button class="btn-apply-template-main" id="btn-apply-template-main">
