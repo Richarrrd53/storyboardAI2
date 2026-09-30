@@ -38,6 +38,19 @@ body {
   transform-style: preserve-3d;
 }
 
+/* --- Brand --- */
+.auth-brand {
+  margin-bottom: 4px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.auth-brand:hover {
+  opacity: 0.85;
+  transform: translateY(-1px);
+}
+
 /* --- Tabs --- */
 .auth-tabs {
   display: flex;

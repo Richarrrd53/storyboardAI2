@@ -66,13 +66,23 @@ body, html {
 }
 
 .brand-logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     font-family: var(--font-display);
     font-weight: 800;
     letter-spacing: -0.02em;
     color: var(--text-dark);
-    font-size: clamp(0.8rem, 1.5vw, 1.25rem);
+    font-size: clamp(0.95rem, 1.5vw, 1.25rem);
     text-decoration: none;
-    margin-left: 5vw;
+}
+
+.brand-logo img,
+.brand-logo-img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    flex-shrink: 0;
 }
 
 .brand-logo span {

@@ -3152,10 +3152,14 @@ table {
     color: var(--text-dark, #0f172a);
 }
 
-.home-brand-icon {
-    font-size: 1.25rem;
+.home-brand-icon,
+.home-brand-logo-img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
     line-height: 1;
 }
+
 
 .home-brand-title span {
     color: var(--primary, #2563eb);
