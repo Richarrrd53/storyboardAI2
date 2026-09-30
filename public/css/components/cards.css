@@ -1,0 +1,69 @@
+/* ============================================================
+   STORYBOARD AI DESIGN SYSTEM v3.0
+   Component: Card Family Primitives (public/css/components/cards.css)
+   ============================================================ */
+
+.card {
+  background: var(--color-surface-primary, #ffffff);
+  border: 1px solid var(--color-border-default, #e2e8f0);
+  border-radius: var(--radius-md, 16px);
+  box-shadow: var(--elevation-1, 0 4px 14px rgba(15, 23, 42, 0.04));
+  overflow: hidden;
+  position: relative;
+  transition: transform var(--motion-duration-fast, 180ms) var(--motion-ease-standard, cubic-bezier(0.2, 0, 0, 1)),
+              box-shadow var(--motion-duration-fast, 180ms) var(--motion-ease-standard, cubic-bezier(0.2, 0, 0, 1)),
+              border-color var(--motion-duration-fast, 180ms) var(--motion-ease-standard, cubic-bezier(0.2, 0, 0, 1));
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--elevation-2, 0 12px 28px rgba(15, 23, 42, 0.08));
+  border-color: var(--slate-300, #cbd5e1);
+}
+
+/* ── Content Card (Articles, Docs, Features) ── */
+.content-card {
+  padding: var(--space-6, 24px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3, 12px);
+}
+
+.content-card-title {
+  font-family: var(--font-family-display, "Noto Sans TC", sans-serif);
+  font-size: 1.125rem;
+  font-weight: var(--font-weight-bold, 700);
+  color: var(--color-text-primary, #0f172a);
+  line-height: var(--line-height-snug, 1.3);
+}
+
+.content-card-desc {
+  font-size: var(--font-size-sm, 0.875rem);
+  color: var(--color-text-secondary, #475569);
+  line-height: var(--line-height-normal, 1.5);
+}
+
+/* ── Action Card (Interactive Quick Actions) ── */
+.action-card {
+  padding: var(--space-5, 20px);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4, 16px);
+  cursor: pointer;
+  background: var(--color-surface-primary, #ffffff);
+}
+
+.action-card:hover {
+  border-color: var(--color-brand-primary-light, #60a5fa);
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.08);
+}
+
+/* ── Floating Card (Resin / Acrylic Elevated Overlay Card) ── */
+.floating-card {
+  background: var(--surface-floating-bg, rgba(255, 255, 255, 0.88));
+  backdrop-filter: var(--surface-floating-blur, blur(16px));
+  -webkit-backdrop-filter: var(--surface-floating-blur, blur(16px));
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: var(--radius-lg, 24px);
+  box-shadow: var(--elevation-3, 0 16px 40px rgba(15, 23, 42, 0.12));
+}

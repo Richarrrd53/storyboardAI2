@@ -1330,11 +1330,10 @@ body {
     box-shadow: 0 0px 0px rgba(37, 99, 235, 0.3);
 }
 
-/* SVG 與文字需在光暈層之上 */
 .new-project-btn > svg,
-.new-project-btn > *:not(.btn-glow-ambient):not(.btn-glow-container) {
+.new-project-btn > span {
     position: relative;
-    z-index: 3;
+    z-index: 1;
 }
 
 
@@ -4649,8 +4648,7 @@ body.sidebar-open .ai-dock-panel.expanding-to-full {
 
 /* ── 彩色旋轉光暈 (復刻自 SE-HTML-class ContactChat.vue) ── */
 /* 外層模糊暈染層 */
-.ai-pill-btn-glow-ambient,
-.new-project-btn .btn-glow-ambient {
+.ai-pill-btn-glow-ambient {
     position: absolute;
     inset: -4px;
     border-radius: 28px;
@@ -4664,8 +4662,7 @@ body.sidebar-open .ai-dock-panel.expanding-to-full {
 }
 
 /* 內層清晰邊框層 */
-.ai-pill-btn-glow-container,
-.new-project-btn .btn-glow-container {
+.ai-pill-btn-glow-container {
     position: absolute;
     inset: -2px;
     border-radius: 26px;
@@ -4683,12 +4680,6 @@ body.sidebar-open .ai-dock-panel.expanding-to-full {
 .ai-unified-capsule.is-closing .ai-pill-btn-glow-container,
 body.ai-quick-compose-closing .ai-pill-btn-glow-ambient,
 body.ai-quick-compose-closing .ai-pill-btn-glow-container,
-.ai-unified-capsule.is-expanded .btn-glow-ambient,
-.ai-unified-capsule.is-expanded .btn-glow-container,
-.ai-unified-capsule.is-closing .btn-glow-ambient,
-.ai-unified-capsule.is-closing .btn-glow-container,
-body.ai-quick-compose-closing .btn-glow-ambient,
-body.ai-quick-compose-closing .btn-glow-container,
 .ai-unified-capsule.is-expanded .mob-circle-glow-container,
 .ai-unified-capsule.is-expanded .mob-circle-glow,
 .ai-unified-capsule.is-closing .mob-circle-glow-container,
@@ -4702,15 +4693,13 @@ body.ai-quick-compose-closing .mob-circle-glow {
 }
 
 /* hover 時外層更亮更模糊 */
-#global-create-capsule:not(.is-expanded):not(.is-closing):hover .ai-pill-btn-glow-ambient,
-.new-project-btn:hover .btn-glow-ambient {
+#global-create-capsule:not(.is-expanded):not(.is-closing):hover .ai-pill-btn-glow-ambient {
     opacity: 1;
     filter: blur(10px);
 }
 
 /* 旋轉扇形光束 */
-.ai-pill-btn-glow-rotator,
-.new-project-btn .btn-glow-rotator {
+.ai-pill-btn-glow-rotator {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -4734,13 +4723,6 @@ body.ai-quick-compose-closing .mob-circle-glow {
     pointer-events: none !important;
 }
 
-/* new-project-btn 膠囊是 50px 圓角，光暈圓角需對應 */
-.new-project-btn .btn-glow-ambient {
-    border-radius: 54px;
-}
-.new-project-btn .btn-glow-container {
-    border-radius: 52px;
-}
 
 /* ============================================================
    MOBILE PORTRAIT FLOATING BOTTOM NAVIGATION (Design System v3.0)

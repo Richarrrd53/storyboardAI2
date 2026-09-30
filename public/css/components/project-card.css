@@ -1,0 +1,175 @@
+/* ============================================================
+   STORYBOARD AI DESIGN SYSTEM v3.0
+   Component: Unified ProjectCard (public/css/components/project-card.css)
+   Variants: .compact (Dashboard) and .full (Projects / History)
+   ============================================================ */
+
+.project-card,
+.home-project-card {
+  background: var(--color-surface-primary, #ffffff);
+  border-radius: var(--radius-md, 16px);
+  border: 1px solid var(--color-border-default, #e2e8f0);
+  box-shadow: var(--elevation-1, 0 4px 14px rgba(15, 23, 42, 0.04));
+  overflow: hidden;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: transform var(--motion-duration-fast, 180ms) var(--motion-ease-standard, cubic-bezier(0.2, 0, 0, 1)),
+              box-shadow var(--motion-duration-fast, 180ms) var(--motion-ease-standard, cubic-bezier(0.2, 0, 0, 1)),
+              border-color var(--motion-duration-fast, 180ms) var(--motion-ease-standard, cubic-bezier(0.2, 0, 0, 1));
+}
+
+.project-card:hover,
+.home-project-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--elevation-2, 0 12px 28px rgba(15, 23, 42, 0.08));
+  border-color: rgba(37, 99, 235, 0.3);
+}
+
+.project-card:active,
+.home-project-card:active {
+  transform: translateY(-1px) scale(0.99);
+}
+
+/* ── 1. Filmstrip Top Header ── */
+.project-card .card-strip,
+.home-project-card .card-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 28px;
+  padding: 0 10px;
+  box-sizing: border-box;
+  background-color: var(--color-surface-film, #0f172a);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+.project-card .strip-holes-group,
+.home-project-card .strip-holes-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.project-card .strip-hole,
+.home-project-card .strip-hole {
+  width: 9px;
+  height: 13px;
+  border-radius: 2px;
+  background-color: rgba(248, 250, 252, 0.7);
+  border: none;
+  flex-shrink: 0;
+}
+
+/* ── 2. Visual Preview Thumbnail (Standard 16:9) ── */
+.project-card .project-thumb,
+.home-project-card .home-card-thumb {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.project-card .project-thumb img,
+.home-project-card .home-card-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.4s ease;
+}
+
+.project-card:hover .project-thumb img,
+.home-project-card:hover .home-card-thumb img {
+  transform: scale(1.04);
+}
+
+/* Fallback Art */
+.project-thumb-fallback,
+.home-card-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  color: var(--slate-400, #94a3b8);
+  font-size: var(--font-size-xs, 0.75rem);
+  font-family: var(--font-family-mono, monospace);
+  gap: 6px;
+}
+
+/* ── 3. Project Info Body ── */
+.project-card-info,
+.project-info,
+.home-card-info {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.project-card-title,
+.project-meta-wrap h3,
+.home-card-title {
+  font-family: var(--font-family-display, "Noto Sans TC", sans-serif);
+  font-size: 1.05rem;
+  font-weight: var(--font-weight-bold, 700);
+  color: var(--color-text-primary, #0f172a);
+  line-height: var(--line-height-snug, 1.3);
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Metadata Row */
+.project-card-meta,
+.project-meta,
+.home-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--font-size-xs, 0.75rem);
+  color: var(--color-text-tertiary, #64748b);
+}
+
+/* ── 4. Project Card Footer ── */
+.project-card-footer {
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-border-subtle, rgba(226, 232, 240, 0.7));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ── 5. Variants: Compact (Dashboard) vs Full (Projects) ── */
+/* Compact: Simplified view, no heavy footer */
+.project-card.variant-compact .project-card-footer,
+.home-project-card.variant-compact .project-card-footer {
+  display: none;
+}
+
+.project-card.variant-compact .project-info,
+.home-project-card.variant-compact .home-card-info {
+  padding: 12px 14px;
+}
+
+/* Full: Complete metadata, date, action triggers */
+.project-card.variant-full .project-card-footer {
+  display: flex;
+}

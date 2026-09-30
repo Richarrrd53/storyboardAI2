@@ -1,0 +1,52 @@
+/* ============================================================
+   STORYBOARD AI DESIGN SYSTEM v3.0
+   Component: Quick Create / QC (public/css/components/quick-create.css)
+   PROTECTED INTERACTION CONTRACT: Signature Create Trigger Glow & Morph
+   ============================================================ */
+
+/* ── QC Conic Rainbow Ambient Glow (Create Signature ONLY) ── */
+.ai-pill-btn-glow-ambient,
+.qc-signature-glow {
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  z-index: 0;
+  pointer-events: none;
+  overflow: visible;
+  filter: blur(10px);
+  opacity: 0.85;
+}
+
+.ai-pill-btn-glow-container {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.ai-pill-btn-glow-rotator {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 250%;
+  aspect-ratio: 1 / 1;
+  transform: translate(-50%, -50%);
+  background: conic-gradient(
+    from 0deg at 50% 50%,
+    rgba(255, 120, 80, 0.9) 0deg,
+    rgba(255, 200, 50, 0.9) 60deg,
+    rgba(80, 220, 160, 0.9) 120deg,
+    rgba(60, 180, 255, 0.95) 180deg,
+    rgba(160, 100, 255, 0.9) 240deg,
+    rgba(255, 100, 180, 0.9) 300deg,
+    rgba(255, 120, 80, 0.9) 360deg
+  );
+  animation: qcGlowRotate 4s linear infinite;
+}
+
+@keyframes qcGlowRotate {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
+}

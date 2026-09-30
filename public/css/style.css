@@ -4,6 +4,20 @@
 @import url('./tokens.css');
 @import url('./shell.css');
 
+/* ── Shared Component Layer ── */
+@import url('./components/button.css');
+@import url('./components/cards.css');
+@import url('./components/project-card.css');
+@import url('./components/filmstrip.css');
+@import url('./components/acrylic.css');
+@import url('./components/badge.css');
+@import url('./components/input.css');
+@import url('./components/dialog.css');
+@import url('./components/bottom-sheet.css');
+@import url('./components/mobile-nav.css');
+@import url('./components/option-morph.css');
+@import url('./components/quick-create.css');
+
 * {
     box-sizing: border-box;
     margin: 0;

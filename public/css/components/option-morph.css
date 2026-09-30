@@ -1,0 +1,165 @@
+/* ============================================================
+   STORYBOARD AI DESIGN SYSTEM v3.0
+   Component: Option Morph Menu (public/css/components/option-morph.css)
+   PROTECTED INTERACTION CONTRACT: Button -> Dot -> Parabola -> Surface
+   ============================================================ */
+
+.project-option-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  pointer-events: none;
+  background: transparent;
+}
+
+.project-option-overlay.is-active {
+  pointer-events: auto;
+}
+
+:root {
+  --morph-ease: cubic-bezier(.4, 0, .2, 1);
+}
+
+.global-project-option-menu {
+  position: fixed;
+  box-sizing: border-box;
+  z-index: 10001;
+  overflow: hidden;
+  pointer-events: auto;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(96, 120, 155, 0.16);
+  box-shadow: var(--elevation-3, 0 16px 40px rgba(15, 23, 42, 0.12)), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px) saturate(130%);
+  -webkit-backdrop-filter: blur(16px) saturate(130%);
+  transform-origin: center center;
+  will-change: width, height, top, left, border-radius, transform;
+}
+
+.global-project-option-menu.is-settled {
+  box-shadow: 0 4px 16px rgba(18, 32, 56, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+/* The Morphing Icon (⋮) */
+.global-project-option-menu .morph-icon {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--slate-500, #64748b);
+  pointer-events: none;
+  opacity: 1;
+  filter: blur(0);
+  transform: scale(1);
+  transition: opacity 70ms var(--morph-ease), filter 70ms var(--morph-ease), transform 70ms var(--morph-ease);
+}
+
+.global-project-option-menu.is-icon-dissolved .morph-icon {
+  opacity: 0;
+  filter: blur(4px);
+  transform: scale(0.7);
+}
+
+/* Menu Content Container */
+.global-project-option-menu .morph-menu-content {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding: 7px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  box-sizing: border-box;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 70ms var(--morph-ease);
+}
+
+.global-project-option-menu.is-content-visible .morph-menu-content {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Menu Items (stagger 14ms, blur 4px -> 0, opacity 0 -> 1, translateY 4px -> 0) */
+.global-project-option-menu .morph-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 28px;
+  padding: 0 8px;
+  box-sizing: border-box;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 550;
+  color: var(--color-text-primary, #0f172a);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  outline: none;
+  white-space: nowrap;
+  opacity: 0;
+  filter: blur(4px);
+  transform: translateY(4px);
+  transition: opacity 0.14s var(--morph-ease),
+              filter 0.14s var(--morph-ease),
+              transform 0.14s var(--morph-ease),
+              background 0.12s ease,
+              color 0.12s ease;
+}
+
+.global-project-option-menu.is-content-visible .morph-item {
+  opacity: 1;
+  filter: blur(0);
+  transform: translateY(0);
+}
+
+/* Stagger Delays (14ms intervals) */
+.global-project-option-menu.is-content-visible .morph-item:nth-child(1) { transition-delay: 0ms; }
+.global-project-option-menu.is-content-visible .morph-item:nth-child(2) { transition-delay: 14ms; }
+.global-project-option-menu.is-content-visible .morph-item:nth-child(3) { transition-delay: 28ms; }
+.global-project-option-menu.is-content-visible .morph-divider { transition-delay: 38ms; }
+.global-project-option-menu.is-content-visible .morph-item:nth-child(5) { transition-delay: 48ms; }
+
+/* Closing: Reverse Stagger + Soft Blur (re-melt into Surface) */
+.global-project-option-menu.is-items-collapsing .morph-item {
+  opacity: 0 !important;
+  filter: blur(3px) !important;
+  transform: translateY(3px) !important;
+  transition: opacity 0.11s var(--morph-ease),
+              filter 0.11s var(--morph-ease),
+              transform 0.11s var(--morph-ease) !important;
+}
+
+/* Reverse Stagger Delays: Delete (child 5) melts first -> Divider -> Export -> Duplicate -> Rename */
+.global-project-option-menu.is-items-collapsing .morph-item:nth-child(5) { transition-delay: 0ms !important; }
+.global-project-option-menu.is-items-collapsing .morph-divider { transition-delay: 14ms !important; }
+.global-project-option-menu.is-items-collapsing .morph-item:nth-child(3) { transition-delay: 26ms !important; }
+.global-project-option-menu.is-items-collapsing .morph-item:nth-child(2) { transition-delay: 38ms !important; }
+.global-project-option-menu.is-items-collapsing .morph-item:nth-child(1) { transition-delay: 50ms !important; }
+.global-project-option-menu.is-items-collapsing .morph-item:only-child { transition-delay: 0ms !important; }
+
+.global-project-option-menu .morph-item:hover {
+  background: rgba(15, 23, 42, 0.06);
+  color: var(--color-brand-primary, #2563eb);
+}
+
+.global-project-option-menu .morph-item.danger:hover {
+  background: var(--red-50, #fef2f2);
+  color: var(--red-600, #dc2626);
+}
+
+.global-project-option-menu .morph-divider {
+  height: 1px;
+  background: var(--color-border-subtle, rgba(226, 232, 240, 0.7));
+  margin: 3px 6px;
+  opacity: 0;
+  transition: opacity 0.14s var(--morph-ease);
+}
+
+.global-project-option-menu.is-content-visible .morph-divider {
+  opacity: 1;
+}
