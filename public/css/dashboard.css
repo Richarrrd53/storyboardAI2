@@ -1252,11 +1252,12 @@ body {
 
 /* Project Management UI */
 
-.projects-header {
+.projects-header,
+.history-header {
     position: relative;
     top: 0;
     margin-top: 0;
-    padding: 28px 44px 16px;
+    padding: 28px var(--page-gutter, 32px) 16px;
     z-index: 20;
     background: var(--off-white);
     display: flex;
@@ -1274,7 +1275,7 @@ body {
     position: relative;
     top: 0;
     margin-top: 0;
-    padding: 24px 44px 16px;
+    padding: 24px var(--page-gutter, 32px) 16px;
     z-index: 20;
     background: var(--off-white);
     width: 100%;
@@ -1285,8 +1286,9 @@ body {
     box-sizing: border-box;
 }
 
-.projects-body {
-    padding: 8px 44px 60px;
+.projects-body,
+.history-body {
+    padding: 8px var(--page-gutter, 32px) 60px;
     width: 100%;
     max-width: 1440px;
     margin: 0 auto;
@@ -3081,7 +3083,7 @@ table {
 }
 
 .home-body {
-    padding: 8px 44px 60px;
+    padding: 8px var(--page-gutter, 32px) 60px;
     width: 100%;
     max-width: 1440px;
     margin: 0 auto;
@@ -3117,7 +3119,7 @@ table {
     display: flex;
     justify-content: flex-start;
     align-items: center;
-    padding: 28px 44px 16px;
+    padding: 28px var(--page-gutter, 32px) 16px;
     width: 100%;
     max-width: 1440px;
     margin: 0 auto;
@@ -3825,7 +3827,9 @@ table {
         padding: 0 !important;
     }
 
-    .home-header {
+    .home-header,
+    .projects-header,
+    .history-header {
         padding: max(16px, env(safe-area-inset-top)) 16px 8px !important;
         margin-bottom: 0 !important;
     }
@@ -3834,7 +3838,9 @@ table {
         font-size: 1.35rem !important;
     }
 
-    .home-body {
+    .home-body,
+    .projects-body,
+    .history-body {
         padding: 8px 16px calc(var(--mobile-nav-height, 64px) + env(safe-area-inset-bottom, 14px) + 24px) !important;
     }
 
@@ -4999,12 +5005,12 @@ body.ai-quick-compose-closing .mob-circle-glow {
         margin-top: 28px !important;
     }
 
-    .projects-header {
+    .projects-header,
+    .history-header {
         position: relative !important;
         top: 0 !important;
         margin-top: 0 !important;
-        padding-top: 0 !important;
-        margin-bottom: 16px !important;
+        margin-bottom: 0 !important;
         flex-wrap: wrap !important;
         gap: 8px !important;
     }

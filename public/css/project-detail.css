@@ -31,7 +31,7 @@
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--card-border, #e5e5e0);
-  padding: 16px 28px 12px;
+  padding: 16px var(--page-gutter, 32px) 12px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -193,7 +193,7 @@
 
 /* ── 內容主區域 ─────────────────────────────────────── */
 .project-workspace-content {
-  padding: 24px 28px;
+  padding: 24px var(--page-gutter, 32px);
   width: 100%;
   box-sizing: border-box;
 }
@@ -947,6 +947,14 @@
 
   .project-shot-editor.open {
     transform: translateY(0);
+  }
+
+  .project-workspace-header {
+    padding: max(16px, env(safe-area-inset-top)) 16px 12px !important;
+  }
+
+  .project-workspace-content {
+    padding: 16px 16px calc(var(--mobile-nav-height, 64px) + env(safe-area-inset-bottom, 14px) + 24px) 16px !important;
   }
 
   /* ── Mobile Story View: Decompose Table into Shot Cards (Spec section 26.1) ── */
