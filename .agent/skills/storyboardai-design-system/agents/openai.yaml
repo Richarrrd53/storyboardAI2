@@ -1,0 +1,4 @@
+interface:
+  display_name: "StoryboardAI Design System"
+  short_description: "Keep StoryboardAI UI consistent across pages, components, motion, and responsive layouts."
+  brand_color: "#2563EB"
