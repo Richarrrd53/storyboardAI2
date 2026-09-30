@@ -3885,7 +3885,8 @@ table {
         width: max-content;
     }
 
-    .home-project-card {
+    .home-project-card,
+    .project-card.variant-compact {
         width: 74vw;
         min-width: 230px;
         max-width: 300px;
@@ -3895,7 +3896,8 @@ table {
     }
 
     /* Option button hidden on mobile - tapping card opens it */
-    .home-card-option-btn {
+    .home-card-option-btn,
+    .project-card.variant-compact .project-option-btn {
         display: none !important;
     }
 

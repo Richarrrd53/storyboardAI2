@@ -393,7 +393,10 @@
     return ratio;
   }
 
-  function buildLightFilmCardHTML(p, isHistory = false) {
+  function renderProjectCard(p, options = {}) {
+    const variant = options.variant || (options.isCompact ? 'compact' : 'full');
+    const isHistory = options.isHistory || false;
+    const isCompact = variant === 'compact';
     const date = new Date(p.createAt).toLocaleDateString('zh-TW');
     const shotsCount = p.shotCount || (Array.isArray(p.shots) ? p.shots.length : 0);
     const ratioBadge = formatRatioBadge(p.ratio);
@@ -434,24 +437,46 @@
       </div>
       <div class="project-info">
         <div class="project-title" title="${titleEsc}">${titleEsc}</div>
-        <div class="project-card-footer">
-          <div class="project-meta-line" title="${metaInfo}">${metaInfo}</div>
-          <div class="project-card-actions">
-            <button class="project-primary-btn" type="button" title="${mainActionLabel}分鏡">${mainActionLabel}</button>
-            <button class="project-option-btn" type="button" title="更多選項" aria-label="更多選項">
-              <span class="option-icon">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-                  <circle cx="12" cy="5" r="2.1" />
-                  <circle cx="12" cy="12" r="2.1" />
-                  <circle cx="12" cy="19" r="2.1" />
-                </svg>
-              </span>
-            </button>
+        ${isCompact ? `
+          <div class="project-meta-line" style="font-size: 12px; color: var(--color-text-tertiary, #64748b);">${shotsCount > 0 ? `${shotsCount} 個鏡頭 · ` : ''}${ratioText}</div>
+          <button class="project-option-btn home-card-option-btn" type="button" title="更多選項" aria-label="更多選項" style="position: absolute; right: 12px; bottom: 12px;">
+            <span class="option-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                <circle cx="12" cy="5" r="2.1" />
+                <circle cx="12" cy="12" r="2.1" />
+                <circle cx="12" cy="19" r="2.1" />
+              </svg>
+            </span>
+          </button>
+        ` : `
+          <div class="project-card-footer">
+            <div class="project-meta-line" title="${metaInfo}">${metaInfo}</div>
+            <div class="project-card-actions">
+              <button class="project-primary-btn" type="button" title="${mainActionLabel}分鏡">${mainActionLabel}</button>
+              <button class="project-option-btn" type="button" title="更多選項" aria-label="更多選項">
+                <span class="option-icon">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="12" cy="5" r="2.1" />
+                    <circle cx="12" cy="12" r="2.1" />
+                    <circle cx="12" cy="19" r="2.1" />
+                  </svg>
+                </span>
+              </button>
+            </div>
           </div>
-        </div>
+        `}
       </div>
     `;
   }
+
+  function buildLightFilmCardHTML(p, isHistory = false) {
+    return renderProjectCard(p, { variant: 'full', isHistory });
+  }
+
+  function buildHomeRecentCardHTML(p) {
+    return renderProjectCard(p, { variant: 'compact' });
+  }
+
 
   // ══════════════════════════════════════════════════════════════
   // GLOBAL OPTION MORPH CONTROLLER v4 (Continuous Overlap Standard Morph)
@@ -1012,13 +1037,13 @@
 
   function setupProjectCardEvents(card, p, isHistoryPage, refreshCallback) {
     if (p.is_deleted) {
-      card.className = 'project-card project-card-deleted';
+      card.className = 'project-card variant-full project-card-deleted';
       card.onclick = (e) => {
         if (e.target.closest('.project-card-actions')) return;
         alert('此分鏡已在回收桶中，請點擊下方「還原」按鈕以還原此分鏡。');
       };
     } else {
-      card.className = 'project-card';
+      card.className = 'project-card variant-full';
       card.onclick = (e) => {
         if (e.target.closest('.project-card-actions')) return;
         navigate('project', { id: p.id });
@@ -4569,46 +4594,16 @@ function initLoginLogic(showRegister) {
         };
       }
 
-      // Simplified Home Recent Project Card Template (Spec section 9)
-      function buildHomeRecentCardHTML(p) {
-        const timeStr = formatRelativeTime(p.updateAt || p.createAt);
-        const shotsCount = p.shotCount || (Array.isArray(p.shots) ? p.shots.length : 0);
-        const titleEsc = esc(p.title || '未命名分鏡');
-        const ratioBadge = formatRatioBadge(p.ratio);
-
-        return `
-          <div class="home-card-thumb loading" data-src="/api/projects/${p.id}/cover">
-            <div class="home-card-fallback">
-              <span class="home-fallback-icon">🎬</span>
-              <span class="home-fallback-title">${titleEsc}</span>
-            </div>
-            <div class="home-card-badge">${ratioBadge}</div>
-          </div>
-          <div class="home-card-info">
-            <h3 class="home-card-title" title="${titleEsc}">${titleEsc}</h3>
-            <div class="home-card-meta">
-              <span>${shotsCount > 0 ? `${shotsCount} 個鏡頭 · ` : ''}${timeStr}</span>
-            </div>
-          </div>
-          <button class="home-card-option-btn" type="button" title="更多選項" aria-label="更多選項">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-              <circle cx="12" cy="5" r="2.1" />
-              <circle cx="12" cy="12" r="2.1" />
-              <circle cx="12" cy="19" r="2.1" />
-            </svg>
-          </button>
-        `;
-      }
-
       function setupHomeRecentCardEvents(card, p, refreshCallback) {
-        card.className = 'home-project-card';
+        card.className = 'project-card variant-compact home-project-card';
         card.onclick = (e) => {
-          if (e.target.closest('.home-card-option-btn')) return;
+          if (e.target.closest('.home-card-option-btn, .project-option-btn')) return;
           navigate('project', { id: p.id });
         };
         card.addEventListener('pointerenter', () => {
           prefetchPage('project', { id: p.id });
         });
+
 
         const optionBtn = card.querySelector('.home-card-option-btn');
         if (optionBtn) {
