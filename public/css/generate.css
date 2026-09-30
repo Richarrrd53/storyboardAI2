@@ -1157,7 +1157,7 @@
         min-height: 100dvh !important;
         max-height: none !important;
         border-radius: 0 !important;
-        padding: 16px 12px calc(var(--mobile-nav-height, 64px) + env(safe-area-inset-bottom, 14px) + 30px) !important;
+        padding: 16px 12px calc(var(--mobile-nav-height, 64px) + env(safe-area-inset-bottom, 16px) + 32px) !important;
         overflow-y: auto !important;
     }
 

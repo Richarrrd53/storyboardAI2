@@ -954,7 +954,7 @@
   }
 
   .project-workspace-content {
-    padding: 16px 16px calc(var(--mobile-nav-height, 64px) + env(safe-area-inset-bottom, 14px) + 24px) 16px !important;
+    padding: 16px 16px calc(var(--mobile-nav-height, 64px) + env(safe-area-inset-bottom, 16px) + 32px) 16px !important;
   }
 
   /* ── Mobile Story View: Decompose Table into Shot Cards (Spec section 26.1) ── */

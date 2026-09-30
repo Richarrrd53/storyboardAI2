@@ -3841,7 +3841,7 @@ table {
     .home-body,
     .projects-body,
     .history-body {
-        padding: 8px 16px calc(var(--mobile-nav-height, 64px) + env(safe-area-inset-bottom, 14px) + 24px) !important;
+        padding: 8px 16px calc(var(--mobile-nav-height, 64px) + env(safe-area-inset-bottom, 16px) + 32px) !important;
     }
 
     .home-hero-layout {
