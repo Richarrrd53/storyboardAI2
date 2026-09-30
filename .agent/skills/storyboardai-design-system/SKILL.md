@@ -12,9 +12,16 @@ Use this skill as the design and implementation guardrail for StoryboardAI. Pres
 Maintain this design DNA:
 
 **Cold Editorial × Film Language × Matte Acrylic**
+**Deep Navy Shell × Light Content Canvas (深藍黑外殼 + 淺色內容畫布)**
+
+Three-tier layering architecture:
+1. **🌑 Deep Navy App Shell (`--app-shell: #0c1324`)**: Outer framing wrapper that integrates the sidebar directly into the shell canvas with 8–16px uniform margins, giving the entire web app the tactile feel of a high-end physical creative device.
+2. **🩶 Cold Light Main Canvas (`--canvas: #f8fafc`)**: The inset `#page-main` work card with 28px rounded corners, delicate 1px rim-light border, and soft ambient shadow, creating strong focal containment.
+3. **⬜ Structured Content Cards (`#ffffff`)**: Foreground cards (hero banner, quick actions, filmstrip cards) that cleanly pop from the canvas without feeling washed out or floating on an undifferentiated background.
 
 Treat the following as golden references:
-- Dashboard: overall airiness, neutral surfaces, hierarchy, spacing, and page rhythm.
+- Dashboard: deep navy shell framing, overall airiness, neutral surfaces, hierarchy, spacing, and page rhythm.
+- Sidebar: integrated directly into dark shell, soft slate inactive items, signature white active pill with deep navy icon.
 - Quick Create (QC): signature creation interaction, matte acrylic, diffuse light, and morph behavior.
 - Project/film card: film-strip language for storyboard/video content.
 - Mobile bottom navigation: floating tactile mobile material and interaction language.

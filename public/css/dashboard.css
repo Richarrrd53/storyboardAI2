@@ -5,7 +5,11 @@
 }
 
 #BG {
-    background: #ebf0f4;
+    background: var(--app-shell, #0c1324);
+}
+
+body.dashboard-layout {
+    background: var(--app-shell, #0c1324) !important;
 }
 
 .dash-main {
@@ -23,8 +27,8 @@ body {
     margin-right: var(--page-shell-margin) !important;
     margin-left: calc(var(--page-shell-margin) * 2 + var(--sidebar-collapsed-width, 60px)) !important;
     padding: 0 !important;
-    background: var(--off-white);
-    border-radius: var(--radius-xl);
+    background: var(--canvas, var(--color-bg-page, #f8fafc));
+    border-radius: 28px !important;
     height: calc(100vh - 2 * var(--page-shell-margin)) !important;
     height: calc(100dvh - 2 * var(--page-shell-margin)) !important;
     max-height: calc(100dvh - 2 * var(--page-shell-margin)) !important;
@@ -32,12 +36,14 @@ body {
     display: flex !important;
     flex-direction: column !important;
     position: relative;
-    transition: width 500ms cubic-bezier(.22, 1, .36, 1),
-                max-width 500ms cubic-bezier(.22, 1, .36, 1),
-                margin-left 500ms cubic-bezier(.22, 1, .36, 1),
-                margin-right 500ms cubic-bezier(.22, 1, .36, 1),
-                padding 500ms cubic-bezier(.22, 1, .36, 1),
-                border-radius 500ms cubic-bezier(0, 0, 0.3, 1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.28);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: width 500ms var(--motion-ease-smooth, cubic-bezier(.22, 1, .36, 1)),
+                max-width 500ms var(--motion-ease-smooth, cubic-bezier(.22, 1, .36, 1)),
+                margin-left 500ms var(--motion-ease-smooth, cubic-bezier(.22, 1, .36, 1)),
+                margin-right 500ms var(--motion-ease-smooth, cubic-bezier(.22, 1, .36, 1)),
+                padding 500ms var(--motion-ease-smooth, cubic-bezier(.22, 1, .36, 1)),
+                border-radius 500ms var(--motion-ease-decelerate, cubic-bezier(0.16, 1, 0.3, 1));
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -180,7 +186,7 @@ body.dashboard-layout .spa-discovery-wrap > * {
 
 .side-burger {
     --size: 25px;
-    --clr: var(--text-dark);
+    --clr: #94a3b8;
     width: var(--size);
     height: calc(0.7 * var(--size));
     cursor: pointer;
@@ -190,7 +196,11 @@ body.dashboard-layout .spa-discovery-wrap > * {
     filter: blur(0px);
     opacity: 1;
     margin-top: 110px;
-    transition: 0.5s cubic-bezier(.4, 0, .2, 1);
+    transition: 0.5s var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1));
+}
+
+.side-burger:hover {
+    --clr: #ffffff;
 }
 
 .side-burger:active {
@@ -280,8 +290,8 @@ body.dashboard-layout .spa-discovery-wrap > * {
     width: 0;
     overflow: hidden;
     word-break: keep-all;
-    color: var(--text-dark);
-    transition: 0.5s cubic-bezier(.33, 1.53, .69, .99);
+    color: #ffffff;
+    transition: 0.5s var(--motion-ease-spring, cubic-bezier(.33, 1.53, .69, .99));
     text-align: left;
     font-size: 1.3rem;
     transform: translateX(50%);
@@ -312,9 +322,9 @@ body.dashboard-layout .spa-discovery-wrap > * {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--text-light);
+    color: #94a3b8;
     text-decoration: none;
-    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: all 0.3s var(--motion-ease-jelly, cubic-bezier(0.34, 1.56, 0.64, 1));
     position: relative;
     display: inline-flex;
     align-items: center;
@@ -330,8 +340,8 @@ body.dashboard-layout .spa-discovery-wrap > * {
     width: 45px;
     height: 0;
     border-radius: 99px;
-    border: 1px solid #d5d5d5;
-    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s var(--motion-ease-jelly, cubic-bezier(0.34, 1.56, 0.64, 1));
     transform: translateX(-10px);
 }
 
@@ -343,11 +353,15 @@ body.dashboard-layout .spa-discovery-wrap > * {
     position: absolute;
     margin-left: 35px;
     width: 0;
-    color: var(--text-mid);
+    color: #cbd5e1;
     overflow: hidden;
-    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: all 0.3s var(--motion-ease-jelly, cubic-bezier(0.34, 1.56, 0.64, 1));
     z-index: 2;
     word-break: keep-all;
+}
+
+.side-link:hover span {
+    color: #ffffff;
 }
 
 .side-link.highlight.active span {
@@ -356,6 +370,7 @@ body.dashboard-layout .spa-discovery-wrap > * {
 
 .side-link.active span {
     font-weight: bold;
+    color: var(--color-text-nav-active, #172554) !important;
 }
 
 .sidebar.open .side-link span {
@@ -370,7 +385,7 @@ body.dashboard-layout .spa-discovery-wrap > * {
     height: 25px;
     z-index: 2;
     flex-shrink: 0;
-    transition: transform 0.3s cubic-bezier(.33,1.53,.69,.99);
+    transition: transform 0.3s var(--motion-ease-spring, cubic-bezier(.33,1.53,.69,.99));
 }
 
 .side-link .side-icon {
@@ -383,7 +398,12 @@ body.dashboard-layout .spa-discovery-wrap > * {
 
 .side-link .side-icon-line {
     display: block !important;
-    color: var(--text-dark, #0f172a);
+    color: #94a3b8 !important;
+    transition: color 0.2s ease;
+}
+
+.side-link:hover .side-icon-line {
+    color: #ffffff !important;
 }
 
 .side-link .side-icon-fill {
@@ -401,7 +421,7 @@ body.dashboard-layout .spa-discovery-wrap > * {
 }
 
 .side-link.highlight .side-icon-line {
-    color: var(--text-dark, #0f172a);
+    color: #ffffff !important;
 }
 
 .side-link.highlight.active .side-icon-fill {
@@ -463,9 +483,10 @@ body.dashboard-layout .spa-discovery-wrap > * {
     transform: translateX(-10px);
     border-radius: 999px;
     z-index: 1;
-    transition: all 0.3s cubic-bezier(.4,0,.2,1);
+    transition: all 0.3s var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1));
     content: '';
-    background-color: #fff;
+    background-color: #ffffff;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
     scale: 0.5;
     opacity: 0;
 }
@@ -542,6 +563,15 @@ body.dashboard-layout .spa-discovery-wrap > * {
     background-size: calc(245px * 5);
 }
 
+.side-link:hover .link-glow {
+    transform: translateX(-10px) scale(1.05);
+}
+
+.side-link:active .link-glow {
+    transform: translateX(-10px) scale(0.92);
+}
+
+
 .side-link.active .link-glow {
     background-position: bottom left;
     transition: background-position 1s var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1));
@@ -560,13 +590,13 @@ body.dashboard-layout .spa-discovery-wrap > * {
     width: 42px;
     height: 42px;
     border-radius: 50%;
-    background: var(--off-white);
+    background: #ffffff;
     border: 2px solid var(--primary);
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 800;
-    color: var(--text-dark);
+    color: var(--color-brand-primary, #2563eb);
     cursor: pointer;
     transition: all 0.3s var(--motion-ease-jelly, cubic-bezier(0.34, 1.56, 0.64, 1));
     overflow: hidden;
@@ -3042,13 +3072,17 @@ table {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--text-mid);
+    color: #94a3b8;
     position: absolute;
     right: 15px;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.3s var(--motion-ease-jelly, cubic-bezier(0.34, 1.56, 0.64, 1)), color 0.2s ease, transform 0.3s ease;
     z-index: 10;
+}
+
+.sub-list-toggle:hover {
+    color: #ffffff;
 }
 
 .sidebar.open .sub-list-toggle {
@@ -3078,7 +3112,7 @@ table {
     padding-left: 10px;
     margin-left: 12px;
     /* Aligns under the project folder icon */
-    border-left: 1.5px dotted var(--text-dark);
+    border-left: 1.5px dotted rgba(255, 255, 255, 0.25);
     gap: 8px;
     overflow: hidden;
     max-height: 0;
@@ -3124,7 +3158,7 @@ table {
     display: flex;
     align-items: center;
     padding: 10px 12px;
-    color: var(--text-mid);
+    color: #94a3b8;
     text-decoration: none;
     font-size: 0.9rem;
     border-radius: 999px;
@@ -3139,7 +3173,8 @@ table {
 
 .sub-link:hover {
     font-weight: bold;
-    background-color: rgba(15, 23, 42, 0.05);
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.08);
 }
 
 .sub-link .link-glow {
@@ -3160,9 +3195,9 @@ table {
 }
 
 .sub-link.active {
-    color: var(--text-dark);
+    color: #ffffff;
     font-weight: 900;
-    background-color: var(--off-white);
+    background-color: rgba(255, 255, 255, 0.16);
 }
 
 .sub-link .sub-text {

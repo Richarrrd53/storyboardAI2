@@ -96,6 +96,10 @@ body:not(.dashboard-layout):not(.auth-layout) #page-content {
 }
 
 /* When in dashboard layout (with sidebar on desktop) */
+body.dashboard-layout {
+  background: var(--app-shell, #0c1324) !important;
+}
+
 body.dashboard-layout .page-shell,
 body.dashboard-layout #page-main {
   display: flex !important;
@@ -104,11 +108,13 @@ body.dashboard-layout #page-main {
   width: auto !important;
   min-height: 0 !important;
   overflow: hidden !important;
-  background: var(--color-bg-page, #f8fafc);
-  border-radius: var(--radius-xl, 32px);
-  margin: clamp(8px, 1vh, 12px) clamp(8px, 1vh, 12px) clamp(8px, 1vh, 12px) calc(clamp(12px, 1.8vh, 16px) + var(--sidebar-collapsed-width, 60px)) !important;
-  height: calc(100vh - 2 * clamp(8px, 1vh, 12px)) !important;
-  height: calc(100dvh - 2 * clamp(8px, 1vh, 12px)) !important;
+  background: var(--canvas, var(--color-bg-page, #f8fafc)) !important;
+  border-radius: 28px !important;
+  margin: clamp(8px, 1.2vh, 12px) clamp(8px, 1.2vh, 12px) clamp(8px, 1.2vh, 12px) calc(clamp(12px, 1.8vh, 16px) + var(--sidebar-collapsed-width, 60px)) !important;
+  height: calc(100vh - 2 * clamp(8px, 1.2vh, 12px)) !important;
+  height: calc(100dvh - 2 * clamp(8px, 1.2vh, 12px)) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   transition: width 460ms var(--motion-ease-decelerate, cubic-bezier(.16, 1, .3, 1)),
               max-width 460ms var(--motion-ease-decelerate, cubic-bezier(.16, 1, .3, 1)),
               margin-left 460ms var(--motion-ease-decelerate, cubic-bezier(.16, 1, .3, 1)),
@@ -150,7 +156,7 @@ body.dashboard-layout.sidebar-open #page-main,
   z-index: 20 !important;
   background: var(--color-bg-page, #f8fafc);
   box-sizing: border-box !important;
-  padding: 24px var(--page-gutter) 16px var(--page-gutter) !important;
+  padding: 24px var(--page-gutter) 32px var(--page-gutter) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;

@@ -20,15 +20,33 @@ Use as the reference for film-strip language, thumbnail presentation, storyboard
 ### Mobile bottom navigation
 Use as the reference for tactile floating mobile controls, rounded material, and touch feedback.
 
+## Three-Tier Layering Model (Desktop Frame Architecture)
+
+To prevent the interface from feeling washed out or floating on one flat layer, desktop StoryboardAI utilizes a 3-tier tactile canvas architecture:
+
+1. **Tier 1: 🌑 Deep Navy App Shell (`--app-shell: #0c1324`)**
+   - The outer structural envelope (`body.dashboard-layout`, `#BG`).
+   - Outer frame margins expose 8–16px around the canvas on top, bottom, and right.
+   - The left sidebar directly dissolves into this dark shell without an awkward intermediate grey container.
+   - Sidebar icons default to soft slate line style (`#94a3b8`), brightening to white on hover (`#ffffff`).
+   - Selected sidebar item uses a high-contrast white pill (`::before` with `#ffffff` and ambient drop-shadow) with an active deep navy fill icon (`#172554`).
+
+2. **Tier 2: 🩶 Inset Cold Canvas (`--canvas: #f8fafc`)**
+   - The primary application viewport (`#page-main`).
+   - Features a generous 28px outer radius (`border-radius: 28px`), fine rim illumination (`border: 1px solid rgba(255, 255, 255, 0.08)`), and soft spatial drop-shadow (`box-shadow: 0 8px 32px rgba(0, 0, 0, 0.28)`).
+   - Functions as an organized creative studio desk / drawing canvas.
+
+3. **Tier 3: ⬜ Structured Cards & Content Blocks (`#ffffff`)**
+   - Individual UI components inside the canvas: Hero banner, AI Script Parsing quick action, Filmstrip project cards, Template cards.
+   - Crisp pure-white backgrounds with subtle borders (`1px solid var(--color-border-card)`) and elevation, standing out cleanly against the cold canvas without visual dilution.
+
 ## Color roles
 
-System UI should be dominated by white/slate neutrals, StoryboardAI Blue, and restrained film-dark accents.
-
-Suggested visual balance:
-- 70–80% white/slate neutrals
-- 10–15% navy/film-dark surfaces
-- 5–10% StoryboardAI Blue
-- under 5% semantic/category accents
+System UI is balanced across the 3-tier architecture:
+- **60–70% white/slate cold neutrals**: Inset canvas (`#f8fafc`) and internal cards (`#ffffff`).
+- **15–25% navy/film-dark structural framing**: Outer shell (`#0c1324`), film-strip headers (`#1e293b`), and primary CTA anchors.
+- **5–10% StoryboardAI Blue**: Brand accents, active links, primary action highlights (`#2563eb`).
+- **under 5% semantic/category accents**: Status tags, timelines, and discrete feature indicators.
 
 Use category colors only for content categories, tags, timelines, status, or semantic feedback. Do not let category purple/orange/green become page-wide system chrome.
 

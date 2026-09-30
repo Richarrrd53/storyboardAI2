@@ -19,6 +19,10 @@
   --color-text-success:    var(--emerald-600);
 
   /* ── 2. Background & Surface Roles ── */
+  --app-shell:                  #0c1324;          /* Deep Navy App Shell Frame */
+  --canvas:                     var(--slate-50);  /* Cold Light Main Canvas */
+  --color-surface-shell:        var(--app-shell); /* Deep Navy Outer Shell */
+  --color-bg-canvas:            var(--canvas);    /* Main Workspace Canvas */
   --color-bg-page:              var(--slate-50);  /* Global cold light page canvas */
   --color-bg-subtle:            var(--slate-100); /* Light secondary section fill */
   --color-surface-primary:       var(--white);     /* Pure card & container surface */

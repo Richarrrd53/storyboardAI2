@@ -65,8 +65,10 @@
   /* ============================================================
      AI CREATION SURFACE SEMANTIC TOKENS (Spec v3.2)
      ============================================================ */
-  --surface-page:                 var(--off-white);
-  --surface-panel:                var(--off-white);
+  --app-shell:                    var(--color-surface-shell, #0c1324);
+  --canvas:                       var(--color-bg-canvas, #f8fafc);
+  --surface-page:                 var(--canvas);
+  --surface-panel:                var(--canvas);
   --surface-elevated:             #ffffff;
   --surface-interactive:          #ffffff;
 
