@@ -5221,7 +5221,7 @@ function initLoginLogic(showRegister) {
     }
 
     const m = initMain();
-    m.className = 'spa-project-wrap';
+    m.className = 'page-shell page-project-detail spa-project-wrap project-workspace';
 
     await ensureSharedLayout(signal);
     if (signal?.aborted) return;

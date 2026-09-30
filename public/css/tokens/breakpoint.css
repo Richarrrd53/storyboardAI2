@@ -1,13 +1,13 @@
 /* ============================================================
    STORYBOARD AI DESIGN SYSTEM v3.0
    Responsive Breakpoints System
-   Standard Breakpoint Constants (480, 768, 1024, 1200, 1440)
+   Converged Standard Breakpoints (480, 768, 1024, 1440)
    ============================================================ */
 
 :root {
-  --breakpoint-sm:   480px;  /* Small Phone / Phablet */
-  --breakpoint-md:   768px;  /* Tablet Portrait (Mobile Navigation Threshold) */
-  --breakpoint-lg:   1024px; /* Tablet Landscape / Netbook */
-  --breakpoint-xl:   1200px; /* Standard Desktop */
-  --breakpoint-2xl:  1440px; /* High-res Desktop Cinema */
+  --breakpoint-sm:   480px;  /* Mobile Small (<= 480px) */
+  --breakpoint-md:   768px;  /* Mobile Large (481 ~ 768px / Mobile Nav threshold) */
+  --breakpoint-lg:   1024px; /* Tablet (769 ~ 1024px) */
+  --breakpoint-xl:   1439px; /* Desktop (1025 ~ 1439px) */
+  --breakpoint-2xl:  1440px; /* Wide Desktop (>= 1440px) */
 }

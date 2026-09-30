@@ -1,0 +1,187 @@
+/* ============================================================
+   STORYBOARD AI DESIGN SYSTEM v3.0
+   Global App Shell & Page Architecture (shell.css)
+   ============================================================ */
+
+/* ── 1. Layout Variables & Grid Anchors ── */
+:root {
+  --container-max-width: 1440px;
+  
+  /* Layout Gutters */
+  --page-gutter-desktop: 32px;
+  --page-gutter-tablet: 24px;
+  --page-gutter-mobile: 16px;
+  --page-gutter: var(--page-gutter-desktop);
+
+  /* Standard Vertical Rhythm */
+  --space-header-to-content: var(--space-6, 24px);
+  --space-section-gap: var(--space-8, 32px);
+  --space-section-header-to-cards: var(--space-4, 16px);
+  --space-card-grid-gap: var(--space-6, 24px);
+
+  /* Sidebar constraints */
+  --sidebar-collapsed-width: 60px;
+  --sidebar-expanded-width: 260px;
+  --sidebar-current-width: var(--sidebar-collapsed-width);
+}
+
+@media (max-width: 1024px) {
+  :root {
+    --page-gutter: var(--page-gutter-tablet);
+    --space-card-grid-gap: var(--space-4, 16px);
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --page-gutter: var(--page-gutter-mobile);
+    --space-header-to-content: var(--space-4, 16px);
+    --space-section-gap: var(--space-6, 24px);
+    --space-section-header-to-cards: var(--space-3, 12px);
+    --space-card-grid-gap: var(--space-3, 12px);
+  }
+}
+
+/* ── 2. App Shell Structure ── */
+.app-shell {
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+}
+
+/* ── 3. Page Shell (Mounting Point & Route Surface) ── */
+.page-shell,
+#page-main {
+  box-sizing: border-box;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  position: relative !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent;
+  overflow: hidden !important;
+}
+
+/* When in dashboard layout (with sidebar on desktop) */
+body.dashboard-layout .page-shell,
+body.dashboard-layout #page-main {
+  background: var(--color-bg-page, #f8fafc);
+  border-radius: var(--radius-xl, 32px);
+  margin: clamp(8px, 1vh, 12px) clamp(8px, 1vh, 12px) clamp(8px, 1vh, 12px) calc(clamp(12px, 1.8vh, 16px) + var(--sidebar-collapsed-width, 60px)) !important;
+  height: calc(100vh - 2 * clamp(8px, 1vh, 12px)) !important;
+  height: calc(100dvh - 2 * clamp(8px, 1vh, 12px)) !important;
+  transition: width 460ms cubic-bezier(.16, 1, .3, 1),
+              max-width 460ms cubic-bezier(.16, 1, .3, 1),
+              margin-left 460ms cubic-bezier(.16, 1, .3, 1),
+              margin-right 460ms cubic-bezier(.16, 1, .3, 1),
+              border-radius 460ms cubic-bezier(.16, 1, .3, 1);
+}
+
+/* Sidebar open state adjustment */
+body.dashboard-layout.sidebar-open .page-shell,
+body.dashboard-layout.sidebar-open #page-main,
+#dash-sidebar.open ~ .page-shell,
+#dash-sidebar.open ~ #page-main {
+  margin-left: calc(clamp(12px, 1.8vh, 16px) + var(--sidebar-expanded-width, 260px)) !important;
+}
+
+/* ── 4. Unified Page Header Family ── */
+.page-header,
+.content-header {
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
+  width: 100% !important;
+  position: relative !important;
+  z-index: 20 !important;
+  background: var(--color-bg-page, #f8fafc);
+  box-sizing: border-box !important;
+  padding: 24px var(--page-gutter) 16px var(--page-gutter) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+/* Optical Baseline Alignment for Header titles */
+.page-header .page-title,
+.content-header h1,
+.content-header .home-greeting-title,
+.content-header .projects-title {
+  font-family: var(--font-family-display, "Noto Sans TC", sans-serif);
+  font-size: clamp(1.625rem, 2.2vw, 2.125rem);
+  font-weight: var(--font-weight-black, 900);
+  line-height: var(--line-height-tight, 1.15);
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary, #0f172a);
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: baseline;
+}
+
+/* Header Action Right Alignment Anchor */
+.page-header-actions,
+.content-header-actions,
+.projects-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3, 12px);
+  margin-left: auto;
+}
+
+/* ── 5. Single Scroll Ownership ── */
+/* Exactly one vertical scroll owner per page */
+.page-scroll,
+.content-body,
+#page-content {
+  flex: 1 1 0 !important;
+  width: 100% !important;
+  min-height: 0 !important;
+  position: relative !important;
+  box-sizing: border-box !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+.page-scroll,
+.content-body {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 0 var(--page-gutter) 48px var(--page-gutter) !important;
+}
+
+/* ── 6. Outer Grid Alignment & Content Containers ── */
+.page-container,
+.page-content-inner {
+  width: 100%;
+  max-width: var(--container-max-width, 1440px);
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+}
+
+/* ── 7. Mobile Safe Area & Bottom Nav Padding ── */
+@media (max-width: 768px) {
+  body.dashboard-layout .page-shell,
+  body.dashboard-layout #page-main {
+    margin: 0 !important;
+    border-radius: 0 !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+  }
+
+  .page-scroll,
+  .content-body {
+    padding: 0 var(--page-gutter-mobile) calc(var(--mobile-nav-height, 64px) + env(safe-area-inset-bottom, 0px) + 32px) var(--page-gutter-mobile) !important;
+  }
+
+  .page-header,
+  .content-header {
+    padding: 16px var(--page-gutter-mobile) 12px var(--page-gutter-mobile) !important;
+  }
+}
