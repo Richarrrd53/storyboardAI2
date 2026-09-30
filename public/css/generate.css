@@ -1167,21 +1167,70 @@
     }
 
     .workspace-top-bar {
-        padding: 8px 14px;
+        padding: 10px 14px;
+        flex-wrap: wrap;
+        gap: 8px;
+        border-radius: var(--radius-lg, 24px);
+    }
+
+    .workspace-brand {
+        font-size: 0.95rem;
+        font-weight: 800;
+    }
+
+    .workspace-progress-indicator {
+        margin-left: auto;
     }
 
     .workspace-stage-nav {
-        gap: 6px;
+        width: 100%;
+        order: 3;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0;
+        padding: 6px 0 2px 0;
+        position: relative;
     }
 
+    /* Mobile Progress Dots */
     .stage-step {
-        font-size: 0.74rem;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--slate-300, #cbd5e1);
+        color: transparent !important;
+        font-size: 0 !important;
+        position: relative;
+        transition: all 0.25s ease;
+        flex-shrink: 0;
+    }
+
+    .stage-step.completed {
+        background: var(--color-brand-primary, #2563eb);
+    }
+
+    .stage-step.active {
+        background: var(--color-brand-primary, #2563eb);
+        transform: scale(1.25);
+        box-shadow: 0 0 0 3px var(--color-brand-primary-soft, rgba(37, 99, 235, 0.2));
+    }
+
+    /* Connection bar */
+    .stage-sep {
+        flex: 1;
+        max-width: 48px;
+        height: 2px;
+        background: var(--slate-200, #e2e8f0);
+        color: transparent !important;
+        font-size: 0 !important;
     }
 
     .creation-surface {
-        padding: 22px 16px 28px;
-        border-radius: var(--gen-radius-lg);
+        padding: 20px 16px 32px !important;
+        border-radius: var(--radius-lg, 24px) !important;
     }
+
 
     .phase-hero-headline .hero-title {
         font-size: 1.5rem;
