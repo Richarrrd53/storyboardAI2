@@ -409,47 +409,76 @@
   }
 
   const CAT_MAP = {
-      'product': '商品焦點',
-      'story': '品牌故事',
-      'twist': '反轉爆點',
-      'custom': '自訂模板',
+      'product': '商品廣告',
+      'story': '敘事紀實',
+      'twist': '高留存節奏',
+      'custom': '團隊資產',
       '未分類': '未分類'
   };
+
+  const CATEGORY_ITEMS = [
+      { id: '全部', label: '全部序列' },
+      { id: 'product', label: '商品廣告' },
+      { id: 'story', label: '敘事紀實' },
+      { id: 'twist', label: '高留存節奏' },
+      { id: 'custom', label: '團隊資產' }
+  ];
+
+  let currentTemplateCategory = '全部';
+
+  function getTemplatesForCategory(catId) {
+      if (catId === '全部') return TEMPLATES;
+      if (catId === 'custom') {
+          return TEMPLATES.filter(t => {
+              const c = t.category || t.type;
+              return c !== 'product' && c !== 'story' && c !== 'twist';
+          });
+      }
+      return TEMPLATES.filter(t => (t.category || t.type) === catId);
+  }
 
   function renderTemplateBrowser() {
       const catsEl = document.getElementById('template-category-chips');
       const containerEl = document.getElementById('template-cards-container');
       const confirmBtn = document.getElementById('btn-template-confirm');
+      const recBarText = document.getElementById('template-rec-text');
       if (!containerEl) return;
 
-      const groups = { '全部': TEMPLATES };
-      TEMPLATES.forEach(t => {
-          const dbCat = t.category || '未分類';
-          const k = CAT_MAP[dbCat] || dbCat;
-          if (!groups[k]) groups[k] = [];
-          groups[k].push(t);
-      });
+      if (recBarText) {
+          const storyName = CreationSessionStore.story ? `「${CreationSessionStore.story.slice(0, 14)}...」` : '你的故事';
+          recBarText.textContent = `AI 已為${storyName}配對最佳剪輯序列`;
+      }
 
-      const categories = ['全部', ...Object.keys(groups).filter(k => k !== '全部')];
+      // Calculate count per category
+      const catCounts = { '全部': TEMPLATES.length, 'product': 0, 'story': 0, 'twist': 0, 'custom': 0 };
+      TEMPLATES.forEach(t => {
+          const cat = t.category || t.type;
+          const key = (cat === 'custom' || cat === 'product' || cat === 'story' || cat === 'twist') ? cat : 'custom';
+          catCounts[key]++;
+      });
 
       // Render Categories
       if (catsEl) {
-          catsEl.innerHTML = categories.map((c, i) => `
-              <button type="button" class="tpl-cat-chip ${i === 0 ? 'active' : ''}" data-cat="${c}">
-                  ${c} <span class="count">(${groups[c].length})</span>
-              </button>
-          `).join('');
+          catsEl.innerHTML = CATEGORY_ITEMS.map((item, i) => {
+              const isActive = item.id === currentTemplateCategory;
+              return `
+                  <button type="button" class="tpl-cat-chip ${isActive ? 'active' : ''}" data-cat="${item.id}">
+                      ${item.label} <span class="count">(${catCounts[item.id] || 0})</span>
+                  </button>
+              `;
+          }).join('');
 
           catsEl.querySelectorAll('.tpl-cat-chip').forEach(btn => {
               btn.onclick = () => {
                   catsEl.querySelectorAll('.tpl-cat-chip').forEach(x => x.classList.remove('active'));
                   btn.classList.add('active');
-                  renderFilteredTemplates(groups[btn.dataset.cat] || []);
+                  currentTemplateCategory = btn.dataset.cat;
+                  renderFilteredTemplates(getTemplatesForCategory(currentTemplateCategory));
               };
           });
       }
 
-      renderFilteredTemplates(TEMPLATES);
+      renderFilteredTemplates(getTemplatesForCategory(currentTemplateCategory));
   }
 
   function renderFilteredTemplates(templates) {
@@ -458,44 +487,112 @@
       if (!containerEl) return;
 
       containerEl.innerHTML = '';
-      if (templates.length === 0) {
-          containerEl.innerHTML = '<div class="tpl-empty-hint">此分類下目前無可用模板</div>';
+      if (!templates || templates.length === 0) {
+          containerEl.innerHTML = '<div class="tpl-empty-hint" style="grid-column: 1 / -1; text-align: center; padding: 48px 20px; color: var(--gen-text-mid); font-size: 0.95rem;">此分類下目前無可用模板</div>';
           return;
       }
 
-      templates.forEach(tpl => {
-          const isSelected = CreationSessionStore.selectedTemplate?.id === tpl.id;
-          const card = document.createElement('div');
-          card.className = `tpl-browser-card ${isSelected ? 'selected' : ''}`;
-          card.id = `tpl-card-${tpl.id}`;
+      templates.forEach(t => {
+          const isSelected = CreationSessionStore.selectedTemplate?.id === t.id;
+          const shotCount = t.shotsCount || (t.structure ? t.structure.length : 0);
+          const tags = Array.isArray(t.tags) ? t.tags.slice(0, 3).map(tag => `<span>${tag}</span>`).join(' ') : '';
+          const platforms = Array.isArray(t.platform) ? t.platform.map(p => `<span class="platform-badge">${p}</span>`).join('') : '<span class="platform-badge">shorts</span>';
+          
+          let duration = '0s';
+          if (t.structure && t.structure.length) {
+              const sumSec = t.structure.map(s => parseInt(s.duration) || 0).reduce((a, b) => a + b, 0);
+              duration = `${sumSec}s`;
+          }
+
+          const totalSeconds = parseInt(duration) || Math.max(shotCount * 3, 15);
+          const sourceUrl = t.videoUrl || t.source?.url || '';
+          const youtubeMatch = sourceUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|shorts\/|embed\/))([\w-]{11})/);
+          const sourceVideoId = t.source?.videoId || t.videoId || youtubeMatch?.[1] || '';
+          const thumbnail = t.thumbnail || t.cover || t.source?.thumbnail || (sourceVideoId ? `https://i.ytimg.com/vi/${encodeURIComponent(sourceVideoId)}/hqdefault.jpg` : '');
+          const paceLabel = totalSeconds <= 25 ? '快節奏' : totalSeconds <= 50 ? '中快節奏' : '敘事節奏';
+          const statusLabel = t.category === 'custom' ? '團隊草稿' : '已驗證結構';
+          const statusClass = t.category === 'custom' ? 'is-draft' : 'is-ready';
+
+          const card = document.createElement('article');
+          card.className = `template-card ${isSelected ? 'selected' : ''}`;
+          card.id = `tpl-card-${t.id}`;
+          card.dataset.id = t.id;
+          card.tabIndex = 0;
+          card.setAttribute('role', 'button');
+          card.setAttribute('aria-label', `選擇 ${t.name || t.title || '無標題'} 模板`);
+
           card.innerHTML = `
-              <div class="tpl-card-thumb">
-                  ${tpl.thumbnail ? `<img src="${tpl.thumbnail}" alt="${tpl.name}">` : '<div class="tpl-placeholder-icon">🎬</div>'}
-                  <span class="tpl-shot-badge">${tpl.shotsCount || (tpl.structure ? tpl.structure.length : 4)} 鏡頭</span>
-                  <span class="tpl-check-badge">✓</span>
+            <div class="template-card-header">
+              <div class="template-card-kicker">
+                <span class="template-card-cat">${CAT_MAP[t.category] || t.category || '未分類'}</span>
+                <span class="workflow-status ${statusClass}"><i></i>${statusLabel}</span>
               </div>
-              <div class="tpl-card-content">
-                  <h4 class="tpl-card-title">${tpl.name}</h4>
-                  <p class="tpl-card-desc">${tpl.description || '精準結構爆點範本'}</p>
-                  <div class="tpl-card-tags">
-                      <span class="tpl-cat-tag">${CAT_MAP[tpl.category] || tpl.category || '未分類'}</span>
-                      ${tpl.narrative?.tone ? `<span class="tpl-tone-tag">${tpl.narrative.tone}</span>` : ''}
-                  </div>
+              <span class="template-selected-badge" style="${isSelected ? '' : 'display: none;'}">✓ 已選擇</span>
+            </div>
+            <div class="template-video-cover ${thumbnail ? '' : 'no-cover'}" aria-label="來源影片封面">
+              ${thumbnail ? `<img src="${thumbnail}" alt="${t.source?.title || t.name || '來源影片'}封面" loading="lazy" onerror="this.parentElement.classList.add('no-cover');this.remove()">` : ''}
+              <span class="cover-source">${sourceVideoId ? 'YOUTUBE' : 'SOURCE VIDEO'}</span>
+              <span class="cover-duration">${duration}</span>
+              <span class="cover-play" aria-hidden="true">▶</span>
+            </div>
+            <div class="template-card-body">
+              <h4>${t.name || t.title || '無標題'}</h4>
+              <p>${t.description || '精準結構爆點範本'}</p>
+              <div class="template-card-tags">
+                ${tags}
               </div>
+            </div>
+            <div class="template-specs" aria-label="剪輯規格">
+              <span><b>${duration}</b> 長度</span>
+              <span><b>${shotCount}</b> 鏡頭</span>
+              <span><b>${paceLabel}</b> 節奏</span>
+            </div>
+            <div class="template-card-footer">
+              <div class="platform-badges" aria-label="適用平台">
+                ${platforms}<span class="aspect-badge">9:16</span>
+              </div>
+              <div class="card-actions">
+                <button type="button" class="card-apply-btn ${isSelected ? 'is-selected' : ''}" data-action="apply" aria-label="選擇 ${t.name || t.title || '模板'}">${isSelected ? '✓ 已選中' : '選擇模板'}</button>
+              </div>
+            </div>
           `;
-          card.onclick = () => selectTemplateCard(tpl);
+
+          card.onclick = () => {
+              selectTemplateCard(t);
+          };
+
+          card.onkeydown = (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  selectTemplateCard(t);
+              }
+          };
+
           containerEl.appendChild(card);
       });
 
       if (confirmBtn) {
           confirmBtn.disabled = !CreationSessionStore.selectedTemplate;
+          if (CreationSessionStore.selectedTemplate) {
+              confirmBtn.textContent = `✦ 套用「${CreationSessionStore.selectedTemplate.name || '模板'}」並開始生成 →`;
+          } else {
+              confirmBtn.textContent = '✦ 套用模板並開始生成 →';
+          }
       }
   }
 
   function selectTemplateCard(tpl) {
       CreationSessionStore.selectedTemplate = tpl;
-      document.querySelectorAll('.tpl-browser-card').forEach(c => {
-          c.classList.toggle('selected', c.id === `tpl-card-${tpl.id}`);
+      document.querySelectorAll('#template-cards-container .template-card').forEach(c => {
+          const isThis = c.dataset.id === tpl.id;
+          c.classList.toggle('selected', isThis);
+          const badge = c.querySelector('.template-selected-badge');
+          if (badge) badge.style.display = isThis ? '' : 'none';
+          const btn = c.querySelector('.card-apply-btn');
+          if (btn) {
+              btn.classList.toggle('is-selected', isThis);
+              btn.textContent = isThis ? '✓ 已選中' : '選擇模板';
+          }
       });
       const confirmBtn = document.getElementById('btn-template-confirm');
       if (confirmBtn) {
