@@ -4,6 +4,9 @@ import ScrollToPlugin from "https://cdn.skypack.dev/gsap/ScrollToPlugin";
 
 gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
 
+window.gsap = gsap;
+window.ScrollTrigger = ScrollTrigger;
+
 let landingCtx;
 
 window.initLandingPage = () => {

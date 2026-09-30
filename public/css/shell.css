@@ -69,6 +69,32 @@
   overflow: hidden !important;
 }
 
+/* Landing Page & non-dashboard public shell reset (allows natural document flow and GSAP ScrollTrigger) */
+.page-landing,
+#page-main.page-landing,
+body:not(.dashboard-layout):not(.auth-layout) .page-shell,
+body:not(.dashboard-layout):not(.auth-layout) #page-main {
+  display: block !important;
+  flex: none !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 100vh !important;
+  overflow: visible !important;
+  position: relative !important;
+}
+
+.page-landing #page-content,
+#page-main.page-landing #page-content,
+body:not(.dashboard-layout):not(.auth-layout) #page-content {
+  display: block !important;
+  flex: none !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 100% !important;
+  overflow: visible !important;
+  margin: 0 !important;
+}
+
 /* When in dashboard layout (with sidebar on desktop) */
 body.dashboard-layout .page-shell,
 body.dashboard-layout #page-main {

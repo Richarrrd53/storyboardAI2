@@ -6250,6 +6250,11 @@ function initLoginLogic(showRegister) {
           window.initLandingLogic();
         }
         window.initLandingPage();
+        requestAnimationFrame(() => {
+          if (typeof window.ScrollTrigger !== 'undefined') {
+            window.ScrollTrigger.refresh();
+          }
+        });
       } else if (page === 'template' && typeof window.initTemplatePage === 'function') {
         window.initTemplatePage();
       }
@@ -6552,6 +6557,9 @@ function initLoginLogic(showRegister) {
       await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
       
       await maskOpen();
+      if (typeof window.ScrollTrigger !== 'undefined') {
+        window.ScrollTrigger.refresh();
+      }
     }
   });
 
