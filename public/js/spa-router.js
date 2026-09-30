@@ -185,6 +185,11 @@
       if (window.parent && window.parent !== window) {
         window.parent.history.replaceState(null, '', '/');
       }
+      const capsule = document.getElementById('global-create-capsule');
+      if (capsule) capsule.remove();
+      const layer = document.getElementById('ai-creation-layer');
+      if (layer) layer.remove();
+      document.body.classList.remove('dashboard-layout');
       navigate('landing', { force: true });
     },
     fetchUser: async (signal) => {
@@ -3241,17 +3246,21 @@ function initLoginLogic(showRegister) {
   }
 
   function updateAICreationLayerState(page) {
-    ensureAICreationLayerDOM();
-    if (!globalCreateTrigger || !aiCreationLayer) return;
-
-    const capsule = document.getElementById('global-create-capsule');
-    const mobGen = document.getElementById('mob-nav-generate');
     const isDashboard = isDashboardPage(page);
 
     if (!isDashboard) {
-      globalCreateTrigger.style.display = 'none';
+      const capsule = document.getElementById('global-create-capsule');
       if (capsule) {
         capsule.style.display = 'none';
+        capsule.classList.remove('is-expanded');
+      }
+      const layer = document.getElementById('ai-creation-layer');
+      if (layer) {
+        layer.style.display = 'none';
+        layer.className = 'ai-creation-layer state-closed';
+      }
+      if (globalCreateTrigger) {
+        globalCreateTrigger.style.display = 'none';
       }
       if (window.AICreationController && window.AICreationController.surfaceState !== 'closed') {
         window.AICreationController.surfaceState = 'closed';
@@ -3259,6 +3268,12 @@ function initLoginLogic(showRegister) {
       }
       return;
     }
+
+    ensureAICreationLayerDOM();
+    if (!globalCreateTrigger || !aiCreationLayer) return;
+
+    const capsule = document.getElementById('global-create-capsule');
+    const mobGen = document.getElementById('mob-nav-generate');
 
     // On Dashboard pages, ensure trigger is visible
     globalCreateTrigger.style.display = '';
@@ -6070,7 +6085,9 @@ function initLoginLogic(showRegister) {
       }
 
       updateSidebarActive(page);
-      updateAIDockState(page);
+      if (isDashboardTransition) {
+        updateAIDockState(page);
+      }
     } else {
       document.body.classList.remove('dashboard-layout');
       if (page === 'login' || page === 'register') {
@@ -6095,6 +6112,8 @@ function initLoginLogic(showRegister) {
       
       const pageMain = document.getElementById('page-main');
       if (pageMain) pageMain.style.margin = '';
+
+      updateAIDockState(page);
     }
 
     if (currentNavController) {
@@ -6189,13 +6208,16 @@ function initLoginLogic(showRegister) {
           document.body.classList.add('dashboard-layout');
           showDashTopbar();
           updateSidebarActive(page);
-      updateAIDockState(page);
         }
         const cssPromises = def.css.map(href => injectCSS(href));
         await Promise.all(cssPromises);
         if (signal.aborted || mySeq !== navSeq) {
           hideInnerLoader();
           return;
+        }
+
+        if (isDashboardPage(page)) {
+          updateAIDockState(page);
         }
 
         removePageCSS(def.css);
@@ -6237,15 +6259,17 @@ function initLoginLogic(showRegister) {
         document.body.classList.remove('auth-layout');
         showDashTopbar();
         updateSidebarActive(page);
-      updateAIDockState(page);
+        updateAIDockState(page);
       } else if (page === 'landing') {
         document.body.classList.remove('dashboard-layout');
         document.body.classList.remove('auth-layout');
         showLandingNav();
+        updateAIDockState(page);
       } else if (page === 'login' || page === 'register') {
         document.body.classList.remove('dashboard-layout');
         document.body.classList.add('auth-layout');
         showLandingNav();
+        updateAIDockState(page);
       }
 
       if (dashboardSidebar) {

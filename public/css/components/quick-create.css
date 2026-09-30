@@ -4,46 +4,100 @@
    PROTECTED INTERACTION CONTRACT: Signature Create Trigger Glow & Morph
    ============================================================ */
 
-/* ── QC Conic Rainbow Ambient Glow (Create Signature ONLY) ── */
+/* ── 1. Capsule Base Enclosure (Zero-leakage Boundary Protection) ── */
+/* Base rules ensuring capsule geometry is always securely defined even if generate.css is loading */
+.ai-unified-capsule,
+#global-create-capsule {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  width: 170px;
+  height: 48px;
+  border-radius: 24px;
+  overflow: visible;
+  z-index: 50;
+  box-sizing: border-box;
+}
+
+/* Hard suppression: Never show capsule or glow on non-dashboard layouts (Landing, Login, Register, or initial load) */
+body:not(.dashboard-layout) #global-create-capsule,
+body:not(.dashboard-layout) #ai-creation-layer,
+body:not(.dashboard-layout) .ai-unified-capsule,
+body:not(.dashboard-layout) .ai-pill-btn-glow-ambient,
+body:not(.dashboard-layout) .ai-pill-btn-glow-container {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* ── 2. QC Conic Rainbow Ambient Glow (Create Signature ONLY) ── */
 .ai-pill-btn-glow-ambient,
 .qc-signature-glow {
   position: absolute;
-  inset: -3px;
-  border-radius: inherit;
+  inset: -4px;
+  border-radius: 28px;
   z-index: 0;
-  pointer-events: none;
-  overflow: visible;
-  filter: blur(10px);
+  pointer-events: none !important;
+  overflow: hidden !important; /* CRITICAL: Must be hidden, never visible */
+  filter: blur(8px);
   opacity: 0.85;
+  max-width: 200px;
+  max-height: 60px;
+  transition: opacity 0.35s ease 0.48s, filter 0.3s ease;
 }
 
 .ai-pill-btn-glow-container {
   position: absolute;
-  inset: 0;
-  border-radius: inherit;
+  inset: -2px;
+  border-radius: 26px;
   z-index: 1;
-  pointer-events: none;
-  overflow: hidden;
+  pointer-events: none !important;
+  overflow: hidden !important;
+  max-width: 200px;
+  max-height: 60px;
+  transition: opacity 0.35s ease 0.48s;
 }
 
 .ai-pill-btn-glow-rotator {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 250%;
-  aspect-ratio: 1 / 1;
+  width: 280px;
+  height: 280px;
+  max-width: 280px;
+  max-height: 280px;
   transform: translate(-50%, -50%);
-  background: conic-gradient(
-    from 0deg at 50% 50%,
-    rgba(255, 120, 80, 0.9) 0deg,
-    rgba(255, 200, 50, 0.9) 60deg,
-    rgba(80, 220, 160, 0.9) 120deg,
-    rgba(60, 180, 255, 0.95) 180deg,
-    rgba(160, 100, 255, 0.9) 240deg,
-    rgba(255, 100, 180, 0.9) 300deg,
-    rgba(255, 120, 80, 0.9) 360deg
+  background-image: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    rgba(56, 189, 248, 0.2) 10deg,
+    rgba(59, 130, 246, 0.75) 35deg,
+    rgba(147, 51, 234, 0.85) 60deg,
+    rgba(236, 72, 153, 0.9) 85deg,
+    rgba(251, 146, 60, 0.95) 105deg,
+    #ffffff 115deg,
+    rgba(52, 211, 153, 0.85) 125deg,
+    transparent 135deg,
+    transparent 360deg
   );
-  animation: qcGlowRotate 4s linear infinite;
+  animation: glow-loop 3.2s linear infinite;
+  pointer-events: none !important;
+}
+
+/* Immediate suppression during expand / close / workspace transitions */
+.ai-unified-capsule.is-expanded .ai-pill-btn-glow-ambient,
+.ai-unified-capsule.is-expanded .ai-pill-btn-glow-container,
+.ai-unified-capsule.is-closing .ai-pill-btn-glow-ambient,
+.ai-unified-capsule.is-closing .ai-pill-btn-glow-container,
+body.ai-quick-compose-closing .ai-pill-btn-glow-ambient,
+body.ai-quick-compose-closing .ai-pill-btn-glow-container,
+.ai-unified-capsule.hidden-by-workspace .ai-pill-btn-glow-ambient,
+.ai-unified-capsule.hidden-by-workspace .ai-pill-btn-glow-container {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  transition: opacity 0.05s ease 0s, visibility 0.05s ease 0s !important;
 }
 
 @keyframes qcGlowRotate {

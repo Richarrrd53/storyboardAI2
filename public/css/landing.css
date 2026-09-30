@@ -1033,7 +1033,7 @@ body{
 }
 
 #black-mask-top {
-    background: rgba(248, 250, 252, 0.65); /* 亮雅半透明冰藍底色 */
+    background: rgba(248, 250, 252, 0.94); /* 亮雅磨砂冰藍底色，遮蔽底層 DOM 置換 */
     backdrop-filter: blur(0px);
     -webkit-backdrop-filter: blur(0px);
 }
