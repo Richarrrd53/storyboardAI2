@@ -425,7 +425,9 @@
       <div class="project-thumb loading" data-src="/api/projects/${p.id}/cover">
         <div class="thumb-fallback">
           <div class="fallback-frame">
-            <span class="fallback-clapper">🎬</span>
+            <span class="fallback-clapper">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8H4Z"/><path d="m4 11 2.3-4.6A2 2 0 0 1 8.1 5h7.8a2 2 0 0 1 1.8 1.4L20 11H4Z"/><path d="m6.5 5 2 6"/><path d="m11.5 5 2 6"/><path d="m16.5 5 2 6"/></svg>
+            </span>
             <span class="fallback-status">草稿分鏡</span>
             <span class="fallback-sub">尚未生成封面</span>
           </div>
@@ -474,7 +476,7 @@
   }
 
   function buildHomeRecentCardHTML(p) {
-    return renderProjectCard(p, { variant: 'compact' });
+    return renderProjectCard(p, { variant: 'full' });
   }
 
 
@@ -4595,23 +4597,7 @@ function initLoginLogic(showRegister) {
       }
 
       function setupHomeRecentCardEvents(card, p, refreshCallback) {
-        card.className = 'project-card variant-compact home-project-card';
-        card.onclick = (e) => {
-          if (e.target.closest('.home-card-option-btn, .project-option-btn')) return;
-          navigate('project', { id: p.id });
-        };
-        card.addEventListener('pointerenter', () => {
-          prefetchPage('project', { id: p.id });
-        });
-
-
-        const optionBtn = card.querySelector('.home-card-option-btn');
-        if (optionBtn) {
-          optionBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            openGlobalOptionMorph(optionBtn, p, card, false, refreshCallback);
-          });
-        }
+        setupProjectCardEvents(card, p, false, refreshCallback);
       }
 
       function displayRecentProjects(projects) {
@@ -4626,7 +4612,9 @@ function initLoginLogic(showRegister) {
         if (recentProjects.length === 0) {
           recentProjectsGrid.innerHTML = `
             <div class="home-empty-recent-card">
-              <div class="home-empty-icon">🎬</div>
+              <div class="home-empty-icon">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--primary, #2563eb);"><path d="M4 11v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8H4Z"/><path d="m4 11 2.3-4.6A2 2 0 0 1 8.1 5h7.8a2 2 0 0 1 1.8 1.4L20 11H4Z"/><path d="m6.5 5 2 6"/><path d="m11.5 5 2 6"/><path d="m16.5 5 2 6"/></svg>
+              </div>
               <h3 class="home-empty-title">尚無最近編輯的分鏡</h3>
               <p class="home-empty-desc">點擊右下角 QC 創作按鈕，快速記錄你的第一個分鏡創意！</p>
               <button class="home-empty-qc-btn" type="button" id="home-empty-create-btn">

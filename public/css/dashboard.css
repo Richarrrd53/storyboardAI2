@@ -3895,6 +3895,7 @@ table {
         width: max-content;
     }
 
+    .home-recent-grid .project-card,
     .home-project-card,
     .project-card.variant-compact {
         width: 74vw;
