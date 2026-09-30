@@ -5938,6 +5938,8 @@ function initLoginLogic(showRegister) {
   }
 
   async function navigate(page, opts = {}) {
+    const isDashboardTransition = isDashboardPage(currentPage) && isDashboardPage(page);
+
     if (opts.openQC) {
       if (window.AICreationController) {
         window.AICreationController.openQuickCompose();
@@ -6153,8 +6155,6 @@ function initLoginLogic(showRegister) {
     }
 
     signal.addEventListener('abort', cleanupTransitionLoader);
-
-    const isDashboardTransition = isDashboardPage(currentPage) && isDashboardPage(page);
 
     const contentEl = getOrCreateContentContainer();
 
