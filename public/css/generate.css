@@ -775,10 +775,32 @@
     grid-template-columns: repeat(2, 1fr);
     gap: 20px;
     width: 100%;
-    max-height: none;
-    overflow: visible;
-    padding: 4px 0 12px;
+    height: clamp(380px, calc(100vh - 430px), 540px);
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding: 6px 8px 24px 4px;
     box-sizing: border-box;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148, 163, 184, 0.4) transparent;
+}
+
+.template-cards-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.template-cards-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.template-cards-container::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.35);
+    border-radius: 999px;
+}
+
+.template-cards-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(100, 116, 139, 0.6);
 }
 
 .template-cards-container .template-card {
@@ -1301,6 +1323,8 @@
     .template-cards-container {
         grid-template-columns: 1fr;
         gap: 16px;
+        height: clamp(340px, calc(100dvh - 380px), 480px);
+        padding: 6px 6px 20px 4px;
     }
 
     .phase-actions-footer {

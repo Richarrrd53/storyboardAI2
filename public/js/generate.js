@@ -158,6 +158,14 @@
       } else if (targetPhase === 3) {
           ensureTemplatesLoaded().then(() => {
               renderTemplateBrowser();
+              if (window.DynamicMaskSystem) {
+                  const tplContainer = document.getElementById('template-cards-container');
+                  if (tplContainer) {
+                      window.DynamicMaskSystem.attach(tplContainer, { maskSize: 36, direction: 'vertical' });
+                      const maskInst = window.DynamicMaskSystem.get(tplContainer);
+                      if (maskInst) maskInst.scheduleUpdate();
+                  }
+              }
           });
       } else if (targetPhase === 4) {
           startGenerationWorkflow();
@@ -486,9 +494,14 @@
       const confirmBtn = document.getElementById('btn-template-confirm');
       if (!containerEl) return;
 
+      containerEl.scrollTop = 0;
       containerEl.innerHTML = '';
       if (!templates || templates.length === 0) {
           containerEl.innerHTML = '<div class="tpl-empty-hint" style="grid-column: 1 / -1; text-align: center; padding: 48px 20px; color: var(--gen-text-mid); font-size: 0.95rem;">此分類下目前無可用模板</div>';
+          if (window.DynamicMaskSystem) {
+              const maskInst = window.DynamicMaskSystem.get(containerEl);
+              if (maskInst) maskInst.scheduleUpdate();
+          }
           return;
       }
 
@@ -578,6 +591,12 @@
           } else {
               confirmBtn.textContent = '✦ 套用模板並開始生成 →';
           }
+      }
+
+      if (window.DynamicMaskSystem) {
+          window.DynamicMaskSystem.attach(containerEl, { maskSize: 36, direction: 'vertical' });
+          const maskInst = window.DynamicMaskSystem.get(containerEl);
+          if (maskInst) maskInst.scheduleUpdate();
       }
   }
 
