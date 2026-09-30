@@ -352,6 +352,7 @@
     else if (page === 'generate') htmlUrl = '/html/generate.html';
     else if (page === 'history') htmlUrl = '/html/history.html';
     else if (page === 'template') htmlUrl = '/html/template.html';
+    else if (page === 'discovery') htmlUrl = '/html/discovery.html';
 
     if (htmlUrl) {
       fetchPageDoc(htmlUrl).catch(() => {});
@@ -1599,14 +1600,20 @@
 
   function cloneMainContent(doc, content) {
     const newMain = doc.querySelector('main');
-    if (newMain && content) {
-      content.innerHTML = '';
-      if (newMain.className) {
-        content.className = newMain.className;
+    const pageMain = document.getElementById('page-main');
+    if (newMain) {
+      if (pageMain && newMain.className) {
+        pageMain.className = newMain.className;
       }
-      Array.from(newMain.childNodes).forEach(child => {
-        content.appendChild(child.cloneNode(true));
-      });
+      if (content) {
+        content.innerHTML = '';
+        if (newMain.className) {
+          content.className = newMain.className;
+        }
+        Array.from(newMain.childNodes).forEach(child => {
+          content.appendChild(child.cloneNode(true));
+        });
+      }
     }
   }
 
@@ -3363,10 +3370,8 @@ function initLoginLogic(showRegister) {
             <button type="button" class="mobile-nav__item mobile-nav__item--create" id="mob-nav-generate" role="tab" aria-selected="false" aria-label="新建分鏡" draggable="false"></button>
             <a href="../template" class="mobile-nav__item" id="mob-nav-template" role="tab" aria-selected="false" aria-label="模板" draggable="false">
                 <div class="mobile-nav__icon-wrap">
-                    <svg class="mobile-nav__svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M3 12C3 4.5885 4.5885 3 12 3C19.4115 3 21 4.5885 21 12C21 19.4115 19.4115 21 12 21C4.5885 21 3 19.4115 3 12Z"></path>
-                        <path d="M14 14L16 16"></path>
-                        <path d="M15 11.5C15 13.433 13.433 15 11.5 15C9.567 15 8 13.433 8 11.5C8 9.567 9.567 8 11.5 8C13.433 8 15 9.567 15 11.5Z"></path>
+                    <svg class="mobile-nav__svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path>
                     </svg>
                 </div>
                 <span class="mobile-nav__label">模板</span>
@@ -3406,7 +3411,7 @@ function initLoginLogic(showRegister) {
             <div class="mobile-nav__item mobile-nav__item--focus">
                 <div class="mobile-nav__icon-wrap">
                     <svg class="mobile-nav__svg mobile-nav__svg--focus" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-                        <path fill-rule="evenodd" clip-rule="evenodd" d="M7.25007 2.38782C8.54878 2.0992 10.1243 2 12 2C13.8757 2 15.4512 2.0992 16.7499 2.38782C18.06 2.67897 19.1488 3.176 19.9864 4.01358C20.824 4.85116 21.321 5.94002 21.6122 7.25007C21.9008 8.54878 22 10.1243 22 12C22 13.8757 21.9008 15.4512 21.6122 16.7499C21.321 18.06 20.824 19.1488 19.9864 19.9864C19.1488 20.824 18.06 21.321 16.7499 21.6122C15.4512 21.9008 13.8757 22 12 22C10.1243 22 8.54878 21.9008 7.25007 21.6122C5.94002 21.321 4.85116 20.824 4.01358 19.9864C3.176 19.1488 2.67897 18.06 2.38782 16.7499C2.0992 15.4512 2 13.8757 2 12C2 10.1243 2.0992 8.54878 2.38782 7.25007C2.67897 5.94002 3.176 4.85116 4.01358 4.01358C4.85116 3.176 5.94002 2.67897 7.25007 2.38782ZM9 11.5C9 10.1193 10.1193 9 11.5 9C12.8807 9 14 10.1193 14 11.5C14 12.8807 12.8807 14 11.5 14C10.1193 14 9 12.8807 9 11.5ZM11.5 7C9.01472 7 7 9.01472 7 11.5C7 13.9853 9 16 11.5 16C12.3805 16 13.202 15.7471 13.8957 15.31L15.2929 16.7071C15.6834 17.0976 16.3166 17.0976 16.7071 16.7071C17.0976 16.3166 17.0976 15.6834 16.7071 15.2929L15.31 13.8957C15.7471 13.202 16 12.3805 16 11.5C16 9.01472 13.9853 7 11.5 7Z"></path>
+                        <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path>
                     </svg>
                 </div>
                 <span class="mobile-nav__label" style="visibility: hidden;">模板</span>
@@ -4558,21 +4563,41 @@ function initLoginLogic(showRegister) {
 
       const qaScript = document.getElementById('qa-script-analysis');
       if (qaScript) {
-        qaScript.onclick = () => { window.location.href = '/analyze'; };
+        qaScript.onclick = (e) => {
+          e.preventDefault();
+          if (window.AICreationController) {
+            window.AICreationController.openQuickCompose();
+          } else {
+            navigate('generate', { targetPhase: 1 });
+          }
+        };
       }
       const qaTemplate = document.getElementById('qa-template-hook');
       if (qaTemplate) {
-        qaTemplate.onclick = () => { navigate('template'); };
+        qaTemplate.onclick = (e) => {
+          e.preventDefault();
+          navigate('template');
+        };
       }
       const qaDiscovery = document.getElementById('qa-discovery-search');
       if (qaDiscovery) {
-        qaDiscovery.onclick = () => { window.location.href = '/discovery'; };
+        qaDiscovery.onclick = (e) => {
+          e.preventDefault();
+          navigate('discovery');
+        };
       }
 
       // Mobile shortcut buttons
       const mobScript = document.getElementById('mob-shortcut-script');
       if (mobScript) {
-        mobScript.onclick = () => { window.location.href = '/analyze'; };
+        mobScript.onclick = (e) => {
+          e.preventDefault();
+          if (window.AICreationController) {
+            window.AICreationController.openQuickCompose();
+          } else {
+            navigate('generate', { targetPhase: 1 });
+          }
+        };
       }
       const mobCreate = document.getElementById('mob-shortcut-create');
       if (mobCreate) {
@@ -4587,11 +4612,17 @@ function initLoginLogic(showRegister) {
       }
       const mobTemplate = document.getElementById('mob-shortcut-template');
       if (mobTemplate) {
-        mobTemplate.onclick = () => { navigate('template'); };
+        mobTemplate.onclick = (e) => {
+          e.preventDefault();
+          navigate('template');
+        };
       }
       const mobDiscovery = document.getElementById('mob-shortcut-discovery');
       if (mobDiscovery) {
-        mobDiscovery.onclick = () => { window.location.href = '/discovery'; };
+        mobDiscovery.onclick = (e) => {
+          e.preventDefault();
+          navigate('discovery');
+        };
       }
 
       // Notification and Avatar
@@ -5544,6 +5575,34 @@ function initLoginLogic(showRegister) {
     }
   }
 
+  async function renderDiscovery(signal) {
+    const doc = await fetchPageDoc('/html/discovery.html', signal);
+    if (signal?.aborted) return;
+
+    const m = initMain();
+
+    const pageMain = document.getElementById('page-main');
+    if (pageMain) {
+      pageMain.style.padding = '0';
+    }
+
+    cloneMainContent(doc, m);
+    m.className = 'spa-discovery-wrap discovery-shell';
+
+    // Hide standalone nav and back-to-dashboard link inside dashboard shell
+    const dNav = m.querySelector('.discovery-nav');
+    if (dNav) dNav.style.display = 'none';
+    const backLink = m.querySelector('.back-link');
+    if (backLink) backLink.style.display = 'none';
+
+    await ensureSharedLayout(signal);
+    if (signal?.aborted) return;
+
+    if (typeof window.initDiscoveryPage === 'function') {
+      window.initDiscoveryPage();
+    }
+  }
+
   function bindSidebarLinks() {
     const containers = [
       document.getElementById('dash-sidebar') || dashboardSidebar,
@@ -5585,6 +5644,7 @@ function initLoginLogic(showRegister) {
         else if (cleanPath.includes('dashboard')) page = 'dashboard';
         else if (cleanPath.includes('history')) page = 'history';
         else if (cleanPath.includes('template')) page = 'template';
+        else if (cleanPath.includes('discovery')) page = 'discovery';
         else if (cleanPath.includes('analysis')) page = 'analysis';
 
         if (page) {
@@ -5684,8 +5744,12 @@ function initLoginLogic(showRegister) {
       css: [],
       js: ['/js/landing-animation.js', '/js/landing.js'],
       render: () => {
+        const pageMain = document.getElementById('page-main');
+        if (pageMain) {
+          pageMain.className = 'page-shell page-landing';
+        }
         const content = initMain();
-        content.className = landingClass;
+        content.className = landingClass || 'landing-content';
         content.innerHTML = landingHTML;
         interceptCTAs();
       }
@@ -5728,9 +5792,15 @@ function initLoginLogic(showRegister) {
     },
 
     template: {
-      css: ['/css/dashboard.css', '/css/template.css', '/css/math-curve-loader.css', '/css/template-detail.css?v=20260926-3'],
+      css: ['/css/dashboard.css', '/css/generate.css', '/css/template.css', '/css/math-curve-loader.css', '/css/template-detail.css?v=20260926-3'],
       js: ['/js/generate-prefill-path.js', '/js/template-timeline.js', '/js/template.js'],
       render: (o, signal) => renderTemplate(signal)
+    },
+
+    discovery: {
+      css: ['/css/dashboard.css', '/css/generate.css', '/css/discovery.css', '/css/math-curve-loader.css'],
+      js: ['/js/discovery.js'],
+      render: (o, signal) => renderDiscovery(signal)
     },
 
     project: {
@@ -5745,7 +5815,7 @@ function initLoginLogic(showRegister) {
   };
 
   function isDashboardPage(page) {
-    return ['dashboard', 'projects', 'generate', 'history', 'template', 'project', 'analysis'].includes(page);
+    return ['dashboard', 'projects', 'generate', 'history', 'template', 'discovery', 'project', 'analysis'].includes(page);
   }
 
   function getHashForPage(page, opts = {}) {
@@ -5834,7 +5904,8 @@ function initLoginLogic(showRegister) {
         (activeMainPage === 'dashboard' && href.includes('dashboard')) ||
         (activeMainPage === 'projects' && href.includes('projects')) ||
         (activeMainPage === 'history' && href.includes('history')) ||
-        (activeMainPage === 'template' && href.includes('template'));
+        (activeMainPage === 'template' && href.includes('template')) ||
+        (activeMainPage === 'discovery' && href.includes('discovery'));
       
       const img = l.querySelector('img');
 
@@ -5939,6 +6010,7 @@ function initLoginLogic(showRegister) {
 
   async function navigate(page, opts = {}) {
     const isDashboardTransition = isDashboardPage(currentPage) && isDashboardPage(page);
+    document.body.classList.add('is-navigating');
 
     if (opts.openQC) {
       if (window.AICreationController) {
@@ -5955,6 +6027,28 @@ function initLoginLogic(showRegister) {
     if (pageMain) {
       pageMain.classList.remove('is-generating');
       pageMain.style.padding = '';
+      if (page === 'landing') {
+        pageMain.className = 'page-shell page-landing';
+      } else {
+        pageMain.classList.remove('page-landing');
+        if (page === 'dashboard') {
+          pageMain.className = 'page-shell page-dashboard dash-main home-main';
+        } else if (page === 'projects') {
+          pageMain.className = 'page-shell page-projects dash-main projects-main';
+        } else if (page === 'template') {
+          pageMain.className = 'page-shell page-template dash-main template-main';
+        } else if (page === 'discovery') {
+          pageMain.className = 'page-shell page-discovery discovery-shell';
+        } else if (page === 'generate') {
+          pageMain.className = 'page-shell page-generate gen-main';
+        } else if (page === 'history') {
+          pageMain.className = 'page-shell page-projects dash-main history-main';
+        } else if (page === 'login' || page === 'register') {
+          pageMain.className = 'page-shell page-auth auth-main';
+        } else if (page === 'project') {
+          pageMain.className = 'page-shell page-project-detail dash-main';
+        }
+      }
     }
 
     // 當從登入/註冊頁面登入進入 Dashboard 時，若先前為展開狀態，自動將其收回（在 mask 遮罩期間完成）
@@ -6366,6 +6460,7 @@ function initLoginLogic(showRegister) {
       if (window.DynamicMaskSystem) {
         window.DynamicMaskSystem.refresh();
       }
+      document.body.classList.remove('is-navigating');
     }
   }
 

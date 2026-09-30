@@ -58,7 +58,9 @@ If the repository and this skill disagree, preserve the user's explicit request 
 - Use film-strip motifs only when content semantics involve storyboard, shots, video, or timeline.
 - Keep page CSS responsible for composition; keep shared component visuals in shared component styles.
 - Keep one primary vertical scroll owner per route where practical.
-- Use design tokens instead of inventing page-local colors, radii, shadows, or spacing values.
+- Protect the fixed #page-main viewport shell in dashboard-layout: #page-main must remain fixed with uniform margins (top, bottom, right), never scrolling body. Its classes must strictly synchronize with the active route, removing page-landing immediately upon leaving landing.
+- Strictly gate non-dashboard/landing stylesheet resets under body:not(.dashboard-layout):not(.auth-layout). Never declare unscoped #page-content or #page-main.page-landing rules with min-height: 100vh.
+- Always use design tokens instead of hardcoded hex codes (#172554, #2563eb) or raw cubic-bezier curves. Use --color-nav-active, --color-brand-primary, and --motion-ease-*.
 - Align page titles, section headers, grids, and actions to shared page gutters and anchors.
 - Do not solve mobile overflow by shrinking text until it fits.
 - Do not introduce a second product-wide visual language for Template, Generate, Project Detail, or any new page.

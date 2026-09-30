@@ -73,4 +73,9 @@
   --color-brand-accent-soft:    var(--sky-200);
   --color-brand-film:           var(--slate-900);
   --color-brand-gold:           var(--gold-500);
+
+  /* ── 7. Navigation Surface & Link Roles ── */
+  --color-nav-active:           var(--blue-950);
+  --color-nav-active-fill:      var(--blue-950);
+  --color-text-nav-active:      var(--blue-950);
 }

@@ -70,8 +70,8 @@
 }
 
 /* Landing Page & non-dashboard public shell reset (allows natural document flow and GSAP ScrollTrigger) */
-.page-landing,
-#page-main.page-landing,
+body:not(.dashboard-layout):not(.auth-layout) .page-landing,
+body:not(.dashboard-layout):not(.auth-layout) #page-main.page-landing,
 body:not(.dashboard-layout):not(.auth-layout) .page-shell,
 body:not(.dashboard-layout):not(.auth-layout) #page-main {
   display: block !important;
@@ -83,8 +83,8 @@ body:not(.dashboard-layout):not(.auth-layout) #page-main {
   position: relative !important;
 }
 
-.page-landing #page-content,
-#page-main.page-landing #page-content,
+body:not(.dashboard-layout):not(.auth-layout) .page-landing #page-content,
+body:not(.dashboard-layout):not(.auth-layout) #page-main.page-landing #page-content,
 body:not(.dashboard-layout):not(.auth-layout) #page-content {
   display: block !important;
   flex: none !important;
@@ -98,16 +98,38 @@ body:not(.dashboard-layout):not(.auth-layout) #page-content {
 /* When in dashboard layout (with sidebar on desktop) */
 body.dashboard-layout .page-shell,
 body.dashboard-layout #page-main {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0 !important;
+  width: auto !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
   background: var(--color-bg-page, #f8fafc);
   border-radius: var(--radius-xl, 32px);
   margin: clamp(8px, 1vh, 12px) clamp(8px, 1vh, 12px) clamp(8px, 1vh, 12px) calc(clamp(12px, 1.8vh, 16px) + var(--sidebar-collapsed-width, 60px)) !important;
   height: calc(100vh - 2 * clamp(8px, 1vh, 12px)) !important;
   height: calc(100dvh - 2 * clamp(8px, 1vh, 12px)) !important;
-  transition: width 460ms cubic-bezier(.16, 1, .3, 1),
-              max-width 460ms cubic-bezier(.16, 1, .3, 1),
-              margin-left 460ms cubic-bezier(.16, 1, .3, 1),
-              margin-right 460ms cubic-bezier(.16, 1, .3, 1),
-              border-radius 460ms cubic-bezier(.16, 1, .3, 1);
+  transition: width 460ms var(--motion-ease-decelerate, cubic-bezier(.16, 1, .3, 1)),
+              max-width 460ms var(--motion-ease-decelerate, cubic-bezier(.16, 1, .3, 1)),
+              margin-left 460ms var(--motion-ease-decelerate, cubic-bezier(.16, 1, .3, 1)),
+              margin-right 460ms var(--motion-ease-decelerate, cubic-bezier(.16, 1, .3, 1)),
+              border-radius 460ms var(--motion-ease-decelerate, cubic-bezier(.16, 1, .3, 1));
+}
+
+body.dashboard-layout #page-content {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  position: relative !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
 }
 
 /* Sidebar open state adjustment */
@@ -189,6 +211,13 @@ body.dashboard-layout.sidebar-open #page-main,
   margin-left: auto;
   margin-right: auto;
   box-sizing: border-box;
+}
+
+body.dashboard-layout .page-container,
+body.dashboard-layout .page-content-inner {
+  max-width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
 }
 
 /* ── 7. Mobile Safe Area & Bottom Nav Padding ── */

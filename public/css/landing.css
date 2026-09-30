@@ -17,7 +17,7 @@ body:not(.dashboard-layout):not(.auth-layout) {
     overflow-y: auto !important;
 }
 
-#page-content {
+body:not(.dashboard-layout):not(.auth-layout) #page-main.page-landing #page-content {
     width: 100% !important;
     height: auto !important;
     min-height: 100vh !important;
@@ -37,7 +37,7 @@ body:not(.dashboard-layout):not(.auth-layout) {
     justify-content: space-between;
     background: transparent;
     border-bottom: 1px solid transparent;
-    transition: all 0.5s cubic-bezier(.4,0,.2,1);
+    transition: all 0.5s var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1));
 }
 
 .nav.scrolled{
@@ -298,7 +298,7 @@ body:not(.dashboard-layout):not(.auth-layout) {
         var(--_g) 0 calc(var(--_d) + var(--y));
     mask-repeat: no-repeat;
     z-index: 2;
-    transition: all 0.3s cubic-bezier(.4,0,.2,1);
+    transition: all 0.3s var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1));
 }
 
 .hero-readmore p span{
@@ -350,7 +350,7 @@ body:not(.dashboard-layout):not(.auth-layout) {
 
 .hero-readmore .btn .button-icon-svg{
     scale: 1.1;
-    transition: all 0.3s cubic-bezier(.4,0,.2,1);
+    transition: all 0.3s var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1));
 }
 
 .hero-readmore .btn:hover{
@@ -550,7 +550,7 @@ body:not(.dashboard-layout):not(.auth-layout) {
     border: 1px solid var(--primary-soft);
     border-radius: var(--radius-md);
     padding: 35px 30px;
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: all 0.3s var(--motion-ease-decelerate, cubic-bezier(0.16, 1, 0.3, 1));
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -615,7 +615,7 @@ body:not(.dashboard-layout):not(.auth-layout) {
     flex: 1;
     width: min(800px, 90vw);
     cursor: default;
-    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: all 0.3s var(--motion-ease-jelly, cubic-bezier(0.34, 1.56, 0.64, 1));
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -706,7 +706,7 @@ body:not(.dashboard-layout):not(.auth-layout) {
     background: var(--white);
     border: 2px solid transparent;
     border-radius: var(--radius-md);
-    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: all 0.3s var(--motion-ease-jelly, cubic-bezier(0.34, 1.56, 0.64, 1));
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
@@ -920,7 +920,7 @@ body:not(.dashboard-layout):not(.auth-layout) {
     }
 
     .step-item h3{
-        transition: all .5s cubic-bezier(.4,0,.2,1);
+        transition: all .5s var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1));
         font-size: 1.3rem;
     }
 
@@ -938,8 +938,8 @@ body:not(.dashboard-layout):not(.auth-layout) {
     }
 
     .step-item{
-        transition: all 0s cubic-bezier(.4,0,.2,1);
-        transition: all .5s cubic-bezier(.4,0,.2,1);
+        transition: all 0s var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1));
+        transition: all .5s var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1));
     }
 
     .step-item:hover h3 {
@@ -951,7 +951,7 @@ body:not(.dashboard-layout):not(.auth-layout) {
 
 
     .step-item p{
-        transition: all .5s cubic-bezier(.4,0,.2,1);
+        transition: all .5s var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1));
         max-height: 0vh;
         transform-origin: top;
         transform: scaleY(0);
@@ -1041,7 +1041,7 @@ body:not(.dashboard-layout):not(.auth-layout) {
     z-index: 999;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), backdrop-filter 0.4s cubic-bezier(0.16, 1, 0.3, 1), -webkit-backdrop-filter 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: opacity 0.4s var(--motion-ease-decelerate, cubic-bezier(0.16, 1, 0.3, 1)), backdrop-filter 0.4s var(--motion-ease-decelerate, cubic-bezier(0.16, 1, 0.3, 1)), -webkit-backdrop-filter 0.4s var(--motion-ease-decelerate, cubic-bezier(0.16, 1, 0.3, 1));
 }
 
 #black-mask-top {
@@ -1056,32 +1056,7 @@ body:not(.dashboard-layout):not(.auth-layout) {
     -webkit-backdrop-filter: blur(0px);
 }
 /* ── SPA Layout ─────────────────────────────────────────── */
-#page-main {
+body:not(.dashboard-layout):not(.auth-layout) #page-main.page-landing {
     position: relative;
 }
 
-/* Login wrap inside SPA */
-.spa-login-wrap {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: start;
-    padding: 10vh 2vh 0;
-    height: 100.1vh;
-    overflow-y: auto;
-    background: linear-gradient(to bottom, var(--off-white) 70%, transparent 95%);
-}
-
-/* Dashboard wrap inside SPA */
-.spa-dash-wrap {
-    display: block;
-    height: 100.1vh;
-    overflow-y: auto;
-}
-
-/* Generate wrap inside SPA */
-.spa-gen-wrap {
-    display: block;
-    height: 100.1vh;
-    overflow-y: auto;
-}

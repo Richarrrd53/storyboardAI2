@@ -30,6 +30,14 @@ Do not replace it with a conventional dropdown merely to simplify implementation
 
 Protect the floating-nav interaction model, center Create integration, active indicator/jelly behavior, and navigation semantics. Fix spacing, safe-area, token, or visual-consistency issues without replacing its interaction language.
 
+## #page-main Fixed Shell & Route Lifecycle Contract
+
+Protect:
+- The fixed-height bounding card of `#page-main` in dashboard layout (`height: calc(100vh - 2 * clamp(8px, 1vh, 12px))`).
+- 3-sided uniform outer margins (top, bottom, right) exposing the cold grey canvas (`--color-bg-page`).
+- Strict single scroll ownership inside `.content-body` or `.page-scroll`; the outer body must never scroll in dashboard mode.
+- Strict class synchronization on `#page-main` during SPA navigation. Every navigation must strip `page-landing` immediately, preventing viewport min-height contamination.
+
 ## Regression rule
 
 If an unrelated UI change alters a protected interaction, treat that as a regression. Restore the protected behavior instead of layering more patches on top.

@@ -28,6 +28,7 @@ Typical system direction:
 - Brand primary: blue-600 / approximately `#2563EB`
 - Brand light: blue-400 / approximately `#60A5FA`
 - Accent sky: approximately `#0EA5E9`
+- Navigation active: blue-950 / approximately `#172554` (`--color-nav-active`, `--color-text-nav-active`)
 - Page: slate-50 / approximately `#F8FAFC`
 - Primary surface: white
 - Primary text: slate-900 / approximately `#0F172A`
@@ -91,10 +92,28 @@ Use current repository tokens when available.
 
 ## Motion
 
-Reuse repository motion tokens. General character:
+Reuse repository motion tokens. Easing curve standards:
+- `--motion-ease-standard`: `cubic-bezier(.4, 0, .2, 1)` (Natural material transitions)
+- `--motion-ease-decelerate`: `cubic-bezier(0.16, 1, 0.3, 1)` (Fluid surface enter, modal, panel transitions)
+- `--motion-ease-accelerate`: `cubic-bezier(0.4, 0, 1, 1)` (Quick surface exit)
+- `--motion-ease-spring`: `cubic-bezier(.33, 1.53, .69, .99)` (Expressive bounce, chip selection)
+- `--motion-ease-anticipate`: `cubic-bezier(.31, .01, .66, -0.59)` (Anticipation exit)
+- `--motion-ease-jelly`: `cubic-bezier(0.34, 1.56, 0.64, 1)` (Organic tactile fluid return, pop-out)
+- `--motion-ease-smooth`: `cubic-bezier(.22, 1, .36, 1)` (Controlled full-panel morph)
+- `--motion-ease-snappy`: `cubic-bezier(0.25, 1, 0.5, 1)` (Indicator snap)
+- `--motion-ease-bounce`: `cubic-bezier(0.33, 1.17, 0.69, 0.99)` (Liquid morph expansion)
+
+General character:
 - press/toggle: short and responsive
 - hover/state: fast
 - surface enter/exit: controlled deceleration
 - major morph: slower, intentional, possibly spring-like
 
 Do not standardize protected QC or option-morph motion by overwriting their mature timings. Protected motion wins over generic motion guidance.
+
+## Page Shell & Container Architecture
+
+- `#page-main`: In `dashboard-layout`, `#page-main` is a fixed viewport card with 3-sided uniform margins (`clamp(8px, 1vh, 12px)` top, bottom, right) and sidebar calc on the left. It has `overflow: hidden; height: calc(100vh - 2 * margin);`.
+- `#page-content`: Inner container taking 100% of `#page-main`. Header is fixed at the top with `flex-shrink: 0;`, while content body (`.content-body` or `.page-scroll`) is the single vertical scroll owner.
+- Route Class Synchronization: `#page-main` must always strictly synchronize its class with the active route (`page-shell page-${route}`). `page-landing` must be removed immediately on leaving landing.
+- Stylesheet Gating: Landing and public shell rules must be gated under `body:not(.dashboard-layout):not(.auth-layout)`. Never use unscoped universal rules for `#page-content` or `#page-main.page-landing`.
