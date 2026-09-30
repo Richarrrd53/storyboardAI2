@@ -107,6 +107,7 @@ window.renderTemplateDetailTimeline = function(template, detailContainer) {
   // 1. Toggle views
   const storeView = document.getElementById('template-store-view');
   const detailImmersive = document.getElementById('template-detail-immersive');
+  document.getElementById('page-main')?.classList.add('is-template-detail-mode');
   if (storeView) storeView.style.display = 'none';
   if (detailImmersive) detailImmersive.style.display = 'flex';
 
@@ -190,6 +191,8 @@ window.renderTemplateDetailTimeline = function(template, detailContainer) {
   document.getElementById('detail-shots-count-badge').textContent = `${template.shotsCount || shots.length} 鏡頭`;
   document.getElementById('detail-duration-badge').textContent = `${timelineDuration}s`;
 
+  renderAnalysisOverview(template, shots);
+
   // Update apply button click behavior
   const applyBtn = document.getElementById('btn-apply-template-main');
   if (applyBtn) {
@@ -211,6 +214,61 @@ window.renderTemplateDetailTimeline = function(template, detailContainer) {
   showHookInspector();
 };
 
+function renderAnalysisOverview(template, shots) {
+  const rawConfidence = Number(template.confidence);
+  const confidence = Number.isFinite(rawConfidence)
+    ? Math.max(0, Math.min(100, rawConfidence <= 1 ? rawConfidence * 100 : rawConfidence))
+    : null;
+  const ring = document.getElementById('analysis-score-ring');
+  if (ring) ring.style.setProperty('--score', String(confidence ?? 0));
+  const scoreValue = document.getElementById('analysis-score-value');
+  if (scoreValue) scoreValue.textContent = confidence === null ? '—' : `${Math.round(confidence)}%`;
+  const scoreLabel = document.getElementById('analysis-score-label');
+  if (scoreLabel) scoreLabel.textContent = confidence === null ? '未提供信心指數' : confidence >= 80 ? '高可信分析' : confidence >= 60 ? '建議人工複核' : '需要人工確認';
+
+  const shotCount = shots.length;
+  const average = shotCount ? timelineDuration / shotCount : 0;
+  const durationEl = document.getElementById('analysis-kpi-duration');
+  const shotsEl = document.getElementById('analysis-kpi-shots');
+  const averageEl = document.getElementById('analysis-kpi-average');
+  if (durationEl) durationEl.textContent = `${timelineDuration}s`;
+  if (shotsEl) shotsEl.textContent = String(shotCount);
+  if (averageEl) averageEl.textContent = shotCount ? `${average.toFixed(1)}s` : '—';
+
+  const rhythmTrack = document.getElementById('analysis-rhythm-track');
+  if (rhythmTrack) {
+    rhythmTrack.replaceChildren();
+    const phases = ['is-hook', 'is-build', 'is-payoff', 'is-close'];
+    shots.forEach((shot, index) => {
+      const duration = Math.max(1, parseInt(shot.duration) || 3);
+      const segment = document.createElement('button');
+      const phaseIndex = Math.min(3, Math.floor(index / Math.max(1, shots.length) * 4));
+      segment.type = 'button';
+      segment.className = `analysis-rhythm-segment ${phases[phaseIndex]}`;
+      segment.style.flexGrow = String(duration);
+      segment.setAttribute('aria-label', `鏡頭 ${index + 1}，${duration} 秒，${shot.purpose || shot.action || '未提供說明'}`);
+      segment.title = `S${String(index + 1).padStart(2, '0')} · ${duration}s · ${shot.purpose || shot.action || '未提供說明'}`;
+      segment.innerHTML = `<b>S${String(index + 1).padStart(2, '0')}</b><span>${duration}s</span>`;
+      segment.onclick = () => {
+        const start = shots.slice(0, index).reduce((sum, item) => sum + (parseInt(item.duration) || 3), 0);
+        window.seekTimeline(start);
+        showShotInspector(shot, index, start);
+      };
+      rhythmTrack.appendChild(segment);
+    });
+    if (!shots.length) {
+      const empty = document.createElement('span');
+      empty.className = 'analysis-rhythm-empty';
+      empty.textContent = '尚無鏡頭節奏資料';
+      rhythmTrack.appendChild(empty);
+    }
+  }
+  const rhythmMid = document.getElementById('analysis-rhythm-mid');
+  const rhythmEnd = document.getElementById('analysis-rhythm-end');
+  if (rhythmMid) rhythmMid.textContent = formatEditorTimecode(timelineDuration / 2).slice(3, 8);
+  if (rhythmEnd) rhythmEnd.textContent = formatEditorTimecode(timelineDuration).slice(3, 8);
+}
+
 /**
  * Switch back to browse store grid
  */
@@ -220,6 +278,7 @@ window.backToStoreBrowse = function() {
   if (currentSourcePlayerType === 'html5') currentSourcePlayer?.pause?.();
   const storeView = document.getElementById('template-store-view');
   const detailImmersive = document.getElementById('template-detail-immersive');
+  document.getElementById('page-main')?.classList.remove('is-template-detail-mode');
   if (storeView) storeView.style.display = 'flex';
   if (detailImmersive) detailImmersive.style.display = 'none';
 
@@ -286,6 +345,17 @@ function renderSideMetadata(t) {
   setChips('detail-target-emotions', t.marketing?.targetEmotion);
   setChips('detail-platform-chips', Array.isArray(t.platform) ? t.platform.map(p => String(p).toUpperCase()) : t.platform);
 
+  const prompts = Array.isArray(t.promptTemplate?.perShot) ? t.promptTemplate.perShot : [];
+  const hasPrompts = Boolean(t.promptTemplate?.base || prompts.length);
+  const hasVariables = varsList.length > 0;
+  const hasMarketing = Boolean(t.marketing && Object.values(t.marketing).some(value => Array.isArray(value) ? value.length : value));
+  const promptTab = document.querySelector('[data-bin-tab="prompts"]');
+  const variableTab = document.querySelector('[data-bin-tab="variables"]');
+  const marketingTab = document.querySelector('[data-inspector-tab="marketing"]');
+  if (promptTab) promptTab.hidden = !hasPrompts;
+  if (variableTab) variableTab.hidden = !hasVariables;
+  if (marketingTab) marketingTab.hidden = !hasMarketing;
+
   setText('detail-narrative-type', t.narrative?.type);
   setText('detail-narrative-tone', translateTone(t.narrative?.tone));
   setText('detail-pace', t.visualFlow?.pace);
@@ -300,7 +370,6 @@ function renderSideMetadata(t) {
 
   const promptList = document.getElementById('detail-prompt-list');
   if (promptList) {
-    const prompts = Array.isArray(t.promptTemplate?.perShot) ? t.promptTemplate.perShot : [];
     promptList.replaceChildren(...(prompts.length ? prompts : ['尚無分鏡提示詞']).map((prompt, index) => {
       const item = document.createElement('div');
       item.innerHTML = `<b>${prompts.length ? `S${String(index + 1).padStart(2, '0')}` : '—'}</b><span></span>`;
@@ -315,6 +384,7 @@ function renderSideMetadata(t) {
       document.querySelectorAll('[data-bin-page]').forEach(page => { page.hidden = page.dataset.binPage !== button.dataset.binTab; });
     };
   });
+  document.querySelector('[data-bin-tab="media"]')?.click();
 
   document.querySelectorAll('.nle-inspector-tabs [data-inspector-tab]').forEach(button => {
     button.onclick = () => {
@@ -322,6 +392,7 @@ function renderSideMetadata(t) {
       document.querySelectorAll('.nle-inspector-page').forEach(page => page.classList.toggle('active', page.dataset.inspectorPage === button.dataset.inspectorTab));
     };
   });
+  document.querySelector('[data-inspector-tab="story"]')?.click();
 
   const storyboardBody = document.getElementById('template-storyboard-body');
   if (storyboardBody) {

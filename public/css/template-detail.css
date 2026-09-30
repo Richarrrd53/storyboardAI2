@@ -1,0 +1,344 @@
+/*
+ * Template detail workspace — 2026 visual system
+ * Glass is reserved for navigation and controls; analytical content remains
+ * opaque and high-contrast. The three-panel NLE model stays intact.
+ */
+
+:is(.template-main, #page-main).is-template-detail-mode {
+  --studio-bg: #080b12;
+  --studio-surface: rgba(20, 24, 34, .96);
+  --studio-surface-raised: rgba(28, 33, 46, .94);
+  --studio-glass: rgba(31, 36, 50, .62);
+  --studio-line: rgba(255, 255, 255, .085);
+  --studio-line-strong: rgba(255, 255, 255, .14);
+  --studio-text: #f5f7fb;
+  --studio-secondary: #a9afbd;
+  --studio-muted: #707887;
+  --studio-blue: #7197ff;
+  --studio-violet: #9b87f5;
+  --studio-cyan: #54c9d8;
+  --studio-coral: #f2768d;
+  min-width: 0;
+  min-height: 0;
+  padding: 12px;
+  background:
+    radial-gradient(circle at 16% -5%, rgba(70, 102, 200, .18), transparent 32rem),
+    radial-gradient(circle at 88% 10%, rgba(120, 77, 190, .13), transparent 30rem),
+    var(--studio-bg);
+  color: var(--studio-text);
+}
+
+body.dashboard-layout #page-main.is-template-detail-mode {
+  padding: 12px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  background:
+    radial-gradient(circle at 16% -5%, rgba(70, 102, 200, .18), transparent 32rem),
+    radial-gradient(circle at 88% 10%, rgba(120, 77, 190, .13), transparent 30rem),
+    var(--studio-bg);
+}
+
+:is(.template-main, #page-main).is-template-detail-mode .template-detail-immersive-container {
+  width: 100%;
+  max-width: 1600px;
+  min-width: 0;
+  margin: 0 auto;
+  gap: 12px;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  container-type: inline-size;
+}
+
+/* The analysis toolbar participates in the normal document flow. */
+.template-detail-immersive-container .editor-menubar {
+  position: relative;
+  top: auto;
+  z-index: 2;
+  align-self: stretch;
+  flex-shrink: 0;
+  height: 54px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  padding: 0 10px 0 14px;
+  overflow: visible;
+  border: 1px solid rgba(255, 255, 255, .13);
+  border-radius: 18px;
+  background: rgba(26, 30, 42, .96);
+  box-shadow: 0 16px 45px rgba(0, 0, 0, .28), inset 0 1px rgba(255, 255, 255,.09);
+  backdrop-filter: blur(22px) saturate(125%);
+  -webkit-backdrop-filter: blur(22px) saturate(125%);
+}
+
+.template-detail-immersive-container .editor-document-title { min-width: 0; padding: 0 14px; text-align: center; }
+.template-detail-immersive-container .editor-document-title span,
+.template-detail-immersive-container .editor-document-title strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.template-detail-immersive-container .editor-document-title span { margin-bottom: 3px; color: #687181; font: 760 .48rem ui-monospace, SFMono-Regular, Consolas, monospace; letter-spacing: .12em; }
+.template-detail-immersive-container .editor-document-title strong { color: #e9ebf1; font-size: .68rem; font-weight: 700; }
+.template-detail-immersive-container .editor-menubar .btn-back-to-store { display: inline-flex; align-items: center; gap: 7px; min-height: 36px; margin: 0; padding: 0 11px; border-radius: 11px; }
+.template-detail-immersive-container .editor-menubar .btn-apply-template-main { min-height: 36px; margin: 0; padding: 0 14px; border-radius: 11px; }
+
+.template-detail-immersive-container .editor-brand-mark {
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  background: linear-gradient(145deg, #6c8eff, #8b68db);
+  box-shadow: inset 0 1px rgba(255,255,255,.3), 0 7px 16px rgba(86,77,190,.28);
+}
+.template-detail-immersive-container .editor-brand strong { color: #f8f9fc; font-size: .74rem; letter-spacing: -.01em; }
+.template-detail-immersive-container .editor-brand small { border: 1px solid rgba(132,160,255,.15); border-radius: 999px; background: rgba(88,116,211,.15); color: #adc0ff; }
+.template-detail-immersive-container .editor-workspaces { align-self: auto; gap: 3px; height: 38px; padding: 3px; border: 1px solid rgba(255,255,255,.07); border-radius: 13px; background: rgba(7,9,14,.32); }
+.template-detail-immersive-container .editor-workspaces button { min-width: 54px; padding: 0 12px; border-radius: 10px; color: #8f96a5; font-size: .65rem; cursor: pointer; transition: background .18s ease, color .18s ease, transform .18s ease; }
+.template-detail-immersive-container .editor-workspaces button:hover:not(:disabled) { color: #fff; background: rgba(255,255,255,.07); }
+.template-detail-immersive-container .editor-workspaces button.active { color: #fff; background: rgba(255,255,255,.115); box-shadow: inset 0 1px rgba(255,255,255,.09), 0 4px 12px rgba(0,0,0,.15); }
+.template-detail-immersive-container .editor-workspaces button.active::after { display: none; }
+.template-detail-immersive-container .editor-workspaces button:disabled { opacity: .32; cursor: not-allowed; }
+.template-detail-immersive-container .editor-project-state { margin-right: 7px; color: #9ba2b1; }
+.template-detail-immersive-container .editor-project-state i { background: #54d89b; box-shadow: 0 0 0 4px rgba(84,216,155,.12); }
+
+/* Context and title become one quiet content header. */
+.template-detail-immersive-container .detail-back-bar {
+  height: 34px;
+  margin: 0;
+  padding: 0 8px;
+  border: 0;
+  background: transparent;
+}
+.template-detail-immersive-container .btn-back-to-store { min-height: 30px; padding: 5px 9px; border-radius: 10px; color: #adb3c0; }
+.template-detail-immersive-container .btn-back-to-store:hover { background: rgba(255,255,255,.07); }
+.template-detail-immersive-container .detail-navigation-path { color: #5e6573; }
+.template-detail-immersive-container .detail-navigation-path span { color: #9299a7; }
+
+.template-detail-immersive-container .detail-template-hero-header {
+  min-height: 108px;
+  padding: 18px 20px;
+  border: 1px solid var(--studio-line);
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(36,42,58,.92), rgba(20,24,34,.94));
+  box-shadow: inset 0 1px rgba(255,255,255,.04), 0 15px 35px rgba(0,0,0,.14);
+}
+.template-detail-immersive-container .detail-header-left { max-width: min(74vw, 980px); gap: 8px; }
+.template-detail-immersive-container .detail-template-title { color: var(--studio-text); font-size: clamp(1.12rem, 2vw, 1.48rem); font-weight: 780; letter-spacing: -.035em; }
+.template-detail-immersive-container .detail-template-desc { max-width: 900px; color: #969dac; font-size: .7rem; line-height: 1.55; }
+.template-detail-immersive-container .detail-badges-row { order: initial; }
+.template-detail-immersive-container .detail-badges-row > span { padding: 4px 8px; border: 1px solid rgba(255,255,255,.075); border-radius: 999px; background: rgba(255,255,255,.05); color: #aeb4c1; font-size: .55rem; }
+.template-detail-immersive-container .btn-apply-template-main { min-height: 40px; padding: 0 17px; border: 1px solid rgba(255,255,255,.18); border-radius: 13px; background: linear-gradient(135deg, #6388ff, #7c64df); box-shadow: inset 0 1px rgba(255,255,255,.25), 0 10px 25px rgba(74,73,185,.28); color: #fff; font-size: .7rem; }
+.template-detail-immersive-container .btn-apply-template-main:hover { transform: translateY(-1px); filter: brightness(1.08); }
+
+/* 影片結構總覽區塊：本區集中管理標題、說明、可信度、關鍵指標與節奏圖的字體大小。 */
+.template-detail-immersive-container .analysis-command-deck {
+  padding: 18px;
+  border: 1px solid var(--studio-line);
+  border-radius: 20px;
+  background: rgba(15, 18, 26, .96);
+  box-shadow: 0 15px 36px rgba(0,0,0,.15);
+}
+.template-detail-immersive-container .analysis-command-head,
+.template-detail-immersive-container .analysis-flow-head { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+.template-detail-immersive-container .analysis-command-head { margin-bottom: 18px; }
+
+/* 「影片結構總覽」主標題：在此調整標題字體、大小、字重與漸層色彩。 */
+.template-detail-immersive-container .analysis-command-head h3 {
+  width: fit-content;
+  margin: 7px 0 0;
+  background: linear-gradient(105deg, #ffffff 0%, #eef0ff 48%, #b9c8ff 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: #f8f9ff;
+  -webkit-text-fill-color: transparent;
+  font-family: "SF Pro Display", "Noto Sans TC", "Segoe UI", sans-serif;
+  font-size: clamp(1.75rem, 2.8vw, 2.35rem);
+  font-weight: 820;
+  letter-spacing: -.045em;
+  line-height: 1.15;
+  text-wrap: balance;
+  filter: drop-shadow(0 4px 14px rgba(107, 124, 220, .14));
+}
+.template-detail-immersive-container .analysis-command-head p { max-width: 520px; margin: 0; color: #a4abba; font-family: "SF Pro Text", "Noto Sans TC", "Segoe UI", sans-serif; font-size: .86rem; line-height: 1.65; text-align: right; }
+.template-detail-immersive-container .analysis-command-kicker,
+.template-detail-immersive-container .analysis-card-label { display: block; color: #b5a9fa; font: 780 .7rem/1.2 "SF Pro Text", "Segoe UI", sans-serif; letter-spacing: .18em; }
+.template-detail-immersive-container .analysis-command-grid { display: grid; grid-template-columns: minmax(230px,.78fr) minmax(420px,1.6fr); gap: 10px; }
+.template-detail-immersive-container .analysis-score-card,
+.template-detail-immersive-container .analysis-kpi-panel,
+.template-detail-immersive-container .analysis-flow-card {
+  border-color: var(--studio-line);
+  border-radius: 14px;
+  background: #191d28;
+  box-shadow: inset 0 1px rgba(255,255,255,.035);
+}
+/* 分析可信度卡片：圓環數值與說明文字大小。 */
+.template-detail-immersive-container .analysis-score-card { display: flex; align-items: center; gap: 13px; min-height: 108px; padding: 14px; }
+.template-detail-immersive-container .analysis-score-ring { position: relative; width: 76px; height: 76px; flex: 0 0 76px; display: grid; place-items: center; border-radius: 50%; background: conic-gradient(#8976e8 calc(var(--score)*1%), #2a2f3d 0); }
+.template-detail-immersive-container .analysis-score-ring::before { content: ''; position: absolute; inset: 6px; border-radius: 50%; background: #171b25; box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); }
+.template-detail-immersive-container .analysis-score-ring > div { position: relative; z-index: 1; text-align: center; }
+.template-detail-immersive-container .analysis-score-ring strong { display: block; color: #fff; font: 780 1.28rem/1 "SF Pro Display", "Segoe UI", sans-serif; font-variant-numeric: tabular-nums; }
+.template-detail-immersive-container .analysis-score-ring span { display: block; margin-top: 5px; color: #929aaa; font-size: .64rem; }
+.template-detail-immersive-container .analysis-score-copy { min-width: 0; }
+.template-detail-immersive-container .analysis-score-copy > span,
+.template-detail-immersive-container .analysis-score-copy strong,
+.template-detail-immersive-container .analysis-score-copy small { display: block; }
+.template-detail-immersive-container .analysis-score-copy > span { color: #9da5b4; font: 660 .7rem "SF Pro Text", "Noto Sans TC", "Segoe UI", sans-serif; letter-spacing: .04em; }
+.template-detail-immersive-container .analysis-score-copy strong { margin-top: 7px; color: #eff1f5; font: 720 .94rem "SF Pro Text", "Noto Sans TC", "Segoe UI", sans-serif; }
+.template-detail-immersive-container .analysis-score-copy small { margin-top: 5px; color: #858d9d; font-size: .66rem; line-height: 1.45; }
+/* 影片關鍵指標：標籤、主要數字及輔助說明文字大小。 */
+.template-detail-immersive-container .analysis-kpi-panel { display: grid; grid-template-columns: repeat(3,1fr); min-height: 108px; overflow: hidden; }
+.template-detail-immersive-container .analysis-kpi { position: relative; display: flex; flex-direction: column; justify-content: center; min-width: 0; padding: 14px; border-right: 1px solid var(--studio-line); }
+.template-detail-immersive-container .analysis-kpi:last-child { border-right: 0; }
+.template-detail-immersive-container .analysis-kpi span { color: #a1a8b6; font-size: .72rem; }
+.template-detail-immersive-container .analysis-kpi strong { margin: 8px 0 5px; color: #fff; font: 760 1.78rem/1 "SF Pro Display", "Segoe UI", sans-serif; font-variant-numeric: tabular-nums; letter-spacing: -.035em; }
+.template-detail-immersive-container .analysis-kpi small { color: #7c8494; font: 620 .64rem "SF Pro Text", "Noto Sans TC", "Segoe UI", sans-serif; letter-spacing: .03em; }
+.template-detail-immersive-container .analysis-kpi::after { content: ''; position: absolute; left: 14px; right: 14px; bottom: 10px; height: 2px; border-radius: 2px; background: linear-gradient(90deg, #7c73e6, #5cbacc 58%, transparent); }
+/* 敘事節奏圖：區塊標題、圖例、鏡頭標記與時間刻度大小。 */
+.template-detail-immersive-container .analysis-flow-card { margin-top: 10px; padding: 13px 14px 10px; }
+.template-detail-immersive-container .analysis-flow-head strong { display: block; margin-top: 5px; color: #eef0f5; font-size: .84rem; }
+.template-detail-immersive-container .analysis-flow-legend { display: flex; flex-wrap: wrap; gap: 13px; color: #929aaa; font-size: .66rem; }
+.template-detail-immersive-container .analysis-flow-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.template-detail-immersive-container .analysis-flow-legend i { width: 7px; height: 7px; border-radius: 2px; }
+.template-detail-immersive-container .analysis-flow-legend .is-hook,
+.template-detail-immersive-container .analysis-rhythm-segment.is-hook { background-color: #e66a83; }
+.template-detail-immersive-container .analysis-flow-legend .is-build,
+.template-detail-immersive-container .analysis-rhythm-segment.is-build { background-color: #7765dc; }
+.template-detail-immersive-container .analysis-flow-legend .is-payoff,
+.template-detail-immersive-container .analysis-rhythm-segment.is-payoff { background-color: #3babc4; }
+.template-detail-immersive-container .analysis-flow-legend .is-close,
+.template-detail-immersive-container .analysis-rhythm-segment.is-close { background-color: #d4a74d; }
+.template-detail-immersive-container .analysis-rhythm-track { display: flex; gap: 3px; min-height: 42px; margin-top: 12px; overflow: hidden; }
+.template-detail-immersive-container .analysis-rhythm-segment { position: relative; min-width: 38px; min-height: 42px; padding: 6px 8px; overflow: hidden; border: 0; border-radius: 7px; color: rgba(255,255,255,.92); text-align: left; cursor: pointer; }
+.template-detail-immersive-container .analysis-rhythm-segment b,
+.template-detail-immersive-container .analysis-rhythm-segment span { display: block; white-space: nowrap; }
+.template-detail-immersive-container .analysis-rhythm-segment b { font: 800 .68rem ui-monospace, monospace; }
+.template-detail-immersive-container .analysis-rhythm-segment span { margin-top: 4px; font: .6rem ui-monospace, monospace; opacity: .82; }
+.template-detail-immersive-container .analysis-rhythm-axis { display: flex; justify-content: space-between; margin-top: 7px; color: #788193; font: .62rem ui-monospace, monospace; }
+.template-detail-immersive-container .analysis-rhythm-empty { width: 100%; display: grid; place-items: center; border: 1px dashed var(--studio-line-strong); border-radius: 7px; color: #858d9d; font-size: .7rem; }
+
+/* NLE canvas: spatial separation instead of heavy dividers. */
+.template-detail-immersive-container .nle-workspace {
+  grid-template-columns: minmax(180px,22%) minmax(340px,1fr) minmax(220px,26%);
+  gap: 10px;
+  min-height: 520px;
+  padding: 10px;
+  overflow: visible;
+  border: 1px solid var(--studio-line);
+  border-radius: 20px;
+  background: rgba(11,14,21,.82);
+  box-shadow: 0 18px 44px rgba(0,0,0,.18);
+}
+.template-detail-immersive-container .nle-panel,
+.template-detail-immersive-container .nle-program-panel,
+.template-detail-immersive-container .nle-properties-panel {
+  overflow: hidden auto;
+  border: 1px solid var(--studio-line);
+  border-radius: 15px;
+  background: #181c26;
+  color: var(--studio-text);
+}
+.template-detail-immersive-container .nle-media-bin,
+.template-detail-immersive-container .nle-properties-panel { border-left: 1px solid var(--studio-line); border-right: 1px solid var(--studio-line); }
+.template-detail-immersive-container .nle-panel-title { height: 43px; padding: 0 14px; border-bottom-color: var(--studio-line); color: #e8eaf0; }
+.template-detail-immersive-container .nle-panel-title small { color: #697181; }
+.template-detail-immersive-container .nle-bin-tabs { gap: 4px; padding: 8px; }
+.template-detail-immersive-container .nle-bin-tabs button { flex: 1; border-radius: 8px; color: #7e8696; }
+.template-detail-immersive-container .nle-bin-tabs button.active { background: #2b3040; color: #f2f3f7; box-shadow: inset 0 1px rgba(255,255,255,.05); }
+.template-detail-immersive-container .nle-bin-tree { border-radius: 8px; background: rgba(255,255,255,.025); }
+.template-detail-immersive-container .nle-source-item { margin: 8px; padding: 8px; border-radius: 10px; }
+.template-detail-immersive-container .nle-source-item.is-selected { border-color: rgba(144,126,233,.5); background: rgba(111,90,191,.18); }
+.template-detail-immersive-container .nle-source-thumb { border-radius: 7px; }
+.template-detail-immersive-container .nle-bin-section { margin: 14px; border-top-color: var(--studio-line); }
+.template-detail-immersive-container .nle-bin-section h6 { color: #b9bec9; }
+.template-detail-immersive-container .nle-bin-section p,
+.template-detail-immersive-container .nle-replicable-list { color: #858d9c; }
+
+.template-detail-immersive-container .nle-program-panel { position: relative; background: #0d1017; }
+.template-detail-immersive-container .nle-program-monitor { height: 410px; margin-top: 16px; border: 1px solid rgba(255,255,255,.06); border-radius: 12px; background: #030407; box-shadow: 0 18px 44px rgba(0,0,0,.4); }
+.template-detail-immersive-container .nle-safe-frame { border-radius: 8px; border-color: rgba(255,255,255,.16); }
+.template-detail-immersive-container .nle-transport { height: 52px; color: #737b8b; }
+.template-detail-immersive-container .source-playback-label { padding: 5px 9px; border: 1px solid rgba(255,255,255,.07); border-radius: 999px; background: rgba(255,255,255,.035); }
+
+.template-detail-immersive-container .nle-inspector-tabs { display: flex; gap: 4px; padding: 8px; border-bottom-color: var(--studio-line); }
+.template-detail-immersive-container .nle-inspector-tabs button { flex: 1; border: 0; border-radius: 8px; color: #7f8796; }
+.template-detail-immersive-container .nle-inspector-tabs button[hidden],
+.template-detail-immersive-container .nle-bin-tabs button[hidden] { display: none; }
+.template-detail-immersive-container .nle-inspector-tabs button.active { border: 0; background: #2a2f3e; color: #f2f3f7; }
+.template-detail-immersive-container .nle-property-group { padding: 15px; border-bottom-color: var(--studio-line); }
+.template-detail-immersive-container .nle-property-group h5 { color: #b7bdc9; }
+.template-detail-immersive-container .nle-property-group dl > div { border-bottom: 1px solid rgba(255,255,255,.045); color: #7e8696; }
+.template-detail-immersive-container .nle-property-group dl > div:last-child { border-bottom: 0; }
+.template-detail-immersive-container .nle-property-group dd { color: #e3e5eb; }
+.template-detail-immersive-container .nle-hook-card { padding: 11px; border: 1px solid rgba(242,118,141,.16); border-radius: 10px; background: rgba(242,118,141,.055); }
+
+/* Timeline remains visually dense, but grouped as one focused editing surface. */
+.template-detail-immersive-container .timeline-editor-wrapper {
+  overflow: hidden;
+  border: 1px solid var(--studio-line);
+  border-radius: 20px;
+  background: #10141c;
+  box-shadow: 0 18px 44px rgba(0,0,0,.18);
+}
+.template-detail-immersive-container .timeline-editor-title { min-height: 48px; padding: 0 14px; border-bottom-color: var(--studio-line); background: rgba(24,28,39,.92); }
+.template-detail-immersive-container .timeline-editor-title .left-label { color: #d8dbe3; }
+.template-detail-immersive-container .timeline-view-switcher { border: 1px solid rgba(255,255,255,.07); border-radius: 11px; background: rgba(5,7,11,.45); }
+.template-detail-immersive-container .timeline-view-switcher button { padding: 6px 11px; border-radius: 8px; }
+.template-detail-immersive-container .timeline-view-switcher button.active { background: #303646; color: #fff; box-shadow: inset 0 1px rgba(255,255,255,.06); }
+.template-detail-immersive-container .timeline-scroll-container { background: #0d1118; }
+.template-detail-immersive-container .timeline-track-row { border-bottom-color: rgba(255,255,255,.055); }
+.template-detail-immersive-container .track-header-cell { background: #171b24; border-right-color: var(--studio-line); }
+.template-detail-immersive-container .track-ruler-row .track-content-cell { background-color: #11151d; }
+.template-detail-immersive-container .timeline-block { border-radius: 7px; box-shadow: inset 0 1px rgba(255,255,255,.09); }
+.template-detail-immersive-container .shot-block { border-radius: 8px; background: linear-gradient(135deg,#4d4670,#37334e); }
+.template-detail-immersive-container .storyboard-script-panel { background: #0f131b; }
+.template-detail-immersive-container .template-storyboard-table th { background: rgba(24,28,39,.96); }
+.template-detail-immersive-container .template-storyboard-table tbody tr { background: #141821; }
+.template-detail-immersive-container .template-storyboard-table tbody tr:nth-child(even) { background: #171b25; }
+.template-detail-immersive-container .template-storyboard-table tbody tr:hover { background: #222735; }
+
+/* Clear keyboard focus and motion preferences are part of the visual system. */
+.template-detail-immersive-container button:focus-visible,
+.template-detail-immersive-container a:focus-visible { outline: 2px solid #aebeff; outline-offset: 2px; }
+
+@media (max-width: 1120px) {
+  .template-detail-immersive-container .analysis-command-grid { grid-template-columns: minmax(220px,.8fr) 1.2fr; }
+  .template-detail-immersive-container .nle-workspace { grid-template-columns: 200px minmax(380px,1fr) 250px; overflow-x: auto; }
+}
+
+@container (max-width: 1080px) {
+  .template-detail-immersive-container .analysis-command-grid { grid-template-columns: minmax(210px,.8fr) 1.2fr; }
+  .template-detail-immersive-container .nle-workspace { grid-template-columns: 190px minmax(340px,1fr) 230px; overflow-x: auto; }
+}
+
+@container (max-width: 820px) {
+  .template-detail-immersive-container .analysis-command-grid { grid-template-columns: 1fr; }
+  .template-detail-immersive-container .nle-workspace { grid-template-columns: minmax(340px,1fr) minmax(230px,.7fr); }
+  .template-detail-immersive-container .nle-media-bin { display: none; }
+}
+
+@media (max-width: 760px) {
+  body.dashboard-layout #page-main.is-template-detail-mode,
+  :is(.template-main, #page-main).is-template-detail-mode { padding: 0 !important; }
+  .template-main.is-template-detail-mode .template-detail-immersive-container { gap: 8px; }
+  .template-detail-immersive-container .editor-menubar { grid-template-columns: auto minmax(0,1fr) auto; border-radius: 0 0 16px 16px; }
+  .template-detail-immersive-container .editor-menubar .btn-back-to-store { width: 38px; padding: 0; justify-content: center; font-size: 0; }
+  .template-detail-immersive-container .editor-menubar .btn-back-to-store svg { width: 17px; height: 17px; }
+  .template-detail-immersive-container .editor-menubar .btn-apply-template-main { padding-inline: 11px; font-size: .62rem; }
+  .template-detail-immersive-container .detail-back-bar { padding-inline: 10px; }
+  .template-detail-immersive-container .detail-template-hero-header,
+  .template-detail-immersive-container .analysis-command-deck,
+  .template-detail-immersive-container .nle-workspace,
+  .template-detail-immersive-container .timeline-editor-wrapper { margin-inline: 8px; border-radius: 16px; }
+  .template-detail-immersive-container .detail-template-hero-header { align-items: stretch; padding: 16px; }
+  .template-detail-immersive-container .detail-header-left { max-width: 100%; }
+  .template-detail-immersive-container .detail-template-desc { white-space: normal; }
+  .template-detail-immersive-container .analysis-command-grid { grid-template-columns: 1fr; }
+  .template-detail-immersive-container .nle-workspace { display: flex; padding: 8px; overflow: visible; }
+  .template-detail-immersive-container .nle-media-bin { display: none; }
+  .template-detail-immersive-container .nle-program-monitor { height: min(58vh, 460px); }
+  .template-detail-immersive-container .nle-properties-panel { max-height: 450px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .template-detail-immersive-container *,
+  .template-detail-immersive-container *::before,
+  .template-detail-immersive-container *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}

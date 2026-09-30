@@ -3,13 +3,14 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>爆點模板庫 — Storyboard AI</title>
   <link rel="stylesheet" href="../css/style.css" />
   <link rel="stylesheet" href="../css/dashboard.css" />
   <link rel="stylesheet" href="../css/template.css" />
   <link rel="stylesheet" href="../css/generate.css" />
   <link rel="stylesheet" href="../css/math-curve-loader.css" />
+  <link rel="stylesheet" href="../css/template-detail.css?v=20260929-8" />
 </head>
 
 <body>
@@ -135,16 +136,7 @@
          STATE 2: IMMERSIVE TIMELINE & INSPECTOR PANEL (HIDDEN BY DEFAULT)
          ============================================ -->
     <section id="template-detail-immersive" class="template-detail-immersive-container anim-fadeInUp" style="display: none;">
-      <div class="editor-menubar">
-        <div class="editor-brand"><span class="editor-brand-mark">S</span><strong>Storyboard AI</strong><small>EDIT</small></div>
-        <nav class="editor-workspaces" aria-label="工作區">
-          <button type="button">媒體</button><button class="active" type="button">剪輯</button><button type="button">文字</button><button type="button">調色</button><button type="button">音訊</button><button type="button">輸出</button>
-        </nav>
-        <div class="editor-project-state"><i></i><span>自動儲存</span></div>
-      </div>
-      
-      <!-- Back navigation bar -->
-      <div class="detail-back-bar">
+      <div class="editor-menubar" aria-label="模板分析工具列">
         <button class="btn-back-to-store" onclick="backToStoreBrowse()">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <line x1="19" y1="12" x2="5" y2="12"></line>
@@ -152,7 +144,8 @@
           </svg>
           模板庫
         </button>
-        <span class="detail-navigation-path">專案 / <span id="nav-template-name">正在讀取...</span></span>
+        <div class="editor-document-title"><span>VIDEO ANALYSIS</span><strong id="nav-template-name">正在讀取...</strong></div>
+        <button class="btn-apply-template-main" id="btn-apply-template-main">套用模板</button>
       </div>
 
       <!-- Template Title Header -->
@@ -166,12 +159,36 @@
           <h2 class="detail-template-title" id="detail-template-title">載入中...</h2>
           <p class="detail-template-desc" id="detail-template-desc">載入中...</p>
         </div>
-        <div class="detail-header-right">
-          <button class="btn-apply-template-main" id="btn-apply-template-main">
-            套用模板
-          </button>
-        </div>
       </div>
+
+      <!-- Visual analysis overview: glanceable first, details remain in the inspector -->
+      <section class="analysis-command-deck" aria-labelledby="analysis-command-title">
+        <div class="analysis-command-head">
+          <div>
+            <span class="analysis-command-kicker">VIDEO STRUCTURE</span>
+            <h3 id="analysis-command-title">影片結構總覽</h3>
+          </div>
+          <p>快速掌握影片長度、剪輯密度與敘事節奏，點選節奏區段即可定位對應鏡頭。</p>
+        </div>
+        <div class="analysis-command-grid">
+          <article class="analysis-score-card" aria-label="分析信心指數">
+            <div class="analysis-score-ring" id="analysis-score-ring" style="--score: 0">
+              <div><strong id="analysis-score-value">—</strong><span>可信度</span></div>
+            </div>
+            <div class="analysis-score-copy"><span>分析可信度</span><strong id="analysis-score-label">資料待確認</strong><small>依據來源資料完整度計算</small></div>
+          </article>
+          <article class="analysis-kpi-panel" aria-label="影片關鍵指標">
+            <div class="analysis-kpi"><span>影片長度</span><strong id="analysis-kpi-duration">—</strong><small>總播放時間</small></div>
+            <div class="analysis-kpi"><span>分鏡數量</span><strong id="analysis-kpi-shots">—</strong><small>剪輯段落</small></div>
+            <div class="analysis-kpi"><span>平均鏡長</span><strong id="analysis-kpi-average">—</strong><small>剪輯密度</small></div>
+          </article>
+        </div>
+        <article class="analysis-flow-card">
+          <div class="analysis-flow-head"><div><span class="analysis-card-label">RHYTHM MAP</span><strong>敘事節奏分布</strong></div><div class="analysis-flow-legend"><span><i class="is-hook"></i>開場鉤子</span><span><i class="is-build"></i>內容鋪陳</span><span><i class="is-payoff"></i>關鍵轉折</span><span><i class="is-close"></i>結尾收束</span></div></div>
+          <div class="analysis-rhythm-track" id="analysis-rhythm-track" aria-label="依時長比例顯示的鏡頭結構"></div>
+          <div class="analysis-rhythm-axis"><span>00:00</span><span id="analysis-rhythm-mid">—</span><span id="analysis-rhythm-end">—</span></div>
+        </article>
+      </section>
 
       <!-- NLE workspace: source bin, program monitor and clip inspector -->
       <div class="nle-workspace">
