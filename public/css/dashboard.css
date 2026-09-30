@@ -409,6 +409,21 @@ body.dashboard-layout .spa-discovery-wrap > * {
 .side-link .side-icon-fill {
     display: none !important;
     color: var(--color-nav-active, #172554) !important;
+    transition: all .3s cubic-bezier(.4,0,.2,1);
+    animation: icon-fill-in 0.5s cubic-bezier(.33, 1.53, .69, .99);
+}
+
+@keyframes icon-fill-in {
+    from{
+        scale: 0;
+        opacity: 0;
+        filter: blur(5px);
+    }
+    to{
+        scale: 1;
+        opacity: 1;
+        filter: blur(0);
+    }
 }
 
 .side-link.active .side-icon-line {
@@ -418,6 +433,7 @@ body.dashboard-layout .spa-discovery-wrap > * {
 .side-link.active .side-icon-fill {
     display: block !important;
     color: var(--color-nav-active, #172554) !important;
+    animation: icon-fill-in 0.5s cubic-bezier(.33, 1.53, .69, .99);
 }
 
 .side-link.highlight .side-icon-line {
@@ -3082,7 +3098,7 @@ table {
 }
 
 .sub-list-toggle:hover {
-    color: #ffffff;
+    color: #000;
 }
 
 .sidebar.open .sub-list-toggle {
@@ -3182,7 +3198,7 @@ table {
     width: 100%;
     height: 100%;
     border-radius: 999px;
-    background: linear-gradient(45deg, transparent 30%, rgb(255, 186, 8) 50%, transparent 70%);
+    background: linear-gradient(45deg, transparent 30%, rgb(250, 213, 121) 50%, transparent 70%);
     background-size: calc(100% * 5);
     background-position: top right;
     z-index: 3;
