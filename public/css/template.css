@@ -37,10 +37,11 @@
 }
 
 .template-main {
-  padding: 80px;
-  background: linear-gradient(180deg, #f5f2fc 0%, #fcfbfd 100%);
-  min-height: calc(100vh - 80px);
+  padding: 0;
+  background: transparent;
+  min-height: 0;
 }
+
 
 /* ============================================
    STATE 1: STORE BROWSE VIEW STYLES
@@ -1915,12 +1916,70 @@
 
 @media (max-width: 768px) {
   .template-main {
-    padding: 16px 12px 40px;
+    padding: 0 !important;
+  }
+
+  /* ── Mobile Category Reel (Spec section 28) ── */
+  .store-categories-grid {
+    display: flex !important;
+    flex-direction: row !important;
+    overflow-x: auto !important;
+    scroll-snap-type: x mandatory !important;
+    -webkit-overflow-scrolling: touch !important;
+    gap: 12px !important;
+    padding: 4px 16px 16px 16px !important;
+    margin: 0 -16px !important;
+    scrollbar-width: none !important;
+    width: auto !important;
+  }
+  .store-categories-grid::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .category-card {
+    width: 78vw !important;
+    min-width: 240px !important;
+    max-width: 320px !important;
+    height: 120px !important;
+    flex-shrink: 0 !important;
+    scroll-snap-align: start !important;
+    border-radius: var(--radius-md, 16px) !important;
+  }
+
+  /* ── Store Grid Header on Mobile (Spec section 28.1) ── */
+  .store-grid-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 14px !important;
+  }
+
+  .store-grid-header .header-right {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    gap: 10px !important;
+  }
+
+  .store-search-wrapper {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .store-search-wrapper input {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .new-template-btn {
+    width: 100% !important;
+    justify-content: center !important;
+    min-height: 42px !important;
   }
 
   .detail-page-content-wrapper {
     gap: 16px;
   }
+
 
   .detail-template-hero-header {
     padding: 20px 16px;
