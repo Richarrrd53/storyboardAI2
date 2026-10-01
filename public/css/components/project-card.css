@@ -1,103 +1,226 @@
 /* ============================================================
-   STORYBOARD AI DESIGN SYSTEM v3.0
-   Component: Unified ProjectCard (public/css/components/project-card.css)
-   Variants: .compact (Dashboard) and .full (Projects / History)
+   STORYBOARD AI DESIGN SYSTEM v3.5
+   Component: Project Folder Card (Storyboard Production Folder)
+   File: public/css/components/project-card.css
+   Spec: Project Folder Card 修正實作計畫 v0.2
    ============================================================ */
 
-.project-card,
-.home-project-card {
-  background: var(--color-surface-primary, #ffffff);
-  border-radius: var(--radius-md, 16px);
-  border: 1px solid var(--color-border-default, #e2e8f0);
-  box-shadow: var(--elevation-1, 0 4px 14px rgba(15, 23, 42, 0.04));
-  overflow: hidden;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
+:root {
+  --surface-folder: var(--color-surface-secondary, #F8F9FB);
+  --surface-folder-highlight: #FFFFFF;
+  --surface-folder-border: var(--color-border-subtle, rgba(203, 213, 225, 0.85));
+  --surface-meta: var(--color-surface-tertiary, #F1F5F9);
+  --folder-text-primary: var(--color-text-primary, #0F172A);
+  --folder-text-secondary: var(--color-text-secondary, #64748B);
+  --folder-shadow-default: 0 4px 16px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.03);
+  --folder-shadow-hover: 0 12px 28px rgba(15, 23, 42, 0.09), 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+/* ── 0. Base Container (.project-folder-card) ── */
+.project-card.project-folder-card,
+.project-folder-card {
   position: relative;
-  box-sizing: border-box;
   width: 100%;
+  max-width: 344px; /* Refined safeguard: prevents folder from becoming overly elongated */
+  margin: 0 auto;
+  cursor: pointer;
   user-select: none;
   -webkit-user-select: none;
-  transition: transform var(--motion-duration-fast, 180ms) var(--motion-ease-standard, cubic-bezier(0.2, 0, 0, 1)),
-              box-shadow var(--motion-duration-fast, 180ms) var(--motion-ease-standard, cubic-bezier(0.2, 0, 0, 1)),
-              border-color var(--motion-duration-fast, 180ms) var(--motion-ease-standard, cubic-bezier(0.2, 0, 0, 1));
-}
-
-.project-card:hover,
-.home-project-card:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--elevation-2, 0 12px 28px rgba(15, 23, 42, 0.08));
-  border-color: rgba(37, 99, 235, 0.3);
-}
-
-.project-card:active,
-.home-project-card:active {
-  transform: translateY(-1px) scale(0.99);
-}
-
-/* ── 1. Filmstrip Top Header ── */
-.project-card .card-strip,
-.home-project-card .card-strip {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  height: 28px;
-  padding: 0 10px;
+  flex-direction: column;
+  padding-top: 14px;
   box-sizing: border-box;
-  background-color: var(--color-surface-film, #0f172a);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  flex-shrink: 0;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+  border-radius: 0 !important;
+  transition: transform var(--motion-duration-fast, 200ms) var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1));
 }
 
-.project-card .strip-holes-group,
-.home-project-card .strip-holes-group {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.project-folder-card:active {
+  transform: scale(0.995);
 }
 
-.project-card .strip-hole,
-.home-project-card .strip-hole {
-  width: 9px;
-  height: 13px;
-  border-radius: 2px;
-  background-color: rgba(248, 250, 252, 0.7);
-  border: none;
-  flex-shrink: 0;
+.project-folder-card.is-navigating {
+  pointer-events: none;
 }
 
-/* ── 2. Visual Preview Thumbnail (Standard 16:9) ── */
-.project-card .project-thumb,
-.home-project-card .home-card-thumb {
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+/* ── 1. Thin Rear Lip (Removed per v0.3 spec) ── */
+.project-folder-rear-lip {
+  display: none !important;
+}
+
+/* ── 2. Preview Activity Zone (.project-folder-preview-stack) ── */
+.project-folder-preview-stack,
+.project-preview-zone {
   position: relative;
-  overflow: hidden;
+  width: 100%;
+  height: 162px;
+  margin-bottom: -46px;
+  z-index: 10;
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: flex-end;
+  overflow: visible;
+  pointer-events: none;
 }
 
-.project-card .project-thumb img,
-.home-project-card .home-card-thumb img {
+/* Base sheet styles */
+.project-preview-primary,
+.project-preview-secondary {
+  transform-origin: center bottom;
+  box-sizing: border-box;
+}
+
+/* ── Dynamic Aspect Ratio Handling ── */
+
+/* Base preview primary container (Target Visual Area Normalization + Ratio-Agnostic v0.4) */
+.project-folder-card .project-preview-primary,
+.project-preview-primary {
+  position: relative;
+  width: var(--primary-cover-width, 186px) !important;
+  height: var(--primary-cover-height, 105px) !important;
+  aspect-ratio: unset !important;
+  max-width: 230px;
+  max-height: 172px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.10);
+  overflow: hidden;
+  z-index: 20;
+  flex: none;
+  transform-origin: bottom center;
+  transform: translateY(calc(var(--insert-depth, 16px) - 46px)) rotate(0deg) scale(1);
+  transition: transform 280ms var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1)),
+              box-shadow 280ms var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1)),
+              visibility 100ms ease;
+}
+
+.project-preview-secondary,
+.project-preview-secondary[data-ratio="16:9"],
+.project-preview-secondary[data-ratio*="16:9"] {
+  position: absolute;
+  height: 128px;
+  width: auto;
+  aspect-ratio: 16 / 9;
+  max-width: 244px;
+  border-radius: 14px;
+  background: #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+  z-index: 10;
+  transform-origin: 85% 90%;
+  transform: translateY(24px) translateX(14px) rotate(5deg) scale(0.96);
+  transition: transform var(--motion-duration-base, 300ms) var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1)),
+              box-shadow var(--motion-duration-base, 300ms) var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1)),
+              opacity var(--motion-duration-base, 300ms) var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1));
+  opacity: 0.88;
+}
+
+/* 9:16 Portrait Secondary */
+.project-preview-secondary[data-ratio="9:16"],
+.project-preview-secondary[data-ratio*="9:16"] {
+  --project-ratio: 9 / 16;
+  height: 144px;
+  width: auto;
+  aspect-ratio: 9 / 16;
+  max-width: 90px;
+  border-radius: 12px;
+  transform: translateY(22px) translateX(12px) rotate(5deg) scale(0.96);
+}
+
+/* 2:3 Portrait Secondary */
+.project-preview-secondary[data-ratio="2:3"],
+.project-preview-secondary[data-ratio*="2:3"] {
+  --project-ratio: 2 / 3;
+  height: 140px;
+  width: auto;
+  aspect-ratio: 2 / 3;
+  max-width: 96px;
+  border-radius: 12px;
+  transform: translateY(22px) translateX(12px) rotate(5deg) scale(0.96);
+}
+
+/* 1:1 Square Secondary */
+.project-preview-secondary[data-ratio="1:1"],
+.project-preview-secondary[data-ratio*="1:1"] {
+  --project-ratio: 1 / 1;
+  height: 132px;
+  width: auto;
+  aspect-ratio: 1 / 1;
+  border-radius: 14px;
+  transform: translateY(22px) translateX(12px) rotate(5deg) scale(0.96);
+}
+
+/* 4:3 Standard Secondary */
+.project-preview-secondary[data-ratio="4:3"],
+.project-preview-secondary[data-ratio*="4:3"] {
+  --project-ratio: 4 / 3;
+  height: 128px;
+  width: auto;
+  aspect-ratio: 4 / 3;
+  border-radius: 14px;
+  transform: translateY(22px) translateX(12px) rotate(5deg) scale(0.96);
+}
+
+/* 3:2 Photo Secondary */
+.project-preview-secondary[data-ratio="3:2"],
+.project-preview-secondary[data-ratio*="3:2"] {
+  --project-ratio: 3 / 2;
+  height: 126px;
+  width: auto;
+  aspect-ratio: 3 / 2;
+  border-radius: 14px;
+  transform: translateY(22px) translateX(12px) rotate(5deg) scale(0.96);
+}
+
+/* 21:9 Ultrawide Secondary */
+.project-preview-secondary[data-ratio="21:9"],
+.project-preview-secondary[data-ratio*="21:9"] {
+  --project-ratio: 21 / 9;
+  height: 104px;
+  width: auto;
+  aspect-ratio: 21 / 9;
+  max-width: 248px;
+  border-radius: 14px;
+  transform: translateY(24px) translateX(14px) rotate(5deg) scale(0.96);
+}
+
+.project-preview-primary img,
+.project-preview-primary .lazy-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  display: block;
+  border-radius: inherit;
+  transition: opacity 0.35s ease-in-out;
+}
+
+.project-preview-secondary img,
+.project-preview-secondary .preview-secondary-inner {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
-  transition: transform 0.4s ease;
+  filter: brightness(0.95);
 }
 
-.project-card:hover .project-thumb img,
-.home-project-card:hover .home-card-thumb img {
-  transform: scale(1.04);
+.preview-secondary-sheet {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.4);
 }
 
-/* Fallback Art */
-.project-thumb-fallback,
-.home-card-fallback {
+/* Fallback Frame (Draft Storyboard) */
+.project-preview-primary .thumb-fallback {
   width: 100%;
   height: 100%;
   display: flex;
@@ -105,71 +228,431 @@
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-  color: var(--slate-400, #94a3b8);
-  font-size: var(--font-size-xs, 0.75rem);
-  font-family: var(--font-family-mono, monospace);
+  color: var(--color-text-muted, #94a3b8);
+  font-size: 0.75rem;
+  font-family: var(--font-family-body, inherit);
   gap: 6px;
+  user-select: none;
 }
 
-/* ── 3. Project Info Body ── */
-.project-card-info,
-.project-info,
-.home-card-info {
-  padding: 14px 16px;
+.project-preview-primary .fallback-clapper {
+  color: rgba(255, 255, 255, 0.7);
+  transition: transform 0.3s ease;
+}
+
+.project-preview-primary .fallback-status {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+.project-preview-primary .fallback-sub {
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+
+/* ── 3. Front Folder Shell (Primary Folder Object) ── */
+.project-folder-shell {
+  position: relative;
+  z-index: 30; /* Front layer covering the inserted sheets */
+  display: flex;
+  flex-direction: column;
+  min-height: 136px;
+  background: var(--surface-folder);
+  border: 1px solid var(--surface-folder-border);
+  border-radius: 0 var(--radius-lg) var(--radius-lg) var(--radius-lg);
+  box-shadow: var(--folder-shadow-default);
+  transition: transform 240ms var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1)),
+              box-shadow 240ms var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1)),
+              border-color 240ms var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1)),
+              opacity 240ms ease;
+}
+
+/* Folder Header Row: 3/4 Header Tab + 1/4 Option Slot */
+.project-folder-header-row {
+  position: absolute;
+  display: flex;
+  align-items: flex-end;
+  height: calc(var(--radius-lg) * 1.5);
+  width: 100%;
+  margin-top: calc(0px - calc(var(--radius-lg) * 1.5));
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* 3/4 Header Tab (74% width) */
+.project-folder-tab {
+  position: relative;
+  height: calc(var(--radius-lg) * 1.5);
+  width: calc(100% - 48px - 16px);
+  background: var(--surface-folder);
+  border-top: 1px solid var(--surface-folder-border);
+  border-left: 1px solid var(--surface-folder-border);
+  border-top-left-radius: var(--radius-lg);
+  border-top-right-radius: var(--radius-lg);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  padding-left: 16px;
+  flex-shrink: 0;
+}
+
+/* Smooth S-curve inverse fillet connecting tab to shelf */
+.project-folder-tab::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  transform: translateX(var(--radius-lg));
+  width: var(--radius-lg);
+  height: calc(var(--radius-lg) * 1.5 / 2);
+  background: transparent;
+  border-bottom-left-radius: var(--radius-lg);
+  box-shadow: -6px 6px 0 0 var(--surface-folder);
+  border-bottom: 1px solid var(--surface-folder-border);
+  border-left: 1px solid var(--surface-folder-border);
+  pointer-events: none;
+}
+
+.project-folder-tab-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(148, 163, 184, 0.7);
+}
+
+/* Middle Shelf (remaining ~26% notch zone) */
+.project-folder-shelf {
+  flex: 1;
+  height: 1px;
+  background: var(--surface-folder-border);
+  margin-bottom: 0px;
+  margin-left: 16px;
+}
+
+/* Option Notch Wrap: Embedded with gap A ≈ gap B (10px ~ 14px) */
+.project-folder-notch-wrap {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  margin-bottom: 8px;  /* gap B to folder body ≈ 12px */
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+.project-option-slot {
+  position: relative;
+  z-index: 40;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+/* Option Button: Unified with Folder Front Shell Surface */
+.project-folder-card .project-option-btn,
+.project-option-btn {
+  width: 48px;
+  height: calc(var(--radius-lg) * 1.5);
+  border-radius: 9999px;
+  background: var(--surface-folder);
+  border: 1px solid var(--surface-folder-border);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--folder-text-secondary);
+  cursor: pointer;
+  outline: none;
+  padding: 0;
+  box-sizing: border-box;
+  transition: background 180ms ease,
+              color 180ms ease,
+              box-shadow 180ms ease,
+              transform 180ms ease,
+              border-color 180ms ease;
+}
+
+.project-folder-card .project-option-btn:hover,
+.project-option-btn:hover {
+  background: var(--surface-folder-highlight, #ffffff);
+  color: var(--folder-text-primary, #0f172a);
+  border-color: rgba(148, 163, 184, 0.65);
+  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.07);
+  transform: translateY(-1px);
+}
+
+.project-folder-card .project-option-btn:active,
+.project-option-btn:active {
+  transform: scale(0.96);
+  background: var(--surface-folder);
+}
+
+.project-option-btn.is-hidden-for-morph {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* ── 4. Folder Content ── */
+.project-folder-content {
+  padding: 12px 20px 30px 20px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  box-sizing: border-box;
   flex: 1;
+  justify-content: flex-end;
 }
 
-.project-card-title,
-.project-meta-wrap h3,
-.home-card-title {
-  font-family: var(--font-family-display, "Noto Sans TC", sans-serif);
-  font-size: 1.05rem;
-  font-weight: var(--font-weight-bold, 700);
-  color: var(--color-text-primary, #0f172a);
-  line-height: var(--line-height-snug, 1.3);
-  margin: 0;
+.project-updated {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--folder-text-secondary);
+  line-height: 1.2;
+}
+
+.project-title-wrapper {
+  position: relative;
+  width: 100%;
   overflow: hidden;
-  text-overflow: ellipsis;
+  mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent 100%);
   white-space: nowrap;
+  padding: 2px 0;
 }
 
-/* Metadata Row */
-.project-card-meta,
-.project-meta,
-.home-card-meta {
+.project-folder-card .project-title {
+  display: inline-block;
+  font-family: var(--font-family-display, inherit);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--folder-text-primary);
+  line-height: 1.35;
+  white-space: nowrap;
+  transition: transform 0.35s var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1));
+  will-change: transform;
+}
+
+.project-meta {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: var(--font-size-xs, 0.75rem);
-  color: var(--color-text-tertiary, #64748b);
+  margin-top: 6px;
+  flex-wrap: wrap;
 }
 
-/* ── 4. Project Card Footer ── */
-.project-card-footer {
-  margin-top: auto;
-  padding-top: 10px;
-  border-top: 1px solid var(--color-border-subtle, rgba(226, 232, 240, 0.7));
-  display: flex;
+.project-meta-pill {
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 9999px;
+  background: var(--surface-meta);
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--folder-text-secondary);
+  line-height: 1;
 }
 
-/* ── 5. Variants: Compact (Dashboard) vs Full (Projects) ── */
-/* Compact: Simplified view, no heavy footer */
-.project-card.variant-compact .project-card-footer,
-.home-project-card.variant-compact .project-card-footer {
-  display: none;
+.project-meta-pill.project-restore-badge {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.25);
+  color: #dc2626;
+  font-weight: 600;
 }
 
-.project-card.variant-compact .project-info,
-.home-project-card.variant-compact .home-card-info {
-  padding: 12px 14px;
+/* ── 5. Variants: Compact (Dashboard) vs Default / Full (Projects) ── */
+.project-folder-card.variant-compact .project-folder-shell {
+  min-height: 124px;
 }
 
-/* Full: Complete metadata, date, action triggers */
-.project-card.variant-full .project-card-footer {
+.project-folder-card.variant-compact .project-folder-content {
+  padding: 10px 18px 24px 18px;
+  gap: 6px;
+}
+
+.project-folder-card.variant-compact .project-folder-preview-stack {
+  height: 150px;
+  margin-bottom: -44px;
+}
+
+.project-folder-card.variant-compact .project-preview-primary {
+  width: var(--primary-cover-width, 168px) !important;
+  height: var(--primary-cover-height, 95px) !important;
+  aspect-ratio: unset !important;
+  transform: translateY(calc(var(--insert-depth, 12px) - 44px)) rotate(0deg) scale(1);
+}
+
+.project-folder-card.variant-compact .project-preview-secondary {
+  height: 124px;
+  width: auto;
+  aspect-ratio: var(--project-ratio, 16 / 9);
+}
+
+.project-folder-card.variant-compact .project-preview-secondary[data-ratio*="9:16"] {
+  height: 134px;
+  max-width: 82px;
+}
+
+/* ── 6. Hover Motion (Physical Storyboard Pull) ── */
+.project-folder-card:hover .project-folder-shell {
+  transform: translateY(-2px);
+  box-shadow: var(--folder-shadow-hover);
+}
+
+.project-folder-card:hover .project-preview-primary {
+  transform: translateY(calc(var(--insert-depth, 16px) - 46px - var(--hover-lift, 16px))) rotate(-5deg) scale(1.03);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.16);
+}
+
+.project-folder-card.variant-compact:hover .project-preview-primary {
+  transform: translateY(calc(var(--insert-depth, 12px) - 44px - var(--hover-lift, 14px))) rotate(-5deg) scale(1.03);
+}
+
+.project-folder-card:hover .project-preview-secondary {
+  transform: translateY(-8px) translateX(18px) rotate(6deg) scale(0.98);
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.12);
+  opacity: 0.96;
+}
+
+.project-folder-card:hover .fallback-clapper {
+  transform: scale(1.08) rotate(4deg);
+}
+
+/* ── 7. App-Level Transition Layer & Reveal Curtain (Phase 1～6) ── */
+#transition-layer,
+.app-transition-layer {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 999998 !important;
+  pointer-events: none !important;
+  overflow: hidden !important;
+}
+
+.project-reveal-scrim {
+  position: fixed !important;
+  inset: 0 !important;
+  background: rgba(12, 19, 36, 0.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  opacity: 0;
+  transition: opacity 320ms var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1));
+  pointer-events: none;
+  z-index: 1;
+}
+
+.project-reveal-curtain {
+  position: fixed !important;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.48), 0 0 0 1px rgba(255, 255, 255, 0.15);
+  transform-origin: center center;
+  background: #0f172a;
+  pointer-events: none;
+  will-change: left, top, width, height, transform, opacity;
+  z-index: 2;
+}
+
+.project-reveal-curtain img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.project-reveal-curtain .thumb-fallback {
+  width: 100%;
+  height: 100%;
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  color: var(--color-text-muted, #94a3b8);
+  font-size: 0.85rem;
+  gap: 8px;
+  user-select: none;
+}
+
+/* ── 8. Responsive Rules ── */
+@media (max-width: 768px) {
+  .project-folder-card .project-folder-tab {
+    flex: 0 0 70%;
+    width: 70%;
+    padding-left: 12px;
+  }
+
+  .project-folder-preview-stack {
+    height: 144px;
+    margin-bottom: -40px;
+  }
+
+  .project-preview-primary {
+    width: var(--primary-cover-width, 150px);
+    height: var(--primary-cover-height, 86px);
+    transform: translateY(calc(var(--insert-depth, 18px) - 40px)) rotate(0deg) scale(1);
+  }
+
+  .project-preview-secondary {
+    height: 118px;
+    width: auto;
+    aspect-ratio: var(--project-ratio, 16 / 9);
+    transform: translateY(20px) translateX(8px) rotate(4deg) scale(0.96);
+  }
+
+  .project-preview-secondary[data-ratio*="9:16"] {
+    height: 128px;
+    max-width: 80px;
+  }
+
+  .project-folder-card:hover .project-preview-primary {
+    transform: translateY(calc(var(--insert-depth, 18px) - 40px - var(--hover-lift, 16px))) rotate(-3deg) scale(1.02);
+  }
+
+  .project-folder-card:hover .project-preview-secondary {
+    transform: translateY(-4px) translateX(12px) rotate(4deg) scale(0.98);
+  }
+}
+
+@media (max-width: 480px) {
+  .project-folder-card {
+    padding-top: 8px;
+    max-width: 100%;
+  }
+
+  .project-folder-tab {
+    flex: 0 0 68%;
+    width: 68%;
+    padding-left: 10px;
+  }
+
+  .project-title-wrapper {
+    mask-image: none;
+    -webkit-mask-image: none;
+  }
+
+  .project-folder-card .project-title {
+    text-overflow: ellipsis;
+    overflow: hidden;
+  }
+}
+
+/* ── 9. Reduced Motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .project-folder-card,
+  .project-folder-shell,
+  .project-preview-primary,
+  .project-preview-secondary,
+  .project-title {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    transform: none !important;
+  }
+
+  .project-folder-card:hover .project-preview-primary,
+  .project-folder-card:hover .project-preview-secondary,
+  .project-folder-card:hover .project-folder-shell {
+    transform: none !important;
+  }
 }

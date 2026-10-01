@@ -14,8 +14,8 @@ Use as the reference for page atmosphere, neutral surfaces, whitespace, typograp
 ### Quick Create / QC
 Use as the reference for brand-signature motion, diffuse creation light, matte acrylic, floating interaction, and morph behavior.
 
-### Project / film card
-Use as the reference for film-strip language, thumbnail presentation, storyboard/video metadata, and dark cinematic accents.
+### Project Folder Card (Storyboard Production Folder)
+Use as the reference for the physical production folder metaphor containing storyboard shots, multi-layer preview stack, folder tab silhouette, option notch, physical pull hover interaction, and reveal entry transition.
 
 ### Mobile bottom navigation
 Use as the reference for tactile floating mobile controls, rounded material, and touch feedback.

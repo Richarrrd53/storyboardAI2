@@ -26,17 +26,17 @@
   z-index: 10001;
   overflow: hidden;
   pointer-events: auto;
-  background: rgba(255, 255, 255, 0.75);
-  border: 1px solid rgba(96, 120, 155, 0.16);
-  box-shadow: var(--elevation-3, 0 16px 40px rgba(15, 23, 42, 0.12)), inset 0 1px 0 rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(16px) saturate(130%);
-  -webkit-backdrop-filter: blur(16px) saturate(130%);
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.10);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   transform-origin: center center;
   will-change: width, height, top, left, border-radius, transform;
 }
 
 .global-project-option-menu.is-settled {
-  box-shadow: 0 4px 16px rgba(18, 32, 56, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.10);
 }
 
 /* The Morphing Icon (⋮) */
@@ -144,7 +144,7 @@
 
 .global-project-option-menu .morph-item:hover {
   background: rgba(15, 23, 42, 0.06);
-  color: var(--color-brand-primary, #2563eb);
+  color: var(--color-text-primary, #0f172a);
 }
 
 .global-project-option-menu .morph-item.danger:hover {

@@ -23,7 +23,7 @@ Treat the following as golden references:
 - Dashboard: deep navy shell framing, overall airiness, neutral surfaces, hierarchy, spacing, and page rhythm.
 - Sidebar: integrated directly into dark shell, soft slate inactive items, signature white active pill with deep navy icon.
 - Quick Create (QC): signature creation interaction, matte acrylic, diffuse light, and morph behavior.
-- Project/film card: film-strip language for storyboard/video content.
+- Project Folder Card (Storyboard Production Folder): tactile production folder metaphor containing storyboard shots, multi-layer preview stack, folder tab silhouette, option notch, physical pull hover interaction, and reveal entry transition.
 - Mobile bottom navigation: floating tactile mobile material and interaction language.
 
 Do not make every page identical. Make every page feel unmistakably part of the same product.

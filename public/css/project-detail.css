@@ -285,6 +285,11 @@
   display: block;
 }
 
+.shot-cell-thumb-wrap.is-transition-target {
+  opacity: 0 !important;
+  visibility: visible !important;
+}
+
 .shot-cell-story-box {
   display: flex;
   flex-direction: column;

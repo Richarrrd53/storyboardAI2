@@ -2,11 +2,11 @@
 
 ## Dashboard
 
-Use as the primary golden reference for product atmosphere. Keep greeting, hero, quick actions, recent projects, and QC composition visually calm and aligned. Recent projects should use the shared ProjectCard family.
+Use as the primary golden reference for product atmosphere. Keep greeting, hero, quick actions, recent projects, and QC composition visually calm and aligned. Recent projects («繼續創作») must use the shared `Project Folder Card` component (`variant="compact"`).
 
 ## Projects
 
-Use the shared ProjectCard family. The page title, card grid, and primary page action should align to the common outer grid. Ordinary “new project/storyboard” actions must not inherit QC rainbow/diffuse glow.
+Use the shared `Project Folder Card` component (`variant="default"`). The page title, card grid, and primary page action should align to the common outer grid. Ordinary “new project/storyboard” actions must not inherit QC rainbow/diffuse glow. Both Dashboard and Projects must share the same folder silhouette, tab, preview stack, and hover pull motion.
 
 ## Generate
 

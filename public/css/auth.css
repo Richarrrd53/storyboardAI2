@@ -11,14 +11,21 @@ body {
   display: none;
 }
 
-.auth-main {
+.auth-main,
+#page-main.auth-main,
+#page-main.page-auth,
+#page-content.auth-main,
+#page-content.spa-login-wrap,
+body.auth-layout #page-main,
+body.auth-layout #page-content {
   width: 100% !important;
   min-height: 100vh !important;
   min-height: 100dvh !important;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  height: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
   overflow-x: hidden !important;
   overflow-y: auto !important;
   -webkit-overflow-scrolling: touch;

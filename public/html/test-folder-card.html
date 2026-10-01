@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StoryboardAI Project Folder Card Showcase</title>
+  <link rel="stylesheet" href="../css/tokens.css">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <style>
+    body {
+      background: #0c1324;
+      margin: 0;
+      padding: 40px 20px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+    .demo-canvas {
+      width: 100%;
+      max-width: 1200px;
+      background: #f8fafc;
+      border-radius: 28px;
+      padding: 40px;
+      box-sizing: border-box;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    }
+    .demo-header {
+      margin-bottom: 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .demo-title {
+      font-size: 26px;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 0 0 8px 0;
+      letter-spacing: -0.02em;
+    }
+    .demo-desc {
+      color: #64748b;
+      margin: 0;
+      font-size: 14px;
+    }
+    .demo-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 12px;
+      border-radius: 9999px;
+      background: rgba(37, 99, 235, 0.1);
+      color: #2563eb;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .demo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 28px;
+    }
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 36px 0 16px 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="demo-canvas">
+    <div class="demo-header">
+      <div>
+        <h1 class="demo-title">Storyboard Production Folder Cards</h1>
+        <p class="demo-desc">實裝驗證：裝著分鏡圖、腳本與拍攝規劃的製作資料夾 (v0.1)</p>
+      </div>
+      <div class="demo-badge">Design System v3.5</div>
+    </div>
+
+    <!-- Default Projects Grid -->
+    <div class="section-title">我的分鏡 (Projects Page — Default Variant)</div>
+    <div class="demo-grid">
+      <!-- Card 1: Multi-shot with Cover & Secondary (9:16 Portrait) -->
+      <div class="project-card project-folder-card variant-default" data-id="p1">
+        <div class="project-folder-preview-stack">
+          <div class="project-preview-secondary" data-ratio="9:16">
+            <div class="preview-secondary-sheet">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <path d="m21 15-5-5L5 21"/>
+              </svg>
+            </div>
+          </div>
+          <div class="project-preview-primary" data-ratio="9:16" style="--primary-cover-width: 95px; --primary-cover-height: 168px; --insert-depth: 27px; --hover-lift: 24px;">
+            <img src="https://images.unsplash.com/photo-1518791841217-8f162f1e1131?auto=format&fit=crop&w=600&q=80" alt="Cat shot">
+          </div>
+        </div>
+        <div class="project-folder-shell">
+          <div class="project-folder-header-row">
+            <div class="project-folder-tab">
+              <span class="project-folder-tab-dot"></span>
+            </div>
+            <div class="project-folder-shelf"></div>
+            <div class="project-folder-notch-wrap">
+              <div class="project-option-slot">
+                <button class="project-option-btn" type="button" title="更多選項" onclick="event.stopPropagation(); alert('開啟 Option Morph 選單');">
+                  <span class="option-icon">
+                    <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+                      <circle cx="8" cy="5" r="1.5" />
+                      <circle cx="8" cy="11" r="1.5" />
+                    </svg>
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="project-folder-content">
+            <div class="project-updated">2 天前編輯</div>
+            <div class="project-title-wrapper">
+              <div class="project-title">晨光中的元氣祕密：鮮甜蘋果牛奶廣告分鏡</div>
+            </div>
+            <div class="project-meta">
+              <span class="project-meta-pill project-meta-shot">4 鏡頭</span>
+              <span class="project-meta-pill project-meta-ratio">直向 9:16</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Multi-shot with landscape cover (16:9) -->
+      <div class="project-card project-folder-card variant-default" data-id="p2">
+        <div class="project-folder-preview-stack">
+          <div class="project-preview-secondary" data-ratio="16:9">
+            <div class="preview-secondary-sheet">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <path d="m21 15-5-5L5 21"/>
+              </svg>
+            </div>
+          </div>
+          <div class="project-preview-primary" data-ratio="16:9" style="--primary-cover-width: 186px; --primary-cover-height: 105px; --insert-depth: 18px; --hover-lift: 16px;">
+            <img src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=600&q=80" alt="Landscape shot">
+          </div>
+        </div>
+        <div class="project-folder-shell">
+          <div class="project-folder-header-row">
+            <div class="project-folder-tab">
+              <span class="project-folder-tab-dot"></span>
+            </div>
+            <div class="project-folder-shelf"></div>
+            <div class="project-folder-notch-wrap">
+              <div class="project-option-slot">
+                <button class="project-option-btn" type="button" title="更多選項" onclick="event.stopPropagation(); alert('開啟 Option Morph 選單');">
+                  <span class="option-icon">
+                    <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+                      <circle cx="8" cy="5" r="1.5" />
+                      <circle cx="8" cy="11" r="1.5" />
+                    </svg>
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="project-folder-content">
+            <div class="project-updated">5 天前編輯</div>
+            <div class="project-title-wrapper">
+              <div class="project-title">深山野營生活短片精華版</div>
+            </div>
+            <div class="project-meta">
+              <span class="project-meta-pill project-meta-shot">6 鏡頭</span>
+              <span class="project-meta-pill project-meta-ratio">橫向 16:9</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3: Single shot (1:1 Square) -->
+      <div class="project-card project-folder-card variant-default" data-id="p3">
+        <div class="project-folder-preview-stack">
+          <div class="project-preview-primary" data-ratio="1:1" style="--primary-cover-width: 140px; --primary-cover-height: 140px; --insert-depth: 22px; --hover-lift: 22px;">
+            <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80" alt="Beach shot">
+          </div>
+        </div>
+        <div class="project-folder-shell">
+          <div class="project-folder-header-row">
+            <div class="project-folder-tab">
+              <span class="project-folder-tab-dot"></span>
+            </div>
+            <div class="project-folder-shelf"></div>
+            <div class="project-folder-notch-wrap">
+              <div class="project-option-slot">
+                <button class="project-option-btn" type="button" title="更多選項" onclick="event.stopPropagation(); alert('開啟 Option Morph 選單');">
+                  <span class="option-icon">
+                    <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+                      <circle cx="8" cy="5" r="1.5" />
+                      <circle cx="8" cy="11" r="1.5" />
+                    </svg>
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="project-folder-content">
+            <div class="project-updated">13 天前編輯</div>
+            <div class="project-title-wrapper">
+              <div class="project-title">夏日海浪主視覺概念</div>
+            </div>
+            <div class="project-meta">
+              <span class="project-meta-pill project-meta-shot">1 鏡頭</span>
+              <span class="project-meta-pill project-meta-ratio">方形 1:1</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 4: Draft (No image, fallback clapper) -->
+      <div class="project-card project-folder-card variant-default" data-id="p4">
+        <div class="project-folder-preview-stack">
+          <div class="project-preview-primary" data-ratio="16:9" style="--primary-cover-width: 186px; --primary-cover-height: 105px; --insert-depth: 18px; --hover-lift: 16px;">
+            <div class="thumb-fallback">
+              <div class="fallback-frame">
+                <span class="fallback-clapper">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8H4Z"/><path d="m4 11 2.3-4.6A2 2 0 0 1 8.1 5h7.8a2 2 0 0 1 1.8 1.4L20 11H4Z"/><path d="m6.5 5 2 6"/><path d="m11.5 5 2 6"/><path d="m16.5 5 2 6"/></svg>
+                </span>
+                <span class="fallback-status">草稿分鏡</span>
+                <span class="fallback-sub">尚未生成封面</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="project-folder-shell">
+          <div class="project-folder-header-row">
+            <div class="project-folder-tab">
+              <span class="project-folder-tab-dot"></span>
+            </div>
+            <div class="project-folder-shelf"></div>
+            <div class="project-folder-notch-wrap">
+              <div class="project-option-slot">
+                <button class="project-option-btn" type="button" title="更多選項" onclick="event.stopPropagation(); alert('開啟 Option Morph 選單');">
+                  <span class="option-icon">
+                    <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+                      <circle cx="8" cy="5" r="1.5" />
+                      <circle cx="8" cy="11" r="1.5" />
+                    </svg>
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="project-folder-content">
+            <div class="project-updated">剛剛編輯</div>
+            <div class="project-title-wrapper">
+              <div class="project-title">未命名分鏡草案</div>
+            </div>
+            <div class="project-meta">
+              <span class="project-meta-pill project-meta-shot">0 鏡頭</span>
+              <span class="project-meta-pill project-meta-ratio">橫向 16:9</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Compact Dashboard View -->
+    <div class="section-title">繼續創作 (Dashboard — Compact Variant)</div>
+    <div class="demo-grid">
+      <div class="project-card project-folder-card variant-compact" data-id="p-compact">
+        <div class="project-folder-preview-stack">
+          <div class="project-preview-secondary">
+            <div class="preview-secondary-sheet">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <path d="m21 15-5-5L5 21"/>
+              </svg>
+            </div>
+          </div>
+          <div class="project-preview-primary" style="--primary-cover-width: 86px; --primary-cover-height: 152px; --insert-depth: 24px; --hover-lift: 24px;">
+            <img src="https://images.unsplash.com/photo-1518791841217-8f162f1e1131?auto=format&fit=crop&w=600&q=80" alt="Cat shot">
+          </div>
+        </div>
+        <div class="project-folder-shell">
+          <div class="project-folder-header-row">
+            <div class="project-folder-tab">
+              <span class="project-folder-tab-dot"></span>
+            </div>
+            <div class="project-folder-shelf"></div>
+            <div class="project-folder-notch-wrap">
+              <div class="project-option-slot">
+                <button class="project-option-btn" type="button" title="更多選項" onclick="event.stopPropagation(); alert('開啟 Option Morph 選單');">
+                  <span class="option-icon">
+                    <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+                      <circle cx="8" cy="5" r="1.5" />
+                      <circle cx="8" cy="11" r="1.5" />
+                    </svg>
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="project-folder-content">
+            <div class="project-updated">1 小時前編輯</div>
+            <div class="project-title-wrapper">
+              <div class="project-title">晨光中的元氣祕密：鮮甜蘋果牛奶廣告分鏡</div>
+            </div>
+            <div class="project-meta">
+              <span class="project-meta-pill project-meta-shot">4 鏡頭</span>
+              <span class="project-meta-pill project-meta-ratio">直向 9:16</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Title overflow scroll logic and click transition
+    document.querySelectorAll('.project-folder-card').forEach(card => {
+      const titleWrapper = card.querySelector('.project-title-wrapper');
+      const title = card.querySelector('.project-title');
+      if (titleWrapper && title) {
+        let scrollTimeout = null;
+        let returnTimeout = null;
+
+        card.addEventListener('pointerenter', () => {
+          const overflow = title.scrollWidth - titleWrapper.clientWidth;
+          if (overflow <= 2) return;
+
+          scrollTimeout = setTimeout(() => {
+            const duration = Math.min(Math.max(overflow / 35, 1.4), 3.0);
+            title.style.transition = `transform ${duration}s cubic-bezier(.4, 0, .2, 1)`;
+            title.style.transform = `translateX(-${overflow + 8}px)`;
+
+            returnTimeout = setTimeout(() => {
+              title.style.transition = `transform ${duration * 0.7}s cubic-bezier(.4, 0, .2, 1)`;
+              title.style.transform = 'translateX(0)';
+            }, (duration * 1000) + 650);
+          }, 400);
+        });
+
+        card.addEventListener('pointerleave', () => {
+          clearTimeout(scrollTimeout);
+          clearTimeout(returnTimeout);
+          title.style.transition = 'transform 0.35s cubic-bezier(.4, 0, .2, 1)';
+          title.style.transform = 'translateX(0)';
+        });
+      }
+
+      // Phase 3 — Entry Transition (Project Reveal)
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('.project-option-btn')) return;
+        if (card.classList.contains('is-navigating')) return;
+
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          alert('Reduced motion: 即刻進入專案 ' + card.dataset.id);
+          return;
+        }
+
+        card.classList.add('is-navigating');
+        const folderShell = card.querySelector('.project-folder-shell');
+        const primaryCover = card.querySelector('.project-preview-primary');
+        const coverImg = primaryCover.querySelector('img') || primaryCover;
+        const rect = primaryCover.getBoundingClientRect();
+
+        folderShell.style.transition = 'transform 320ms cubic-bezier(.4, 0, .2, 1), opacity 260ms ease';
+        folderShell.style.transform = 'translateY(36px)';
+        folderShell.style.opacity = '0';
+
+        const secondary = card.querySelector('.project-preview-secondary');
+        if (secondary) {
+          secondary.style.transition = 'opacity 220ms ease, transform 260ms ease';
+          secondary.style.opacity = '0';
+          secondary.style.transform = 'translateY(24px) scale(0.92)';
+        }
+
+        const flyingCover = document.createElement('div');
+        flyingCover.className = 'project-reveal-curtain';
+        flyingCover.style.position = 'fixed';
+        flyingCover.style.left = `${rect.left}px`;
+        flyingCover.style.top = `${rect.top}px`;
+        flyingCover.style.width = `${rect.width}px`;
+        flyingCover.style.height = `${rect.height}px`;
+        flyingCover.style.zIndex = '99999';
+        flyingCover.style.borderRadius = '14px';
+        flyingCover.style.overflow = 'hidden';
+        flyingCover.style.boxShadow = '0 20px 50px rgba(0, 0, 0, 0.35)';
+        flyingCover.style.transformOrigin = 'center center';
+        flyingCover.style.background = '#0f172a';
+
+        if (coverImg.tagName === 'IMG') {
+          const imgClone = document.createElement('img');
+          imgClone.src = coverImg.src;
+          imgClone.style.width = '100%';
+          imgClone.style.height = '100%';
+          imgClone.style.objectFit = 'cover';
+          flyingCover.appendChild(imgClone);
+        } else {
+          flyingCover.innerHTML = primaryCover.innerHTML;
+        }
+
+        const scrim = document.createElement('div');
+        scrim.className = 'project-reveal-scrim';
+        document.body.appendChild(scrim);
+        document.body.appendChild(flyingCover);
+
+        primaryCover.style.visibility = 'hidden';
+        requestAnimationFrame(() => {
+          scrim.style.opacity = '1';
+        });
+
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        const targetW = Math.min(vw * 0.9, 1080);
+        const targetH = Math.min(vh * 0.78, targetW * 9 / 16);
+        const targetLeft = (vw - targetW) / 2;
+        const targetTop = (vh - targetH) / 2;
+
+        const anim = flyingCover.animate([
+          {
+            left: `${rect.left}px`,
+            top: `${rect.top}px`,
+            width: `${rect.width}px`,
+            height: `${rect.height}px`,
+            transform: 'rotate(-5deg) scale(1)',
+            borderRadius: '14px'
+          },
+          {
+            offset: 0.35,
+            left: `${(rect.left + targetLeft) / 2}px`,
+            top: `${Math.min(rect.top, targetTop) - 24}px`,
+            width: `${rect.width * 1.12}px`,
+            height: `${rect.height * 1.12}px`,
+            transform: 'rotate(-2deg) scale(1.04)',
+            borderRadius: '12px'
+          },
+          {
+            offset: 1,
+            left: `${targetLeft}px`,
+            top: `${targetTop}px`,
+            width: `${targetW}px`,
+            height: `${targetH}px`,
+            transform: 'rotate(0deg) scale(1)',
+            borderRadius: '16px'
+          }
+        ], {
+          duration: 620,
+          easing: 'cubic-bezier(.4, 0, .2, 1)',
+          fill: 'forwards'
+        });
+
+        anim.onfinish = () => {
+          setTimeout(() => {
+            scrim.style.transition = 'opacity 280ms ease';
+            flyingCover.style.transition = 'opacity 280ms ease, transform 280ms ease';
+            scrim.style.opacity = '0';
+            flyingCover.style.opacity = '0';
+            flyingCover.style.transform = 'scale(1.02)';
+
+            setTimeout(() => {
+              if (scrim.parentNode) scrim.parentNode.removeChild(scrim);
+              if (flyingCover.parentNode) flyingCover.parentNode.removeChild(flyingCover);
+              primaryCover.style.visibility = '';
+              folderShell.style.transform = '';
+              folderShell.style.opacity = '';
+              if (secondary) {
+                secondary.style.opacity = '';
+                secondary.style.transform = '';
+              }
+              card.classList.remove('is-navigating');
+              alert('成功觸發轉場進入分鏡專案：' + card.dataset.id);
+            }, 300);
+          }, 120);
+        };
+      });
+    });
+  </script>
+</body>
+</html>

@@ -95,6 +95,60 @@ body:not(.dashboard-layout):not(.auth-layout) #page-content {
   margin: 0 !important;
 }
 
+/* ── Auth Layout (Login & Register full-viewport centered shell) ── */
+body.auth-layout,
+html:has(body.auth-layout) {
+  height: auto !important;
+  min-height: 100vh !important;
+  min-height: 100dvh !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+body.auth-layout .page-shell,
+body.auth-layout #page-main,
+#page-main.page-auth,
+#page-main.auth-main,
+.page-shell.page-auth,
+.page-shell.auth-main {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: none !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 100vh !important;
+  min-height: 100dvh !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  position: relative !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+body.auth-layout #page-content,
+#page-main.page-auth #page-content,
+#page-main.auth-main #page-content,
+#page-content.auth-main,
+#page-content.spa-login-wrap {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 1 0 auto !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 100vh !important;
+  min-height: 100dvh !important;
+  overflow: visible !important;
+  margin: 0 !important;
+  padding: 24px 16px !important;
+  box-sizing: border-box !important;
+}
+
 /* When in dashboard layout (with sidebar on desktop) */
 body.dashboard-layout {
   background: var(--app-shell, #0c1324) !important;

@@ -1491,15 +1491,16 @@ body.dashboard-layout .spa-discovery-wrap > * {
 
 .projects-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    grid-auto-rows: minmax(360px, auto);
+    grid-template-columns: repeat(auto-fill, minmax(270px, 344px));
+    grid-auto-rows: auto;
     gap: 24px;
+    justify-content: start;
 }
 
 /* ══════════════════════════════════════════════════════════════
-   LIGHT FILM CARD (MODERN MINIMAL PROJECT CARD)
+   LIGHT FILM CARD (MODERN MINIMAL PROJECT CARD - LEGACY FALLBACK)
    ══════════════════════════════════════════════════════════════ */
-.project-card {
+.project-card:not(.project-folder-card) {
     background: #ffffff;
     border-radius: 14px;
     border: 1px solid rgba(226, 232, 240, 0.85);
@@ -1561,8 +1562,8 @@ body.dashboard-layout .spa-discovery-wrap > * {
     border: none;
 }
 
-/* 2. Visual Preview (16:9 Hero Thumbnail) */
-.project-thumb {
+/* 2. Visual Preview (16:9 Hero Thumbnail - Legacy Card Only) */
+.project-card:not(.project-folder-card) .project-thumb {
     width: 100%;
     aspect-ratio: 16 / 9;
     max-height: 160px;
@@ -1574,8 +1575,8 @@ body.dashboard-layout .spa-discovery-wrap > * {
     justify-content: center;
 }
 
-.project-thumb img,
-.project-thumb .lazy-thumb {
+.project-card:not(.project-folder-card) .project-thumb img,
+.project-card:not(.project-folder-card) .project-thumb .lazy-thumb {
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -1586,12 +1587,12 @@ body.dashboard-layout .spa-discovery-wrap > * {
     transition: opacity 0.4s ease, transform 0.35s var(--motion-ease-decelerate, cubic-bezier(0.16, 1, 0.3, 1));
 }
 
-.project-card:hover .project-thumb img,
-.project-card:hover .project-thumb .lazy-thumb {
+.project-card:not(.project-folder-card):hover .project-thumb img,
+.project-card:not(.project-folder-card):hover .project-thumb .lazy-thumb {
     transform: scale(1.008);
 }
 
-.project-thumb.loading,
+.project-card:not(.project-folder-card) .project-thumb.loading,
 .project-view-thumb.loading {
     animation: thumbPulse 1.8s ease-in-out infinite;
     background: linear-gradient(90deg, #1e293b 0%, #334155 50%, #1e293b 100%);
@@ -1609,7 +1610,7 @@ body.dashboard-layout .spa-discovery-wrap > * {
 }
 
 /* Thumbnail Overlaid Badges */
-.thumb-overlay-badges {
+.project-card:not(.project-folder-card) .thumb-overlay-badges {
     position: absolute;
     bottom: 8px;
     left: 8px;
@@ -1747,7 +1748,7 @@ body.dashboard-layout .spa-discovery-wrap > * {
 }
 
 .project-card:hover .project-title {
-    color: var(--primary, #2563eb);
+    color: inherit;
 }
 
 .project-meta-line {
@@ -1778,299 +1779,6 @@ body.dashboard-layout .spa-discovery-wrap > * {
     flex-shrink: 0;
 }
 
-/* Primary CTA Button: [ 開啟 ] (Solid Matte Acrylic Capsule) */
-.project-primary-btn {
-    width: 74px;
-    height: 36px;
-    padding: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 999px;
-    font-family: inherit;
-    font-size: 13px;
-    font-weight: 600;
-    color: #1e293b;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(245, 247, 250, 0.88));
-    border: 1px solid rgba(20, 40, 80, 0.08);
-    box-shadow: 0 4px 14px rgba(20, 35, 60, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    cursor: pointer;
-    line-height: 1;
-    white-space: nowrap;
-    box-sizing: border-box;
-    transition: transform 0.18s var(--motion-ease-decelerate, cubic-bezier(0.16, 1, 0.3, 1)),
-                box-shadow 0.18s ease,
-                background 0.18s ease,
-                color 0.18s ease,
-                border-color 0.18s ease;
-}
-
-.project-primary-btn:hover {
-    background: linear-gradient(180deg, #ffffff, rgba(240, 245, 255, 0.95));
-    border-color: rgba(37, 99, 235, 0.22);
-    color: #1d4ed8;
-    box-shadow: 0 6px 18px rgba(37, 99, 235, 0.12), inset 0 1px 0 #ffffff;
-    transform: translateY(-1px);
-}
-
-.project-primary-btn:active {
-    transform: scale(0.96) translateY(0);
-    box-shadow: 0 2px 6px rgba(20, 35, 60, 0.06);
-}
-
-/* Secondary Option Button: ( ⋮ ) in Card */
-.project-option-btn {
-    width: 36px;
-    height: 36px;
-    padding: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.90), rgba(245, 247, 250, 0.84));
-    border: 1px solid rgba(20, 40, 80, 0.08);
-    box-shadow: 0 4px 12px rgba(20, 35, 60, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.92);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    color: #64748b;
-    cursor: pointer;
-    outline: none;
-    box-sizing: border-box;
-    transition: background 0.18s ease,
-                color 0.18s ease,
-                border-color 0.18s ease,
-                box-shadow 0.18s ease;
-}
-
-.project-option-btn:hover {
-    background: linear-gradient(180deg, #ffffff, rgba(242, 246, 252, 0.94));
-    color: #0f172a;
-    border-color: rgba(37, 99, 235, 0.20);
-    box-shadow: 0 4px 14px rgba(20, 35, 60, 0.08), inset 0 1px 0 #ffffff;
-}
-
-.project-option-btn.is-hidden-for-morph {
-    opacity: 0 !important;
-    pointer-events: none !important;
-}
-
-.project-option-btn .option-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 15px;
-    height: 15px;
-    pointer-events: none;
-}
-
-/* ══════════════════════════════════════════════════════════════
-   GLOBAL OPTION MORPH MENU (Button → Dot → Surface)
-   ══════════════════════════════════════════════════════════════ */
-.project-option-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 10000;
-    pointer-events: none;
-    background: transparent;
-}
-
-.project-option-overlay.is-active {
-    pointer-events: auto;
-}
-
-:root {
-    --morph-ease: var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1));
-}
-
-.global-project-option-menu {
-    position: fixed;
-    box-sizing: border-box;
-    z-index: 10001;
-    overflow: hidden;
-    pointer-events: auto;
-    background: rgba(255, 255, 255, 0.66);
-    border: 1px solid rgba(96, 120, 155, 0.14);
-    box-shadow: 0 2px 8px rgba(18, 32, 56, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.72);
-    backdrop-filter: blur(16px) saturate(130%);
-    -webkit-backdrop-filter: blur(16px) saturate(130%);
-    transform-origin: center center;
-    will-change: width, height, top, left, border-radius, transform;
-}
-
-.global-project-option-menu.is-settled {
-    box-shadow: 0 2px 8px rgba(18, 32, 56, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.72);
-}
-
-/* The Morphing Icon (⋮) */
-.global-project-option-menu .morph-icon {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #64748b;
-    pointer-events: none;
-    opacity: 1;
-    filter: blur(0);
-    transform: scale(1);
-    transition: opacity 70ms var(--morph-ease), filter 70ms var(--morph-ease), transform 70ms var(--morph-ease);
-}
-
-.global-project-option-menu.is-icon-dissolved .morph-icon {
-    opacity: 0;
-    filter: blur(4px);
-    transform: scale(0.7);
-}
-
-/* Menu Content Container */
-.global-project-option-menu .morph-menu-content {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    padding: 7px;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    box-sizing: border-box;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 70ms var(--morph-ease);
-}
-
-.global-project-option-menu.is-content-visible .morph-menu-content {
-    opacity: 1;
-    pointer-events: auto;
-}
-
-/* Menu Items (stagger 14ms, blur 4px -> 0, opacity 0 -> 1, translateY 4px -> 0) */
-.global-project-option-menu .morph-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
-    height: 28px;
-    padding: 0 8px;
-    box-sizing: border-box;
-    border-radius: 8px;
-    font-family: inherit;
-    font-size: 12.5px;
-    font-weight: 550;
-    color: #334155;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    text-align: left;
-    outline: none;
-    white-space: nowrap;
-    opacity: 0;
-    filter: blur(4px);
-    transform: translateY(4px);
-    transition: opacity 0.14s var(--morph-ease),
-                filter 0.14s var(--morph-ease),
-                transform 0.14s var(--morph-ease),
-                background 0.12s ease,
-                color 0.12s ease;
-}
-
-.global-project-option-menu.is-content-visible .morph-item {
-    opacity: 1;
-    filter: blur(0);
-    transform: translateY(0);
-}
-
-/* Stagger Delays (14ms intervals) */
-.global-project-option-menu.is-content-visible .morph-item:nth-child(1) { transition-delay: 0ms; }
-.global-project-option-menu.is-content-visible .morph-item:nth-child(2) { transition-delay: 14ms; }
-.global-project-option-menu.is-content-visible .morph-item:nth-child(3) { transition-delay: 28ms; }
-.global-project-option-menu.is-content-visible .morph-divider { transition-delay: 38ms; }
-.global-project-option-menu.is-content-visible .morph-item:nth-child(5) { transition-delay: 48ms; }
-
-/* Closing: Reverse Stagger + Soft Blur (re-melt into Surface) */
-.global-project-option-menu.is-items-collapsing .morph-item {
-    opacity: 0 !important;
-    filter: blur(3px) !important;
-    transform: translateY(3px) !important;
-    transition: opacity 0.11s var(--morph-ease),
-                filter 0.11s var(--morph-ease),
-                transform 0.11s var(--morph-ease) !important;
-}
-
-/* Reverse Stagger Delays: Delete (child 5) melts first -> Divider -> Export -> Duplicate -> Rename */
-.global-project-option-menu.is-items-collapsing .morph-item:nth-child(5) { transition-delay: 0ms !important; }
-.global-project-option-menu.is-items-collapsing .morph-divider { transition-delay: 14ms !important; }
-.global-project-option-menu.is-items-collapsing .morph-item:nth-child(3) { transition-delay: 26ms !important; }
-.global-project-option-menu.is-items-collapsing .morph-item:nth-child(2) { transition-delay: 38ms !important; }
-.global-project-option-menu.is-items-collapsing .morph-item:nth-child(1) { transition-delay: 50ms !important; }
-.global-project-option-menu.is-items-collapsing .morph-item:only-child { transition-delay: 0ms !important; }
-
-.global-project-option-menu .morph-item:hover {
-    background: rgba(15, 23, 42, 0.06);
-    color: #0f172a;
-}
-
-.global-project-option-menu .morph-item:active {
-    transform: scale(0.97);
-}
-
-.global-project-option-menu .morph-item-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 15px;
-    height: 15px;
-    flex-shrink: 0;
-    color: inherit;
-}
-
-.global-project-option-menu .morph-item.delete {
-    color: #e11d48;
-}
-
-.global-project-option-menu .morph-item.delete:hover {
-    background: rgba(239, 68, 68, 0.08);
-    color: #be123c;
-}
-
-.global-project-option-menu .morph-item.delete:hover .morph-item-icon {
-    color: #be123c;
-}
-
-.global-project-option-menu .morph-divider {
-    height: 1px;
-    background: rgba(226, 232, 240, 0.85);
-    margin: 3px 4px;
-    opacity: 0;
-    filter: blur(2px);
-    transform: translateY(3px);
-    transition: opacity 0.12s var(--morph-ease), filter 0.12s var(--morph-ease), transform 0.12s var(--morph-ease);
-}
-
-.global-project-option-menu.is-content-visible .morph-divider {
-    opacity: 1;
-    filter: blur(0);
-    transform: translateY(0);
-}
-
-.global-project-option-menu.is-items-collapsing .morph-divider {
-    opacity: 0 !important;
-    filter: blur(2px) !important;
-    transform: translateY(2px) !important;
-    transition: opacity 0.10s var(--morph-ease), filter 0.10s var(--morph-ease), transform 0.10s var(--morph-ease) !important;
-    transition-delay: 14ms !important;
-}
-
-.project-meta {
-    font-size: 0.85rem;
-    color: var(--text-mid);
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 16px;
-}
 
 .project-tag {
     background: var(--off-white);
@@ -3741,20 +3449,9 @@ table {
 
 .home-recent-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-}
-
-@media (max-width: 1280px) and (min-width: 961px) {
-    .home-recent-grid {
-        grid-template-columns: repeat(3, 1fr);
-    }
-}
-
-@media (max-width: 960px) and (min-width: 769px) {
-    .home-recent-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
+    grid-template-columns: repeat(auto-fill, minmax(260px, 344px));
+    gap: 20px;
+    justify-content: start;
 }
 
 /* Simplified Recent Project Card */
@@ -4062,9 +3759,8 @@ table {
         border-radius: 16px;
     }
 
-    /* Option button hidden on mobile - tapping card opens it */
-    .home-card-option-btn,
-    .project-card.variant-compact .project-option-btn {
+    /* Legacy home-card option button hidden on mobile - Project Folder Card keeps its notch option button */
+    .home-card-option-btn {
         display: none !important;
     }
 

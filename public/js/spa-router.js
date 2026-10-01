@@ -31,22 +31,29 @@
   let activeDisplayHistoryFn = null;
 
   const SKELETON_CARDS_HTML = Array.from({ length: 4 }).map(() => `
-    <div class="project-card skeleton">
-      <div class="card-strip">
-        <div class="strip-holes-group">
-          <div class="strip-hole"></div>
-          <div class="strip-hole"></div>
-          <div class="strip-hole"></div>
-        </div>
+    <div class="project-card project-folder-card skeleton">
+      <div class="project-folder-preview-stack">
+        <div class="project-preview-primary skeleton-pulse" style="background: #1e293b; width: 88%; max-width: 256px; height: 142px; border-radius: 14px;"></div>
       </div>
-      <div class="project-thumb skeleton-pulse" style="background: #1e293b; aspect-ratio: 16 / 9;"></div>
-      <div class="project-info">
-        <div class="project-meta-wrap">
-          <div class="skeleton-pulse" style="background: #e2e8f0; height: 1rem; border-radius: 4px; width: 75%; margin-bottom: 8px;"></div>
-          <div class="skeleton-pulse" style="background: #e2e8f0; height: 0.75rem; border-radius: 4px; width: 45%;"></div>
+      <div class="project-folder-shell">
+        <div class="project-folder-header-row">
+          <div class="project-folder-tab">
+            <span class="project-folder-tab-dot"></span>
+          </div>
+          <div class="project-folder-shelf"></div>
+          <div class="project-folder-notch-wrap">
+            <div class="project-option-slot">
+              <div class="skeleton-pulse" style="width: 36px; height: 32px; border-radius: 9999px; background: #e2e8f0;"></div>
+            </div>
+          </div>
         </div>
-        <div class="project-card-footer">
-          <div class="skeleton-pulse" style="background: #f1f5f9; height: 32px; width: 84px; border-radius: 8px;"></div>
+        <div class="project-folder-content">
+          <div class="skeleton-pulse" style="background: #e2e8f0; height: 0.75rem; border-radius: 4px; width: 30%; margin-bottom: 6px;"></div>
+          <div class="skeleton-pulse" style="background: #e2e8f0; height: 1.1rem; border-radius: 4px; width: 75%; margin-bottom: 10px;"></div>
+          <div style="display: flex; gap: 8px;">
+            <div class="skeleton-pulse" style="background: #f1f5f9; height: 26px; width: 64px; border-radius: 9999px;"></div>
+            <div class="skeleton-pulse" style="background: #f1f5f9; height: 26px; width: 78px; border-radius: 9999px;"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -280,9 +287,19 @@
 
   function rafDelay(ms) {
     return new Promise(resolve => {
+      let done = false;
       const start = performance.now();
+      const timer = setTimeout(() => {
+        if (!done) {
+          done = true;
+          resolve();
+        }
+      }, ms + 50);
       function frame(now) {
+        if (done) return;
         if (now - start >= ms) {
+          done = true;
+          clearTimeout(timer);
           resolve();
         } else {
           requestAnimationFrame(frame);
@@ -390,105 +407,287 @@
     return ratio;
   }
 
+  function normalizeRatio(ratio) {
+    if (!ratio) return '16:9';
+    const str = String(ratio).trim();
+    if (str.includes('9:16') || str.includes('9/16')) return '9:16';
+    if (str.includes('2:3') || str.includes('2/3')) return '2:3';
+    if (str.includes('1:1') || str.includes('1/1')) return '1:1';
+    if (str.includes('4:3') || str.includes('4/3')) return '4:3';
+    if (str.includes('3:2') || str.includes('3/2')) return '3:2';
+    if (str.includes('21:9') || str.includes('21/9')) return '21:9';
+    if (str.includes('16:9') || str.includes('16/9')) return '16:9';
+    const match = str.match(/\d+[:/]\d+/);
+    return match ? match[0].replace('/', ':') : '16:9';
+  }
+
+  function parseAspectRatio(ratioInput, width, height) {
+    if (width > 0 && height > 0) {
+      const r = width / height;
+      if (isFinite(r) && r > 0) return r;
+    }
+    if (typeof ratioInput === 'number' && ratioInput > 0 && isFinite(ratioInput)) {
+      return ratioInput;
+    }
+    const str = String(ratioInput || '').trim();
+    if (!str) return 16 / 9;
+
+    const match = str.match(/(\d+(?:\.\d+)?)\s*[:/]\s*(\d+(?:\.\d+)?)/);
+    if (match) {
+      const w = parseFloat(match[1]);
+      const h = parseFloat(match[2]);
+      if (w > 0 && h > 0) return w / h;
+    }
+
+    const floatVal = parseFloat(str);
+    if (!isNaN(floatVal) && floatVal > 0) {
+      return floatVal;
+    }
+
+    if (str.includes('直向')) return 9 / 16;
+    if (str.includes('方形')) return 1;
+    if (str.includes('超寬')) return 21 / 9;
+    return 16 / 9;
+  }
+
+  function calculateBalancedPreviewSize(options = {}) {
+    const {
+      aspectRatio = 16 / 9,
+      variant = 'default',
+      isMobile = false
+    } = options;
+
+    let r = Number(aspectRatio) || (16 / 9);
+    if (r <= 0 || !isFinite(r)) r = 16 / 9;
+
+    // Default variant (Projects): Target Area ~19500px^2
+    let targetArea = 19500;
+    let maxWidth = 225;
+    let maxHeight = 168;
+
+    if (variant === 'compact') {
+      targetArea = 15800;
+      maxWidth = 205;
+      maxHeight = 152;
+    }
+
+    if (isMobile) {
+      targetArea = Math.round(targetArea * 0.88);
+      maxWidth = Math.round(maxWidth * 0.92);
+      maxHeight = Math.round(maxHeight * 0.94);
+    }
+
+    // Ideal dimensions: width * height ≈ targetArea and width / height = r
+    let width = Math.sqrt(targetArea * r);
+    let height = Math.sqrt(targetArea / r);
+
+    // Boundary clamp: maintain aspect ratio r
+    if (width > maxWidth) {
+      width = maxWidth;
+      height = width / r;
+    }
+    if (height > maxHeight) {
+      height = maxHeight;
+      width = height * r;
+    }
+
+    // Minimum safety bounds
+    const minW = 60;
+    const minH = 60;
+    if (width < minW) {
+      width = minW;
+      height = width / r;
+    }
+    if (height < minH) {
+      height = minH;
+      width = height * r;
+    }
+
+    width = Math.round(width * 10) / 10;
+    height = Math.round(height * 10) / 10;
+
+    // ── Continuous Ratio-Agnostic VISIBLE_RATIO calculation ──
+    // Continuous logarithmic curve: f(r) = 0.55 - 0.08 * log2(r)
+    // Portrait (9:16 ~ 2:3): ~58% - 62% visible
+    // Square (1:1): ~55% visible
+    // Landscape (16:9 ~ 4:3): ~46% - 51% visible
+    // Ultrawide (21:9): ~43% visible (clamped >= 40%)
+    // ── Continuous Ratio-Agnostic VISIBLE_RATIO calculation ──
+    // Continuous curve: f(r) = 0.54 - 0.05 * log2(r)
+    // Landscape (16:9 ~ 21:9): ~48% - 50% visible unhovered
+    // Square (1:1): ~54% visible unhovered
+    // Portrait (9:16 ~ 2:3): ~58% - 62% visible unhovered
+    const log2r = Math.log(r) / Math.LN2;
+    const rawVisibleRatio = 0.54 - 0.05 * log2r;
+    const visibleRatio = Math.max(0.46, Math.min(0.65, rawVisibleRatio));
+
+    // The folder pocket tab stands 36px in front of the folder body rim.
+    // Physical pocket geometry:
+    // hiddenHeight = height * (1 - visibleRatio)
+    // insertDepth = hiddenHeight - tabHeight
+    const tabHeight = 36;
+    const targetHiddenHeight = height * (1 - visibleRatio);
+
+    // Clamped insertDepth ensures cover is securely inserted inside the pocket (at least 4px, max 28px)
+    let insertDepth = Math.max(4, Math.min(28, Math.round(targetHiddenHeight - tabHeight)));
+
+    // Guarantee at least 46% of height is visibly exposed above the tab for landscape
+    let visibleHeight = height - (insertDepth + tabHeight);
+    if (visibleHeight / height < 0.46) {
+      insertDepth = Math.max(4, Math.round(height * 0.54 - tabHeight));
+      visibleHeight = height - (insertDepth + tabHeight);
+    }
+
+    // Hover Lift: proportional pull, checked so landscape covers are not pulled too high
+    const hoverLift = Math.max(12, Math.min(18, Math.round(Math.min(height * 0.15, insertDepth + 10))));
+
+    return {
+      width,
+      height,
+      visibleRatio: Math.round(visibleRatio * 100) / 100,
+      insertDepth,
+      visibleHeight: Math.round(visibleHeight * 10) / 10,
+      hoverLift
+    };
+  }
+
+  window.calculateBalancedPreviewSize = calculateBalancedPreviewSize;
+  window.parseAspectRatio = parseAspectRatio;
+
   function formatRatioText(ratio) {
-    if (!ratio) return '橫向 16:9';
-    if (ratio === '16:9') return '橫向 16:9';
-    if (ratio === '9:16') return '直向 9:16';
-    if (ratio === '1:1') return '方形 1:1';
-    if (ratio === '4:3') return '橫向 4:3';
-    return ratio;
+    const clean = normalizeRatio(ratio);
+    if (clean === '16:9') return '橫向 16:9';
+    if (clean === '9:16') return '直向 9:16';
+    if (clean === '1:1') return '方形 1:1';
+    if (clean === '4:3') return '橫向 4:3';
+    if (clean === '3:2') return '橫向 3:2';
+    if (clean === '2:3') return '直向 2:3';
+    if (clean === '21:9') return '超寬 21:9';
+    return ratio || '橫向 16:9';
+  }
+
+  function formatRelativeTime(dateInput) {
+    if (!dateInput) return '剛剛編輯';
+    const now = Date.now();
+    const time = new Date(dateInput).getTime();
+    if (isNaN(time)) return '剛剛編輯';
+    const diffSec = Math.max(0, Math.floor((now - time) / 1000));
+    
+    if (diffSec < 60) return '剛剛編輯';
+    const diffMin = Math.floor(diffSec / 60);
+    if (diffMin < 60) return `${diffMin} 分鐘前編輯`;
+    const diffHour = Math.floor(diffMin / 60);
+    if (diffHour < 24) return `${diffHour} 小時前編輯`;
+    const diffDay = Math.floor(diffHour / 24);
+    if (diffDay < 30) return `${diffDay} 天前編輯`;
+    const diffMonth = Math.floor(diffDay / 30);
+    if (diffMonth < 12) return `${diffMonth} 個月前編輯`;
+    const diffYear = Math.floor(diffDay / 365);
+    return `${diffYear} 年前編輯`;
   }
 
   function renderProjectCard(p, options = {}) {
-    const variant = options.variant || (options.isCompact ? 'compact' : 'full');
+    const variant = options.variant || (options.isCompact ? 'compact' : 'default');
     const isHistory = options.isHistory || false;
-    const isCompact = variant === 'compact';
-    const date = new Date(p.createAt).toLocaleDateString('zh-TW');
     const shotsCount = p.shotCount || (Array.isArray(p.shots) ? p.shots.length : 0);
-    const ratioBadge = formatRatioBadge(p.ratio);
+    const cleanRatio = normalizeRatio(p.ratio);
     const ratioText = formatRatioText(p.ratio);
+    const relativeTime = formatRelativeTime(p.updateAt || p.createAt);
     const titleEsc = String(p.title || '未命名分鏡').replace(/[&<>"']/g, m => ({
       '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
     }[m]));
-    const styleEsc = p.style ? String(p.style).replace(/[&<>"']/g, m => ({
-      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-    }[m])) : '';
 
-    const metaInfo = isHistory && styleEsc
-      ? `${date} · ${ratioText} · ${styleEsc}`
-      : `${date} · ${ratioText}`;
+    const numericRatio = parseAspectRatio(p.ratio, p.width, p.height);
+    const isMob = typeof isMobileView === 'function' ? isMobileView() : false;
+    const { width: pWidth, height: pHeight, insertDepth: pInsertDepth, hoverLift } = calculateBalancedPreviewSize({
+      aspectRatio: numericRatio,
+      variant,
+      isMobile: isMob
+    });
 
-    const mainActionLabel = (isHistory || p.is_deleted) ? '還原' : '開啟';
+    const hasSecondary = shotsCount > 1;
+    let secondaryImgSrc = null;
+    if (Array.isArray(p.shots) && p.shots[1]?.payload?.image) {
+      secondaryImgSrc = p.shots[1].payload.image;
+    }
+
+    const secondaryContent = secondaryImgSrc
+      ? `<img src="${secondaryImgSrc}" alt="Secondary Shot" />`
+      : `<div class="preview-secondary-sheet">
+           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+             <rect x="3" y="3" width="18" height="18" rx="2"/>
+             <circle cx="8.5" cy="8.5" r="1.5"/>
+             <path d="m21 15-5-5L5 21"/>
+           </svg>
+         </div>`;
 
     return `
-      <div class="card-strip">
-        <div class="strip-holes-group">
-          <div class="strip-hole"></div>
-          <div class="strip-hole"></div>
-          <div class="strip-hole"></div>
-        </div>
-      </div>
-      <div class="project-thumb loading" data-src="/api/projects/${p.id}/cover">
-        <div class="thumb-fallback">
-          <div class="fallback-frame">
-            <span class="fallback-clapper">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8H4Z"/><path d="m4 11 2.3-4.6A2 2 0 0 1 8.1 5h7.8a2 2 0 0 1 1.8 1.4L20 11H4Z"/><path d="m6.5 5 2 6"/><path d="m11.5 5 2 6"/><path d="m16.5 5 2 6"/></svg>
-            </span>
-            <span class="fallback-status">草稿分鏡</span>
-            <span class="fallback-sub">尚未生成封面</span>
+      <div class="project-folder-preview-stack" data-ratio="${cleanRatio}">
+        ${hasSecondary ? `
+          <div class="project-preview-secondary" data-ratio="${cleanRatio}">
+            ${secondaryContent}
+          </div>
+        ` : ''}
+        <div class="project-preview-primary project-thumb loading" data-ratio="${cleanRatio}" style="--primary-cover-width: ${pWidth}px; --primary-cover-height: ${pHeight}px; --insert-depth: ${pInsertDepth}px; --hover-lift: ${hoverLift}px;" data-src="/api/projects/${p.id}/cover">
+          <div class="thumb-fallback">
+            <div class="fallback-frame">
+              <span class="fallback-clapper">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8H4Z"/><path d="m4 11 2.3-4.6A2 2 0 0 1 8.1 5h7.8a2 2 0 0 1 1.8 1.4L20 11H4Z"/><path d="m6.5 5 2 6"/><path d="m11.5 5 2 6"/><path d="m16.5 5 2 6"/></svg>
+              </span>
+              <span class="fallback-status">草稿分鏡</span>
+              <span class="fallback-sub">尚未生成封面</span>
+            </div>
           </div>
         </div>
-        <div class="thumb-overlay-badges">
-          <span class="thumb-badge">${ratioBadge}</span>
-          ${shotsCount > 0 ? `<span class="thumb-badge">${shotsCount} 鏡頭</span>` : ''}
-        </div>
       </div>
-      <div class="project-info">
-        <div class="project-title" title="${titleEsc}">${titleEsc}</div>
-        ${isCompact ? `
-          <div class="project-meta-line" style="font-size: 12px; color: var(--color-text-tertiary, #64748b);">${shotsCount > 0 ? `${shotsCount} 個鏡頭 · ` : ''}${ratioText}</div>
-          <button class="project-option-btn home-card-option-btn" type="button" title="更多選項" aria-label="更多選項" style="position: absolute; right: 12px; bottom: 12px;">
-            <span class="option-icon">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-                <circle cx="12" cy="5" r="2.1" />
-                <circle cx="12" cy="12" r="2.1" />
-                <circle cx="12" cy="19" r="2.1" />
-              </svg>
-            </span>
-          </button>
-        ` : `
-          <div class="project-card-footer">
-            <div class="project-meta-line" title="${metaInfo}">${metaInfo}</div>
-            <div class="project-card-actions">
-              <button class="project-primary-btn" type="button" title="${mainActionLabel}分鏡">${mainActionLabel}</button>
+      <div class="project-folder-shell">
+        <div class="project-folder-header-row">
+          <div class="project-folder-tab">
+            <span class="project-folder-tab-dot"></span>
+          </div>
+          <div class="project-folder-notch-wrap">
+            <div class="project-option-slot">
               <button class="project-option-btn" type="button" title="更多選項" aria-label="更多選項">
                 <span class="option-icon">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-                    <circle cx="12" cy="5" r="2.1" />
-                    <circle cx="12" cy="12" r="2.1" />
-                    <circle cx="12" cy="19" r="2.1" />
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+                    <circle cx="8" cy="5" r="1.5" />
+                    <circle cx="8" cy="11" r="1.5" />
                   </svg>
                 </span>
               </button>
             </div>
           </div>
-        `}
+        </div>
+        <div class="project-folder-content">
+          <div class="project-updated">${relativeTime}</div>
+          <div class="project-title-wrapper">
+            <div class="project-title" title="${titleEsc}">${titleEsc}</div>
+          </div>
+          <div class="project-meta">
+            <span class="project-meta-pill project-meta-shot">${shotsCount} 鏡頭</span>
+            <span class="project-meta-pill project-meta-ratio">${ratioText}</span>
+            ${(isHistory || p.is_deleted) ? `<span class="project-meta-pill project-restore-badge">已刪除</span>` : ''}
+          </div>
+        </div>
       </div>
     `;
   }
 
   function buildLightFilmCardHTML(p, isHistory = false) {
-    return renderProjectCard(p, { variant: 'full', isHistory });
+    return renderProjectCard(p, { variant: 'default', isHistory });
   }
 
   function buildHomeRecentCardHTML(p) {
-    return renderProjectCard(p, { variant: 'full' });
+    return renderProjectCard(p, { variant: 'compact' });
   }
 
 
   // ══════════════════════════════════════════════════════════════
   // GLOBAL OPTION MORPH CONTROLLER v4 (Continuous Overlap Standard Morph)
   // ══════════════════════════════════════════════════════════════
+  // Synchronized with CSS .project-option-btn (width: 48px, height: calc(var(--radius-lg) * 1.5) = 36px)
+  const OPTION_BTN_WIDTH = 48;
+  const OPTION_BTN_HEIGHT = 36;
   let activeMorphSession = null;
 
   // High-precision cubic-bezier solver for standard Material curve cubic-bezier(.4, 0, .2, 1)
@@ -641,14 +840,13 @@
         morphIcon.style.opacity = '0';
       } else if (elapsed < closeTotalDuration) {
         // Phase C: Dot is now at p0_target; dedicate full 210ms (230 - 440ms) to
-        // 20px -> 36px steady growth with synchronized blur-to-clear icon emergence
+        // 20px -> button dimensions steady growth with synchronized blur-to-clear icon emergence
         const rp = (elapsed - 230) / 210;
         const rEase = easeStandard(rp);
 
-        const curSize = 20 + 16 * rEase;
-        curW = curSize;
-        curH = curSize;
-        curRadius = 50;
+        curW = 20 + (OPTION_BTN_WIDTH - 20) * rEase;
+        curH = 20 + (OPTION_BTN_HEIGHT - 20) * rEase;
+        curRadius = 9999;
         curCenterX = p0_target.x;
         curCenterY = p0_target.y;
 
@@ -671,10 +869,10 @@
         const bump = Math.sin(rEase * Math.PI) * Math.max(0, 1 - 0.5 * rEase);
         curScale = 1 + 0.004 * bump;
       } else {
-        // Exact final state at button center
-        curW = 36;
-        curH = 36;
-        curRadius = 50;
+        // Exact final state at button center (synchronized 48px x 36px capsule)
+        curW = OPTION_BTN_WIDTH;
+        curH = OPTION_BTN_HEIGHT;
+        curRadius = 9999;
         curCenterX = p0_target.x;
         curCenterY = p0_target.y;
         curScale = 1;
@@ -687,7 +885,7 @@
       menu.style.height = `${curH.toFixed(1)}px`;
       menu.style.left = `${(curCenterX - curW / 2).toFixed(1)}px`;
       menu.style.top = `${(curCenterY - curH / 2).toFixed(1)}px`;
-      menu.style.borderRadius = curRadius > 45 ? '50%' : `${curRadius.toFixed(1)}%`;
+      menu.style.borderRadius = (curRadius >= 45 || elapsed >= 230) ? '9999px' : `${curRadius.toFixed(1)}%`;
       menu.style.transform = `scale(${curScale.toFixed(4)})`;
 
       if (elapsed < closeTotalDuration) {
@@ -731,20 +929,19 @@
 
     const menu = document.createElement('div');
     menu.className = 'global-project-option-menu';
-    menu.style.width = '36px';
-    menu.style.height = '36px';
+    menu.style.width = `${OPTION_BTN_WIDTH}px`;
+    menu.style.height = `${OPTION_BTN_HEIGHT}px`;
     menu.style.left = `${rect.left}px`;
     menu.style.top = `${rect.top}px`;
-    menu.style.borderRadius = '50%';
+    menu.style.borderRadius = '9999px';
 
-    // Morphing Icon (⋮)
+    // Morphing Icon (••━)
     const morphIcon = document.createElement('span');
     morphIcon.className = 'morph-icon';
     morphIcon.innerHTML = `
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-        <circle cx="12" cy="5" r="2.1" />
-        <circle cx="12" cy="12" r="2.1" />
-        <circle cx="12" cy="19" r="2.1" />
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+        <circle cx="8" cy="5" r="1.5" />
+        <circle cx="8" cy="11" r="1.5" />
       </svg>
     `;
 
@@ -826,30 +1023,28 @@
     document.body.removeChild(measureWrap);
 
     const expandedWidth = 156;
-    let targetTop = rect.bottom - expandedHeight;
+    // Drop downwards into the folder body footprint
+    let targetTop = rect.top;
     let targetLeft = rect.right - expandedWidth;
 
     if (targetTop + expandedHeight > window.innerHeight - 12) {
       targetTop = window.innerHeight - expandedHeight - 12;
-    }
-    if (targetTop < 12) {
-      targetTop = Math.min(rect.top, window.innerHeight - expandedHeight - 12);
     }
     if (targetTop < 12) targetTop = 12;
     if (targetLeft < 12) targetLeft = 12;
 
     const targetBounds = { targetLeft, targetTop, expandedWidth, expandedHeight };
 
-    // Target expansion center P2: Biased towards bottom-right by ~10% to preserve spatial origin
+    // Target expansion center P2: Biased towards bottom-right to preserve spatial origin
     const p2 = {
       x: targetLeft + expandedWidth * 0.60,
-      y: targetTop + expandedHeight * 0.60
+      y: targetTop + expandedHeight * 0.35
     };
 
-    // Parabolic control point P1 with natural ~18px upward lift (light, continuous arc)
+    // Parabolic control point P1 with subtle natural arc
     const p1 = {
-      x: (p0.x + p2.x) / 2 + 4,
-      y: Math.min(p0.y, p2.y) - 18
+      x: (p0.x + p2.x) / 2 + 2,
+      y: (p0.y + p2.y) / 2 - 4
     };
 
     // Final bounding box center
@@ -916,30 +1111,28 @@
       let curW, curH, curCenterX, curCenterY, curRadius;
 
       if (elapsed < 80) {
-        // Initial button shrinking phase (36px -> 20px)
+        // Initial button shrinking phase (48x36px -> 20x20px)
         const sp = easeStandard(elapsed / 80);
-        const shrinkSize = 36 - 16 * sp;
-        curW = shrinkSize;
-        curH = shrinkSize;
+        curW = OPTION_BTN_WIDTH - (OPTION_BTN_WIDTH - 20) * sp;
+        curH = OPTION_BTN_HEIGHT - (OPTION_BTN_HEIGHT - 20) * sp;
         curCenterX = flightPt.x;
         curCenterY = flightPt.y;
-        curRadius = 50;
+        curRadius = 9999;
       } else if (elapsed < 90) {
         // 20px Dot at start of expansion
         curW = 20;
         curH = 20;
         curCenterX = flightPt.x;
         curCenterY = flightPt.y;
-        curRadius = 50;
+        curRadius = 9999;
       } else if (elapsed < 350) {
         // Surface expands in mid-air (90 - 350ms, dur: 260ms)
-        // Note: At 145ms (flight midpoint, 50% distance), ep = 55/260 ≈ 0.21, eEase ≈ 0.29 (~30% expanded!)
         const ep = (elapsed - 90) / 260;
         const eEase = easeStandard(ep);
 
         curW = 20 + (expandedWidth - 20) * eEase;
         curH = 20 + (expandedHeight - 20) * eEase;
-        curRadius = 50 - 33 * eEase;
+        curRadius = 24 - 7 * eEase; // smooth transition from capsule to 17px rounded rect
 
         // Center smoothly drifts towards finalCenter during expansion
         curCenterX = flightPt.x + (finalCenter.x - p2.x) * eEase;
@@ -957,7 +1150,7 @@
       menu.style.height = `${curH.toFixed(1)}px`;
       menu.style.left = `${(curCenterX - curW / 2).toFixed(1)}px`;
       menu.style.top = `${(curCenterY - curH / 2).toFixed(1)}px`;
-      menu.style.borderRadius = (curRadius <= 18 || elapsed >= 350) ? '17px' : `${curRadius.toFixed(1)}%`;
+      menu.style.borderRadius = (elapsed >= 350) ? '17px' : (elapsed < 90 ? '9999px' : `${curRadius.toFixed(1)}px`);
 
       // 4. Trigger Menu Items at ~290ms (~85% of expansion completed)
       if (elapsed >= 290 && !contentTriggered) {
@@ -1043,39 +1236,350 @@
     });
   }
 
-  function setupProjectCardEvents(card, p, isHistoryPage, refreshCallback) {
-    if (p.is_deleted) {
-      card.className = 'project-card variant-full project-card-deleted';
-      card.onclick = (e) => {
-        if (e.target.closest('.project-card-actions')) return;
-        alert('此分鏡已在回收桶中，請點擊下方「還原」按鈕以還原此分鏡。');
-      };
+  function launchProjectRevealTransition(card, p) {
+    if (!card || card.classList.contains('is-navigating')) return;
+    card.classList.add('is-navigating');
+
+    // Close any active option morph immediately
+    if (activeMorphSession) {
+      closeGlobalOptionMorph();
+    }
+
+    const folderShell = card.querySelector('.project-folder-shell');
+    const primaryCover = card.querySelector('.project-preview-primary');
+    if (!folderShell || !primaryCover) {
+      navigate('project', { id: p.id });
+      return;
+    }
+
+    // 1. App-Level Transition Layer (strictly outside page-main, child of body)
+    let transitionLayer = document.getElementById('transition-layer');
+    if (!transitionLayer || transitionLayer.parentElement !== document.body) {
+      if (transitionLayer) transitionLayer.remove();
+      transitionLayer = document.createElement('div');
+      transitionLayer.id = 'transition-layer';
+      transitionLayer.className = 'app-transition-layer';
+      document.body.appendChild(transitionLayer);
+    }
+
+    const rect = primaryCover.getBoundingClientRect();
+
+    // 2. Folder Shell & Secondary Preview drop down and fade out
+    folderShell.style.transition = 'transform 300ms cubic-bezier(.4, 0, .2, 1), opacity 240ms ease';
+    folderShell.style.transform = 'translateY(32px)';
+    folderShell.style.opacity = '0';
+
+    const secondary = card.querySelector('.project-preview-secondary');
+    if (secondary) {
+      secondary.style.transition = 'opacity 200ms ease, transform 240ms ease';
+      secondary.style.opacity = '0';
+      secondary.style.transform = 'translateY(20px) scale(0.92)';
+    }
+
+    // 3. Transition Flying Cover in App-Level Layer
+    const flyingCover = document.createElement('div');
+    flyingCover.className = 'project-reveal-curtain';
+    flyingCover.style.position = 'fixed';
+    flyingCover.style.left = `${rect.left}px`;
+    flyingCover.style.top = `${rect.top}px`;
+    flyingCover.style.width = `${rect.width}px`;
+    flyingCover.style.height = `${rect.height}px`;
+    flyingCover.style.zIndex = '999999';
+    flyingCover.style.borderRadius = '14px';
+    flyingCover.style.overflow = 'hidden';
+    flyingCover.style.boxShadow = '0 32px 80px rgba(0, 0, 0, 0.48), 0 0 0 1px rgba(255, 255, 255, 0.15)';
+    flyingCover.style.transformOrigin = 'center center';
+    flyingCover.style.background = '#0f172a';
+
+    const imgEl = primaryCover.querySelector('img');
+    if (imgEl && imgEl.src) {
+      const imgClone = document.createElement('img');
+      imgClone.src = imgEl.src;
+      imgClone.style.cssText = 'width: 100%; height: 100%; object-fit: cover; display: block; border-radius: inherit;';
+      flyingCover.appendChild(imgClone);
     } else {
-      card.className = 'project-card variant-full';
-      card.onclick = (e) => {
-        if (e.target.closest('.project-card-actions')) return;
-        navigate('project', { id: p.id });
-      };
-      card.addEventListener('pointerenter', () => {
-        prefetchPage('project', { id: p.id });
-      });
+      flyingCover.innerHTML = primaryCover.innerHTML;
     }
 
-    const primaryBtn = card.querySelector('.project-primary-btn');
-    if (primaryBtn) {
-      primaryBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (isHistoryPage || p.is_deleted) {
-          restoreProject(p, card, () => {
-            if (refreshCallback) refreshCallback();
-            updateSidebarProjects();
-          });
-        } else {
-          navigate('project', { id: p.id });
+    const scrim = document.createElement('div');
+    scrim.className = 'project-reveal-scrim';
+    transitionLayer.appendChild(scrim);
+    transitionLayer.appendChild(flyingCover);
+
+    primaryCover.style.visibility = 'hidden';
+    requestAnimationFrame(() => {
+      scrim.style.opacity = '1';
+    });
+
+    // 4. Viewport target sizing preserving ratio
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const numericR = parseAspectRatio(primaryCover.dataset.ratio || p.ratio, rect.width, rect.height) || (16 / 9);
+    let targetW, targetH;
+    if (numericR < 0.8) {
+      targetH = Math.min(vh * 0.72, 620);
+      targetW = targetH * numericR;
+    } else if (numericR <= 1.1) {
+      targetW = Math.min(vw * 0.65, vh * 0.65, 480);
+      targetH = targetW / numericR;
+    } else {
+      targetW = Math.min(vw * 0.82, 760);
+      targetH = targetW / numericR;
+      if (targetH > vh * 0.75) {
+        targetH = vh * 0.75;
+        targetW = targetH * numericR;
+      }
+    }
+    const targetLeft = (vw - targetW) / 2;
+    const targetTop = (vh - targetH) / 2;
+
+    // Transition Session Controller (Shared Element State Machine)
+    const session = {
+      projectId: p.id,
+      card,
+      primaryCover,
+      folderShell,
+      secondary,
+      flyingCover,
+      scrim,
+      targetLeft,
+      targetTop,
+      targetW,
+      targetH,
+      state: 'extracting', // 'extracting' | 'center_hold' | 'returning' | 'completed'
+      pendingTarget: null,
+      fallbackTimer: null,
+
+      onFirstShotReady(targetWrap, targetImg) {
+        if (this.state === 'completed' || this.state === 'returning') return;
+        if (this.state === 'extracting') {
+          this.pendingTarget = { targetWrap, targetImg };
+          return;
         }
-      });
-    }
+        this.executeReturn(targetWrap, targetImg);
+      },
 
+      executeReturn(targetWrap, targetImg) {
+        if (this.state === 'completed' || this.state === 'returning') return;
+        this.state = 'returning';
+        if (this.fallbackTimer) {
+          clearTimeout(this.fallbackTimer);
+          this.fallbackTimer = null;
+        }
+
+        // Wait 2 requestAnimationFrame frames to guarantee layout stability
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            if (!targetWrap || !targetWrap.isConnected) {
+              this.fallbackDismiss();
+              return;
+            }
+
+            const targetRect = targetWrap.getBoundingClientRect();
+            if (targetRect.width <= 0 || targetRect.height <= 0) {
+              this.fallbackDismiss();
+              return;
+            }
+
+            const curRect = this.flyingCover.getBoundingClientRect();
+
+            // Scrim fades out smoothly
+            this.scrim.style.transition = 'opacity 320ms cubic-bezier(.4, 0, .2, 1)';
+            this.scrim.style.opacity = '0';
+
+            // Phase C: Cover Return (center -> targetRect)
+            const returnAnim = this.flyingCover.animate([
+              {
+                left: `${curRect.left}px`,
+                top: `${curRect.top}px`,
+                width: `${curRect.width}px`,
+                height: `${curRect.height}px`,
+                transform: 'rotate(0deg) scale(1)',
+                borderRadius: '16px',
+                boxShadow: '0 32px 80px rgba(0, 0, 0, 0.48), 0 0 0 1px rgba(255, 255, 255, 0.15)'
+              },
+              {
+                left: `${targetRect.left}px`,
+                top: `${targetRect.top}px`,
+                width: `${targetRect.width}px`,
+                height: `${targetRect.height}px`,
+                transform: 'rotate(0deg) scale(1)',
+                borderRadius: '8px',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)'
+              }
+            ], {
+              duration: 380,
+              easing: 'cubic-bezier(.4, 0, .2, 1)',
+              fill: 'forwards'
+            });
+
+            returnAnim.onfinish = () => {
+              // Seamless handoff: 90ms crossfade
+              if (targetWrap) {
+                targetWrap.classList.remove('is-transition-target');
+                targetWrap.style.transition = 'opacity 90ms ease';
+                targetWrap.style.opacity = '1';
+              }
+
+              const crossFade = this.flyingCover.animate([
+                { opacity: 1 },
+                { opacity: 0 }
+              ], {
+                duration: 90,
+                fill: 'forwards'
+              });
+
+              crossFade.onfinish = () => {
+                this.cleanup();
+              };
+            };
+          });
+        });
+      },
+
+      fallbackDismiss() {
+        if (this.state === 'completed' || this.state === 'returning') return;
+        this.state = 'completed';
+        if (this.fallbackTimer) {
+          clearTimeout(this.fallbackTimer);
+          this.fallbackTimer = null;
+        }
+
+        this.scrim.style.transition = 'opacity 300ms ease';
+        this.scrim.style.opacity = '0';
+
+        const exitAnim = this.flyingCover.animate([
+          { transform: 'scale(1)', opacity: 1 },
+          { offset: 0.22, transform: 'scale(1.015)', opacity: 0.98 },
+          { offset: 1, transform: 'scale(0.92) translateY(12px)', opacity: 0 }
+        ], {
+          duration: 380,
+          easing: 'cubic-bezier(0.36, 0, 0.66, -0.56)', // --motion-ease-anticipate
+          fill: 'forwards'
+        });
+
+        exitAnim.onfinish = () => {
+          this.cleanup();
+          const targetWrap = document.querySelector('.shot-cell-thumb-wrap.is-transition-target');
+          if (targetWrap) {
+            targetWrap.classList.remove('is-transition-target');
+            targetWrap.style.opacity = '1';
+          }
+        };
+      },
+
+      cleanup() {
+        this.state = 'completed';
+        if (this.fallbackTimer) {
+          clearTimeout(this.fallbackTimer);
+          this.fallbackTimer = null;
+        }
+        if (this.scrim && this.scrim.parentNode) {
+          this.scrim.parentNode.removeChild(this.scrim);
+        }
+        if (this.flyingCover && this.flyingCover.parentNode) {
+          this.flyingCover.parentNode.removeChild(this.flyingCover);
+        }
+        if (this.primaryCover) this.primaryCover.style.visibility = '';
+        if (this.folderShell) {
+          this.folderShell.style.transform = '';
+          this.folderShell.style.opacity = '';
+        }
+        if (this.secondary) {
+          this.secondary.style.opacity = '';
+          this.secondary.style.transform = '';
+        }
+        if (this.card) this.card.classList.remove('is-navigating');
+        if (window._activeProjectTransition === this) {
+          window._activeProjectTransition = null;
+        }
+      }
+    };
+    window._activeProjectTransition = session;
+
+    // 5. Trigger SPA Navigation at ~180ms (at ~40% into extract flight)
+    let navTriggered = false;
+    const triggerNav = () => {
+      if (!navTriggered) {
+        navTriggered = true;
+        navigate('project', { id: p.id });
+      }
+    };
+    setTimeout(triggerNav, 180);
+
+    // 6. Flying Flight Curve (0 - 500ms)
+    const anim = flyingCover.animate([
+      {
+        left: `${rect.left}px`,
+        top: `${rect.top}px`,
+        width: `${rect.width}px`,
+        height: `${rect.height}px`,
+        transform: 'rotate(-4deg) scale(1)',
+        borderRadius: '14px'
+      },
+      {
+        offset: 0.35,
+        left: `${(rect.left + targetLeft) / 2}px`,
+        top: `${Math.min(rect.top, targetTop) - 24}px`,
+        width: `${rect.width + (targetW - rect.width) * 0.45}px`,
+        height: `${rect.height + (targetH - rect.height) * 0.45}px`,
+        transform: 'rotate(-1.5deg) scale(1.03)',
+        borderRadius: '14px'
+      },
+      {
+        offset: 1,
+        left: `${targetLeft}px`,
+        top: `${targetTop}px`,
+        width: `${targetW}px`,
+        height: `${targetH}px`,
+        transform: 'rotate(0deg) scale(1)',
+        borderRadius: '16px'
+      }
+    ], {
+      duration: 500,
+      easing: 'cubic-bezier(.4, 0, .2, 1)',
+      fill: 'forwards'
+    });
+
+    // 7. Phase B: Center Hold & Wait for First Shot Ready
+    anim.onfinish = () => {
+      triggerNav(); // Safety fallback
+
+      if (session.state === 'completed') return;
+
+      // Settle fixed in center
+      flyingCover.style.left = `${targetLeft}px`;
+      flyingCover.style.top = `${targetTop}px`;
+      flyingCover.style.width = `${targetW}px`;
+      flyingCover.style.height = `${targetH}px`;
+      flyingCover.style.transform = 'none';
+      flyingCover.style.borderRadius = '16px';
+      flyingCover.style.opacity = '1';
+
+      session.state = 'center_hold';
+
+      // If First Shot already arrived while extracting, execute return immediately
+      if (session.pendingTarget) {
+        const { targetWrap, targetImg } = session.pendingTarget;
+        session.pendingTarget = null;
+        session.executeReturn(targetWrap, targetImg);
+        return;
+      }
+
+      // Safety timeout: 3 seconds max hold fallback
+      session.fallbackTimer = setTimeout(() => {
+        session.fallbackDismiss();
+      }, 3000);
+    };
+  }
+
+  function setupProjectCardEvents(card, p, isHistoryPage, refreshCallback) {
+    const isDeleted = Boolean(p.is_deleted || isHistoryPage);
+    const variant = card.dataset.variant || 'default';
+    card.className = `project-card project-folder-card variant-${variant}${isDeleted ? ' project-card-deleted' : ''}`;
+    card.dataset.id = p.id;
+
+    // Option Button Morph StopPropagation
     const optionBtn = card.querySelector('.project-option-btn');
     if (optionBtn) {
       optionBtn.addEventListener('click', (e) => {
@@ -1083,6 +1587,66 @@
         openGlobalOptionMorph(optionBtn, p, card, isHistoryPage, refreshCallback);
       });
     }
+
+    // Title Overflow Marquee Handling
+    const titleWrapper = card.querySelector('.project-title-wrapper');
+    const titleEl = card.querySelector('.project-title');
+    if (titleWrapper && titleEl) {
+      let scrollTimer = null;
+      let returnTimer = null;
+
+      card.addEventListener('pointerenter', () => {
+        const overflow = titleEl.scrollWidth - titleWrapper.clientWidth;
+        if (overflow <= 2) return;
+
+        scrollTimer = setTimeout(() => {
+          const duration = Math.min(Math.max(overflow / 35, 1.4), 3.0);
+          titleEl.style.transition = `transform ${duration}s cubic-bezier(.4, 0, .2, 1)`;
+          titleEl.style.transform = `translateX(-${overflow + 8}px)`;
+
+          returnTimer = setTimeout(() => {
+            titleEl.style.transition = `transform ${duration * 0.7}s cubic-bezier(.4, 0, .2, 1)`;
+            titleEl.style.transform = 'translateX(0)';
+          }, (duration * 1000) + 650);
+        }, 400);
+      });
+
+      card.addEventListener('pointerleave', () => {
+        clearTimeout(scrollTimer);
+        clearTimeout(returnTimer);
+        titleEl.style.transition = 'transform 0.35s cubic-bezier(.4, 0, .2, 1)';
+        titleEl.style.transform = 'translateX(0)';
+      });
+    }
+
+    // Hover Prefetch
+    card.addEventListener('pointerenter', () => {
+      if (!isDeleted) prefetchPage('project', { id: p.id });
+    });
+
+    // Card Click: Entry Transition or Restore
+    card.onclick = (e) => {
+      if (e.target.closest('.project-option-btn')) return;
+
+      if (isDeleted) {
+        if (confirm('此分鏡在回收桶中，是否還原此分鏡專案？')) {
+          restoreProject(p, card, () => {
+            if (refreshCallback) refreshCallback();
+            updateSidebarProjects();
+          });
+        }
+        return;
+      }
+
+      // Check reduced motion
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        navigate('project', { id: p.id });
+        return;
+      }
+
+      // Phase 3 Navigation Transition (Project Reveal)
+      launchProjectRevealTransition(card, p);
+    };
   }
 
   function lazyLoadProjectThumbs(container) {
@@ -1104,6 +1668,22 @@
         
         const fallback = thumb.querySelector('.thumb-fallback');
         if (fallback) fallback.style.display = 'none';
+
+        // Maintain project's configured aspect ratio (from data-ratio or p.ratio)
+        const projectRatioAttr = thumb.dataset.ratio || thumb.closest('.project-folder-preview-stack')?.dataset.ratio;
+        const targetRatio = projectRatioAttr ? parseAspectRatio(projectRatioAttr) : (img.naturalWidth && img.naturalHeight ? (img.naturalWidth / img.naturalHeight) : (16 / 9));
+
+        const isCompact = !!thumb.closest('.variant-compact');
+        const isMob = typeof isMobileView === 'function' ? isMobileView() : false;
+        const size = calculateBalancedPreviewSize({
+          aspectRatio: targetRatio,
+          variant: isCompact ? 'compact' : 'default',
+          isMobile: isMob
+        });
+        thumb.style.setProperty('--primary-cover-width', `${size.width}px`);
+        thumb.style.setProperty('--primary-cover-height', `${size.height}px`);
+        thumb.style.setProperty('--insert-depth', `${size.insertDepth}px`);
+        thumb.style.setProperty('--hover-lift', `${size.hoverLift}px`);
 
         const badges = thumb.querySelector('.thumb-overlay-badges');
         if (badges) {
@@ -1951,6 +2531,7 @@
     const m = initMain();
     m.className = 'auth-main spa-login-wrap';
     cloneMainContent(doc, m);
+    m.classList.add('auth-main', 'spa-login-wrap');
     initLoginLogic(showRegister);
   }
 
@@ -4643,6 +5224,7 @@ function initLoginLogic(showRegister) {
       }
 
       function setupHomeRecentCardEvents(card, p, refreshCallback) {
+        card.dataset.variant = 'compact';
         setupProjectCardEvents(card, p, false, refreshCallback);
       }
 
@@ -5362,9 +5944,12 @@ function initLoginLogic(showRegister) {
 
       // ── Table Rows ──────────────────────────────────────────
       let tableRowsHtml = '';
-      processedShots.forEach(s => {
+      const isTransitionActive = Boolean(window._activeProjectTransition && window._activeProjectTransition.projectId === projectId);
+      processedShots.forEach((s, idx) => {
+        const isTarget = isTransitionActive && idx === 0 && Boolean(s.imageUrl);
+        const targetClass = isTarget ? ' is-transition-target' : '';
         const thumbHtml = s.imageUrl
-          ? `<div class="shot-cell-thumb-wrap" style="aspect-ratio:${aspectRatio};" data-src="${s.imageUrl}"><div class="project-shot-thumb-skeleton" style="width:140px;aspect-ratio:${aspectRatio};"></div></div>`
+          ? `<div class="shot-cell-thumb-wrap${targetClass}" style="aspect-ratio:${aspectRatio};" data-src="${s.imageUrl}"><div class="project-shot-thumb-skeleton" style="width:140px;aspect-ratio:${aspectRatio};"></div></div>`
           : `<div class="shot-cell-thumb-wrap" style="aspect-ratio:${aspectRatio};background:#e2e8f0;width:140px;"></div>`;
         tableRowsHtml += `
           <tr class="project-shot-row" data-shot-id="${s.id}">
@@ -5508,17 +6093,37 @@ function initLoginLogic(showRegister) {
       m.querySelectorAll('.shot-cell-thumb-wrap[data-src]').forEach(wrap => {
         const src = wrap.dataset.src;
         if (!src) return;
+        const isTarget = wrap.classList.contains('is-transition-target');
         const img = new Image();
-        img.onload = () => {
-          img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .35s;';
+        img.onload = async () => {
+          if (img.decode) {
+            try { await img.decode(); } catch (e) {}
+          }
+          img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
           img.alt = 'Shot';
           wrap.innerHTML = '';
           wrap.appendChild(img);
-          requestAnimationFrame(() => { img.style.opacity = '1'; });
+
+          if (isTarget && window._activeProjectTransition?.projectId === projectId) {
+            window._activeProjectTransition.onFirstShotReady(wrap, img);
+          } else {
+            img.style.opacity = '0';
+            img.style.transition = 'opacity .35s';
+            requestAnimationFrame(() => { img.style.opacity = '1'; });
+          }
         };
-        img.onerror = () => { wrap.innerHTML = '<div style="width:100%;height:100%;background:#e2e8f0;"></div>'; };
+        img.onerror = () => {
+          wrap.innerHTML = '<div style="width:100%;height:100%;background:#e2e8f0;"></div>';
+          if (isTarget && window._activeProjectTransition?.projectId === projectId) {
+            window._activeProjectTransition.fallbackDismiss();
+          }
+        };
         img.src = src;
       });
+
+      if (isTransitionActive && processedShots.length === 0) {
+        window._activeProjectTransition.fallbackDismiss();
+      }
 
       // ── Initialise Controller ───────────────────────────────
       if (typeof window.ProjectDetailController?.init === 'function') {
@@ -6023,6 +6628,10 @@ function initLoginLogic(showRegister) {
       closeGlobalOptionMorph();
     }
 
+    if (window._activeProjectTransition && page !== 'project') {
+      window._activeProjectTransition.fallbackDismiss();
+    }
+
     const pageMain = document.getElementById('page-main');
     if (pageMain) {
       pageMain.classList.remove('is-generating');
@@ -6230,22 +6839,17 @@ function initLoginLogic(showRegister) {
         clearTimeout(showLoaderTimer);
         showLoaderTimer = null;
       }
-      if (loaderShowing) {
-        loaderShowing = false;
-        
-        const overlay = document.getElementById('transition-loader-overlay');
-        if (overlay) overlay.classList.remove('active');
-        
-        const dashLoader = document.getElementById('spa-dash-loader');
-        if (dashLoader) dashLoader.classList.remove('active');
-        
-        stopTextCycling();
-        setTimeout(() => {
-          if (!loaderShowing && window.spaTransitionLoader) {
-            window.spaTransitionLoader.stop();
-          }
-        }, 450);
-      }
+      loaderShowing = false;
+      const overlay = document.getElementById('transition-loader-overlay');
+      if (overlay) overlay.classList.remove('active');
+      const dashLoader = document.getElementById('spa-dash-loader');
+      if (dashLoader) dashLoader.classList.remove('active');
+      stopTextCycling();
+      setTimeout(() => {
+        if (!loaderShowing && window.spaTransitionLoader) {
+          window.spaTransitionLoader.stop();
+        }
+      }, 300);
     }
 
     signal.addEventListener('abort', cleanupTransitionLoader);
