@@ -1438,11 +1438,12 @@ body.dashboard-layout .spa-discovery-wrap > * {
 
 .projects-body,
 .history-body {
-    padding: 8px var(--page-gutter, 32px) 60px;
+    padding: 24px var(--page-gutter, 32px) 60px;
     width: 100%;
     max-width: 100% !important;
     margin: 0 !important;
     box-sizing: border-box;
+    overflow-x: visible;
 }
 
 .projects-title {
@@ -1491,10 +1492,11 @@ body.dashboard-layout .spa-discovery-wrap > * {
 
 .projects-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(270px, 344px));
+    grid-template-columns: repeat(auto-fill, minmax(260px, 316px));
     grid-auto-rows: auto;
     gap: 24px;
     justify-content: start;
+    overflow: visible;
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -3449,9 +3451,10 @@ table {
 
 .home-recent-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 344px));
+    grid-template-columns: repeat(auto-fill, minmax(250px, 316px));
     gap: 20px;
     justify-content: start;
+    overflow: visible;
 }
 
 /* Simplified Recent Project Card */
@@ -3732,8 +3735,8 @@ table {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
         scroll-snap-type: x mandatory;
-        padding: 4px 16px 16px;
-        margin: 0 -16px;
+        padding: 28px 16px 16px;
+        margin: -24px -16px 0 -16px;
         scrollbar-width: none;
     }
 

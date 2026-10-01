@@ -38,19 +38,20 @@ Dashboard「繼續創作」與 Projects 頁面必須使用同一個 **Project Fo
 - 資料夾本身代表 Project，資料夾內露出的圖片代表專案內的 Storyboard Shots。
 - 互動體驗應呈現「查看／抽出資料夾中的分鏡」之體感。
 - 保留深海軍藍 App Shell、冷灰/白 Workspace、Pill 元件、柔和陰影與克制 Motion；不做黃色文具風、不模仿 Windows/macOS 系統 icon、不加紙張紋理。
-- **整體比例規範 (1.9 ～ 2.05 : 1)**：
-  - 卡片本體 `max-width: 344px`（避免超寬螢幕過度扁長）。
-  - Folder Shell Body 高度增加約 15～20%（`min-height: 136px`，整體 Folder 含 Tab 達 ~172px），整體外觀比例精準收斂於 **1.9 ～ 2.05 : 1**，由扁長卡片回歸厚實自然的實體製作資料夾。
-  - Grid 欄寬限制：`repeat(auto-fill, minmax(270px, 344px))`。
-  - **底部容器感留白**：`.project-folder-content` 底部 padding 增加約 12px（`padding: 12px 20px 30px 20px`，Compact 為 `10px 18px 24px 18px`），使 Folder 呈現真正容納企劃資訊的容器層次，而非塞滿文字的扁條。
+- **整體比例規範 (v0.5)**：
+  - 卡片本體 `max-width: 316px`（縮小約 8%，徹底根除橫向扁長感，比例更接近實體檔案夾）。
+  - Folder Shell Body 高度維持（`min-height: 136px`，整體 Folder 含 Tab 達 ~160px），整體長寬比收斂至健康的 **2.2 ～ 2.3 : 1**。
+  - Grid 欄寬限制：`repeat(auto-fill, minmax(260px, 316px))`。
+  - **外層固定 Headroom 留白**：`.project-folder-card` 設置固定頂部留白 `padding-top: var(--folder-headroom, 56px)`（Compact 設為 `50px`），專供 Preview Zone 容納靜態露出與 Hover 抽出，絕不依賴外部脆弱的負邊距，杜絕被上方容器裁切。
+  - **底部容器感留白**：`.project-folder-content` 底部 padding 保持厚實（`padding: 12px 18px 26px 18px`，Compact 為 `10px 16px 22px 16px`），使 Folder 呈現真正容納企劃資訊的容器層次。
 - **純粹中性 Hover 規範**：Card Hover 時 Title 與外框維持自然中性沉穩，嚴禁變為高亮藍色（維持純黑/深海軍灰文字與柔和陰影）；Option Menu Hover 亦維持高透光霧面淡灰（`rgba(15, 23, 42, 0.06)`）與中性深色字，不得轉為藍色。
 
-### 2. 元件層次架構 (v0.3 Single Shell Architecture)
+### 2. 元件層次架構 (v0.5 Preview Zone & Single Shell Architecture)
 ```
-.project-folder-card (.project-card) [max-width: 344px]
-├── .project-folder-preview-stack (Preview Activity Zone，z-index: 10，底部共用同一條 insertion baseline)
+.project-folder-card (.project-card) [max-width: 316px, padding-top: 56px headroom]
+├── .project-folder-preview-stack (Preview Activity Zone，height: 140px，margin-bottom: -46px，z-index: 10，overflow: visible)
 │   ├── .project-preview-secondary (多鏡頭時露出後方第 2 鏡頭，右傾 +5deg，完全維持既有尺寸與動態，z-index: 10)
-│   └── .project-preview-primary (主封面，依 Target Visual Area + MIN_VISIBLE_HEIGHT 計算，z-index: 20)
+│   └── .project-preview-primary (主封面，依 Landscape 95% Boost + Continuous Depth Curve 計算，z-index: 20)
 │
 └── .project-folder-shell (純粹前層資料夾本體，min-height: 136px，z-index: 30)
     ├── .project-folder-header-row
@@ -58,9 +59,9 @@ Dashboard「繼續創作」與 Projects 頁面必須使用同一個 **Project Fo
     │   ├── .project-folder-shelf (中段水平過渡線)
     │   └── .project-folder-notch-wrap (佔寬約 26% 的 Option 缺口區域)
     │       └── .project-option-slot
-    │           └── .project-option-btn (36px 純白膠囊/圓形按鈕，Gap A ≈ Gap B ≈ 12px，stopPropagation)
+    │           └── .project-option-btn (48x24px 雙圓點膠囊按鈕，background: var(--surface-folder)，stopPropagation)
     │
-    └── .project-folder-content (padding-bottom: 30px 增加留白)
+    └── .project-folder-content (padding-bottom: 26px 留白)
         ├── .project-updated (相對時間，如「2 天前編輯」)
         ├── .project-title-wrapper (右側漸層 Fade Mask)
         │   └── .project-title (單行不換行，實際 overflow 時於 Hover 啟動平滑往返滾動，Hover 不變藍)
@@ -70,9 +71,9 @@ Dashboard「繼續創作」與 Projects 頁面必須使用同一個 **Project Fo
 ```
 * **架構鐵則**：
   1. 圖片層（`.project-folder-preview-stack`）與資料夾外殼（`.project-folder-shell`）必須分離，外層容器絕對不得設為 `overflow: hidden`，以保證 Hover 抽卡動態能自然伸展。
-  2. 取消 `project-folder-rear-lip`，以簡約洗鍊之單一前層 Shell 覆蓋，避免多餘裝飾線條。
+  2. 專案頁與歷史頁外層容器（`.projects-body`, `.history-body`）設置 `padding-top: 24px`，確保第一排卡片的 Primary Cover 與 Hover 抽卡狀態絕不被 content-header 遮蔽或被動態漸層遮罩裁切。
   3. Header 寬度維持約 74%，Option Button 位於 26% 缺口處，按鈕與 Tab 曲線間距（Gap A）及與下方資料夾本體間距（Gap B）保持視覺平衡一致（~10–14px）。
-  4. Secondary Preview 完全保持現有規格（尺寸、旋轉角度、位置、Hover 動態與 z-index 邏輯皆不受 Primary Cover 影響）。
+  4. **Secondary Preview 完全保持現有規格**（尺寸、旋轉角度、位置、Hover 動態與 z-index 邏輯皆不受 Primary Cover 影響）。
 
 ### 3. Tokens 與外型規格
 - `--surface-folder`: `#F8F9FB` (`var(--color-surface-secondary)`)
@@ -85,21 +86,22 @@ Dashboard「繼續創作」與 Projects 頁面必須使用同一個 **Project Fo
   - Option 按鈕常態採用 `background: var(--surface-folder)` 與 `border: 1px solid var(--surface-folder-border)`，搭配內凹微光澤 `box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.6)`。
   - Hover 狀態輕微浮起：`background: var(--surface-folder-highlight, #FFFFFF)`，邊框與外陰影加深。Folder + Option Button 視覺上屬於同一個實體物件系統，而非外掛的白色 Floating Button。
   - Option Menu 維持獨立浮動層（`rgba(255, 255, 255, 0.96)`, blur 14px），兩者層級分明。
-- **Ratio-Agnostic 連續 VISIBLE_RATIO 與插入深度解算**：
-  - 核心公式：$f(r) = 0.55 - 0.08 \times \log_2(r)$，並以 `clamp(0.40, 0.65)` 限制。
-  - **Portrait (9:16 ~ 2:3)**: 可見比例約 55% ~ 65%（插深 24~28px）。
-  - **Square (1:1)**: 可見比例約 50% ~ 60%（插深 22~27px）。
-  - **Landscape (16:9 ~ 4:3)**: 可見比例約 40% ~ 50%（露在 Folder 外達 40px ~ 52px，插深 14~18px），**絕不只剩一條圖片細邊**。
-  - **Ultra-wide (21:9)**: 可見比例不得低於 40%。
-  - 由獨立工具函式 `calculateBalancedPreviewSize({ aspectRatio, variant, isMobile })` 即時計算，並自適應更新 `--primary-cover-width`, `--primary-cover-height`, `--insert-depth`, `--hover-lift`。
-  - 抽出距離 `hoverLift` 限制在 12px ~ 20px 區間，避免橫式封面抽出過高。
+- **Unified Preview (Default) & Hover Ratio Reveal Morph (v0.4)**：
+  - **Default（整齊統一眼界）**：所有專案 Primary Cover 預設採用一致尺寸的橫向 Preview（~2.25 : 1 構圖比例，寬度約 Folder 內寬 92%~95%：Default 為 **282px × 125px**，Compact 為 **254px × 113px**；露出高度約 58px / 46.4%）。預設狀態允許 `object-fit: cover` 裁切，徹底消除因直幅 9:16 過窄像書籤或高低不齊導致的 Grid 雜亂。
+  - **Hover（抽出並 Morph 回真實比例）**：滑鼠懸停時，Primary Cover 向上抽出並平滑形變（Morph）回專案真實比例（9:16、1:1、4:3、16:9、21:9）：
+    - 9:16 Portrait：展開為 94.5px × 168px，視覺重心微偏左（`--expanded-x: -18px`），旋轉 -4.0deg，避免居中書籤感。
+    - 16:9 Landscape：展開為 282px × 158.6px，`--expanded-x: 0px`，旋轉 -5.0deg。
+    - 1:1 Square：展開為 139.6px × 139.6px，`--expanded-x: -8px`，旋轉 -4.5deg。
+  - 由獨立工具函式 `calculateProjectCoverGeometry({ aspectRatio, variant, isMobile })`（相容別名 `calculateBalancedPreviewSize`）計算 `--collapsed-*` 與 `--expanded-*` 變數並綁定至 inline style。
+  - 抽出距離 `hoverLift` 限制在 14px ~ 18px 區間，平滑沉穩。
 
 ### 4. 互動與動效規範
-1. **Hover Pull（抽卡動效）**：
-   - Primary Cover: `transform-origin: bottom center;`，位移依高度自適應 `translateY(calc(var(--insert-depth, 20px) - 46px - var(--hover-lift, 18px))) rotate(-5deg) scale(1.03)`，旋轉統一為 -5deg，陰影加深。
+1. **Hover Pull & Morph（抽卡與比例還原動效）**：
+   - Primary Cover: `transform-origin: bottom center;`，平滑過渡 `width, height, transform, border-radius, box-shadow`（320ms, `cubic-bezier(.4, 0, .2, 1)`）。
+   - 預設位移：`translateY(calc(var(--collapsed-insert-depth, 43px) - 46px)) translateX(0) rotate(0deg) scale(1)`。
+   - Hover / Expanded 位移：`translateY(calc(var(--expanded-insert-depth, 56px) - 46px - var(--hover-lift, 16px))) translateX(var(--expanded-x, 0px)) rotate(var(--hover-rotate, -4.5deg)) scale(1.02)`。
    - Secondary Shot: 維持 `translateY(-8px) translateX(18px) rotate(6deg) scale(0.98)`。
    - Folder Shell: `translateY(-2px)`，陰影加深，**外框維持中性，禁止變藍，亦禁止本體旋轉**。
-   - 動態曲線：`cubic-bezier(.4, 0, .2, 1)`，時長 240ms ~ 320ms。
 2. **Title Overflow 動畫**：
    - 僅在文字寬度超過容器時啟動。
    - Hover 等待 380–400ms 後向左滾動至尾端，停留 650ms，返回起點。滑出時平滑回位，禁止突兀重設；**文字顏色維持中性，禁止變為藍色**。

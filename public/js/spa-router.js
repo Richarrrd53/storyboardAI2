@@ -450,7 +450,7 @@
     return 16 / 9;
   }
 
-  function calculateBalancedPreviewSize(options = {}) {
+  function calculateProjectCoverGeometry(options = {}) {
     const {
       aspectRatio = 16 / 9,
       variant = 'default',
@@ -460,97 +460,142 @@
     let r = Number(aspectRatio) || (16 / 9);
     if (r <= 0 || !isFinite(r)) r = 16 / 9;
 
-    // Default variant (Projects): Target Area ~19500px^2
+    // 1. Collapsed (Default Unified Landscape Preview - Spec v0.4)
+    // Every project card in grid shares identical landscape preview bounds
+    // Width: ~92% - 95% of inner folder width (default: 282px, compact: 254px)
+    // Aspect Ratio: ~2.25 : 1
+    let collapsedW = 282;
+    let collapsedH = 125;
+    let collapsedInsertDepth = 43;
+
+    if (variant === 'compact') {
+      collapsedW = 254;
+      collapsedH = 113;
+      collapsedInsertDepth = 37;
+    }
+
+    if (isMobile) {
+      collapsedW = Math.round(collapsedW * 0.88);
+      collapsedH = Math.round(collapsedH * 0.88);
+      collapsedInsertDepth = Math.round(collapsedInsertDepth * 0.88);
+    }
+
+    // 2. Expanded (Hover / True Aspect Ratio Reveal - Spec v0.4)
     let targetArea = 19500;
-    let maxWidth = 225;
+    let targetLandscapeWidth = 282;
     let maxHeight = 168;
 
     if (variant === 'compact') {
-      targetArea = 15800;
-      maxWidth = 205;
+      targetArea = 16000;
+      targetLandscapeWidth = 254;
       maxHeight = 152;
     }
 
     if (isMobile) {
       targetArea = Math.round(targetArea * 0.88);
-      maxWidth = Math.round(maxWidth * 0.92);
+      targetLandscapeWidth = Math.round(targetLandscapeWidth * 0.88);
       maxHeight = Math.round(maxHeight * 0.94);
     }
 
-    // Ideal dimensions: width * height ≈ targetArea and width / height = r
-    let width = Math.sqrt(targetArea * r);
-    let height = Math.sqrt(targetArea / r);
+    let expWidth = Math.sqrt(targetArea * r);
+    let expHeight = Math.sqrt(targetArea / r);
 
-    // Boundary clamp: maintain aspect ratio r
-    if (width > maxWidth) {
-      width = maxWidth;
-      height = width / r;
-    }
-    if (height > maxHeight) {
-      height = maxHeight;
-      width = height * r;
+    // Landscape expansion
+    if (r > 1.0) {
+      const t = Math.min(1.0, Math.max(0, (r - 1.0) / (16 / 9 - 1.0)));
+      const baseLandscapeW = Math.sqrt(targetArea * r);
+      const maxW = r >= 2.0 ? Math.min(targetLandscapeWidth + 4, 288) : targetLandscapeWidth;
+      const boostedW = baseLandscapeW + (maxW - baseLandscapeW) * (0.85 + 0.15 * t);
+      expWidth = Math.min(maxW, Math.max(expWidth, boostedW));
+      expHeight = expWidth / r;
     }
 
-    // Minimum safety bounds
+    if (expHeight > maxHeight) {
+      expHeight = maxHeight;
+      expWidth = expHeight * r;
+    }
+
     const minW = 60;
     const minH = 60;
-    if (width < minW) {
-      width = minW;
-      height = width / r;
+    if (expWidth < minW) {
+      expWidth = minW;
+      expHeight = expWidth / r;
     }
-    if (height < minH) {
-      height = minH;
-      width = height * r;
+    if (expHeight < minH) {
+      expHeight = minH;
+      expWidth = expHeight * r;
     }
 
-    width = Math.round(width * 10) / 10;
-    height = Math.round(height * 10) / 10;
+    expWidth = Math.round(expWidth * 10) / 10;
+    expHeight = Math.round(expHeight * 10) / 10;
 
-    // ── Continuous Ratio-Agnostic VISIBLE_RATIO calculation ──
-    // Continuous logarithmic curve: f(r) = 0.55 - 0.08 * log2(r)
-    // Portrait (9:16 ~ 2:3): ~58% - 62% visible
-    // Square (1:1): ~55% visible
-    // Landscape (16:9 ~ 4:3): ~46% - 51% visible
-    // Ultrawide (21:9): ~43% visible (clamped >= 40%)
-    // ── Continuous Ratio-Agnostic VISIBLE_RATIO calculation ──
-    // Continuous curve: f(r) = 0.54 - 0.05 * log2(r)
-    // Landscape (16:9 ~ 21:9): ~48% - 50% visible unhovered
-    // Square (1:1): ~54% visible unhovered
-    // Portrait (9:16 ~ 2:3): ~58% - 62% visible unhovered
     const log2r = Math.log(r) / Math.LN2;
     const rawVisibleRatio = 0.54 - 0.05 * log2r;
-    const visibleRatio = Math.max(0.46, Math.min(0.65, rawVisibleRatio));
+    const visibleRatio = Math.max(0.48, Math.min(0.62, rawVisibleRatio));
 
-    // The folder pocket tab stands 36px in front of the folder body rim.
-    // Physical pocket geometry:
-    // hiddenHeight = height * (1 - visibleRatio)
-    // insertDepth = hiddenHeight - tabHeight
-    const tabHeight = 36;
-    const targetHiddenHeight = height * (1 - visibleRatio);
+    const tabHeight = 24;
+    const targetHiddenHeight = expHeight * (1 - visibleRatio);
+    let expInsertDepth = Math.max(8, Math.round(targetHiddenHeight - tabHeight));
 
-    // Clamped insertDepth ensures cover is securely inserted inside the pocket (at least 4px, max 28px)
-    let insertDepth = Math.max(4, Math.min(28, Math.round(targetHiddenHeight - tabHeight)));
-
-    // Guarantee at least 46% of height is visibly exposed above the tab for landscape
-    let visibleHeight = height - (insertDepth + tabHeight);
-    if (visibleHeight / height < 0.46) {
-      insertDepth = Math.max(4, Math.round(height * 0.54 - tabHeight));
-      visibleHeight = height - (insertDepth + tabHeight);
+    let visibleHeight = expHeight - (expInsertDepth + tabHeight);
+    if (visibleHeight / expHeight < 0.46) {
+      expInsertDepth = Math.max(8, Math.round(expHeight * 0.54 - tabHeight));
+      visibleHeight = expHeight - (expInsertDepth + tabHeight);
     }
 
-    // Hover Lift: proportional pull, checked so landscape covers are not pulled too high
-    const hoverLift = Math.max(12, Math.min(18, Math.round(Math.min(height * 0.15, insertDepth + 10))));
+    // Visual center offset for portrait so it leans naturally to the left (~44% of folder width)
+    let expandedX = 0;
+    let hoverRotate = -4.5;
+    if (r <= 0.6) {
+      expandedX = isMobile ? -14 : -18;
+      hoverRotate = -4.0;
+    } else if (r <= 0.8) {
+      expandedX = isMobile ? -10 : -14;
+      hoverRotate = -4.0;
+    } else if (r <= 1.1) {
+      expandedX = isMobile ? -6 : -8;
+      hoverRotate = -4.5;
+    } else if (r <= 1.4) {
+      expandedX = isMobile ? -3 : -4;
+      hoverRotate = -4.5;
+    } else {
+      expandedX = 0;
+      hoverRotate = -5.0;
+    }
+
+    const hoverLift = Math.max(14, Math.min(18, Math.round(Math.min(expHeight * 0.14, expInsertDepth + 6))));
 
     return {
-      width,
-      height,
+      collapsed: {
+        width: collapsedW,
+        height: collapsedH,
+        insertDepth: collapsedInsertDepth,
+        aspectRatio: 2.25
+      },
+      expanded: {
+        width: expWidth,
+        height: expHeight,
+        insertDepth: expInsertDepth,
+        visibleHeight: Math.round(visibleHeight * 10) / 10,
+        x: expandedX,
+        hoverLift,
+        hoverRotate,
+        aspectRatio: r
+      },
+      width: expWidth,
+      height: expHeight,
+      insertDepth: expInsertDepth,
       visibleRatio: Math.round(visibleRatio * 100) / 100,
-      insertDepth,
       visibleHeight: Math.round(visibleHeight * 10) / 10,
       hoverLift
     };
   }
 
+  function calculateBalancedPreviewSize(options = {}) {
+    return calculateProjectCoverGeometry(options);
+  }
+
+  window.calculateProjectCoverGeometry = calculateProjectCoverGeometry;
   window.calculateBalancedPreviewSize = calculateBalancedPreviewSize;
   window.parseAspectRatio = parseAspectRatio;
 
@@ -599,7 +644,7 @@
 
     const numericRatio = parseAspectRatio(p.ratio, p.width, p.height);
     const isMob = typeof isMobileView === 'function' ? isMobileView() : false;
-    const { width: pWidth, height: pHeight, insertDepth: pInsertDepth, hoverLift } = calculateBalancedPreviewSize({
+    const geom = calculateProjectCoverGeometry({
       aspectRatio: numericRatio,
       variant,
       isMobile: isMob
@@ -622,13 +667,23 @@
          </div>`;
 
     return `
-      <div class="project-folder-preview-stack" data-ratio="${cleanRatio}">
+      <div class="project-preview-zone project-folder-preview-stack" data-ratio="${cleanRatio}">
         ${hasSecondary ? `
           <div class="project-preview-secondary" data-ratio="${cleanRatio}">
             ${secondaryContent}
           </div>
         ` : ''}
-        <div class="project-preview-primary project-thumb loading" data-ratio="${cleanRatio}" style="--primary-cover-width: ${pWidth}px; --primary-cover-height: ${pHeight}px; --insert-depth: ${pInsertDepth}px; --hover-lift: ${hoverLift}px;" data-src="/api/projects/${p.id}/cover">
+        <div class="project-preview-primary project-thumb loading"
+             data-ratio="${cleanRatio}"
+             data-collapsed-w="${geom.collapsed.width}"
+             data-collapsed-h="${geom.collapsed.height}"
+             data-expanded-w="${geom.expanded.width}"
+             data-expanded-h="${geom.expanded.height}"
+             data-expanded-x="${geom.expanded.x}"
+             data-expanded-depth="${geom.expanded.insertDepth}"
+             data-hover-lift="${geom.expanded.hoverLift}"
+             style="--collapsed-width: ${geom.collapsed.width}px; --collapsed-height: ${geom.collapsed.height}px; --collapsed-insert-depth: ${geom.collapsed.insertDepth}px; --expanded-width: ${geom.expanded.width}px; --expanded-height: ${geom.expanded.height}px; --expanded-insert-depth: ${geom.expanded.insertDepth}px; --expanded-x: ${geom.expanded.x}px; --hover-lift: ${geom.expanded.hoverLift}px; --hover-rotate: ${geom.expanded.hoverRotate}deg;"
+             data-src="/api/projects/${p.id}/cover">
           <div class="thumb-fallback">
             <div class="fallback-frame">
               <span class="fallback-clapper">
@@ -897,6 +952,12 @@
       if (triggerBtn) {
         triggerBtn.classList.remove('is-hidden-for-morph');
       }
+      if (session.card) {
+        session.card.classList.remove('is-menu-open');
+        if (!session.card.matches(':hover')) {
+          session.card.classList.remove('is-expanded');
+        }
+      }
       if (overlay && overlay.parentNode) {
         overlay.parentNode.removeChild(overlay);
       }
@@ -1055,8 +1116,10 @@
 
     // Hide original button in card
     triggerBtn.classList.add('is-hidden-for-morph');
+    if (card) card.classList.add('is-menu-open', 'is-expanded');
 
     const session = {
+      card,
       overlay,
       menu,
       morphIcon,
@@ -1262,7 +1325,38 @@
       document.body.appendChild(transitionLayer);
     }
 
-    const rect = primaryCover.getBoundingClientRect();
+    card.classList.add('is-expanded');
+
+    // Section 24, 25, 26, 28:
+    // Transition origin MUST be the True Ratio (Expanded) cover!
+    const expW = parseFloat(primaryCover.dataset.expandedW) || 282;
+    const expH = parseFloat(primaryCover.dataset.expandedH) || 158;
+    const expX = parseFloat(primaryCover.dataset.expandedX) || 0;
+    const expDepth = parseFloat(primaryCover.dataset.expandedDepth) || 46;
+    const hoverLift = parseFloat(primaryCover.dataset.hoverLift) || 16;
+
+    const curRect = primaryCover.getBoundingClientRect();
+    const cardRect = card.getBoundingClientRect();
+    const shellRect = folderShell.getBoundingClientRect();
+
+    let startW = expW;
+    let startH = expH;
+    let startLeft = curRect.left;
+    let startTop = curRect.top;
+
+    // If card was clicked while collapsed or fast-tapped on mobile:
+    // Calculate the precise expanded coordinates in viewport
+    if (Math.abs(curRect.width - expW) > 8) {
+      const centerX = cardRect.left + cardRect.width / 2 + expX;
+      startLeft = centerX - expW / 2;
+      const sheetBottom = shellRect.top + expDepth - hoverLift;
+      startTop = sheetBottom - expH;
+    } else {
+      startW = curRect.width;
+      startH = curRect.height;
+      startLeft = curRect.left;
+      startTop = curRect.top;
+    }
 
     // 2. Folder Shell & Secondary Preview drop down and fade out
     folderShell.style.transition = 'transform 300ms cubic-bezier(.4, 0, .2, 1), opacity 240ms ease';
@@ -1276,16 +1370,16 @@
       secondary.style.transform = 'translateY(20px) scale(0.92)';
     }
 
-    // 3. Transition Flying Cover in App-Level Layer
+    // 3. Transition Flying Cover in App-Level Layer (True Aspect Ratio)
     const flyingCover = document.createElement('div');
     flyingCover.className = 'project-reveal-curtain';
     flyingCover.style.position = 'fixed';
-    flyingCover.style.left = `${rect.left}px`;
-    flyingCover.style.top = `${rect.top}px`;
-    flyingCover.style.width = `${rect.width}px`;
-    flyingCover.style.height = `${rect.height}px`;
+    flyingCover.style.left = `${startLeft}px`;
+    flyingCover.style.top = `${startTop}px`;
+    flyingCover.style.width = `${startW}px`;
+    flyingCover.style.height = `${startH}px`;
     flyingCover.style.zIndex = '999999';
-    flyingCover.style.borderRadius = '14px';
+    flyingCover.style.borderRadius = '12px';
     flyingCover.style.overflow = 'hidden';
     flyingCover.style.boxShadow = '0 32px 80px rgba(0, 0, 0, 0.48), 0 0 0 1px rgba(255, 255, 255, 0.15)';
     flyingCover.style.transformOrigin = 'center center';
@@ -1314,7 +1408,7 @@
     // 4. Viewport target sizing preserving ratio
     const vw = window.innerWidth;
     const vh = window.innerHeight;
-    const numericR = parseAspectRatio(primaryCover.dataset.ratio || p.ratio, rect.width, rect.height) || (16 / 9);
+    const numericR = parseAspectRatio(primaryCover.dataset.ratio || p.ratio, startW, startH) || (startW / startH);
     let targetW, targetH;
     if (numericR < 0.8) {
       targetH = Math.min(vh * 0.72, 620);
@@ -1510,19 +1604,19 @@
     // 6. Flying Flight Curve (0 - 500ms)
     const anim = flyingCover.animate([
       {
-        left: `${rect.left}px`,
-        top: `${rect.top}px`,
-        width: `${rect.width}px`,
-        height: `${rect.height}px`,
+        left: `${startLeft}px`,
+        top: `${startTop}px`,
+        width: `${startW}px`,
+        height: `${startH}px`,
         transform: 'rotate(-4deg) scale(1)',
-        borderRadius: '14px'
+        borderRadius: '12px'
       },
       {
         offset: 0.35,
-        left: `${(rect.left + targetLeft) / 2}px`,
-        top: `${Math.min(rect.top, targetTop) - 24}px`,
-        width: `${rect.width + (targetW - rect.width) * 0.45}px`,
-        height: `${rect.height + (targetH - rect.height) * 0.45}px`,
+        left: `${(startLeft + targetLeft) / 2}px`,
+        top: `${Math.min(startTop, targetTop) - 24}px`,
+        width: `${startW + (targetW - startW) * 0.45}px`,
+        height: `${startH + (targetH - startH) * 0.45}px`,
         transform: 'rotate(-1.5deg) scale(1.03)',
         borderRadius: '14px'
       },
@@ -1619,9 +1713,15 @@
       });
     }
 
-    // Hover Prefetch
+    // Card-wide Hover: Ratio Reveal Morph & Hover Prefetch
     card.addEventListener('pointerenter', () => {
+      card.classList.add('is-expanded');
       if (!isDeleted) prefetchPage('project', { id: p.id });
+    });
+
+    card.addEventListener('pointerleave', () => {
+      if (card.classList.contains('is-menu-open')) return;
+      card.classList.remove('is-expanded');
     });
 
     // Card Click: Entry Transition or Restore
@@ -1675,15 +1775,28 @@
 
         const isCompact = !!thumb.closest('.variant-compact');
         const isMob = typeof isMobileView === 'function' ? isMobileView() : false;
-        const size = calculateBalancedPreviewSize({
+        const geom = calculateProjectCoverGeometry({
           aspectRatio: targetRatio,
           variant: isCompact ? 'compact' : 'default',
           isMobile: isMob
         });
-        thumb.style.setProperty('--primary-cover-width', `${size.width}px`);
-        thumb.style.setProperty('--primary-cover-height', `${size.height}px`);
-        thumb.style.setProperty('--insert-depth', `${size.insertDepth}px`);
-        thumb.style.setProperty('--hover-lift', `${size.hoverLift}px`);
+        thumb.style.setProperty('--collapsed-width', `${geom.collapsed.width}px`);
+        thumb.style.setProperty('--collapsed-height', `${geom.collapsed.height}px`);
+        thumb.style.setProperty('--collapsed-insert-depth', `${geom.collapsed.insertDepth}px`);
+        thumb.style.setProperty('--expanded-width', `${geom.expanded.width}px`);
+        thumb.style.setProperty('--expanded-height', `${geom.expanded.height}px`);
+        thumb.style.setProperty('--expanded-insert-depth', `${geom.expanded.insertDepth}px`);
+        thumb.style.setProperty('--expanded-x', `${geom.expanded.x}px`);
+        thumb.style.setProperty('--hover-lift', `${geom.expanded.hoverLift}px`);
+        thumb.style.setProperty('--hover-rotate', `${geom.expanded.hoverRotate}deg`);
+
+        thumb.dataset.collapsedW = geom.collapsed.width;
+        thumb.dataset.collapsedH = geom.collapsed.height;
+        thumb.dataset.expandedW = geom.expanded.width;
+        thumb.dataset.expandedH = geom.expanded.height;
+        thumb.dataset.expandedX = geom.expanded.x;
+        thumb.dataset.expandedDepth = geom.expanded.insertDepth;
+        thumb.dataset.hoverLift = geom.expanded.hoverLift;
 
         const badges = thumb.querySelector('.thumb-overlay-badges');
         if (badges) {
