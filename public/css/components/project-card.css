@@ -73,15 +73,14 @@
   box-sizing: border-box;
 }
 
-/* ── Dynamic Aspect Ratio Handling ── */
-
-/* Base preview primary container (Default Unified Landscape Preview + Hover Ratio Reveal v0.4) */
+/* ── Fixed 16:9 Cover Frame (Unified Landscape Preview Frame) ── */
 .project-folder-card .project-preview-primary,
-.project-preview-primary {
+.project-preview-primary,
+.project-cover-frame {
   position: relative;
-  width: var(--collapsed-width, 282px) !important;
-  height: var(--collapsed-height, 125px) !important;
-  aspect-ratio: unset !important;
+  width: var(--cover-width, var(--collapsed-width, 282px)) !important;
+  height: var(--cover-height, var(--collapsed-height, 158.6px)) !important;
+  aspect-ratio: 16 / 9 !important;
   max-width: 295px;
   max-height: 180px;
   border-radius: 14px;
@@ -92,28 +91,28 @@
   z-index: 20;
   flex: none;
   transform-origin: bottom center;
-  transform: translateY(calc(var(--collapsed-insert-depth, 43px) - 46px)) translateX(0) rotate(0deg) scale(1);
-  transition: width 320ms var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1)),
-              height 320ms var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1)),
-              transform 320ms var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1)),
+  transform: translateY(calc(var(--insert-depth, var(--collapsed-insert-depth, 46px)) - 46px)) translateX(0) rotate(0deg) scale(1);
+  transition: transform 320ms var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1)),
               border-radius 320ms var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1)),
               box-shadow 320ms var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1)),
+              border-color 320ms var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1)),
               visibility 100ms ease;
-  will-change: width, height, transform;
+  will-change: transform;
 }
 
-.project-preview-secondary,
-.project-preview-secondary[data-ratio="16:9"],
-.project-preview-secondary[data-ratio*="16:9"] {
+/* ── 2.1 Secondary Preview (Unified 16:9 Frosted White Glass Sheet - Spec v0.5) ── */
+.project-preview-secondary {
   position: absolute;
   height: 128px;
   width: auto;
   aspect-ratio: 16 / 9;
   max-width: 244px;
   border-radius: 14px;
-  background: #e2e8f0;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow: 0 6px 18px rgba(10, 20, 40, 0.06);
   overflow: hidden;
   z-index: 10;
   transform-origin: 85% 90%;
@@ -122,86 +121,79 @@
               box-shadow var(--motion-duration-base, 300ms) var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1)),
               opacity var(--motion-duration-base, 300ms) var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1));
   opacity: 0.88;
+  pointer-events: none;
 }
 
-/* 9:16 Portrait Secondary */
-.project-preview-secondary[data-ratio="9:16"],
-.project-preview-secondary[data-ratio*="9:16"] {
-  --project-ratio: 9 / 16;
-  height: 144px;
-  width: auto;
-  aspect-ratio: 9 / 16;
-  max-width: 90px;
-  border-radius: 12px;
-  transform: translateY(22px) translateX(12px) rotate(5deg) scale(0.96);
+/* ── 2.2 Primary Cover Ambient Overlay & Layers (Light White Frosted Material) ── */
+.project-preview-primary.has-contain-preview {
+  background: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.65);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
 }
 
-/* 2:3 Portrait Secondary */
-.project-preview-secondary[data-ratio="2:3"],
-.project-preview-secondary[data-ratio*="2:3"] {
-  --project-ratio: 2 / 3;
-  height: 140px;
-  width: auto;
-  aspect-ratio: 2 / 3;
-  max-width: 96px;
-  border-radius: 12px;
-  transform: translateY(22px) translateX(12px) rotate(5deg) scale(0.96);
+.project-preview-primary::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: transparent;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.35s ease;
 }
 
-/* 1:1 Square Secondary */
-.project-preview-secondary[data-ratio="1:1"],
-.project-preview-secondary[data-ratio*="1:1"] {
-  --project-ratio: 1 / 1;
-  height: 132px;
-  width: auto;
-  aspect-ratio: 1 / 1;
-  border-radius: 14px;
-  transform: translateY(22px) translateX(12px) rotate(5deg) scale(0.96);
+.project-preview-primary.has-contain-preview::after {
+  opacity: 1;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.58) 0%, rgba(248, 250, 252, 0.48) 100%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
-/* 4:3 Standard Secondary */
-.project-preview-secondary[data-ratio="4:3"],
-.project-preview-secondary[data-ratio*="4:3"] {
-  --project-ratio: 4 / 3;
-  height: 128px;
-  width: auto;
-  aspect-ratio: 4 / 3;
-  border-radius: 14px;
-  transform: translateY(22px) translateX(12px) rotate(5deg) scale(0.96);
+/* Contain Ambient Blurred Background Layer (Light White Frosted Material) */
+.project-preview-primary-bg,
+.project-preview-primary .cover-background {
+  position: absolute;
+  inset: -12px;
+  width: calc(100% + 24px);
+  height: calc(100% + 24px);
+  object-fit: cover;
+  object-position: center;
+  filter: blur(24px) saturate(0.95) brightness(1.06);
+  transform: scale(1.10);
+  opacity: .42;
+  pointer-events: none;
+  border-radius: inherit;
+  z-index: 0;
+  transition: opacity 0.45s ease-in-out;
 }
 
-/* 3:2 Photo Secondary */
-.project-preview-secondary[data-ratio="3:2"],
-.project-preview-secondary[data-ratio*="3:2"] {
-  --project-ratio: 3 / 2;
-  height: 126px;
-  width: auto;
-  aspect-ratio: 3 / 2;
-  border-radius: 14px;
-  transform: translateY(22px) translateX(12px) rotate(5deg) scale(0.96);
-}
-
-/* 21:9 Ultrawide Secondary */
-.project-preview-secondary[data-ratio="21:9"],
-.project-preview-secondary[data-ratio*="21:9"] {
-  --project-ratio: 21 / 9;
-  height: 104px;
-  width: auto;
-  aspect-ratio: 21 / 9;
-  max-width: 248px;
-  border-radius: 14px;
-  transform: translateY(24px) translateX(14px) rotate(5deg) scale(0.96);
-}
-
-.project-preview-primary img,
-.project-preview-primary .lazy-thumb {
+/* Foreground Main Cover Image */
+.project-preview-primary-image,
+.project-preview-primary .cover-main {
+  position: relative;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  object-position: center center;
+  object-fit: contain;
+  object-position: center;
   display: block;
   border-radius: inherit;
+  z-index: 2;
   transition: opacity 0.35s ease-in-out;
+}
+
+.project-preview-primary.has-contain-preview .project-preview-primary-image,
+.project-preview-primary.has-contain-preview .cover-main {
+  filter: drop-shadow(0 4px 14px rgba(15, 23, 42, 0.10));
+}
+
+.project-preview-primary-image.fit-contain,
+.project-preview-primary .cover-main.fit-contain {
+  object-fit: contain;
+}
+
+.project-preview-primary-image.fit-cover,
+.project-preview-primary .cover-main.fit-cover {
+  object-fit: cover;
 }
 
 .project-preview-secondary img,
@@ -487,54 +479,49 @@
 }
 
 .project-folder-card.variant-compact .project-preview-primary {
-  width: var(--collapsed-width, 254px) !important;
-  height: var(--collapsed-height, 113px) !important;
-  aspect-ratio: unset !important;
+  width: var(--cover-width, var(--collapsed-width, 254px)) !important;
+  height: var(--cover-height, var(--collapsed-height, 142.9px)) !important;
+  aspect-ratio: 16 / 9 !important;
   max-width: 268px;
   max-height: 160px;
-  transform: translateY(calc(var(--collapsed-insert-depth, 37px) - 44px)) translateX(0) rotate(0deg) scale(1);
+  transform: translateY(calc(var(--insert-depth, var(--collapsed-insert-depth, 42px)) - 44px)) translateX(0) rotate(0deg) scale(1);
 }
 
 .project-folder-card.variant-compact .project-preview-secondary {
   height: 124px;
   width: auto;
-  aspect-ratio: var(--project-ratio, 16 / 9);
+  aspect-ratio: 16 / 9;
 }
 
-.project-folder-card.variant-compact .project-preview-secondary[data-ratio*="9:16"] {
-  height: 134px;
-  max-width: 82px;
-}
-
-/* ── 6. Hover Motion & Ratio Reveal Morph (Physical Storyboard Pull) ── */
+/* ── 6. Hover Motion (Physical Storyboard Pull - Keep 16:9 Frame) ── */
 .project-folder-card:hover .project-folder-shell,
 .project-folder-card.is-expanded .project-folder-shell {
   transform: translateY(-2px);
   box-shadow: var(--folder-shadow-hover);
 }
 
-/* Primary Cover morphs from Default Unified Landscape Preview to True Aspect Ratio Cover */
+/* Primary Cover lifts and tilts without changing 16:9 aspect ratio */
 .project-folder-card:hover .project-preview-primary,
 .project-folder-card.is-expanded .project-preview-primary {
-  width: var(--expanded-width, 282px) !important;
-  height: var(--expanded-height, 158.6px) !important;
-  transform: translateY(calc(var(--expanded-insert-depth, 56px) - 46px - var(--hover-lift, 16px)))
-             translateX(var(--expanded-x, 0px))
+  width: var(--cover-width, var(--collapsed-width, 282px)) !important;
+  height: var(--cover-height, var(--collapsed-height, 158.6px)) !important;
+  transform: translateY(calc(var(--insert-depth, var(--collapsed-insert-depth, 46px)) - 46px - var(--hover-lift, 16px)))
+             translateX(0)
              rotate(var(--hover-rotate, -4.5deg))
              scale(1.02);
-  border-radius: 11px;
+  border-radius: 14px;
   box-shadow: 0 16px 36px rgba(15, 23, 42, 0.18);
 }
 
 .project-folder-card.variant-compact:hover .project-preview-primary,
 .project-folder-card.variant-compact.is-expanded .project-preview-primary {
-  width: var(--expanded-width, 254px) !important;
-  height: var(--expanded-height, 142.9px) !important;
-  transform: translateY(calc(var(--expanded-insert-depth, 48px) - 44px - var(--hover-lift, 14px)))
-             translateX(var(--expanded-x, 0px))
+  width: var(--cover-width, var(--collapsed-width, 254px)) !important;
+  height: var(--cover-height, var(--collapsed-height, 142.9px)) !important;
+  transform: translateY(calc(var(--insert-depth, var(--collapsed-insert-depth, 42px)) - 44px - var(--hover-lift, 14px)))
+             translateX(0)
              rotate(var(--hover-rotate, -4.5deg))
              scale(1.02);
-  border-radius: 11px;
+  border-radius: 14px;
   box-shadow: 0 14px 30px rgba(15, 23, 42, 0.16);
 }
 
@@ -571,26 +558,77 @@
   z-index: 1;
 }
 
-.project-reveal-curtain {
+.project-reveal-curtain,
+.transition-cover-shell {
   position: fixed !important;
-  border-radius: 16px;
+  border-radius: 14px;
   overflow: hidden;
-  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.48), 0 0 0 1px rgba(255, 255, 255, 0.15);
-  transform-origin: center center;
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.35);
+  transform-origin: 45% 100%;
   background: #0f172a;
   pointer-events: none;
   will-change: left, top, width, height, transform, opacity;
   z-index: 2;
+  box-sizing: border-box;
 }
 
-.project-reveal-curtain img {
+.transition-cover-shell.is-contain-shell {
+  background: #ffffff;
+}
+
+.project-reveal-curtain .cover-background,
+.transition-cover-shell .transition-cover-bg {
+  position: absolute;
+  inset: -12px;
+  width: calc(100% + 24px);
+  height: calc(100% + 24px);
+  object-fit: cover;
+  filter: blur(24px) saturate(.95) brightness(1.06);
+  transform: scale(1.10);
+  opacity: .42;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.transition-cover-shell .transition-cover-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.58) 0%, rgba(248, 250, 252, 0.48) 100%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  pointer-events: none;
+  border-radius: inherit;
+  z-index: 1;
+}
+
+.project-reveal-curtain .cover-main-wrap,
+.transition-cover-shell .transition-cover-media {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.project-reveal-curtain img,
+.transition-cover-shell img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
 
-.project-reveal-curtain .thumb-fallback {
+.transition-cover-shell .transition-cover-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  display: block;
+}
+
+.project-reveal-curtain .thumb-fallback,
+.transition-cover-shell .thumb-fallback {
   width: 100%;
   height: 100%;
   display: flex;
@@ -618,25 +656,23 @@
   }
 
   .project-preview-primary {
-    width: var(--primary-cover-width, 150px);
-    height: var(--primary-cover-height, 86px);
-    transform: translateY(calc(var(--insert-depth, 18px) - 40px)) rotate(0deg) scale(1);
+    width: var(--cover-width, 248px) !important;
+    height: var(--cover-height, 139.5px) !important;
+    aspect-ratio: 16 / 9 !important;
+    transform: translateY(calc(var(--insert-depth, 40px) - 40px)) rotate(0deg) scale(1);
   }
 
   .project-preview-secondary {
     height: 118px;
     width: auto;
-    aspect-ratio: var(--project-ratio, 16 / 9);
+    aspect-ratio: 16 / 9;
     transform: translateY(20px) translateX(8px) rotate(4deg) scale(0.96);
   }
 
-  .project-preview-secondary[data-ratio*="9:16"] {
-    height: 128px;
-    max-width: 80px;
-  }
-
   .project-folder-card:hover .project-preview-primary {
-    transform: translateY(calc(var(--insert-depth, 18px) - 40px - var(--hover-lift, 16px))) rotate(-3deg) scale(1.02);
+    width: var(--cover-width, 248px) !important;
+    height: var(--cover-height, 139.5px) !important;
+    transform: translateY(calc(var(--insert-depth, 40px) - 40px - var(--hover-lift, 14px))) rotate(-3.5deg) scale(1.02);
   }
 
   .project-folder-card:hover .project-preview-secondary {

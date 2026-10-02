@@ -460,134 +460,161 @@
     let r = Number(aspectRatio) || (16 / 9);
     if (r <= 0 || !isFinite(r)) r = 16 / 9;
 
-    // 1. Collapsed (Default Unified Landscape Preview - Spec v0.4)
-    // Every project card in grid shares identical landscape preview bounds
-    // Width: ~92% - 95% of inner folder width (default: 282px, compact: 254px)
-    // Aspect Ratio: ~2.25 : 1
-    let collapsedW = 282;
-    let collapsedH = 125;
-    let collapsedInsertDepth = 43;
-
-    if (variant === 'compact') {
-      collapsedW = 254;
-      collapsedH = 113;
-      collapsedInsertDepth = 37;
-    }
-
-    if (isMobile) {
-      collapsedW = Math.round(collapsedW * 0.88);
-      collapsedH = Math.round(collapsedH * 0.88);
-      collapsedInsertDepth = Math.round(collapsedInsertDepth * 0.88);
-    }
-
-    // 2. Expanded (Hover / True Aspect Ratio Reveal - Spec v0.4)
-    let targetArea = 19500;
-    let targetLandscapeWidth = 282;
-    let maxHeight = 168;
-
-    if (variant === 'compact') {
-      targetArea = 16000;
-      targetLandscapeWidth = 254;
-      maxHeight = 152;
-    }
-
-    if (isMobile) {
-      targetArea = Math.round(targetArea * 0.88);
-      targetLandscapeWidth = Math.round(targetLandscapeWidth * 0.88);
-      maxHeight = Math.round(maxHeight * 0.94);
-    }
-
-    let expWidth = Math.sqrt(targetArea * r);
-    let expHeight = Math.sqrt(targetArea / r);
-
-    // Landscape expansion
-    if (r > 1.0) {
-      const t = Math.min(1.0, Math.max(0, (r - 1.0) / (16 / 9 - 1.0)));
-      const baseLandscapeW = Math.sqrt(targetArea * r);
-      const maxW = r >= 2.0 ? Math.min(targetLandscapeWidth + 4, 288) : targetLandscapeWidth;
-      const boostedW = baseLandscapeW + (maxW - baseLandscapeW) * (0.85 + 0.15 * t);
-      expWidth = Math.min(maxW, Math.max(expWidth, boostedW));
-      expHeight = expWidth / r;
-    }
-
-    if (expHeight > maxHeight) {
-      expHeight = maxHeight;
-      expWidth = expHeight * r;
-    }
-
-    const minW = 60;
-    const minH = 60;
-    if (expWidth < minW) {
-      expWidth = minW;
-      expHeight = expWidth / r;
-    }
-    if (expHeight < minH) {
-      expHeight = minH;
-      expWidth = expHeight * r;
-    }
-
-    expWidth = Math.round(expWidth * 10) / 10;
-    expHeight = Math.round(expHeight * 10) / 10;
-
-    const log2r = Math.log(r) / Math.LN2;
-    const rawVisibleRatio = 0.54 - 0.05 * log2r;
-    const visibleRatio = Math.max(0.48, Math.min(0.62, rawVisibleRatio));
-
-    const tabHeight = 24;
-    const targetHiddenHeight = expHeight * (1 - visibleRatio);
-    let expInsertDepth = Math.max(8, Math.round(targetHiddenHeight - tabHeight));
-
-    let visibleHeight = expHeight - (expInsertDepth + tabHeight);
-    if (visibleHeight / expHeight < 0.46) {
-      expInsertDepth = Math.max(8, Math.round(expHeight * 0.54 - tabHeight));
-      visibleHeight = expHeight - (expInsertDepth + tabHeight);
-    }
-
-    // Visual center offset for portrait so it leans naturally to the left (~44% of folder width)
-    let expandedX = 0;
+    // Spec Section 1: Fixed 16:9 Cover Frame
+    // Folder inner width ~92% ~ 95%
+    // Default: 282px, Compact: 254px, Mobile: 248px
+    let frameW = 282;
+    let frameH = 158.6;
+    let insertDepth = 46;
+    let hoverLift = 16;
     let hoverRotate = -4.5;
-    if (r <= 0.6) {
-      expandedX = isMobile ? -14 : -18;
-      hoverRotate = -4.0;
-    } else if (r <= 0.8) {
-      expandedX = isMobile ? -10 : -14;
-      hoverRotate = -4.0;
-    } else if (r <= 1.1) {
-      expandedX = isMobile ? -6 : -8;
+
+    if (variant === 'compact') {
+      frameW = 254;
+      frameH = 142.9;
+      insertDepth = 42;
+      hoverLift = 14;
       hoverRotate = -4.5;
-    } else if (r <= 1.4) {
-      expandedX = isMobile ? -3 : -4;
-      hoverRotate = -4.5;
-    } else {
-      expandedX = 0;
-      hoverRotate = -5.0;
     }
 
-    const hoverLift = Math.max(14, Math.min(18, Math.round(Math.min(expHeight * 0.14, expInsertDepth + 6))));
+    if (isMobile) {
+      frameW = 248;
+      frameH = 139.5;
+      insertDepth = 40;
+      hoverLift = 14;
+      hoverRotate = -3.5;
+    }
 
     return {
+      frame: {
+        width: frameW,
+        height: frameH,
+        insertDepth,
+        aspectRatio: 16 / 9
+      },
+      // Collapsed and Expanded keep identical 16:9 frame dimensions
+      // Spec Section 6: Hover does NOT change ratio, only translateY/rotate/shadow
       collapsed: {
-        width: collapsedW,
-        height: collapsedH,
-        insertDepth: collapsedInsertDepth,
-        aspectRatio: 2.25
+        width: frameW,
+        height: frameH,
+        insertDepth,
+        aspectRatio: 16 / 9
       },
       expanded: {
-        width: expWidth,
-        height: expHeight,
-        insertDepth: expInsertDepth,
-        visibleHeight: Math.round(visibleHeight * 10) / 10,
-        x: expandedX,
+        width: frameW,
+        height: frameH,
+        insertDepth,
+        x: 0,
         hoverLift,
         hoverRotate,
-        aspectRatio: r
+        aspectRatio: 16 / 9
       },
-      width: expWidth,
-      height: expHeight,
-      insertDepth: expInsertDepth,
-      visibleRatio: Math.round(visibleRatio * 100) / 100,
-      visibleHeight: Math.round(visibleHeight * 10) / 10,
-      hoverLift
+      width: frameW,
+      height: frameH,
+      insertDepth,
+      trueRatio: r,
+      hoverLift,
+      hoverRotate
+    };
+  }
+
+  // Spec Section 10: calculateTransitionTargetSize
+  function calculateTransitionTargetSize(options = {}) {
+    const {
+      aspectRatio = 16 / 9,
+      viewportWidth = window.innerWidth,
+      viewportHeight = window.innerHeight
+    } = options;
+
+    let r = Number(aspectRatio) || (16 / 9);
+    if (r <= 0 || !isFinite(r)) r = 16 / 9;
+
+    const vw = viewportWidth;
+    const vh = viewportHeight;
+    const isMob = vw < 768;
+
+    // Spec limits:
+    // max-width: 45% ~ 60% of viewport
+    // max-height: 60% ~ 72% of viewport
+    const maxW = isMob ? Math.min(vw * 0.88, 520) : Math.min(vw * 0.58, 860);
+    const maxH = Math.min(vh * 0.68, 640);
+
+    let targetW, targetH;
+
+    if (r < 0.8) {
+      // Portrait (e.g. 9:16, 2:3, 3:4)
+      targetH = Math.min(maxH, isMob ? vh * 0.62 : 620);
+      targetW = targetH * r;
+      if (targetW > maxW) {
+        targetW = maxW;
+        targetH = targetW / r;
+      }
+    } else if (r <= 1.15) {
+      // Square-ish (e.g. 1:1)
+      const side = Math.min(maxW, maxH, isMob ? 360 : 500);
+      targetW = side;
+      targetH = targetW / r;
+    } else {
+      // Landscape (e.g. 4:3, 16:9, 21:9)
+      targetW = Math.min(maxW, r >= 2.0 ? 840 : 760);
+      targetH = targetW / r;
+      if (targetH > maxH) {
+        targetH = maxH;
+        targetW = targetH * r;
+      }
+    }
+
+    targetW = Math.round(targetW * 10) / 10;
+    targetH = Math.round(targetH * 10) / 10;
+
+    const targetLeft = Math.round((vw - targetW) / 2);
+    const targetTop = Math.round((vh - targetH) / 2);
+
+    return {
+      width: targetW,
+      height: targetH,
+      left: targetLeft,
+      top: targetTop,
+      aspectRatio: r
+    };
+  }
+
+  // Plan Section 3 & 4: getContainedImageRect (computes exact visible contained image rect)
+  function getContainedImageRect(img) {
+    if (!img) return null;
+    const box = img.getBoundingClientRect();
+    if (box.width <= 0 || box.height <= 0) return box;
+
+    const naturalWidth = img.naturalWidth || box.width;
+    const naturalHeight = img.naturalHeight || box.height;
+
+    if (!naturalWidth || !naturalHeight) return box;
+
+    const imageRatio = naturalWidth / naturalHeight;
+    const boxRatio = box.width / box.height;
+
+    let width;
+    let height;
+    let left;
+    let top;
+
+    if (imageRatio > boxRatio) {
+      width = box.width;
+      height = width / imageRatio;
+      left = box.left;
+      top = box.top + (box.height - height) / 2;
+    } else {
+      height = box.height;
+      width = height * imageRatio;
+      left = box.left + (box.width - width) / 2;
+      top = box.top;
+    }
+
+    return {
+      left: Math.round(left * 10) / 10,
+      top: Math.round(top * 10) / 10,
+      width: Math.round(width * 10) / 10,
+      height: Math.round(height * 10) / 10
     };
   }
 
@@ -597,6 +624,8 @@
 
   window.calculateProjectCoverGeometry = calculateProjectCoverGeometry;
   window.calculateBalancedPreviewSize = calculateBalancedPreviewSize;
+  window.calculateTransitionTargetSize = calculateTransitionTargetSize;
+  window.getContainedImageRect = getContainedImageRect;
   window.parseAspectRatio = parseAspectRatio;
 
   function formatRatioText(ratio) {
@@ -651,38 +680,23 @@
     });
 
     const hasSecondary = shotsCount > 1;
-    let secondaryImgSrc = null;
-    if (Array.isArray(p.shots) && p.shots[1]?.payload?.image) {
-      secondaryImgSrc = p.shots[1].payload.image;
-    }
-
-    const secondaryContent = secondaryImgSrc
-      ? `<img src="${secondaryImgSrc}" alt="Secondary Shot" />`
-      : `<div class="preview-secondary-sheet">
-           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-             <rect x="3" y="3" width="18" height="18" rx="2"/>
-             <circle cx="8.5" cy="8.5" r="1.5"/>
-             <path d="m21 15-5-5L5 21"/>
-           </svg>
-         </div>`;
 
     return `
       <div class="project-preview-zone project-folder-preview-stack" data-ratio="${cleanRatio}">
         ${hasSecondary ? `
-          <div class="project-preview-secondary" data-ratio="${cleanRatio}">
-            ${secondaryContent}
-          </div>
+          <div class="project-preview-secondary" aria-hidden="true"></div>
         ` : ''}
-        <div class="project-preview-primary project-thumb loading"
+        <div class="project-preview-primary project-cover-frame project-thumb loading"
              data-ratio="${cleanRatio}"
+             data-true-ratio="${numericRatio}"
              data-collapsed-w="${geom.collapsed.width}"
              data-collapsed-h="${geom.collapsed.height}"
              data-expanded-w="${geom.expanded.width}"
              data-expanded-h="${geom.expanded.height}"
-             data-expanded-x="${geom.expanded.x}"
-             data-expanded-depth="${geom.expanded.insertDepth}"
-             data-hover-lift="${geom.expanded.hoverLift}"
-             style="--collapsed-width: ${geom.collapsed.width}px; --collapsed-height: ${geom.collapsed.height}px; --collapsed-insert-depth: ${geom.collapsed.insertDepth}px; --expanded-width: ${geom.expanded.width}px; --expanded-height: ${geom.expanded.height}px; --expanded-insert-depth: ${geom.expanded.insertDepth}px; --expanded-x: ${geom.expanded.x}px; --hover-lift: ${geom.expanded.hoverLift}px; --hover-rotate: ${geom.expanded.hoverRotate}deg;"
+             data-expanded-x="0"
+             data-expanded-depth="${geom.collapsed.insertDepth}"
+             data-hover-lift="${geom.hoverLift}"
+             style="--cover-width: ${geom.frame.width}px; --cover-height: ${geom.frame.height}px; --insert-depth: ${geom.frame.insertDepth}px; --collapsed-width: ${geom.collapsed.width}px; --collapsed-height: ${geom.collapsed.height}px; --collapsed-insert-depth: ${geom.collapsed.insertDepth}px; --expanded-width: ${geom.expanded.width}px; --expanded-height: ${geom.expanded.height}px; --expanded-insert-depth: ${geom.collapsed.insertDepth}px; --expanded-x: 0px; --hover-lift: ${geom.hoverLift}px; --hover-rotate: ${geom.hoverRotate}deg;"
              data-src="/api/projects/${p.id}/cover">
           <div class="thumb-fallback">
             <div class="fallback-frame">
@@ -1327,36 +1341,30 @@
 
     card.classList.add('is-expanded');
 
-    // Section 24, 25, 26, 28:
-    // Transition origin MUST be the True Ratio (Expanded) cover!
-    const expW = parseFloat(primaryCover.dataset.expandedW) || 282;
-    const expH = parseFloat(primaryCover.dataset.expandedH) || 158;
-    const expX = parseFloat(primaryCover.dataset.expandedX) || 0;
-    const expDepth = parseFloat(primaryCover.dataset.expandedDepth) || 46;
-    const hoverLift = parseFloat(primaryCover.dataset.hoverLift) || 16;
-
+    // Spec Section 7 & 8: Transition Origin is the current 16:9 preview frame!
     const curRect = primaryCover.getBoundingClientRect();
-    const cardRect = card.getBoundingClientRect();
-    const shellRect = folderShell.getBoundingClientRect();
+    const startW = curRect.width;
+    const startH = curRect.height;
+    const startLeft = curRect.left;
+    const startTop = curRect.top;
 
-    let startW = expW;
-    let startH = expH;
-    let startLeft = curRect.left;
-    let startTop = curRect.top;
+    // Spec Section 2: Project True Ratio
+    const projectRatio = parseAspectRatio(
+      primaryCover.dataset.trueRatio || primaryCover.dataset.ratio || p.ratio,
+      p.width,
+      p.height
+    );
 
-    // If card was clicked while collapsed or fast-tapped on mobile:
-    // Calculate the precise expanded coordinates in viewport
-    if (Math.abs(curRect.width - expW) > 8) {
-      const centerX = cardRect.left + cardRect.width / 2 + expX;
-      startLeft = centerX - expW / 2;
-      const sheetBottom = shellRect.top + expDepth - hoverLift;
-      startTop = sheetBottom - expH;
-    } else {
-      startW = curRect.width;
-      startH = curRect.height;
-      startLeft = curRect.left;
-      startTop = curRect.top;
-    }
+    // Spec Section 10: Calculate True Ratio Target Size
+    const targetGeom = calculateTransitionTargetSize({
+      aspectRatio: projectRatio,
+      viewportWidth: window.innerWidth,
+      viewportHeight: window.innerHeight
+    });
+    const targetW = targetGeom.width;
+    const targetH = targetGeom.height;
+    const targetLeft = targetGeom.left;
+    const targetTop = targetGeom.top;
 
     // 2. Folder Shell & Secondary Preview drop down and fade out
     folderShell.style.transition = 'transform 300ms cubic-bezier(.4, 0, .2, 1), opacity 240ms ease';
@@ -1370,7 +1378,7 @@
       secondary.style.transform = 'translateY(20px) scale(0.92)';
     }
 
-    // 3. Transition Flying Cover in App-Level Layer (True Aspect Ratio)
+    // 3. Spec Section 8: Transition Flying Cover in App-Level Layer
     const flyingCover = document.createElement('div');
     flyingCover.className = 'project-reveal-curtain';
     flyingCover.style.position = 'fixed';
@@ -1379,18 +1387,65 @@
     flyingCover.style.width = `${startW}px`;
     flyingCover.style.height = `${startH}px`;
     flyingCover.style.zIndex = '999999';
-    flyingCover.style.borderRadius = '12px';
+    flyingCover.style.borderRadius = '14px';
+    flyingCover.style.border = '1px solid rgba(255, 255, 255, 0.45)';
     flyingCover.style.overflow = 'hidden';
-    flyingCover.style.boxShadow = '0 32px 80px rgba(0, 0, 0, 0.48), 0 0 0 1px rgba(255, 255, 255, 0.15)';
-    flyingCover.style.transformOrigin = 'center center';
+    flyingCover.style.boxShadow = '0 16px 36px rgba(15, 23, 42, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.35)';
+    flyingCover.style.transformOrigin = '45% 100%'; // Spec Section 12
     flyingCover.style.background = '#0f172a';
+    flyingCover.style.boxSizing = 'border-box';
 
-    const imgEl = primaryCover.querySelector('img');
-    if (imgEl && imgEl.src) {
-      const imgClone = document.createElement('img');
-      imgClone.src = imgEl.src;
-      imgClone.style.cssText = 'width: 100%; height: 100%; object-fit: cover; display: block; border-radius: inherit;';
-      flyingCover.appendChild(imgClone);
+    const mainImgEl = primaryCover.querySelector('.project-preview-primary-image') || primaryCover.querySelector('.cover-main') || primaryCover.querySelector('img.lazy-thumb') || primaryCover.querySelector('img');
+    let bgImg = null;
+    let frostedOverlay = null;
+    let mainImgWrap = null;
+    let mainImgClone = null;
+    const isContain = projectRatio < (16 / 9) - 0.01;
+
+    if (mainImgEl && mainImgEl.src) {
+      if (isContain) {
+        flyingCover.classList.add('is-contain-shell');
+        flyingCover.style.background = '#ffffff';
+
+        // Background Layer Morph (Section 4 & 14 - Light White Frosted Material)
+        bgImg = document.createElement('img');
+        bgImg.src = mainImgEl.src;
+        bgImg.className = 'cover-background transition-cover-bg';
+        bgImg.style.cssText = 'position: absolute; inset: -12px; width: calc(100% + 24px); height: calc(100% + 24px); object-fit: cover; filter: blur(24px) saturate(.95) brightness(1.06); transform: scale(1.10); opacity: 0.42; pointer-events: none; border-radius: inherit; z-index: 1;';
+        flyingCover.appendChild(bgImg);
+
+        frostedOverlay = document.createElement('div');
+        frostedOverlay.className = 'transition-cover-overlay';
+        frostedOverlay.style.cssText = 'position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255, 255, 255, 0.58) 0%, rgba(248, 250, 252, 0.48) 100%); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); pointer-events: none; border-radius: inherit; z-index: 1;';
+        flyingCover.appendChild(frostedOverlay);
+
+        // Main Image Inner Wrap for seamless crop morph (Section 15)
+        const innerW_start = Math.round(startH * projectRatio * 10) / 10;
+        const innerH_start = startH;
+
+        mainImgWrap = document.createElement('div');
+        mainImgWrap.className = 'cover-main-wrap transition-cover-media';
+        mainImgWrap.style.cssText = `position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: ${innerW_start}px; height: ${innerH_start}px; overflow: hidden; border-radius: inherit; z-index: 2; display: flex; align-items: center; justify-content: center;`;
+
+        mainImgClone = document.createElement('img');
+        mainImgClone.src = mainImgEl.src;
+        mainImgClone.className = 'cover-main transition-cover-image';
+        mainImgClone.style.cssText = 'width: 100%; height: 100%; object-fit: cover; display: block; border-radius: inherit; filter: drop-shadow(0 4px 14px rgba(15, 23, 42, 0.10));';
+        mainImgWrap.appendChild(mainImgClone);
+        flyingCover.appendChild(mainImgWrap);
+      } else {
+        // Section 3 & 17: projectRatio >= 16/9
+        mainImgWrap = document.createElement('div');
+        mainImgWrap.className = 'cover-main-wrap transition-cover-media';
+        mainImgWrap.style.cssText = 'position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; border-radius: inherit; z-index: 2; display: flex; align-items: center; justify-content: center;';
+
+        mainImgClone = document.createElement('img');
+        mainImgClone.src = mainImgEl.src;
+        mainImgClone.className = 'cover-main transition-cover-image';
+        mainImgClone.style.cssText = 'width: 100%; height: 100%; object-fit: cover; display: block; border-radius: inherit;';
+        mainImgWrap.appendChild(mainImgClone);
+        flyingCover.appendChild(mainImgWrap);
+      }
     } else {
       flyingCover.innerHTML = primaryCover.innerHTML;
     }
@@ -1405,48 +1460,29 @@
       scrim.style.opacity = '1';
     });
 
-    // 4. Viewport target sizing preserving ratio
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    const numericR = parseAspectRatio(primaryCover.dataset.ratio || p.ratio, startW, startH) || (startW / startH);
-    let targetW, targetH;
-    if (numericR < 0.8) {
-      targetH = Math.min(vh * 0.72, 620);
-      targetW = targetH * numericR;
-    } else if (numericR <= 1.1) {
-      targetW = Math.min(vw * 0.65, vh * 0.65, 480);
-      targetH = targetW / numericR;
-    } else {
-      targetW = Math.min(vw * 0.82, 760);
-      targetH = targetW / numericR;
-      if (targetH > vh * 0.75) {
-        targetH = vh * 0.75;
-        targetW = targetH * numericR;
-      }
-    }
-    const targetLeft = (vw - targetW) / 2;
-    const targetTop = (vh - targetH) / 2;
-
     // Transition Session Controller (Shared Element State Machine)
     const session = {
+      id: `cover-trans-${p.id}-${Date.now()}`,
       projectId: p.id,
+      targetRoute: `/project/${p.id}`,
       card,
       primaryCover,
       folderShell,
       secondary,
       flyingCover,
       scrim,
+      flightAnim: null,
       targetLeft,
       targetTop,
       targetW,
       targetH,
-      state: 'extracting', // 'extracting' | 'center_hold' | 'returning' | 'completed'
+      state: 'extracting', // 'extracting' | 'flying' | 'waiting-project' | 'returning' | 'handoff' | 'complete' | 'cancelled'
+      cancelled: false,
       pendingTarget: null,
-      fallbackTimer: null,
 
       onFirstShotReady(targetWrap, targetImg) {
-        if (this.state === 'completed' || this.state === 'returning') return;
-        if (this.state === 'extracting') {
+        if (this.state === 'complete' || this.state === 'returning' || this.cancelled) return;
+        if (this.state === 'extracting' || this.state === 'flying') {
           this.pendingTarget = { targetWrap, targetImg };
           return;
         }
@@ -1454,51 +1490,62 @@
       },
 
       executeReturn(targetWrap, targetImg) {
-        if (this.state === 'completed' || this.state === 'returning') return;
+        if (this.state === 'complete' || this.state === 'returning' || this.cancelled) return;
         this.state = 'returning';
-        if (this.fallbackTimer) {
-          clearTimeout(this.fallbackTimer);
-          this.fallbackTimer = null;
-        }
 
         // Wait 2 requestAnimationFrame frames to guarantee layout stability
         requestAnimationFrame(() => {
           requestAnimationFrame(() => {
+            if (this.cancelled || this.state === 'complete') return;
             if (!targetWrap || !targetWrap.isConnected) {
-              this.fallbackDismiss();
+              this.cancel();
               return;
             }
 
-            const targetRect = targetWrap.getBoundingClientRect();
-            if (targetRect.width <= 0 || targetRect.height <= 0) {
-              this.fallbackDismiss();
+            // Plan Section 3 & 4: Get actual visible contained image rect
+            const imgEl = targetImg || targetWrap.querySelector('img') || targetWrap;
+            const targetRect = getContainedImageRect(imgEl) || targetWrap.getBoundingClientRect();
+            if (!targetRect || targetRect.width <= 0 || targetRect.height <= 0) {
+              this.cancel();
               return;
             }
 
-            const curRect = this.flyingCover.getBoundingClientRect();
+            // Plan Section 1: Lock Cover Dimensions from Center Hold
+            const sourceRect = this.flyingCover.getBoundingClientRect();
+            if (!sourceRect || sourceRect.width <= 0 || sourceRect.height <= 0) {
+              this.cancel();
+              return;
+            }
+
+            // Plan Section 2: Uniform Scale & Translation
+            const scale = targetRect.width / sourceRect.width;
+            const dx = targetRect.left - sourceRect.left;
+            const dy = targetRect.top - sourceRect.top;
+
+            this.flyingCover.style.transformOrigin = 'top left';
 
             // Scrim fades out smoothly
-            this.scrim.style.transition = 'opacity 320ms cubic-bezier(.4, 0, .2, 1)';
-            this.scrim.style.opacity = '0';
+            if (this.scrim) {
+              this.scrim.style.transition = 'opacity 320ms cubic-bezier(.4, 0, .2, 1)';
+              this.scrim.style.opacity = '0';
+            }
 
-            // Phase C: Cover Return (center -> targetRect)
+            // Plan Section 6: First Shot remains hidden during return
+            targetWrap.style.opacity = '0';
+
+            const endRadius = Math.max(2, Math.round(8 / scale));
+
+            // Plan Section 2 & 9: Return ONLY animates translate + uniform scale + border-radius + shadow.
+            // Width, height, and inner image styles remain completely FROZEN (no crop / no reflow)!
             const returnAnim = this.flyingCover.animate([
               {
-                left: `${curRect.left}px`,
-                top: `${curRect.top}px`,
-                width: `${curRect.width}px`,
-                height: `${curRect.height}px`,
-                transform: 'rotate(0deg) scale(1)',
-                borderRadius: '16px',
-                boxShadow: '0 32px 80px rgba(0, 0, 0, 0.48), 0 0 0 1px rgba(255, 255, 255, 0.15)'
+                transform: 'translate(0px, 0px) scale(1)',
+                borderRadius: '10px',
+                boxShadow: '0 32px 80px rgba(0, 0, 0, 0.45)'
               },
               {
-                left: `${targetRect.left}px`,
-                top: `${targetRect.top}px`,
-                width: `${targetRect.width}px`,
-                height: `${targetRect.height}px`,
-                transform: 'rotate(0deg) scale(1)',
-                borderRadius: '8px',
+                transform: `translate(${dx}px, ${dy}px) scale(${scale})`,
+                borderRadius: `${endRadius}px`,
                 boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)'
               }
             ], {
@@ -1508,7 +1555,10 @@
             });
 
             returnAnim.onfinish = () => {
-              // Seamless handoff: 90ms crossfade
+              if (this.cancelled) return;
+              this.state = 'handoff';
+
+              // Plan Section 7: Seamless handoff (60~120ms crossfade)
               if (targetWrap) {
                 targetWrap.classList.remove('is-transition-target');
                 targetWrap.style.transition = 'opacity 90ms ease';
@@ -1531,16 +1581,34 @@
         });
       },
 
+      cancel() {
+        if (this.state === 'complete' || this.cancelled) return;
+        this.cancelled = true;
+        this.state = 'cancelled';
+        this.runLegacyCoverShrink();
+      },
+
       fallbackDismiss() {
-        if (this.state === 'completed' || this.state === 'returning') return;
-        this.state = 'completed';
-        if (this.fallbackTimer) {
-          clearTimeout(this.fallbackTimer);
-          this.fallbackTimer = null;
+        this.cancel();
+      },
+
+      runLegacyCoverShrink() {
+        if (this.state === 'complete') return;
+        this.state = 'cancelled';
+
+        if (this.flightAnim) {
+          try { this.flightAnim.cancel(); } catch (e) {}
         }
 
-        this.scrim.style.transition = 'opacity 300ms ease';
-        this.scrim.style.opacity = '0';
+        if (this.scrim) {
+          this.scrim.style.transition = 'opacity 300ms ease';
+          this.scrim.style.opacity = '0';
+        }
+
+        if (!this.flyingCover) {
+          this.cleanup();
+          return;
+        }
 
         const exitAnim = this.flyingCover.animate([
           { transform: 'scale(1)', opacity: 1 },
@@ -1563,16 +1631,15 @@
       },
 
       cleanup() {
-        this.state = 'completed';
-        if (this.fallbackTimer) {
-          clearTimeout(this.fallbackTimer);
-          this.fallbackTimer = null;
-        }
+        this.state = 'complete';
         if (this.scrim && this.scrim.parentNode) {
           this.scrim.parentNode.removeChild(this.scrim);
         }
         if (this.flyingCover && this.flyingCover.parentNode) {
           this.flyingCover.parentNode.removeChild(this.flyingCover);
+        }
+        if (frostedOverlay && frostedOverlay.parentNode) {
+          frostedOverlay.parentNode.removeChild(frostedOverlay);
         }
         if (this.primaryCover) this.primaryCover.style.visibility = '';
         if (this.folderShell) {
@@ -1583,15 +1650,19 @@
           this.secondary.style.opacity = '';
           this.secondary.style.transform = '';
         }
-        if (this.card) this.card.classList.remove('is-navigating');
+        if (this.card) this.card.classList.remove('is-navigating', 'is-expanded');
         if (window._activeProjectTransition === this) {
           window._activeProjectTransition = null;
         }
+        if (window.currentCoverTransition === this) {
+          window.currentCoverTransition = null;
+        }
       }
     };
+    window.currentCoverTransition = session;
     window._activeProjectTransition = session;
 
-    // 5. Trigger SPA Navigation at ~180ms (at ~40% into extract flight)
+    // Spec Section 18: Trigger SPA Navigation at ~200ms (~40% into flight morph)
     let navTriggered = false;
     const triggerNav = () => {
       if (!navTriggered) {
@@ -1599,26 +1670,46 @@
         navigate('project', { id: p.id });
       }
     };
-    setTimeout(triggerNav, 180);
+    setTimeout(triggerNav, 200);
 
-    // 6. Flying Flight Curve (0 - 500ms)
-    const anim = flyingCover.animate([
+    // Spec Section 9, 11, 12, 13: Flight Morph Keyframes (0 - 520ms)
+    // 0% ~ 20%: 保持 16:9 抽出
+    // 20% ~ 60%: Morph 16:9 → Project Ratio, border/radius 縮減, background blur 消失
+    // 60% ~ 100%: 比例完成，飛往中央
+    session.state = 'flying';
+    const flightKeyframes = [
       {
+        offset: 0,
         left: `${startLeft}px`,
         top: `${startTop}px`,
         width: `${startW}px`,
         height: `${startH}px`,
-        transform: 'rotate(-4deg) scale(1)',
-        borderRadius: '12px'
+        transform: 'rotate(-4.5deg) scale(1)',
+        borderRadius: '14px',
+        borderWidth: '1px',
+        boxShadow: '0 16px 36px rgba(15, 23, 42, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.35)'
       },
       {
-        offset: 0.35,
-        left: `${(startLeft + targetLeft) / 2}px`,
-        top: `${Math.min(startTop, targetTop) - 24}px`,
-        width: `${startW + (targetW - startW) * 0.45}px`,
-        height: `${startH + (targetH - startH) * 0.45}px`,
-        transform: 'rotate(-1.5deg) scale(1.03)',
-        borderRadius: '14px'
+        offset: 0.20,
+        left: `${startLeft + (targetLeft - startLeft) * 0.12}px`,
+        top: `${startTop - 28}px`,
+        width: `${startW}px`, // 0% ~ 20% 保持 16:9!
+        height: `${startH}px`,
+        transform: 'rotate(-3.5deg) scale(1.02)',
+        borderRadius: '13px',
+        borderWidth: '1px',
+        boxShadow: '0 24px 52px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.25)'
+      },
+      {
+        offset: 0.60,
+        left: `${startLeft + (targetLeft - startLeft) * 0.78}px`,
+        top: `${Math.min(startTop, targetTop) - 14 + (targetTop - startTop) * 0.65}px`,
+        width: `${targetW}px`, // 60%: True Ratio Morph Complete!
+        height: `${targetH}px`,
+        transform: 'rotate(-0.8deg) scale(1.01)',
+        borderRadius: '10px',
+        borderWidth: '0.5px',
+        boxShadow: '0 32px 72px rgba(0, 0, 0, 0.42), 0 0 0 1px rgba(255, 255, 255, 0.15)'
       },
       {
         offset: 1,
@@ -1627,32 +1718,114 @@
         width: `${targetW}px`,
         height: `${targetH}px`,
         transform: 'rotate(0deg) scale(1)',
-        borderRadius: '16px'
+        borderRadius: '10px',
+        borderWidth: '0px',
+        boxShadow: '0 32px 80px rgba(0, 0, 0, 0.45), 0 0 0 0px rgba(255, 255, 255, 0)'
       }
-    ], {
-      duration: 500,
+    ];
+
+    const anim = flyingCover.animate(flightKeyframes, {
+      duration: 520,
       easing: 'cubic-bezier(.4, 0, .2, 1)',
       fill: 'forwards'
     });
+    session.flightAnim = anim;
 
-    // 7. Phase B: Center Hold & Wait for First Shot Ready
+    // Background Layer Morph (20%: 0.42 -> 40%: 0.18 -> 60%: 0)
+    if (bgImg) {
+      bgImg.animate([
+        { offset: 0, opacity: 0.42 },
+        { offset: 0.20, opacity: 0.42 },
+        { offset: 0.40, opacity: 0.18 },
+        { offset: 0.60, opacity: 0 },
+        { offset: 1, opacity: 0 }
+      ], {
+        duration: 520,
+        easing: 'cubic-bezier(.4, 0, .2, 1)',
+        fill: 'forwards'
+      });
+    }
+
+    if (frostedOverlay) {
+      frostedOverlay.animate([
+        { offset: 0, opacity: 1 },
+        { offset: 0.20, opacity: 1 },
+        { offset: 0.40, opacity: 0.4 },
+        { offset: 0.60, opacity: 0 },
+        { offset: 1, opacity: 0 }
+      ], {
+        duration: 520,
+        easing: 'cubic-bezier(.4, 0, .2, 1)',
+        fill: 'forwards'
+      });
+    }
+
+    // Spec Section 15: Main Image Inner Wrap Morph
+    if (mainImgWrap && isContain) {
+      const innerW_start = Math.round(startH * projectRatio * 10) / 10;
+      const innerH_start = startH;
+
+      mainImgWrap.animate([
+        { offset: 0, width: `${innerW_start}px`, height: `${innerH_start}px` },
+        { offset: 0.20, width: `${innerW_start}px`, height: `${innerH_start}px` },
+        { offset: 0.60, width: `${targetW}px`, height: `${targetH}px` },
+        { offset: 1, width: `${targetW}px`, height: `${targetH}px` }
+      ], {
+        duration: 520,
+        easing: 'cubic-bezier(.4, 0, .2, 1)',
+        fill: 'forwards'
+      });
+    }
+
+    // Spec Section 19: Center Hold & Wait for First Shot Ready
     anim.onfinish = () => {
       triggerNav(); // Safety fallback
 
-      if (session.state === 'completed') return;
+      if (session.state === 'complete' || session.cancelled) return;
 
-      // Settle fixed in center
+      // Settle fixed in center with true project ratio
       flyingCover.style.left = `${targetLeft}px`;
       flyingCover.style.top = `${targetTop}px`;
       flyingCover.style.width = `${targetW}px`;
       flyingCover.style.height = `${targetH}px`;
       flyingCover.style.transform = 'none';
-      flyingCover.style.borderRadius = '16px';
+      flyingCover.style.borderRadius = '10px';
+      flyingCover.style.borderWidth = '0px';
       flyingCover.style.opacity = '1';
+      flyingCover.style.background = 'transparent';
 
-      session.state = 'center_hold';
+      if (bgImg && bgImg.parentNode) bgImg.remove();
+      bgImg = null;
+      if (frostedOverlay && frostedOverlay.parentNode) frostedOverlay.remove();
+      frostedOverlay = null;
 
-      // If First Shot already arrived while extracting, execute return immediately
+      // Normalize Media Layer completely at Center Hold
+      if (mainImgWrap) {
+        mainImgWrap.style.position = 'relative';
+        mainImgWrap.style.inset = '0';
+        mainImgWrap.style.left = '0';
+        mainImgWrap.style.top = '0';
+        mainImgWrap.style.width = '100%';
+        mainImgWrap.style.height = '100%';
+        mainImgWrap.style.transform = 'none';
+        mainImgWrap.style.display = 'flex';
+        mainImgWrap.style.alignItems = 'center';
+        mainImgWrap.style.justifyContent = 'center';
+        mainImgWrap.style.overflow = 'hidden';
+      }
+      if (mainImgClone) {
+        mainImgClone.style.width = '100%';
+        mainImgClone.style.height = '100%';
+        mainImgClone.style.objectFit = 'contain';
+        mainImgClone.style.objectPosition = 'center';
+        mainImgClone.style.transform = 'none';
+        mainImgClone.style.filter = 'none';
+        mainImgClone.style.display = 'block';
+      }
+
+      session.state = 'waiting-project';
+
+      // If First Shot already arrived while extracting/flight, execute return immediately
       if (session.pendingTarget) {
         const { targetWrap, targetImg } = session.pendingTarget;
         session.pendingTarget = null;
@@ -1660,10 +1833,7 @@
         return;
       }
 
-      // Safety timeout: 3 seconds max hold fallback
-      session.fallbackTimer = setTimeout(() => {
-        session.fallbackDismiss();
-      }, 3000);
+      // No timeout shrink during normal loading path: wait until project is ready!
     };
   }
 
@@ -1758,20 +1928,14 @@
       
       const img = new Image();
       img.onload = () => {
-        img.className = 'lazy-thumb';
-        img.alt = 'Cover';
-        img.style.width = '100%';
-        img.style.height = '100%';
-        img.style.objectFit = 'cover';
-        img.style.opacity = '0';
-        img.style.transition = 'opacity 0.45s ease-in-out, transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)';
-        
         const fallback = thumb.querySelector('.thumb-fallback');
         if (fallback) fallback.style.display = 'none';
 
         // Maintain project's configured aspect ratio (from data-ratio or p.ratio)
-        const projectRatioAttr = thumb.dataset.ratio || thumb.closest('.project-folder-preview-stack')?.dataset.ratio;
+        const projectRatioAttr = thumb.dataset.trueRatio || thumb.dataset.ratio || thumb.closest('.project-folder-preview-stack')?.dataset.ratio;
         const targetRatio = projectRatioAttr ? parseAspectRatio(projectRatioAttr) : (img.naturalWidth && img.naturalHeight ? (img.naturalWidth / img.naturalHeight) : (16 / 9));
+
+        thumb.dataset.trueRatio = targetRatio;
 
         const isCompact = !!thumb.closest('.variant-compact');
         const isMob = typeof isMobileView === 'function' ? isMobileView() : false;
@@ -1780,35 +1944,89 @@
           variant: isCompact ? 'compact' : 'default',
           isMobile: isMob
         });
+
+        thumb.style.setProperty('--cover-width', `${geom.frame.width}px`);
+        thumb.style.setProperty('--cover-height', `${geom.frame.height}px`);
+        thumb.style.setProperty('--insert-depth', `${geom.frame.insertDepth}px`);
         thumb.style.setProperty('--collapsed-width', `${geom.collapsed.width}px`);
         thumb.style.setProperty('--collapsed-height', `${geom.collapsed.height}px`);
         thumb.style.setProperty('--collapsed-insert-depth', `${geom.collapsed.insertDepth}px`);
         thumb.style.setProperty('--expanded-width', `${geom.expanded.width}px`);
         thumb.style.setProperty('--expanded-height', `${geom.expanded.height}px`);
-        thumb.style.setProperty('--expanded-insert-depth', `${geom.expanded.insertDepth}px`);
-        thumb.style.setProperty('--expanded-x', `${geom.expanded.x}px`);
-        thumb.style.setProperty('--hover-lift', `${geom.expanded.hoverLift}px`);
-        thumb.style.setProperty('--hover-rotate', `${geom.expanded.hoverRotate}deg`);
+        thumb.style.setProperty('--expanded-insert-depth', `${geom.collapsed.insertDepth}px`);
+        thumb.style.setProperty('--expanded-x', '0px');
+        thumb.style.setProperty('--hover-lift', `${geom.hoverLift}px`);
+        thumb.style.setProperty('--hover-rotate', `${geom.hoverRotate}deg`);
 
         thumb.dataset.collapsedW = geom.collapsed.width;
         thumb.dataset.collapsedH = geom.collapsed.height;
         thumb.dataset.expandedW = geom.expanded.width;
         thumb.dataset.expandedH = geom.expanded.height;
-        thumb.dataset.expandedX = geom.expanded.x;
-        thumb.dataset.expandedDepth = geom.expanded.insertDepth;
-        thumb.dataset.hoverLift = geom.expanded.hoverLift;
+        thumb.dataset.expandedX = 0;
+        thumb.dataset.expandedDepth = geom.collapsed.insertDepth;
+        thumb.dataset.hoverLift = geom.hoverLift;
 
+        const isFolderPrimary = thumb.classList.contains('project-preview-primary');
         const badges = thumb.querySelector('.thumb-overlay-badges');
-        if (badges) {
-          thumb.insertBefore(img, badges);
-        } else {
-          thumb.appendChild(img);
-        }
 
-        requestAnimationFrame(() => {
-          img.style.opacity = '1';
-          thumb.classList.remove('loading');
-        });
+        if (isFolderPrimary) {
+          // Spec Section 3 & 4:
+          // Fixed 16:9 Frame.
+          // If targetRatio < 16/9: fit = contain, with blurred background layer!
+          // If targetRatio >= 16/9: fit = cover.
+          const isContain = targetRatio < (16 / 9) - 0.01;
+          let bgImg = null;
+
+          if (isContain) {
+            thumb.classList.add('has-contain-preview');
+            bgImg = new Image();
+            bgImg.className = 'project-preview-primary-bg cover-background';
+            bgImg.alt = '';
+            bgImg.src = img.src;
+            bgImg.style.opacity = '0';
+            if (badges) {
+              thumb.insertBefore(bgImg, badges);
+            } else {
+              thumb.appendChild(bgImg);
+            }
+          } else {
+            thumb.classList.remove('has-contain-preview');
+          }
+
+          img.className = `lazy-thumb project-preview-primary-image cover-main ${isContain ? 'fit-contain' : 'fit-cover'}`;
+          img.alt = 'Cover';
+          img.style.opacity = '0';
+          if (badges) {
+            thumb.insertBefore(img, badges);
+          } else {
+            thumb.appendChild(img);
+          }
+
+          requestAnimationFrame(() => {
+            if (bgImg) bgImg.style.opacity = '';
+            img.style.opacity = '1';
+            thumb.classList.remove('loading');
+          });
+        } else {
+          // Legacy non-folder card
+          img.className = 'lazy-thumb';
+          img.alt = 'Cover';
+          img.style.width = '100%';
+          img.style.height = '100%';
+          img.style.objectFit = 'cover';
+          img.style.opacity = '0';
+          img.style.transition = 'opacity 0.45s ease-in-out, transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)';
+          if (badges) {
+            thumb.insertBefore(img, badges);
+          } else {
+            thumb.appendChild(img);
+          }
+
+          requestAnimationFrame(() => {
+            img.style.opacity = '1';
+            thumb.classList.remove('loading');
+          });
+        }
       };
       img.onerror = () => {
         thumb.classList.remove('loading');
@@ -6258,6 +6476,7 @@ function initLoginLogic(showRegister) {
         if (signal?.aborted) return;
         if (!p) {
           m.innerHTML = `<div class="projects-empty"><h3>無法取得分鏡</h3></div>`;
+          window.currentCoverTransition?.cancel?.() || window._activeProjectTransition?.cancel?.();
           return;
         }
         await renderWithProjectData(p);
@@ -6265,6 +6484,7 @@ function initLoginLogic(showRegister) {
         if (e.name !== 'AbortError') {
           console.error('renderProject error', e);
           m.innerHTML = `<div class="projects-empty"><h3>讀取分鏡發生錯誤</h3><p>${e.message || '未知錯誤'}</p></div>`;
+          window.currentCoverTransition?.cancel?.() || window._activeProjectTransition?.cancel?.();
         }
       }
     }
@@ -6741,8 +6961,12 @@ function initLoginLogic(showRegister) {
       closeGlobalOptionMorph();
     }
 
-    if (window._activeProjectTransition && page !== 'project') {
-      window._activeProjectTransition.fallbackDismiss();
+    const activeTransition = window.currentCoverTransition || window._activeProjectTransition;
+    if (activeTransition) {
+      const isTargetRoute = (page === 'project' && String(opts?.id) === String(activeTransition.projectId));
+      if (!isTargetRoute) {
+        activeTransition.cancel();
+      }
     }
 
     const pageMain = document.getElementById('page-main');
