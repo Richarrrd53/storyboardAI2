@@ -4,26 +4,8 @@
   // ════════════════════════════════════════════════════════════
   // 1. Creation Session Store & Decoupled State Architecture
   // ════════════════════════════════════════════════════════════
-  const CreationSessionStore = {
-      entryMode: 'full', // 'quick' | 'full'
-      story: '',
-      styleIndex: 0,
-      ratio: '橫向16:9',
-      selectedTemplate: null,
-      currentPhase: 1,
-      generationStatus: 'idle', // 'idle' | 'generating' | 'completed' | 'error'
-      resolvedVariables: {},
-      finalPrompts: [],
-      storyboardData: null,
-      error: null,
-      draft: {
-          story: '',
-          styleIndex: 0,
-          ratio: '橫向16:9',
-          selectedTemplate: null
-      }
-  };
-  window.CreationSessionStore = CreationSessionStore;
+  // Creation owns the session; GenerationTask owns the long-running work.
+  const CreationSessionStore = window.CreationSessionStore;
 
   const STYLES = [
       { name: '預設風格', dot: '#7fba7a', desc: '自然清新', gradient: 'linear-gradient(135deg, #a8ff78, #78ffd6)', icon: '🍃', prompt: "natural lighting, high resolution, clean composition, soft focus background" },
@@ -35,7 +17,6 @@
       { name: '水彩插畫風格', dot: '#b8d4ff', desc: '柔和藝術', gradient: 'linear-gradient(135deg, #89f7fe, #66a6ff)', icon: '🎨', prompt: "delicate watercolor painting, ink wash, dreamy atmosphere, paper texture, hand-drawn illustration" },
       { name: '極簡室內風格', dot: '#eceff1', desc: '侘寂高級感', gradient: 'linear-gradient(135deg, #e0eafc, #cfdef3)', icon: '🏛️', prompt: "minimalist aesthetic, soft natural light, Wabi-sabi style, high-end interior design photography, neutral tones" }
   ];
-  window.GEN_STYLES = STYLES;
 
   const AI_RESPONSE_TEMPLATES = [
       s => `為「${s}」鎖定最佳敘事視覺：建議以寫實生活感搭配黃金視角，引導情緒轉折。`,
@@ -57,14 +38,55 @@
 
   let TEMPLATES = [];
   let isTransitioningPhase = false;
-  let activeGenController = null;
+  let pageController = null;
+  let unsubscribeTask = null;
+  let pageTimers = new Set();
+  let boundNodes = new Set();
+  let routeCleanup = null;
+  let lastErrorTaskId = null;
+
+  function pageTimeout(callback, ms) {
+      const controller = pageController;
+      const timer = setTimeout(() => {
+          pageTimers.delete(timer);
+          if (controller && pageController === controller && !controller.signal.aborted) callback();
+      }, ms);
+      pageTimers.add(timer);
+      return timer;
+  }
+
+  function bindPageEvent(node, type, callback) {
+      node.removeAttribute('on' + type); // Avoid running both HTML inline and mounted handlers.
+      boundNodes.add(node);
+      node.addEventListener(type, callback, { signal: pageController.signal });
+  }
+
+  function unmountGeneratePage() {
+      routeCleanup?.();
+      routeCleanup = null;
+      pageController?.abort();
+      pageController = null;
+      unsubscribeTask?.();
+      unsubscribeTask = null;
+      pageTimers.forEach(clearTimeout);
+      pageTimers.clear();
+      if (typewriterTimer) clearTimeout(typewriterTimer);
+      typewriterTimer = null;
+      boundNodes.forEach(node => { delete node.dataset.bound; });
+      boundNodes.clear();
+      const container = document.getElementById('template-cards-container');
+      window.DynamicMaskSystem?.detach?.(container);
+      isTransitioningPhase = false;
+  }
   let typewriterTimer = null;
 
   // ════════════════════════════════════════════════════════════
   // 2. Persistent Creation Surface Phase Transition Engine
   // ════════════════════════════════════════════════════════════
   async function switchPhase(targetPhase, animate = true) {
-      if (isTransitioningPhase) return;
+      if (isTransitioningPhase && animate) return;
+      const mount = pageController;
+      if (!mount || mount.signal.aborted) return;
       const currentPhase = CreationSessionStore.currentPhase || 1;
       if (animate && targetPhase === currentPhase && document.getElementById(`phase-panel-${targetPhase}`)?.classList.contains('active')) {
           return;
@@ -98,7 +120,15 @@
           currentPanel.style.opacity = '0';
           currentPanel.style.transform = 'translateY(-12px)';
 
-          await new Promise(r => setTimeout(r, 220));
+          await new Promise(resolve => {
+              const finish = () => {
+                  mount.signal.removeEventListener('abort', finish);
+                  resolve();
+              };
+              pageTimeout(finish, 220);
+              mount.signal.addEventListener('abort', finish, { once: true });
+          });
+          if (pageController !== mount || mount.signal.aborted) return;
 
           currentPanel.classList.remove('active', 'phase-leaving');
           currentPanel.style.display = 'none';
@@ -117,7 +147,7 @@
           nextPanel.style.opacity = '1';
           nextPanel.style.transform = 'translateY(0)';
 
-          setTimeout(() => {
+          pageTimeout(() => {
               nextPanel.classList.remove('phase-entering');
               nextPanel.style.transition = '';
               nextPanel.style.opacity = '';
@@ -149,14 +179,16 @@
                   input.value = CreationSessionStore.story;
               }
               onStoryInput();
-              setTimeout(() => input.focus(), 150);
+              pageTimeout(() => input.focus(), 150);
           }
       } else if (targetPhase === 2) {
           buildStyleCards();
           syncRatioChips();
           triggerDirectionAiText();
       } else if (targetPhase === 3) {
+          const mount = pageController;
           ensureTemplatesLoaded().then(() => {
+              if (pageController !== mount || mount.signal.aborted) return;
               renderTemplateBrowser();
               if (window.DynamicMaskSystem) {
                   const tplContainer = document.getElementById('template-cards-container');
@@ -317,9 +349,9 @@
       const tick = () => {
           if (i < targetText.length) {
               textEl.textContent += targetText[i++];
-              typewriterTimer = setTimeout(tick, 22 + Math.random() * 15);
+              typewriterTimer = pageTimeout(tick, 22 + Math.random() * 15);
           } else {
-              typewriterTimer = setTimeout(() => {
+              typewriterTimer = pageTimeout(() => {
                   if (cursorEl) cursorEl.style.opacity = '0';
               }, 600);
           }
@@ -365,7 +397,7 @@
                   <div class="style-card-desc">${s.desc}</div>
               </div>
           `;
-          card.onclick = () => selectStyleCard(idx);
+          bindPageEvent(card, 'click', () => selectStyleCard(idx));
           grid.appendChild(card);
       });
   }
@@ -404,12 +436,16 @@
   // ════════════════════════════════════════════════════════════
   async function ensureTemplatesLoaded() {
       if (TEMPLATES && TEMPLATES.length > 0) return TEMPLATES;
+      const mount = pageController;
       try {
-          const res = await fetch('/api/get-templates');
+          const res = await fetch('/api/get-templates', { signal: mount?.signal });
           if (res.ok) {
-              TEMPLATES = await res.json();
+              const templates = await res.json();
+              if (pageController !== mount || mount?.signal.aborted) return TEMPLATES;
+              TEMPLATES = templates;
           }
       } catch (err) {
+          if (err.name === 'AbortError' || pageController !== mount || mount?.signal.aborted) return TEMPLATES;
           console.error("Failed to load templates:", err);
           TEMPLATES = [];
       }
@@ -570,16 +606,16 @@
             </div>
           `;
 
-          card.onclick = () => {
+          bindPageEvent(card, 'click', () => {
               selectTemplateCard(t);
-          };
+          });
 
-          card.onkeydown = (e) => {
+          bindPageEvent(card, 'keydown', (e) => {
               if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
                   selectTemplateCard(t);
               }
-          };
+          });
 
           containerEl.appendChild(card);
       });
@@ -621,27 +657,21 @@
   }
 
   function skipTemplateAndGenerate() {
+      if (window.GenerationTask.getState().status !== 'generating') window.GenerationTask.reset();
       CreationSessionStore.selectedTemplate = null;
       switchPhase(4);
   }
   window.skipTemplateAndGenerate = skipTemplateAndGenerate;
 
   function applySelectedTemplateAndGenerate() {
+      if (window.GenerationTask.getState().status !== 'generating') window.GenerationTask.reset();
       switchPhase(4);
   }
   window.applySelectedTemplateAndGenerate = applySelectedTemplateAndGenerate;
 
   // ════════════════════════════════════════════════════════════
-  // 6. Phase 4 — AI Generation Engine
+  // 6. Phase 4 — Generation Task Presentation
   // ════════════════════════════════════════════════════════════
-  const LOADING_STEPS_FREE = [
-      { pct: 0, msg: '正在分析故事語意與敘事動機... ✦' },
-      { pct: 20, msg: '正在編排最佳鏡位與時間軸節奏... 🎬' },
-      { pct: 50, msg: '正在為每個鏡頭注入視覺風格與調性... 🖌️' },
-      { pct: 85, msg: '正在沖洗底片並渲染分鏡畫面... 🎨' },
-      { pct: 100, msg: '精彩分鏡已就緒！🎉' }
-  ];
-
   function updateGenProgress(pct, statusText, activeStepId) {
       const barEl = document.getElementById('gen-progress-fill');
       const pctEl = document.getElementById('gen-status-pct');
@@ -663,272 +693,26 @@
           });
       }
 
-      if (typeof window.updateGlobalPillProgress === 'function') {
-          window.updateGlobalPillProgress(pct, pct < 100);
+
+  }
+
+  function startGenerationWorkflow() {
+      const task = window.GenerationTask.getState();
+      if (task.status === 'generating' || task.status === 'completed') {
+          presentTask(task);
+          return;
       }
-  }
-
-  function getStoryboardPrompt() {
-      const styleDetail = STYLES[CreationSessionStore.styleIndex].prompt;
-      return `你是一個專業的短影音分鏡設計系統。
-請分析使用者的故事描述，並為其設計一個包含分鏡鏡頭與角色設定的完整分鏡腳本。
-
-使用者故事："""${CreationSessionStore.story}"""
-影片風格：${STYLES[CreationSessionStore.styleIndex].name} (${styleDetail})
-
-請嚴格輸出符合以下 JSON 格式的內容，不要包含任何 markdown 外框或額外的說明文字：
-{
-  "meta": {
-    "title": "影片標題（簡短有吸引力）"
-  },
-  "characters": {
-    "char_1": {
-      "appearance": "主角外貌特徵（英文描述，例如: young Asian woman, long black hair）",
-      "outfit": "主角服裝（英文描述，例如: white t-shirt, blue jeans）",
-      "personality": "性格或神情（英文描述，例如: smiling, energetic）"
-    }
-  },
-  "shots": [
-    {
-      "id": 1,
-      "story": "分鏡畫面發生的情節與動作描述（中文，用於畫面標題）",
-      "camera": "鏡頭與運鏡方式（例如: close-up, medium shot, tracking shot）",
-      "duration": "鏡頭時長（例如: 3s, 4s）",
-      "emotion": "此鏡頭的情緒（例如: excited, satisfied, neutral）",
-      "shotPrompt": "此鏡頭畫面的英文提示詞描述（例如: a close up of a young woman smiling in a bright kitchen）",
-      "characters": ["char_1"]
-    }
-  ]
-}
-注意：
-1. "shots" 中的 "characters" 必須關聯到 "characters" 物件中的 key（例如 "char_1"）。
-2. 所有提示詞、角色外觀及服飾描述必須使用英文，以方便圖像生成。`;
-  }
-
-  function getRatioPrompt() {
-      return {
-          '橫向16:9': 'horizontal 16:9 aspect ratio, wide landscape composition',
-          '直向9:16': 'vertical 9:16 aspect ratio, portrait composition, tall frame',
-          '1:1': 'square 1:1 aspect ratio',
-          '橫向3:2': 'horizontal 3:2 aspect ratio, landscape composition',
-          '直向2:3': 'vertical 2:3 aspect ratio, portrait composition',
-      }[CreationSessionStore.ratio] || 'composition';
-  }
-
-  async function buildFinalPrompt(shot) {
-      const styleDetail = STYLES[CreationSessionStore.styleIndex].prompt;
-      const rPrompt = getRatioPrompt();
-      const characterData = (shot.characters || [])
-          .map(id => window.storyboardData?.characters?.[id])
-          .filter(Boolean);
-      const shotPromptRaw = shot.shotPrompt || shot.prompt || '';
-
-      if (characterData.length === 0) {
-          return `${shotPromptRaw}, ${styleDetail}, ${rPrompt}, high quality`;
-      }
-
-      const characterPromptArray = characterData.map(char => {
-          const a = char.appearance || '';
-          const o = char.outfit || '';
-          const p = char.personality || '';
-          return [a, o, p].filter(Boolean).join(', ');
-      });
-      
-      const characterPrompt = characterPromptArray.join(', ');
-      return `${characterPrompt}, ${shotPromptRaw}, ${styleDetail}, ${rPrompt}, high quality, consistent character design`;
-  }
-
-  async function startGenerationWorkflow() {
       if (!CreationSessionStore.story) return;
-
-      activeGenController = new AbortController();
-      window.isGeneratingStoryboard = true;
-
-      // Show Progress View, hide Result View
-      const progressWrap = document.getElementById('generation-progress-wrap');
-      const resultWrap = document.getElementById('generation-result-wrap');
-      if (progressWrap) progressWrap.style.display = 'flex';
-      if (resultWrap) resultWrap.style.display = 'none';
-
-      updateGenProgress(5, '解析故事靈感與結構...', 'step-analyze');
-
-      window.generatedImgs = [];
-      window.generatedStoryTitles = [];
-      window.generatedStoryCams = [];
-      window.generatedPrompts = [];
-      window.generatedShotData = [];
-
-      try {
-          if (CreationSessionStore.selectedTemplate) {
-              await runTemplateGeneration();
-          } else {
-              await runFreeformGeneration();
-          }
-      } catch (err) {
-          if (err.name === 'AbortError') {
-              console.log("Generation aborted by user");
-              return;
-          }
-          console.error("Generation error:", err);
-          updateGenProgress(0, '生成發生錯誤，請重試', null);
-          alert('生成發生異常：' + (err.message || '請稍後再試'));
-          switchPhase(2);
-      } finally {
-          window.isGeneratingStoryboard = false;
-          activeGenController = null;
-      }
+      return window.GenerationTask.start({
+          story: CreationSessionStore.story,
+          style: STYLES[CreationSessionStore.styleIndex] || STYLES[0],
+          ratio: CreationSessionStore.ratio,
+          selectedTemplate: CreationSessionStore.selectedTemplate
+      });
   }
 
-  async function runFreeformGeneration() {
-      const prompt = getStoryboardPrompt();
-      const storyboardRes = await askGemini(prompt, 'story');
-      window.storyboardData = safeParseJson(storyboardRes.response);
-      if (!window.storyboardData) throw new Error('無法解析故事結構 JSON');
-
-      updateGenProgress(30, '編排鏡頭敘事結構與視角...', 'step-structure');
-      await delay(600);
-
-      const shots = window.storyboardData.shots || [];
-      const total = shots.length;
-      window.generatedImgs = Array(total).fill('../icon/error.jpg');
-      window.generatedStoryTitles = Array(total).fill('');
-      window.generatedStoryCams = Array(total).fill('');
-
-      updateGenProgress(50, '繪製分鏡草稿提示詞...', 'step-prompt');
-
-      let completedCount = 0;
-      for (let i = 0; i < total; i++) {
-          const shot = shots[i];
-          window.generatedStoryTitles[i] = shot.story;
-          window.generatedStoryCams[i] = shot.camera;
-
-          const finalPrompt = await buildFinalPrompt(shot);
-          shot.finalPrompt = finalPrompt;
-
-          try {
-              const res = await askGemini(finalPrompt, 'image');
-              const imgSrc = (res?.image?.length > 0) ? res.image[0] : '../icon/error.jpg';
-              window.generatedImgs[i] = imgSrc;
-              if (res?.image?.length > 0) completedCount++;
-              // 寫入 normalized shot data
-              window.generatedShotData[i] = {
-                  order: i + 1,
-                  title: shot.story || `鏡頭 ${i + 1}`,
-                  camera: shot.camera || '',
-                  duration: shot.duration || '3s',
-                  payload: {
-                      image: imgSrc,
-                      emotion: shot.emotion || '',
-                      note: '',
-                      shotPrompt: shot.shotPrompt || '',
-                      finalPrompt: finalPrompt,
-                      characters: shot.characters || []
-                  }
-              };
-          } catch (e) {
-              console.error(`Image generation failed for shot ${i + 1}`, e);
-              window.generatedShotData[i] = {
-                  order: i + 1,
-                  title: shot.story || `鏡頭 ${i + 1}`,
-                  camera: shot.camera || '',
-                  duration: shot.duration || '3s',
-                  payload: {
-                      image: '../icon/error.jpg',
-                      emotion: shot.emotion || '',
-                      note: '',
-                      shotPrompt: shot.shotPrompt || '',
-                      finalPrompt: finalPrompt,
-                      characters: shot.characters || []
-                  }
-              };
-          }
-
-          const progress = 50 + (completedCount / total) * 42;
-          updateGenProgress(progress, `正在沖洗第 ${i + 1} / ${total} 張分鏡底片...`, 'step-render');
-          if (i < total - 1) await delay(800);
-      }
-
-      updateGenProgress(95, '正在將分鏡儲存至資料庫...', 'step-render');
-      await saveProjectToDatabase();
-
-      updateGenProgress(100, '分鏡草稿沖洗完成！', 'step-render');
-      await delay(500);
-
-      renderResults();
-  }
-
-  async function runTemplateGeneration() {
-      const tpl = CreationSessionStore.selectedTemplate;
-      const total = tpl.shotsCount || (tpl.structure ? tpl.structure.length : 4);
-      window.generatedImgs = Array(total).fill('../icon/error.jpg');
-      window.generatedStoryTitles = Array(total).fill('');
-      window.generatedStoryCams = Array(total).fill('');
-
-      updateGenProgress(25, `正在套用「${tpl.name}」爆點結構...`, 'step-structure');
-      await delay(500);
-
-      updateGenProgress(50, '正在優化每個鏡頭的提示詞...', 'step-prompt');
-      await delay(500);
-
-      const styleDetail = STYLES[CreationSessionStore.styleIndex].prompt;
-      for (let i = 0; i < total; i++) {
-          const shot = tpl.structure?.[i] || {};
-          window.generatedStoryTitles[i] = shot.action || `鏡頭 ${i + 1}`;
-          window.generatedStoryCams[i] = shot.camera || 'medium shot';
-
-          const imagePrompt = `${shot.action || ''}, ${CreationSessionStore.story}, ${styleDetail}, ${getRatioPrompt()}`;
-          try {
-              const res = await askGemini(imagePrompt, 'image');
-              const imgSrc = (res?.image?.length > 0) ? res.image[0] : '../icon/error.jpg';
-              window.generatedImgs[i] = imgSrc;
-              // 寫入 normalized shot data
-              window.generatedShotData[i] = {
-                  order: i + 1,
-                  title: shot.action || `鏡頭 ${i + 1}`,
-                  camera: shot.camera || 'medium shot',
-                  duration: shot.duration || '3s',
-                  payload: {
-                      image: imgSrc,
-                      emotion: '',
-                      note: '',
-                      shotPrompt: imagePrompt,
-                      finalPrompt: imagePrompt,
-                      characters: []
-                  }
-              };
-          } catch (e) {
-              console.error(`Template image ${i + 1} failed`, e);
-              window.generatedShotData[i] = {
-                  order: i + 1,
-                  title: shot.action || `鏡頭 ${i + 1}`,
-                  camera: shot.camera || 'medium shot',
-                  duration: shot.duration || '3s',
-                  payload: {
-                      image: '../icon/error.jpg',
-                      emotion: '',
-                      note: '',
-                      shotPrompt: imagePrompt,
-                      finalPrompt: imagePrompt,
-                      characters: []
-                  }
-              };
-          }
-
-          const progress = 50 + ((i + 1) / total) * 42;
-          updateGenProgress(progress, `正在著色第 ${i + 1} / ${total} 張模板分鏡...`, 'step-render');
-          if (i < total - 1) await delay(800);
-      }
-
-      updateGenProgress(95, '備份至雲端資料庫...', 'step-render');
-      await saveProjectToDatabase();
-
-      updateGenProgress(100, '模板分鏡生成完成！', 'step-render');
-      await delay(500);
-
-      renderResults();
-  }
-
-  function renderResults() {
+  function renderResults(task = window.GenerationTask.getState()) {
+      const result = task.result;
       const progressWrap = document.getElementById('generation-progress-wrap');
       const resultWrap = document.getElementById('generation-result-wrap');
       if (progressWrap) progressWrap.style.display = 'none';
@@ -942,9 +726,9 @@
 
       // Metadata summary
       const metaEl = document.getElementById('result-meta-info');
-      const count = window.generatedImgs.length;
-      const stName = STYLES[CreationSessionStore.styleIndex].name;
-      const r = CreationSessionStore.ratio;
+      const count = result.generatedImgs.length;
+      const stName = task.input.style.name;
+      const r = task.input.ratio;
       if (metaEl) {
           metaEl.textContent = `${count} 個鏡頭 · ${stName} · ${r}`;
       }
@@ -953,7 +737,7 @@
       const grid = document.getElementById('storyboard-grid');
       if (grid) {
           grid.innerHTML = '';
-          window.generatedImgs.forEach((imgSrc, i) => {
+          result.generatedImgs.forEach((imgSrc, i) => {
               const card = document.createElement('div');
               card.className = 'shot-card';
               card.innerHTML = `
@@ -962,8 +746,8 @@
                       <span class="shot-num-badge">#${i + 1}</span>
                   </div>
                   <div class="shot-card-meta">
-                      <div class="shot-title">${window.generatedStoryTitles[i] || `鏡頭 ${i + 1}`}</div>
-                      <div class="shot-cam">${window.generatedStoryCams[i] || '一般鏡頭'}</div>
+                      <div class="shot-title">${result.generatedStoryTitles[i] || `鏡頭 ${i + 1}`}</div>
+                      <div class="shot-cam">${result.generatedStoryCams[i] || '一般鏡頭'}</div>
                   </div>
               `;
               grid.appendChild(card);
@@ -972,15 +756,13 @@
   }
 
   function abortGeneration() {
-      if (activeGenController) {
-          activeGenController.abort();
-      }
-      updateGenProgress(0, '生成已中斷', null);
-      switchPhase(2);
+      if (!window.GenerationTask.cancel()) switchPhase(2, false);
   }
   window.abortGeneration = abortGeneration;
 
   function resetCreationWorkflow() {
+      window.GenerationTask.reset();
+      CreationSessionStore.targetPhase = 1;
       CreationSessionStore.story = '';
       CreationSessionStore.selectedTemplate = null;
       CreationSessionStore.draft.story = '';
@@ -994,91 +776,18 @@
   // ════════════════════════════════════════════════════════════
   // 7. Helpers & API Connections
   // ════════════════════════════════════════════════════════════
-  function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-  async function askGemini(question, type) {
-      const res = await fetch('/api/ask-gemini', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ question, type, ratio: CreationSessionStore.ratio })
-      });
-      const data = await res.json();
-      if (!res.ok) {
-          const err = new Error(data.error || '請求異常');
-          err.status = res.status;
-          throw err;
-      }
-      return data;
-  }
-
-  function safeParseJson(text) {
-      try {
-          const cleaned = text.replace(/```json/g, '').replace(/```/g, '').trim();
-          const s = cleaned.indexOf('{');
-          const e = cleaned.lastIndexOf('}');
-          if (s === -1 || e === -1) return null;
-          return JSON.parse(cleaned.slice(s, e + 1));
-      } catch (e) {
-          return null;
-      }
-  }
-
-  async function saveProjectToDatabase() {
-      if (!window.spaAuth || !window.spaAuth.isLoggedIn()) return null;
-      try {
-          const title = CreationSessionStore.selectedTemplate?.name 
-              || window.storyboardData?.meta?.title 
-              || (CreationSessionStore.story.slice(0, 24) + '...');
-          const style = STYLES[CreationSessionStore.styleIndex].name;
-          const ratio = CreationSessionStore.ratio;
-          const cover = window.generatedImgs[0] || null;
-
-          // 使用 normalized generatedShotData，若尚未建立則 fallback 舊邏輯
-          const shots = (window.generatedShotData && window.generatedShotData.length > 0)
-              ? window.generatedShotData
-              : window.generatedImgs.map((img, i) => ({
-                  order: i + 1,
-                  title: window.generatedStoryTitles[i] || '',
-                  camera: window.generatedStoryCams[i] || '',
-                  duration: '3s',
-                  payload: { image: img }
-              }));
-
-          const characters = window.storyboardData?.characters || {};
-          const metadata = {
-              originalStory: CreationSessionStore.story || '',
-              generationMode: CreationSessionStore.selectedTemplate ? 'template' : 'freeform',
-              templateId: CreationSessionStore.selectedTemplate?.id || null
-          };
-
-          const token = window.spaAuth.getToken();
-          const res = await fetch('/api/projects', {
-              method: 'POST',
-              headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${token}`
-              },
-              body: JSON.stringify({ title, style, ratio, cover, shots, characters, metadata })
-          });
-          if (!res.ok) return null;
-          const json = await res.json();
-          if (typeof window.clearSpaCache === 'function') window.clearSpaCache();
-          return json.project?.id;
-      } catch (e) {
-          console.error("Failed to auto-save project:", e);
-          return null;
-      }
-  }
-
   function exportStoryboardJson() {
+      const task = window.GenerationTask.getState();
+      if (!task.input) return;
+      const result = task.result;
       const exportData = {
-          story: CreationSessionStore.story,
-          style: STYLES[CreationSessionStore.styleIndex].name,
-          ratio: CreationSessionStore.ratio,
-          shots: window.generatedImgs.map((img, i) => ({
+          story: task.input.story,
+          style: task.input.style.name,
+          ratio: task.input.ratio,
+          shots: result.generatedImgs.map((img, i) => ({
               shot: i + 1,
-              title: window.generatedStoryTitles[i] || '',
-              camera: window.generatedStoryCams[i] || '',
+              title: result.generatedStoryTitles[i] || '',
+              camera: result.generatedStoryCams[i] || '',
               image: img
           }))
       };
@@ -1095,23 +804,52 @@
   // ════════════════════════════════════════════════════════════
   // 8. Page Initialization & Shared Handoff Receptor
   // ════════════════════════════════════════════════════════════
-  function initGeneratePage() {
+  function presentTask(task) {
+      if (!pageController || pageController.signal.aborted) return;
+      if (task.status === 'idle') return;
+      updateGenProgress(task.progress.pct, task.progress.statusText, task.progress.activeStepId);
+      if (task.status === 'completed' && CreationSessionStore.currentPhase === 4) {
+          renderResults(task);
+      } else if (task.status === 'generating') {
+          const progress = document.getElementById('generation-progress-wrap');
+          const result = document.getElementById('generation-result-wrap');
+          if (progress) progress.style.display = 'flex';
+          if (result) result.style.display = 'none';
+      } else if (task.status === 'error') {
+          if (lastErrorTaskId !== task.taskId) {
+              lastErrorTaskId = task.taskId;
+              alert('生成發生異常：' + task.error.message);
+          }
+          switchPhase(2, false);
+      } else if (task.status === 'cancelled') {
+          switchPhase(2, false);
+      }
+  }
+
+  function initGeneratePage(options = {}) {
+      unmountGeneratePage();
+      if (options.signal?.aborted) return null;
+      pageController = new AbortController();
+      const mount = pageController;
+      const unmount = () => { if (pageController === mount) unmountGeneratePage(); };
+      options.signal?.addEventListener('abort', unmount, { once: true });
+      routeCleanup = () => options.signal?.removeEventListener('abort', unmount);
       const input = document.getElementById('story-input');
       if (input && !input.dataset.bound) {
           input.dataset.bound = 'true';
-          input.addEventListener('keydown', e => {
+          bindPageEvent(input, 'keydown', e => {
               if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
                   submitPhase1Story();
               }
           });
-          input.addEventListener('input', onStoryInput);
+          bindPageEvent(input, 'input', onStoryInput);
       }
 
       const submitBtn = document.getElementById('composer-submit-btn');
       if (submitBtn && !submitBtn.dataset.bound) {
           submitBtn.dataset.bound = 'true';
-          submitBtn.addEventListener('click', (e) => {
+          bindPageEvent(submitBtn, 'click', (e) => {
               e.preventDefault();
               submitPhase1Story();
           });
@@ -1120,7 +858,7 @@
       document.querySelectorAll('#phase1-suggestions .sugg-chip').forEach(chip => {
           if (!chip.dataset.bound) {
               chip.dataset.bound = 'true';
-              chip.addEventListener('click', (e) => {
+              bindPageEvent(chip, 'click', (e) => {
                   e.preventDefault();
                   fillPhase1Sugg(chip);
               });
@@ -1130,7 +868,7 @@
       const editBtn = document.getElementById('context-edit-btn');
       if (editBtn && !editBtn.dataset.bound) {
           editBtn.dataset.bound = 'true';
-          editBtn.addEventListener('click', (e) => {
+          bindPageEvent(editBtn, 'click', (e) => {
               e.preventDefault();
               editStoryFromHeader();
           });
@@ -1139,7 +877,7 @@
       const dirBack = document.getElementById('btn-direction-back');
       if (dirBack && !dirBack.dataset.bound) {
           dirBack.dataset.bound = 'true';
-          dirBack.addEventListener('click', (e) => {
+          bindPageEvent(dirBack, 'click', (e) => {
               e.preventDefault();
               switchPhase(1);
           });
@@ -1148,7 +886,7 @@
       const dirNext = document.getElementById('btn-direction-next');
       if (dirNext && !dirNext.dataset.bound) {
           dirNext.dataset.bound = 'true';
-          dirNext.addEventListener('click', (e) => {
+          bindPageEvent(dirNext, 'click', (e) => {
               e.preventDefault();
               confirmDirectionAndAdvance();
           });
@@ -1157,7 +895,7 @@
       const skipTpl = document.getElementById('btn-skip-template');
       if (skipTpl && !skipTpl.dataset.bound) {
           skipTpl.dataset.bound = 'true';
-          skipTpl.addEventListener('click', (e) => {
+          bindPageEvent(skipTpl, 'click', (e) => {
               e.preventDefault();
               skipTemplateAndGenerate();
           });
@@ -1166,7 +904,7 @@
       const tplBack = document.getElementById('btn-template-back');
       if (tplBack && !tplBack.dataset.bound) {
           tplBack.dataset.bound = 'true';
-          tplBack.addEventListener('click', (e) => {
+          bindPageEvent(tplBack, 'click', (e) => {
               e.preventDefault();
               switchPhase(2);
           });
@@ -1175,7 +913,7 @@
       const tplConfirm = document.getElementById('btn-template-confirm');
       if (tplConfirm && !tplConfirm.dataset.bound) {
           tplConfirm.dataset.bound = 'true';
-          tplConfirm.addEventListener('click', (e) => {
+          bindPageEvent(tplConfirm, 'click', (e) => {
               e.preventDefault();
               applySelectedTemplateAndGenerate();
           });
@@ -1184,15 +922,31 @@
       const abortBtn = document.getElementById('btn-abort-generation');
       if (abortBtn && !abortBtn.dataset.bound) {
           abortBtn.dataset.bound = 'true';
-          abortBtn.addEventListener('click', (e) => {
+          bindPageEvent(abortBtn, 'click', (e) => {
               e.preventDefault();
               abortGeneration();
           });
       }
 
+      document.querySelectorAll('.ratio-chip').forEach(chip => {
+          bindPageEvent(chip, 'click', () => selectRatioOption(chip));
+      });
+      document.querySelectorAll('#generation-result-wrap .result-actions .btn-outline').forEach(button => {
+          bindPageEvent(button, 'click', exportStoryboardJson);
+      });
+      document.querySelectorAll('#generation-result-wrap .result-actions .btn-primary').forEach(button => {
+          bindPageEvent(button, 'click', resetCreationWorkflow);
+      });
+
       // Check if session already has a story (e.g. from QC Shared Handoff)
       const story = CreationSessionStore.story || CreationSessionStore.draft?.story || '';
-      const targetPhase = CreationSessionStore.targetPhase || (story ? 2 : 1);
+      if (options.fromQC && window.GenerationTask.getState().status !== 'generating') {
+          window.GenerationTask.reset();
+      }
+      const task = window.GenerationTask.getState();
+      const targetPhase = ['generating', 'completed'].includes(task.status)
+          ? 4 : (['error', 'cancelled'].includes(task.status) ? 2
+              : (CreationSessionStore.targetPhase || (story ? 2 : 1)));
 
       if (story) {
           CreationSessionStore.story = story;
@@ -1202,12 +956,18 @@
       // If preselected template
       if (window.preselectedTemplateId) {
           ensureTemplatesLoaded().then(tpls => {
+              if (pageController !== mount || mount.signal.aborted) return;
               const t = tpls.find(x => x.id === window.preselectedTemplateId);
               if (t) CreationSessionStore.selectedTemplate = t;
           });
       }
 
+      unsubscribeTask = window.GenerationTask.subscribe(presentTask);
       switchPhase(targetPhase, false);
+      return { unmount: () => {
+          options.signal?.removeEventListener('abort', unmount);
+          unmount();
+      } };
   }
   window.initGeneratePage = initGeneratePage;
 

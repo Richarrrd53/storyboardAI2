@@ -54,6 +54,10 @@
     // ── 銷毀清理 ──
     destroy() {
       this.closeEditor(false);
+      if (this._keyHandler) {
+        document.removeEventListener('keydown', this._keyHandler);
+        this._keyHandler = null;
+      }
       this._root = null;
       this._project = null;
     },
@@ -201,6 +205,10 @@
 
     // ── 鍵盤快捷鍵 (Escape 關閉抽屜) ──
     _bindKeyboard() {
+      if (this._keyHandler) {
+        document.removeEventListener('keydown', this._keyHandler);
+        this._keyHandler = null;
+      }
       this._keyHandler = (e) => {
         if (e.key === 'Escape' && this._editorEl && this._editorEl.classList.contains('open')) {
           this.closeEditor();

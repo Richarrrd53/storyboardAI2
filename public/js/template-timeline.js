@@ -187,128 +187,6 @@ async function mountYouTubePlayer(videoId, title, templateId) {
   }
 }
 
-/**
- * Main entrance to render a template detail
- */
-window.renderTemplateDetailTimeline = function(template, detailContainer) {
-  stopPlayerTimelineSync();
-  if (currentSourcePlayerType === 'youtube' && currentSourcePlayer?.destroy) {
-    try { currentSourcePlayer.destroy(); } catch (_) {}
-  }
-  currentSourcePlayer = null;
-  currentSourcePlayerType = null;
-  currentTemplate = template;
-  console.log("Rendering immersive timeline for template:", template);
-
-  // 1. Toggle views
-  const storeView = document.getElementById('template-store-view');
-  const detailImmersive = document.getElementById('template-detail-immersive');
-  document.getElementById('page-main')?.classList.add('is-template-detail-mode');
-  if (storeView) storeView.style.display = 'none';
-  if (detailImmersive) detailImmersive.style.display = 'flex';
-
-  // Scroll to top
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-
-  // 2. Populate metadata headers
-  document.getElementById('nav-template-name').textContent = template.name || template.title || '無標題';
-  document.getElementById('detail-template-title').textContent = template.name || template.title || '無標題';
-  document.getElementById('detail-template-desc').textContent = template.description || '無描述';
-
-  // Populate source-video surfaces. YouTube templates derive their actual cover
-  // directly from the source video ID; uploaded/custom templates use the stored poster.
-  const sourceUrl = template.videoUrl || template.source?.url || '';
-  const youtubeMatch = sourceUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|shorts\/|embed\/))([\w-]{11})/);
-  const sourceVideoId = template.source?.videoId || template.videoId || youtubeMatch?.[1] || '';
-  const sourceCover = template.thumbnail || template.cover || template.source?.thumbnail ||
-    (sourceVideoId ? `https://i.ytimg.com/vi/${encodeURIComponent(sourceVideoId)}/hqdefault.jpg` : '');
-  const sourceTitle = template.source?.title || template.name || template.title || '來源影片';
-
-  const programMonitorEl = document.getElementById('detail-program-monitor');
-  if (!programMonitorEl) return;
-
-  const fallback = programMonitorEl.querySelector('.nle-monitor-fallback');
-  programMonitorEl.querySelectorAll('.nle-monitor-image, .nle-source-player').forEach(el => el.remove());
-
-  if (sourceVideoId) {
-    const playerMount = document.createElement('div');
-    playerMount.id = 'detail-source-player';
-    playerMount.className = 'nle-source-player';
-    programMonitorEl.prepend(playerMount);
-    mountYouTubePlayer(sourceVideoId, sourceTitle, template.id);
-    if (fallback) fallback.hidden = true;
-  } else if (sourceUrl && /\.(?:mp4|webm|ogg)(?:[?#]|$)/i.test(sourceUrl)) {
-    const player = document.createElement('video');
-    player.id = 'detail-source-player';
-    player.className = 'nle-source-player';
-    player.src = sourceUrl;
-    player.poster = sourceCover;
-    player.controls = false;
-    player.playsInline = true;
-    currentSourcePlayer = player;
-    currentSourcePlayerType = 'html5';
-
-    player.addEventListener('play', () => {
-      updatePlayPauseButtonUI(true);
-      startPlayerSync();
-    });
-    player.addEventListener('pause', () => {
-      updatePlayPauseButtonUI(false);
-      stopPlayerSync();
-    });
-    player.addEventListener('timeupdate', () => {
-      window.seekTimeline(player.currentTime, { fromPlayer: true });
-    });
-    player.addEventListener('seeking', () => {
-      window.seekTimeline(player.currentTime, { fromPlayer: true });
-    });
-    programMonitorEl.prepend(player);
-    if (fallback) fallback.hidden = true;
-  } else if (sourceCover) {
-    const image = document.createElement('img');
-    image.className = 'nle-monitor-image';
-    image.src = sourceCover;
-    image.alt = `${sourceTitle}影片封面`;
-    image.onerror = () => image.remove();
-    programMonitorEl.prepend(image);
-    currentSourcePlayer = null;
-    currentSourcePlayerType = 'none';
-    if (fallback) fallback.hidden = true;
-  } else if (fallback) {
-    currentSourcePlayer = null;
-    currentSourcePlayerType = 'none';
-    fallback.hidden = false;
-  }
-
-  // Setup play/pause button listener
-  const playPauseBtn = document.getElementById('btn-player-playpause');
-  if (playPauseBtn) {
-    playPauseBtn.onclick = togglePlayPause;
-  }
-
-  // Setup Scrubber interaction
-  const scrubberTrack = document.getElementById('player-scrubber-track');
-  if (scrubberTrack) {
-    const seekFromScrubber = e => {
-      const rect = scrubberTrack.getBoundingClientRect();
-      const clickX = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
-      const targetSec = (clickX / rect.width) * (timelineDuration || 1);
-      window.seekTimeline(targetSec);
-    };
-
-    scrubberTrack.onpointerdown = e => {
-      scrubberTrack.setPointerCapture?.(e.pointerId);
-      seekFromScrubber(e);
-      scrubberTrack.onpointermove = moveEvt => {
-        if (moveEvt.buttons === 1) seekFromScrubber(moveEvt);
-      };
-      scrubberTrack.onpointerup = () => {
-        scrubberTrack.onpointermove = null;
-      };
-    };
-  }
-}
-
 /* ==========================================================================
    MAIN ENTRANCE: RENDER TEMPLATE DETAIL
    ========================================================================== */
@@ -444,66 +322,6 @@ function renderAnalysisOverview(template, shots) {
   if (rhythmMid) rhythmMid.textContent = formatEditorTimecode(timelineDuration / 2).slice(3, 8);
   if (rhythmEnd) rhythmEnd.textContent = formatEditorTimecode(timelineDuration).slice(3, 8);
 }
-
-/**
- * Switch back to browse store grid
- */
-window.backToStoreBrowse = function() {
-  stopPlayerTimelineSync();
-  if (currentSourcePlayerType === 'youtube') currentSourcePlayer?.pauseVideo?.();
-  if (currentSourcePlayerType === 'html5') currentSourcePlayer?.pause?.();
-  const storeView = document.getElementById('template-store-view');
-  const detailImmersive = document.getElementById('template-detail-immersive');
-  document.getElementById('page-main')?.classList.remove('is-template-detail-mode');
-  if (storeView) storeView.style.display = 'flex';
-  if (detailImmersive) detailImmersive.style.display = 'none';
-
-  // Trigger search refilter just in case
-  if (window.filterStoreTemplates) {
-    window.filterStoreTemplates();
-  }
-};
-
-/**
- * Handle direct template click from spotlight or external calls
- */
-window.triggerTemplateDetail = async function(templateId) {
-  // If cache exists in spa-router, we find it. Else fetch it.
-  let templates = [];
-  if (window.cacheTemplatesList) {
-    templates = window.cacheTemplatesList;
-  } else {
-    if (colWhyItWorks) colWhyItWorks.style.display = 'block';
-    setText('meta-why-it-works', whyItWorks || '利用快節奏剪輯與大眾共鳴點開場，輔以視覺細節特寫，加深信任感與轉換效果。');
-    const replicableUl = document.getElementById('meta-replicable-elements');
-    if (replicableUl) {
-      replicableUl.innerHTML = '';
-      replicableList.forEach(el => {
-        const li = document.createElement('li');
-        li.textContent = el;
-        replicableUl.appendChild(li);
-      });
-    }
-  }
-
-  // Hook apply buttons
-  const applyMainBtn = document.getElementById('btn-apply-template-main');
-  const applyBottomBtn = document.getElementById('btn-apply-template-bottom');
-  const onApply = () => {
-    if (window.spaNavigate) {
-      window.spaNavigate('generate', { templateId: t.id });
-    } else {
-      window.location.href = `generate-template.html?templateId=${encodeURIComponent(t.id)}`;
-    }
-  }
-
-  const t = templates.find(x => x.id === templateId);
-  if (t) {
-    window.renderTemplateDetailTimeline(t, document.getElementById('template-detail-immersive'));
-  } else {
-    alert('找不到對應的模板！');
-  }
-};
 
 /**
  * Helper to render side metadata panels
@@ -1217,11 +1035,63 @@ window.backToStoreBrowse = function() {
   if (currentSourcePlayerType === 'html5') currentSourcePlayer?.pause?.();
   const storeView = document.getElementById('template-store-view');
   const detailImmersive = document.getElementById('template-detail-immersive');
+  document.getElementById('page-main')?.classList.remove('is-template-detail-mode');
   if (storeView) storeView.style.display = 'flex';
   if (detailImmersive) detailImmersive.style.display = 'none';
 
   if (window.filterStoreTemplates) {
     window.filterStoreTemplates();
+  }
+};
+
+window.destroyTemplateTimeline = function() {
+  stopPlayerSync();
+  if (currentSourcePlayerType === 'youtube' && currentSourcePlayer?.destroy) {
+    try { currentSourcePlayer.destroy(); } catch (_) {}
+  } else if (currentSourcePlayerType === 'html5' && currentSourcePlayer?.pause) {
+    try { currentSourcePlayer.pause(); } catch (_) {}
+  }
+  currentSourcePlayer = null;
+  currentSourcePlayerType = null;
+  currentTemplate = null;
+  currentTime = 0;
+  isPlaying = false;
+  selectedItemId = null;
+  window.closeInspectorDrawer?.();
+  document.getElementById('page-main')?.classList.remove('is-template-detail-mode');
+};
+
+window.switchDetailViewMode = function(mode) {
+  currentViewMode = mode === 'professional' ? 'professional' : 'story';
+  const storyBtn = document.getElementById('btn-mode-story');
+  const proBtn = document.getElementById('btn-mode-professional');
+  const storyView = document.getElementById('view-mode-story');
+  const proView = document.getElementById('view-mode-professional');
+
+  if (storyBtn) {
+    storyBtn.classList.toggle('active', currentViewMode === 'story');
+    storyBtn.setAttribute('aria-selected', currentViewMode === 'story' ? 'true' : 'false');
+  }
+  if (proBtn) {
+    proBtn.classList.toggle('active', currentViewMode === 'professional');
+    proBtn.setAttribute('aria-selected', currentViewMode === 'professional' ? 'true' : 'false');
+  }
+  if (storyView) storyView.style.display = currentViewMode === 'story' ? 'block' : 'none';
+  if (proView) proView.style.display = currentViewMode === 'professional' ? 'flex' : 'none';
+
+  if (currentViewMode === 'story') {
+    highlightActiveStoryNode();
+  } else {
+    syncProfessionalPlayhead();
+  }
+};
+
+window.playTemplateSegment = function(seconds) {
+  window.seekTimeline(seconds);
+  if (currentSourcePlayerType === 'youtube' && currentSourcePlayer?.playVideo) {
+    currentSourcePlayer.playVideo();
+  } else if (currentSourcePlayerType === 'html5' && currentSourcePlayer?.play) {
+    currentSourcePlayer.play();
   }
 };
 
@@ -1303,3 +1173,15 @@ function formatTextWithLinks(text) {
   });
   return formatted;
 }
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    renderTemplateDetailTimeline: window.renderTemplateDetailTimeline,
+    backToStoreBrowse: window.backToStoreBrowse,
+    triggerTemplateDetail: window.triggerTemplateDetail,
+    destroyTemplateTimeline: window.destroyTemplateTimeline,
+    switchDetailViewMode: window.switchDetailViewMode,
+    playTemplateSegment: window.playTemplateSegment
+  };
+}
+
