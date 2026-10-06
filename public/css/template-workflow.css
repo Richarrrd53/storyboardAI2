@@ -1,0 +1,77 @@
+/* 模板套用至生成結果：僅作用於生成頁，不改模板庫儀表板。 */
+/* 創作方向有獨立捲動區：避免外層版面裁切，確認按鈕固定在區域底部。 */
+.generate-workspace #phase-panel-2 {
+  max-height: max(220px, calc(100dvh - 300px));
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  overscroll-behavior-y: contain;
+  touch-action: pan-x pan-y;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: auto;
+  scrollbar-color: #94a3b8 #eff6ff;
+  scrollbar-gutter: stable;
+  padding-right: 10px;
+}
+.generate-workspace #phase-panel-2 > * { flex-shrink: 0; }
+.generate-workspace #phase-panel-2::-webkit-scrollbar { width: 10px; }
+.generate-workspace #phase-panel-2::-webkit-scrollbar-track { background: #eff6ff; border-radius: 8px; }
+.generate-workspace #phase-panel-2::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 8px; border: 2px solid #eff6ff; }
+.generate-workspace #phase-panel-2:focus-visible { outline: 2px solid var(--gen-primary); outline-offset: 4px; }
+.generate-workspace #phase-panel-2.is-drag-scrolling { cursor: grabbing; user-select: none; }
+.generate-workspace #phase-panel-2 .phase-actions-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  background: #f8fafc;
+  padding: 14px 0;
+  border-top: 1px solid #dbe3ef;
+}
+.direction-scroll-hint { display: block; margin-top: 8px; color: var(--gen-text-mid); font-size: 12px; }
+@media (max-width: 760px) {
+  .generate-workspace #phase-panel-2 { max-height: max(220px, calc(100dvh - 280px)); }
+}
+.generate-workspace [hidden] { display: none !important; }
+.template-entry-banner, .generation-error-banner { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 18px 22px; margin-bottom: 20px; border: 1px solid var(--gen-primary-border); border-radius: 16px; background: var(--gen-primary-soft); }
+.template-entry-banner strong { font-size: 14px; color: var(--gen-primary); }
+.template-entry-banner p, .generation-error-banner p { font-size: 13px; line-height: 1.8; margin: 6px 0 0; color: var(--gen-text-mid); }
+.generation-error-banner { background: #fff1f2; border-color: #fecdd3; flex-wrap: wrap; }
+.generation-error-banner p { flex: 1 1 100%; color: #9f1239; }
+.template-customization { width: 100%; border: 1px solid var(--gen-primary-border); border-radius: 16px; background: #f8faff; padding: 24px; margin: 20px 0; }
+.template-customization h3 { margin: 0 0 8px; font-size: 17px; color: var(--gen-primary); }
+.template-customization > p { margin: 8px 0; color: var(--gen-text-mid); font-size: 13px; line-height: 1.8; }
+#template-variable-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 20px 0; }
+.template-variable-field { display: flex; flex-direction: column; gap: 8px; color: var(--gen-text-dark); font-size: 13px; }
+.template-variable-field input { width: 100%; padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 8px; background: #ffffff; color: var(--gen-text-dark); font: inherit; }
+.template-variable-field input:focus { outline: 2px solid var(--gen-primary); outline-offset: 2px; }
+.template-customization summary { color: var(--gen-primary); cursor: pointer; font-size: 13px; }
+#template-reference-summary ol { padding-left: 24px; font-size: 13px; color: var(--gen-text-mid); }
+#template-reference-summary li { margin: 12px 0; }
+#template-reference-summary span { display: block; color: var(--gen-text-mid); margin-top: 4px; font-size: 12px; }
+.result-workflow-status { width: 100%; padding: 18px 22px; border: 1px solid #dbe3ef; border-radius: 14px; background: #f8fafc; }
+.result-workflow-status p { margin: 0 0 12px; color: var(--gen-text-mid); font-size: 13px; line-height: 1.8; }
+.result-workflow-status p[data-status="saved"] { color: #047857; }
+.result-workflow-status p[data-status="failed"], .result-workflow-status p[data-status="local"] { color: #92400e; }
+.result-workflow-status > div { display: flex; flex-wrap: wrap; gap: 10px; }
+:is(.result-workflow-status, .template-entry-banner, .generation-error-banner) button, .result-view-switch button { padding: 9px 13px; border: 1px solid var(--gen-primary-border); border-radius: 8px; background: var(--gen-primary-soft); color: var(--gen-primary); font: inherit; font-size: 12px; cursor: pointer; }
+.result-view-switch { display: flex; gap: 8px; width: 100%; padding: 10px 0; }
+.result-view-switch button[aria-selected="true"] { color: var(--gen-primary); background: #dbeafe; }
+.generation-image-failure { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 20px; gap: 10px; text-align: center; background: #fff1f2; color: #9f1239; }
+.generation-image-failure span { color: var(--gen-text-mid); font-size: 12px; line-height: 1.8; }
+.shot-card-meta details { margin-top: 12px; color: var(--gen-text-mid); font-size: 12px; }
+.shot-card-meta summary { cursor: pointer; }
+.shot-card-meta details p { line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere; }
+.generated-storyboard-table { width: 100%; overflow: auto; max-height: 640px; border: 1px solid #dbe3ef; border-radius: 12px; }
+.generated-storyboard-table table { width: 100%; min-width: 860px; border-collapse: collapse; text-align: left; font-size: 13px; }
+.generated-storyboard-table caption { padding: 16px; text-align: left; color: var(--gen-primary); }
+.generated-storyboard-table th { position: sticky; top: 0; padding: 14px; background: #eff6ff; color: var(--gen-text-mid); }
+.generated-storyboard-table td { padding: 16px 14px; border-top: 1px solid #e2e8f0; color: var(--gen-text-dark); vertical-align: top; line-height: 1.8; }
+.generated-storyboard-table td:nth-child(2) { min-width: 320px; max-width: 450px; }
+.generated-storyboard-table :is(small, summary) { display: block; color: var(--gen-text-mid); }
+.generated-storyboard-table summary { cursor: pointer; }
+.generated-storyboard-table p { white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (max-width: 760px) {
+  #template-variable-fields { grid-template-columns: 1fr; }
+  .template-customization { padding: 18px; }
+  .template-entry-banner { align-items: flex-start; flex-direction: column; padding: 16px; }
+  .result-workflow-status { padding: 16px; }
+}

@@ -1187,7 +1187,8 @@ function initLoginLogic(showRegister) {
     if (signal?.aborted) return null;
     window.CreationController?.syncRoute('generate', opts);
     if (!window.GenerationTask) await injectScripts(['/js/features/generation-task.js'], signal);
-    await injectScripts(['/js/generate.js'], signal);
+    if (!window.TemplateWorkflow) await injectScripts(['/js/features/template-workflow.js?v=20261006-3'], signal);
+    await injectScripts(['/js/generate.js?v=20261006-4'], signal);
     if (signal?.aborted) return null;
     return window.initGeneratePage?.({ ...opts, signal });
   }
@@ -1348,7 +1349,7 @@ function initLoginLogic(showRegister) {
     },
 
     generate: {
-      css: ['/css/dashboard.css', '/css/generate.css', '/css/math-curve-loader.css', '/css/template.css'],
+      css: ['/css/dashboard.css', '/css/generate.css', '/css/math-curve-loader.css', '/css/template.css', '/css/template-workflow.css?v=20261006-4'],
       js: ['/js/math-curve-loader.js', '/js/token-manager.js', '/js/prompt-translate.js'],
       render: (o, signal) => renderGenerate(o, signal)
     },
@@ -1361,8 +1362,8 @@ function initLoginLogic(showRegister) {
     },
 
     template: {
-      css: ['/css/dashboard.css', '/css/generate.css', '/css/template.css', '/css/math-curve-loader.css', '/css/template-detail.css?v=20260926-3'],
-      js: ['/js/generate-prefill-path.js', '/js/template-timeline.js', '/js/template.js'],
+      css: ['/css/dashboard.css', '/css/generate.css', '/css/template.css', '/css/math-curve-loader.css', '/css/template-detail.css?v=20261006-1', '/css/template-editor.css?v=20261006-2'],
+      js: ['/js/generate-prefill-path.js', '/js/template-timeline.js', '/js/template-editor.js?v=20261006-2', '/js/template.js'],
       mount: (o, signal) => renderTemplate(signal),
       render: (o, signal) => renderTemplate(signal)
     },

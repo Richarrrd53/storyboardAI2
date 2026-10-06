@@ -202,13 +202,27 @@ window.renderTemplateDetailTimeline = function(template, detailContainer) {
   currentTime = 0;
   isPlaying = false;
   selectedItemId = null;
-  currentViewMode = 'story';
+  currentViewMode = 'professional';
 
   // Toggle store view vs detail immersive container
   const storeView = document.getElementById('template-store-view');
   const detailImmersive = document.getElementById('template-detail-immersive');
   if (storeView) storeView.style.display = 'none';
   if (detailImmersive) detailImmersive.style.display = 'flex';
+  const pageMain = document.getElementById('page-main');
+  pageMain?.classList.add('is-template-detail-mode');
+  if (pageMain) pageMain.scrollTop = 0;
+  updatePlayPauseButtonUI(false);
+  window.closeInspectorDrawer();
+
+  const title = template.name || template.title || '無標題';
+  ['detail-template-title', 'nav-template-name'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = title;
+  });
+  const description = document.getElementById('detail-template-desc');
+  if (description) description.textContent = template.description || '尚未提供模板描述';
+  mountSourcePreview(template);
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -216,7 +230,7 @@ window.renderTemplateDetailTimeline = function(template, detailContainer) {
   const shots = Array.isArray(template.structure) ? template.structure : [];
   let totalSec = 0;
   shots.forEach(s => {
-    const sec = parseInt(s.duration) || 3;
+    const sec = shotSeconds(s);
     totalSec += sec;
   });
   timelineDuration = totalSec || 15; // default 15s if no shots
@@ -232,31 +246,35 @@ window.renderTemplateDetailTimeline = function(template, detailContainer) {
   renderAnalysisOverview(template, shots);
 
   // Update apply button click behavior
-  const applyBtn = document.getElementById('btn-apply-template-main');
-  if (applyBtn) {
-    applyBtn.onclick = () => {
+  ['btn-apply-template-main', 'btn-apply-template-bottom'].forEach(id => {
+    const applyBtn = document.getElementById(id);
+    if (applyBtn) applyBtn.onclick = () => {
       window.spaNavigate('generate', { templateId: template.id });
     };
-  }
+  });
 
   // 3. Render side overview panel (Right side)
   renderSideMetadata(template);
 
   // 4. Render Professional View (Timeline & Track Filters)
   renderProfessionalView(template, shots);
+  window.TemplateEditor?.mount(template, {
+    seconds: shotSeconds, escape: escapeTemplateText, videoId: sourceVideoId,
+    emotion: translateEmotion, seek: window.seekTimeline, inspect: showShotInspector
+  });
 
   // 5. Initialize Mode Switcher
-  window.switchDetailViewMode('story');
+  window.switchDetailViewMode('professional');
 
   // 6. Reset Playhead & Timeline to 0s
   window.seekTimeline(0);
 
   // 6. Highlight first section (Hook) by default in inspector
-  showHookInspector();
+  if (shots.length) showShotInspector(shots[0], 0, 0);
 };
 
 function renderAnalysisOverview(template, shots) {
-  const rawConfidence = Number(template.confidence);
+  const rawConfidence = template.confidence == null || template.confidence === '' ? NaN : Number(template.confidence);
   const confidence = Number.isFinite(rawConfidence)
     ? Math.max(0, Math.min(100, rawConfidence <= 1 ? rawConfidence * 100 : rawConfidence))
     : null;
@@ -294,7 +312,7 @@ function renderAnalysisOverview(template, shots) {
     rhythmTrack.replaceChildren();
     const phases = ['is-hook', 'is-build', 'is-payoff', 'is-close'];
     shots.forEach((shot, index) => {
-      const duration = Math.max(1, parseInt(shot.duration) || 3);
+      const duration = shotSeconds(shot);
       const segment = document.createElement('button');
       const phaseIndex = Math.min(3, Math.floor(index / Math.max(1, shots.length) * 4));
       segment.type = 'button';
@@ -304,7 +322,7 @@ function renderAnalysisOverview(template, shots) {
       segment.title = `S${String(index + 1).padStart(2, '0')} · ${duration}s · ${shot.purpose || shot.action || '未提供說明'}`;
       segment.innerHTML = `<b>S${String(index + 1).padStart(2, '0')}</b><span>${duration}s</span>`;
       segment.onclick = () => {
-        const start = shots.slice(0, index).reduce((sum, item) => sum + (parseInt(item.duration) || 3), 0);
+        const start = shots.slice(0, index).reduce((sum, item) => sum + (shotSeconds(item)), 0);
         window.seekTimeline(start);
         showShotInspector(shot, index, start);
       };
@@ -319,155 +337,151 @@ function renderAnalysisOverview(template, shots) {
   }
   const rhythmMid = document.getElementById('analysis-rhythm-mid');
   const rhythmEnd = document.getElementById('analysis-rhythm-end');
-  if (rhythmMid) rhythmMid.textContent = formatEditorTimecode(timelineDuration / 2).slice(3, 8);
-  if (rhythmEnd) rhythmEnd.textContent = formatEditorTimecode(timelineDuration).slice(3, 8);
+  if (rhythmMid) rhythmMid.textContent = formatEditorTimecode(timelineDuration / 2);
+  if (rhythmEnd) rhythmEnd.textContent = formatEditorTimecode(timelineDuration);
 }
 
 /**
  * Helper to render side metadata panels
  */
+function shotSeconds(shot) {
+  const value = parseFloat(shot.duration);
+  return Number.isFinite(value) && value > 0 ? value : 3;
+}
+
+function escapeTemplateText(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  })[ch]);
+}
+
+function sourceVideoId(t) {
+  const url = t.videoUrl || t.source?.url || '';
+  return t.source?.videoId || t.videoId || url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|shorts\/|embed\/))([\w-]{11})/)?.[1] || '';
+}
+
+function mountSourcePreview(t) {
+  const monitor = document.getElementById('detail-program-monitor');
+  if (!monitor) return;
+  monitor.replaceChildren();
+  const videoId = sourceVideoId(t);
+  if (videoId) {
+    const mount = document.createElement('div');
+    mount.id = 'detail-source-player';
+    monitor.appendChild(mount);
+    mountYouTubePlayer(videoId, t.source?.title || t.name || '來源影片', t.id);
+  } else if (t.videoUrl || t.source?.url) {
+    const video = document.createElement('video');
+    video.src = t.videoUrl || t.source.url;
+    video.controls = true;
+    video.playsInline = true;
+    video.preload = 'metadata';
+    monitor.appendChild(video);
+    currentSourcePlayer = video;
+    currentSourcePlayerType = 'html5';
+    video.onplay = () => { updatePlayPauseButtonUI(true); startPlayerSync(); };
+    video.onpause = video.onended = () => { updatePlayPauseButtonUI(false); stopPlayerSync(); };
+    video.ontimeupdate = () => window.seekTimeline(video.currentTime, { fromPlayer: true });
+  } else {
+    const fallback = document.createElement('p');
+    fallback.className = 'nle-monitor-fallback';
+    fallback.textContent = '此模板未提供來源影片';
+    monitor.appendChild(fallback);
+  }
+  const playBtn = document.getElementById('btn-player-playpause');
+  if (playBtn) {
+    playBtn.disabled = !videoId && !(t.videoUrl || t.source?.url);
+    playBtn.onclick = togglePlayPause;
+  }
+  const scrubber = document.getElementById('player-scrubber-track');
+  if (scrubber) {
+    const seek = event => {
+      const bounds = scrubber.getBoundingClientRect();
+      if (bounds.width) window.seekTimeline((event.clientX - bounds.left) / bounds.width * timelineDuration);
+    };
+    scrubber.onpointerdown = event => { scrubber.setPointerCapture?.(event.pointerId); seek(event); };
+    scrubber.onpointermove = event => { if (event.buttons === 1) seek(event); };
+  }
+}
+
+// 顯示來源資料的所有欄位，避免改版後的舊 DOM 名稱中斷整頁渲染。
+const TEMPLATE_FIELD_LABELS = {
+  narrative: '敘事設計', hook: '開場鉤子', marketing: '行銷設計', visualFlow: '視覺節奏',
+  controls: '生成控制', analysis: '分析結果', promptTemplate: '製作提示詞', variables: '可替換變數',
+  source: '來源影片', tags: '標籤', platform: '適用平台', useCase: '使用情境', confidence: '分析信心',
+  version: '分析版本', type: '類型', structure: '結構', tone: '語氣', summary: '摘要',
+  description: '說明', position: '位置', isImplicit: '隱性置入', exposureType: '曝光方式',
+  brandRole: '品牌角色', integrationMethod: '融合方式', revealTiming: '揭露時機',
+  persuasionStyle: '說服風格', targetEmotion: '目標情緒', pace: '節奏', transitionStyle: '轉場方式',
+  rhythmPattern: '節奏模式', cameraIntensity: '鏡頭強度', emotionIntensity: '情緒強度',
+  whyItWorks: '成功原因', replicableElements: '可複製元素', targetAudience: '目標受眾',
+  base: '基礎提示詞', perShot: '逐鏡提示詞', videoId: '影片編號', title: '影片標題',
+  channel: '頻道', views: '觀看次數', url: '影片網址', thumbnail: '封面網址', analyzedAt: '分析時間',
+  publishedAt: '發布時間', category: '分類', duration: '時長', name: '名稱', shotsCount: '鏡頭數',
+  shot: '鏡頭編號', action: '畫面動作', camera: '鏡頭運動', angle: '拍攝角度', emotion: '情緒',
+  purpose: '敘事目的', dialogue: '對白', dialogueInfo: '互動資訊', categoryLabel: '分類名稱'
+};
+
+function renderTemplateFields(value) {
+  if (Array.isArray(value)) return value.length ? `<ol>${value.map(item => `<li>${renderTemplateFields(item)}</li>`).join('')}</ol>` : '—';
+  if (value && typeof value === 'object') {
+    return `<dl>${Object.entries(value).map(([key, item]) => `<div><dt>${escapeTemplateText(TEMPLATE_FIELD_LABELS[key] || key)}</dt><dd>${renderTemplateFields(item)}</dd></div>`).join('')}</dl>`;
+  }
+  if (typeof value === 'boolean') return value ? '是' : '否';
+  return escapeTemplateText(value ?? '—');
+}
+
 function renderSideMetadata(t) {
-  const varsList = Array.isArray(t.variables) ? t.variables : [];
-  const platforms = Array.isArray(t.platform) ? t.platform.join(', ') : (t.platform || '無限制');
-  const setText = (id, value, fallback = '—') => {
+  const setText = (id, value) => {
     const el = document.getElementById(id);
-    if (el) el.textContent = value === undefined || value === null || value === '' ? fallback : value;
+    if (el) el.textContent = value ?? '—';
   };
-  const setChips = (id, values) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    const list = Array.isArray(values) ? values : (values ? [values] : []);
-    el.replaceChildren(...(list.length ? list : ['—']).map(value => {
-      const span = document.createElement('span');
-      span.textContent = value;
-      return span;
-    }));
-  };
-
-  setText('detail-source-views', `觀看次數：${Number(t.source?.views || 0).toLocaleString('zh-TW')}`);
-  setText('detail-template-version', `分析版本：v${t.version || '—'}`);
-  setText('detail-confidence', `信心指數：${Number.isFinite(Number(t.confidence)) ? Math.round(Number(t.confidence) * 100) + '%' : '—'}`);
-  setText('detail-bin-count', String((Array.isArray(t.structure) ? t.structure.length : 0) + 1));
-  setChips('detail-variable-chips', varsList.map(v => `{${v}}`));
-  setChips('detail-target-emotions', t.marketing?.targetEmotion);
-  setChips('detail-platform-chips', Array.isArray(t.platform) ? t.platform.map(p => String(p).toUpperCase()) : t.platform);
-
-  const prompts = Array.isArray(t.promptTemplate?.perShot) ? t.promptTemplate.perShot : [];
-  const hasPrompts = Boolean(t.promptTemplate?.base || prompts.length);
-  const hasVariables = varsList.length > 0;
-  const hasMarketing = Boolean(t.marketing && Object.values(t.marketing).some(value => Array.isArray(value) ? value.length : value));
-  const promptTab = document.querySelector('[data-bin-tab="prompts"]');
-  const variableTab = document.querySelector('[data-bin-tab="variables"]');
-  const marketingTab = document.querySelector('[data-inspector-tab="marketing"]');
-  if (promptTab) promptTab.hidden = !hasPrompts;
-  if (variableTab) variableTab.hidden = !hasVariables;
-  if (marketingTab) marketingTab.hidden = !hasMarketing;
-
-  setText('detail-narrative-type', t.narrative?.type);
-  setText('detail-narrative-tone', translateTone(t.narrative?.tone));
-  setText('detail-pace', t.visualFlow?.pace);
-  setText('detail-transition', t.visualFlow?.transitionStyle);
-  setText('detail-narrative-structure', t.narrative?.structure);
-  setText('detail-hook-type', `${t.hook?.type || '—'} · ${t.hook?.position || '—'}`);
-  setText('detail-hook-description', t.hook?.description);
-  setText('detail-marketing-method', t.marketing?.integrationMethod);
-  setText('detail-brand-role', t.marketing?.brandRole);
-  setText('detail-reveal-timing', t.marketing?.revealTiming);
-  setText('detail-persuasion', t.marketing?.persuasionStyle);
-
-  const promptList = document.getElementById('detail-prompt-list');
-  if (promptList) {
-    promptList.replaceChildren(...(prompts.length ? prompts : ['尚無分鏡提示詞']).map((prompt, index) => {
-      const item = document.createElement('div');
-      item.innerHTML = `<b>${prompts.length ? `S${String(index + 1).padStart(2, '0')}` : '—'}</b><span></span>`;
-      item.querySelector('span').textContent = prompt;
-      return item;
-    }));
+  setText('detail-source-title', t.source?.title || t.name || t.title);
+  setText('detail-source-channel', t.source?.channel || '未提供頻道');
+  setText('detail-source-views', `觀看次數：${t.source?.views == null ? '—' : Number(t.source.views).toLocaleString('zh-TW')}`);
+  setText('detail-template-version', `分析版本：${t.version ?? '—'}`);
+  setText('detail-confidence', `信心指數：${document.getElementById('analysis-score-value')?.textContent || '—'}`);
+  setText('detail-bin-count', String((t.structure || []).length + 1));
+  setText('meta-usecase', t.useCase);
+  setText('meta-platforms', Array.isArray(t.platform) ? t.platform.join(' / ') : t.platform);
+  setText('meta-audience', t.analysis?.targetAudience);
+  setText('meta-shotscount', `${(t.structure || []).length} 鏡`);
+  setText('meta-duration', `${timelineDuration} 秒`);
+  const cover = t.thumbnail || t.cover || t.source?.thumbnail || (sourceVideoId(t) ? `https://i.ytimg.com/vi/${encodeURIComponent(sourceVideoId(t))}/hqdefault.jpg` : '');
+  const thumb = document.getElementById('detail-source-thumb');
+  if (thumb) {
+    thumb.replaceChildren();
+    if (cover) { const image = document.createElement('img'); image.onerror = () => image.remove(); image.src = cover; image.alt = '來源影片封面'; thumb.appendChild(image); }
+  }
+  const info = document.getElementById('template-information');
+  if (info) {
+    const omitted = new Set(['id', 'name', 'title', 'description', 'structure', 'thumbnail', 'cover']);
+    info.innerHTML = Object.entries(t).filter(([key]) => !omitted.has(key)).map(([key, value]) =>
+      `<details${['narrative', 'hook'].includes(key) ? ' open' : ''} data-field="${escapeTemplateText(key)}"><summary>${escapeTemplateText(TEMPLATE_FIELD_LABELS[key] || key)}</summary>${renderTemplateFields(value)}</details>`).join('');
   }
 
-  document.querySelectorAll('.nle-bin-tabs [data-bin-tab]').forEach(button => {
-    button.onclick = () => {
-      document.querySelectorAll('.nle-bin-tabs [data-bin-tab]').forEach(item => item.classList.toggle('active', item === button));
-      document.querySelectorAll('[data-bin-page]').forEach(page => { page.hidden = page.dataset.binPage !== button.dataset.binTab; });
-    };
-  });
-  document.querySelector('[data-bin-tab="media"]')?.click();
+}
 
-  document.querySelectorAll('.nle-inspector-tabs [data-inspector-tab]').forEach(button => {
-    button.onclick = () => {
-      document.querySelectorAll('.nle-inspector-tabs [data-inspector-tab]').forEach(item => item.classList.toggle('active', item === button));
-      document.querySelectorAll('.nle-inspector-page').forEach(page => page.classList.toggle('active', page.dataset.inspectorPage === button.dataset.inspectorTab));
-    };
-  });
-  document.querySelector('[data-inspector-tab="story"]')?.click();
-
-  const storyboardBody = document.getElementById('template-storyboard-body');
-  if (storyboardBody) {
-    storyboardBody.innerHTML = '';
-    const sourceId = t.source?.videoId || t.videoId || '';
-    const cover = t.thumbnail || t.cover || t.source?.thumbnail || (sourceId ? `https://i.ytimg.com/vi/${encodeURIComponent(sourceId)}/hqdefault.jpg` : '');
-    let startTime = 0;
-    (Array.isArray(t.structure) ? t.structure : []).forEach((shot, index) => {
-      const row = document.createElement('tr');
-      const shotStart = startTime;
-      const duration = parseInt(shot.duration) || 3;
-      row.innerHTML = `
-        <td class="script-shot-number">${String(shot.shot || index + 1).padStart(2, '0')}</td>
-        <td class="script-preview-cell">${cover ? `<img src="${cover}" alt="鏡頭 ${index + 1} 來源畫面">` : '<span>NO IMAGE</span>'}</td>
-        <td class="script-action-cell"><strong>${shot.action || '未提供畫面動作'}</strong><small>${t.promptTemplate?.perShot?.[index] || ''}</small></td>
-        <td><span class="script-tech-label">${shot.camera || '—'}</span><small>${shot.angle || '—'}</small></td>
-        <td class="script-duration-cell">${shot.duration || `${duration}s`}</td>
-        <td class="script-purpose-cell"><strong>${translateEmotion(shot.emotion)}</strong><small>${shot.purpose || '—'}</small></td>`;
-      row.onclick = () => {
-        window.seekTimeline(shotStart);
-        showShotInspector(shot, index, shotStart);
+function renderProfessionalView(t, shots) {
+  const filters = document.getElementById('track-filter-pills');
+  if (filters) {
+    filters.replaceChildren(...TRACKS_CONFIG.map(track => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'track-filter-pill';
+      button.textContent = track.label;
+      const update = () => {
+        button.classList.toggle('is-active', visibleTracks[track.id]);
+        button.setAttribute('aria-pressed', String(visibleTracks[track.id]));
+        const row = document.querySelector(`.timeline-track-row[data-track="${track.id}"]`);
+        if (row) row.hidden = !visibleTracks[track.id];
       };
-      storyboardBody.appendChild(row);
-      startTime += duration;
-    });
-    if (!storyboardBody.children.length) storyboardBody.innerHTML = '<tr><td colspan="6" class="script-empty">此模板尚無分鏡資料</td></tr>';
+      button.onclick = () => { visibleTracks[track.id] = !visibleTracks[track.id]; update(); };
+      update();
+      return button;
+    }));
   }
-
-  const timelineView = document.querySelector('.timeline-scroll-container');
-  const scriptView = document.getElementById('storyboard-script-panel');
-  document.querySelectorAll('[data-editor-view]').forEach(button => {
-    button.onclick = () => {
-      const isTimeline = button.dataset.editorView === 'timeline';
-      document.querySelectorAll('[data-editor-view]').forEach(item => item.classList.toggle('active', item === button));
-      if (timelineView) timelineView.hidden = !isTimeline;
-      if (scriptView) scriptView.hidden = isTimeline;
-    };
-  });
-  
-  document.getElementById('meta-usecase').textContent = t.useCase || '短影音宣傳、生活/產品Vlog';
-  document.getElementById('meta-platforms').textContent = platforms.toUpperCase();
-  document.getElementById('meta-audience').textContent = t.analysis?.targetAudience || '大眾社群用戶';
-  document.getElementById('meta-shotscount').textContent = `${t.shotsCount || (t.structure ? t.structure.length : 0)} 鏡`;
-  document.getElementById('meta-duration').textContent = `${timelineDuration} 秒`;
-  document.getElementById('meta-variables').textContent = varsList.length ? varsList.map(v => `{${v}}`).join(' · ') : '無變數';
-  setText('meta-prompt-base', t.promptTemplate?.base);
-  setText('meta-rhythm-pattern', t.visualFlow?.rhythmPattern);
-  setText('meta-camera-control', Array.isArray(t.controls?.cameraIntensity) ? t.controls.cameraIntensity.join(' / ') : t.controls?.cameraIntensity);
-  setText('meta-emotion-control', Array.isArray(t.controls?.emotionIntensity) ? t.controls.emotionIntensity.join(' / ') : t.controls?.emotionIntensity);
-
-  document.getElementById('meta-why-it-works').innerHTML = formatTextWithLinks(t.analysis?.whyItWorks || '利用快節奏剪輯與大眾共鳴點開場，輔以視覺細節特寫，加深信任感與轉換效果。');
-
-  const replicableUl = document.getElementById('meta-replicable-elements');
-  replicableUl.innerHTML = '';
-  const elements = Array.isArray(t.analysis?.replicableElements) ? t.analysis.replicableElements : ['前置懸念開場', '快節奏畫切換', '價格標註/結尾行動指引'];
-  elements.forEach(el => {
-    const li = document.createElement('li');
-    li.innerHTML = formatTextWithLinks(el);
-    replicableUl.appendChild(li);
-  });
-
-  // Apply initial track visibility
-  TRACKS_CONFIG.forEach(track => {
-    const trackRow = document.querySelector(`.timeline-track-row[data-track="${track.id}"]`);
-    if (trackRow) {
-      trackRow.hidden = !visibleTracks[track.id];
-    }
-  });
+  renderTimelineWidget(t, shots);
 }
 
 function renderTimelineWidget(t, shots) {
@@ -513,7 +527,7 @@ function renderTimelineWidget(t, shots) {
     tick.style.left = `${pct}%`;
     if (i % 5 === 0 || i === timelineDuration) {
       tick.style.borderLeft = '2px solid rgba(255, 255, 255, 0.25)';
-      tick.innerHTML = `00:${i < 10 ? '0' + i : i}`;
+      tick.textContent = formatEditorTimecode(i);
     } else {
       tick.style.height = '40%';
       tick.style.borderLeft = '1px solid rgba(255, 255, 255, 0.08)';
@@ -524,7 +538,7 @@ function renderTimelineWidget(t, shots) {
   // 2. Shots Track
   let accumulatedTime = 0;
   shots.forEach((shot, index) => {
-    const dur = parseInt(shot.duration) || 3;
+    const dur = shotSeconds(shot);
     const shotStart = accumulatedTime;
     const blockWidth = (dur / timelineDuration) * 100;
     const blockLeft = (shotStart / timelineDuration) * 100;
@@ -601,7 +615,7 @@ function renderTimelineWidget(t, shots) {
   if (emotionContainer) {
     let curTime = 0;
     shots.forEach((shot, index) => {
-      const dur = parseInt(shot.duration) || 3;
+      const dur = shotSeconds(shot);
       if (shot.emotion && shot.emotion !== 'none') {
         const emoBlock = document.createElement('div');
         emoBlock.className = 'timeline-block ai-block-emotion';
@@ -627,7 +641,7 @@ function renderTimelineWidget(t, shots) {
     let timePointer = 0;
     let qaCount = 0;
     shots.forEach((shot, index) => {
-      const dur = parseInt(shot.duration) || 3;
+      const dur = shotSeconds(shot);
       const actionText = shot.action || '';
       const purposeText = shot.purpose || '';
       const isQA = actionText.includes('問') || actionText.includes('對話') || actionText.includes('藏鏡人') ||
@@ -674,7 +688,7 @@ function renderTimelineWidget(t, shots) {
     let tPointer = 0;
     let conflictCount = 0;
     shots.forEach((shot, index) => {
-      const dur = parseInt(shot.duration) || 3;
+      const dur = shotSeconds(shot);
       const cameraText = shot.camera || '';
       const actionText = shot.action || '';
       const angleText = shot.angle || '';
@@ -780,7 +794,7 @@ window.seekTimeline = function(seconds, options = {}) {
   let accum = 0;
   let foundIndex = 0;
   for (let i = 0; i < shots.length; i++) {
-    const dur = parseInt(shots[i].duration) || 3;
+    const dur = shotSeconds(shots[i]);
     if (seconds >= accum && seconds < accum + dur) {
       foundIndex = i;
       break;
@@ -791,6 +805,7 @@ window.seekTimeline = function(seconds, options = {}) {
     }
   }
   activeShotIndex = foundIndex;
+  window.TemplateEditor?.sync(foundIndex);
 
   // 4. Update Story View Active Node & Canvas Axis Progress
   if (currentViewMode === 'story') {
@@ -862,7 +877,7 @@ window.openInspectorDrawer = function(title, badge, bodyHtml, segmentStart = 0) 
 
   if (!inspector) return;
 
-  if (titleEl) titleEl.innerHTML = title;
+  if (titleEl) titleEl.textContent = title;
   if (badgeEl) badgeEl.textContent = badge;
   if (bodyEl) {
     bodyEl.innerHTML = `
@@ -878,6 +893,7 @@ window.openInspectorDrawer = function(title, badge, bodyHtml, segmentStart = 0) 
   }
 
   inspector.hidden = false;
+  window.TemplateEditor?.showInspector();
 };
 
 window.closeInspectorDrawer = function() {
@@ -889,42 +905,18 @@ window.closeInspectorDrawer = function() {
    INSPECTOR DETAIL RENDERERS
    ========================================================================== */
 
+function translateCamera(camera) {
+  const labels = { wide: '廣角', medium: '中景', 'close-up': '特寫', static: '固定鏡頭', handheld: '手持', tracking: '跟拍', pan: '橫移', tilt: '俯仰', zoom: '變焦' };
+  return labels[camera] || camera || '未提供運鏡';
+}
+
 function showShotInspector(shot, index, start) {
-  const shotNum = String(shot.shot || index + 1).padStart(2, '0');
-  const dur = parseInt(shot.duration) || 3;
-  const content = `
-    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-      <div style="background:rgba(255,255,255,0.04); padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.07);">
-        <span style="font-size:0.72rem; color:#94a3b8; display:block;">運鏡方式</span>
-        <strong style="color:#60a5fa; font-size:0.88rem;">🎥 ${translateCamera(shot.camera)}</strong>
-      </div>
-      <div style="background:rgba(255,255,255,0.04); padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.07);">
-        <span style="font-size:0.72rem; color:#94a3b8; display:block;">畫面視角</span>
-        <strong style="color:#60a5fa; font-size:0.88rem;">📐 ${shot.angle || '平視 (eye-level)'}</strong>
-      </div>
-      <div style="background:rgba(255,255,255,0.04); padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.07);">
-        <span style="font-size:0.72rem; color:#94a3b8; display:block;">情緒要求</span>
-        <strong style="color:#60a5fa; font-size:0.88rem;">🌊 ${translateEmotion(shot.emotion)}</strong>
-      </div>
-      <div style="background:rgba(255,255,255,0.04); padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.07);">
-        <span style="font-size:0.72rem; color:#94a3b8; display:block;">鏡頭長度</span>
-        <strong style="color:#60a5fa; font-size:0.88rem;">⏱️ ${shot.duration || `${dur}s`}</strong>
-      </div>
-    </div>
-    <div>
-      <strong style="display:block; margin-bottom:6px; color:#f1f5f9; font-size:0.84rem;">畫面動作 (Action)：</strong>
-      <p style="margin:0; font-size:0.88rem; line-height:1.6; color:#cbd5e1; background:rgba(255,255,255,0.03); padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.06);">
-        ${formatTextWithLinks(shot.action || '畫面動作')}
-      </p>
-    </div>
-    <div>
-      <strong style="display:block; margin-bottom:6px; color:#f1f5f9; font-size:0.84rem;">分鏡目的 (Purpose)：</strong>
-      <p style="margin:0; font-size:0.88rem; color:#cbd5e1; background:rgba(255,255,255,0.03); padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.06);">
-        ${formatTextWithLinks(shot.purpose || '推進故事')}
-      </p>
-    </div>
-  `;
-  window.openInspectorDrawer(`Shot ${shotNum} 詳細屬性`, 'SHOT', content, start);
+  const shotNum = String(index + 1).padStart(2, '0');
+  const description = window.TemplateEditor?.describe || (value => value || '未提供');
+  const details = { ...shot, camera: description(shot.camera), angle: description(shot.angle), emotion: translateEmotion(shot.emotion), purpose: description(shot.purpose) };
+  const prompt = currentTemplate?.promptTemplate?.perShot?.[index];
+  const body = `${renderTemplateFields(details)}<h5>製作提示詞</h5><p>${escapeTemplateText(prompt || '此鏡頭未提供製作提示詞')}</p>`;
+  window.openInspectorDrawer(`鏡頭 ${shotNum} · ${shotSeconds(shot)} 秒`, 'SHOT', body, start);
 }
 
 function showHookInspector() {
@@ -1053,6 +1045,7 @@ window.destroyTemplateTimeline = function() {
   }
   currentSourcePlayer = null;
   currentSourcePlayerType = null;
+  window.TemplateEditor?.destroy();
   currentTemplate = null;
   currentTime = 0;
   isPlaying = false;
@@ -1063,27 +1056,23 @@ window.destroyTemplateTimeline = function() {
 
 window.switchDetailViewMode = function(mode) {
   currentViewMode = mode === 'professional' ? 'professional' : 'story';
-  const storyBtn = document.getElementById('btn-mode-story');
-  const proBtn = document.getElementById('btn-mode-professional');
-  const storyView = document.getElementById('view-mode-story');
-  const proView = document.getElementById('view-mode-professional');
-
-  if (storyBtn) {
-    storyBtn.classList.toggle('active', currentViewMode === 'story');
-    storyBtn.setAttribute('aria-selected', currentViewMode === 'story' ? 'true' : 'false');
-  }
-  if (proBtn) {
-    proBtn.classList.toggle('active', currentViewMode === 'professional');
-    proBtn.setAttribute('aria-selected', currentViewMode === 'professional' ? 'true' : 'false');
-  }
-  if (storyView) storyView.style.display = currentViewMode === 'story' ? 'block' : 'none';
-  if (proView) proView.style.display = currentViewMode === 'professional' ? 'flex' : 'none';
-
-  if (currentViewMode === 'story') {
-    highlightActiveStoryNode();
-  } else {
-    syncProfessionalPlayhead();
-  }
+  const tabs = [document.getElementById('btn-mode-professional'), document.getElementById('btn-mode-story')].filter(Boolean);
+  tabs.forEach((button, index) => {
+    const active = index === (currentViewMode === 'professional' ? 0 : 1);
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-selected', String(active));
+    button.tabIndex = active ? 0 : -1;
+    const panel = document.getElementById(button.getAttribute('aria-controls'));
+    if (panel) { panel.hidden = !active; panel.style.display = active ? 'block' : 'none'; }
+    button.onkeydown = event => {
+      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+      event.preventDefault();
+      const next = event.key === 'Home' ? tabs[0] : event.key === 'End' ? tabs[tabs.length - 1] : tabs[(index + 1) % tabs.length];
+      next.click(); next.focus();
+    };
+  });
+  // 切換視圖只改顯示狀態，不重設播放位置、鏡頭與面板資料。
+  syncProfessionalPlayhead();
 };
 
 window.playTemplateSegment = function(seconds) {

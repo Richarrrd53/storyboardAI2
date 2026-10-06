@@ -9,7 +9,8 @@
   <link rel="stylesheet" href="../css/dashboard.css" />
   <link rel="stylesheet" href="../css/template.css" />
   <link rel="stylesheet" href="../css/math-curve-loader.css" />
-  <link rel="stylesheet" href="../css/template-detail.css?v=20260926-2" />
+  <link rel="stylesheet" href="../css/template-detail.css?v=20261006-1" />
+  <link rel="stylesheet" href="../css/template-editor.css?v=20261006-2" />
 </head>
 
 <body>
@@ -148,7 +149,7 @@
       </div>
 
       <!-- Template Title Header -->
-      <div class="detail-template-hero-header">
+      <div class="detail-template-hero-header editor-template-heading">
         <div class="detail-header-left">
           <div class="detail-badges-row">
             <span class="badge-cat" id="detail-category-badge">商品焦點</span>
@@ -194,60 +195,36 @@
         </article>
       </section>
 
-      <!-- NLE workspace: source bin, program monitor and clip inspector -->
-      <div class="nle-workspace">
-        <aside class="nle-panel nle-media-bin">
-          <div class="nle-panel-title"><span>專案媒體</span><small>MEDIA POOL</small></div>
-          <div class="nle-bin-tabs"><button class="active" type="button" data-bin-tab="media">媒體</button><button type="button" data-bin-tab="prompts">提示詞</button><button type="button" data-bin-tab="variables">變數</button></div>
-          <div class="nle-bin-tree"><span>⌄</span><strong>模板素材</strong><small id="detail-bin-count">1</small></div>
-          <div class="nle-source-item is-selected" data-bin-page="media">
-            <div class="nle-source-thumb" id="detail-source-thumb"></div>
-            <div><strong id="detail-source-title">來源影片</strong><span id="detail-source-channel">原始素材</span></div>
-          </div>
-          <div class="nle-bin-section" data-bin-page="media">
-            <h6>素材資訊</h6>
-            <p id="detail-source-views">觀看次數：—</p>
-            <p id="detail-template-version">分析版本：—</p>
-            <p id="detail-confidence">信心指數：—</p>
-          </div>
-          <div class="nle-bin-section" data-bin-page="media">
-            <h6>模板摘要</h6>
-            <dl class="nle-compact-meta">
-              <div><dt>題材</dt><dd id="meta-usecase">—</dd></div>
-              <div><dt>平台</dt><dd id="meta-platforms">—</dd></div>
-              <div><dt>受眾</dt><dd id="meta-audience">—</dd></div>
-              <div><dt>鏡頭</dt><dd id="meta-shotscount">—</dd></div>
-              <div><dt>長度</dt><dd id="meta-duration">—</dd></div>
-            </dl>
-          </div>
-          <div class="detail-header-right">
-            <button class="btn-apply-template-main" id="btn-apply-template-main">
-              套用此模板
-            </button>
-          </div>
-        </header>
+      <!-- 剪輯工作區：素材／監看器／屬性，與下方序列共用同一支影片與播放位置。 -->
+      <div class="editor-studio" id="template-editor-studio">
+        <div class="editor-studio-topbar"><div><span class="editor-status-dot"></span><strong>影片分析工作區</strong><span class="editor-topbar-note">SOURCE / SEQUENCE</span></div><span>點選鏡頭，預覽對應片段</span></div>
+        <div class="editor-panels">
+          <aside class="editor-panel editor-media nle-media-bin" aria-label="模板素材">
+            <div class="editor-panel-heading"><h3>專案素材</h3><span id="detail-bin-count">0</span></div>
+            <div class="editor-tabs" role="tablist" aria-label="素材內容">
+              <button id="editor-media-tab" type="button" role="tab" aria-selected="true" aria-controls="editor-media-page" data-bin-tab="media">素材</button>
+              <button id="editor-prompts-tab" type="button" role="tab" aria-selected="false" aria-controls="editor-prompts-page" data-bin-tab="prompts">提示詞</button>
+              <button id="editor-variables-tab" type="button" role="tab" aria-selected="false" aria-controls="editor-variables-page" data-bin-tab="variables">變數</button>
+            </div>
+            <div id="editor-media-page" class="editor-panel-scroll" role="tabpanel" aria-labelledby="editor-media-tab" data-bin-page="media">
+              <div class="editor-source-card"><div id="detail-source-thumb" class="editor-source-thumb"></div><strong id="detail-source-title">來源影片</strong><span id="detail-source-channel">—</span></div>
+              <div class="editor-source-stats"><span id="detail-source-views">—</span><span id="detail-template-version">—</span><span id="detail-confidence">—</span></div>
+              <div class="editor-list-heading">序列鏡頭 <span id="editor-media-shot-count">0</span></div>
+              <div id="editor-shot-list"></div>
+            </div>
+            <div id="editor-prompts-page" class="editor-panel-scroll editor-prompts" role="tabpanel" aria-labelledby="editor-prompts-tab" data-bin-page="prompts" hidden><div id="editor-base-prompt"></div><div id="editor-prompt-list"></div></div>
+            <div id="editor-variables-page" class="editor-panel-scroll" role="tabpanel" aria-labelledby="editor-variables-tab" data-bin-page="variables" hidden><p class="editor-help">套用模板時，可替換以下內容以符合你的企劃。</p><div id="editor-variable-list"></div></div>
+          </aside>
 
-        <!-- View Mode Toggle -->
-        <div class="view-mode-toggle-bar">
-          <div class="view-mode-toggle" role="tablist">
-            <button type="button" class="toggle-btn active" id="btn-mode-story" onclick="switchDetailViewMode('story')" role="tab" aria-selected="true">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
-              故事檢視
-            </button>
-            <button type="button" class="toggle-btn" id="btn-mode-professional" onclick="switchDetailViewMode('professional')" role="tab" aria-selected="false">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line></svg>
-              專業檢視
-            </button>
-          </div>
-        </div>
-
-        <!-- Shared Video Player (Center Anchor) -->
-        <section class="shared-video-player-section">
-          <div class="video-player-container">
+          <section class="editor-panel editor-monitor" aria-label="來源影片監看器">
+            <div class="editor-panel-heading"><h3>來源影片</h3><span>直式預覽 · 9:16</span></div>
+            <div class="editor-monitor-stage">
             <div class="video-monitor-wrapper" id="detail-program-monitor">
               <div class="nle-monitor-fallback">SOURCE PREVIEW</div>
               <div class="nle-safe-frame"></div>
             </div>
+            </div>
+            <div class="editor-monitor-caption"><span id="editor-current-shot">尚未選擇鏡頭</span><span id="editor-current-action">—</span></div>
             <!-- Transport / Player Controls -->
             <div class="video-player-controls">
               <button type="button" class="btn-player-playpause" id="btn-player-playpause" title="播放 / 暫停">
@@ -261,62 +238,32 @@
               </div>
               <span class="player-time-duration" id="detail-monitor-duration">00:00</span>
             </div>
-          </div>
-        </section>
-
-        <!-- Mode Content Area -->
-        <div class="mode-content-container">
-          
-          <!-- MODE 1: NARRATIVE CANVAS (STORY VIEW) -->
-          <section id="view-mode-story" class="narrative-canvas-panel active anim-fadeIn">
-            <div class="canvas-header-block">
-              <div class="canvas-title-wrap">
-                <span class="canvas-badge">故事地圖</span>
-                <h3 class="canvas-headline">這支影片怎麼說故事？</h3>
-              </div>
-              <p class="canvas-subline">節點位置真實呈現時間長度與敘事節奏，點擊任意分鏡可探索關鍵動作並跳轉播放。</p>
-            </div>
-
-            <!-- Narrative Canvas Viewport -->
-            <div class="narrative-canvas-viewport">
-              <div class="narrative-canvas-stage" id="narrative-canvas-stage">
-                <!-- SVG Connections Layer for connectors & branches -->
-                <svg class="canvas-svg-layer" id="canvas-svg-layer" preserveAspectRatio="none"></svg>
-
-                <!-- Stage Labels Layer (Top) -->
-                <div class="canvas-stage-labels-layer" id="canvas-stage-labels-layer"></div>
-
-                <!-- True-time Timeline Track (Center Axis) -->
-                <div class="canvas-axis-track">
-                  <div class="canvas-axis-line"></div>
-                  <div class="canvas-axis-progress" id="canvas-axis-progress"></div>
-                  <!-- Shot Anchor Dots on Axis -->
-                  <div class="canvas-axis-dots" id="canvas-axis-dots"></div>
-                </div>
-
-                <!-- Primary Shot Nodes & Secondary Nodes Layer -->
-                <div class="canvas-nodes-layer" id="canvas-nodes-layer"></div>
-
-                <!-- Selected Shot Expansion Bubble Layer -->
-                <div class="canvas-expansion-layer" id="canvas-expansion-layer"></div>
-              </div>
-            </div>
+            <div class="editor-monitor-tools"><button type="button" id="editor-prev-shot" aria-label="上一鏡">◀ 上一鏡</button><span>點選時間軸或分鏡表定位</span><button type="button" id="editor-next-shot" aria-label="下一鏡">下一鏡 ▶</button></div>
           </section>
 
-          <!-- MODE 2: PROFESSIONAL VIEW (INTEGRATED WORKSPACE) -->
-          <section id="view-mode-professional" class="professional-workspace-panel anim-fadeIn" style="display: none;">
-            <div class="timeline-editor-wrapper">
-              <!-- Integrated Toolbar (Filter + Timecode) -->
-              <div class="timeline-editor-toolbar">
-                <div class="toolbar-left">
-                  <span class="toolbar-title">多軌剪輯序列 · 9:16</span>
-                  <div class="track-filter-pills" id="track-filter-pills"></div>
-                </div>
-                <div class="toolbar-right">
-                  <span class="timeline-timecode-display" id="pro-toolbar-timecode">00:00</span>
-                </div>
-              </div>
+          <aside class="editor-panel editor-inspector" aria-label="鏡頭與模板屬性">
+            <div class="editor-panel-heading"><h3>屬性檢查器</h3><span>INSPECTOR</span></div>
+            <div class="editor-tabs" role="tablist" aria-label="屬性內容">
+              <button id="editor-shot-tab" type="button" role="tab" aria-selected="true" aria-controls="timeline-local-inspector" data-inspector-tab="shot">所選鏡頭</button>
+              <button id="editor-template-tab" type="button" role="tab" aria-selected="false" aria-controls="template-information" data-inspector-tab="template">模板資訊</button>
+            </div>
+            <section id="timeline-local-inspector" class="editor-panel-scroll" role="tabpanel" aria-labelledby="editor-shot-tab" data-inspector-page="shot">
+              <div class="editor-selection-heading"><span id="local-inspector-badge">SHOT</span><h4 id="local-inspector-title">所選鏡頭</h4></div><div id="local-inspector-body"></div>
+            </section>
+            <section id="template-information" class="editor-panel-scroll" role="tabpanel" aria-labelledby="editor-template-tab" data-inspector-page="template" hidden></section>
+          </aside>
+        </div>
 
+        <section class="editor-sequence" aria-label="時間軸與企劃分鏡表">
+          <div class="editor-sequence-heading">
+            <div class="editor-tabs editor-view-tabs" role="tablist" aria-label="序列檢視">
+              <button id="btn-mode-professional" type="button" role="tab" aria-selected="true" aria-controls="view-mode-professional" onclick="switchDetailViewMode('professional')">▥ 時間軸</button>
+              <button id="btn-mode-story" type="button" role="tab" aria-selected="false" aria-controls="view-mode-story" onclick="switchDetailViewMode('story')">▦ 企劃分鏡表</button>
+            </div>
+            <div class="editor-sequence-summary"><span id="editor-sequence-count">0 鏡頭</span><span id="pro-toolbar-timecode">00:00</span></div>
+          </div>
+          <section id="view-mode-professional" role="tabpanel" aria-labelledby="btn-mode-professional">
+            <div class="editor-timeline-tools"><div class="track-filter-pills" id="track-filter-pills" aria-label="顯示軌道"></div><label class="editor-zoom">縮放 <input id="editor-timeline-zoom" type="range" min="100" max="240" step="20" value="100" aria-label="時間軸縮放"><output id="editor-zoom-value">100%</output></label></div>
               <div class="timeline-scroll-container">
                 <div class="timeline-editor-body" id="timeline-editor-body">
                   <!-- Playhead -->
@@ -375,34 +322,26 @@
                 </div>
               </div>
 
-              <!-- Local Floating Inspector Panel inside Workspace -->
-              <aside class="timeline-local-inspector" id="timeline-local-inspector" hidden>
-                <div class="local-inspector-head">
-                  <div class="inspector-badge-title">
-                    <span class="inspector-badge" id="local-inspector-badge">CLIP</span>
-                    <h5 id="local-inspector-title">片段屬性</h5>
-                  </div>
-                  <button type="button" class="btn-close-local-inspector" onclick="closeInspectorDrawer()" aria-label="關閉檢查器">×</button>
-                </div>
-                <div class="local-inspector-body" id="local-inspector-body"></div>
-              </aside>
-            </div>
           </section>
-
-        </div>
+          <section id="view-mode-story" class="editor-storyboard" role="tabpanel" aria-labelledby="btn-mode-story" hidden>
+            <div class="editor-board-intro"><div><h3>把每一鏡，交代清楚。</h3><p>依影片順序閱讀畫面、對白與拍攝需求。點選任一鏡，可同步預覽影片及右側屬性。</p></div><button type="button" id="editor-export-storyboard">↓ 匯出分鏡表</button></div>
+            <div class="editor-board-scroll"><table class="editor-board-table"><caption class="editor-sr-only">企劃分鏡表：鏡頭、時間、參考畫面、畫面與對白、拍攝方式、時長、情緒與目的</caption><thead><tr><th scope="col">鏡頭 / 時間</th><th scope="col">參考畫面</th><th scope="col">畫面內容與對白</th><th scope="col">拍攝方式</th><th scope="col">時長</th><th scope="col">情緒 / 目的</th></tr></thead><tbody id="template-storyboard-body"></tbody></table></div>
+          </section>
+        </section>
+        <div class="editor-studio-footer"><span>來源分析 · <span id="editor-footer-title">—</span></span><span>鏡頭、分鏡表與影片同步定位</span></div>
+      </div>
 
         <!-- Bottom Apply CTA -->
         <div class="detail-bottom-cta-banner">
           <div class="cta-banner-text">
-            <h4>喜歡這個爆款剪輯結構嗎？</h4>
-            <p>將此結構直接套用至你的新腳本，AI 會依照此節奏自動規劃每一鏡頭的分鏡提示詞與畫面描述。</p>
+            <h4>準備好套用這份影片企劃？</h4>
+            <p>保留鏡頭順序與敘事節奏，帶入你的角色、場景與產品，開始建立新腳本。</p>
           </div>
           <button class="btn-apply-template-bottom" id="btn-apply-template-bottom">
             套用此模板
           </button>
         </div>
 
-      </div>
     </section>
 
   </main>
@@ -454,6 +393,7 @@
   <script src="../js/generate-prefill-path.js"></script>
   <script src="../js/sys.js"></script>
   <script src="../js/template-timeline.js"></script>
+  <script src="../js/template-editor.js?v=20261006-2"></script>
   <script src="../js/template.js"></script>
 </body>
 

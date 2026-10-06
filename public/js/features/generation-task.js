@@ -14,10 +14,11 @@
   const clone = value => JSON.parse(JSON.stringify(value));
   function initialState() {
     return {
-      taskId: null, projectId: null, status: 'idle', input: null, error: null,
+      taskId: null, projectId: null, projectShotIds: {}, status: 'idle', input: null, error: null,
+      save: { status: 'idle', error: null },
       progress: { pct: 0, statusText: '', activeStepId: null },
       result: { storyboardData: null, generatedImgs: [], generatedStoryTitles: [],
-        generatedStoryCams: [], generatedPrompts: [], generatedShotData: [] }
+        generatedStoryCams: [], generatedPrompts: [], generatedShotData: [], failedShotIndexes: [] }
     };
   }
   let state = initialState();
@@ -37,12 +38,13 @@
   }
   function start(options) {
     if (state.status === 'generating') return activePromise;
+    if (savePromise) return savePromise;
     if (!options?.story) return Promise.resolve(getState());
     if (!options.style) throw new Error('GenerationTask requires a style snapshot');
     const controller = new AbortController();
     currentController = controller;
     const run = initialState();
-    run.taskId = `generation-${Date.now()}-${++sequence}`;
+    run.taskId = `generation-${Date.now()}-${++sequence}-${Math.random().toString(36).slice(2, 10)}`;
     run.status = 'generating';
     run.input = clone(options);
     run.progress = { pct: 5, statusText: '解析故事靈感與結構...', activeStepId: 'step-analyze' };
@@ -66,12 +68,131 @@
     currentController = null;
     controller?.abort();
     activePromise = null;
+    savePromise = null;
     state = initialState();
     notify();
   }
   function retry() {
     if (state.status === 'generating') return activePromise;
     return state.input ? start(state.input) : Promise.resolve(getState());
+  }
+  function positiveSeconds(value) {
+    const seconds = parseFloat(value);
+    return Number.isFinite(seconds) && seconds > 0 ? seconds : 3;
+  }
+  function validateStoryboard(data) {
+    if (!data || !Array.isArray(data.shots) || !data.shots.length || data.shots.some(shot => !shot || typeof shot.story !== 'string' || !shot.story.trim() || typeof shot.shotPrompt !== 'string' || !shot.shotPrompt.trim())) {
+      throw new Error('無法解析有效的分鏡腳本，請重試。');
+    }
+    if (!data.characters || typeof data.characters !== 'object' || Array.isArray(data.characters)) data.characters = {};
+    data.shots.forEach(shot => { if (!Array.isArray(shot.characters)) shot.characters = []; });
+    return data;
+  }
+  function assertRun(run, controller) {
+    if (state !== run || controller.signal.aborted) {
+      const error = new Error('Generation cancelled'); error.name = 'AbortError'; throw error;
+    }
+  }
+  async function requestJSON(run, controller, url, options) {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    assertRun(run, controller);
+    const data = await response.json();
+    assertRun(run, controller);
+    if (!response.ok) { const error = new Error(data.error || '服務暫時無法處理，請稍後再試'); error.status = response.status; throw error; }
+    return data;
+  }
+  async function persistResult(run, controller) {
+    assertRun(run, controller);
+    if (!root.spaAuth?.isLoggedIn()) {
+      run.save = { status: 'local', error: '尚未登入，分鏡保留在目前頁面，可先匯出。' }; notify(); return;
+    }
+    run.save = { status: 'saving', error: null }; notify();
+    const input = run.input, result = run.result;
+    const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${root.spaAuth.getToken()}` };
+    try {
+      if (run.projectId) {
+        if (result.generatedShotData.some(shot => !run.projectShotIds[shot.order])) {
+          const detail = await requestJSON(run, controller, '/api/projects/' + encodeURIComponent(run.projectId), { headers });
+          for (const shot of detail.project?.shots || []) run.projectShotIds[shot.order] = shot.id;
+        }
+        for (const shot of result.generatedShotData) {
+          const shotId = run.projectShotIds[shot.order];
+          if (!shotId) throw new Error('無法取得已儲存的鏡頭編號，請稍後重試儲存。');
+          await requestJSON(run, controller, `/api/projects/${encodeURIComponent(run.projectId)}/shots/${encodeURIComponent(shotId)}`, {
+            method: 'PATCH', headers, body: JSON.stringify({ title: shot.title, camera: shot.camera, duration: shot.duration, payloadPatch: shot.payload })
+          });
+        }
+      } else {
+        const metadata = {
+          originalStory: input.story, generationMode: input.selectedTemplate ? 'template' : 'freeform',
+          templateId: input.selectedTemplate?.id || null, templateValues: input.templateValues || {}, generationTaskId: run.taskId,
+          templateSnapshot: input.selectedTemplate || null
+        };
+        const data = await requestJSON(run, controller, '/api/projects', {
+          method: 'POST', headers, body: JSON.stringify({
+            title: result.storyboardData?.meta?.title || input.story.slice(0, 32), style: input.style.name, ratio: input.ratio,
+            cover: result.generatedShotData.find(shot => shot.payload.imageStatus === 'succeeded')?.payload.image || null,
+            shots: result.generatedShotData, characters: result.storyboardData?.characters || {}, metadata
+          })
+        });
+        if (!data.project?.id) throw new Error('儲存服務未回傳專案編號，請重試儲存。');
+        run.projectId = data.project.id;
+        for (const shot of data.project.shots || []) run.projectShotIds[shot.order] = shot.id;
+        if (data.reused) { await persistResult(run, controller); return; }
+      }
+      run.save = { status: 'saved', error: null };
+      root.ProjectStore?.invalidateProjects?.();
+      root.ProjectStore?.invalidateProjectDetail?.(run.projectId);
+      if (typeof root.clearSpaCache === 'function') root.clearSpaCache();
+    } catch (error) {
+      assertRun(run, controller);
+      if (error.name === 'AbortError') throw error;
+      run.save = { status: 'failed', error: error.message || '儲存失敗，請重試。' };
+    }
+    notify();
+  }
+  let savePromise = null;
+  function retrySave() {
+    if (savePromise) return savePromise;
+    if (state.status !== 'completed' || !state.result.generatedShotData.length) return Promise.resolve(getState());
+    const run = state, controller = new AbortController();
+    currentController = controller;
+    savePromise = persistResult(run, controller).then(getState).catch(error => {
+      if (error.name !== 'AbortError') throw error;
+      return getState();
+    }).finally(() => { if (currentController === controller) currentController = null; if (state === run) savePromise = null; });
+    return savePromise;
+  }
+  function retryFailedImages() {
+    if (state.status === 'generating') return activePromise;
+    if (savePromise || state.status !== 'completed' || !state.result.failedShotIndexes.length) return Promise.resolve(getState());
+    const run = state, controller = new AbortController();
+    currentController = controller; run.status = 'generating'; run.error = null;
+    activePromise = (async () => {
+      const failures = [...run.result.failedShotIndexes];
+      for (let index = 0; index < failures.length; index++) {
+        const i = failures[index];
+        assertRun(run, controller);
+        run.progress = { pct: index / failures.length * 90, statusText: `重試鏡頭 ${i + 1} 的圖片...`, activeStepId: 'step-render' }; notify();
+        try {
+          const response = await requestJSON(run, controller, '/api/ask-gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question: run.result.generatedPrompts[i], type: 'image', ratio: run.input.ratio }) });
+          if (!response.image?.[0]) throw new Error('圖像服務沒有回傳圖片');
+          run.result.generatedImgs[i] = response.image[0];
+          Object.assign(run.result.generatedShotData[i].payload, { image: response.image[0], imageStatus: 'succeeded', imageError: '' });
+          run.result.failedShotIndexes = run.result.failedShotIndexes.filter(value => value !== i);
+        } catch (error) {
+          assertRun(run, controller);
+          run.result.generatedShotData[i].payload.imageError = error.message;
+        }
+      }
+      await persistResult(run, controller);
+      assertRun(run, controller);
+      run.status = 'completed'; run.progress.pct = 100; notify(); return getState();
+    })().catch(error => {
+      if (state === run && !controller.signal.aborted) { run.status = 'error'; run.error = { message: error.message }; notify(); }
+      return getState();
+    }).finally(() => { if (currentController === controller) currentController = null; });
+    return activePromise;
   }
   async function execute(run, controller) {
     const input = run.input;
@@ -177,160 +298,88 @@
     }
 
     async function runFreeformGeneration() {
-        const prompt = getStoryboardPrompt();
-        const storyboardRes = await askGemini(prompt, 'story');
-        assertActive();
-        result.storyboardData = safeParseJson(storyboardRes.response);
-        if (!result.storyboardData) throw new Error('無法解析故事結構 JSON');
-
-        updateGenProgress(30, '編排鏡頭敘事結構與視角...', 'step-structure');
-        await delay(600);
-
-        const shots = result.storyboardData.shots || [];
-        const total = shots.length;
-        result.generatedImgs = Array(total).fill('../icon/error.jpg');
-        result.generatedStoryTitles = Array(total).fill('');
-        result.generatedStoryCams = Array(total).fill('');
-
-        updateGenProgress(50, '繪製分鏡草稿提示詞...', 'step-prompt');
-
-        let completedCount = 0;
-        for (let i = 0; i < total; i++) {
-            const shot = shots[i];
-            result.generatedStoryTitles[i] = shot.story;
-            result.generatedStoryCams[i] = shot.camera;
-
-            const finalPrompt = await buildFinalPrompt(shot);
-            assertActive();
-            shot.finalPrompt = finalPrompt;
-            result.generatedPrompts[i] = finalPrompt;
-
-            try {
-                const res = await askGemini(finalPrompt, 'image');
-                const imgSrc = (res?.image?.length > 0) ? res.image[0] : '../icon/error.jpg';
-                result.generatedImgs[i] = imgSrc;
-                if (res?.image?.length > 0) completedCount++;
-                // 寫入 normalized shot data
-                result.generatedShotData[i] = {
-                    order: i + 1,
-                    title: shot.story || `鏡頭 ${i + 1}`,
-                    camera: shot.camera || '',
-                    duration: shot.duration || '3s',
-                    payload: {
-                        image: imgSrc,
-                        emotion: shot.emotion || '',
-                        note: '',
-                        shotPrompt: shot.shotPrompt || '',
-                        finalPrompt: finalPrompt,
-                        characters: shot.characters || []
-                    }
-                };
-            } catch (e) {
-                assertActive();
-                if (e.name === 'AbortError') throw e;
-                console.error(`Image generation failed for shot ${i + 1}`, e);
-                result.generatedShotData[i] = {
-                    order: i + 1,
-                    title: shot.story || `鏡頭 ${i + 1}`,
-                    camera: shot.camera || '',
-                    duration: shot.duration || '3s',
-                    payload: {
-                        image: '../icon/error.jpg',
-                        emotion: shot.emotion || '',
-                        note: '',
-                        shotPrompt: shot.shotPrompt || '',
-                        finalPrompt: finalPrompt,
-                        characters: shot.characters || []
-                    }
-                };
-            }
-
-            const progress = 50 + (completedCount / total) * 42;
-            updateGenProgress(progress, `正在沖洗第 ${i + 1} / ${total} 張分鏡底片...`, 'step-render');
-            if (i < total - 1) await delay(800);
-        }
-
-        updateGenProgress(95, '正在將分鏡儲存至資料庫...', 'step-render');
-        run.projectId = await saveProjectToDatabase();
-
-        updateGenProgress(100, '分鏡草稿沖洗完成！', 'step-render');
-        await delay(500);
-
-
+      const response = await askGemini(getStoryboardPrompt(), 'story');
+      result.storyboardData = validateStoryboard(safeParseJson(response.response));
+      await renderShots();
     }
 
     async function runTemplateGeneration() {
-        const tpl = input.selectedTemplate;
-        const total = tpl.shotsCount || (tpl.structure ? tpl.structure.length : 4);
-        result.generatedImgs = Array(total).fill('../icon/error.jpg');
-        result.generatedStoryTitles = Array(total).fill('');
-        result.generatedStoryCams = Array(total).fill('');
+      const tpl = input.selectedTemplate;
+      if (!Array.isArray(tpl.structure) || !tpl.structure.length) throw new Error('此模板沒有分鏡結構，請選擇其他模板或使用自由生成。');
+      const values = { style: input.style.name, ...(input.templateValues || {}) };
+      const replace = text => String(text || '').replace(/\{([\w-]+)\}/g, (match, key) => String(values[key] ?? '').trim() || match);
+      const reference = {
+        name: tpl.name, narrative: tpl.narrative, hook: tpl.hook, marketing: tpl.marketing,
+        visualFlow: tpl.visualFlow, controls: tpl.controls,
+        basePrompt: replace(tpl.promptTemplate?.base),
+        shots: tpl.structure.map((shot, index) => ({ ...shot, id: index + 1, referencePrompt: replace(tpl.promptTemplate?.perShot?.[index]) }))
+      };
+      updateGenProgress(15, '正在依照企劃改寫模板腳本與角色...', 'step-analyze');
+      const prompt = getStoryboardPrompt() + `
+請將參考模板改寫為上述使用者的新企劃，不要複製原影片的商品、場景或角色。
+參考模板：${JSON.stringify(reference)}
+使用者指定的可替換內容：${JSON.stringify(values)}
+必須輸出剛好 ${tpl.structure.length} 個 shots，維持原鏡頭順序、敘事目的、時長、運鏡與角度。
+每鏡 story 與 shotPrompt 必須依新企劃改寫，角色描述在所有鏡頭保持一致。
+shots 可另外提供 angle、purpose、dialogue（中文對白或旁白）、emotion。
+沒填寫的變數請依企劃合理規劃。英文 shotPrompt 不得留下 {variable} 佔位符。`;
+      const response = await askGemini(prompt, 'story');
+      const storyboard = validateStoryboard(safeParseJson(response.response));
+      if (storyboard.shots.length !== tpl.structure.length) throw new Error('改寫鏡頭數與模板不一致，請重試生成。');
+      storyboard.shots = storyboard.shots.map((shot, index) => ({
+        ...shot, id: index + 1, duration: `${positiveSeconds(tpl.structure[index].duration)}s`,
+        camera: tpl.structure[index].camera || shot.camera || 'medium shot',
+        angle: tpl.structure[index].angle || shot.angle || '',
+        purpose: tpl.structure[index].purpose || shot.purpose || '', sourceShot: index + 1
+      }));
+      if (storyboard.shots.some(shot => /\{[\w-]+\}/.test(shot.shotPrompt))) throw new Error('分鏡提示詞仍含未填寫的變數，請重試生成。');
+      result.storyboardData = storyboard;
+      await renderShots();
+    }
 
-        updateGenProgress(25, `正在套用「${tpl.name}」爆點結構...`, 'step-structure');
-        await delay(500);
-
-        updateGenProgress(50, '正在優化每個鏡頭的提示詞...', 'step-prompt');
-        await delay(500);
-
-        const styleDetail = input.style.prompt;
-        for (let i = 0; i < total; i++) {
-            const shot = tpl.structure?.[i] || {};
-            result.generatedStoryTitles[i] = shot.action || `鏡頭 ${i + 1}`;
-            result.generatedStoryCams[i] = shot.camera || 'medium shot';
-
-            const imagePrompt = `${shot.action || ''}, ${input.story}, ${styleDetail}, ${getRatioPrompt()}`;
-            result.generatedPrompts[i] = imagePrompt;
-            try {
-                const res = await askGemini(imagePrompt, 'image');
-                const imgSrc = (res?.image?.length > 0) ? res.image[0] : '../icon/error.jpg';
-                result.generatedImgs[i] = imgSrc;
-                // 寫入 normalized shot data
-                result.generatedShotData[i] = {
-                    order: i + 1,
-                    title: shot.action || `鏡頭 ${i + 1}`,
-                    camera: shot.camera || 'medium shot',
-                    duration: shot.duration || '3s',
-                    payload: {
-                        image: imgSrc,
-                        emotion: '',
-                        note: '',
-                        shotPrompt: imagePrompt,
-                        finalPrompt: imagePrompt,
-                        characters: []
-                    }
-                };
-            } catch (e) {
-                assertActive();
-                if (e.name === 'AbortError') throw e;
-                console.error(`Template image ${i + 1} failed`, e);
-                result.generatedShotData[i] = {
-                    order: i + 1,
-                    title: shot.action || `鏡頭 ${i + 1}`,
-                    camera: shot.camera || 'medium shot',
-                    duration: shot.duration || '3s',
-                    payload: {
-                        image: '../icon/error.jpg',
-                        emotion: '',
-                        note: '',
-                        shotPrompt: imagePrompt,
-                        finalPrompt: imagePrompt,
-                        characters: []
-                    }
-                };
-            }
-
-            const progress = 50 + ((i + 1) / total) * 42;
-            updateGenProgress(progress, `正在著色第 ${i + 1} / ${total} 張模板分鏡...`, 'step-render');
-            if (i < total - 1) await delay(800);
+    async function renderShots() {
+      const shots = result.storyboardData.shots;
+      const total = shots.length;
+      updateGenProgress(30, '已完成分鏡腳本，正在編排角色與鏡頭...', 'step-structure');
+      await delay(600);
+      result.generatedImgs = Array(total).fill('../icon/error.jpg');
+      result.generatedStoryTitles = shots.map(shot => shot.story);
+      result.generatedStoryCams = shots.map(shot => shot.camera || 'medium shot');
+      updateGenProgress(50, '正在準備逐鏡圖像提示詞...', 'step-prompt');
+      for (let i = 0; i < total; i++) {
+        const shot = shots[i];
+        const finalPrompt = await buildFinalPrompt(shot);
+        assertActive();
+        shot.finalPrompt = finalPrompt;
+        result.generatedPrompts[i] = finalPrompt;
+        result.generatedShotData[i] = {
+          order: i + 1, title: shot.story, camera: shot.camera || 'medium shot', duration: `${positiveSeconds(shot.duration)}s`,
+          payload: {
+            image: '../icon/error.jpg', imageStatus: 'pending', emotion: shot.emotion || '', note: '',
+            shotPrompt: shot.shotPrompt, finalPrompt, characters: shot.characters || [],
+            dialogue: shot.dialogue || '', purpose: shot.purpose || '', angle: shot.angle || '', sourceShot: shot.sourceShot || null
+          }
+        };
+        try {
+          const response = await askGemini(finalPrompt, 'image');
+          if (!response?.image?.[0]) throw new Error('圖像服務沒有回傳圖片');
+          result.generatedImgs[i] = response.image[0];
+          result.generatedShotData[i].payload.image = response.image[0];
+          result.generatedShotData[i].payload.imageStatus = 'succeeded';
+        } catch (error) {
+          assertActive();
+          if (error.name === 'AbortError') throw error;
+          result.failedShotIndexes.push(i);
+          result.generatedShotData[i].payload.imageStatus = 'failed';
+          result.generatedShotData[i].payload.imageError = error.message;
         }
-
-        updateGenProgress(95, '備份至雲端資料庫...', 'step-render');
-        run.projectId = await saveProjectToDatabase();
-
-        updateGenProgress(100, '模板分鏡生成完成！', 'step-render');
-        await delay(500);
-
-
+        updateGenProgress(50 + ((i + 1) / total) * 42, `正在生成第 ${i + 1} / ${total} 張分鏡...`, 'step-render');
+        if (i < total - 1) await delay(800);
+      }
+      updateGenProgress(95, '正在儲存分鏡與企劃資料...', 'step-render');
+      await persistResult(run, controller);
+      updateGenProgress(100, result.failedShotIndexes.length ? `分鏡腳本完成，${result.failedShotIndexes.length} 張圖片可重試` : '分鏡生成完成！', 'step-render');
+      await delay(500);
     }
 
     async function askGemini(question, type) {
@@ -363,59 +412,6 @@
         }
     }
 
-    async function saveProjectToDatabase() {
-        if (!root.spaAuth || !root.spaAuth.isLoggedIn()) return null;
-        try {
-            const title = input.selectedTemplate?.name 
-                || result.storyboardData?.meta?.title 
-                || (input.story.slice(0, 24) + '...');
-            const style = input.style.name;
-            const ratio = input.ratio;
-            const cover = result.generatedImgs[0] || null;
-
-            // 使用 normalized generatedShotData，若尚未建立則 fallback 舊邏輯
-            const shots = (result.generatedShotData && result.generatedShotData.length > 0)
-                ? result.generatedShotData
-                : result.generatedImgs.map((img, i) => ({
-                    order: i + 1,
-                    title: result.generatedStoryTitles[i] || '',
-                    camera: result.generatedStoryCams[i] || '',
-                    duration: '3s',
-                    payload: { image: img }
-                }));
-
-            const characters = result.storyboardData?.characters || {};
-            const metadata = {
-                originalStory: input.story || '',
-                generationMode: input.selectedTemplate ? 'template' : 'freeform',
-                templateId: input.selectedTemplate?.id || null
-            };
-
-            const token = root.spaAuth.getToken();
-            const res = await fetch('/api/projects', {
-                signal: controller.signal,
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ title, style, ratio, cover, shots, characters, metadata })
-            });
-            assertActive();
-            if (!res.ok) return null;
-            const json = await res.json();
-            assertActive();
-            if (typeof root.clearSpaCache === 'function') root.clearSpaCache();
-            return json.project?.id;
-        } catch (e) {
-            assertActive();
-            if (e.name === 'AbortError') throw e;
-            console.error("Failed to auto-save project:", e);
-            return null;
-        }
-    }
-
-
     try {
       assertActive();
       if (input.selectedTemplate) await runTemplateGeneration();
@@ -435,5 +431,5 @@
     }
     return getState();
   }
-  root.GenerationTask = { start, retry, cancel, reset, cleanup: reset, getState, subscribe };
+  root.GenerationTask = { start, retry, retrySave, retryFailedImages, cancel, reset, cleanup: reset, getState, subscribe };
 })(typeof window !== 'undefined' ? window : globalThis);

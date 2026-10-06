@@ -14,6 +14,8 @@ const { analyzeVideo } = require('./lib/discovery/video-analyzer');
 const { getSkill, listSkills } = require('./lib/discovery/skill-registry');
 const { ApiSettings } = require('./lib/discovery/api-settings');
 const { buildTemplateFromDiscovery } = require('./lib/discovery/template-builder');
+const { toCatalogTemplate } = require('./lib/template-catalog');
+const { generationProjectId } = require('./lib/generation-project-id');
 
 const pool = new Pool({ 
     connectionString: process.env.DATABASE_URL,
@@ -781,7 +783,7 @@ app.patch('/api/projects/:projectId/shots/:shotId', async (req, res) => {
         // Payload merge（不覆蓋，只更新指定欄位）
         if (payloadPatch && typeof payloadPatch === 'object') {
             const currentPayload = shot.payload || {};
-            const allowedPayloadKeys = ['emotion', 'note', 'shotPrompt', 'finalPrompt', 'cameraDetails', 'image', 'imageHistory'];
+            const allowedPayloadKeys = ['emotion', 'note', 'shotPrompt', 'finalPrompt', 'cameraDetails', 'image', 'imageHistory', 'imageStatus', 'imageError', 'characters', 'dialogue', 'purpose', 'angle', 'sourceShot'];
             const patchedPayload = { ...currentPayload };
             for (const key of allowedPayloadKeys) {
                 if (payloadPatch[key] !== undefined) {
@@ -1058,6 +1060,15 @@ app.post('/api/projects', async (req, res) => {
 
         const { title, style, ratio, cover, metadata, characters, shots } = req.body;
 
+        const generationId = generationProjectId(decoded.id, metadata?.generationTaskId);
+        if (generationId) {
+            const existingProject = await prisma.project.findUnique({ where: { id: generationId }, include: { shots: true } });
+            if (existingProject) {
+                if (existingProject.is_deleted) return res.status(409).json({ error: '這份分鏡已被刪除，請建立新的分鏡。' });
+                return res.json({ message: '分鏡已儲存', project: existingProject, reused: true });
+            }
+        }
+
         if (!title) {
             return res.status(400).json({ error: '專案標題為必填欄位' });
         }
@@ -1074,6 +1085,7 @@ app.post('/api/projects', async (req, res) => {
 
         const project = await prisma.project.create({
             data: {
+                ...(generationId ? { id: generationId } : {}),
                 shortId,
                 authorId: decoded.id,
                 title,
@@ -1206,9 +1218,7 @@ app.get('/api/get-templates', async (req, res) => {
         const templates = await prisma.template.findMany({
             orderBy: { createAt: 'desc' }
         });
-        const dataArray = templates.map(t => {
-            return typeof t.content === 'string' ? JSON.parse(t.content) : t.content;
-        });
+        const dataArray = templates.map(toCatalogTemplate);
         res.json(dataArray);
     }
     catch (err) {

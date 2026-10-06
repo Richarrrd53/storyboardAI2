@@ -17,6 +17,7 @@
       styleIndex: 0,
       ratio: '橫向16:9',
       selectedTemplate: null,
+      templateValues: {},
       currentPhase: 1,
       targetPhase: 1,
       draft: {

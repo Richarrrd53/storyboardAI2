@@ -12,6 +12,78 @@ const storyboard = {
 };
 function deferred() { let resolve; const promise = new Promise(r => { resolve = r; }); return { promise, resolve }; }
 const response = (data, ok = true, status = 200) => ({ ok, status, json: async () => data });
+test('generation project IDs deduplicate retries and isolate authors', () => {
+  const { generationProjectId } = require('../lib/generation-project-id');
+  assert.equal(generationProjectId('a', 'task'), generationProjectId('a', 'task'));
+  assert.notEqual(generationProjectId('a', 'task'), generationProjectId('b', 'task'));
+  assert.match(generationProjectId('a', 'task'), /^[a-f0-9-]{36}$/);
+  assert.equal(generationProjectId('a', null), null);
+});
+test('save failure preserves output; retry saves without generating again', async () => {
+  let fail = true;
+  const f = fixture(url => url === '/api/projects' && fail ? response({ error: 'storage unavailable' }, false, 503) : undefined);
+  const run = f.task.start(options()); await f.drain(); await run;
+  assert.equal(f.task.getState().status, 'completed');
+  assert.equal(f.task.getState().save.status, 'failed');
+  const imageCalls = f.calls.filter(c => c.body.type === 'image').length;
+  fail = false; await f.task.retrySave();
+  assert.equal(f.task.getState().save.status, 'saved');
+  assert.equal(f.calls.filter(c => c.body.type === 'image').length, imageCalls);
+  assert.equal(f.calls.filter(c => c.url === '/api/projects')[0].body.metadata.generationTaskId, f.calls.at(-1).body.metadata.generationTaskId);
+});
+test('failed image repair reuses script, only renders failed shots and updates saved project', async () => {
+  let imageCount = 0;
+  const f = fixture((url, body) => body.type === 'image' && ++imageCount === 1 ? response({ error: 'image unavailable' }, false, 503) : undefined);
+  const run = f.task.start(options()); await f.drain(); await run;
+  assert.equal(f.task.getState().result.failedShotIndexes.length, 1);
+  await f.task.retryFailedImages();
+  assert.equal(f.task.getState().result.failedShotIndexes.length, 0);
+  assert.equal(imageCount, 3);
+  assert.equal(f.calls.filter(c => c.body.type === 'story').length, 1);
+  assert.equal(f.calls.filter(c => c.url === '/api/projects').length, 1);
+  assert.equal(f.calls.filter(c => c.url.includes('/shots/')).length, 2);
+  assert.equal(f.task.getState().save.status, 'saved');
+});
+test('template inputs reach adaptation; original fractional timing and cameras are preserved', async () => {
+  const f = fixture();
+  const run = f.task.start({ ...options(), templateValues: { product: 'Coffee' }, selectedTemplate: { id: 'tpl', structure: [{ camera: 'close', duration: '1.5s' }, { camera: 'wide', duration: '2s' }], promptTemplate: { base: 'Feature {product}' } } });
+  await f.drain(); await run;
+  assert.match(f.calls[0].body.question, /Feature Coffee/);
+  assert.equal(f.task.getState().result.generatedShotData[0].duration, '1.5s');
+  assert.equal(f.task.getState().result.generatedShotData[0].camera, 'close');
+  assert.equal(f.calls.at(-1).body.metadata.templateValues.product, 'Coffee');
+});
+test('invalid templates and mismatched adaptation stop before image requests', async () => {
+  for (const structure of [[], [{ action: 'one' }]]) {
+    const f = fixture(); const run = f.task.start({ ...options(), selectedTemplate: { structure } });
+    await f.drain(); await run;
+    assert.equal(f.task.getState().status, 'error');
+    assert.equal(f.calls.some(c => c.body.type === 'image'), false);
+  }
+});
+test('empty scripts and unresolved template prompts are retryable errors', async () => {
+  for (const data of [{ shots: [] }, { ...storyboard, shots: [{ ...storyboard.shots[0], shotPrompt: '{product}' }] }]) {
+    const f = fixture((url, body) => body.type === 'story' ? response({ response: JSON.stringify(data) }) : undefined);
+    const run = f.task.start({ ...options(), selectedTemplate: { structure: [{ action: 'one' }] } });
+    await f.drain(); await run;
+    assert.equal(f.task.getState().status, 'error');
+    assert.equal(f.calls.some(c => c.body.type === 'image'), false);
+  }
+});
+test('lost save response retry reconciles recovered project without duplicate creation', async () => {
+  let fail = true;
+  const f = fixture((url, body) => {
+    if (url !== '/api/projects') return undefined;
+    if (fail) return response({ error: 'lost response' }, false, 503);
+    return response({ reused: true, project: { id: 'recovered', shots: body.shots.map(s => ({ id: `recovered-${s.order}`, order: s.order })) } });
+  });
+  const run = f.task.start(options()); await f.drain(); await run;
+  fail = false; await f.task.retrySave();
+  assert.equal(f.task.getState().save.status, 'saved');
+  assert.equal(f.task.getState().projectId, 'recovered');
+  assert.equal(f.calls.filter(c => c.url.includes('/shots/')).length, 2);
+  assert.equal(f.calls.filter(c => c.body.type === 'story').length, 1);
+});
 async function tick() { for (let i = 0; i < 30; i++) await Promise.resolve(); }
 function fixture(customFetch) {
   const timers = new Map();
@@ -22,11 +94,11 @@ function fixture(customFetch) {
     setTimeout: (fn, ms) => { const id = ++timerId; timers.set(id, { fn, ms }); return id; },
     clearTimeout: id => timers.delete(id),
     fetch: async (url, init) => {
-      const body = JSON.parse(init.body);
+      const body = init.body ? JSON.parse(init.body) : {};
       calls.push({ url, body, signal: init.signal });
       const custom = customFetch?.(url, body, init, calls.length);
       if (custom !== undefined) return custom;
-      return response(url === '/api/projects' ? { project: { id: 'project-42' } }
+      return response(url === '/api/projects' ? { project: { id: 'project-42', shots: (body.shots || []).map(shot => ({ id: `shot-${shot.order}`, order: shot.order })) } }
         : body.type === 'story' ? { response: JSON.stringify(storyboard) } : { image: ['data:image/png;base64,test'] });
     },
     spaAuth: { isLoggedIn: () => true, getToken: () => 'test-token' },
@@ -61,7 +133,7 @@ test('start, sequential requests, progress, completed and original save contract
   const state = f.task.getState();
   assert.equal(state.taskId, taskId);
   assert.equal(state.status, 'completed'); assert.equal(state.projectId, 'project-42');
-  assert.deepEqual(states.filter(s => s.status === 'generating').map(s => s.progress.pct), [5, 30, 50, 71, 92, 95, 100]);
+  assert.deepEqual([...new Set(states.filter(s => s.status === 'generating').map(s => s.progress.pct))], [5, 30, 50, 71, 92, 95, 100]);
   assert.deepEqual(f.calls.map(c => c.url), ['/api/ask-gemini', '/api/ask-gemini', '/api/ask-gemini', '/api/projects']);
   assert.deepEqual(f.calls.slice(0, 3).map(c => c.body.type), ['story', 'image', 'image']);
   assert.equal(f.calls[0].body.ratio, '橫向16:9');
@@ -84,15 +156,16 @@ test('duplicate start shares one promise, one task id and one API chain', async 
 });
 
 test('template path retains normalized payload and image failure fallback', async () => {
-  const f = fixture((url, body) => body.type === 'image' ? response({ error: 'image unavailable' }, false, 500) : undefined);
+  const f = fixture((url, body) => body.type === 'image' ? response({ error: 'image unavailable' }, false, 500) : body.type === 'story' ? response({ response: JSON.stringify({ ...storyboard, shots: [storyboard.shots[0]] }) }) : undefined);
   const input = { ...options(), selectedTemplate: { id: 'tpl', name: 'Template', structure: [{ action: 'Open', camera: 'close', duration: '2s' }] } };
   const done = f.task.start(input); await f.drain(); await done;
   const state = f.task.getState();
   assert.equal(state.status, 'completed'); assert.equal(state.result.generatedImgs[0], '../icon/error.jpg');
-  assert.equal(f.calls.some(c => c.body.type === 'story'), false);
+  assert.equal(f.calls.some(c => c.body.type === 'story'), true);
   const saved = f.calls.at(-1).body;
-  assert.equal(saved.title, 'Template'); assert.equal(saved.metadata.templateId, 'tpl');
-  assert.equal(saved.shots[0].duration, '2s'); assert.equal(Object.keys(saved.characters).length, 0);
+  assert.equal(saved.title, 'Journey'); assert.equal(saved.metadata.templateId, 'tpl');
+  assert.equal(saved.shots[0].duration, '2s'); assert.equal(Object.keys(saved.characters).length, 1);
+  assert.equal(saved.shots[0].payload.imageStatus, 'failed');
 });
 
 test('story error and malformed JSON are terminal, retry keeps original task input', async () => {

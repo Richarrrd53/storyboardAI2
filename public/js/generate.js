@@ -37,6 +37,21 @@
   ];
 
   let TEMPLATES = [];
+  let templateLoading = false, templateError = null, requestedTemplateId = null;
+  function renderTemplateSelection() {
+      window.TemplateWorkflow?.selection(CreationSessionStore, { loading: templateLoading, error: templateError }, pageController?.signal);
+      onStoryInput();
+  }
+  async function loadRequestedTemplate() {
+      templateLoading = true; templateError = null; renderTemplateSelection();
+      const mount = pageController;
+      const templates = await ensureTemplatesLoaded();
+      if (mount !== pageController || mount?.signal.aborted) return;
+      templateLoading = false;
+      const template = templates.find(t => t.id === requestedTemplateId);
+      if (template) selectTemplateCard(template);
+      else { templateError ||= '無法載入此模板，請重試或選擇其他模板。'; renderTemplateSelection(); }
+  }
   let isTransitioningPhase = false;
   let pageController = null;
   let unsubscribeTask = null;
@@ -59,6 +74,38 @@
       node.removeAttribute('on' + type); // Avoid running both HTML inline and mounted handlers.
       boundNodes.add(node);
       node.addEventListener(type, callback, { signal: pageController.signal });
+  }
+
+  // 桌面空白處可拖曳捲動；觸控使用瀏覽器原生滑動，保留卡片與按鈕操作。
+  function bindDirectionScrolling() {
+      const panel = document.getElementById('phase-panel-2');
+      if (!panel) return;
+      let drag = null;
+      const finish = () => {
+          if (drag && panel.hasPointerCapture(drag.id)) panel.releasePointerCapture(drag.id);
+          drag = null;
+          panel.classList.remove('is-drag-scrolling');
+      };
+      bindPageEvent(panel, 'pointerdown', event => {
+          if (event.pointerType !== 'mouse' || event.button !== 0 ||
+              event.target.closest('button, a, input, textarea, select, .style-card, .ratio-chip')) return;
+          // 保留原生捲軸的拖曳，避免與空白處拖曳互相干擾。
+          if (event.clientX >= panel.getBoundingClientRect().left + panel.clientWidth) return;
+          drag = { id: event.pointerId, y: event.clientY, scroll: panel.scrollTop };
+      });
+      bindPageEvent(panel, 'pointermove', event => {
+          if (!drag || event.pointerId !== drag.id || !(event.buttons & 1)) return;
+          const distance = event.clientY - drag.y;
+          if (Math.abs(distance) < 5 && !panel.classList.contains('is-drag-scrolling')) return;
+          panel.setPointerCapture(drag.id);
+          panel.classList.add('is-drag-scrolling');
+          panel.scrollTop = drag.scroll - distance;
+          event.preventDefault();
+      });
+      bindPageEvent(panel, 'pointerup', finish);
+      bindPageEvent(panel, 'pointercancel', finish);
+      bindPageEvent(panel, 'lostpointercapture', () => { drag = null; panel.classList.remove('is-drag-scrolling'); });
+      pageController.signal.addEventListener('abort', finish, { once: true });
   }
 
   function unmountGeneratePage() {
@@ -285,7 +332,7 @@
 
       const val = input.value.trim();
       const hasVal = val.length > 0;
-      btn.disabled = !hasVal;
+      btn.disabled = !hasVal || templateLoading;
       btn.setAttribute('data-active', hasVal ? 'true' : 'false');
       CreationSessionStore.draft.story = input.value;
   }
@@ -306,7 +353,7 @@
   function submitPhase1Story() {
       const input = document.getElementById('story-input');
       const story = (input ? input.value.trim() : '') || CreationSessionStore.draft.story;
-      if (!story) return;
+      if (!story || templateLoading) return;
 
       CreationSessionStore.story = story;
       CreationSessionStore.draft.story = story;
@@ -439,15 +486,19 @@
       const mount = pageController;
       try {
           const res = await fetch('/api/get-templates', { signal: mount?.signal });
+          if (!res.ok) throw new Error('模板載入失敗，請重試。');
           if (res.ok) {
               const templates = await res.json();
               if (pageController !== mount || mount?.signal.aborted) return TEMPLATES;
-              TEMPLATES = templates;
+              TEMPLATES = Array.isArray(templates) ? templates : [];
+              templateError = null;
           }
       } catch (err) {
           if (err.name === 'AbortError' || pageController !== mount || mount?.signal.aborted) return TEMPLATES;
           console.error("Failed to load templates:", err);
           TEMPLATES = [];
+          templateError = err.message;
+          renderTemplateSelection();
       }
       return TEMPLATES;
   }
@@ -637,7 +688,10 @@
   }
 
   function selectTemplateCard(tpl) {
+      if (CreationSessionStore.selectedTemplate?.id !== tpl.id) CreationSessionStore.templateValues = {};
       CreationSessionStore.selectedTemplate = tpl;
+      templateError = null;
+      renderTemplateSelection();
       document.querySelectorAll('#template-cards-container .template-card').forEach(c => {
           const isThis = c.dataset.id === tpl.id;
           c.classList.toggle('selected', isThis);
@@ -659,11 +713,16 @@
   function skipTemplateAndGenerate() {
       if (window.GenerationTask.getState().status !== 'generating') window.GenerationTask.reset();
       CreationSessionStore.selectedTemplate = null;
+      CreationSessionStore.templateValues = {};
+      templateError = null; renderTemplateSelection();
       switchPhase(4);
   }
   window.skipTemplateAndGenerate = skipTemplateAndGenerate;
 
   function applySelectedTemplateAndGenerate() {
+      if (!CreationSessionStore.selectedTemplate?.structure?.length) {
+          templateError = '請選擇含有鏡頭結構的模板。'; renderTemplateSelection(); return;
+      }
       if (window.GenerationTask.getState().status !== 'generating') window.GenerationTask.reset();
       switchPhase(4);
   }
@@ -707,7 +766,8 @@
           story: CreationSessionStore.story,
           style: STYLES[CreationSessionStore.styleIndex] || STYLES[0],
           ratio: CreationSessionStore.ratio,
-          selectedTemplate: CreationSessionStore.selectedTemplate
+          selectedTemplate: CreationSessionStore.selectedTemplate,
+          templateValues: { ...CreationSessionStore.templateValues }
       });
   }
 
@@ -724,35 +784,7 @@
           resultWrap.style.opacity = '1';
       }
 
-      // Metadata summary
-      const metaEl = document.getElementById('result-meta-info');
-      const count = result.generatedImgs.length;
-      const stName = task.input.style.name;
-      const r = task.input.ratio;
-      if (metaEl) {
-          metaEl.textContent = `${count} 個鏡頭 · ${stName} · ${r}`;
-      }
-
-      // Render Shots Grid
-      const grid = document.getElementById('storyboard-grid');
-      if (grid) {
-          grid.innerHTML = '';
-          result.generatedImgs.forEach((imgSrc, i) => {
-              const card = document.createElement('div');
-              card.className = 'shot-card';
-              card.innerHTML = `
-                  <div class="shot-card-thumb">
-                      <img src="${imgSrc}" alt="Shot ${i + 1}">
-                      <span class="shot-num-badge">#${i + 1}</span>
-                  </div>
-                  <div class="shot-card-meta">
-                      <div class="shot-title">${result.generatedStoryTitles[i] || `鏡頭 ${i + 1}`}</div>
-                      <div class="shot-cam">${result.generatedStoryCams[i] || '一般鏡頭'}</div>
-                  </div>
-              `;
-              grid.appendChild(card);
-          });
-      }
+      window.TemplateWorkflow.results(task);
   }
 
   function abortGeneration() {
@@ -762,9 +794,12 @@
 
   function resetCreationWorkflow() {
       window.GenerationTask.reset();
+      document.getElementById('generation-error-banner').hidden = true;
       CreationSessionStore.targetPhase = 1;
       CreationSessionStore.story = '';
       CreationSessionStore.selectedTemplate = null;
+      CreationSessionStore.templateValues = {};
+      templateError = null; renderTemplateSelection();
       CreationSessionStore.draft.story = '';
       CreationSessionStore.currentPhase = 1;
       const input = document.getElementById('story-input');
@@ -779,25 +814,7 @@
   function exportStoryboardJson() {
       const task = window.GenerationTask.getState();
       if (!task.input) return;
-      const result = task.result;
-      const exportData = {
-          story: task.input.story,
-          style: task.input.style.name,
-          ratio: task.input.ratio,
-          shots: result.generatedImgs.map((img, i) => ({
-              shot: i + 1,
-              title: result.generatedStoryTitles[i] || '',
-              camera: result.generatedStoryCams[i] || '',
-              image: img
-          }))
-      };
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `storyboard_${Date.now()}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
+      window.TemplateWorkflow.exportJSON(task);
   }
   window.exportStoryboardJson = exportStoryboardJson;
 
@@ -811,6 +828,7 @@
       if (task.status === 'completed' && CreationSessionStore.currentPhase === 4) {
           renderResults(task);
       } else if (task.status === 'generating') {
+          document.getElementById('generation-error-banner').hidden = true;
           const progress = document.getElementById('generation-progress-wrap');
           const result = document.getElementById('generation-result-wrap');
           if (progress) progress.style.display = 'flex';
@@ -818,7 +836,8 @@
       } else if (task.status === 'error') {
           if (lastErrorTaskId !== task.taskId) {
               lastErrorTaskId = task.taskId;
-              alert('生成發生異常：' + task.error.message);
+              document.getElementById('generation-error-banner').hidden = false;
+              document.getElementById('generation-error-message').textContent = '生成發生異常：' + task.error.message;
           }
           switchPhase(2, false);
       } else if (task.status === 'cancelled') {
@@ -832,8 +851,19 @@
       pageController = new AbortController();
       const mount = pageController;
       const unmount = () => { if (pageController === mount) unmountGeneratePage(); };
+      bindDirectionScrolling();
       options.signal?.addEventListener('abort', unmount, { once: true });
       routeCleanup = () => options.signal?.removeEventListener('abort', unmount);
+      requestedTemplateId = options.templateId || window.preselectedTemplateId || null;
+      window.preselectedTemplateId = null;
+      templateLoading = false; templateError = null;
+      if (requestedTemplateId && window.GenerationTask.getState().status !== 'generating') {
+          CreationSessionStore.reset();
+          CreationSessionStore.ratio = '直向9:16';
+      }
+      bindPageEvent(document.getElementById('btn-reload-template'), 'click', () => requestedTemplateId ? loadRequestedTemplate() : ensureTemplatesLoaded().then(() => { renderTemplateBrowser(); renderTemplateSelection(); }));
+      bindPageEvent(document.getElementById('btn-retry-generation'), 'click', () => { window.GenerationTask.retry(); switchPhase(4, false); });
+      bindPageEvent(document.getElementById('btn-edit-generation-brief'), 'click', () => { document.getElementById('generation-error-banner').hidden = true; switchPhase(1); });
       const input = document.getElementById('story-input');
       if (input && !input.dataset.bound) {
           input.dataset.bound = 'true';
@@ -953,14 +983,8 @@
           if (input) input.value = story;
       }
 
-      // If preselected template
-      if (window.preselectedTemplateId) {
-          ensureTemplatesLoaded().then(tpls => {
-              if (pageController !== mount || mount.signal.aborted) return;
-              const t = tpls.find(x => x.id === window.preselectedTemplateId);
-              if (t) CreationSessionStore.selectedTemplate = t;
-          });
-      }
+      if (requestedTemplateId && task.status !== 'generating') loadRequestedTemplate();
+      else renderTemplateSelection();
 
       unsubscribeTask = window.GenerationTask.subscribe(presentTask);
       switchPhase(targetPhase, false);

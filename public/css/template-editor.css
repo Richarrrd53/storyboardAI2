@@ -1,0 +1,182 @@
+/* 模板詳情剪輯工作區：僅處理 editor-* 元件，不覆蓋影片結構儀表板。 */
+.editor-studio {
+  --editor-border: #2b303d;
+  --editor-muted: #949dac;
+  --editor-accent: #a99bff;
+  overflow: hidden;
+  border: 1px solid var(--editor-border);
+  border-radius: 18px;
+  background: #10131a;
+  color: #e8ecf4;
+  box-shadow: 0 24px 70px #0003;
+  font-size: 13px;
+}
+.editor-studio * { box-sizing: border-box; }
+.editor-studio button, .editor-studio input { font: inherit; }
+.editor-studio button { cursor: pointer; }
+.editor-studio button:disabled { opacity: .4; cursor: default; }
+.editor-studio button:focus-visible, .editor-studio summary:focus-visible { outline: 2px solid var(--editor-accent); outline-offset: 3px; }
+.editor-studio [hidden] { display: none !important; }
+.editor-studio-topbar, .editor-studio-footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 18px; background: #1c202b; }
+.editor-studio-topbar > div { display: flex; align-items: center; gap: 10px; }
+.editor-studio-topbar > span, .editor-studio-footer { color: var(--editor-muted); font-size: 12px; }
+.editor-status-dot { width: 6px; height: 6px; border-radius: 50%; background: #a99bff; box-shadow: 0 0 10px #a99bff66; }
+.editor-topbar-note { margin-left: 12px; color: #7c8597; font: 10px ui-monospace, monospace; letter-spacing: .1em; }
+
+/* 三欄固定工作區：素材與屬性各自捲動，監看器維持在中央。 */
+.editor-panels { display: grid; grid-template-columns: minmax(190px, .75fr) minmax(320px, 1.8fr) minmax(270px, 1fr); gap: 1px; padding: 1px 0; background: var(--editor-border); }
+.editor-panel { display: flex; flex-direction: column; min-width: 0; height: clamp(480px, 58vh, 580px); overflow: hidden; background: #171b24; }
+.editor-studio .editor-media { display: flex; }
+.editor-panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 46px; padding: 0 16px; border-bottom: 1px solid var(--editor-border); }
+.editor-panel-heading h3 { margin: 0; font-size: 13px; font-weight: 650; }
+.editor-panel-heading > span { color: #8992a4; font: 10px ui-monospace, monospace; white-space: nowrap; }
+.editor-panel-scroll { flex: 1; min-height: 0; padding: 14px; overflow: auto; scrollbar-width: thin; scrollbar-color: #41495b transparent; }
+.editor-tabs { display: flex; gap: 2px; padding: 7px 10px; border-bottom: 1px solid var(--editor-border); }
+.editor-tabs button { border: 0; border-radius: 5px; padding: 8px 11px; background: transparent; color: #919aab; font-size: 12px; white-space: nowrap; }
+.editor-tabs button:hover { color: #fff; background: #ffffff08; }
+.editor-tabs button[aria-selected="true"] { background: #a99bff1a; color: #c7bfff; }
+.editor-source-card { display: grid; gap: 6px; }
+.editor-source-card > strong { font-weight: 600; line-height: 1.5; }
+.editor-source-card > span { color: var(--editor-muted); font-size: 12px; }
+.editor-source-thumb { position: relative; min-height: 90px; border-radius: 7px; overflow: hidden; background: #0b0d13; }
+.editor-source-thumb img { display: block; width: 100%; max-height: 124px; object-fit: cover; }
+.editor-source-thumb:empty::after { content: '未提供來源封面'; display: block; padding: 36px 12px; text-align: center; color: #6f788a; }
+.editor-source-stats { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 12px 0 18px; color: var(--editor-muted); font-size: 10px; line-height: 1.7; }
+.editor-list-heading { display: flex; justify-content: space-between; margin: 12px 0; color: #b4bccb; font-size: 11px; }
+.editor-shot-item { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; align-items: center; gap: 9px; width: 100%; margin-bottom: 5px; padding: 9px; border: 1px solid transparent; border-radius: 6px; background: #ffffff03; color: #aab3c3; text-align: left; }
+.editor-shot-item > b { color: #b6aaff; font: 11px ui-monospace, monospace; }
+.editor-shot-item > span { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; line-height: 1.5; font-size: 12px; }
+.editor-shot-item > small { color: #737f94; font: 10px ui-monospace, monospace; }
+.editor-shot-item:hover, .editor-shot-item.is-active { border-color: #a99bff55; background: #a99bff12; color: #e8ecf4; }
+.editor-help { margin: 0 0 16px; color: var(--editor-muted); line-height: 1.8; }
+.editor-studio .editor-prompts h4 { margin: 0 0 8px; color: #c4b8ff; font-size: 12px; }
+.editor-studio .editor-prompts p { margin: 0 0 20px; color: #c1c8d4; font-size: 12px; line-height: 1.8; overflow-wrap: anywhere; }
+.editor-variable { padding: 12px; margin: 8px 0; border: 1px solid var(--editor-border); border-radius: 6px; color: #d0c7ff; background: #211f31; }
+
+/* 影片使用直式安全區，播放器與操作列不因素材欄寬度而變形。 */
+.editor-studio .editor-monitor { background: #0d1017; }
+.editor-monitor-stage { flex: 1; min-height: 0; display: flex; justify-content: center; align-items: center; padding: 16px; background: radial-gradient(ellipse at center, #202535, #0d1017 70%); }
+.editor-studio #detail-program-monitor { width: auto; height: 100%; max-width: 100%; aspect-ratio: 9 / 16; border: 1px solid #ffffff12; border-radius: 4px; box-shadow: 0 12px 30px #0006; }
+.editor-studio #detail-program-monitor :is(iframe, video, #detail-source-player) { width: 100%; height: 100%; border: 0; }
+.editor-studio #detail-program-monitor .nle-monitor-fallback { padding: 16px; text-align: center; color: #828c9f; font-size: 12px; }
+.editor-monitor-caption { display: flex; align-items: center; gap: 10px; padding: 10px 16px; min-width: 0; }
+.editor-monitor-caption > span:first-child { color: #b3a5ff; white-space: nowrap; font: 11px ui-monospace, monospace; }
+.editor-monitor-caption > span:last-child { color: #949fb1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
+.editor-studio .video-player-controls { flex: 0 0 auto; gap: 10px; padding: 12px 16px; border-top: 1px solid #ffffff08; background: #171b25; }
+.editor-studio .btn-player-playpause { display: grid; place-items: center; width: 30px; height: 30px; flex: 0 0 30px; border-radius: 5px; background: #a99bff1a; color: #cdc4ff; }
+.editor-studio .player-scrubber-track { flex: 1; min-width: 30px; touch-action: none; }
+.editor-studio :is(.player-time-current, .player-time-duration) { color: #a6b0c3; font: 11px ui-monospace, monospace; }
+.editor-monitor-tools { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-top: 1px solid var(--editor-border); gap: 8px; }
+.editor-monitor-tools button { padding: 4px 0; border: 0; background: transparent; color: #b1bad0; font-size: 11px; white-space: nowrap; }
+.editor-monitor-tools > span { color: #626e84; font-size: 10px; text-align: center; }
+
+/* 固定屬性面板取代覆蓋時間軸的浮動視窗，完整文案可換行與捲動。 */
+.editor-selection-heading { display: flex; align-items: baseline; gap: 8px; padding: 0 0 16px; border-bottom: 1px solid var(--editor-border); }
+.editor-selection-heading > span { color: #ae9fff; font: 10px ui-monospace, monospace; }
+.editor-selection-heading h4 { margin: 0; font-size: 13px; }
+.editor-studio #local-inspector-body { padding-top: 14px; line-height: 1.75; overflow-wrap: anywhere; }
+.editor-studio #local-inspector-body h5 { margin: 14px 0 6px; color: #838fa5; font-size: 11px; }
+.editor-studio #local-inspector-body p { margin: 0; color: #c9d1e0; }
+.editor-studio #local-inspector-body dl > div { padding: 9px 0; border-bottom: 1px solid #ffffff08; }
+.editor-studio #local-inspector-body dt { color: #8994a8; font-size: 11px; margin-bottom: 4px; }
+.editor-studio #local-inspector-body dd { margin: 0; white-space: pre-wrap; color: #d1d8e5; font-size: 13px; }
+.editor-studio .btn-play-segment { border: 1px solid #a99bff55; border-radius: 5px; padding: 8px 12px; background: #a99bff12; color: #d0c6ff; }
+.editor-studio #template-information { padding: 14px; }
+.editor-studio #template-information details { padding: 12px 0; }
+.editor-studio #template-information summary { font-size: 12px; font-weight: 600; color: #c0c9d8; }
+.editor-studio #template-information dl > div { display: block; }
+.editor-studio #template-information dt { color: #7c89a0; font-size: 11px; }
+.editor-studio #template-information dd { margin: 5px 0 8px; line-height: 1.7; color: #bcc7d9; font-size: 12px; }
+.editor-studio #template-information ol { padding-left: 20px; line-height: 1.8; overflow-wrap: anywhere; }
+
+/* 下方序列工作區：時間軸與分鏡表切換時，監看器／所選鏡頭維持同步。 */
+.editor-sequence { min-width: 0; border-top: 1px solid var(--editor-border); }
+.editor-sequence-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 14px; background: #1c202b; border-bottom: 1px solid var(--editor-border); }
+.editor-sequence-heading .editor-tabs { border: 0; padding: 9px 0; }
+.editor-sequence-summary { display: flex; gap: 16px; align-items: center; color: #848fa2; font: 11px ui-monospace, monospace; }
+.editor-sequence-summary > span:last-child { color: #cec3ff; padding: 5px 9px; border: 1px solid #ffffff0d; border-radius: 4px; background: #10131a; }
+.editor-timeline-tools { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 16px; background: #151922; }
+.editor-studio .track-filter-pills { flex-wrap: wrap; gap: 5px; }
+.editor-studio .track-filter-pill { padding: 5px 9px; font-size: 11px; min-height: 28px; }
+.editor-zoom { display: flex; gap: 8px; align-items: center; flex: 0 0 auto; color: #8d98ac; font-size: 11px; }
+.editor-zoom input { width: 70px; accent-color: #a99bff; }
+.editor-zoom output { min-width: 32px; font-family: ui-monospace, monospace; }
+.editor-studio .timeline-scroll-container { width: 100%; overflow: auto; max-height: 400px; scrollbar-width: thin; scrollbar-color: #42485b #10131a; }
+.editor-studio .timeline-editor-body { min-width: 880px; width: 100%; }
+.editor-studio .track-header-cell { width: 130px; min-width: 130px; position: sticky; left: 0; z-index: 4; background: #1c212c; }
+.editor-studio .track-header-cell span { color: #8994a8; }
+.editor-studio .track-shots-row { min-height: 68px; }
+.editor-studio .shot-block { top: 8px; height: 50px; border-radius: 5px; background: linear-gradient(135deg, #5a507d, #39334f); }
+.editor-studio .shot-block.active { box-shadow: inset 0 0 0 2px #c0b0ff; }
+.editor-studio .timeline-playhead { z-index: 5; pointer-events: none; }
+.editor-studio .timeline-block { text-align: left; cursor: pointer; }
+
+/* 企劃分鏡表：具體拍攝需求優先，提示詞另行展開，不以剪輯術語為主。 */
+.editor-board-intro { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 20px; background: #191e29; }
+.editor-board-intro h3 { margin: 0 0 6px; font-size: 16px; font-weight: 650; }
+.editor-board-intro p { margin: 0; color: #929eb3; font-size: 12px; line-height: 1.8; }
+.editor-board-intro > button { flex: 0 0 auto; padding: 8px 12px; border: 1px solid #41465a; border-radius: 6px; background: #242a38; color: #c8d0e0; font-size: 12px; }
+.editor-board-scroll { overflow: auto; max-height: 640px; }
+.editor-board-table { width: 100%; min-width: 1020px; border-collapse: collapse; table-layout: fixed; text-align: left; }
+.editor-board-table th { position: sticky; top: 0; z-index: 2; background: #232937; color: #8d9bb2; font-size: 11px; font-weight: 600; padding: 13px 16px; }
+.editor-board-table th:nth-child(1) { width: 12%; }
+.editor-board-table th:nth-child(2) { width: 14%; }
+.editor-board-table th:nth-child(3) { width: 34%; }
+.editor-board-table th:nth-child(4) { width: 16%; }
+.editor-board-table th:nth-child(5) { width: 7%; }
+.editor-board-table th:nth-child(6) { width: 17%; }
+.editor-board-table td { vertical-align: top; padding: 18px 16px; border-bottom: 1px solid #2a303d; color: #c5cfdf; line-height: 1.75; overflow-wrap: anywhere; }
+.editor-board-table tr:nth-child(even) { background: #ffffff02; }
+.editor-board-table tr.is-active { background: #a99bff0d; }
+.editor-board-table tr.is-active td:first-child { box-shadow: inset 3px 0 #ae9eff; }
+.editor-board-table td > strong { display: block; color: #e0e6f1; font-size: 13px; font-weight: 500; }
+.editor-board-table small { display: block; color: #7f8fa8; font-size: 11px; }
+.editor-board-table .editor-shot-select { border: 0; background: transparent; color: #c6b9ff; padding: 0; font: 600 14px ui-monospace, monospace; text-align: left; }
+.editor-board-table .editor-ref-preview { display: block; width: 100%; height: 78px; position: relative; overflow: hidden; border-radius: 6px; border: 1px solid #ffffff0a; background: linear-gradient(135deg, #2a2d40, #1a1e2a); color: #8590a7; }
+.editor-ref-preview img { width: 100%; height: 100%; object-fit: cover; }
+.editor-ref-preview img + span { display: none; }
+.editor-ref-preview > span { position: absolute; inset: 0; display: grid; place-items: center; font: 22px ui-monospace, monospace; }
+.editor-board-table details { margin-top: 10px; color: #a197ce; font-size: 11px; }
+.editor-board-table summary { cursor: pointer; }
+.editor-board-table details p { color: #a5b0c6; font-size: 12px; white-space: pre-wrap; }
+.editor-board-dialogue { margin: 10px 0 0; color: #9eabc1; font-size: 12px; }
+.editor-board-empty { padding: 48px 20px !important; text-align: center; color: #818ea5 !important; }
+.editor-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.editor-studio-footer { padding: 10px 16px; font-size: 10px; border-top: 1px solid var(--editor-border); background: #151922; }
+
+/* 平板保留素材與監看器並排，屬性面板移至下方，避免擠壓影片。 */
+@media (max-width: 1100px) {
+  .editor-panels { grid-template-columns: minmax(200px, .7fr) minmax(0, 1.3fr); }
+  .editor-inspector { grid-column: 1 / -1; height: 320px; }
+  .editor-inspector #local-inspector-body dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 18px; }
+  .editor-timeline-tools { align-items: flex-start; }
+}
+
+/* 手機完整保留素材、監看器與屬性；分鏡表改為附欄位名稱的直向卡片。 */
+@media (max-width: 760px) {
+  .editor-studio { margin-inline: 8px; border-radius: 12px; }
+  .editor-studio-topbar { padding: 12px; }
+  .editor-studio-topbar > span, .editor-topbar-note { display: none; }
+  .editor-panels { display: flex; flex-direction: column; }
+  .editor-monitor { order: -1; height: 520px; }
+  .editor-media { height: 340px; }
+  .editor-inspector { height: 370px; }
+  .editor-inspector #local-inspector-body dl { display: block; }
+  .editor-monitor-tools > span { display: none; }
+  .editor-sequence-heading { padding-inline: 10px; flex-wrap: wrap; gap: 0; }
+  .editor-sequence-summary { margin: 0 0 10px; font-size: 10px; }
+  .editor-timeline-tools { flex-direction: column; gap: 10px; padding: 10px; }
+  .editor-board-intro { flex-direction: column; align-items: flex-start; padding: 16px; gap: 12px; }
+  .editor-board-table, .editor-board-table tbody { display: block; min-width: 0; }
+  .editor-board-table thead { display: none; }
+  .editor-board-table tr { display: block; padding: 14px; border-bottom: 1px solid #363b4a; }
+  .editor-board-table td { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 4px 12px; padding: 8px 0; border: 0; font-size: 12px; }
+  .editor-board-table td::before { content: attr(data-label); color: #78879f; font-size: 11px; grid-column: 1; grid-row: 1 / span 6; }
+  .editor-board-table td > * { grid-column: 2; }
+  .editor-board-table tr.is-active td:first-child { box-shadow: none; }
+  .editor-board-table tr.is-active { box-shadow: inset 3px 0 #ae9eff; }
+  .editor-board-table .editor-ref-preview { width: 124px; }
+  .editor-board-table .editor-board-empty { display: block; }
+  .editor-board-table .editor-board-empty::before { display: none; }
+  .editor-studio-footer > span:last-child { display: none; }
+}

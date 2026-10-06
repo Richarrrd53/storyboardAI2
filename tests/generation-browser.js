@@ -58,7 +58,7 @@ async function until(predicate, label) {
       if (url.pathname === '/api/get-templates' && holdTemplates) { templateRequests.push(route); return; }
       if (url.pathname === '/api/get-templates') return fulfill([{ id: 'browser-template', name: 'Browser template', category: 'story', description: 'Fixture', structure: [{ action: 'Open', camera: 'close' }] }]);
       if (url.pathname === '/api/ask-gemini') {
-        if (body.type === 'story') return failStory ? fulfill({ error: 'fixture error' }, 503) : fulfill({ response: JSON.stringify(storyboard) });
+        if (body.type === 'story') return failStory ? fulfill({ error: 'fixture error' }, 503) : fulfill({ response: JSON.stringify(body.question?.includes("模板") ? { ...storyboard, shots: storyboard.shots.slice(0, 1) } : storyboard) });
         held.push(route); return;
       }
       return fulfill({});
@@ -124,9 +124,9 @@ async function until(predicate, label) {
     await page.locator('#story-input').fill('Failure and retry'); await page.locator('#story-input').press('Enter'); await phase(2);
     await page.locator('#btn-direction-next').click(); await phase(3); await page.locator('#btn-skip-template').click();
     await taskStatus('error'); await phase(2);
-    await page.locator('.sys-btn').click();
+    assert.equal(await page.locator('#generation-error-banner').isVisible(), true);
     failStory = false;
-    await page.locator('#btn-direction-next').click(); await phase(3); await page.locator('#btn-skip-template').click(); await phase(4);
+    await page.locator('#btn-retry-generation').click(); await phase(4);
     await until(() => held.length === 1, 'retry image');
     await page.locator('#btn-abort-generation').click(); await taskStatus('cancelled'); await phase(2);
     await release(); await page.evaluate(() => resetCreationWorkflow()); await phase(1);

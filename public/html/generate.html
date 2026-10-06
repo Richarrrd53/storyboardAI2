@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="../css/style.css" />
     <link rel="stylesheet" href="../css/generate.css" />
     <link rel="stylesheet" href="../css/template.css" />
+    <link rel="stylesheet" href="../css/template-workflow.css?v=20261006-4" />
     <link rel="stylesheet" href="../css/math-curve-loader.css" />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
 </head>
@@ -70,6 +71,8 @@
                      Phase 1 — Idea (輸入故事)
                      Spec items 6, 7, 8, 9
                 ════════════════════════════════════════════════════ -->
+                <div class="template-entry-banner" id="template-entry-banner" role="status" hidden><div><strong id="template-entry-title"></strong><p id="template-entry-description"></p></div><button type="button" id="btn-reload-template" hidden>重試載入</button></div>
+                <div class="generation-error-banner" id="generation-error-banner" role="alert" hidden><p id="generation-error-message"></p><button type="button" id="btn-retry-generation">重試這次生成</button><button type="button" id="btn-edit-generation-brief">修改企劃</button></div>
                 <div class="phase-panel phase-1-panel active" id="phase-panel-1">
                     <div class="phase-hero-headline" id="phase1-headline">
                         <h1 class="hero-title">建立新的分鏡</h1>
@@ -105,10 +108,11 @@
                      Phase 2 — Direction (創作方向)
                      Spec items 11, 12, 13
                 ════════════════════════════════════════════════════ -->
-                <div class="phase-panel phase-2-panel" id="phase-panel-2">
+                <div class="phase-panel phase-2-panel" id="phase-panel-2" role="region" aria-label="創作方向，可捲動選擇風格與畫面比例" tabindex="0">
                     <div class="direction-header">
                         <div class="direction-badge-wrap">
                             <span class="direction-title-badge">✦ 創作方向</span>
+                            <span class="direction-scroll-hint">可拖曳空白處或使用捲軸瀏覽</span>
                         </div>
                         <!-- AI 推薦文字 (打字機效果) -->
                         <div class="direction-ai-box" id="direction-ai-box">
@@ -199,6 +203,7 @@
                     </div>
 
                     <!-- 動作按鈕 -->
+                    <section id="template-customization" class="template-customization" aria-label="模板客製設定" hidden><h3 id="template-customization-title"></h3><p id="template-customization-summary"></p><p>填入你的角色、場景與商品。欄位為選填，未填內容將依企劃自動規劃。</p><div id="template-variable-fields"></div><details><summary>查看參考鏡頭結構</summary><div id="template-reference-summary"></div></details></section>
                     <div class="phase-actions-footer template-actions-footer">
                         <button type="button" class="btn btn-ghost" id="btn-template-back" onclick="switchPhase(2)">← 返回創作方向</button>
                         <button type="button" class="btn btn-primary" id="btn-template-confirm" onclick="applySelectedTemplateAndGenerate()" disabled>
@@ -274,7 +279,7 @@
                     <div class="generation-result-wrap" id="generation-result-wrap" style="display: none;">
                         <div class="result-header">
                             <div class="result-info">
-                                <h2 class="result-title">分鏡草稿已就緒 ✦</h2>
+                                <h2 id="result-heading" class="result-title">分鏡草稿已就緒 ✦</h2>
                                 <p class="result-meta" id="result-meta-info"></p>
                             </div>
                             <div class="result-actions">
@@ -282,7 +287,10 @@
                                 <button type="button" class="btn btn-primary btn-sm" onclick="resetCreationWorkflow()">+ 新建分鏡</button>
                             </div>
                         </div>
+                        <div class="result-workflow-status"><p id="result-save-status" role="status"></p><div><button type="button" id="btn-retry-save">重試儲存</button><button type="button" id="btn-open-generated-project" hidden>開啟專案編輯</button><button type="button" id="btn-retry-failed-images" hidden>重試失敗圖片</button><button type="button" id="btn-export-result-csv">匯出企劃分鏡表</button></div></div>
+                        <div class="result-view-switch" role="tablist" aria-label="生成結果檢視"><button type="button" role="tab" aria-selected="true" data-result-view="images">圖像分鏡</button><button type="button" role="tab" aria-selected="false" data-result-view="table">企劃分鏡表</button></div>
                         <div class="storyboard-grid" id="storyboard-grid"></div>
+                        <div class="generated-storyboard-table" id="generated-storyboard-table" hidden><table><caption>生成結果：企劃分鏡表</caption><thead><tr><th>鏡頭</th><th>畫面與對白</th><th>拍攝方式</th><th>時長</th><th>情緒與目的</th><th>圖片狀態</th></tr></thead><tbody id="generated-storyboard-body"></tbody></table></div>
                     </div>
                 </div>
 
@@ -299,7 +307,8 @@
     <script src="../js/dynamic-mask.js"></script>
     <script src="../js/features/creation.js"></script>
     <script src="../js/features/generation-task.js"></script>
-    <script src="../js/generate.js"></script>
+    <script src="../js/features/template-workflow.js?v=20261006-3"></script>
+    <script src="../js/generate.js?v=20261006-4"></script>
     <script>initGeneratePage();</script>
     <script src="../js/sys.js"></script>
 </body>

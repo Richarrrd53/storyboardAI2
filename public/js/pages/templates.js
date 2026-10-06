@@ -31,7 +31,10 @@
     
     let duration = '0s';
     if (t.structure && t.structure.length) {
-      const sumSec = t.structure.map(s => parseInt(s.duration) || 0).reduce((a, b) => a + b, 0);
+      const sumSec = t.structure.map(s => {
+        const seconds = parseFloat(s.duration);
+        return Number.isFinite(seconds) && seconds > 0 ? seconds : 3;
+      }).reduce((a, b) => a + b, 0);
       duration = `${sumSec}s`;
     }
 
