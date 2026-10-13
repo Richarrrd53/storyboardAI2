@@ -1,0 +1,1070 @@
+TAP version 13
+# Subtest: AppShell: Module interface and compatibility bridges
+ok 1 - AppShell: Module interface and compatibility bridges
+  ---
+  duration_ms: 17.6931
+  ...
+# Subtest: AppShell: init() creates and binds shell layout elements
+ok 2 - AppShell: init() creates and binds shell layout elements
+  ---
+  duration_ms: 37.4146
+  ...
+# Subtest: AppShell: updateRoute() controls shell visibility (dashboard vs landing/auth)
+ok 3 - AppShell: updateRoute() controls shell visibility (dashboard vs landing/auth)
+  ---
+  duration_ms: 19.516
+  ...
+# Subtest: AppShell: expandSidebar() controls sidebar width and body class
+ok 4 - AppShell: expandSidebar() controls sidebar width and body class
+  ---
+  duration_ms: 11.3106
+  ...
+# Subtest: AppShell: ProjectStore subscription reactively updates sidebar projects
+ok 5 - AppShell: ProjectStore subscription reactively updates sidebar projects
+  ---
+  duration_ms: 19.0694
+  ...
+# Subtest: AppShell: toggleUserPanel() toggles active class
+ok 6 - AppShell: toggleUserPanel() toggles active class
+  ---
+  duration_ms: 437.2549
+  ...
+# Subtest: AppShell: collapseProjectsGroup() collapses project sub-list and saves localStorage
+ok 7 - AppShell: collapseProjectsGroup() collapses project sub-list and saves localStorage
+  ---
+  duration_ms: 8.3054
+  ...
+# Subtest: AppShell: updateRoute() updates active sidebar link and swaps blur/focus icons
+ok 8 - AppShell: updateRoute() updates active sidebar link and swaps blur/focus icons
+  ---
+  duration_ms: 15.9434
+  ...
+# Subtest: AppShell: Router Navigation Simulation: Direct Entry, Leave, Return, Back/Forward Lifecycle
+ok 9 - AppShell: Router Navigation Simulation: Direct Entry, Leave, Return, Back/Forward Lifecycle
+  ---
+  duration_ms: 23
+  ...
+# Subtest: AppShell: ProjectStore subscription event compatibility across all mutations (optimistic, commit, undo, rename, duplicated, reset)
+ok 10 - AppShell: ProjectStore subscription event compatibility across all mutations (optimistic, commit, undo, rename, duplicated, reset)
+  ---
+  duration_ms: 14.0183
+  ...
+# Subtest: AppShell: Compatibility bridges this-context safety and destructuring
+ok 11 - AppShell: Compatibility bridges this-context safety and destructuring
+  ---
+  duration_ms: 11.4121
+  ...
+# Subtest: AppShell: init() idempotency and destroy() re-initialization lifecycle
+ok 12 - AppShell: init() idempotency and destroy() re-initialization lifecycle
+  ---
+  duration_ms: 11.2615
+  ...
+# Subtest: Regression A: ProjectStore.notify() -> AppShell.updateSidebarProjects() never passes non-Node to Node.contains
+ok 13 - Regression A: ProjectStore.notify() -> AppShell.updateSidebarProjects() never passes non-Node to Node.contains
+  ---
+  duration_ms: 16.1564
+  ...
+# Subtest: Regression B: spa-router.js does not contain dead reference to justHandledPointerNav
+ok 14 - Regression B: spa-router.js does not contain dead reference to justHandledPointerNav
+  ---
+  duration_ms: 4.124
+  ...
+# Subtest: Regression C: Repeated navigation and clicks do not duplicate document-level listeners
+ok 15 - Regression C: Repeated navigation and clicks do not duplicate document-level listeners
+  ---
+  duration_ms: 2.6559
+  ...
+# Subtest: CreationFeature: Module interface and compatibility bridges
+ok 16 - CreationFeature: Module interface and compatibility bridges
+  ---
+  duration_ms: 20.1138
+  ...
+# Subtest: CreationSessionStore: Authoritative single-source-of-truth and reset contract
+ok 17 - CreationSessionStore: Authoritative single-source-of-truth and reset contract
+  ---
+  duration_ms: 10.9969
+  ...
+# Subtest: CreationController: QuickCompose submit -> Generate route handoff
+ok 18 - CreationController: QuickCompose submit -> Generate route handoff
+  ---
+  duration_ms: 15.3311
+  ...
+# Subtest: CreationController: Enter key in textarea triggers submit
+ok 19 - CreationController: Enter key in textarea triggers submit
+  ---
+  duration_ms: 7.6311
+  ...
+# Subtest: CreationController: Duplicate submit guard prevents simultaneous submissions
+ok 20 - CreationController: Duplicate submit guard prevents simultaneous submissions
+  ---
+  duration_ms: 4.5883
+  ...
+# Subtest: CreationController: CreationSessionStore state persistence across route leave / return
+ok 21 - CreationController: CreationSessionStore state persistence across route leave / return
+  ---
+  duration_ms: 4.5337
+  ...
+# Subtest: CreationController: Direct Generate entry (openWorkspaceDirectly)
+ok 22 - CreationController: Direct Generate entry (openWorkspaceDirectly)
+  ---
+  duration_ms: 5.5623
+  ...
+# Subtest: CreationController: Explicit reset & logout reset
+ok 23 - CreationController: Explicit reset & logout reset
+  ---
+  duration_ms: 11.4052
+  ...
+# Subtest: CreationController: Destroy & remount QuickCompose lifecycle maintains submission ability
+ok 24 - CreationController: Destroy & remount QuickCompose lifecycle maintains submission ability
+  ---
+  duration_ms: 8.9626
+  ...
+# Subtest: CreationController: Mobile submit updates mobile navigation selector
+ok 25 - CreationController: Mobile submit updates mobile navigation selector
+  ---
+  duration_ms: 13.3181
+  ...
+# Subtest: CreationController snapshot reads QuickCompose UI state and route metadata
+ok 26 - CreationController snapshot reads QuickCompose UI state and route metadata
+  ---
+  duration_ms: 12.5595
+  ...
+# Subtest: reset order cancels task, replaces session, then clears QC UI without unbinding
+ok 27 - reset order cancels task, replaces session, then clears QC UI without unbinding
+  ---
+  duration_ms: 11.1163
+  ...
+# Subtest: reset during pending handoff prevents a late navigation completion from rearming UI cleanup
+ok 28 - reset during pending handoff prevents a late navigation completion from rearming UI cleanup
+  ---
+  duration_ms: 8.1871
+  ...
+# Subtest: ordinary route sync closes the actual mobile QC surface without resetting app state
+ok 29 - ordinary route sync closes the actual mobile QC surface without resetting app state
+  ---
+  duration_ms: 11.9418
+  ...
+# Subtest: DashboardPage: getRecentProjects filters deleted/pending, sorts desc, and takes at most 4
+ok 30 - DashboardPage: getRecentProjects filters deleted/pending, sorts desc, and takes at most 4
+  ---
+  duration_ms: 15.8088
+  ...
+# Subtest: DashboardPage: Page Lifecycle Contract - mount() returns { unmount() }
+ok 31 - DashboardPage: Page Lifecycle Contract - mount() returns { unmount() }
+  ---
+  duration_ms: 16.2576
+  ...
+# Subtest: DashboardPage: dynamic greeting and user info presentation
+ok 32 - DashboardPage: dynamic greeting and user info presentation
+  ---
+  duration_ms: 26.4831
+  ...
+# Subtest: DashboardPage: renders empty state when no recent projects exist
+ok 33 - DashboardPage: renders empty state when no recent projects exist
+  ---
+  duration_ms: 2.8147
+  ...
+# Subtest: DashboardPage: renders compact cards and binds setupProjectCardEvents with variant=compact
+ok 34 - DashboardPage: renders compact cards and binds setupProjectCardEvents with variant=compact
+  ---
+  duration_ms: 7.8498
+  ...
+# Subtest: DashboardPage: Quick Actions navigation events
+ok 35 - DashboardPage: Quick Actions navigation events
+  ---
+  duration_ms: 2.5345
+  ...
+# Subtest: DashboardPage: reactive updates via ProjectStore subscription and mask lifecycle
+ok 36 - DashboardPage: reactive updates via ProjectStore subscription and mask lifecycle
+  ---
+  duration_ms: 2.5617
+  ...
+# Subtest: Router Navigation Simulation: Direct Entry to Dashboard, Leave, Return, Back/Forward Lifecycle
+ok 37 - Router Navigation Simulation: Direct Entry to Dashboard, Leave, Return, Back/Forward Lifecycle
+  ---
+  duration_ms: 4.4379
+  ...
+# Subtest: discovery.html contains non-empty default option for SKILL dropdown
+ok 38 - discovery.html contains non-empty default option for SKILL dropdown
+  ---
+  duration_ms: 14.9607
+  ...
+# Subtest: spa-router.js injects discovery.js and invokes initDiscoveryPage
+ok 39 - spa-router.js injects discovery.js and invokes initDiscoveryPage
+  ---
+  duration_ms: 3.7626
+  ...
+# Subtest: discovery.js populates SKILL dropdown and handles fallback gracefully
+ok 40 - discovery.js populates SKILL dropdown and handles fallback gracefully
+  ---
+  duration_ms: 171.9289
+  ...
+# ◇ injected env (9) from .env // tip: ⌘ suppress logs { quiet: true }
+# Subtest: settings page, validated save, reload and search use browser credentials without leaking keys
+ok 41 - settings page, validated save, reload and search use browser credentials without leaking keys
+  ---
+  duration_ms: 21047.9849
+  ...
+# Subtest: encrypted settings persist across instances and never return secret values in status
+ok 42 - encrypted settings persist across instances and never return secret values in status
+  ---
+  duration_ms: 16.595
+  ...
+# Subtest: tampered cookies cannot supply keys and another browser does not inherit them
+ok 43 - tampered cookies cannot supply keys and another browser does not inherit them
+  ---
+  duration_ms: 4.0939
+  ...
+# Subtest: empty fields keep existing keys, server defaults are recognized and malformed updates fail
+ok 44 - empty fields keep existing keys, server defaults are recognized and malformed updates fail
+  ---
+  duration_ms: 4.0095
+  ...
+# Subtest: cloud encryption requires a stable secret, and valid configuration does not require a local file
+ok 45 - cloud encryption requires a stable secret, and valid configuration does not require a local file
+  ---
+  duration_ms: 1.5151
+  ...
+# Subtest: hashtag filters long/unrelated videos, follows pages and sorts views
+ok 46 - hashtag filters long/unrelated videos, follows pages and sorts views
+  ---
+  duration_ms: 49.2322
+  ...
+# Subtest: channel names resolve into channelId instead of keyword video search
+ok 47 - channel names resolve into channelId instead of keyword video search
+  ---
+  duration_ms: 3.5536
+  ...
+# Subtest: missing key and quota errors are actionable
+ok 48 - missing key and quota errors are actionable
+  ---
+  duration_ms: 4.7595
+  ...
+# Subtest: handle lookup, duplicate removal and publication cutoff
+ok 49 - handle lookup, duplicate removal and publication cutoff
+  ---
+  duration_ms: 5.4293
+  ...
+# Subtest: hashtag evidence includes exact metadata tags and reports exclusions
+ok 50 - hashtag evidence includes exact metadata tags and reports exclusions
+  ---
+  duration_ms: 3.4689
+  ...
+# Subtest: direct Shorts URL bypasses search index and fetches the exact video
+ok 51 - direct Shorts URL bypasses search index and fetches the exact video
+  ---
+  duration_ms: 2.5333
+  ...
+# Subtest: 亡妻回憶錄 regression: searches without hash and keeps the exact hashtag match
+ok 52 - 亡妻回憶錄 regression: searches without hash and keeps the exact hashtag match
+  ---
+  duration_ms: 2.1528
+  ...
+# Subtest: quoted credential paths are normalized
+ok 53 - quoted credential paths are normalized
+  ---
+  duration_ms: 66.737
+  ...
+# Subtest: analyzer sends actual video media and rejects invalid structured output
+ok 54 - analyzer sends actual video media and rejects invalid structured output
+  ---
+  duration_ms: 5.3038
+  ...
+# Subtest: analysis and hashtags are converted into an auto-categorized template
+ok 55 - analysis and hashtags are converted into an auto-categorized template
+  ---
+  duration_ms: 10.0708
+  ...
+# ◇ injected env (10) from .env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+# Subtest: project save retries deduplicate and repaired images retain storyboard fields
+ok 56 - project save retries deduplicate and repaired images retain storyboard fields
+  ---
+  duration_ms: 20586.6897
+  ...
+# Subtest: generation project IDs deduplicate retries and isolate authors
+ok 57 - generation project IDs deduplicate retries and isolate authors
+  ---
+  duration_ms: 115.2349
+  ...
+# Subtest: save failure preserves output; retry saves without generating again
+ok 58 - save failure preserves output; retry saves without generating again
+  ---
+  duration_ms: 36.2284
+  ...
+# Subtest: failed image repair reuses script, only renders failed shots and updates saved project
+ok 59 - failed image repair reuses script, only renders failed shots and updates saved project
+  ---
+  duration_ms: 23.6878
+  ...
+# Subtest: template inputs reach adaptation; original fractional timing and cameras are preserved
+ok 60 - template inputs reach adaptation; original fractional timing and cameras are preserved
+  ---
+  duration_ms: 22.4275
+  ...
+# Subtest: invalid templates and mismatched adaptation stop before image requests
+ok 61 - invalid templates and mismatched adaptation stop before image requests
+  ---
+  duration_ms: 10.9148
+  ...
+# Subtest: empty scripts and unresolved template prompts are retryable errors
+ok 62 - empty scripts and unresolved template prompts are retryable errors
+  ---
+  duration_ms: 11.7508
+  ...
+# Subtest: lost save response retry reconciles recovered project without duplicate creation
+ok 63 - lost save response retry reconciles recovered project without duplicate creation
+  ---
+  duration_ms: 13.4793
+  ...
+# Subtest: start, sequential requests, progress, completed and original save contract
+ok 64 - start, sequential requests, progress, completed and original save contract
+  ---
+  duration_ms: 23.0888
+  ...
+# Subtest: duplicate start shares one promise, one task id and one API chain
+ok 65 - duplicate start shares one promise, one task id and one API chain
+  ---
+  duration_ms: 10.1861
+  ...
+# Subtest: template path retains normalized payload and image failure fallback
+ok 66 - template path retains normalized payload and image failure fallback
+  ---
+  duration_ms: 14.6022
+  ...
+# Subtest: story error and malformed JSON are terminal, retry keeps original task input
+ok 67 - story error and malformed JSON are terminal, retry keeps original task input
+  ---
+  duration_ms: 21.8148
+  ...
+# Subtest: cancel owns fetch signal; late uncooperative response cannot revive cancelled task
+ok 68 - cancel owns fetch signal; late uncooperative response cannot revive cancelled task
+  ---
+  duration_ms: 7.7431
+  ...
+# Subtest: cancel during delay clears timer and prevents later API/save
+ok 69 - cancel during delay clears timer and prevents later API/save
+  ---
+  duration_ms: 9.7881
+  ...
+# Subtest: abort during image request escapes fallback and never starts next image or save
+ok 70 - abort during image request escapes fallback and never starts next image or save
+  ---
+  duration_ms: 7.7515
+  ...
+# Subtest: reset followed by new task rejects obsolete writes and obsolete finally cleanup
+ok 71 - reset followed by new task rejects obsolete writes and obsolete finally cleanup
+  ---
+  duration_ms: 22.9854
+  ...
+# Subtest: cancel during save suppresses cache invalidation from late success
+ok 72 - cancel during save suppresses cache invalidation from late success
+  ---
+  duration_ms: 20.5314
+  ...
+# Subtest: save failure remains non-fatal and anonymous task skips save
+ok 73 - save failure remains non-fatal and anonymous task skips save
+  ---
+  duration_ms: 16.5311
+  ...
+# Subtest: input/getState snapshots cannot mutate authoritative result or recreate legacy globals
+ok 74 - input/getState snapshots cannot mutate authoritative result or recreate legacy globals
+  ---
+  duration_ms: 11.4342
+  ...
+# Subtest: unsubscribe simulates leave; resubscribe restores running and completed task without new requests
+ok 75 - unsubscribe simulates leave; resubscribe restores running and completed task without new requests
+  ---
+  duration_ms: 20.4853
+  ...
+# Subtest: CreationSessionStore reset and CreationController cleanup cancel app task; idle direct entry is inert
+ok 76 - CreationSessionStore reset and CreationController cleanup cancel app task; idle direct entry is inert
+  ---
+  duration_ms: 9.6154
+  ...
+# Subtest: GlobalToast: Module interface and compatibility bridges
+ok 77 - GlobalToast: Module interface and compatibility bridges
+  ---
+  duration_ms: 8.5882
+  ...
+# Subtest: GlobalToast: showSpaToast() displays message and adds .show class
+ok 78 - GlobalToast: showSpaToast() displays message and adds .show class
+  ---
+  duration_ms: 4.2125
+  ...
+# Subtest: GlobalToast: showSpaToast() handles onUndo callback and dismisses on click
+ok 79 - GlobalToast: showSpaToast() handles onUndo callback and dismisses on click
+  ---
+  duration_ms: 3.5076
+  ...
+# Subtest: GlobalToast: showSpaToast() auto-dismisses after duration
+ok 80 - GlobalToast: showSpaToast() auto-dismisses after duration
+  ---
+  duration_ms: 68.0054
+  ...
+# Subtest: GlobalToast: showToast() manages \#toast element and fallback
+ok 81 - GlobalToast: showToast() manages \#toast element and fallback
+  ---
+  duration_ms: 65.5152
+  ...
+# Subtest: GlobalToast: dismissAll() clears all active toasts immediately
+ok 82 - GlobalToast: dismissAll() clears all active toasts immediately
+  ---
+  duration_ms: 3.2542
+  ...
+# Subtest: HistoryPage: getDeletedProjects filters is_deleted: true, excludes pending delete and sorts desc by updateAt
+ok 83 - HistoryPage: getDeletedProjects filters is_deleted: true, excludes pending delete and sorts desc by updateAt
+  ---
+  duration_ms: 12.4294
+  ...
+# Subtest: HistoryPage: Page Lifecycle Contract - mount() returns { unmount() }
+ok 84 - HistoryPage: Page Lifecycle Contract - mount() returns { unmount() }
+  ---
+  duration_ms: 5.3316
+  ...
+# Subtest: HistoryPage: renders empty state when no deleted projects exist
+ok 85 - HistoryPage: renders empty state when no deleted projects exist
+  ---
+  duration_ms: 2.9305
+  ...
+# Subtest: HistoryPage: renders deleted project cards with isHistory = true and hooks setupProjectCardEvents
+ok 86 - HistoryPage: renders deleted project cards with isHistory = true and hooks setupProjectCardEvents
+  ---
+  duration_ms: 6.3961
+  ...
+# Subtest: HistoryPage: reactive updates via ProjectStore subscription and unmount cleanup
+ok 87 - HistoryPage: reactive updates via ProjectStore subscription and unmount cleanup
+  ---
+  duration_ms: 3.3412
+  ...
+# Subtest: HistoryPage: signal abort triggers immediate and safe unmount
+ok 88 - HistoryPage: signal abort triggers immediate and safe unmount
+  ---
+  duration_ms: 6.1918
+  ...
+# Subtest: HistoryPage: Restore synchronization between History, Projects, and Sidebar
+ok 89 - HistoryPage: Restore synchronization between History, Projects, and Sidebar
+  ---
+  duration_ms: 2.454
+  ...
+# Subtest: Router Navigation Simulation: Direct Entry to History, Leave, Return, Back/Forward Lifecycle
+ok 90 - Router Navigation Simulation: Direct Entry to History, Leave, Return, Back/Forward Lifecycle
+  ---
+  duration_ms: 3.8491
+  ...
+# Subtest: PageAssetLoader: Module interface and compatibility bridges
+ok 91 - PageAssetLoader: Module interface and compatibility bridges
+  ---
+  duration_ms: 10.815
+  ...
+# Subtest: PageAssetLoader: injectCSS() and removePageCSS() lifecycle
+ok 92 - PageAssetLoader: injectCSS() and removePageCSS() lifecycle
+  ---
+  duration_ms: 28.8019
+  ...
+# Subtest: PageAssetLoader: injectScript() appends script and deduplicates
+ok 93 - PageAssetLoader: injectScript() appends script and deduplicates
+  ---
+  duration_ms: 7.5666
+  ...
+# Subtest: PageAssetLoader: injectScripts() loads array of scripts
+ok 94 - PageAssetLoader: injectScripts() loads array of scripts
+  ---
+  duration_ms: 9.9131
+  ...
+# Subtest: PageAssetLoader: fetchPageDoc() caches parsed DOM in memory
+ok 95 - PageAssetLoader: fetchPageDoc() caches parsed DOM in memory
+  ---
+  duration_ms: 3.7147
+  ...
+# Subtest: PageAssetLoader: prefetchPage() and prefetchAuthResources()
+ok 96 - PageAssetLoader: prefetchPage() and prefetchAuthResources()
+  ---
+  duration_ms: 4.2334
+  ...
+# Subtest: ProjectCardInteractions: Module interface & compatibility bridge
+ok 97 - ProjectCardInteractions: Module interface & compatibility bridge
+  ---
+  duration_ms: 9.8499
+  ...
+# Subtest: ProjectCardInteractions: Dashboard compact card click launches reveal transition
+ok 98 - ProjectCardInteractions: Dashboard compact card click launches reveal transition
+  ---
+  duration_ms: 14.2162
+  ...
+# Subtest: ProjectCardInteractions: Prefers-reduced-motion navigates without transition
+ok 99 - ProjectCardInteractions: Prefers-reduced-motion navigates without transition
+  ---
+  duration_ms: 3.1206
+  ...
+# Subtest: ProjectCardInteractions: History deleted card click prompts restore and does NOT launch transition
+ok 100 - ProjectCardInteractions: History deleted card click prompts restore and does NOT launch transition
+  ---
+  duration_ms: 3.747
+  ...
+# Subtest: ProjectCardInteractions: Option button click invokes openGlobalOptionMorph and stops propagation
+ok 101 - ProjectCardInteractions: Option button click invokes openGlobalOptionMorph and stops propagation
+  ---
+  duration_ms: 3.157
+  ...
+# Subtest: ProjectCardInteractions: Title overflow marquee starts on hover and cleans up on leave
+ok 102 - ProjectCardInteractions: Title overflow marquee starts on hover and cleans up on leave
+  ---
+  duration_ms: 467.7367
+  ...
+# Subtest: ProjectCardInteractions: Card hover expands and triggers prefetch
+ok 103 - ProjectCardInteractions: Card hover expands and triggers prefetch
+  ---
+  duration_ms: 3.7921
+  ...
+# Subtest: ProjectCardInteractions: Duplicate bind does NOT duplicate listeners (Idempotency)
+ok 104 - ProjectCardInteractions: Duplicate bind does NOT duplicate listeners (Idempotency)
+  ---
+  duration_ms: 3.366
+  ...
+# Subtest: ProjectCardInteractions: Card click debounce guard allows only one transition trigger
+ok 105 - ProjectCardInteractions: Card click debounce guard allows only one transition trigger
+  ---
+  duration_ms: 4.8346
+  ...
+# Subtest: ProjectCardInteractions: bindAll and destroyWithin lifecycle over container
+ok 106 - ProjectCardInteractions: bindAll and destroyWithin lifecycle over container
+  ---
+  duration_ms: 5.0515
+  ...
+# Subtest: ProjectCard.normalizeRatio normalizes aspect ratio strings
+ok 107 - ProjectCard.normalizeRatio normalizes aspect ratio strings
+  ---
+  duration_ms: 6.184
+  ...
+# Subtest: ProjectCard.parseAspectRatio parses ratios from strings, numbers, and dimensions
+ok 108 - ProjectCard.parseAspectRatio parses ratios from strings, numbers, and dimensions
+  ---
+  duration_ms: 2.5779
+  ...
+# Subtest: ProjectCard.calculateProjectCoverGeometry computes correct dimensions for variants
+ok 109 - ProjectCard.calculateProjectCoverGeometry computes correct dimensions for variants
+  ---
+  duration_ms: 2.0827
+  ...
+# Subtest: ProjectCard.calculateTransitionTargetSize computes centered target rect within limits
+ok 110 - ProjectCard.calculateTransitionTargetSize computes centered target rect within limits
+  ---
+  duration_ms: 1.7361
+  ...
+# Subtest: ProjectCard.getContainedImageRect computes contained image bounds
+ok 111 - ProjectCard.getContainedImageRect computes contained image bounds
+  ---
+  duration_ms: 1.3677
+  ...
+# Subtest: ProjectCard.formatRatioText returns user-facing localized ratio labels
+ok 112 - ProjectCard.formatRatioText returns user-facing localized ratio labels
+  ---
+  duration_ms: 4.3888
+  ...
+# Subtest: ProjectCard.formatRelativeTime handles missing or relative timestamps
+ok 113 - ProjectCard.formatRelativeTime handles missing or relative timestamps
+  ---
+  duration_ms: 8.1445
+  ...
+# Subtest: ProjectCard.renderProjectCard renders expected folder markup, classes, and escapes HTML
+ok 114 - ProjectCard.renderProjectCard renders expected folder markup, classes, and escapes HTML
+  ---
+  duration_ms: 2.7918
+  ...
+# Subtest: ProjectCard.renderProjectCard handles single shot without secondary card and handles deleted flag
+ok 115 - ProjectCard.renderProjectCard handles single shot without secondary card and handles deleted flag
+  ---
+  duration_ms: 2.2157
+  ...
+# Subtest: ProjectCoverTransition: Module interface and compatibility bridge
+ok 116 - ProjectCoverTransition: Module interface and compatibility bridge
+  ---
+  duration_ms: 15.3323
+  ...
+# Subtest: ProjectCoverTransition: Missing folder shell or primary cover falls back to immediate navigation
+ok 117 - ProjectCoverTransition: Missing folder shell or primary cover falls back to immediate navigation
+  ---
+  duration_ms: 14.0412
+  ...
+# Subtest: ProjectCoverTransition: Card already navigating bails out (idempotency)
+ok 118 - ProjectCoverTransition: Card already navigating bails out (idempotency)
+  ---
+  duration_ms: 3.7277
+  ...
+# Subtest: ProjectCoverTransition: Closes active Option Morph immediately upon launch
+ok 119 - ProjectCoverTransition: Closes active Option Morph immediately upon launch
+  ---
+  duration_ms: 9.2748
+  ...
+# Subtest: ProjectCoverTransition: Creates transition layer and session on launch
+ok 120 - ProjectCoverTransition: Creates transition layer and session on launch
+  ---
+  duration_ms: 6.5473
+  ...
+# Subtest: ProjectCoverTransition: Fires navigation trigger after 200ms
+ok 121 - ProjectCoverTransition: Fires navigation trigger after 200ms
+  ---
+  duration_ms: 238.4422
+  ...
+# Subtest: ProjectCoverTransition: Launching new transition cancels previous active session
+ok 122 - ProjectCoverTransition: Launching new transition cancels previous active session
+  ---
+  duration_ms: 5.7551
+  ...
+# Subtest: ProjectCoverTransition: onFirstShotReady executes return animation and cleans up
+ok 123 - ProjectCoverTransition: onFirstShotReady executes return animation and cleans up
+  ---
+  duration_ms: 165.2229
+  ...
+# Subtest: ProjectCoverTransition: Pending target handled when first shot arrives during flight
+ok 124 - ProjectCoverTransition: Pending target handled when first shot arrives during flight
+  ---
+  duration_ms: 173.6919
+  ...
+# Subtest: ProjectCoverTransition: Fallback dismiss / cancel runs legacy shrink and cleans up
+ok 125 - ProjectCoverTransition: Fallback dismiss / cancel runs legacy shrink and cleans up
+  ---
+  duration_ms: 46.2022
+  ...
+# Subtest: ProjectCoverTransition: Top-level cancel() cancels active session matching projectId
+ok 126 - ProjectCoverTransition: Top-level cancel() cancels active session matching projectId
+  ---
+  duration_ms: 4.0667
+  ...
+# Subtest: ProjectCoverTransition: Cleanup removes DOM nodes and restores card styles
+ok 127 - ProjectCoverTransition: Cleanup removes DOM nodes and restores card styles
+  ---
+  duration_ms: 3.7142
+  ...
+# Subtest: ProjectStore: Generation Granularity — Invalidate Detail(A) must NOT invalidate in-flight Detail(B)
+ok 128 - ProjectStore: Generation Granularity — Invalidate Detail(A) must NOT invalidate in-flight Detail(B)
+  ---
+  duration_ms: 14.4069
+  ...
+# Subtest: ProjectStore: Generation Granularity — reset() invalidates all in-flight requests
+ok 129 - ProjectStore: Generation Granularity — reset() invalidates all in-flight requests
+  ---
+  duration_ms: 1.7927
+  ...
+# Subtest: ProjectStore: Promise Identity — \#1 finally does NOT clear \#2 inFlightDetailsPromises[id]
+ok 130 - ProjectStore: Promise Identity — \#1 finally does NOT clear \#2 inFlightDetailsPromises[id]
+  ---
+  duration_ms: 3.2983
+  ...
+# Subtest: ProjectDetailPage: Page Lifecycle Contract — mount() returns { unmount() }
+ok 131 - ProjectDetailPage: Page Lifecycle Contract — mount() returns { unmount() }
+  ---
+  duration_ms: 19.1269
+  ...
+# Subtest: ProjectDetailPage: SWR Lifecycle & Duplicate Listener Guard — cached render -> background detail_loaded triggers events only ONCE
+ok 132 - ProjectDetailPage: SWR Lifecycle & Duplicate Listener Guard — cached render -> background detail_loaded triggers events only ONCE
+  ---
+  duration_ms: 45.2284
+  ...
+# Subtest: ProjectDetailPage: Empty / Error State when project does not exist
+ok 133 - ProjectDetailPage: Empty / Error State when project does not exist
+  ---
+  duration_ms: 2.8976
+  ...
+# Subtest: ProjectDetailPage: Cover Transition Integration — (1) Slow Image Load
+ok 134 - ProjectDetailPage: Cover Transition Integration — (1) Slow Image Load
+  ---
+  duration_ms: 58.496
+  ...
+# Subtest: ProjectDetailPage: Cover Transition Integration — (2) Already-Cached Image in Browser
+ok 135 - ProjectDetailPage: Cover Transition Integration — (2) Already-Cached Image in Browser
+  ---
+  duration_ms: 3.7573
+  ...
+# Subtest: ProjectDetailPage: Cover Transition Integration — (3) Image Error triggers fallbackDismiss
+ok 136 - ProjectDetailPage: Cover Transition Integration — (3) Image Error triggers fallbackDismiss
+  ---
+  duration_ms: 40.0206
+  ...
+# Subtest: ProjectDetailPage: Cover Transition Integration — (4) No Shots or shots without image triggers fallbackDismiss immediately
+ok 137 - ProjectDetailPage: Cover Transition Integration — (4) No Shots or shots without image triggers fallbackDismiss immediately
+  ---
+  duration_ms: 5.2884
+  ...
+# Subtest: Cover Transition: cancel() is strictly idempotent
+ok 138 - Cover Transition: cancel() is strictly idempotent
+  ---
+  duration_ms: 1.7246
+  ...
+# Subtest: Router Navigation Simulation: Direct Entry, Leave to Dashboard, Return, Back/Forward Lifecycle
+ok 139 - Router Navigation Simulation: Direct Entry, Leave to Dashboard, Return, Back/Forward Lifecycle
+  ---
+  duration_ms: 4.5286
+  ...
+# Subtest: ProjectOptionMorph: Module interface and compatibility bridge
+ok 140 - ProjectOptionMorph: Module interface and compatibility bridge
+  ---
+  duration_ms: 13.4381
+  ...
+# Subtest: ProjectOptionMorph: open and close creates and removes portal cleanly
+ok 141 - ProjectOptionMorph: open and close creates and removes portal cleanly
+  ---
+  duration_ms: 23.3307
+  ...
+# Subtest: ProjectOptionMorph: double open on same trigger acts as toggle close
+ok 142 - ProjectOptionMorph: double open on same trigger acts as toggle close
+  ---
+  duration_ms: 4.4277
+  ...
+# Subtest: ProjectOptionMorph: open A -> open B replaces active session cleanly
+ok 143 - ProjectOptionMorph: open A -> open B replaces active session cleanly
+  ---
+  duration_ms: 9.7399
+  ...
+# Subtest: ProjectOptionMorph: repeated close idempotency
+ok 144 - ProjectOptionMorph: repeated close idempotency
+  ---
+  duration_ms: 4.1681
+  ...
+# Subtest: ProjectOptionMorph: outside click closes menu
+ok 145 - ProjectOptionMorph: outside click closes menu
+  ---
+  duration_ms: 3.9692
+  ...
+# Subtest: ProjectOptionMorph: Escape key closes menu
+ok 146 - ProjectOptionMorph: Escape key closes menu
+  ---
+  duration_ms: 8.7832
+  ...
+# Subtest: ProjectOptionMorph: Window scroll and resize closes menu
+ok 147 - ProjectOptionMorph: Window scroll and resize closes menu
+  ---
+  duration_ms: 8.9278
+  ...
+# Subtest: ProjectOptionMorph: History mode renders restore action only
+ok 148 - ProjectOptionMorph: History mode renders restore action only
+  ---
+  duration_ms: 5.4944
+  ...
+# Subtest: ProjectOptionMorph: Action click executes action via ProjectActions and closes
+ok 149 - ProjectOptionMorph: Action click executes action via ProjectActions and closes
+  ---
+  duration_ms: 506.4267
+  ...
+# Subtest: ProjectOptionMorph: Card rerender / detached card does not throw on close
+ok 150 - ProjectOptionMorph: Card rerender / detached card does not throw on close
+  ---
+  duration_ms: 11.3731
+  ...
+# Subtest: ProjectOptionMorph: Route leave immediate cleanup (navigation)
+ok 151 - ProjectOptionMorph: Route leave immediate cleanup (navigation)
+  ---
+  duration_ms: 4.3031
+  ...
+# Subtest: ProjectOptionMorph: Global listeners lifecycle (no duplicate or lingering listeners)
+ok 152 - ProjectOptionMorph: Global listeners lifecycle (no duplicate or lingering listeners)
+  ---
+  duration_ms: 5.292
+  ...
+# Immediate delete failed on flush: Failed to parse URL from /api/projects/p-flush-1
+# Immediate delete failed on flush: Failed to parse URL from /api/projects/p-flush-2
+# Subtest: ProjectStore: stores, filters active/history projects and supports subscriptions
+ok 153 - ProjectStore: stores, filters active/history projects and supports subscriptions
+  ---
+  duration_ms: 6.5885
+  ...
+# Subtest: ProjectDeleteQueue: optimistic enqueue, undo restoration and status tracking
+ok 154 - ProjectDeleteQueue: optimistic enqueue, undo restoration and status tracking
+  ---
+  duration_ms: 1.9531
+  ...
+# Subtest: ProjectDeleteQueue: flushAll commits pending items without duplicate calls
+ok 155 - ProjectDeleteQueue: flushAll commits pending items without duplicate calls
+  ---
+  duration_ms: 106.2932
+  ...
+# Subtest: ProjectStore: seedProjectDetail and invalidate detail
+ok 156 - ProjectStore: seedProjectDetail and invalidate detail
+  ---
+  duration_ms: 1.0964
+  ...
+# Subtest: ProjectActions: rename validation rejects empty titles without modifying project
+ok 157 - ProjectActions: rename validation rejects empty titles without modifying project
+  ---
+  duration_ms: 1.1163
+  ...
+# Subtest: ProjectStore: reset clears all caches and timers for clean logout
+ok 158 - ProjectStore: reset clears all caches and timers for clean logout
+  ---
+  duration_ms: 1.252
+  ...
+# Subtest: ProjectStore: in-flight request resolving after reset() must NOT overwrite store or notify
+ok 159 - ProjectStore: in-flight request resolving after reset() must NOT overwrite store or notify
+  ---
+  duration_ms: 5.0394
+  ...
+# Subtest: ProjectsPage: getFilteredAndSortedProjects filters deleted/pending and sorts desc by updateAt
+ok 160 - ProjectsPage: getFilteredAndSortedProjects filters deleted/pending and sorts desc by updateAt
+  ---
+  duration_ms: 16.4224
+  ...
+# Subtest: ProjectsPage: Page Lifecycle Contract - mount() returns { unmount() }
+ok 161 - ProjectsPage: Page Lifecycle Contract - mount() returns { unmount() }
+  ---
+  duration_ms: 6.335
+  ...
+# Subtest: ProjectsPage: renders empty state when no active projects exist
+ok 162 - ProjectsPage: renders empty state when no active projects exist
+  ---
+  duration_ms: 2.7512
+  ...
+# Subtest: ProjectsPage: renders project cards and hooks lazyLoadProjectThumbs & card events
+ok 163 - ProjectsPage: renders project cards and hooks lazyLoadProjectThumbs & card events
+  ---
+  duration_ms: 5.9029
+  ...
+# Subtest: ProjectsPage: reactive updates via ProjectStore subscription and unmount cleanup
+ok 164 - ProjectsPage: reactive updates via ProjectStore subscription and unmount cleanup
+  ---
+  duration_ms: 3.2267
+  ...
+# Subtest: ProjectsPage: signal abort triggers immediate and safe unmount
+ok 165 - ProjectsPage: signal abort triggers immediate and safe unmount
+  ---
+  duration_ms: 3.2847
+  ...
+# Subtest: Router Navigation Simulation: Direct Entry, Leave, Return, Back/Forward Lifecycle
+ok 166 - Router Navigation Simulation: Direct Entry, Leave, Return, Back/Forward Lifecycle
+  ---
+  duration_ms: 5.0083
+  ...
+# Subtest: prompt-translate: returns empty string for null or undefined
+ok 167 - prompt-translate: returns empty string for null or undefined
+  ---
+  duration_ms: 6.0039
+  ...
+# Subtest: prompt-translate: preserves pure non-latin text without calling network
+ok 168 - prompt-translate: preserves pure non-latin text without calling network
+  ---
+  duration_ms: 1.035
+  ...
+# 自動翻譯出錯，降級使用原文字： TypeError: fetch failed
+#     at node:internal/deps/undici/undici:13484:13
+#     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+#     at async translatePromptText (D:\\My Files\\web\\StoryboardAI2\\public\\js\\prompt-translate.js:32:30)
+#     at async TestContext.<anonymous> (D:\\My Files\\web\\StoryboardAI2\\tests\\prompt-translate.test.js:19:20)
+#     at async Test.run (node:internal/test_runner/test:935:9)
+#     at async Test.processPendingSubtests (node:internal/test_runner/test:633:7) {
+#   [cause]: Error: connect EACCES 64.233.189.95:443
+#       at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1615:16) {
+#     errno: -4092,
+#     code: 'EACCES',
+#     syscall: 'connect',
+#     address: '64.233.189.95',
+#     port: 443
+#   }
+# }
+# Subtest: prompt-translate: protects placeholders and normalizes punctuation on fallback
+ok 169 - prompt-translate: protects placeholders and normalizes punctuation on fallback
+  ---
+  duration_ms: 662.1921
+  ...
+# Subtest: prompt-translate: formatPromptText escapes HTML and converts newlines
+ok 170 - prompt-translate: formatPromptText escapes HTML and converts newlines
+  ---
+  duration_ms: 1.7972
+  ...
+# Subtest: QuickCompose: Module interface and compatibility bridges
+ok 171 - QuickCompose: Module interface and compatibility bridges
+  ---
+  duration_ms: 16.4108
+  ...
+# Subtest: QuickCompose: Singleton and mount idempotency
+ok 172 - QuickCompose: Singleton and mount idempotency
+  ---
+  duration_ms: 17.5804
+  ...
+# Subtest: QuickCompose: Desktop vs Mobile placement
+ok 173 - QuickCompose: Desktop vs Mobile placement
+  ---
+  duration_ms: 12.2669
+  ...
+# Subtest: QuickCompose: UI State Machine and Expand / Collapse lifecycle
+ok 174 - QuickCompose: UI State Machine and Expand / Collapse lifecycle
+  ---
+  duration_ms: 627.5394
+  ...
+# Subtest: QuickCompose: Suggestions interaction
+ok 175 - QuickCompose: Suggestions interaction
+  ---
+  duration_ms: 4.6216
+  ...
+# Subtest: QuickCompose: Escape key closes active QuickCompose
+ok 176 - QuickCompose: Escape key closes active QuickCompose
+  ---
+  duration_ms: 6.5739
+  ...
+# Subtest: QuickCompose: Progress presentation and pulse
+ok 177 - QuickCompose: Progress presentation and pulse
+  ---
+  duration_ms: 5.301
+  ...
+# Subtest: QuickCompose: Listener lifecycle & clean destroy()
+ok 178 - QuickCompose: Listener lifecycle & clean destroy()
+  ---
+  duration_ms: 3.2105
+  ...
+# Subtest: AICreationController: Integration & delegation with QuickCompose
+ok 179 - AICreationController: Integration & delegation with QuickCompose
+  ---
+  duration_ms: 5.5412
+  ...
+# Subtest: QuickCompose: Event binding verification (Capsule click, Close button click, Send button click)
+ok 180 - QuickCompose: Event binding verification (Capsule click, Close button click, Send button click)
+  ---
+  duration_ms: 5.9557
+  ...
+# Subtest: QuickCompose: bindEvents() guards against missing DOM elements and tracks node identity
+ok 181 - QuickCompose: bindEvents() guards against missing DOM elements and tracks node identity
+  ---
+  duration_ms: 5.5747
+  ...
+# Subtest: new templates without content IDs retain their database identity and fields
+ok 182 - new templates without content IDs retain their database identity and fields
+  ---
+  duration_ms: 8.1612
+  ...
+# Subtest: serialized analysis preserves all nested data while using canonical database IDs
+ok 183 - serialized analysis preserves all nested data while using canonical database IDs
+  ---
+  duration_ms: 1.6282
+  ...
+# Subtest: template pathname and legacy hash deep links restore the canonical ID
+ok 184 - template pathname and legacy hash deep links restore the canonical ID
+  ---
+  duration_ms: 11.2888
+  ...
+# Subtest: history serializes template ID and browse state rather than only the page
+ok 185 - history serializes template ID and browse state rather than only the page
+  ---
+  duration_ms: 2.122
+  ...
+# Subtest: project routes and generate template selection retain their existing behavior
+ok 186 - project routes and generate template selection retain their existing behavior
+  ---
+  duration_ms: 2.2961
+  ...
+# Subtest: malformed template encodings recover without crashing router initialization
+ok 187 - malformed template encodings recover without crashing router initialization
+  ---
+  duration_ms: 0.961
+  ...
+# Subtest: embedded navigation uses the parent URL while leaving the iframe document untouched
+ok 188 - embedded navigation uses the parent URL while leaving the iframe document untouched
+  ---
+  duration_ms: 1.2811
+  ...
+# Subtest: production and development entrypoints both serve template deep links
+ok 189 - production and development entrypoints both serve template deep links
+  ---
+  duration_ms: 8.9801
+  ...
+# Subtest: TemplatesPage: Category counts calculation (getCatCounts)
+ok 190 - TemplatesPage: Category counts calculation (getCatCounts)
+  ---
+  duration_ms: 5.8851
+  ...
+# Subtest: TemplatesPage: Page Lifecycle Contract - mount() returns { unmount() }
+ok 191 - TemplatesPage: Page Lifecycle Contract - mount() returns { unmount() }
+  ---
+  duration_ms: 72.4745
+  ...
+# Subtest: TemplatesPage: Data loading from API and caches in window.cacheTemplatesList
+ok 192 - TemplatesPage: Data loading from API and caches in window.cacheTemplatesList
+  ---
+  duration_ms: 4.7827
+  ...
+# Subtest: TemplatesPage: Empty state when no templates exist
+ok 193 - TemplatesPage: Empty state when no templates exist
+  ---
+  duration_ms: 2.4959
+  ...
+# Subtest: TemplatesPage: Category filtering and search interaction
+ok 194 - TemplatesPage: Category filtering and search interaction
+  ---
+  duration_ms: 4.7932
+  ...
+# Subtest: TemplatesPage: Template card interactions (preview, apply) & back button
+ok 195 - TemplatesPage: Template card interactions (preview, apply) & back button
+  ---
+  duration_ms: 10.788
+  ...
+# Subtest: TemplatesPage: backToStoreBrowse() cleans the timeline while preserving the mounted catalog and listeners
+ok 196 - TemplatesPage: backToStoreBrowse() cleans the timeline while preserving the mounted catalog and listeners
+  ---
+  duration_ms: 3.7167
+  ...
+# Subtest: TemplatesPage: Teardown on unmount() invokes destroyTemplateTimeline and clears state
+ok 197 - TemplatesPage: Teardown on unmount() invokes destroyTemplateTimeline and clears state
+  ---
+  duration_ms: 3.3421
+  ...
+# Subtest: Router Navigation Simulation: Direct Entry to Template, Leave to Dashboard, Return, Back/Forward Lifecycle
+ok 198 - Router Navigation Simulation: Direct Entry to Template, Leave to Dashboard, Return, Back/Forward Lifecycle
+  ---
+  duration_ms: 8.6473
+  ...
+# Subtest: marketplace search, category and tag filters combine and unknown durations sort last
+ok 199 - marketplace search, category and tag filters combine and unknown durations sort last
+  ---
+  duration_ms: 9.9307
+  ...
+# Subtest: deep-linked IDs reuse the mounted catalog and unknown IDs have a recovery state
+ok 200 - deep-linked IDs reuse the mounted catalog and unknown IDs have a recovery state
+  ---
+  duration_ms: 5.2829
+  ...
+# Subtest: catalog HTTP errors are distinct from an empty catalog
+ok 201 - catalog HTTP errors are distinct from an empty catalog
+  ---
+  duration_ms: 2.4353
+  ...
+# Subtest: template card text is escaped and missing specifications are not fabricated
+ok 202 - template card text is escaped and missing specifications are not fabricated
+  ---
+  duration_ms: 1.4289
+  ...
+# Subtest: TransitionLoader: Module interface and compatibility bridges
+ok 203 - TransitionLoader: Module interface and compatibility bridges
+  ---
+  duration_ms: 7.7877
+  ...
+# Subtest: TransitionLoader: initDashboardLoader() creates spinner element
+ok 204 - TransitionLoader: initDashboardLoader() creates spinner element
+  ---
+  duration_ms: 5.8098
+  ...
+# Subtest: TransitionLoader: setupRoseAnimation() starts and stops particle animation
+ok 205 - TransitionLoader: setupRoseAnimation() starts and stops particle animation
+  ---
+  duration_ms: 8.9637
+  ...
+# Subtest: TransitionLoader: startTextCycling() cycles text and stopTextCycling() stops interval
+ok 206 - TransitionLoader: startTextCycling() cycles text and stopTextCycling() stops interval
+  ---
+  duration_ms: 2.2934
+  ...
+# Subtest: TransitionLoader: showInnerLoader() delayed 250ms and hideInnerLoader() cleans up
+ok 207 - TransitionLoader: showInnerLoader() delayed 250ms and hideInnerLoader() cleans up
+  ---
+  duration_ms: 295.6615
+  ...
+# Subtest: TransitionLoader: startLoaderTimer() and cleanup() lifecycle
+ok 208 - TransitionLoader: startLoaderTimer() and cleanup() lifecycle
+  ---
+  duration_ms: 3.2699
+  ...
+1..208
+# tests 208
+# suites 0
+# pass 208
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 22173.4956

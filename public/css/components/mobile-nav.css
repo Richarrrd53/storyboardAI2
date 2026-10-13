@@ -40,6 +40,229 @@
     transition: transform 380ms cubic-bezier(0.16, 1, 0.3, 1), opacity 320ms ease !important;
   }
 
+  .mobile-bottom-nav::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 55%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Floating Selection Indicator - Translucent Black Grooved Capsule */
+  .mobile-nav__indicator {
+    display: block !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: var(--nav-selector-inset-y, 5px) !important;
+    height: calc(100% - (var(--nav-selector-inset-y, 5px) * 2)) !important;
+    width: var(--nav-selector-width, 64px) !important;
+    background: rgba(0, 0, 0, 0.03) !important;
+    border: none !important;
+    border-radius: var(--radius-pill, 999px) !important;
+    box-shadow: none !important;
+    pointer-events: none !important;
+    z-index: 1 !important;
+    opacity: 0;
+    will-change: transform, opacity;
+    transition: opacity 0.2s ease, transform 0.18s cubic-bezier(0.2, 0.9, 0.3, 1), background 0.18s cubic-bezier(0.2, 0.9, 0.3, 1);
+    transform-origin: center center;
+  }
+
+  .mobile-nav__indicator.is-active {
+    opacity: 1 !important;
+  }
+
+  .mobile-nav__indicator.is-settling {
+    transition: transform 0.24s var(--motion-ease-snappy, cubic-bezier(0.25, 1, 0.5, 1)), opacity 0.2s ease !important;
+  }
+
+  .mobile-nav__indicator.is-pressed {
+    transform: scale(1.04);
+    background: rgba(0, 0, 0, 0.08) !important;
+  }
+
+  /* Mobile Nav Dual Tracks (Base & Liquid-Clipped Focus Track) */
+  .mobile-nav__track {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-around !important;
+    width: 100% !important;
+    height: 100% !important;
+    padding: 0 10px !important;
+    box-sizing: border-box !important;
+  }
+
+  .mobile-nav__track--base {
+    position: relative !important;
+    z-index: 2 !important;
+  }
+
+  .mobile-nav__track--focus {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 3 !important;
+    pointer-events: none !important;
+    clip-path: var(--nav-clip-path, inset(0 100% 0 0 round 999px));
+    -webkit-clip-path: var(--nav-clip-path, inset(0 100% 0 0 round 999px));
+    will-change: clip-path, -webkit-clip-path;
+    transition: none !important;
+  }
+
+  .mobile-nav__track--focus.is-settling {
+    transition: clip-path 0.24s var(--motion-ease-snappy, cubic-bezier(0.25, 1, 0.5, 1)), -webkit-clip-path 0.24s var(--motion-ease-snappy, cubic-bezier(0.25, 1, 0.5, 1)), opacity 0.2s ease !important;
+  }
+
+  .mobile-nav__track--focus .mobile-nav__item {
+    color: #0b1329 !important;
+    pointer-events: none !important;
+  }
+
+  .mobile-nav__track--focus .mobile-nav__label {
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+
+  .mobile-nav__track--focus .mobile-nav__svg,
+  .mobile-nav__svg--focus {
+    color: var(--color-nav-active, #172554) !important;
+    stroke: none !important;
+    stroke-width: 0 !important;
+    fill: currentColor !important;
+    pointer-events: none !important;
+  }
+
+  .mobile-nav__track--focus .mobile-nav__svg path,
+  .mobile-nav__track--focus .mobile-nav__svg circle,
+  .mobile-nav__track--focus .mobile-nav__svg rect,
+  .mobile-nav__svg--focus path,
+  .mobile-nav__svg--focus circle,
+  .mobile-nav__svg--focus rect {
+    stroke: none !important;
+    stroke-width: 0 !important;
+    fill: currentColor !important;
+  }
+
+  /* Nav Items */
+  .mobile-nav__item {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    width: 56px;
+    height: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    text-decoration: none;
+    color: #64748b;
+    cursor: pointer;
+    z-index: 2;
+    padding: 0;
+    margin: 0;
+    font-family: inherit;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-drag: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    touch-action: none;
+    transition: color 0.2s ease, transform 0.15s ease;
+    will-change: transform;
+  }
+
+  .mobile-nav__item:focus-visible {
+    outline: 2px solid var(--color-brand-primary, #2563eb);
+    outline-offset: 2px;
+    border-radius: 16px;
+  }
+
+  .mobile-nav__icon-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    pointer-events: none;
+    touch-action: none;
+    transition: opacity 0.16s ease, transform 0.25s var(--motion-ease-jelly, cubic-bezier(0.34, 1.56, 0.64, 1));
+  }
+
+  .mobile-nav__svg {
+    stroke: currentColor;
+    pointer-events: none;
+    touch-action: none;
+    transition: stroke 0.2s ease, stroke-width 0.2s ease, fill 0.2s ease;
+  }
+
+  .mobile-nav__label {
+    font-size: 0.6875rem; /* 11px */
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: -0.01em;
+    pointer-events: none;
+    touch-action: none;
+    transition: color 0.2s ease, transform 0.2s ease;
+  }
+
+  /* Active & Magnetic Hover Nav Item */
+  .mobile-nav__item.active,
+  .mobile-nav__item.snap-target {
+    color: var(--color-brand-primary, #2563eb) !important;
+  }
+
+  /* Base link icons: ALWAYS remain original grey (#64748b) when item is not selected */
+  .mobile-nav__track--base .mobile-nav__item .mobile-nav__svg {
+    color: #64748b !important;
+    stroke: #64748b !important;
+    stroke-width: 1.8px;
+  }
+
+  .mobile-nav__track--base .mobile-nav__item .mobile-nav__svg.icon-fill-target {
+    stroke: none !important;
+    stroke-width: 0 !important;
+    fill: #64748b !important;
+  }
+
+  /* Prevent layer superposition bleed-through:
+     When an item is active, hide its base track line icon so ONLY the focus track's filled icon is visible. */
+  .mobile-nav__track--base .mobile-nav__item.active .mobile-nav__icon-wrap {
+    opacity: 0 !important;
+  }
+
+  /* While dragging/interacting: the indicator follows the snap target */
+  .mobile-bottom-nav.is-interacting .mobile-nav__track--base .mobile-nav__item.active .mobile-nav__icon-wrap {
+    opacity: 1 !important;
+  }
+  .mobile-bottom-nav.is-interacting .mobile-nav__track--base .mobile-nav__item.snap-target .mobile-nav__icon-wrap {
+    opacity: 0 !important;
+  }
+
+  /* Focus icons in active track: PURE FILL, STRICTLY NO STROKE OUTLINE */
+  .mobile-nav__track--focus .mobile-nav__svg,
+  .mobile-nav__track--focus .mobile-nav__svg--focus,
+  .mobile-nav__item--focus .mobile-nav__svg,
+  .mobile-nav__svg--focus {
+    stroke: none !important;
+    stroke-width: 0 !important;
+  }
+
+  /* Active & Snap Target Text Label - Primary Brand Blue */
+  .mobile-bottom-nav:not(.is-interacting) .mobile-nav__item.active .mobile-nav__label,
+  .mobile-nav__item.snap-target .mobile-nav__label {
+    color: var(--color-text-nav-active, #172554) !important;
+  }
+  .mobile-bottom-nav.is-interacting .mobile-nav__item.active:not(.snap-target) .mobile-nav__label {
+    color: #64748b !important;
+  }
+
   /* Center Create Button: Guaranteed Horizontal Centering */
   .mobile-nav__item--create {
     position: relative;

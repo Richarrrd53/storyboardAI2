@@ -32,8 +32,8 @@ function createMockElement(tagName = 'div', id = '', className = '') {
     hasAttribute: (k) => k in el.attributes,
     removeAttribute: (k) => { delete el.attributes[k]; },
     classList: {
-      add: (cls) => classListSet.add(cls),
-      remove: (cls) => classListSet.delete(cls),
+      add: (...classes) => classes.forEach(cls => classListSet.add(cls)),
+      remove: (...classes) => classes.forEach(cls => classListSet.delete(cls)),
       toggle: (cls, force) => {
         if (force === undefined) {
           if (classListSet.has(cls)) classListSet.delete(cls);
@@ -63,27 +63,54 @@ function createMockElement(tagName = 'div', id = '', className = '') {
     _rebuildChildrenFromHTML(html) {
       this.children.length = 0;
       if (!html) return;
-      const tagRegex = /<([a-z0-9\-]+)([^>]*)>([\s\S]*?)<\/\1>|<([a-z0-9\-]+)([^>]*)\/>/gi;
+      const tagRe = /<(\/)?([a-z0-9\-]+)([^>]*)>|([^<]+)/gi;
+      const stack = [this];
       let m;
-      while ((m = tagRegex.exec(html)) !== null) {
-        const tag = m[1] || m[4];
-        const attrs = m[2] || m[5] || '';
-        const inner = m[3] || '';
-        const idMatch = attrs.match(/id="([^"]+)"/);
-        const classMatch = attrs.match(/class="([^"]+)"/);
-        const hrefMatch = attrs.match(/href="([^"]+)"/);
-        const dataIdMatch = attrs.match(/data-id="([^"]+)"/);
-        const srcMatch = attrs.match(/src="([^"]+)"/);
-        const child = createMockElement(tag, idMatch ? idMatch[1] : '', classMatch ? classMatch[1] : '');
+
+      while ((m = tagRe.exec(html)) !== null) {
+        const isClosing = m[1] === '/';
+        const tagName = m[2] ? m[2].toLowerCase() : null;
+        const attrsStr = m[3] || '';
+        const text = m[4];
+
+        if (text) {
+          if (stack.length > 0 && text.trim()) {
+            const top = stack[stack.length - 1];
+            top.textContent = (top.textContent ? top.textContent + ' ' : '') + text.trim();
+          }
+          continue;
+        }
+
+        if (isClosing) {
+          if (stack.length > 1) {
+            for (let i = stack.length - 1; i >= 1; i--) {
+              if (stack[i].tagName === tagName.toUpperCase()) {
+                stack.length = i;
+                break;
+              }
+            }
+          }
+          continue;
+        }
+
+        const isSelfClosing = attrsStr.endsWith('/') || ['path', 'circle', 'rect', 'line', 'polygon', 'input', 'img', 'br', 'hr'].includes(tagName);
+        const idMatch = attrsStr.match(/id="([^"]+)"/);
+        const classMatch = attrsStr.match(/class="([^"]+)"/);
+        const hrefMatch = attrsStr.match(/href="([^"]+)"/);
+        const dataIdMatch = attrsStr.match(/data-id="([^"]+)"/);
+        const srcMatch = attrsStr.match(/src="([^"]+)"/);
+
+        const child = createMockElement(tagName, idMatch ? idMatch[1] : '', classMatch ? classMatch[1] : '');
         if (hrefMatch) child.href = hrefMatch[1];
         if (srcMatch) child.src = srcMatch[1];
         if (dataIdMatch) child.dataset.id = dataIdMatch[1];
-        child.parentElement = this;
-        child.textContent = inner.replace(/<[^>]+>/g, '').trim();
-        if (inner.includes('<')) {
-          child.innerHTML = inner;
+
+        const parent = stack[stack.length - 1];
+        parent.appendChild(child);
+
+        if (!isSelfClosing) {
+          stack.push(child);
         }
-        this.appendChild(child);
       }
     },
     appendChild(child) {
@@ -136,12 +163,27 @@ function createMockElement(tagName = 'div', id = '', className = '') {
       return this.querySelectorAll(sel)[0] || null;
     },
     querySelectorAll(sel) {
+      if (sel.includes(' ')) {
+        const parts = sel.trim().split(/\s+/);
+        let currentNodes = [this];
+        for (const part of parts) {
+          const nextNodes = [];
+          for (const node of currentNodes) {
+            nextNodes.push(...node.querySelectorAll(part));
+          }
+          currentNodes = nextNodes;
+        }
+        return currentNodes;
+      }
       const results = [];
       function traverse(node) {
         for (const child of node.children) {
           let match = false;
           if (sel.startsWith('#')) {
             if (child.id === sel.slice(1)) match = true;
+          } else if (sel.startsWith('.')) {
+            const cls = sel.slice(1);
+            if (child.classList?.contains(cls)) match = true;
           } else if (sel.includes('.')) {
             const parts = sel.split('.');
             const tagPart = parts[0];
@@ -897,6 +939,258 @@ test('Regression C: Repeated navigation and clicks do not duplicate document-lev
     'spa-router.js should not duplicate mob-nav-profile click listener');
   assert.strictEqual(routerCode.includes("e.target.closest('#spa-mobile-nav, .mobile-bottom-nav')"), false,
     'spa-router.js should not duplicate mobile-nav outside-click listener');
+});
+
+test('Mobile Bottom Nav: Pointer down initiates interaction, micro-enlargement, snap target, and indicator tracking', async () => {
+  const { windowListeners } = setupMockEnvironment();
+  let navigatedRoute = null;
+  const AppShell = loadAppShell();
+  await AppShell.init({
+    navigate: (route) => { navigatedRoute = route; }
+  });
+
+  const mobNav = document.getElementById('spa-mobile-nav');
+  assert.ok(mobNav, 'Mobile bottom nav should exist');
+
+  const items = mobNav.querySelectorAll('.mobile-nav__track--base .mobile-nav__item');
+  assert.strictEqual(items.length, 5, 'Should have 5 navigation items');
+
+  mobNav.getBoundingClientRect = () => ({ left: 0, width: 300, top: 0, height: 60, right: 300, bottom: 60 });
+  items.forEach((item, idx) => {
+    item.getBoundingClientRect = () => ({
+      left: idx * 60,
+      width: 60,
+      top: 0,
+      height: 60,
+      right: (idx + 1) * 60,
+      bottom: 60
+    });
+  });
+
+  // Dispatch pointerdown on first item (Home)
+  mobNav.dispatchEvent({
+    type: 'pointerdown',
+    button: 0,
+    pointerId: 1,
+    clientX: 30,
+    clientY: 30,
+    target: items[0]
+  });
+
+  assert.ok(mobNav.classList.contains('is-interacting'), 'Should set is-interacting class');
+  assert.ok(items[0].classList.contains('snap-target'), 'First item should have snap-target class');
+  assert.ok(mobNav.style.transform.includes('scale'), 'mobNav should apply micro-enlargement scale');
+
+  const indicator = mobNav.querySelector('.mobile-nav__indicator');
+  assert.ok(indicator.classList.contains('is-active'), 'Indicator should be active');
+  assert.ok(indicator.classList.contains('is-pressed'), 'Indicator should be pressed');
+
+  // Cleanup
+  mobNav.dispatchEvent({
+    type: 'pointercancel',
+    pointerId: 1
+  });
+  AppShell.destroy();
+});
+
+test('Mobile Bottom Nav: Pointer move applies rubberband damping, directional stretch, magnetic tracking, and dual-track clip-path', async () => {
+  const { windowListeners } = setupMockEnvironment();
+  const AppShell = loadAppShell();
+  await AppShell.init({});
+
+  const mobNav = document.getElementById('spa-mobile-nav');
+  const items = mobNav.querySelectorAll('.mobile-nav__track--base .mobile-nav__item');
+  const focusTrack = mobNav.querySelector('.mobile-nav__track--focus');
+
+  mobNav.getBoundingClientRect = () => ({ left: 0, width: 300, top: 0, height: 60, right: 300, bottom: 60 });
+  items.forEach((item, idx) => {
+    item.getBoundingClientRect = () => ({
+      left: idx * 60,
+      width: 60,
+      top: 0,
+      height: 60,
+      right: (idx + 1) * 60,
+      bottom: 60
+    });
+  });
+
+  // Start touch at item 0 (Home)
+  mobNav.dispatchEvent({
+    type: 'pointerdown',
+    button: 0,
+    pointerId: 2,
+    clientX: 30,
+    clientY: 30,
+    target: items[0]
+  });
+
+  // Drag finger towards item 1 (Projects, clientX = 90) and downwards (clientY = 50, rawDy = 20 > 8px for vertical stretch)
+  const moveListeners = windowListeners['pointermove'] || [];
+  assert.ok(moveListeners.length > 0, 'pointermove listener should be registered on window');
+
+  moveListeners.forEach(fn => fn({
+    type: 'pointermove',
+    pointerId: 2,
+    clientX: 90,
+    clientY: 50,
+    pointerType: 'touch',
+    cancelable: true,
+    preventDefault: () => {}
+  }));
+
+  // Target item should snap to item 1 (Projects)
+  assert.ok(items[1].classList.contains('snap-target'), 'Item 1 (Projects) should be snapped');
+  assert.strictEqual(items[0].classList.contains('snap-target'), false, 'Item 0 should no longer be snapped');
+
+  // Rubberband damping and scale should be active
+  assert.ok(mobNav.style.transform.includes('translate3d'), 'mobNav should apply translate3d from rubberband damping');
+  assert.ok(mobNav.style.transform.includes('scale'), 'mobNav should apply scale');
+
+  // Focus track clip-path should update to inset rounded capsule
+  assert.ok(focusTrack.style.clipPath.includes('inset(') && focusTrack.style.clipPath.includes('round 999px)'),
+    'focusTrack should have liquid-clipped inset round 999px clipPath');
+
+  // Release
+  const upListeners = windowListeners['pointerup'] || [];
+  upListeners.forEach(fn => fn({
+    type: 'pointerup',
+    pointerId: 2
+  }));
+
+  AppShell.destroy();
+});
+
+test('Mobile Bottom Nav: Pointer release executes spring rebound and navigation to target route', async () => {
+  const { windowListeners } = setupMockEnvironment();
+  let navigatedRoute = null;
+  const AppShell = loadAppShell();
+  await AppShell.init({
+    navigate: (route) => { navigatedRoute = route; }
+  });
+
+  const mobNav = document.getElementById('spa-mobile-nav');
+  const items = mobNav.querySelectorAll('.mobile-nav__track--base .mobile-nav__item');
+
+  mobNav.getBoundingClientRect = () => ({ left: 0, width: 300, top: 0, height: 60, right: 300, bottom: 60 });
+  items.forEach((item, idx) => {
+    item.getBoundingClientRect = () => ({
+      left: idx * 60,
+      width: 60,
+      top: 0,
+      height: 60,
+      right: (idx + 1) * 60,
+      bottom: 60
+    });
+  });
+
+  // Start touch on item 1 (Projects)
+  mobNav.dispatchEvent({
+    type: 'pointerdown',
+    button: 0,
+    pointerId: 3,
+    clientX: 90,
+    clientY: 30,
+    target: items[1]
+  });
+
+  // Release on item 1
+  const upListeners = windowListeners['pointerup'] || [];
+  upListeners.forEach(fn => fn({
+    type: 'pointerup',
+    pointerId: 3
+  }));
+
+  assert.strictEqual(navigatedRoute, 'projects', 'Releasing on projects item should navigate to projects');
+  assert.strictEqual(mobNav.classList.contains('is-interacting'), false, 'is-interacting class should be removed');
+
+  AppShell.destroy();
+});
+
+test('Mobile Bottom Nav: Vertical drag out of bounds cancels selection without navigation', async () => {
+  const { windowListeners } = setupMockEnvironment();
+  let navigatedRoute = null;
+  const AppShell = loadAppShell();
+  await AppShell.init({
+    navigate: (route) => { navigatedRoute = route; }
+  });
+
+  const mobNav = document.getElementById('spa-mobile-nav');
+  const items = mobNav.querySelectorAll('.mobile-nav__track--base .mobile-nav__item');
+
+  mobNav.getBoundingClientRect = () => ({ left: 0, width: 300, top: 0, height: 60, right: 300, bottom: 60 });
+  items.forEach((item, idx) => {
+    item.getBoundingClientRect = () => ({
+      left: idx * 60,
+      width: 60,
+      top: 0,
+      height: 60,
+      right: (idx + 1) * 60,
+      bottom: 60
+    });
+  });
+
+  // Start touch on item 1
+  mobNav.dispatchEvent({
+    type: 'pointerdown',
+    button: 0,
+    pointerId: 4,
+    clientX: 90,
+    clientY: 30,
+    target: items[1]
+  });
+
+  // Drag far out of bounds vertically (> bottom + 65 = 125)
+  const moveListeners = windowListeners['pointermove'] || [];
+  moveListeners.forEach(fn => fn({
+    type: 'pointermove',
+    pointerId: 4,
+    clientX: 90,
+    clientY: 180,
+    pointerType: 'touch',
+    cancelable: true,
+    preventDefault: () => {}
+  }));
+
+  assert.strictEqual(items[1].classList.contains('snap-target'), false, 'Snap target should be cleared on cancellation');
+
+  // Release after cancellation
+  const upListeners = windowListeners['pointerup'] || [];
+  upListeners.forEach(fn => fn({
+    type: 'pointerup',
+    pointerId: 4
+  }));
+
+  assert.strictEqual(navigatedRoute, null, 'Cancelled gesture must not trigger navigation');
+
+  AppShell.destroy();
+});
+
+test('Mobile Bottom Nav: Route updates synchronize active item and indicator', async () => {
+  setupMockEnvironment();
+  const AppShell = loadAppShell();
+  await AppShell.init({});
+
+  const mobNav = document.getElementById('spa-mobile-nav');
+  const homeItem = mobNav.querySelector('#mob-nav-home');
+  const projectsItem = mobNav.querySelector('#mob-nav-projects');
+  const templateItem = mobNav.querySelector('#mob-nav-template');
+
+  // Initially dashboard is active
+  AppShell.updateRoute('dashboard');
+  assert.ok(homeItem.classList.contains('active'), 'Home item should be active for dashboard route');
+  assert.strictEqual(projectsItem.classList.contains('active'), false);
+
+  // Navigate to projects
+  AppShell.updateRoute('projects');
+  assert.ok(projectsItem.classList.contains('active'), 'Projects item should be active for projects route');
+  assert.strictEqual(homeItem.classList.contains('active'), false);
+
+  // Navigate to template
+  AppShell.updateRoute('template');
+  assert.ok(templateItem.classList.contains('active'), 'Template item should be active for template route');
+  assert.strictEqual(projectsItem.classList.contains('active'), false);
+
+  AppShell.destroy();
 });
 
 

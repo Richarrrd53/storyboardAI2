@@ -115,6 +115,30 @@
       });
     }
 
+    // 2.5 標籤點擊事件防冒泡與篩選委派
+    const tagPills = card.querySelectorAll ? card.querySelectorAll('.project-tag-pill') : [];
+    if (tagPills.length > 0) {
+      tagPills.forEach(tagBtn => {
+        const onTagClick = (e) => {
+          if (e && typeof e.stopPropagation === 'function') {
+            e.stopPropagation();
+          }
+          const tag = tagBtn.dataset ? tagBtn.dataset.tag : tagBtn.getAttribute?.('data-tag');
+          if (tag) {
+            if (typeof opts.onTagClick === 'function') {
+              opts.onTagClick(tag, project);
+            } else if (typeof global.onProjectCardTagClick === 'function') {
+              global.onProjectCardTagClick(tag, project);
+            }
+          }
+        };
+        tagBtn.addEventListener('click', onTagClick);
+        cleanupFns.push(() => {
+          tagBtn.removeEventListener('click', onTagClick);
+        });
+      });
+    }
+
     // 3. 標題溢出跑馬燈互動 (Title Marquee)
     const titleWrapper = card.querySelector ? card.querySelector('.project-title-wrapper') : null;
     const titleEl = card.querySelector ? card.querySelector('.project-title') : null;

@@ -54,7 +54,7 @@
     // ── 銷毀清理 ──
     destroy() {
       this.closeEditor(false);
-      if (this._keyHandler) {
+      if (this._keyHandler && typeof document !== 'undefined') {
         document.removeEventListener('keydown', this._keyHandler);
         this._keyHandler = null;
       }
@@ -100,17 +100,51 @@
       if (!btnTable || !btnFilm) return;
 
       const switchView = (mode) => {
+        if (this._viewMode === mode) return;
+
+        // 捕捉切換前關注的 Shot ID (選取中的 shot 或視野中 shot)
+        let targetShotId = this._selectedShotId;
+        if (!targetShotId) {
+          if (this._viewMode === 'table') {
+            const firstRow = root.querySelector('.project-shot-row');
+            if (firstRow) targetShotId = firstRow.dataset.shotId;
+          } else {
+            const firstFrame = root.querySelector('.project-film-frame');
+            if (firstFrame) targetShotId = firstFrame.dataset.shotId;
+          }
+        }
+
         this._viewMode = mode;
         if (mode === 'table') {
           btnTable.classList.add('active');
           btnFilm.classList.remove('active');
           if (tableView) tableView.style.display = 'block';
           if (filmView) filmView.style.display = 'none';
+
+          const raf = typeof requestAnimationFrame === 'function' ? requestAnimationFrame : fn => setTimeout(fn, 0);
+          if (targetShotId) {
+            raf(() => {
+              const row = root.querySelector(`.project-shot-row[data-shot-id="${targetShotId}"]`);
+              if (row && typeof row.scrollIntoView === 'function') {
+                row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+              }
+            });
+          }
         } else {
           btnFilm.classList.add('active');
           btnTable.classList.remove('active');
           if (filmView) filmView.style.display = 'block';
           if (tableView) tableView.style.display = 'none';
+
+          const raf = typeof requestAnimationFrame === 'function' ? requestAnimationFrame : fn => setTimeout(fn, 0);
+          if (targetShotId) {
+            raf(() => {
+              const frame = root.querySelector(`.project-film-frame[data-shot-id="${targetShotId}"]`);
+              if (frame && typeof frame.scrollIntoView === 'function') {
+                frame.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+              }
+            });
+          }
         }
       };
 
@@ -205,6 +239,7 @@
 
     // ── 鍵盤快捷鍵 (Escape 關閉抽屜) ──
     _bindKeyboard() {
+      if (typeof document === 'undefined') return;
       if (this._keyHandler) {
         document.removeEventListener('keydown', this._keyHandler);
         this._keyHandler = null;

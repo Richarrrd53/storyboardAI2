@@ -142,3 +142,32 @@ test('ProjectCard.renderProjectCard handles single shot without secondary card a
   assert.ok(html.includes('已刪除'));
   assert.ok(html.includes('直向 9:16'));
 });
+
+test('ProjectCard.renderProjectCard renders tags cleanly and escapes HTML in tags', () => {
+  const pWithTags = {
+    id: 'proj-tags',
+    title: '標籤專案',
+    ratio: '16:9',
+    tags: ['商業廣告', '短影音 <特別篇>', '品牌 & 企劃']
+  };
+
+  const html = ProjectCard.renderProjectCard(pWithTags, { variant: 'default' });
+  assert.ok(html.includes('project-tags-row'));
+  assert.ok(html.includes('project-tag-pill'));
+  assert.ok(html.includes('#商業廣告'));
+  assert.ok(html.includes('#短影音 &lt;特別篇&gt;'));
+  assert.ok(html.includes('#品牌 &amp; 企劃'));
+  assert.ok(!html.includes('<特別篇>')); // must escape
+
+  // Compact variant should show first 2 tags and +1 more
+  const compactHtml = ProjectCard.renderProjectCard(pWithTags, { variant: 'compact' });
+  assert.ok(compactHtml.includes('project-tags-row-compact'));
+  assert.ok(compactHtml.includes('#商業廣告'));
+  assert.ok(compactHtml.includes('+1'));
+
+  // Without tags: no tags row
+  const pNoTags = { id: 'p-none', title: '無標籤專案', ratio: '16:9' };
+  const htmlNoTags = ProjectCard.renderProjectCard(pNoTags);
+  assert.ok(!htmlNoTags.includes('project-tags-row'));
+});
+

@@ -31,6 +31,7 @@ let isPlaying = false;
 let currentSourcePlayer = null;
 let currentSourcePlayerType = null; // 'youtube' | 'html5' | 'none'
 let playerSyncFrame = null;
+let playerRevision = 0;
 
 // Track Filters configuration
 const TRACKS_CONFIG = [
@@ -154,20 +155,23 @@ function loadYouTubePlayerApi() {
 }
 
 async function mountYouTubePlayer(videoId, title, templateId) {
+  const revision = playerRevision;
   const mount = document.getElementById('detail-source-player');
   if (!mount) return;
   try {
     await loadYouTubePlayerApi();
-    if (!document.getElementById('detail-source-player') || currentTemplate?.id !== templateId) return;
+    if (revision !== playerRevision || !document.getElementById('detail-source-player') || currentTemplate?.id !== templateId) return;
     currentSourcePlayerType = 'youtube';
     currentSourcePlayer = new window.YT.Player('detail-source-player', {
       videoId,
       playerVars: { rel: 0, playsinline: 1, modestbranding: 1, controls: 0 },
       events: {
         onReady: event => {
-          event.target.getIframe().setAttribute('title', `${title} 原始影片播放器`);
+          if (revision !== playerRevision) return;
+          event.target.getIframe?.()?.setAttribute('title', `${title} 原始影片播放器`);
         },
         onStateChange: event => {
+          if (revision !== playerRevision) return;
           if (event.data === window.YT.PlayerState.PLAYING) {
             updatePlayPauseButtonUI(true);
             startPlayerSync();
@@ -192,12 +196,7 @@ async function mountYouTubePlayer(videoId, title, templateId) {
    ========================================================================== */
 
 window.renderTemplateDetailTimeline = function(template, detailContainer) {
-  stopPlayerSync();
-  if (currentSourcePlayerType === 'youtube' && currentSourcePlayer?.destroy) {
-    try { currentSourcePlayer.destroy(); } catch (_) {}
-  }
-  currentSourcePlayer = null;
-  currentSourcePlayerType = null;
+  window.destroyTemplateTimeline();
   currentTemplate = template;
   currentTime = 0;
   isPlaying = false;
@@ -241,7 +240,7 @@ window.renderTemplateDetailTimeline = function(template, detailContainer) {
   // Update badges
   document.getElementById('detail-category-badge').textContent = CAT_MAP[template.category] || template.category || '未分類';
   document.getElementById('detail-shots-count-badge').textContent = `${template.shotsCount || shots.length} 鏡頭`;
-  document.getElementById('detail-duration-badge').textContent = `${timelineDuration}s`;
+  document.getElementById('detail-duration-badge').textContent = totalSec > 0 ? `${totalSec}s` : '未提供時長';
 
   renderAnalysisOverview(template, shots);
 
@@ -290,7 +289,7 @@ function renderAnalysisOverview(template, shots) {
   const durationEl = document.getElementById('analysis-kpi-duration');
   const shotsEl = document.getElementById('analysis-kpi-shots');
   const averageEl = document.getElementById('analysis-kpi-average');
-  if (durationEl) durationEl.textContent = `${timelineDuration}s`;
+  if (durationEl) durationEl.textContent = shotCount ? `${timelineDuration}s` : '—';
   if (shotsEl) shotsEl.textContent = String(shotCount);
   if (averageEl) averageEl.textContent = shotCount ? `${average.toFixed(1)}s` : '—';
 
@@ -401,6 +400,12 @@ function mountSourcePreview(t) {
     };
     scrubber.onpointerdown = event => { scrubber.setPointerCapture?.(event.pointerId); seek(event); };
     scrubber.onpointermove = event => { if (event.buttons === 1) seek(event); };
+    scrubber.onkeydown = event => {
+      const positions = { ArrowLeft: currentTime - 1, ArrowRight: currentTime + 1, Home: 0, End: timelineDuration };
+      if (!(event.key in positions)) return;
+      event.preventDefault();
+      window.seekTimeline(positions[event.key]);
+    };
   }
 }
 
@@ -773,6 +778,12 @@ window.seekTimeline = function(seconds, options = {}) {
   const timecodeEl = document.getElementById('detail-monitor-timecode');
   const durEl = document.getElementById('detail-monitor-duration');
   const proTimecodeEl = document.getElementById('pro-toolbar-timecode');
+  const scrubberEl = document.getElementById('player-scrubber-track');
+  if (scrubberEl) {
+    scrubberEl.setAttribute('aria-valuemax', String(timelineDuration));
+    scrubberEl.setAttribute('aria-valuenow', String(Math.round(seconds * 10) / 10));
+    scrubberEl.setAttribute('aria-valuetext', formatEditorTimecode(seconds));
+  }
 
   if (progressEl) progressEl.style.width = `${pct}%`;
   if (thumbEl) thumbEl.style.left = `${pct}%`;
@@ -1022,6 +1033,7 @@ function showOutroInspector(start) {
    ========================================================================== */
 
 window.backToStoreBrowse = function() {
+  if (window.templatePageNavigation) return window.templatePageNavigation.back();
   stopPlayerSync();
   if (currentSourcePlayerType === 'youtube') currentSourcePlayer?.pauseVideo?.();
   if (currentSourcePlayerType === 'html5') currentSourcePlayer?.pause?.();
@@ -1037,10 +1049,12 @@ window.backToStoreBrowse = function() {
 };
 
 window.destroyTemplateTimeline = function() {
+  playerRevision++;
   stopPlayerSync();
   if (currentSourcePlayerType === 'youtube' && currentSourcePlayer?.destroy) {
     try { currentSourcePlayer.destroy(); } catch (_) {}
   } else if (currentSourcePlayerType === 'html5' && currentSourcePlayer?.pause) {
+    currentSourcePlayer.onplay = currentSourcePlayer.onpause = currentSourcePlayer.onended = currentSourcePlayer.ontimeupdate = null;
     try { currentSourcePlayer.pause(); } catch (_) {}
   }
   currentSourcePlayer = null;
@@ -1048,6 +1062,9 @@ window.destroyTemplateTimeline = function() {
   window.TemplateEditor?.destroy();
   currentTemplate = null;
   currentTime = 0;
+  timelineDuration = 0;
+  activeShotIndex = 0;
+  visibleTracks = Object.fromEntries(TRACKS_CONFIG.map(track => [track.id, track.default]));
   isPlaying = false;
   selectedItemId = null;
   window.closeInspectorDrawer?.();
@@ -1085,6 +1102,8 @@ window.playTemplateSegment = function(seconds) {
 };
 
 window.triggerTemplateDetail = async function(templateId) {
+  if (window.templatePageNavigation) return window.templatePageNavigation.preview(templateId);
+  if (window.spaNavigate) return window.spaNavigate('template', { templateId });
   let templates = [];
   if (window.cacheTemplatesList) {
     templates = window.cacheTemplatesList;

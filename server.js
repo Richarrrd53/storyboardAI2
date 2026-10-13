@@ -453,6 +453,7 @@ app.get('/api/projects', async (req, res) => {
                 ratio: true,
                 style: true,
                 is_deleted: true,
+                metadata: true,
                 createAt: true,
                 updatedAt: true,
                 _count: {
@@ -464,6 +465,7 @@ app.get('/api/projects', async (req, res) => {
 
         const formattedProjects = projects.map(p => ({
             ...p,
+            tags: (p.metadata && typeof p.metadata === 'object' && Array.isArray(p.metadata.tags)) ? p.metadata.tags : [],
             shotCount: p._count ? p._count.shots : 0,
             createAt: toTaipeiTZ(p.createAt),
             updateAt: toTaipeiTZ(p.updatedAt || p.createAt)
@@ -613,10 +615,10 @@ app.patch('/api/projects/:id', async (req, res) => {
         const token = authHeader.split(' ')[1];
         const decoded = jwt.verify(token, JWT_SECRET);
         const { id } = req.params;
-        const { title } = req.body;
+        const { title, tags } = req.body;
 
-        if (!title || !title.trim()) {
-            return res.status(400).json({ error: '專案標題為必填' });
+        if (title === undefined && tags === undefined) {
+            return res.status(400).json({ error: '請提供要更新的欄位' });
         }
 
         const project = await prisma.project.findUnique({
@@ -626,12 +628,40 @@ app.patch('/api/projects/:id', async (req, res) => {
         if (!project) return res.status(404).json({ error: '找不到專案' });
         if (project.authorId !== decoded.id) return res.status(403).json({ error: '沒有權限修改此專案' });
 
+        const dataToUpdate = {};
+
+        if (title !== undefined) {
+            if (!title || !title.trim()) {
+                return res.status(400).json({ error: '專案標題為必填' });
+            }
+            dataToUpdate.title = title.trim();
+        }
+
+        if (tags !== undefined) {
+            if (!Array.isArray(tags)) {
+                return res.status(400).json({ error: 'Tags 必須為陣列' });
+            }
+            const cleanTags = Array.from(new Set(tags.map(t => String(t || '').trim()).filter(Boolean)));
+            const currentMetadata = (project.metadata && typeof project.metadata === 'object' && !Array.isArray(project.metadata)) ? project.metadata : {};
+            dataToUpdate.metadata = {
+                ...currentMetadata,
+                tags: cleanTags
+            };
+        }
+
         const updated = await prisma.project.update({
             where: { id },
-            data: { title: title.trim() }
+            data: dataToUpdate
         });
 
-        res.json({ message: '專案已成功更新', project: updated });
+        const formatted = {
+            ...updated,
+            tags: (updated.metadata && typeof updated.metadata === 'object' && Array.isArray(updated.metadata.tags)) ? updated.metadata.tags : [],
+            createAt: toTaipeiTZ(updated.createAt),
+            updateAt: toTaipeiTZ(updated.updatedAt || updated.createAt)
+        };
+
+        res.json({ message: '專案已成功更新', project: formatted });
     } catch (error) {
         console.error('Update Project Error:', error);
         res.status(500).json({ error: '更新專案失敗' });
@@ -696,6 +726,7 @@ app.post('/api/projects/:id/duplicate', async (req, res) => {
 
         const formattedProject = {
             ...newProject,
+            tags: (newProject.metadata && typeof newProject.metadata === 'object' && Array.isArray(newProject.metadata.tags)) ? newProject.metadata.tags : [],
             createAt: toTaipeiTZ(newProject.createAt),
             updatedAt: toTaipeiTZ(newProject.updatedAt),
             shots: (newProject.shots || []).map(s => ({
@@ -1011,6 +1042,7 @@ app.get('/api/projects/:id', async (req, res) => {
 
         const formattedProject = {
             ...project,
+            tags: (project.metadata && typeof project.metadata === 'object' && Array.isArray(project.metadata.tags)) ? project.metadata.tags : [],
             cover: cleanCover,
             createAt: toTaipeiTZ(project.createAt),
             updatedAt: toTaipeiTZ(project.updatedAt),
@@ -1278,7 +1310,7 @@ app.get('/discovery/settings', (req, res) => {
 });
 
 // SPA catch-all — redirect routes to main.html
-const spaRoutes = ['/dashboard', '/projects', '/login', '/register', '/generate', '/analyze', '/analysis', '/history', '/template', '/project/:id'];
+const spaRoutes = ['/dashboard', '/projects', '/login', '/register', '/generate', '/analyze', '/analysis', '/history', '/template', '/template/:id', '/project/:id'];
 spaRoutes.forEach(route => {
     app.get(route, (req, res) => {
         res.sendFile(path.join(process.cwd(), 'public', 'main.html'));

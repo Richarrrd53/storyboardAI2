@@ -29,6 +29,10 @@
   let lastOpenTime = 0;
   let updateMobNavVisual = null;
   let isNavInteracting = false;
+  let navSpringRaf = null;
+  let justHandledPointerNav = false;
+  let cleanupMobNavGestures = null;
+  let cacheMobNavMetrics = null;
 
   // Cleanup tracking
   const registeredListeners = [];
@@ -919,13 +923,39 @@
     if (!mobNav || mobNav.dataset.gesturesBound) return;
     mobNav.dataset.gesturesBound = 'true';
 
-    let indicatorWidth = parseFloat(getComputedStyle(mobNav).getPropertyValue('--nav-selector-width')) || 64;
-    const insetY = parseFloat(getComputedStyle(mobNav).getPropertyValue('--nav-selector-inset-y')) || 5;
+    if (typeof window.mountAICreationCapsule === 'function') {
+      try { window.mountAICreationCapsule(); } catch (_) {}
+    }
 
-    const indicator = mobNav.querySelector('.mobile-nav__indicator');
+    let activePointerId = null;
+    let startX = 0;
+    let startY = 0;
+    let curDx = 0;
+    let curDy = 0;
+    let curScaleX = 1.0;
+    let curScaleY = 1.0;
+    let isCancelled = false;
+    let currentTargetItem = null;
+    let lastSnappedItem = null;
+    let cachedMetrics = [];
+    let cachedNavRect = null;
+    let failsafeTimer = null;
+    let curIndicatorX = 0;
+    let pressStartTime = 0;
+
+    const maxDx = 18;
+    const maxDy = 12;
+    const insetX = parseFloat(getComputedStyle(mobNav).getPropertyValue('--nav-selector-inset-x')) || 5;
+    const insetY = parseFloat(getComputedStyle(mobNav).getPropertyValue('--nav-selector-inset-y')) || 5;
+    let indicatorWidth = parseFloat(getComputedStyle(mobNav).getPropertyValue('--nav-selector-width')) || 64;
+
     const items = Array.from(mobNav.querySelectorAll('.mobile-nav__track--base .mobile-nav__item')).length
       ? Array.from(mobNav.querySelectorAll('.mobile-nav__track--base .mobile-nav__item'))
       : Array.from(mobNav.querySelectorAll('.mobile-nav__item:not(.mobile-nav__item--focus)'));
+    const indicator = mobNav.querySelector('.mobile-nav__indicator');
+
+    addTrackedListener(mobNav, 'dragstart', (e) => e.preventDefault());
+    items.forEach(it => it.setAttribute('draggable', 'false'));
 
     function updateIndicatorVisual(x, scale = 1.0, isSettling = false, opacity = 1.0) {
       if (!indicator || !mobNav) return;
@@ -938,20 +968,24 @@
         if (focusTrack) focusTrack.classList.remove('is-settling');
       }
 
-      indicator.style.opacity = opacity.toString();
-      if (focusTrack) focusTrack.style.opacity = opacity.toString();
+      const opacityStr = opacity.toString();
+      indicator.style.opacity = opacityStr;
+      if (focusTrack) focusTrack.style.opacity = opacityStr;
       indicator.style.transform = `translate3d(${x.toFixed(2)}px, 0, 0) scale(${scale.toFixed(4)})`;
 
       if (focusTrack) {
         if (opacity <= 0.01) {
           const hiddenClip = 'inset(0 100% 0 0 round 999px)';
           focusTrack.style.clipPath = hiddenClip;
+          if (focusTrack.style.webkitClipPath !== undefined) {
+            focusTrack.style.webkitClipPath = hiddenClip;
+          }
           mobNav.style.setProperty('--nav-clip-path', hiddenClip);
           return;
         }
 
-        const navW = mobNav.getBoundingClientRect().width;
-        const navH = mobNav.getBoundingClientRect().height || 64;
+        const navW = cachedNavRect ? cachedNavRect.width : (mobNav.getBoundingClientRect?.().width || 0);
+        const navH = cachedNavRect ? cachedNavRect.height : (mobNav.getBoundingClientRect?.().height || 64);
         const selW = indicatorWidth;
         const selH = navH - (insetY * 2);
         const centerY = insetY + selH / 2;
@@ -967,22 +1001,402 @@
 
         const clipValue = `inset(${top.toFixed(2)}px ${right.toFixed(2)}px ${bottom.toFixed(2)}px ${left.toFixed(2)}px round 999px)`;
         focusTrack.style.clipPath = clipValue;
+        if (focusTrack.style.webkitClipPath !== undefined) {
+          focusTrack.style.webkitClipPath = clipValue;
+        }
         mobNav.style.setProperty('--nav-clip-path', clipValue);
       }
     }
     updateMobNavVisual = updateIndicatorVisual;
+
+    function cacheMetrics() {
+      if (!mobNav.getBoundingClientRect) return;
+      cachedNavRect = mobNav.getBoundingClientRect();
+      cachedMetrics = items.map(it => {
+        const r = it.getBoundingClientRect ? it.getBoundingClientRect() : { left: 0, width: 0 };
+        return {
+          item: it,
+          id: it.id,
+          centerX: r.left + r.width / 2,
+          isCreate: it.classList?.contains('mobile-nav__item--create') || it.id === 'mob-nav-generate'
+        };
+      });
+
+      if (cachedMetrics.length >= 1 && cachedNavRect && cachedNavRect.width > 0) {
+        const c0 = cachedMetrics[0].centerX - cachedNavRect.left;
+        const calcW = Math.round(2 * (c0 - insetX));
+        if (calcW > 40 && calcW < 120) {
+          indicatorWidth = calcW;
+          indicator.style.width = `${indicatorWidth}px`;
+          mobNav.style.setProperty('--nav-selector-width', `${indicatorWidth}px`);
+        }
+
+        const mobBtn = mobNav.querySelector('#mob-nav-circle-wrap') || mobNav.querySelector('.mob-circle-btn');
+        if (mobBtn && mobBtn.getBoundingClientRect) {
+          const br = mobBtn.getBoundingClientRect();
+          if (br && br.width > 0) {
+            window.__mobBtnRestingBottomPx = Math.max(0, Math.round(window.innerHeight - br.bottom));
+            document.documentElement?.style?.setProperty('--mob-btn-bottom', `${window.__mobBtnRestingBottomPx}px`);
+          }
+        }
+      }
+    }
+    cacheMobNavMetrics = cacheMetrics;
+
+    function clearSnapHover() {
+      items.forEach(it => {
+        it.classList?.remove('snap-target', 'selector-hovered', 'is-hovered');
+      });
+      const circleBtn = mobNav.querySelector('.mob-circle-btn') || document.getElementById('global-create-capsule');
+      if (circleBtn) {
+        circleBtn.classList?.remove('snap-hover', 'selector-hovered', 'is-hovered');
+      }
+    }
+
+    function highlightTargetItem(targetItem) {
+      if (!targetItem) {
+        clearSnapHover();
+        return;
+      }
+      items.forEach(it => {
+        if (it === targetItem) {
+          it.classList?.add('snap-target');
+        } else {
+          it.classList?.remove('snap-target', 'selector-hovered', 'is-hovered');
+        }
+      });
+      const circleBtn = mobNav.querySelector('.mob-circle-btn') || document.getElementById('global-create-capsule');
+      const isCreate = targetItem.classList?.contains('mobile-nav__item--create') || targetItem.id === 'mob-nav-generate';
+      if (circleBtn) {
+        if (isCreate) {
+          circleBtn.classList?.add('snap-hover', 'selector-hovered', 'is-hovered');
+          targetItem.classList?.add('selector-hovered', 'is-hovered');
+        } else {
+          circleBtn.classList?.remove('snap-hover', 'selector-hovered', 'is-hovered');
+          targetItem.classList?.remove('selector-hovered', 'is-hovered');
+        }
+      }
+    }
+
+    function findClosestMetric(clientX) {
+      let closest = cachedMetrics[0] || null;
+      let minXDist = Infinity;
+      for (const m of cachedMetrics) {
+        const d = Math.abs(clientX - m.centerX);
+        if (d < minXDist) {
+          minXDist = d;
+          closest = m;
+        }
+      }
+      return closest;
+    }
+
+    function cleanupWindowListeners() {
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointercancel', onPointerCancel);
+      if (failsafeTimer) {
+        clearTimeout(failsafeTimer);
+        failsafeTimer = null;
+      }
+    }
+    cleanupMobNavGestures = cleanupWindowListeners;
+
+    function onPointerDown(e) {
+      if (e.button !== 0 && e.pointerType === 'mouse') return;
+
+      if (navSpringRaf) {
+        cancelAnimationFrame(navSpringRaf);
+        navSpringRaf = null;
+      }
+      mobNav.style.transform = '';
+      mobNav.style.transition = 'none';
+
+      isNavInteracting = true;
+      mobNav.classList.add('is-interacting');
+      activePointerId = e.pointerId;
+      startX = e.clientX;
+      startY = e.clientY;
+      curDx = 0;
+      curDy = 0;
+      isCancelled = false;
+      pressStartTime = performance.now();
+
+      const directItem = e.target ? e.target.closest('.mobile-nav__item') : null;
+      cacheMetrics();
+      const closestMetric = findClosestMetric(e.clientX);
+      currentTargetItem = directItem || (closestMetric ? closestMetric.item : null);
+      lastSnappedItem = currentTargetItem;
+      highlightTargetItem(currentTargetItem);
+
+      // 按下即動：只要有點擊到 link 就觸發 selector 移動過來，手指點擊時微反饋 (scale 1.05)
+      if (indicator && currentTargetItem && cachedNavRect) {
+        indicator.classList.add('is-active', 'is-pressed');
+        const tMetric = cachedMetrics.find(m => m.item === currentTargetItem);
+        const targetCenterX = tMetric ? tMetric.centerX : (currentTargetItem.getBoundingClientRect ? (currentTargetItem.getBoundingClientRect().left + currentTargetItem.getBoundingClientRect().width / 2) : 0);
+        const finalOffset = targetCenterX - cachedNavRect.left - indicatorWidth / 2;
+        curIndicatorX = Math.max(insetX, Math.min(cachedNavRect.width - indicatorWidth - insetX, finalOffset));
+        updateIndicatorVisual(curIndicatorX, 1.05, true, 1.0);
+      }
+
+      curScaleX = 1.026;
+      curScaleY = 1.026;
+
+      mobNav.style.transition = 'transform 0.16s cubic-bezier(0.2, 0.9, 0.3, 1)';
+      mobNav.style.transform = `translate3d(0px, 0px, 0) scale(${curScaleX.toFixed(4)}, ${curScaleY.toFixed(4)})`;
+
+      window.addEventListener('pointermove', onPointerMove, { passive: false });
+      window.addEventListener('pointerup', onPointerUp);
+      window.addEventListener('pointercancel', onPointerCancel);
+
+      failsafeTimer = setTimeout(() => {
+        if (isNavInteracting) {
+          onPointerRelease(null, true);
+        }
+      }, 4000);
+    }
+
+    function onPointerMove(e) {
+      if (!isNavInteracting || (activePointerId !== null && e.pointerId !== activePointerId)) return;
+      if (e.cancelable && e.pointerType !== 'mouse') {
+        e.preventDefault();
+      }
+
+      mobNav.style.transition = 'none';
+
+      const rawDx = e.clientX - startX;
+      const rawDy = e.clientY - startY;
+
+      if (cachedNavRect && (e.clientY < cachedNavRect.top - 65 || e.clientY > cachedNavRect.bottom + 65)) {
+        if (!isCancelled) {
+          isCancelled = true;
+          currentTargetItem = null;
+          clearSnapHover();
+          updateMobileBottomNavActive();
+        }
+      } else {
+        isCancelled = false;
+        const closestMetric = findClosestMetric(e.clientX);
+        const newTargetItem = closestMetric ? closestMetric.item : null;
+
+        if (newTargetItem !== currentTargetItem) {
+          currentTargetItem = newTargetItem;
+          if (currentTargetItem !== lastSnappedItem) {
+            lastSnappedItem = currentTargetItem;
+            if (typeof navigator !== 'undefined' && navigator.vibrate) {
+              try { navigator.vibrate(8); } catch (_) {}
+            }
+          }
+          highlightTargetItem(currentTargetItem);
+        }
+
+        // 跟手磁吸吸附
+        if (indicator && cachedNavRect && closestMetric) {
+          if (Math.hypot(rawDx, rawDy) > 4) {
+            indicator.classList.remove('is-settling');
+          }
+          const fingerRelX = e.clientX - cachedNavRect.left - indicatorWidth / 2;
+          const closestCenterRelX = closestMetric.centerX - cachedNavRect.left - indicatorWidth / 2;
+          const distX = fingerRelX - closestCenterRelX;
+          let targetIndX = fingerRelX - distX * 0.35;
+          targetIndX = Math.max(insetX, Math.min(cachedNavRect.width - indicatorWidth - insetX, targetIndX));
+
+          curIndicatorX += (targetIndX - curIndicatorX) * 0.36;
+
+          indicator.classList.add('is-active');
+          updateIndicatorVisual(curIndicatorX, 1.05, false, 1.0);
+        }
+      }
+
+      curDx = Math.sign(rawDx) * maxDx * (1 - 1 / (1 + (Math.abs(rawDx) * 0.16) / maxDx));
+      curDy = Math.sign(rawDy) * maxDy * (1 - 1 / (1 + (Math.abs(rawDy) * 0.16) / maxDy));
+
+      let edgeStretchY = 0;
+      let originY = 'center';
+      if (Math.abs(rawDy) > 8) {
+        edgeStretchY = Math.min(0.045, (Math.abs(rawDy) - 8) * 0.0035);
+        originY = rawDy > 0 ? 'top' : 'bottom';
+      }
+
+      mobNav.style.transformOrigin = `center ${originY}`;
+
+      const elapsed = performance.now() - pressStartTime;
+      const baseScale = 1.0 + 0.026 * Math.min(1, elapsed / 140);
+      curScaleX = baseScale;
+      curScaleY = baseScale + edgeStretchY;
+
+      mobNav.style.transform = `translate3d(${curDx.toFixed(2)}px, ${curDy.toFixed(2)}px, 0) scale(${curScaleX.toFixed(4)}, ${curScaleY.toFixed(4)})`;
+    }
+
+    function onPointerRelease(e, forceCancel = false) {
+      if (!isNavInteracting) return;
+      if (!forceCancel && activePointerId !== null && e && e.pointerId !== activePointerId) return;
+
+      const releasedTargetItem = currentTargetItem;
+      const isActuallyCancelled = isCancelled || (forceCancel && Math.hypot(curDx, curDy) >= 10);
+      const releaseCancelled = isActuallyCancelled || !releasedTargetItem;
+
+      cleanupWindowListeners();
+      clearSnapHover();
+
+      isNavInteracting = false;
+      mobNav.classList.remove('is-interacting');
+      activePointerId = null;
+
+      if (indicator && releasedTargetItem && cachedNavRect) {
+        indicator.classList.add('is-active');
+        indicator.classList.remove('is-pressed');
+        const tMetric = cachedMetrics.find(m => m.item === releasedTargetItem);
+        const targetCenterX = tMetric ? tMetric.centerX : (releasedTargetItem.getBoundingClientRect ? (releasedTargetItem.getBoundingClientRect().left + releasedTargetItem.getBoundingClientRect().width / 2) : 0);
+        const finalOffset = targetCenterX - cachedNavRect.left - indicatorWidth / 2;
+        curIndicatorX = Math.max(insetX, Math.min(cachedNavRect.width - indicatorWidth - insetX, finalOffset));
+        updateIndicatorVisual(curIndicatorX, 1.0, true, 1.0);
+      }
+
+      const dragDist = Math.hypot(curDx, curDy);
+      const isLargeDisplacement = dragDist > 5.0;
+
+      let curX = curDx;
+      let curY = curDy;
+      let sX = curScaleX;
+      let sY = curScaleY;
+      let vx = isLargeDisplacement ? -Math.sign(curX) * Math.max(36, Math.min(65, Math.abs(curX) * 4)) : 0;
+      let vy = isLargeDisplacement ? -Math.sign(curY) * Math.max(26, Math.min(50, Math.abs(curY) * 3.5)) : 0;
+      let vsX = 0;
+      let vsY = 0;
+
+      const posStiffness = isLargeDisplacement ? 380 : 320;
+      const posDamping = isLargeDisplacement ? 12.5 : 24;
+      const scaleStiffness = 360;
+      const scaleDamping = 22;
+      let lastTime = performance.now();
+
+      function springStep(now) {
+        const dt = Math.min(0.032, (now - lastTime) / 1000);
+        lastTime = now;
+
+        const ax = -posStiffness * curX - posDamping * vx;
+        const ay = -posStiffness * curY - posDamping * vy;
+        vx += ax * dt;
+        vy += ay * dt;
+        curX += vx * dt;
+        curY += vy * dt;
+
+        const asX = -scaleStiffness * (sX - 1.0) - scaleDamping * vsX;
+        const asY = -scaleStiffness * (sY - 1.0) - scaleDamping * vsY;
+        vsX += asX * dt;
+        vsY += asY * dt;
+        sX += vsX * dt;
+        sY += vsY * dt;
+
+        mobNav.style.transform = `translate3d(${curX.toFixed(2)}px, ${curY.toFixed(2)}px, 0) scale(${sX.toFixed(4)}, ${sY.toFixed(4)})`;
+
+        const isPosActive = Math.hypot(curX, curY) > 0.18 || Math.hypot(vx, vy) > 2;
+        const isScaleActive = Math.hypot(sX - 1.0, sY - 1.0) > 0.001 || Math.hypot(vsX, vsY) > 0.05;
+
+        if (isPosActive || isScaleActive) {
+          navSpringRaf = requestAnimationFrame(springStep);
+        } else {
+          mobNav.style.transform = '';
+          mobNav.style.transformOrigin = 'center center';
+          navSpringRaf = null;
+        }
+      }
+      navSpringRaf = requestAnimationFrame(springStep);
+
+      if (releaseCancelled) {
+        updateMobileBottomNavActive();
+        return;
+      }
+
+      window.__justHandledPointerNav = Date.now();
+      justHandledPointerNav = true;
+      setTimeout(() => { justHandledPointerNav = false; }, 450);
+
+      const targetItem = releasedTargetItem;
+      if (targetItem.id === 'mob-nav-profile') {
+        toggleUserPanel();
+      } else if (targetItem.id === 'mob-nav-generate' || targetItem.classList?.contains('mobile-nav__item--create')) {
+        if (window.AICreationController) {
+          if (window.AICreationController.surfaceState === 'quick-compose') {
+            window.AICreationController.closeQuickCompose();
+          } else {
+            window.AICreationController.openQuickCompose();
+          }
+        }
+      } else {
+        const href = targetItem.getAttribute('href') || '';
+        if (href.includes('generate')) {
+          if (window.AICreationController) {
+            window.AICreationController.openQuickCompose();
+          }
+          return;
+        }
+        let targetRoute = 'dashboard';
+        if (href.includes('projects')) targetRoute = 'projects';
+        else if (href.includes('template')) targetRoute = 'template';
+        else if (href.includes('history')) targetRoute = 'history';
+        else if (href.includes('discovery')) targetRoute = 'discovery';
+        shellOptions.navigate(targetRoute);
+      }
+    }
+
+    function onPointerUp(e) {
+      onPointerRelease(e, false);
+    }
+
+    function onPointerCancel(e) {
+      onPointerRelease(e, true);
+    }
+
+    addTrackedListener(mobNav, 'pointerdown', onPointerDown);
+    addTrackedListener(mobNav, 'click', (e) => {
+      e.stopPropagation();
+    });
+
+    const mobGenItem = mobNav.querySelector('#mob-nav-generate');
+    if (mobGenItem) {
+      addTrackedListener(mobGenItem, 'pointerenter', () => {
+        const cap = document.getElementById('global-create-capsule');
+        if (cap && !cap.classList?.contains('is-expanded')) {
+          cap.classList?.add('selector-hovered', 'is-hovered');
+        }
+      });
+      addTrackedListener(mobGenItem, 'pointerleave', () => {
+        const cap = document.getElementById('global-create-capsule');
+        if (cap && !isNavInteracting) {
+          cap.classList?.remove('selector-hovered', 'is-hovered');
+        }
+      });
+    }
 
     items.forEach(item => {
       const onItemClick = (e) => {
         e.preventDefault();
         e.stopPropagation();
 
+        if (justHandledPointerNav || (window.__justHandledPointerNav && Date.now() - window.__justHandledPointerNav < 450)) return;
+
         if (item.id === 'mob-nav-profile') {
           toggleUserPanel();
           return;
         }
 
-        if (item.id === 'mob-nav-generate' || item.classList.contains('mobile-nav__item--create')) {
+        if (item.id === 'mob-nav-generate' || item.classList?.contains('mobile-nav__item--create')) {
+          if (indicator) {
+            indicator.classList?.add('is-active');
+            const itemRect = item.getBoundingClientRect ? item.getBoundingClientRect() : { left: 0, width: 0 };
+            const navRect = mobNav.getBoundingClientRect ? mobNav.getBoundingClientRect() : { left: 0, width: 0 };
+            const targetCenterX = itemRect.left + itemRect.width / 2;
+            const finalOffset = targetCenterX - navRect.left - indicatorWidth / 2;
+            updateIndicatorVisual(finalOffset, 1.05, true, 1.0);
+            mobNav.style.transition = 'transform 0.16s cubic-bezier(0.2, 0.9, 0.3, 1)';
+            mobNav.style.transform = 'translate3d(0px, 0px, 0) scale(1.026, 1.026)';
+            setTimeout(() => {
+              mobNav.style.transform = '';
+              updateIndicatorVisual(finalOffset, 1.0, true, 1.0);
+            }, 160);
+          }
           if (window.AICreationController) {
             if (window.AICreationController.surfaceState === 'quick-compose') {
               window.AICreationController.closeQuickCompose();
@@ -998,11 +1412,62 @@
         if (href.includes('projects')) targetRoute = 'projects';
         else if (href.includes('template')) targetRoute = 'template';
         else if (href.includes('history')) targetRoute = 'history';
+        else if (href.includes('discovery')) targetRoute = 'discovery';
 
         shellOptions.navigate(targetRoute);
       };
       addTrackedListener(item, 'click', onItemClick);
     });
+
+    if (window.visualViewport && !mobNav.dataset.viewportBound) {
+      mobNav.dataset.viewportBound = 'true';
+      const initialHeight = window.visualViewport.height;
+
+      const onViewportChange = () => {
+        const isQuickComposeActive = document.body.classList?.contains('ai-quick-compose-active') ||
+          (window.AICreationController && window.AICreationController.surfaceState === 'quick-compose');
+
+        if (isQuickComposeActive) {
+          mobNav.style.opacity = '1';
+          mobNav.style.pointerEvents = 'auto';
+
+          const lift = Math.max(0, window.innerHeight - window.visualViewport.height);
+          const qcContainer = document.getElementById('quick-creation-container');
+
+          if (lift > 80) {
+            document.body.classList?.add('ai-keyboard-open');
+            mobNav.style.transform = `translate3d(0, -${lift}px, 0)`;
+            if (qcContainer) {
+              qcContainer.style.transform = `translate3d(-50%, -${lift}px, 0)`;
+            }
+          } else {
+            mobNav.style.transform = '';
+            if (qcContainer) {
+              qcContainer.style.transform = 'translateX(-50%)';
+            }
+            if (document.activeElement !== document.getElementById('qc-story-input')) {
+              document.body.classList?.remove('ai-keyboard-open');
+            }
+          }
+        } else {
+          document.body.classList?.remove('ai-keyboard-open');
+          const currentHeight = window.visualViewport.height;
+          const isKeyboardOpen = (initialHeight - currentHeight) > 150;
+          if (isKeyboardOpen) {
+            mobNav.style.transform = 'translateY(120%)';
+            mobNav.style.opacity = '0';
+            mobNav.style.pointerEvents = 'none';
+          } else {
+            mobNav.style.transform = '';
+            mobNav.style.opacity = '';
+            mobNav.style.pointerEvents = '';
+          }
+        }
+      };
+
+      addTrackedListener(window.visualViewport, 'resize', onViewportChange);
+      addTrackedListener(window.visualViewport, 'scroll', onViewportChange);
+    }
   }
 
   function updateMobileBottomNavActive(page) {
@@ -1075,6 +1540,25 @@
             indicator.style.transform = `translate3d(${finalOffset.toFixed(2)}px, 0, 0) scale(1)`;
             indicator.style.opacity = '1';
           }
+        } else {
+          requestAnimationFrame(() => {
+            const currentMobNav = document.getElementById('spa-mobile-nav') || mobileBottomNav;
+            if (!currentMobNav) return;
+            const nR = currentMobNav.getBoundingClientRect ? currentMobNav.getBoundingClientRect() : { width: 0, left: 0 };
+            const iR = activeItem.getBoundingClientRect ? activeItem.getBoundingClientRect() : { width: 0, left: 0 };
+            if (nR.width > 0 && iR.width > 0) {
+              const iCenterX = iR.left + iR.width / 2;
+              const tOffset = iCenterX - nR.left - currentIndicatorWidth / 2;
+              const fOffset = Math.max(insetX, Math.min(nR.width - currentIndicatorWidth - insetX, tOffset));
+              indicator.classList.add('is-active');
+              if (updateMobNavVisual) {
+                updateMobNavVisual(fOffset, 1.0, true, 1.0);
+              } else {
+                indicator.style.transform = `translate3d(${fOffset.toFixed(2)}px, 0, 0) scale(1)`;
+                indicator.style.opacity = '1';
+              }
+            }
+          });
         }
       } else {
         indicator.classList.remove('is-active');
@@ -1125,6 +1609,9 @@
         if (panel) {
           panel.style.removeProperty('transform');
         }
+      }
+      if (typeof cacheMobNavMetrics === 'function') {
+        try { cacheMobNavMetrics(); } catch (_) {}
       }
       updateMobileBottomNavActive();
     };
@@ -1200,6 +1687,7 @@
       }
 
       updateSidebarActive(page);
+      updateMobileBottomNavActive(page);
     }
   }
 
@@ -1219,6 +1707,20 @@
       } catch (_) {}
       storeUnsubscribe = null;
     }
+
+    if (cleanupMobNavGestures) {
+      try { cleanupMobNavGestures(); } catch (_) {}
+      cleanupMobNavGestures = null;
+    }
+
+    if (navSpringRaf) {
+      try { cancelAnimationFrame(navSpringRaf); } catch (_) {}
+      navSpringRaf = null;
+    }
+
+    isNavInteracting = false;
+    justHandledPointerNav = false;
+    cacheMobNavMetrics = null;
 
     registeredListeners.forEach(({ target, event, handler, options }) => {
       try {
@@ -1255,7 +1757,10 @@
     if (backdrop) delete backdrop.dataset.bound;
 
     const mobNav = document.getElementById('spa-mobile-nav') || mobileBottomNav;
-    if (mobNav) delete mobNav.dataset.gesturesBound;
+    if (mobNav) {
+      delete mobNav.dataset.gesturesBound;
+      delete mobNav.dataset.viewportBound;
+    }
 
     document.querySelectorAll('[data-spa-bound]').forEach(el => {
       delete el.dataset.spaBound;

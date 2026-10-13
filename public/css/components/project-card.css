@@ -458,6 +458,59 @@
   font-weight: 600;
 }
 
+/* ── 4.1 Project Tags Row & Pills ── */
+.project-tags-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+  margin-bottom: 2px;
+}
+
+.project-tag-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: var(--radius-pill, 9999px);
+  background: rgba(241, 245, 249, 0.85);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: #475569;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+  font-family: inherit;
+}
+
+.project-tag-pill:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+}
+
+.project-tag-pill:active {
+  transform: translateY(0);
+}
+
+.project-tag-pill-more {
+  background: transparent;
+  border: 1px dashed #cbd5e1;
+  color: #94a3b8;
+  font-size: 0.7rem;
+  cursor: default;
+}
+
+.project-tags-row.project-tags-row-compact {
+  gap: 4px;
+  margin-top: 2px;
+  margin-bottom: 0;
+}
+
 /* ── 5. Variants: Compact (Dashboard) vs Default / Full (Projects) ── */
 .project-folder-card.variant-compact {
   max-width: 290px;
@@ -572,6 +625,7 @@
   box-sizing: border-box;
 }
 
+.project-reveal-curtain.is-contain-shell,
 .transition-cover-shell.is-contain-shell {
   background: #ffffff;
 }
@@ -590,6 +644,7 @@
   border-radius: inherit;
 }
 
+.project-reveal-curtain .transition-cover-overlay,
 .transition-cover-shell .transition-cover-overlay {
   position: absolute;
   inset: 0;
@@ -604,11 +659,27 @@
 .project-reveal-curtain .cover-main-wrap,
 .transition-cover-shell .transition-cover-media {
   position: absolute;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+/* Contain mode (portrait / square): media is centered and scaled proportionally with frosted backdrop */
+.project-reveal-curtain.is-contain-shell .cover-main-wrap,
+.transition-cover-shell.is-contain-shell .transition-cover-media {
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  overflow: hidden;
-  border-radius: inherit;
+}
+
+/* Default / landscape non-contain mode: media fills the entire curtain container */
+.project-reveal-curtain:not(.is-contain-shell) .cover-main-wrap,
+.transition-cover-shell:not(.is-contain-shell) .transition-cover-media {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  transform: none;
 }
 
 .project-reveal-curtain img,
@@ -619,10 +690,20 @@
   display: block;
 }
 
-.transition-cover-shell .transition-cover-image {
+.project-reveal-curtain.is-contain-shell .transition-cover-image,
+.transition-cover-shell.is-contain-shell .transition-cover-image {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  object-position: center;
+  display: block;
+}
+
+.project-reveal-curtain:not(.is-contain-shell) .transition-cover-image,
+.transition-cover-shell:not(.is-contain-shell) .transition-cover-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
   object-position: center;
   display: block;
 }

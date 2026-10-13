@@ -2,42 +2,135 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 // Set up mock DOM environment
+function matchesSelector(node, sel) {
+  if (!node || !sel) return false;
+  if (sel.startsWith('#')) return node.id === sel.slice(1);
+  if (sel.startsWith('.')) return Boolean(node.className && node.className.includes(sel.slice(1)));
+  if (sel.startsWith('[')) {
+    const match = sel.match(/\[([a-zA-Z0-9_-]+)(?:=["']?([^"']*)["']?)?\]/);
+    if (match) {
+      const attr = match[1];
+      const val = match[2];
+      const actual = node.getAttribute ? node.getAttribute(attr) : node[attr];
+      return val !== undefined ? actual === val : Boolean(actual);
+    }
+  }
+  return node.tagName === sel.toUpperCase();
+}
+
+function findDescendant(node, sel) {
+  if (!node || !node.children) return null;
+  for (const child of node.children) {
+    if (matchesSelector(child, sel)) return child;
+    const found = findDescendant(child, sel);
+    if (found) return found;
+  }
+  return null;
+}
+
+function findAllDescendants(node, sel, results = []) {
+  if (!node || !node.children) return results;
+  for (const child of node.children) {
+    if (matchesSelector(child, sel)) results.push(child);
+    findAllDescendants(child, sel, results);
+  }
+  return results;
+}
+
 function createMockElement(tagName = 'div') {
   const children = [];
   const eventListeners = {};
   const dataset = {};
+  const attributes = {};
   const style = {
     setProperty: (k, v) => { style[k] = v; }
   };
 
-  return {
+  const classList = {
+    add: (...cls) => {
+      const current = elem.className ? elem.className.split(/\s+/).filter(Boolean) : [];
+      cls.forEach(c => { if (!current.includes(c)) current.push(c); });
+      elem.className = current.join(' ');
+    },
+    remove: (...cls) => {
+      const current = elem.className ? elem.className.split(/\s+/).filter(Boolean) : [];
+      elem.className = current.filter(c => !cls.includes(c)).join(' ');
+    },
+    contains: (c) => Boolean(elem.className && elem.className.split(/\s+/).includes(c)),
+    toggle: (c, force) => {
+      if (force === true) classList.add(c);
+      else if (force === false) classList.remove(c);
+      else if (classList.contains(c)) classList.remove(c);
+      else classList.add(c);
+    }
+  };
+
+  const elem = {
     tagName: tagName.toUpperCase(),
     dataset,
     style,
     className: '',
+    classList,
     children,
+    parentNode: null,
+    getAttribute(k) { return attributes[k] !== undefined ? attributes[k] : (dataset[k] || null); },
+    setAttribute(k, v) { attributes[k] = String(v); },
+    removeAttribute(k) { delete attributes[k]; },
     get innerHTML() {
-      return this._innerHTML || '';
+      if (this._innerHTML) {
+        return this._innerHTML;
+      }
+      if (this.children.length > 0) {
+        return this.children.map(c => c.innerHTML || c._innerHTML || '').join('');
+      }
+      return '';
     },
     set innerHTML(val) {
       this._innerHTML = val;
       this.children.length = 0;
+      if (typeof val === 'string' && val.includes('<')) {
+        const tagRegex = /<([a-zA-Z0-9_-]+)([^>]*)>/g;
+        let match;
+        while ((match = tagRegex.exec(val)) !== null) {
+          const tag = match[1];
+          if (tag.startsWith('/')) continue;
+          const attrsStr = match[2];
+          const child = createMockElement(tag);
+          const idMatch = attrsStr.match(/id=["']([^"']+)["']/);
+          if (idMatch) child.id = idMatch[1];
+          const classMatch = attrsStr.match(/class=["']([^"']+)["']/);
+          if (classMatch) child.className = classMatch[1];
+          const typeMatch = attrsStr.match(/type=["']([^"']+)["']/);
+          if (typeMatch) child.type = typeMatch[1];
+          const dataTagMatch = attrsStr.match(/data-tag=["']([^"']+)["']/);
+          if (dataTagMatch) child.setAttribute('data-tag', dataTagMatch[1]);
+          this.appendChild(child);
+        }
+      }
     },
     appendChild(child) {
       children.push(child);
+      child.parentNode = elem;
+      if (this._innerHTML && (child.innerHTML || child._innerHTML)) {
+        this._innerHTML += (child.innerHTML || child._innerHTML);
+      }
+      return child;
+    },
+    removeChild(child) {
+      const idx = children.indexOf(child);
+      if (idx !== -1) children.splice(idx, 1);
+      child.parentNode = null;
+      if (this._innerHTML && (child.innerHTML || child._innerHTML)) {
+        this._innerHTML = this._innerHTML.replace(child.innerHTML || child._innerHTML, '');
+      }
       return child;
     },
     querySelector(sel) {
-      if (sel === '#projects-grid' || sel === '.projects-grid') {
-        return children.find(c => c.id === 'projects-grid') || (this.id === 'projects-grid' ? this : null);
-      }
-      if (sel === '.projects-body') {
-        return children.find(c => c.className?.includes('projects-body')) || (this.className?.includes('projects-body') ? this : null);
-      }
-      return null;
+      if (matchesSelector(elem, sel)) return elem;
+      return findDescendant(elem, sel);
     },
     querySelectorAll(sel) {
-      return [];
+      return findAllDescendants(elem, sel, []);
     },
     addEventListener(evt, fn) {
       if (!eventListeners[evt]) eventListeners[evt] = [];
@@ -48,25 +141,51 @@ function createMockElement(tagName = 'div') {
       eventListeners[evt] = eventListeners[evt].filter(f => f !== fn);
     },
     dispatchEvent(evt) {
-      const fns = eventListeners[evt] || [];
-      fns.forEach(f => f({ type: evt }));
+      const evtType = typeof evt === 'string' ? evt : (evt && evt.type ? evt.type : 'click');
+      const fns = eventListeners[evtType] || [];
+      const evObj = typeof evt === 'string' ? { type: evt, target: elem, stopPropagation() {} } : { stopPropagation() {}, target: elem, ...evt };
+      fns.forEach(f => f(evObj));
+    },
+    click() {
+      if (typeof this.onclick === 'function') this.onclick({ type: 'click', target: this, stopPropagation() {} });
+      this.dispatchEvent({ type: 'click', stopPropagation() {} });
     }
   };
+  return elem;
 }
 
 // Minimal mock document and window
+const mockBody = createMockElement('body');
+mockBody.className = 'projects-body';
+global.mockBody = mockBody;
+
 const mockDocument = {
+  body: mockBody,
   getElementById(id) {
-    if (id === 'projects-grid') return global.mockGrid;
-    return null;
+    if (id === 'projects-grid') return global.mockGrid || mockBody.querySelector('#projects-grid');
+    return mockBody.querySelector(`#${id}`);
   },
   querySelector(sel) {
     if (sel === '.projects-body') return global.mockBody;
-    return null;
+    return mockBody.querySelector(sel);
   },
   createElement(tag) {
     return createMockElement(tag);
   }
+};
+
+const windowListeners = {};
+global.addEventListener = (evt, fn) => {
+  if (!windowListeners[evt]) windowListeners[evt] = [];
+  windowListeners[evt].push(fn);
+};
+global.removeEventListener = (evt, fn) => {
+  if (!windowListeners[evt]) return;
+  windowListeners[evt] = windowListeners[evt].filter(f => f !== fn);
+};
+global.dispatchEvent = (evt) => {
+  const evtType = typeof evt === 'string' ? evt : (evt && evt.type ? evt.type : 'click');
+  (windowListeners[evtType] || []).forEach(f => f(evt));
 };
 
 global.document = mockDocument;
@@ -294,3 +413,187 @@ test('Router Navigation Simulation: Direct Entry, Leave, Return, Back/Forward Li
   
   inst3.unmount();
 });
+
+test('ProjectsPage: getFilteredAndSortedProjects supports OR logic with multiple tags and preserves sort', () => {
+  const p1 = { id: 'p1', title: 'Commercial', tags: ['商業廣告'], updateAt: '2026-01-01' };
+  const p2 = { id: 'p2', title: 'Short Video', tags: ['短影音'], updateAt: '2026-01-03' };
+  const p3 = { id: 'p3', title: 'Personal', tags: ['個人創作'], updateAt: '2026-01-02' };
+  const p4 = { id: 'p4', title: 'Graduation', tags: ['畢業專題'], updateAt: '2026-01-04' };
+
+  // 1. Single tag filter
+  const single = ProjectsPage.getFilteredAndSortedProjects([p1, p2, p3, p4], new Set(['短影音']));
+  assert.equal(single.length, 1);
+  assert.equal(single[0].id, 'p2');
+
+  // 2. Multi-tag filter with OR logic
+  const multi = ProjectsPage.getFilteredAndSortedProjects([p1, p2, p3, p4], new Set(['商業廣告', '畢業專題']));
+  assert.equal(multi.length, 2);
+  // Sorted desc by updateAt: p4 (2026-01-04) then p1 (2026-01-01)
+  assert.equal(multi[0].id, 'p4');
+  assert.equal(multi[1].id, 'p1');
+
+  // 3. Filter with no match
+  const none = ProjectsPage.getFilteredAndSortedProjects([p1, p2, p3, p4], new Set(['不存在的標籤']));
+  assert.equal(none.length, 0);
+
+  // 4. Empty set returns all active projects sorted
+  const all = ProjectsPage.getFilteredAndSortedProjects([p1, p2, p3, p4], new Set());
+  assert.equal(all.length, 4);
+  assert.equal(all[0].id, 'p4');
+});
+
+test('ProjectsPage: extractTagsWithCounts gathers unique tags and correct project counts', () => {
+  const projects = [
+    { id: '1', tags: ['商業廣告', '短影音'], is_deleted: false },
+    { id: '2', tags: ['商業廣告'], is_deleted: false },
+    { id: '3', tags: ['個人創作'], is_deleted: false },
+    { id: '4', tags: ['商業廣告'], is_deleted: true } // Deleted should be ignored
+  ];
+
+  const { allTags, counts } = ProjectsPage.extractTagsWithCounts(projects);
+  assert.equal(counts['商業廣告'], 2);
+  assert.equal(counts['短影音'], 1);
+  assert.equal(counts['個人創作'], 1);
+  assert.equal(counts['已刪除'], undefined);
+  assert.ok(allTags.includes('商業廣告'));
+  assert.ok(allTags.includes('短影音'));
+});
+
+test('ProjectsPage: renderFilterEmptyState renders filter-specific empty state and binds clear callback', () => {
+  const container = createMockElement('div');
+  let cleared = false;
+  ProjectsPage.renderFilterEmptyState(container, () => {
+    cleared = true;
+  });
+
+  assert.ok(container.innerHTML.includes('無符合的分鏡'));
+  assert.ok(container.innerHTML.includes('清除篩選'));
+  assert.ok(!container.innerHTML.includes('尚未建立專案'));
+
+  const btn = container.querySelector('#empty-clear-filters-btn');
+  assert.ok(btn);
+  btn.click();
+  assert.equal(cleared, true);
+});
+
+test('ProjectsPage: mount toolbar renders tag filter pills, updates count badge, and toggles filters', async () => {
+  ProjectStore.reset();
+  const projects = [
+    { id: 'p1', title: '廣告 A', tags: ['商業廣告'], updateAt: '2026-01-01', is_deleted: false },
+    { id: 'p2', title: '短片 B', tags: ['短影音'], updateAt: '2026-01-02', is_deleted: false },
+    { id: 'p3', title: '廣告 C', tags: ['商業廣告'], updateAt: '2026-01-03', is_deleted: false }
+  ];
+  ProjectStore.setProjects(projects);
+
+  const root = createMockElement('div');
+  const toolbar = createMockElement('div');
+  toolbar.id = 'projects-toolbar';
+  const tagsScroll = createMockElement('div');
+  tagsScroll.id = 'projects-tags-scroll';
+  const clearBtn = createMockElement('button');
+  clearBtn.id = 'projects-clear-filter-btn';
+  const countBadge = createMockElement('span');
+  countBadge.id = 'projects-count-badge';
+  const grid = createMockElement('div');
+  grid.id = 'projects-grid';
+
+  toolbar.appendChild(tagsScroll);
+  toolbar.appendChild(clearBtn);
+  root.appendChild(countBadge);
+  root.appendChild(toolbar);
+  root.appendChild(grid);
+
+  const instance = await ProjectsPage.mount({ root });
+
+  // Initial render: 3 cards, count badge = 3
+  assert.equal(grid.children.length, 3);
+  assert.equal(countBadge.textContent, '3');
+
+  // Verify pills: "全部", "#商業廣告 (2)", "#短影音 (1)"
+  const allPill = tagsScroll.querySelector('[data-tag="__ALL__"]');
+  const commPill = tagsScroll.querySelector('[data-tag="商業廣告"]');
+  const videoPill = tagsScroll.querySelector('[data-tag="短影音"]');
+  assert.ok(allPill);
+  assert.ok(commPill);
+  assert.ok(videoPill);
+  assert.ok(allPill.className.includes('is-active'));
+
+  // Click "#短影音" filter pill
+  commPill.click(); // toggle 商業廣告
+  assert.equal(grid.children.length, 2);
+  assert.equal(countBadge.textContent, '2 / 3');
+  assert.equal(clearBtn.style.display, 'inline-flex');
+
+  // Click clear filter button
+  clearBtn.click();
+  assert.equal(grid.children.length, 3);
+  assert.equal(countBadge.textContent, '3');
+  assert.equal(clearBtn.style.display, 'none');
+
+  instance.unmount();
+});
+
+test('ProjectsPage: openProjectTagModal opens dialog, allows adding/removing tags, and saves via onSave', async () => {
+  const project = {
+    id: 'modal-proj',
+    title: '標籤彈窗測試',
+    tags: ['商業廣告']
+  };
+
+  let savedTags = null;
+  const modal = ProjectsPage.openProjectTagModal(project, async (tags) => {
+    savedTags = tags;
+  });
+
+  assert.ok(modal);
+  const overlay = mockDocument.body.querySelector('.project-tags-modal-overlay');
+  assert.ok(overlay, 'Modal overlay should be appended to document.body');
+
+  // Wait 20ms for open timeout: backdrop blur and panel scale 1
+  await new Promise(r => setTimeout(r, 20));
+  const panel = overlay.querySelector('.project-tags-modal-panel');
+  assert.ok(panel);
+  assert.equal(panel.style.scale, '1');
+  assert.equal(overlay.style.backdropFilter, 'blur(16px)');
+  assert.ok(overlay.style.transition.includes('cubic-bezier(.4, 0, .2, 1)') || overlay.style.transition.includes('cubic-bezier(.4,0,.2,1)'));
+
+  // Verify title
+  assert.ok(overlay.innerHTML.includes('標籤彈窗測試'));
+
+  // Verify current tags chips
+  const chipsWrap = overlay.querySelector('#modal-chips-wrap');
+  assert.ok(chipsWrap);
+  assert.ok(chipsWrap.innerHTML.includes('#商業廣告'));
+
+  // Add new tag from input
+  const input = overlay.querySelector('#modal-tag-input');
+  const addBtn = overlay.querySelector('#modal-tag-add-btn');
+  input.value = '短影音';
+  addBtn.click();
+
+  assert.ok(chipsWrap.innerHTML.includes('#短影音'));
+
+  // Remove original tag
+  const removeBtn = chipsWrap.querySelector('[data-tag="商業廣告"]');
+  assert.ok(removeBtn);
+  removeBtn.click();
+
+  assert.ok(!chipsWrap.innerHTML.includes('#商業廣告'));
+  assert.ok(chipsWrap.innerHTML.includes('#短影音'));
+
+  // Click save button
+  const saveBtn = overlay.querySelector('#modal-save-btn');
+  saveBtn.click();
+
+  // Wait 20ms: verify close transition step (panel scale 0, blur 0, close easing)
+  await new Promise(r => setTimeout(r, 20));
+  assert.deepEqual(savedTags, ['短影音']);
+  assert.ok(panel.style.transition.includes('cubic-bezier(.31, .01, .66, -0.59)') || panel.style.transition.includes('cubic-bezier(.31,.01,.66,-0.59)'));
+  assert.equal(panel.style.scale, '0');
+  assert.equal(overlay.style.backdropFilter, 'blur(0px)');
+
+  // Wait for complete close animation (duration + 50ms)
+  await new Promise(r => setTimeout(r, 550));
+  assert.equal(mockDocument.body.querySelector('.project-tags-modal-overlay'), null, 'Modal should be removed on save');
+});
+

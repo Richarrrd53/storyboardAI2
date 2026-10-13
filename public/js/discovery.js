@@ -6,6 +6,8 @@
         const count = document.getElementById('result-count');
         const skillSelect = document.getElementById('skill');
         if (!form || !results || !skillSelect) return;
+        if (form.dataset.discoveryInitialized === 'true') return;
+        form.dataset.discoveryInitialized = 'true';
         const button = form.querySelector('button');
         let currentVideos = [];
         let currentSkill;
@@ -21,16 +23,27 @@
         const escapeHtml = value => String(value).replace(/[&<>'"]/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[character]));
 
         async function loadSkills() {
-            const data = await api('/api/discovery/skills');
-            skillSelect.innerHTML = data.skills.map(skill => `<option value="${escapeHtml(skill.id)}">${escapeHtml(skill.name)}</option>`).join('');
-            const settingsLink = document.getElementById('skill-status');
-            if (settingsLink) {
-                settingsLink.textContent = data.configured ? '已設定完畢' : '尚未完成 API 設定';
-                settingsLink.classList.toggle('is-pending', !data.configured);
+            try {
+                const data = await api('/api/discovery/skills');
+                if (Array.isArray(data?.skills) && data.skills.length > 0) {
+                    skillSelect.innerHTML = data.skills.map(skill => `<option value="${escapeHtml(skill.id)}">${escapeHtml(skill.name)}</option>`).join('');
+                } else if (!skillSelect.children.length) {
+                    skillSelect.innerHTML = '<option value="short-video-template-lab">Short Video Template Lab</option>';
+                }
+                const settingsLink = document.getElementById('skill-status');
+                if (settingsLink) {
+                    settingsLink.textContent = data.configured ? '已設定完畢' : '尚未完成 API 設定';
+                    settingsLink.classList.toggle('is-pending', !data.configured);
+                }
+                if (!data.configured && message) message.textContent = '請點選「尚未完成 API 設定」，填寫 YouTube 與 Gemini 金鑰後即可開始。';
+                else if (message && message.textContent.startsWith('請點選「尚未完成 API 設定」')) message.textContent = '';
+                if (button) button.disabled = !data.configured || !skillSelect.children.length;
+            } catch (error) {
+                if (!skillSelect.children.length) {
+                    skillSelect.innerHTML = '<option value="short-video-template-lab">Short Video Template Lab</option>';
+                }
+                if (message) message.textContent = `無法載入 skill registry：${error.message}`;
             }
-            if (!data.configured && message) message.textContent = '請點選「尚未完成 API 設定」，填寫 YouTube 與 Gemini 金鑰後即可開始。';
-            else if (message && message.textContent.startsWith('請點選「尚未完成 API 設定」')) message.textContent = '';
-            if (button) button.disabled = !data.configured || !data.skills.length;
         }
 
         function renderSection(name, section) {
@@ -185,20 +198,22 @@
         loadSkills().catch(error => { if (message) message.textContent = `無法載入 skill registry：${error.message}`; });
     };
 
-    // Auto-run if standalone or already present
+    // Auto-run if discovery-form is present in DOM
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
-            if (!window.spaNavigate && document.getElementById('discovery-form')) {
+            if (document.getElementById('discovery-form')) {
                 window.initDiscoveryPage();
             }
         });
     } else {
-        if (!window.spaNavigate && document.getElementById('discovery-form')) {
+        if (document.getElementById('discovery-form')) {
             window.initDiscoveryPage();
         }
     }
     window.addEventListener('pageshow', event => {
         if (event.persisted && typeof window.initDiscoveryPage === 'function') {
+            const form = document.getElementById('discovery-form');
+            if (form) delete form.dataset.discoveryInitialized;
             window.initDiscoveryPage();
         }
     });

@@ -30,7 +30,20 @@ function createMockElement(tagName = 'div', id = '', className = '') {
     background: '',
     boxSizing: '',
     setProperty: (k, v) => { style[k] = v; },
-    removeProperty: (k) => { delete style[k]; }
+    removeProperty: (k) => { delete style[k]; },
+    get cssText() { return Object.entries(style).filter(([k, v]) => typeof v === 'string' && v).map(([k, v]) => `${k}:${v}`).join(';'); },
+    set cssText(val) {
+      if (!val) return;
+      val.split(';').forEach(part => {
+        const idx = part.indexOf(':');
+        if (idx > -1) {
+          const rawK = part.slice(0, idx).trim();
+          const k = rawK.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+          const v = part.slice(idx + 1).trim();
+          style[k] = v;
+        }
+      });
+    }
   };
 
   const el = {
@@ -185,7 +198,16 @@ function setupMockEnvironment() {
     currentCoverTransition: null,
     _activeProjectTransition: null,
     ProjectCard: {
-      parseAspectRatio: () => 16 / 9,
+      parseAspectRatio: (ratioInput, width, height) => {
+        if (width > 0 && height > 0) return width / height;
+        if (typeof ratioInput === 'number' && ratioInput > 0) return ratioInput;
+        const str = String(ratioInput || '').trim();
+        const match = str.match(/(\d+(?:\.\d+)?)\s*[:/]\s*(\d+(?:\.\d+)?)/);
+        if (match) return parseFloat(match[1]) / parseFloat(match[2]);
+        const floatVal = parseFloat(str);
+        if (!isNaN(floatVal) && floatVal > 0) return floatVal;
+        return 16 / 9;
+      },
       calculateTransitionTargetSize: () => ({ width: 760, height: 427.5, left: 220, top: 186 }),
       getContainedImageRect: () => ({ left: 200, top: 150, width: 320, height: 180 })
     }
@@ -487,4 +509,57 @@ test('ProjectCoverTransition: Cleanup removes DOM nodes and restores card styles
   assert.strictEqual(card.classList.contains('is-expanded'), false);
   assert.strictEqual(windowMock.currentCoverTransition, null);
   assert.strictEqual(windowMock._activeProjectTransition, null);
+});
+
+test('ProjectCoverTransition: Landscape (16:9) transition fills curtain with transform: none and no is-contain-shell', () => {
+  const { body } = setupMockEnvironment();
+  const PCT = loadProjectCoverTransition();
+
+  const { card, primaryCover } = createTestCard();
+  primaryCover.dataset.trueRatio = '1.7777777777777777';
+  body.appendChild(card);
+
+  const session = PCT.launch(card, { id: 'p-landscape', ratio: '16:9' });
+  const flyingCover = session.flyingCover;
+
+  assert.ok(flyingCover, 'Flying cover must exist');
+  assert.strictEqual(flyingCover.classList.contains('is-contain-shell'), false, 'Landscape must not have is-contain-shell');
+  assert.strictEqual(flyingCover.classList.contains('transition-cover-shell'), true, 'Must have transition-cover-shell class');
+
+  const mainImgWrap = flyingCover.querySelector('.cover-main-wrap');
+  assert.ok(mainImgWrap, 'cover-main-wrap must exist');
+  assert.ok(mainImgWrap.style.transform === 'none' || mainImgWrap.style.transform.includes('none'), 'Landscape mainImgWrap must have transform: none');
+
+  const mainImgClone = flyingCover.querySelector('.cover-main');
+  assert.ok(mainImgClone, 'cover-main image must exist');
+  assert.strictEqual(mainImgClone.style.objectFit, 'cover', 'Landscape cover-main must use object-fit: cover');
+
+  session.cleanup();
+});
+
+test('ProjectCoverTransition: Portrait (9:16) transition adds is-contain-shell and centers media', () => {
+  const { body } = setupMockEnvironment();
+  const PCT = loadProjectCoverTransition();
+
+  const { card, primaryCover } = createTestCard();
+  primaryCover.dataset.trueRatio = '0.5625';
+  body.appendChild(card);
+
+  const session = PCT.launch(card, { id: 'p-portrait', ratio: '9:16' });
+  const flyingCover = session.flyingCover;
+
+  assert.ok(flyingCover, 'Flying cover must exist');
+  assert.strictEqual(flyingCover.classList.contains('is-contain-shell'), true, 'Portrait must have is-contain-shell');
+
+  const bgImg = flyingCover.querySelector('.cover-background');
+  assert.ok(bgImg, 'Portrait must have blurred background layer');
+
+  const overlay = flyingCover.querySelector('.transition-cover-overlay');
+  assert.ok(overlay, 'Portrait must have frosted overlay');
+
+  const mainImgWrap = flyingCover.querySelector('.cover-main-wrap');
+  assert.ok(mainImgWrap, 'cover-main-wrap must exist');
+  assert.ok(mainImgWrap.style.transform.includes('translate(-50%, -50%)'), 'Portrait mainImgWrap must be centered with translate(-50%, -50%)');
+
+  session.cleanup();
 });

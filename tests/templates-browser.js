@@ -23,7 +23,7 @@ const server = http.createServer(async (req, res) => {
     await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
     const origin = `http://127.0.0.1:${server.address().port}`;
     browser = await chromium.launch({ headless: true, executablePath: process.env.STORYBOARD_CHROME_PATH || 'C:/Program Files/Google/Chrome/Application/chrome.exe' });
-    for (const viewport of [{ width: 1366, height: 768 }, { width: 390, height: 844 }]) {
+    for (const viewport of [{ width: 1440, height: 900 }, { width: 1024, height: 768 }, { width: 390, height: 844 }].filter(viewport => !process.env.STORYBOARD_QA_WIDTH || String(viewport.width) === process.env.STORYBOARD_QA_WIDTH)) {
       const context = await browser.newContext({ viewport, reducedMotion: 'reduce' });
       await context.addInitScript(() => {
         localStorage.setItem('spa_auth_token', 'fixture-token');
@@ -51,7 +51,7 @@ const server = http.createServer(async (req, res) => {
       page.on('pageerror', error => errors.push(error.message));
       await page.goto(origin + '/#/template');
       await page.locator('.template-card').first().waitFor();
-      await page.locator(`.template-card[data-id="${template.id}"]`).click();
+      await page.locator(`#template-grid .template-card[data-id="${template.id}"]`).click();
       await page.locator('#page-main.is-template-detail-mode').waitFor();
       assert.equal(await page.locator('#detail-template-title').textContent(), template.name);
       assert.equal(await page.locator('#editor-shot-list .editor-shot-item').count(), template.structure.length);
@@ -65,6 +65,10 @@ const server = http.createServer(async (req, res) => {
       assert.equal(await page.locator('#analysis-kpi-duration').textContent(), `${total}s`);
       await page.locator('#editor-shot-list .editor-shot-item').nth(1).click();
       assert.equal(await page.evaluate(() => window.__playerSeek), 2.5);
+      await page.locator('#player-scrubber-track').focus();
+      await page.keyboard.press('ArrowRight');
+      assert.equal(await page.locator('#player-scrubber-track').getAttribute('aria-valuenow'), '3.5');
+      await page.keyboard.press('ArrowLeft');
       await page.locator('#btn-mode-story').click();
       assert.equal(await page.locator('#view-mode-story').isVisible(), true);
       assert.equal(await page.locator('#view-mode-professional').isVisible(), false);
@@ -129,7 +133,7 @@ const server = http.createServer(async (req, res) => {
       await page.locator('.editor-board-intro').scrollIntoViewIfNeeded();
       await page.screenshot({ path: path.join(output, `storyboard-${viewport.width}.png`) });
       await page.locator('.btn-back-to-store').click();
-      await page.locator('.template-card[data-id="sparse"]').click();
+      await page.locator('#template-grid .template-card[data-id="sparse"]').click();
       assert.equal(await page.locator('#analysis-score-value').textContent(), '—');
       assert.equal(await page.locator('#editor-shot-list .editor-shot-item').count(), 0);
       assert.equal(await page.locator('#editor-export-storyboard').isDisabled(), true);

@@ -2,35 +2,39 @@
    StoryboardAI — Unified Generation Workflow Stylesheet
    Persistent Creation Surface & 4-Phase Architecture
 ════════════════════════════════════════════════════════════ */
+@import url('./tokens.css');
 
 :root {
-    --gen-primary: #2563eb;
-    --gen-primary-hover: #1d4ed8;
-    --gen-primary-soft: rgba(37, 99, 235, 0.08);
-    --gen-primary-border: rgba(37, 99, 235, 0.2);
-    --gen-surface-bg: rgba(255, 255, 255, 0.88);
-    --gen-surface-border: rgba(255, 255, 255, 0.7);
-    --gen-text-dark: #0f172a;
-    --gen-text-mid: #475569;
-    --gen-text-light: #94a3b8;
-    --gen-radius-sm: 8px;
-    --gen-radius-md: 14px;
-    --gen-radius-lg: 20px;
-    --gen-radius-xl: 28px;
-    --gen-radius-pill: 999px;
-    --gen-shadow-card: 0 16px 40px -10px rgba(37, 99, 235, 0.08), 0 4px 16px rgba(15, 23, 42, 0.04);
-    --gen-shadow-elevated: 0 24px 60px -12px rgba(37, 99, 235, 0.14), 0 8px 24px rgba(15, 23, 42, 0.06);
-    --gen-ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
-    --gen-ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+    --gen-primary: var(--color-brand-primary, #2563eb);
+    --gen-primary-hover: var(--color-action-primary-hover, #1d4ed8);
+    --gen-primary-soft: var(--color-brand-primary-soft, rgba(37, 99, 235, 0.08));
+    --gen-primary-border: var(--color-brand-primary-border, rgba(37, 99, 235, 0.2));
+    --gen-surface-bg: var(--color-surface-primary, rgba(255, 255, 255, 0.88));
+    --gen-surface-border: var(--color-border-subtle, rgba(255, 255, 255, 0.7));
+    --gen-text-dark: var(--color-text-primary, #0f172a);
+    --gen-text-mid: var(--color-text-secondary, #475569);
+    --gen-text-light: var(--color-text-muted, #94a3b8);
+    --gen-radius-sm: var(--radius-sm, 8px);
+    --gen-radius-md: var(--radius-md, 14px);
+    --gen-radius-lg: var(--radius-lg, 20px);
+    --gen-radius-xl: var(--radius-xl, 28px);
+    --gen-radius-pill: var(--radius-pill, 999px);
+    --gen-shadow-card: var(--elevation-2, 0 16px 40px -10px rgba(37, 99, 235, 0.08), 0 4px 16px rgba(15, 23, 42, 0.04));
+    --gen-shadow-elevated: var(--elevation-3, 0 24px 60px -12px rgba(37, 99, 235, 0.14), 0 8px 24px rgba(15, 23, 42, 0.06));
+    --gen-ease-spring: var(--motion-ease-decelerate, cubic-bezier(0.16, 1, 0.3, 1));
+    --gen-ease-smooth: var(--motion-ease-smooth, cubic-bezier(0.22, 1, 0.36, 1));
 }
 
 /* ── 1. Page Main Layout & Workspace Shell ── */
-.dashboard-layout #page-main.spa-gen-wrap,
 .dashboard-layout #page-main.gen-main,
-#page-main.spa-gen-wrap,
-#page-main.gen-main,
-.gen-main,
-.spa-gen-wrap {
+.dashboard-layout #page-main.page-generate {
+    padding: 0 !important;
+    overflow: hidden !important;
+    background: transparent !important;
+}
+
+body:not(.dashboard-layout) #page-main.gen-main,
+body:not(.dashboard-layout) .gen-main {
     width: 100%;
     height: calc(100vh - 2 * clamp(8px, 1vh, 12px));
     height: calc(100dvh - 2 * clamp(8px, 1vh, 12px));
@@ -42,7 +46,27 @@
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    padding: 24px 20px 120px !important;
+    padding: var(--space-6, 24px) var(--space-5, 20px) 120px !important;
+    box-sizing: border-box !important;
+    background:
+        radial-gradient(circle 1000px at 15% 10%, rgba(59, 130, 246, 0.04) 0%, transparent 60%),
+        radial-gradient(circle 900px at 85% 85%, rgba(99, 102, 241, 0.035) 0%, transparent 55%),
+        linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+}
+
+.spa-gen-wrap {
+    width: 100%;
+    height: 100%;
+    max-height: 100%;
+    min-height: 0;
+    flex: 1 1 0;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: var(--space-6, 24px) var(--space-5, 20px) 120px !important;
     box-sizing: border-box !important;
     background:
         radial-gradient(circle 1000px at 15% 10%, rgba(59, 130, 246, 0.04) 0%, transparent 60%),
@@ -1192,11 +1216,14 @@
 
 /* ── 12. Mobile Responsive Layouts (Spec items 32, 33, 34, 59) ── */
 @media (max-width: 768px) {
-    .dashboard-layout #page-main.spa-gen-wrap,
     .dashboard-layout #page-main.gen-main,
-    #page-main.spa-gen-wrap,
-    #page-main.gen-main,
-    .gen-main,
+    .dashboard-layout #page-main.page-generate {
+        padding: 0 !important;
+        overflow: hidden !important;
+    }
+
+    body:not(.dashboard-layout) #page-main.gen-main,
+    body:not(.dashboard-layout) .gen-main,
     .spa-gen-wrap {
         margin: 0 !important;
         height: auto !important;
@@ -1204,7 +1231,7 @@
         min-height: 100dvh !important;
         max-height: none !important;
         border-radius: 0 !important;
-        padding: 16px 12px calc(var(--mobile-nav-height, 64px) + env(safe-area-inset-bottom, 16px) + 32px) !important;
+        padding: var(--space-4, 16px) var(--space-3, 12px) calc(var(--mobile-nav-height, 64px) + env(safe-area-inset-bottom, 16px) + var(--space-8, 32px)) !important;
         overflow-y: auto !important;
     }
 

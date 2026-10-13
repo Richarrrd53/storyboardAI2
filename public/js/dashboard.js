@@ -702,11 +702,21 @@
           }
         }
       } else {
-        const href = targetItem.getAttribute('href');
-        if (href && href.includes('generate')) {
+        const href = targetItem.getAttribute('href') || '';
+        if (href.includes('generate')) {
           if (window.AICreationController) {
             window.AICreationController.openQuickCompose();
           }
+          return;
+        }
+        if (typeof window.spaNavigate === 'function' || typeof window.navigate === 'function') {
+          const navFn = window.spaNavigate || window.navigate;
+          let targetRoute = 'dashboard';
+          if (href.includes('projects')) targetRoute = 'projects';
+          else if (href.includes('template')) targetRoute = 'template';
+          else if (href.includes('history')) targetRoute = 'history';
+          else if (href.includes('discovery')) targetRoute = 'discovery';
+          navFn(targetRoute);
           return;
         }
         if (href) window.location.href = href;
@@ -777,11 +787,21 @@
             }
           }
         } else {
-          const href = item.getAttribute('href');
-          if (href && href.includes('generate')) {
+          const href = item.getAttribute('href') || '';
+          if (href.includes('generate')) {
             if (window.AICreationController) {
               window.AICreationController.openQuickCompose();
             }
+            return;
+          }
+          if (typeof window.spaNavigate === 'function' || typeof window.navigate === 'function') {
+            const navFn = window.spaNavigate || window.navigate;
+            let targetRoute = 'dashboard';
+            if (href.includes('projects')) targetRoute = 'projects';
+            else if (href.includes('template')) targetRoute = 'template';
+            else if (href.includes('history')) targetRoute = 'history';
+            else if (href.includes('discovery')) targetRoute = 'discovery';
+            navFn(targetRoute);
             return;
           }
           if (href) window.location.href = href;

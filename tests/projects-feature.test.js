@@ -181,3 +181,99 @@ test('ProjectStore: in-flight request resolving after reset() must NOT overwrite
   ProjectsApi.fetchProjectDetail = originalFetchDetail;
   unsubscribe();
 });
+
+test('ProjectStore: normalizes tags from metadata and defaults to empty array', () => {
+  ProjectStore.reset();
+  const p1 = { id: 'p1', title: '有標籤', metadata: { tags: ['商業廣告', '短影音'] } };
+  const p2 = { id: 'p2', title: '無標籤', metadata: null };
+  const p3 = { id: 'p3', title: '已有 tags 陣列', tags: ['個人創作'] };
+
+  ProjectStore.setProjects([p1, p2, p3]);
+  const list = ProjectStore.getProjects();
+
+  assert.deepEqual(list[0].tags, ['商業廣告', '短影音']);
+  assert.deepEqual(list[1].tags, []);
+  assert.deepEqual(list[2].tags, ['個人創作']);
+});
+
+test('ProjectsApi.updateProjectTags: normalizes tags array and invokes PATCH endpoint', async () => {
+  const originalFetch = global.fetch;
+  let requestedUrl = '';
+  let requestedMethod = '';
+  let requestedBody = null;
+
+  global.fetch = async (url, options) => {
+    requestedUrl = url;
+    requestedMethod = options.method;
+    requestedBody = JSON.parse(options.body);
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({ message: '專案已成功更新', project: { id: 'proj-tag-1', tags: requestedBody.tags } })
+    };
+  };
+
+  try {
+    const result = await ProjectsApi.updateProjectTags('proj-tag-1', [' 商業廣告 ', '短影音', '商業廣告', '']);
+    assert.equal(requestedUrl, '/api/projects/proj-tag-1');
+    assert.equal(requestedMethod, 'PATCH');
+    assert.deepEqual(requestedBody.tags, ['商業廣告', '短影音']);
+    assert.equal(result.ok, true);
+    assert.deepEqual(result.tags, ['商業廣告', '短影音']);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
+test('ProjectActions.updateProjectTags: optimistic update, store notification, and error rollback', async () => {
+  ProjectStore.reset();
+  const project = { id: 'p-opt', title: '測試分鏡', tags: ['舊標籤'] };
+  ProjectStore.setProjects([project]);
+
+  const originalUpdate = ProjectsApi.updateProjectTags;
+  let shouldFail = false;
+  ProjectsApi.updateProjectTags = async (id, tags) => {
+    if (shouldFail) {
+      return { ok: false, error: '伺服器網路錯誤' };
+    }
+    return { ok: true, tags };
+  };
+
+  let notifications = [];
+  const unsubscribe = ProjectStore.subscribe((projects, event) => {
+    notifications.push(event.type);
+  });
+
+  try {
+    // 1. 成功更新流程
+    let refreshed = false;
+    const ok = await ProjectActions.updateProjectTags(project, ['商業廣告', '短影音'], () => {
+      refreshed = true;
+    });
+
+    assert.equal(ok, true);
+    assert.equal(refreshed, true);
+    assert.deepEqual(project.tags, ['商業廣告', '短影音']);
+    assert.deepEqual(project.metadata.tags, ['商業廣告', '短影音']);
+    assert.ok(notifications.includes('tags_updated_optimistic'));
+    assert.ok(notifications.includes('tags_updated'));
+
+    // 2. 失敗回滾流程
+    shouldFail = true;
+    notifications = [];
+    refreshed = false;
+    const failed = await ProjectActions.updateProjectTags(project, ['將要失敗的標籤'], () => {
+      refreshed = true;
+    });
+
+    assert.equal(failed, false);
+    // 應回滾為先前的 ['商業廣告', '短影音']
+    assert.deepEqual(project.tags, ['商業廣告', '短影音']);
+    assert.deepEqual(project.metadata.tags, ['商業廣告', '短影音']);
+    assert.ok(notifications.includes('tags_update_rollback'));
+  } finally {
+    ProjectsApi.updateProjectTags = originalUpdate;
+    unsubscribe();
+  }
+});
+

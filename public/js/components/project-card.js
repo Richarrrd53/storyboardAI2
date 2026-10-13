@@ -300,6 +300,9 @@
 
     const hasSecondary = shotsCount > 1;
 
+    const tags = Array.isArray(p.tags) ? p.tags : ((p.metadata && Array.isArray(p.metadata.tags)) ? p.metadata.tags : []);
+    const hasTags = tags.length > 0;
+
     return `
       <div class="project-preview-zone project-folder-preview-stack" data-ratio="${cleanRatio}">
         ${hasSecondary ? `
@@ -351,6 +354,15 @@
           <div class="project-title-wrapper">
             <div class="project-title" title="${titleEsc}">${titleEsc}</div>
           </div>
+          ${hasTags ? `
+            <div class="project-tags-row${variant === 'compact' ? ' project-tags-row-compact' : ''}" aria-label="專案標籤">
+              ${(variant === 'compact' ? tags.slice(0, 2) : tags).map(t => {
+                const tagEsc = escapeHtml(t);
+                return `<button type="button" class="project-tag-pill" data-tag="${tagEsc}" title="標籤：${tagEsc}">#${tagEsc}</button>`;
+              }).join('')}
+              ${variant === 'compact' && tags.length > 2 ? `<span class="project-tag-pill project-tag-pill-more">+${tags.length - 2}</span>` : ''}
+            </div>
+          ` : ''}
           <div class="project-meta">
             <span class="project-meta-pill project-meta-shot">${shotsCount} 鏡頭</span>
             <span class="project-meta-pill project-meta-ratio">${ratioText}</span>

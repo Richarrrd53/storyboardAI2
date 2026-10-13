@@ -125,6 +125,7 @@
       p.width,
       p.height
     );
+    const isContain = projectRatio < (16 / 9) - 0.01;
 
     // Spec Section 10: Calculate True Ratio Target Size
     const viewportWidth = (typeof window !== 'undefined' && window.innerWidth) || 1200;
@@ -155,7 +156,7 @@
 
     // 3. Spec Section 8: Transition Flying Cover in App-Level Layer
     const flyingCover = document.createElement('div');
-    flyingCover.className = 'project-reveal-curtain';
+    flyingCover.className = 'project-reveal-curtain transition-cover-shell';
     flyingCover.style.position = 'fixed';
     flyingCover.style.left = `${startLeft}px`;
     flyingCover.style.top = `${startTop}px`;
@@ -167,7 +168,7 @@
     flyingCover.style.overflow = 'hidden';
     flyingCover.style.boxShadow = '0 16px 36px rgba(15, 23, 42, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.35)';
     flyingCover.style.transformOrigin = '45% 100%'; // Spec Section 12
-    flyingCover.style.background = '#0f172a';
+    flyingCover.style.background = isContain ? '#ffffff' : '#0f172a';
     flyingCover.style.boxSizing = 'border-box';
 
     const mainImgEl = primaryCover.querySelector
@@ -181,7 +182,6 @@
     let frostedOverlay = null;
     let mainImgWrap = null;
     let mainImgClone = null;
-    const isContain = projectRatio < (16 / 9) - 0.01;
 
     if (mainImgEl && mainImgEl.src) {
       if (isContain) {
@@ -218,7 +218,7 @@
         // Section 3 & 17: projectRatio >= 16/9
         mainImgWrap = document.createElement('div');
         mainImgWrap.className = 'cover-main-wrap transition-cover-media';
-        mainImgWrap.style.cssText = 'position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; border-radius: inherit; z-index: 2; display: flex; align-items: center; justify-content: center;';
+        mainImgWrap.style.cssText = 'position: absolute; inset: 0; width: 100%; height: 100%; left: 0; top: 0; transform: none; overflow: hidden; border-radius: inherit; z-index: 2; display: flex; align-items: center; justify-content: center;';
 
         mainImgClone = document.createElement('img');
         mainImgClone.src = mainImgEl.src;
@@ -640,7 +640,7 @@
         if (mainImgClone && mainImgClone.style) {
           mainImgClone.style.width = '100%';
           mainImgClone.style.height = '100%';
-          mainImgClone.style.objectFit = 'contain';
+          mainImgClone.style.objectFit = isContain ? 'contain' : 'cover';
           mainImgClone.style.objectPosition = 'center';
           mainImgClone.style.transform = 'none';
           mainImgClone.style.filter = 'none';

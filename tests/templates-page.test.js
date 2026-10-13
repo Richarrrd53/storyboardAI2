@@ -241,6 +241,11 @@ function setupDOMStructure() {
   const detailImmersive = registerEl(createMockElement('section', 'template-detail-immersive'));
   const categoriesGrid = registerEl(createMockElement('div', 'store-categories'));
   const templateGrid = registerEl(createMockElement('div', 'template-grid'));
+  const tagInput = registerEl(createMockElement('select', 'store-tag-filter'));
+  const sortInput = registerEl(createMockElement('select', 'store-sort'));
+  const clearButton = registerEl(createMockElement('button', 'store-clear-filters'));
+  const recovery = registerEl(createMockElement('section', 'template-recovery'));
+  const resultCount = registerEl(createMockElement('span', 'template-result-count'));
   const searchInput = registerEl(createMockElement('input', 'store-search-input'));
 
   const countAll = registerEl(createMockElement('span', 'count-all'));
@@ -272,6 +277,7 @@ function setupDOMStructure() {
     categoriesGrid,
     templateGrid,
     searchInput,
+    tagInput, sortInput, clearButton, recovery, resultCount,
     countAll,
     countProd,
     countStory,
@@ -307,6 +313,7 @@ test('TemplatesPage: Page Lifecycle Contract - mount() returns { unmount() }', a
   };
 
   const instance = await TemplatesPage.mount({
+    route: { browseState: { category: '全部', query: '', tag: '', sort: 'catalog', scrollTop: 0 } },
     root: dom.pageMain,
     navigate
   });
@@ -315,8 +322,8 @@ test('TemplatesPage: Page Lifecycle Contract - mount() returns { unmount() }', a
   assert.equal(typeof instance.unmount, 'function', 'instance must have unmount()');
 
   // Verify DOM updated
-  assert.equal(dom.countAll.textContent, '4 模板');
-  assert.equal(dom.countProd.textContent, '1 模板');
+  assert.equal(dom.countAll.textContent, '4');
+  assert.equal(dom.countProd.textContent, '1');
   assert.equal(dom.templateGrid.children.length, 4, '4 template cards rendered');
 
   // Calling unmount should be idempotent and not throw
@@ -341,6 +348,7 @@ test('TemplatesPage: Data loading from API and caches in window.cacheTemplatesLi
   };
 
   const instance = await TemplatesPage.mount({
+    route: { browseState: { category: '全部', query: '', tag: '', sort: 'catalog', scrollTop: 0 } },
     root: dom.pageMain
   });
 
@@ -360,6 +368,7 @@ test('TemplatesPage: Empty state when no templates exist', async () => {
   });
 
   const instance = await TemplatesPage.mount({
+    route: { browseState: { category: '全部', query: '', tag: '', sort: 'catalog', scrollTop: 0 } },
     root: dom.pageMain
   });
 
@@ -375,6 +384,7 @@ test('TemplatesPage: Category filtering and search interaction', async () => {
   window.cacheTemplatesList = [...sampleTemplates];
 
   const instance = await TemplatesPage.mount({
+    route: { browseState: { category: '全部', query: '', tag: '', sort: 'catalog', scrollTop: 0 } },
     root: dom.pageMain
   });
 
@@ -387,7 +397,7 @@ test('TemplatesPage: Category filtering and search interaction', async () => {
 
   assert.equal(dom.templateGrid.children.length, 1);
   assert.equal(dom.templateGrid.children[0].dataset.id, 'tpl-1');
-  assert.equal(dom.currentCatTitle.textContent, '商品廣告 序列');
+  assert.equal(dom.currentCatTitle.textContent, '商品廣告');
 
   // Search query within category
   dom.searchInput.value = '無相符關鍵字';
@@ -418,11 +428,14 @@ test('TemplatesPage: Template card interactions (preview, apply) & back button',
   };
 
   let navigatedTo = null;
+  let instance;
   const navigate = (page, params) => {
     navigatedTo = { page, params };
+    if (page === 'template') instance.updateRoute(params || {});
   };
 
-  const instance = await TemplatesPage.mount({
+  instance = await TemplatesPage.mount({
+    route: { browseState: { category: '全部', query: '', tag: '', sort: 'catalog', scrollTop: 0 } },
     root: dom.pageMain,
     navigate
   });
@@ -457,7 +470,7 @@ test('TemplatesPage: Template card interactions (preview, apply) & back button',
   instance.unmount();
 });
 
-test('TemplatesPage: backToStoreBrowse() only toggles internal list/detail mode and does NOT unmount page instance or unbind listeners', async () => {
+test('TemplatesPage: backToStoreBrowse() cleans the timeline while preserving the mounted catalog and listeners', async () => {
   const dom = setupDOMStructure();
   window.cacheTemplatesList = [...sampleTemplates];
 
@@ -467,8 +480,11 @@ test('TemplatesPage: backToStoreBrowse() only toggles internal list/detail mode 
     timelineDestroyed = true;
   };
 
-  const instance = await TemplatesPage.mount({
-    root: dom.pageMain
+  let instance;
+  instance = await TemplatesPage.mount({
+    route: { browseState: { category: '全部', query: '', tag: '', sort: 'catalog', scrollTop: 0 } },
+    root: dom.pageMain,
+    navigate: (page, params) => instance.updateRoute(params || {})
   });
 
   const originalUnmount = instance.unmount;
@@ -495,7 +511,7 @@ test('TemplatesPage: backToStoreBrowse() only toggles internal list/detail mode 
 
   // Verify TemplatesPage is NOT unmounted
   assert.equal(unmountedCalled, false, 'TemplatesPage.unmount() must NOT be called on backToStoreBrowse()');
-  assert.equal(timelineDestroyed, false, 'destroyTemplateTimeline must NOT be called on backToStoreBrowse()');
+  assert.equal(timelineDestroyed, true, 'destroyTemplateTimeline releases the player on backToStoreBrowse()');
   assert.equal(typeof window.filterStoreTemplates, 'function', 'filterStoreTemplates hook must remain active');
 
   // Verify page listeners and interactions are still 100% functional
@@ -527,6 +543,7 @@ test('TemplatesPage: Teardown on unmount() invokes destroyTemplateTimeline and c
   };
 
   const instance = await TemplatesPage.mount({
+    route: { browseState: { category: '全部', query: '', tag: '', sort: 'catalog', scrollTop: 0 } },
     root: dom.pageMain
   });
 
@@ -552,7 +569,8 @@ test('Router Navigation Simulation: Direct Entry to Template, Leave to Dashboard
     }
 
     if (pageName === 'template') {
-      activePageInstance = await TemplatesPage.mount({ root: dom.pageMain });
+      activePageInstance = await TemplatesPage.mount({
+    route: { browseState: { category: '全部', query: '', tag: '', sort: 'catalog', scrollTop: 0 } }, root: dom.pageMain });
     } else if (pageName === 'dashboard') {
       activePageInstance = {
         unmount() {
@@ -586,3 +604,76 @@ test('Router Navigation Simulation: Direct Entry to Template, Leave to Dashboard
 
   activePageInstance.unmount();
 });
+
+test('marketplace search, category and tag filters combine and unknown durations sort last', async () => {
+  const dom = setupDOMStructure();
+  window.cacheTemplatesList = [
+    { id: 'short', name: '短廣告', category: 'product', tags: ['品牌'], structure: [{ duration: '2.5s' }] },
+    { id: 'unknown', name: '長廣告', category: 'product', tags: ['品牌'] },
+    { id: 'other', name: '故事', category: 'story', tags: ['品牌'], duration: 1 }
+  ];
+  const instance = await TemplatesPage.mount({ root: dom.pageMain, route: { browseState: { category: '全部', query: '', tag: '', sort: 'catalog' } } });
+  dom.categoriesGrid.children.find(card => card.dataset.catId === 'product').dispatchEvent('click');
+  dom.tagInput.value = '品牌'; dom.tagInput.dispatchEvent('change');
+  dom.searchInput.value = '廣告'; dom.searchInput.dispatchEvent('input');
+  dom.sortInput.value = 'duration'; dom.sortInput.dispatchEvent('change');
+  assert.deepEqual(dom.templateGrid.children.map(card => card.dataset.id), ['short', 'unknown']);
+  assert.equal(dom.resultCount.textContent, '2 個模板');
+  assert.equal(TemplatesPage.durationOf(window.cacheTemplatesList[0]), 2.5);
+  assert.equal(TemplatesPage.durationOf(window.cacheTemplatesList[1]), null);
+  instance.unmount();
+});
+
+test('deep-linked IDs reuse the mounted catalog and unknown IDs have a recovery state', async () => {
+  const dom = setupDOMStructure();
+  window.cacheTemplatesList = sampleTemplates;
+  const rendered = [];
+  window.renderTemplateDetailTimeline = template => rendered.push(template.id);
+  let fetches = 0;
+  global.fetch = async () => { fetches++; throw new Error('Unexpected download'); };
+  const instance = await TemplatesPage.mount({ root: dom.pageMain, route: { templateId: 'tpl-1' } });
+  instance.updateRoute({ templateId: 'tpl-2' });
+  instance.updateRoute({ templateId: 'tpl-2' });
+  assert.deepEqual(rendered, ['tpl-1', 'tpl-2']);
+  assert.equal(fetches, 0);
+  instance.updateRoute({ templateId: 'missing' });
+  assert.equal(dom.recovery.hidden, false);
+  assert.match(dom.recovery.innerHTML, /找不到這個模板/);
+  instance.unmount();
+});
+
+test('catalog HTTP errors are distinct from an empty catalog', async () => {
+  const dom = setupDOMStructure();
+  window.cacheTemplatesList = null;
+  global.fetch = async () => ({ ok: false, status: 503 });
+  const instance = await TemplatesPage.mount({ root: dom.pageMain });
+  assert.match(dom.templateGrid.innerHTML, /模板載入失敗/);
+  assert.doesNotMatch(dom.templateGrid.innerHTML, /目前尚無模板/);
+  instance.unmount();
+});
+
+test('template card text is escaped and missing specifications are not fabricated', () => {
+  const html = TemplatesPage.renderCard({ id: 'safe', name: '<script>bad</script>', description: '"unsafe"', tags: ['<img>'], category: 'custom', thumbnail: 'javascript:bad' });
+  assert.match(html, /&lt;script&gt;/);
+  assert.doesNotMatch(html, /<script>|src="javascript:|9:16|已驗證|0 秒|快節奏/);
+});
+
+test('template grid layout specifies 5 columns by default with compact card styles', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const css = fs.readFileSync(path.resolve('public/css/template.css'), 'utf8');
+
+  // Verify 5 columns grid on desktop
+  assert.match(css, /\.template-store-container\s+\.template-grid\s*\{[^}]*grid-template-columns:\s*repeat\(5,\s*minmax\(0,\s*1fr\)\)/);
+  
+  // Verify compact card rules exist for 5-column grid cards
+  assert.match(css, /\.template-store-container\s+\.template-grid\s+\.template-card-body\s*\{/);
+  assert.match(css, /\.template-store-container\s+\.template-grid\s+:is\(\.card-preview-btn,\s*\.card-apply-btn\)\s*\{/);
+  assert.match(css, /\.template-store-container\s+\.template-grid\s+\.template-card\s+\.cover-play\s*\{/);
+
+  // Verify responsive degradation breakpoints
+  assert.match(css, /@media\s*\(max-width:\s*1200px\)[\s\S]*?repeat\(4,\s*minmax\(0,\s*1fr\)\)/);
+  assert.match(css, /@media\s*\(max-width:\s*960px\)[\s\S]*?repeat\(3,\s*minmax\(0,\s*1fr\)\)/);
+  assert.match(css, /@media\s*\(max-width:\s*768px\)[\s\S]*?repeat\(2,\s*minmax\(0,\s*1fr\)\)/);
+});
+

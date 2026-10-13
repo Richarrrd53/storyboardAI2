@@ -1,3 +1,90 @@
+const ModalAnimation = {
+    EASING_BACKDROP: 'cubic-bezier(.4,0,.2,1)',
+    EASING_CARD_ENTER: 'cubic-bezier(.33,1.53,.69,.99)',
+    EASING_CARD_LEAVE: 'cubic-bezier(.31, .01, .66, -0.59)',
+    DURATION: 400,
+
+    open(overlay, panel, options = {}) {
+        if (!overlay) return;
+        const duration = options.duration || this.DURATION;
+        const blur = options.blur || '16px';
+        const backdropBg = options.backdropBg || 'rgba(15, 23, 42, 0.45)';
+
+        overlay.style.display = 'flex';
+        overlay.style.pointerEvents = 'none';
+        overlay.style.transition = `all ${duration}ms ${this.EASING_BACKDROP}`;
+        overlay.style.backdropFilter = 'blur(0px)';
+        if (overlay.style.webkitBackdropFilter !== undefined) {
+            overlay.style.webkitBackdropFilter = 'blur(0px)';
+        }
+        overlay.style.background = 'rgba(15, 23, 42, 0)';
+        overlay.style.opacity = '0';
+
+        if (panel) {
+            panel.style.transition = `all ${duration}ms ${this.EASING_CARD_ENTER}`;
+            panel.style.scale = '0';
+            panel.style.opacity = '0';
+        }
+
+        setTimeout(() => {
+            if (overlay.classList && typeof overlay.classList.add === 'function') {
+                overlay.classList.add('active');
+            }
+            overlay.style.pointerEvents = 'auto';
+            overlay.style.opacity = '1';
+            overlay.style.background = backdropBg;
+            overlay.style.backdropFilter = `blur(${blur})`;
+            if (overlay.style.webkitBackdropFilter !== undefined) {
+                overlay.style.webkitBackdropFilter = `blur(${blur})`;
+            }
+            if (panel) {
+                panel.style.scale = '1';
+                panel.style.opacity = '1';
+            }
+            if (typeof options.onOpened === 'function') options.onOpened();
+        }, 10);
+    },
+
+    close(overlay, panel, options = {}) {
+        if (!overlay) return;
+        const duration = options.duration || this.DURATION;
+        const onComplete = typeof options === 'function' ? options : (options.onComplete || null);
+
+        overlay.style.pointerEvents = 'none';
+
+        if (panel) {
+            panel.style.transition = `all ${duration}ms ${this.EASING_CARD_LEAVE}`;
+        }
+        overlay.style.transition = `all ${duration}ms ${this.EASING_BACKDROP}`;
+
+        setTimeout(() => {
+            if (panel) {
+                panel.style.scale = '0';
+                panel.style.opacity = '0';
+            }
+            overlay.style.backdropFilter = 'blur(0px)';
+            if (overlay.style.webkitBackdropFilter !== undefined) {
+                overlay.style.webkitBackdropFilter = 'blur(0px)';
+            }
+            overlay.style.background = 'rgba(15, 23, 42, 0)';
+            overlay.style.opacity = '0';
+            if (overlay.classList && typeof overlay.classList.remove === 'function') {
+                overlay.classList.remove('active');
+            }
+        }, 10);
+
+        setTimeout(() => {
+            overlay.style.display = 'none';
+            if (typeof onComplete === 'function') {
+                onComplete();
+            }
+        }, duration + 50);
+    }
+};
+
+if (typeof window !== 'undefined') window.ModalAnimation = ModalAnimation;
+if (typeof global !== 'undefined') global.ModalAnimation = ModalAnimation;
+
 function alert(message, options = { btnText: "確定", duration: 15000 }) {
     return new Promise((resolve) => {
         const bg = document.createElement("div");
@@ -31,28 +118,20 @@ function alert(message, options = { btnText: "確定", duration: 15000 }) {
         document.body.appendChild(bg);
 
         const closeAlert = () => {
-            bg.style.background = "rgba(46, 46, 46, 0)";
-            bg.style.backdropFilter = "blur(0px)";
-            windowEl.style.transition = "all 0.5s cubic-bezier(.31,.01,.66,-0.59)";
-            windowEl.style.scale = "0";
-            windowEl.style.transform = "translate(0, -400px)";
-            windowEl.style.filter = "blur(20px)";
-            windowEl.style.opacity = "0";
-
-            setTimeout(() => {
-                bg.remove();
-                resolve();
-            }, 500);
+            ModalAnimation.close(bg, windowEl, {
+                duration: 400,
+                onComplete: () => {
+                    bg.remove();
+                    resolve();
+                }
+            });
         };
 
-        setTimeout(() => {
-            bg.style.background = "var(--primary-soft)";
-            bg.style.backdropFilter = "blur(50px)";
-            windowEl.style.scale = "1";
-            windowEl.style.transform = "translate(0, 0px)";
-            windowEl.style.filter = "blur(0)";
-            windowEl.style.opacity = "1";
-        }, 10);
+        ModalAnimation.open(bg, windowEl, {
+            duration: 400,
+            blur: '50px',
+            backdropBg: 'var(--primary-soft)'
+        });
 
         confirmBtn.onclick = closeAlert;
     });
@@ -113,14 +192,12 @@ function confirm(message, description, type = 'default', btnText, projectEl) {
         document.body.appendChild(bg);
 
         const closeWindow = () => {
-            bg.style.background = "rgba(46, 46, 46, 0)";
-            bg.style.backdropFilter = "blur(0px)";
-            windowEl.style.transition = "all 0.5s cubic-bezier(.31,.01,.66,-0.59)";
-            windowEl.style.scale = 0;
-            windowEl.style.filter = "blur(20px)";
-            setTimeout(() => {
-                bg.remove();
-            }, 700);
+            ModalAnimation.close(bg, windowEl, {
+                duration: 400,
+                onComplete: () => {
+                    bg.remove();
+                }
+            });
         };
 
         const btn1 = document.createElement("button");
@@ -201,15 +278,14 @@ function confirm(message, description, type = 'default', btnText, projectEl) {
             };
         }
 
-
-
-
-        setTimeout(() => {
-            bg.style.background = "var(--primary-soft)";
-            bg.style.backdropFilter = "blur(50px)";
-            windowEl.style.scale = 1;
-            windowEl.style.filter = "blur(0)";
-            windowEl.style.opacity = "1"
-        }, 10);
+        ModalAnimation.open(bg, windowEl, {
+            duration: 400,
+            blur: '50px',
+            backdropBg: 'var(--primary-soft)'
+        });
     });
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { alert, confirm, ModalAnimation };
 }

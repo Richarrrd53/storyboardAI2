@@ -5,7 +5,8 @@ ifm.id = "ifm";
 let route = window.location.pathname.replace(/^\/|\/$/g, '');
 if (route === 'html' || route === 'index.html') route = '';
 
-ifm.src = `./html/index.html` + (route ? `#/${route}` : '') + window.location.search;
+const initialIframeRoute = window.location.hash.startsWith('#/') ? window.location.hash : (route ? `#/${route}` : '');
+const initialIframeUrl = `./html/index.html` + initialIframeRoute + window.location.search;
 
 // --- 更改部分 1: 讓 iframe 徹底填滿視窗，不鎖死比例並支援動態 Viewport (dvh) ---
 ifm.style.position = "fixed";
@@ -20,6 +21,9 @@ ifm.style.padding = "0";
 ifm.style.overflow = "hidden";
 
 document.body.appendChild(ifm);
+// Replace the initial child document so a shell reload does not append a duplicate
+// joint-history entry ahead of the catalog/detail history managed by spa-router.
+ifm.contentWindow.location.replace(initialIframeUrl);
 document.body.style.position = "fixed";
 document.body.style.top = "0";
 document.body.style.left = "0";

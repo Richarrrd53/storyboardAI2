@@ -127,6 +127,27 @@
       }
     },
 
+    async updateProjectTags(projectId, tags) {
+      const token = this.getAuthToken();
+      const normalizedTags = Array.isArray(tags)
+        ? Array.from(new Set(tags.map(t => String(t || '').trim()).filter(Boolean)))
+        : [];
+      try {
+        const res = await fetch(`/api/projects/${projectId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ tags: normalizedTags })
+        });
+        const data = await res.json().catch(() => ({}));
+        return { ok: res.ok, status: res.status, tags: normalizedTags, data };
+      } catch (err) {
+        return { ok: false, error: err.message };
+      }
+    },
+
     async duplicateProject(projectId) {
       const token = this.getAuthToken();
       try {
@@ -398,7 +419,16 @@
     },
 
     setProjects(projectsList) {
-      this.projects = Array.isArray(projectsList) ? projectsList : null;
+      if (Array.isArray(projectsList)) {
+        projectsList.forEach(p => {
+          if (!Array.isArray(p.tags)) {
+            p.tags = (p.metadata && Array.isArray(p.metadata.tags)) ? p.metadata.tags : [];
+          }
+        });
+        this.projects = projectsList;
+      } else {
+        this.projects = null;
+      }
       this.notify({ type: 'set', projects: this.projects });
     },
 
@@ -469,8 +499,11 @@
           }
 
           const list = res.projects;
-          // 比對最近刪除與還原狀態
+          // 比對最近刪除與還原狀態並正規化標籤
           list.forEach(p => {
+            if (!Array.isArray(p.tags)) {
+              p.tags = (p.metadata && Array.isArray(p.metadata.tags)) ? p.metadata.tags : [];
+            }
             if (ProjectDeleteQueue.recentlyDeleted.has(p.id)) {
               p.is_deleted = true;
             }
@@ -752,6 +785,59 @@
         }
         return false;
       }
+    },
+
+    async updateProjectTags(p, tags, refreshCallback) {
+      if (!p || !p.id) return false;
+      const normalized = Array.isArray(tags)
+        ? Array.from(new Set(tags.map(t => String(t || '').trim()).filter(Boolean)))
+        : [];
+      const oldTags = Array.isArray(p.tags) ? [...p.tags] : [];
+
+      // 樂觀更新
+      p.tags = [...normalized];
+      if (!p.metadata || typeof p.metadata !== 'object') p.metadata = {};
+      p.metadata.tags = [...normalized];
+
+      const toastFn = typeof global !== 'undefined' && typeof global.showSpaToast === 'function'
+        ? global.showSpaToast
+        : () => {};
+
+      if (typeof refreshCallback === 'function') refreshCallback();
+      ProjectStore.notify({ type: 'tags_updated_optimistic', project: p, tags: normalized, oldTags });
+
+      try {
+        const res = await ProjectsApi.updateProjectTags(p.id, normalized);
+        if (res.ok) {
+          toastFn(`分鏡「${p.title}」標籤已更新。`);
+          ProjectStore.notify({ type: 'tags_updated', project: p, tags: normalized });
+          return true;
+        } else {
+          throw new Error(res.data?.error || '更新標籤失敗');
+        }
+      } catch (err) {
+        console.error('Failed to update project tags on server', err);
+        // 失敗回滾
+        p.tags = [...oldTags];
+        p.metadata.tags = [...oldTags];
+        if (typeof refreshCallback === 'function') refreshCallback();
+        ProjectStore.notify({ type: 'tags_update_rollback', project: p, tags: oldTags });
+        if (typeof global !== 'undefined' && typeof global.alert === 'function') {
+          global.alert(err.message || '更新標籤失敗，請稍後再試');
+        }
+        return false;
+      }
+    },
+
+    editProjectTags(p, card, refreshCallback) {
+      if (!p) return false;
+      if (typeof global !== 'undefined' && typeof global.openProjectTagModal === 'function') {
+        global.openProjectTagModal(p, async (newTags) => {
+          return await this.updateProjectTags(p, newTags, refreshCallback);
+        });
+        return true;
+      }
+      return false;
     }
   };
 

@@ -1171,8 +1171,15 @@ function initLoginLogic(showRegister) {
     if (signal?.aborted) return;
 
     const m = initMain();
-    m.className = 'spa-gen-wrap';
+
+    const pageMain = document.getElementById('page-main');
+    if (pageMain) {
+      pageMain.style.padding = '0';
+    }
+
     cloneMainContent(doc, m);
+    // cloneMainContent copies main classes; the content must not become a second shell.
+    m.className = 'spa-gen-wrap';
 
     await ensureSharedLayout(signal);
     if (signal?.aborted) return;
@@ -1211,12 +1218,11 @@ function initLoginLogic(showRegister) {
     return null;
   }
 
-  async function renderTemplate(signal) {
+  async function renderTemplate(opts, signal) {
     const doc = await fetchPageDoc('/html/template.html', signal);
     if (signal?.aborted) return null;
 
     const m = initMain();
-    m.className = 'spa-template-wrap';
 
     const pageMain = document.getElementById('page-main');
     if (pageMain) {
@@ -1224,12 +1230,17 @@ function initLoginLogic(showRegister) {
     }
 
     cloneMainContent(doc, m);
+    // cloneMainContent copies main classes; the content must not become a second shell.
+    m.className = 'spa-template-wrap';
 
     await ensureSharedLayout(signal);
     if (signal?.aborted) return null;
 
     if (window.TemplatesPage && typeof window.TemplatesPage.mount === 'function') {
-      return await window.TemplatesPage.mount({ root: m, signal, navigate });
+      // Deep links render during mount, before the router's legacy post-mount scripts.
+      await injectScripts(pageDefs.template.js, signal);
+      if (signal?.aborted) return null;
+      return await window.TemplatesPage.mount({ root: m, signal, navigate, route: opts });
     }
     return null;
   }
@@ -1289,6 +1300,11 @@ function initLoginLogic(showRegister) {
     if (backLink) backLink.style.display = 'none';
 
     await ensureSharedLayout(signal);
+    if (signal?.aborted) return;
+
+    if (!window.initDiscoveryPage) {
+      await injectScripts(['/js/discovery.js'], signal);
+    }
     if (signal?.aborted) return;
 
     if (typeof window.initDiscoveryPage === 'function') {
@@ -1362,10 +1378,10 @@ function initLoginLogic(showRegister) {
     },
 
     template: {
-      css: ['/css/dashboard.css', '/css/generate.css', '/css/template.css', '/css/math-curve-loader.css', '/css/template-detail.css?v=20261006-1', '/css/template-editor.css?v=20261006-2'],
+      css: ['/css/dashboard.css', '/css/template.css', '/css/template-editor.css?v=20261006-2', '/css/template-detail.css?v=20261013-1'],
       js: ['/js/generate-prefill-path.js', '/js/template-timeline.js', '/js/template-editor.js?v=20261006-2', '/js/template.js'],
-      mount: (o, signal) => renderTemplate(signal),
-      render: (o, signal) => renderTemplate(signal)
+      mount: (o, signal) => renderTemplate(o, signal),
+      render: (o, signal) => renderTemplate(o, signal)
     },
 
     discovery: {
@@ -1383,7 +1399,7 @@ function initLoginLogic(showRegister) {
   };
 
   window.spaNavigate = (page, opts) => {
-    navigate(page, opts);
+    return navigate(page, opts);
   };
 
   function isDashboardPage(page) {
@@ -1395,6 +1411,46 @@ function initLoginLogic(showRegister) {
     if (page === 'project' && opts?.id) return `#/project/${opts.id}`;
     if (page === 'generate' && opts?.templateId) return `#/generate?templateId=${opts.templateId}`;
     return `#/${page}`;
+  }
+
+  function getRouteUrl(page, opts = {}) {
+    if (window.parent && window.parent !== window) return getPathForPage(page, opts);
+    if (page === 'template') {
+      const route = opts.templateId ? `/template/${encodeURIComponent(opts.templateId)}` : '/template';
+      return route;
+    }
+    // Hash routes must not inherit a template pathname when leaving its detail.
+    const path = window.location.pathname.startsWith('/template') ? '/' : window.location.pathname;
+    return path + window.location.search + getHashForPage(page, opts);
+  }
+
+  function getHistoryHost() {
+    return window.parent && window.parent !== window ? window.parent : window;
+  }
+
+  function getPathForPage(page, opts = {}) {
+    if (page === 'landing') return '/';
+    if (page === 'project' && opts.id) return `/project/${encodeURIComponent(opts.id)}`;
+    if (page === 'template' && opts.templateId) return `/template/${encodeURIComponent(opts.templateId)}`;
+    if (page === 'generate' && opts.templateId) return `/generate?templateId=${encodeURIComponent(opts.templateId)}`;
+    return `/${page}`;
+  }
+
+  function parseRouteFromLocation(location) {
+    if (location.hash?.startsWith('#/')) return parseRouteFromHash(location.hash);
+    return parseRouteFromHash('#' + (location.pathname || '/') + (location.search || ''));
+  }
+
+  function routeHistoryState(page, opts = {}, browseState) {
+    return { page, id: opts.id || null, templateId: opts.templateId || null,
+      ...(page === 'template' ? { templateBrowse: browseState || opts.browseState || null,
+        templateFromBrowse: !!opts.templateFromBrowse } : {}) };
+  }
+
+  function syncParentRoute(page, opts = {}) {
+    if (!window.parent || window.parent === window) return;
+    const host = getHistoryHost();
+    host.history.replaceState(routeHistoryState(page, opts, host.history.state?.templateBrowse), '', getPathForPage(page, opts));
   }
 
   function parseRouteFromHash(hash) {
@@ -1413,6 +1469,13 @@ function initLoginLogic(showRegister) {
       for (const [key, value] of searchParams.entries()) {
         opts[key] = value;
       }
+    }
+
+    const templateMatch = route.match(/^template\/([^/]+)\/?$/);
+    if (templateMatch) {
+      let templateId;
+      try { templateId = decodeURIComponent(templateMatch[1]); } catch (_) { templateId = templateMatch[1]; }
+      return { page: 'template', opts: { ...opts, templateId } };
     }
 
     const projectMatch = route.match(/^project\/(.+)$/);
@@ -1535,6 +1598,30 @@ function initLoginLogic(showRegister) {
 
     if (isSameRoute && !opts.force) return;
 
+    const templateBrowse = activePageInstance?.getHistoryState?.();
+    const historyHost = getHistoryHost();
+    if (!opts.noHistory && templateBrowse) {
+      historyHost.history.replaceState({ ...historyHost.history.state, templateBrowse }, '', historyHost.location.href);
+    }
+    if (page === 'template' && opts.templateId && activePage === 'template' && !activeOpts?.templateId) {
+      opts = { ...opts, templateFromBrowse: true };
+    }
+    const writeHistory = () => {
+      if (!opts.noHistory) {
+        historyHost.history.pushState(routeHistoryState(page, opts, templateBrowse), '', getRouteUrl(page, opts));
+      }
+    };
+
+    // List/detail transitions keep the mounted catalog and its scroll/filter state.
+    if (page === 'template' && currentPage === 'template' && !targetPage &&
+        activePageInstance?.updateRoute && !opts.force) {
+      writeHistory();
+      syncParentRoute(page, opts);
+      currentOpts = opts;
+      activePageInstance.updateRoute(opts);
+      return;
+    }
+
     if (activePageInstance) {
       try {
         activePageInstance.unmount?.();
@@ -1587,25 +1674,9 @@ function initLoginLogic(showRegister) {
     }
 
     // 即時變更網址列 (URL Hash)
-    if (!opts.noHistory) {
-      const hash = getHashForPage(page, opts);
-      history.pushState(
-        { page, id: opts?.id || null },
-        '',
-        window.location.pathname + window.location.search + hash
-      );
-    }
+    writeHistory();
 
-    if (window.parent && window.parent !== window) {
-      const parentPath =
-        page === 'landing'
-          ? '/'
-          : page === 'project' && opts?.id
-            ? `/project/${opts.id}`
-            : `/${page}`;
-
-      window.parent.history.replaceState(null, '', parentPath);
-    }
+    syncParentRoute(page, opts);
 
     // 即時變更側邊欄與佈局狀態
     if (isDashboardPage(page)) {
@@ -1789,6 +1860,8 @@ function initLoginLogic(showRegister) {
         });
       } else if (page === 'template' && typeof window.initTemplatePage === 'function') {
         window.initTemplatePage();
+      } else if (page === 'discovery' && typeof window.initDiscoveryPage === 'function') {
+        window.initDiscoveryPage();
       }
 
       if (isDashboardPage(page)) {
@@ -1883,9 +1956,10 @@ function initLoginLogic(showRegister) {
     }
   }
 
-  window.addEventListener('popstate', e => {
+  function handlePopState(e) {
     const statePage = e.state?.page;
     const stateId = e.state?.id;
+    const templateId = e.state?.templateId;
 
     if (window.CreationController?.syncRoute) {
       window.CreationController.syncRoute(statePage);
@@ -1901,21 +1975,29 @@ function initLoginLogic(showRegister) {
     if (statePage) {
       navigate(statePage, {
         id: stateId || undefined,
+        templateId: templateId || undefined,
+        browseState: e.state?.templateBrowse,
+        templateFromBrowse: e.state?.templateFromBrowse,
         noHistory: true,
-        force: true,
         noOpenQC: true
       });
       return;
     }
 
-    const parsed = parseRouteFromHash(window.location.hash);
+    const parsed = parseRouteFromLocation(e.currentTarget?.location || window.location);
     navigate(parsed.page, {
       ...parsed.opts,
       noHistory: true,
-      force: true,
       noOpenQC: true
     });
-  });
+  }
+  window.addEventListener('popstate', handlePopState);
+  // The parent owns history for the iframe shell; both entrypoints use this router.
+  if (window.parent && window.parent !== window) {
+    window.parent.addEventListener('popstate', handlePopState);
+    window.addEventListener('pagehide', () => window.parent.removeEventListener('popstate', handlePopState));
+    window.addEventListener('pageshow', () => window.parent.addEventListener('popstate', handlePopState));
+  }
 
   function interceptCTAs() {
     document.querySelectorAll('[data-navigate]').forEach(el => {
@@ -1992,7 +2074,7 @@ function initLoginLogic(showRegister) {
     let initialPage = 'landing';
     let initialOpts = {};
 
-    const parsedHash = parseRouteFromHash(window.location.hash);
+    const parsedHash = parseRouteFromLocation(getHistoryHost().location);
     if (parsedHash.page !== 'landing') {
       initialPage = parsedHash.page;
       initialOpts = parsedHash.opts || {};
@@ -2012,15 +2094,23 @@ function initLoginLogic(showRegister) {
       }
     }
 
-    history.replaceState(
-      { page: initialPage, id: initialOpts.id || null },
+    const initialHistoryHost = getHistoryHost();
+    const savedRouteState = initialHistoryHost.history.state;
+    if (savedRouteState?.page === initialPage && savedRouteState.templateId === (initialOpts.templateId || null)) {
+      initialOpts.browseState = savedRouteState.templateBrowse;
+      initialOpts.templateFromBrowse = savedRouteState.templateFromBrowse;
+    }
+
+    initialHistoryHost.history.replaceState(
+      routeHistoryState(initialPage, initialOpts, initialOpts.browseState),
       '',
-      window.location.pathname + window.location.search + window.location.hash
+      initialPage === 'template' ? getRouteUrl(initialPage, initialOpts) : initialHistoryHost.location.href
     );
 
     if (initialPage !== 'landing') {
       navigate(initialPage, {
         ...initialOpts,
+        browseState: initialHistoryHost.history.state?.templateBrowse,
         noHistory: true,
         force: true
       });

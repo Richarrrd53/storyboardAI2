@@ -4,33 +4,56 @@ let templateSelectedVideo = {
     file: null
 };
 
+let templateFormCleanup = [];
+
+function destroyTemplatePage() {
+    templateFormCleanup.forEach(cleanup => cleanup());
+    templateFormCleanup = [];
+}
+
 function initTemplatePage() {
+    destroyTemplatePage();
     const tabs = document.querySelectorAll('.video-source-tab');
     const fileInput = document.getElementById('video-file-input');
 
     tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
+        const handler = () => {
             const source = tab.dataset.source;
             selectVideoSource(source);
-        });
+        };
+        tab.addEventListener('click', handler);
+        templateFormCleanup.push(() => tab.removeEventListener('click', handler));
     });
 
     if (fileInput) {
         fileInput.addEventListener('change', handleVideoFileChange);
+        templateFormCleanup.push(() => fileInput.removeEventListener('change', handleVideoFileChange));
     }
 }
 
 function openNewTemplateModal() {
     const modal = document.getElementById('template-modal');
     if (!modal) return;
-    modal.classList.add('active');
+    const panel = modal.querySelector('.template-modal-panel');
+    const modalAnim = (typeof window !== 'undefined' && window.ModalAnimation) || (typeof global !== 'undefined' && global.ModalAnimation);
+    if (modalAnim && typeof modalAnim.open === 'function') {
+        modalAnim.open(modal, panel, { blur: '16px' });
+    } else {
+        modal.classList.add('active');
+    }
     resetNewTemplateModal();
 }
 
 function closeNewTemplateModal() {
     const modal = document.getElementById('template-modal');
     if (!modal) return;
-    modal.classList.remove('active');
+    const panel = modal.querySelector('.template-modal-panel');
+    const modalAnim = (typeof window !== 'undefined' && window.ModalAnimation) || (typeof global !== 'undefined' && global.ModalAnimation);
+    if (modalAnim && typeof modalAnim.close === 'function') {
+        modalAnim.close(modal, panel);
+    } else {
+        modal.classList.remove('active');
+    }
 }
 
 function selectVideoSource(source) {
@@ -204,6 +227,7 @@ async function submitNewTemplate() {
             body: JSON.stringify(payload)
         });
         if (res.ok) {
+            window.cacheTemplatesList = null;
             alert(`已成功建立並儲存模板到資料庫！\n名稱：${templateName}`);
             closeNewTemplateModal();
             // Trigger refresh of the SPA template page

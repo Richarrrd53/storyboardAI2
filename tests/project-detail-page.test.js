@@ -706,3 +706,97 @@ test('Router Navigation Simulation: Direct Entry, Leave to Dashboard, Return, Ba
 
   activeInstance.unmount();
 });
+
+test('ProjectDetailController: View Mode Switch (Table vs Film) preserves focus and updates toggles', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const code = fs.readFileSync(path.resolve(__dirname, '../public/js/project-detail.js'), 'utf8');
+
+  const prevWindow = global.window;
+  const mockWin = { ...global.window };
+  global.window = mockWin;
+
+  try {
+    eval(code);
+    const controller = mockWin.ProjectDetailController;
+    assert.ok(controller, 'ProjectDetailController must be exported on window');
+
+    const btnTable = createMockElement('button');
+    btnTable.id = 'pd-view-list';
+    btnTable.classList.add('active');
+
+    const btnFilm = createMockElement('button');
+    btnFilm.id = 'pd-view-film';
+
+    const tableView = createMockElement('div');
+    tableView.id = 'pd-table-view';
+    tableView.style.display = 'block';
+
+    const filmView = createMockElement('div');
+    filmView.id = 'pd-film-view';
+    filmView.style.display = 'none';
+
+    let scrolledTarget = null;
+    const mockRow = createMockElement('tr');
+    mockRow.classList.add('project-shot-row');
+    mockRow.dataset.shotId = 'shot-99';
+    mockRow.scrollIntoView = () => { scrolledTarget = 'row'; };
+
+    const mockFrame = createMockElement('div');
+    mockFrame.classList.add('project-film-frame');
+    mockFrame.dataset.shotId = 'shot-99';
+    mockFrame.scrollIntoView = () => { scrolledTarget = 'frame'; };
+
+    tableView.appendChild(mockRow);
+    filmView.appendChild(mockFrame);
+
+    const root = createMockElement('div');
+    root.appendChild(btnTable);
+    root.appendChild(btnFilm);
+    root.appendChild(tableView);
+    root.appendChild(filmView);
+
+    controller.init({
+      root,
+      projectId: 'p1',
+      project: {
+        id: 'p1',
+        title: '測試專案',
+        shots: [{ id: 'shot-99', title: '鏡頭 99', duration: '3s', camera: 'Wide' }]
+      }
+    });
+
+    controller._selectedShotId = 'shot-99';
+
+    // Switch to film mode
+    btnFilm.dispatchEvent('click');
+    assert.equal(controller._viewMode, 'film');
+    assert.ok(btnFilm.classList.contains('active'));
+    assert.ok(!btnTable.classList.contains('active'));
+    assert.equal(filmView.style.display, 'block');
+    assert.equal(tableView.style.display, 'none');
+
+    // Switch back to table mode
+    btnTable.dispatchEvent('click');
+    assert.equal(controller._viewMode, 'table');
+    assert.ok(btnTable.classList.contains('active'));
+    assert.ok(!btnFilm.classList.contains('active'));
+    assert.equal(tableView.style.display, 'block');
+    assert.equal(filmView.style.display, 'none');
+
+    controller.destroy();
+  } finally {
+    global.window = prevWindow;
+  }
+});
+
+test('project-detail.css imports tokens.css and contains no un-tokenized legacy canvas', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const css = fs.readFileSync(path.resolve(__dirname, '../public/css/project-detail.css'), 'utf8');
+
+  assert.ok(css.includes("@import url('./tokens.css');"), 'must import tokens.css');
+  assert.ok(css.includes('var(--color-bg-canvas'), 'must use --color-bg-canvas for workspace background');
+  assert.ok(!css.includes('min-height: calc(100vh - 80px)'), 'must eliminate min-height second scroll container');
+});
+
