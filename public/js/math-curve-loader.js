@@ -75,16 +75,17 @@
       };
   }
 
-  let animId = null;
+  let activeLoader = null;
 
-  window.initMathCurveLoader = function () {
-      if (animId) {
-          cancelAnimationFrame(animId);
-          animId = null;
-      }
+  window.initMathCurveLoader = function (options = {}) {
+      activeLoader?.stop();
+      if (options.signal?.aborted) return null;
+      let animId = null, stopped = false;
+      const scope = options.root || document;
+      const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
       const loaders = [];
-      const svgEls = document.querySelectorAll('.math-loader-svg');
+      const svgEls = scope.querySelectorAll('.math-loader-svg');
       
       svgEls.forEach(svg => {
           const group = svg.querySelector('.math-loader-group');
@@ -107,6 +108,7 @@
           });
 
           loaders.push({
+              svg,
               group,
               path,
               suckedContainer,
@@ -115,7 +117,31 @@
           });
       });
 
-      if (loaders.length === 0) return;
+      if (loaders.length === 0) return null;
+
+      const handle = { stop };
+      activeLoader = handle;
+      function stop() {
+          if (stopped) return;
+          stopped = true;
+          if (animId !== null) cancelAnimationFrame(animId);
+          animId = null;
+          document.removeEventListener('visibilitychange', onVisibility);
+          options.signal?.removeEventListener('abort', stop);
+          loaders.forEach(loader => {
+              loader.particles.forEach(node => node.remove());
+              loader.suckedAssets.forEach(asset => asset.el.remove());
+              loader.suckedAssets.length = 0;
+          });
+          if (activeLoader === handle) activeLoader = null;
+      }
+      function onVisibility() {
+          if (animId !== null) cancelAnimationFrame(animId);
+          animId = null;
+          if (!stopped && !document.hidden && !reducedMotion) animId = requestAnimationFrame(render);
+      }
+      document.addEventListener('visibilitychange', onVisibility);
+      options.signal?.addEventListener('abort', stop, { once: true });
 
       const startedAt = performance.now();
 
@@ -172,6 +198,9 @@
       }
 
       function render(now) {
+          animId = null;
+          if (stopped) return;
+          if (loaders.every(loader => !loader.svg.isConnected)) { stop(); return; }
           const time = now - startedAt;
           const progress = (time % config.durationMs) / config.durationMs;
           const detailScale = getDetailScale(time);
@@ -188,18 +217,15 @@
                   node.setAttribute('r', particle.radius.toFixed(2));
                   node.setAttribute('opacity', particle.opacity.toFixed(3));
               });
-              updateSuckedAssets(loader);
+              if (!reducedMotion) updateSuckedAssets(loader);
           });
           
-          animId = requestAnimationFrame(render);
+          if (!reducedMotion && !document.hidden) animId = requestAnimationFrame(render);
       }
 
-      animId = requestAnimationFrame(render);
+      // Reduced motion keeps the existing curve as a static progress illustration.
+      render(startedAt);
+      return handle;
   };
-
-  // Run automatically if DOM is already ready
-  if (document.querySelector('.math-loader-svg')) {
-      window.initMathCurveLoader();
-  }
 
 })();

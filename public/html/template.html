@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="../css/dashboard.css" />
   <link rel="stylesheet" href="../css/template.css" />
   <link rel="stylesheet" href="../css/template-editor.css?v=20261006-2" />
-  <link rel="stylesheet" href="../css/template-detail.css?v=20261013-1" />
+  <link rel="stylesheet" href="../css/template-detail.css?v=20261013-2" />
 </head>
 
 <body>
@@ -77,6 +77,9 @@
         <div class="editor-document-title"><span>模板結構</span><strong id="nav-template-name">正在讀取...</strong></div>
         <button class="btn-apply-template-main" id="btn-apply-template-main">套用模板</button>
       </div>
+
+      <!-- ═══ SCROLLABLE DETAIL BODY (WITH DYNAMIC MASK) ═══ -->
+      <div class="content-body template-detail-body" id="template-detail-body" data-dynamic-mask data-mask-direction="vertical" data-mask-size="36">
 
       <!-- Template Title Header -->
       <div class="detail-template-hero-header editor-template-heading">
@@ -272,6 +275,7 @@
           </button>
         </div>
 
+      </div>
     </section>
 
   </main>
@@ -322,6 +326,7 @@
 
   <script src="../js/generate-prefill-path.js"></script>
   <script src="../js/sys.js"></script>
+  <script src="../js/dynamic-mask.js"></script>
   <script src="../js/template-timeline.js"></script>
   <script src="../js/template-editor.js?v=20261006-2"></script>
   <script src="../js/template.js"></script>

@@ -5,12 +5,12 @@
 
 /* ── 1. Layout Variables & Grid Anchors ── */
 :root {
-  --container-max-width: 1440px;
+  --container-max-width: var(--container-xl);
   
   /* Layout Gutters */
-  --page-gutter-desktop: 32px;
-  --page-gutter-tablet: 24px;
-  --page-gutter-mobile: 16px;
+  --page-gutter-desktop: var(--layout-gutter-desktop);
+  --page-gutter-tablet: var(--layout-gutter-tablet);
+  --page-gutter-mobile: var(--layout-gutter-mobile);
   --page-gutter: var(--page-gutter-desktop);
 
   /* Standard Vertical Rhythm */
@@ -20,9 +20,11 @@
   --space-card-grid-gap: var(--space-6, 24px);
 
   /* Sidebar constraints */
-  --sidebar-collapsed-width: 60px;
-  --sidebar-expanded-width: 260px;
+  --sidebar-collapsed-width: var(--sidebar-width-collapsed);
+  --sidebar-expanded-width: var(--sidebar-width-expanded);
   --sidebar-current-width: var(--sidebar-collapsed-width);
+  /* Resting creation capsule: 28px offset + 48px height + breathing room. */
+  --workspace-bottom-inset: var(--space-24);
 }
 
 @media (max-width: 1024px) {
@@ -39,6 +41,8 @@
     --space-section-gap: var(--space-6, 24px);
     --space-section-header-to-cards: var(--space-3, 12px);
     --space-card-grid-gap: var(--space-3, 12px);
+    /* Include the raised create control, navigation offset and device safe area. */
+    --workspace-bottom-inset: calc(var(--mobile-nav-height) + var(--mobile-nav-offset) + var(--space-4) + var(--space-4) + env(safe-area-inset-bottom, 0px));
   }
 }
 
@@ -145,7 +149,7 @@ body.auth-layout #page-content,
   min-height: 100dvh !important;
   overflow: visible !important;
   margin: 0 !important;
-  padding: 24px 16px !important;
+  padding: var(--space-6) var(--space-4) !important;
   box-sizing: border-box !important;
 }
 
@@ -163,7 +167,7 @@ body.dashboard-layout #page-main {
   min-height: 0 !important;
   overflow: hidden !important;
   background: var(--canvas, var(--color-bg-page, #f8fafc)) !important;
-  border-radius: 28px !important;
+  border-radius: var(--radius-xl) !important;
   margin: clamp(8px, 1.2vh, 12px) clamp(8px, 1.2vh, 12px) clamp(8px, 1.2vh, 12px) calc(clamp(12px, 1.8vh, 16px) + var(--sidebar-collapsed-width, 60px)) !important;
   height: calc(100vh - 2 * clamp(8px, 1.2vh, 12px)) !important;
   height: calc(100dvh - 2 * clamp(8px, 1.2vh, 12px)) !important;
@@ -210,7 +214,7 @@ body.dashboard-layout.sidebar-open #page-main,
   z-index: 20 !important;
   background: var(--color-bg-page, #f8fafc);
   box-sizing: border-box !important;
-  padding: 24px var(--page-gutter) 32px var(--page-gutter) !important;
+  padding: var(--space-6) var(--page-gutter) var(--space-8) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
@@ -260,7 +264,8 @@ body.dashboard-layout.sidebar-open #page-main,
 .content-body {
   overflow-y: auto !important;
   overflow-x: hidden !important;
-  padding: 0 var(--page-gutter) 48px var(--page-gutter) !important;
+  padding: 0 var(--page-gutter) var(--workspace-bottom-inset) !important;
+  scroll-padding-bottom: var(--workspace-bottom-inset);
 }
 
 /* ── 6. Outer Grid Alignment & Content Containers ── */
@@ -288,15 +293,18 @@ body.dashboard-layout .page-content-inner {
     border-radius: 0 !important;
     height: 100vh !important;
     height: 100dvh !important;
+    max-height: 100dvh !important;
+    border: 0;
+    box-shadow: none;
   }
 
   .page-scroll,
   .content-body {
-    padding: 0 var(--page-gutter-mobile) calc(var(--mobile-nav-height, 64px) + env(safe-area-inset-bottom, 0px) + 32px) var(--page-gutter-mobile) !important;
+    padding: 0 var(--page-gutter-mobile) var(--workspace-bottom-inset) !important;
   }
 
   .page-header,
   .content-header {
-    padding: 16px var(--page-gutter-mobile) 12px var(--page-gutter-mobile) !important;
+    padding: var(--space-4) var(--page-gutter-mobile) var(--space-3) !important;
   }
 }

@@ -175,19 +175,50 @@ const mockDoc = {
   },
   createElement(tag) {
     return createMockElement(tag);
+  },
+  querySelector(sel) {
+    if (sel.startsWith('#')) return elementsById[sel.slice(1)] || null;
+    for (const id in elementsById) {
+      if (elementsById[id].classList?.contains(sel.replace(/^\./, ''))) return elementsById[id];
+      const found = elementsById[id].querySelector?.(sel);
+      if (found) return found;
+    }
+    return null;
+  },
+  querySelectorAll(sel) {
+    const res = [];
+    for (const id in elementsById) {
+      if (elementsById[id].classList?.contains(sel.replace(/^\./, ''))) res.push(elementsById[id]);
+      if (elementsById[id].querySelectorAll) res.push(...elementsById[id].querySelectorAll(sel));
+    }
+    return res;
   }
 };
 
 global.document = mockDoc;
 global.window = {
   document: mockDoc,
+  scrollTo: () => {},
   cacheTemplatesList: null,
   renderTemplateDetailTimeline: null,
   destroyTemplateTimeline: null,
   initTemplatePage: null,
   backToStoreBrowse: null,
   triggerTemplateDetail: null,
-  filterStoreTemplates: null
+  filterStoreTemplates: null,
+  DynamicMaskSystem: null
+};
+
+let dynamicMaskAttached = null;
+let dynamicMaskDetached = null;
+global.DynamicMaskSystem = global.window.DynamicMaskSystem = {
+  attach(el, opts) {
+    dynamicMaskAttached = el;
+    return { destroy: () => { dynamicMaskDetached = el; } };
+  },
+  detach(el) {
+    dynamicMaskDetached = el;
+  }
 };
 
 // Require the modules
@@ -239,6 +270,8 @@ function setupDOMStructure() {
   const pageMain = registerEl(createMockElement('main', 'page-main'));
   const storeView = registerEl(createMockElement('section', 'template-store-view'));
   const detailImmersive = registerEl(createMockElement('section', 'template-detail-immersive'));
+  const detailBody = registerEl(createMockElement('div', 'template-detail-body'));
+  detailImmersive.appendChild(detailBody);
   const categoriesGrid = registerEl(createMockElement('div', 'store-categories'));
   const templateGrid = registerEl(createMockElement('div', 'template-grid'));
   const tagInput = registerEl(createMockElement('select', 'store-tag-filter'));
@@ -274,6 +307,7 @@ function setupDOMStructure() {
     pageMain,
     storeView,
     detailImmersive,
+    detailBody,
     categoriesGrid,
     templateGrid,
     searchInput,
@@ -677,3 +711,27 @@ test('template grid layout specifies 5 columns by default with compact card styl
   assert.match(css, /@media\s*\(max-width:\s*768px\)[\s\S]*?repeat\(2,\s*minmax\(0,\s*1fr\)\)/);
 });
 
+test('TemplatesPage: DynamicMaskSystem lifecycle on template-detail-body during detail preview and cleanup', async () => {
+  const dom = setupDOMStructure();
+  window.renderTemplateDetailTimeline = timelineModule.renderTemplateDetailTimeline;
+  window.destroyTemplateTimeline = timelineModule.destroyTemplateTimeline;
+  window.cacheTemplatesList = sampleTemplates;
+  dynamicMaskAttached = null;
+  dynamicMaskDetached = null;
+
+  // Render detail via timeline module
+  window.renderTemplateDetailTimeline(sampleTemplates[0], dom.detailImmersive);
+  assert.equal(dynamicMaskAttached, dom.detailBody, 'DynamicMaskSystem must attach to template-detail-body');
+
+  // Destroy timeline
+  window.destroyTemplateTimeline();
+  assert.equal(dynamicMaskDetached, dom.detailBody, 'DynamicMaskSystem must detach from template-detail-body on destroy');
+
+  // Mount TemplatesPage and test unmount cleanup
+  dynamicMaskAttached = null;
+  dynamicMaskDetached = null;
+  const instance = await TemplatesPage.mount({ root: dom.pageMain, route: { templateId: 'tpl-1' } });
+  assert.equal(dynamicMaskAttached, dom.detailBody, 'Mounting detail route must attach mask to template-detail-body');
+  instance.unmount();
+  assert.equal(dynamicMaskDetached, dom.detailBody, 'Unmounting must detach mask from template-detail-body');
+});

@@ -277,3 +277,83 @@ test('ProjectActions.updateProjectTags: optimistic update, store notification, a
   }
 });
 
+test('ProjectActions.editProjectTags works when invoked as an unbound menu action', async () => {
+  const originalModal = global.openProjectTagModal;
+  const originalUpdate = ProjectsApi.updateProjectTags;
+  let save;
+  const project = { id: 'menu-tags', metadata: { generationTaskId: 'keep', tags: ['舊標籤'] } };
+  ProjectStore.reset();
+  ProjectStore.setProjects([project]);
+  global.openProjectTagModal = (p, onSave) => { save = onSave; };
+  ProjectsApi.updateProjectTags = async () => ({ ok: true, data: { project: { tags: ['新標籤'], updateAt: '2026-10-13T01:00:00Z' } } });
+  try {
+    const action = ProjectActions.editProjectTags;
+    assert.equal(action(project, null, null), true);
+    assert.equal(await save(['新標籤']), true);
+    assert.deepEqual(project.tags, ['新標籤']);
+    assert.equal(project.metadata.generationTaskId, 'keep');
+    assert.equal(project.updateAt, '2026-10-13T01:00:00Z');
+  } finally {
+    global.openProjectTagModal = originalModal;
+    ProjectsApi.updateProjectTags = originalUpdate;
+  }
+});
+
+test('Tag saves preserve metadata and synchronize detail cache; failures restore legacy metadata', async () => {
+  const originalUpdate = ProjectsApi.updateProjectTags;
+  ProjectStore.reset();
+  const project = { id: 'metadata-tags', title: 'Metadata', metadata: { generationTaskId: 'keep', tags: ['舊標籤'] } };
+  const detail = { id: project.id, metadata: { generationTaskId: 'keep', tags: ['舊標籤'] } };
+  ProjectStore.setProjects([project]);
+  ProjectStore.seedProjectDetail(project.id, detail);
+  ProjectsApi.updateProjectTags = async () => ({ ok: true });
+  try {
+    assert.equal(await ProjectActions.updateProjectTags(project, [' 新標籤 ', '新標籤']), true);
+    assert.deepEqual(detail.tags, ['新標籤']);
+    assert.deepEqual(detail.metadata, { generationTaskId: 'keep', tags: ['新標籤'] });
+    const legacy = { id: 'legacy-tags', metadata: null };
+    ProjectsApi.updateProjectTags = async () => ({ ok: false, status: 403 });
+    assert.equal(await ProjectActions.updateProjectTags(legacy, ['失敗標籤']), false);
+    assert.equal(legacy.metadata, null);
+    assert.equal(Object.hasOwn(legacy, 'tags'), false);
+    ProjectsApi.updateProjectTags = async () => ({ ok: false, status: 500 });
+    assert.equal(await ProjectActions.updateProjectTags(project, []), false);
+    assert.deepEqual(project.tags, ['新標籤']);
+    assert.deepEqual(detail.tags, ['新標籤']);
+    assert.equal(project.metadata.generationTaskId, 'keep');
+  } finally {
+    ProjectsApi.updateProjectTags = originalUpdate;
+  }
+});
+
+test('Tag mutation rejects older in-flight list responses and late logout callbacks', async () => {
+  ProjectStore.reset();
+  const originalFetch = ProjectsApi.fetchProjects;
+  const originalUpdate = ProjectsApi.updateProjectTags;
+  const project = { id: 'stale-tags', tags: ['舊標籤'] };
+  ProjectStore.setProjects([project]);
+  let resolveList;
+  let resolveSave;
+  ProjectsApi.fetchProjects = () => new Promise(resolve => { resolveList = resolve; });
+  ProjectsApi.updateProjectTags = async () => ({ ok: true });
+  try {
+    const loading = ProjectStore.fetchProjects({ force: true });
+    await ProjectActions.updateProjectTags(project, ['已儲存']);
+    resolveList({ ok: true, projects: [{ id: project.id, tags: ['舊標籤'] }] });
+    await loading;
+    assert.deepEqual(ProjectStore.getProjects()[0].tags, ['已儲存']);
+
+    ProjectsApi.updateProjectTags = () => new Promise(resolve => { resolveSave = resolve; });
+    let refreshCount = 0;
+    const saving = ProjectActions.updateProjectTags(project, ['登出中'], () => { refreshCount++; });
+    ProjectStore.reset();
+    resolveSave({ ok: true });
+    assert.equal(await saving, false);
+    assert.equal(refreshCount, 1, 'Only optimistic update refreshes; late save must not touch logged-out UI');
+    assert.equal(ProjectStore.getProjects(), null);
+  } finally {
+    ProjectsApi.fetchProjects = originalFetch;
+    ProjectsApi.updateProjectTags = originalUpdate;
+  }
+});
+

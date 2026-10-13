@@ -6,7 +6,7 @@
 
 :root {
   /* ── Button Component Tokens ── */
-  --button-primary-bg:           linear-gradient(135deg, var(--color-brand-primary-light), var(--color-brand-primary));
+  --button-primary-bg:           linear-gradient(135deg, var(--color-action-primary-default), var(--color-action-primary-hover));
   --button-primary-text:         var(--white);
   --button-primary-hover-shadow: var(--shadow-brand-glow);
   --button-secondary-bg:         var(--slate-100);
@@ -31,7 +31,7 @@
   --card-border:                 var(--color-border-default);
   --card-shadow:                 var(--elevation-1);
   --card-hover-shadow:           var(--elevation-2);
-  --card-radius:                 var(--radius-sm);
+  --card-radius:                 var(--radius-md);
   --card-thumbnail-ratio:        16 / 9;
 
   /* ── Form Input Tokens ── */
@@ -52,10 +52,11 @@
 
   /* ── Mobile Portrait Floating Bottom Nav Tokens ── */
   --mobile-nav-height:           64px;
+  --mobile-nav-offset:           var(--space-6);
   --mobile-nav-radius:           var(--radius-pill);
   --mobile-nav-gap:              var(--space-1);
   --mobile-nav-padding:          0 10px;
-  --mobile-nav-bg:               var(--surface-floating-bg);
+  --mobile-nav-bg:               linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.94));
   --mobile-nav-border:           var(--surface-floating-border);
   --mobile-nav-shadow:           var(--surface-floating-shadow);
   --mobile-nav-item-size:        48px;

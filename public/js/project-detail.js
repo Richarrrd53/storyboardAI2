@@ -363,7 +363,7 @@
             <span>🎬</span>
             <span>Shot ${orderStr}</span>
           </div>
-          <button class="project-shot-editor-close" id="pd-editor-close" title="關閉 (Esc)">✕</button>
+          <button class="project-shot-editor-close" id="pd-editor-close" aria-label="關閉分鏡編輯器" title="關閉 (Esc)">✕</button>
         </div>
 
         <div class="project-shot-editor-body">
@@ -374,7 +374,7 @@
 
           <!-- 故事內容 / 動作 -->
           <div class="editor-field-group">
-            <label class="editor-field-label">故事內容 / 動作描述</label>
+            <label class="editor-field-label" for="pd-f-title">故事內容 / 動作描述</label>
             <textarea class="editor-field-textarea" id="pd-f-title" rows="3" placeholder="例如：老闆拉開早餐店鐵門，晨光照入店內">${this._escHtml(shot.title || '')}</textarea>
           </div>
 
@@ -383,19 +383,19 @@
             <label class="editor-field-label">鏡頭語言 (Camera Language)</label>
             <div class="editor-camera-grid">
               <div class="editor-camera-item">
-                <label>景別 (Shot Size)</label>
+                <label for="pd-f-cam-size">景別 (Shot Size)</label>
                 <input type="text" id="pd-f-cam-size" value="${this._escHtml(shotSize)}" placeholder="Wide Shot">
               </div>
               <div class="editor-camera-item">
-                <label>視角 (Angle)</label>
+                <label for="pd-f-cam-angle">視角 (Angle)</label>
                 <input type="text" id="pd-f-cam-angle" value="${this._escHtml(shotAngle)}" placeholder="Eye Level">
               </div>
               <div class="editor-camera-item">
-                <label>運鏡 (Movement)</label>
+                <label for="pd-f-cam-move">運鏡 (Movement)</label>
                 <input type="text" id="pd-f-cam-move" value="${this._escHtml(shotMovement)}" placeholder="Slow Dolly In">
               </div>
               <div class="editor-camera-item">
-                <label>時長 (Duration)</label>
+                <label for="pd-f-duration">時長 (Duration)</label>
                 <input type="text" id="pd-f-duration" value="${this._escHtml(shotDuration)}" placeholder="3.5s">
               </div>
             </div>
@@ -403,22 +403,22 @@
 
           <!-- 情緒 / 目的 -->
           <div class="editor-field-group">
-            <label class="editor-field-label">情緒 / 目的 (Emotion / Purpose)</label>
+            <label class="editor-field-label" for="pd-f-emotion">情緒 / 目的 (Emotion / Purpose)</label>
             <input class="editor-field-input" id="pd-f-emotion" type="text" value="${this._escHtml(p.emotion || '')}" placeholder="例如：建立溫暖、日常的開場氛圍">
           </div>
 
           <!-- 導演備註 -->
           <div class="editor-field-group">
-            <label class="editor-field-label">導演備註 / 拍攝註記 (Director's Note)</label>
+            <label class="editor-field-label" for="pd-f-note">導演備註 / 拍攝註記 (Director's Note)</label>
             <textarea class="editor-field-textarea" id="pd-f-note" rows="2" placeholder="例如：演員這裡不要看鏡頭、現場注意暖色打光">${this._escHtml(p.note || '')}</textarea>
           </div>
 
           <!-- AI 圖像提示詞工作流 -->
           <div class="editor-prompt-card">
-            <label class="editor-field-label">
+            <label class="editor-field-label" for="pd-f-prompt">
               <span>AI 圖像提示詞 (Image Prompt)</span>
             </label>
-            <textarea class="editor-field-textarea" id="pd-f-prompt" rows="4" style="font-family:monospace;font-size:0.8rem;">${this._escHtml(prompt)}</textarea>
+            <textarea class="editor-field-textarea" id="pd-f-prompt" rows="4">${this._escHtml(prompt)}</textarea>
             
             <div class="editor-prompt-actions">
               <button class="editor-ai-btn" id="pd-btn-optimize-prompt" title="根據故事內容與鏡頭語言，重新生成精確英文提示詞">

@@ -1,0 +1,343 @@
+TAP version 13
+# Subtest: ProjectCardInteractions: Module interface & compatibility bridge
+ok 1 - ProjectCardInteractions: Module interface & compatibility bridge
+  ---
+  duration_ms: 11.1914
+  ...
+# Subtest: ProjectCardInteractions: Dashboard compact card click launches reveal transition
+ok 2 - ProjectCardInteractions: Dashboard compact card click launches reveal transition
+  ---
+  duration_ms: 17.3989
+  ...
+# Subtest: ProjectCardInteractions: Prefers-reduced-motion navigates without transition
+ok 3 - ProjectCardInteractions: Prefers-reduced-motion navigates without transition
+  ---
+  duration_ms: 3.2096
+  ...
+# Subtest: ProjectCardInteractions: History deleted card click prompts restore and does NOT launch transition
+ok 4 - ProjectCardInteractions: History deleted card click prompts restore and does NOT launch transition
+  ---
+  duration_ms: 4.7247
+  ...
+# Subtest: ProjectCardInteractions: Option button click invokes openGlobalOptionMorph and stops propagation
+ok 5 - ProjectCardInteractions: Option button click invokes openGlobalOptionMorph and stops propagation
+  ---
+  duration_ms: 3.1604
+  ...
+# Subtest: ProjectCardInteractions: Title overflow marquee starts on hover and cleans up on leave
+ok 6 - ProjectCardInteractions: Title overflow marquee starts on hover and cleans up on leave
+  ---
+  duration_ms: 473.1496
+  ...
+# Subtest: ProjectCardInteractions: Card hover expands and triggers prefetch
+ok 7 - ProjectCardInteractions: Card hover expands and triggers prefetch
+  ---
+  duration_ms: 6.399
+  ...
+# Subtest: ProjectCardInteractions: Duplicate bind does NOT duplicate listeners (Idempotency)
+ok 8 - ProjectCardInteractions: Duplicate bind does NOT duplicate listeners (Idempotency)
+  ---
+  duration_ms: 5.7673
+  ...
+# Subtest: ProjectCardInteractions: Card click debounce guard allows only one transition trigger
+ok 9 - ProjectCardInteractions: Card click debounce guard allows only one transition trigger
+  ---
+  duration_ms: 4.9246
+  ...
+# Subtest: ProjectCardInteractions: bindAll and destroyWithin lifecycle over container
+ok 10 - ProjectCardInteractions: bindAll and destroyWithin lifecycle over container
+  ---
+  duration_ms: 6.5748
+  ...
+# Subtest: ProjectCard.normalizeRatio normalizes aspect ratio strings
+ok 11 - ProjectCard.normalizeRatio normalizes aspect ratio strings
+  ---
+  duration_ms: 7.4035
+  ...
+# Subtest: ProjectCard.parseAspectRatio parses ratios from strings, numbers, and dimensions
+ok 12 - ProjectCard.parseAspectRatio parses ratios from strings, numbers, and dimensions
+  ---
+  duration_ms: 4.7223
+  ...
+# Subtest: ProjectCard.calculateProjectCoverGeometry computes correct dimensions for variants
+ok 13 - ProjectCard.calculateProjectCoverGeometry computes correct dimensions for variants
+  ---
+  duration_ms: 2.1948
+  ...
+# Subtest: ProjectCard.calculateTransitionTargetSize computes centered target rect within limits
+ok 14 - ProjectCard.calculateTransitionTargetSize computes centered target rect within limits
+  ---
+  duration_ms: 1.7225
+  ...
+# Subtest: ProjectCard.getContainedImageRect computes contained image bounds
+ok 15 - ProjectCard.getContainedImageRect computes contained image bounds
+  ---
+  duration_ms: 5.1347
+  ...
+# Subtest: ProjectCard.formatRatioText returns user-facing localized ratio labels
+ok 16 - ProjectCard.formatRatioText returns user-facing localized ratio labels
+  ---
+  duration_ms: 1.1247
+  ...
+# Subtest: ProjectCard.formatRelativeTime handles missing or relative timestamps
+ok 17 - ProjectCard.formatRelativeTime handles missing or relative timestamps
+  ---
+  duration_ms: 11.8725
+  ...
+# Subtest: ProjectCard.renderProjectCard renders expected folder markup, classes, and escapes HTML
+ok 18 - ProjectCard.renderProjectCard renders expected folder markup, classes, and escapes HTML
+  ---
+  duration_ms: 3.1929
+  ...
+# Subtest: ProjectCard.renderProjectCard handles single shot without secondary card and handles deleted flag
+ok 19 - ProjectCard.renderProjectCard handles single shot without secondary card and handles deleted flag
+  ---
+  duration_ms: 14.2822
+  ...
+# Subtest: ProjectCard.renderProjectCard renders tags cleanly and escapes HTML in tags
+ok 20 - ProjectCard.renderProjectCard renders tags cleanly and escapes HTML in tags
+  ---
+  duration_ms: 4.7602
+  ...
+# Subtest: Dashboard compact card normalizes metadata tags before its two-tag display limit
+ok 21 - Dashboard compact card normalizes metadata tags before its two-tag display limit
+  ---
+  duration_ms: 2.0917
+  ...
+# Subtest: ProjectOptionMorph: Module interface and compatibility bridge
+ok 22 - ProjectOptionMorph: Module interface and compatibility bridge
+  ---
+  duration_ms: 17.0159
+  ...
+# Subtest: ProjectOptionMorph: open and close creates and removes portal cleanly
+ok 23 - ProjectOptionMorph: open and close creates and removes portal cleanly
+  ---
+  duration_ms: 27.7533
+  ...
+# Subtest: ProjectOptionMorph: double open on same trigger acts as toggle close
+ok 24 - ProjectOptionMorph: double open on same trigger acts as toggle close
+  ---
+  duration_ms: 8.4047
+  ...
+# Subtest: ProjectOptionMorph: open A -> open B replaces active session cleanly
+ok 25 - ProjectOptionMorph: open A -> open B replaces active session cleanly
+  ---
+  duration_ms: 11.6354
+  ...
+# Subtest: ProjectOptionMorph: repeated close idempotency
+ok 26 - ProjectOptionMorph: repeated close idempotency
+  ---
+  duration_ms: 6.5417
+  ...
+# Subtest: ProjectOptionMorph: outside click closes menu
+ok 27 - ProjectOptionMorph: outside click closes menu
+  ---
+  duration_ms: 9.5501
+  ...
+# Subtest: ProjectOptionMorph: Escape key closes menu
+ok 28 - ProjectOptionMorph: Escape key closes menu
+  ---
+  duration_ms: 23.2883
+  ...
+# Subtest: ProjectOptionMorph: Window scroll and resize closes menu
+ok 29 - ProjectOptionMorph: Window scroll and resize closes menu
+  ---
+  duration_ms: 16.4414
+  ...
+# Subtest: ProjectOptionMorph: History mode renders restore action only
+ok 30 - ProjectOptionMorph: History mode renders restore action only
+  ---
+  duration_ms: 6.5751
+  ...
+# Subtest: ProjectOptionMorph: Action click executes action via ProjectActions and closes
+ok 31 - ProjectOptionMorph: Action click executes action via ProjectActions and closes
+  ---
+  duration_ms: 524.4819
+  ...
+# Subtest: ProjectOptionMorph: Card rerender / detached card does not throw on close
+ok 32 - ProjectOptionMorph: Card rerender / detached card does not throw on close
+  ---
+  duration_ms: 7.3688
+  ...
+# Subtest: ProjectOptionMorph: Route leave immediate cleanup (navigation)
+ok 33 - ProjectOptionMorph: Route leave immediate cleanup (navigation)
+  ---
+  duration_ms: 5.389
+  ...
+# Subtest: ProjectOptionMorph: Global listeners lifecycle (no duplicate or lingering listeners)
+ok 34 - ProjectOptionMorph: Global listeners lifecycle (no duplicate or lingering listeners)
+  ---
+  duration_ms: 4.5019
+  ...
+# Immediate delete failed on flush: Failed to parse URL from /api/projects/p-flush-1
+# Immediate delete failed on flush: Failed to parse URL from /api/projects/p-flush-2
+# Failed to update project tags on server Error: 伺服器網路錯誤
+#     at Object.updateProjectTags (D:\\My Files\\web\\StoryboardAI2\\public\\js\\features\\projects.js:846:17)
+#     at async TestContext.<anonymous> (D:\\My Files\\web\\StoryboardAI2\\tests\\projects-feature.test.js:265:20)
+#     at async Test.run (node:internal/test_runner/test:935:9)
+#     at async Test.processPendingSubtests (node:internal/test_runner/test:633:7)
+# Failed to update project tags on server Error: 更新標籤失敗
+#     at Object.updateProjectTags (D:\\My Files\\web\\StoryboardAI2\\public\\js\\features\\projects.js:846:17)
+#     at async TestContext.<anonymous> (D:\\My Files\\web\\StoryboardAI2\\tests\\projects-feature.test.js:316:18)
+#     at async Test.run (node:internal/test_runner/test:935:9)
+#     at async Test.processPendingSubtests (node:internal/test_runner/test:633:7)
+# Failed to update project tags on server Error: 更新標籤失敗
+#     at Object.updateProjectTags (D:\\My Files\\web\\StoryboardAI2\\public\\js\\features\\projects.js:846:17)
+#     at async TestContext.<anonymous> (D:\\My Files\\web\\StoryboardAI2\\tests\\projects-feature.test.js:320:18)
+#     at async Test.run (node:internal/test_runner/test:935:9)
+#     at async Test.processPendingSubtests (node:internal/test_runner/test:633:7)
+# Subtest: ProjectStore: stores, filters active/history projects and supports subscriptions
+ok 35 - ProjectStore: stores, filters active/history projects and supports subscriptions
+  ---
+  duration_ms: 12.1313
+  ...
+# Subtest: ProjectDeleteQueue: optimistic enqueue, undo restoration and status tracking
+ok 36 - ProjectDeleteQueue: optimistic enqueue, undo restoration and status tracking
+  ---
+  duration_ms: 5.6868
+  ...
+# Subtest: ProjectDeleteQueue: flushAll commits pending items without duplicate calls
+ok 37 - ProjectDeleteQueue: flushAll commits pending items without duplicate calls
+  ---
+  duration_ms: 184.4429
+  ...
+# Subtest: ProjectStore: seedProjectDetail and invalidate detail
+ok 38 - ProjectStore: seedProjectDetail and invalidate detail
+  ---
+  duration_ms: 1.6017
+  ...
+# Subtest: ProjectActions: rename validation rejects empty titles without modifying project
+ok 39 - ProjectActions: rename validation rejects empty titles without modifying project
+  ---
+  duration_ms: 1.7845
+  ...
+# Subtest: ProjectStore: reset clears all caches and timers for clean logout
+ok 40 - ProjectStore: reset clears all caches and timers for clean logout
+  ---
+  duration_ms: 2.8497
+  ...
+# Subtest: ProjectStore: in-flight request resolving after reset() must NOT overwrite store or notify
+ok 41 - ProjectStore: in-flight request resolving after reset() must NOT overwrite store or notify
+  ---
+  duration_ms: 5.1601
+  ...
+# Subtest: ProjectStore: normalizes tags from metadata and defaults to empty array
+ok 42 - ProjectStore: normalizes tags from metadata and defaults to empty array
+  ---
+  duration_ms: 5.5992
+  ...
+# Subtest: ProjectsApi.updateProjectTags: normalizes tags array and invokes PATCH endpoint
+ok 43 - ProjectsApi.updateProjectTags: normalizes tags array and invokes PATCH endpoint
+  ---
+  duration_ms: 3.3752
+  ...
+# Subtest: ProjectActions.updateProjectTags: optimistic update, store notification, and error rollback
+ok 44 - ProjectActions.updateProjectTags: optimistic update, store notification, and error rollback
+  ---
+  duration_ms: 9.6782
+  ...
+# Subtest: ProjectActions.editProjectTags works when invoked as an unbound menu action
+ok 45 - ProjectActions.editProjectTags works when invoked as an unbound menu action
+  ---
+  duration_ms: 3.0999
+  ...
+# Subtest: Tag saves preserve metadata and synchronize detail cache; failures restore legacy metadata
+ok 46 - Tag saves preserve metadata and synchronize detail cache; failures restore legacy metadata
+  ---
+  duration_ms: 5.2201
+  ...
+# Subtest: Tag mutation rejects older in-flight list responses and late logout callbacks
+ok 47 - Tag mutation rejects older in-flight list responses and late logout callbacks
+  ---
+  duration_ms: 4.566
+  ...
+# Subtest: ProjectsPage: getFilteredAndSortedProjects filters deleted/pending and sorts desc by updateAt
+ok 48 - ProjectsPage: getFilteredAndSortedProjects filters deleted/pending and sorts desc by updateAt
+  ---
+  duration_ms: 14.3685
+  ...
+# Subtest: ProjectsPage: Page Lifecycle Contract - mount() returns { unmount() }
+ok 49 - ProjectsPage: Page Lifecycle Contract - mount() returns { unmount() }
+  ---
+  duration_ms: 23.6919
+  ...
+# Subtest: ProjectsPage: renders empty state when no active projects exist
+ok 50 - ProjectsPage: renders empty state when no active projects exist
+  ---
+  duration_ms: 3.6112
+  ...
+# Subtest: ProjectsPage: renders project cards and hooks lazyLoadProjectThumbs & card events
+ok 51 - ProjectsPage: renders project cards and hooks lazyLoadProjectThumbs & card events
+  ---
+  duration_ms: 10.0029
+  ...
+# Subtest: ProjectsPage: reactive updates via ProjectStore subscription and unmount cleanup
+ok 52 - ProjectsPage: reactive updates via ProjectStore subscription and unmount cleanup
+  ---
+  duration_ms: 6.4661
+  ...
+# Subtest: ProjectsPage: signal abort triggers immediate and safe unmount
+ok 53 - ProjectsPage: signal abort triggers immediate and safe unmount
+  ---
+  duration_ms: 8.2869
+  ...
+# Subtest: Router Navigation Simulation: Direct Entry, Leave, Return, Back/Forward Lifecycle
+ok 54 - Router Navigation Simulation: Direct Entry, Leave, Return, Back/Forward Lifecycle
+  ---
+  duration_ms: 18.8986
+  ...
+# Subtest: ProjectsPage: getFilteredAndSortedProjects supports OR logic with multiple tags and preserves sort
+ok 55 - ProjectsPage: getFilteredAndSortedProjects supports OR logic with multiple tags and preserves sort
+  ---
+  duration_ms: 2.8468
+  ...
+# Subtest: ProjectsPage: extractTagsWithCounts gathers unique tags and correct project counts
+ok 56 - ProjectsPage: extractTagsWithCounts gathers unique tags and correct project counts
+  ---
+  duration_ms: 77.0267
+  ...
+# Subtest: ProjectsPage: tags count each project once and normalize legacy metadata without prototype collisions
+ok 57 - ProjectsPage: tags count each project once and normalize legacy metadata without prototype collisions
+  ---
+  duration_ms: 3.3119
+  ...
+# Subtest: ProjectsPage: renderFilterEmptyState renders filter-specific empty state and binds clear callback
+ok 58 - ProjectsPage: renderFilterEmptyState renders filter-specific empty state and binds clear callback
+  ---
+  duration_ms: 2.2835
+  ...
+# Subtest: ProjectsPage: mount toolbar renders tag filter pills, updates count badge, and toggles filters
+ok 59 - ProjectsPage: mount toolbar renders tag filter pills, updates count badge, and toggles filters
+  ---
+  duration_ms: 36.5885
+  ...
+# Subtest: ProjectsPage: openProjectTagModal opens dialog, allows adding/removing tags, and saves via onSave
+ok 60 - ProjectsPage: openProjectTagModal opens dialog, allows adding/removing tags, and saves via onSave
+  ---
+  duration_ms: 718.7024
+  ...
+# Subtest: ProjectsPage: tag modal keeps draft on failed save, blocks duplicate saves, and retries
+ok 61 - ProjectsPage: tag modal keeps draft on failed save, blocks duplicate saves, and retries
+  ---
+  duration_ms: 554.7029
+  ...
+# Subtest: ProjectsPage: singleton modal and route cleanup remove overlay and keyboard listener immediately
+ok 62 - ProjectsPage: singleton modal and route cleanup remove overlay and keyboard listener immediately
+  ---
+  duration_ms: 5.2727
+  ...
+# ◇ injected env (10) from .env // tip: ⌁ auth for agents [www.vestauth.com]
+# Subtest: Projects Routes: GET, PATCH tags, 401/403 authorization, and duplicate preservation
+ok 63 - Projects Routes: GET, PATCH tags, 401/403 authorization, and duplicate preservation
+  ---
+  duration_ms: 4760.8083
+  ...
+1..63
+# tests 63
+# suites 0
+# pass 63
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 7010.3587

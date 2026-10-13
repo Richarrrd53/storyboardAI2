@@ -93,7 +93,7 @@
 
                     <!-- 主 Composer 容器 -->
                     <div class="composer-container" id="phase1-composer">
-                        <textarea id="story-input" class="story-composer-textarea" placeholder="描述故事或創作方向... ✦" rows="1" oninput="onStoryInput()"></textarea>
+                        <textarea id="story-input" class="story-composer-textarea" aria-label="故事或創作方向" placeholder="描述故事或創作方向... ✦" rows="3" oninput="onStoryInput()"></textarea>
                         <button type="button" class="composer-submit-btn" id="composer-submit-btn" disabled aria-label="送出故事" onclick="submitPhase1Story()">
                             <div class="btn-icon-wrapper">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -111,13 +111,13 @@
                 <div class="phase-panel phase-2-panel" id="phase-panel-2" role="region" aria-label="創作方向，可捲動選擇風格與畫面比例" tabindex="0">
                     <div class="direction-header">
                         <div class="direction-badge-wrap">
-                            <span class="direction-title-badge">✦ 創作方向</span>
-                            <span class="direction-scroll-hint">可拖曳空白處或使用捲軸瀏覽</span>
+                            <h2 class="direction-title-badge" id="direction-heading" data-phase-heading tabindex="-1">✦ 創作方向</h2>
+                            <span class="direction-scroll-hint">選擇影像調性與發布平台的畫面比例</span>
                         </div>
                         <!-- AI 推薦文字 (打字機效果) -->
                         <div class="direction-ai-box" id="direction-ai-box">
                             <span class="ai-box-sparkle">✦</span>
-                            <span class="ai-box-text" id="direction-ai-text">AI 正在為故事分析最佳視覺調性與畫面比例...</span>
+                            <span class="ai-box-text" id="direction-ai-text">依故事關鍵字推薦風格，你可以自由調整。</span>
                             <span class="ai-box-cursor" id="direction-ai-cursor">|</span>
                         </div>
                     </div>
@@ -125,19 +125,19 @@
                     <!-- 視覺風格區塊 -->
                     <div class="direction-section" id="section-visual-style">
                         <div class="section-label-row">
-                            <label class="section-label">視覺風格</label>
+                            <h3 class="section-label" id="visual-style-label">視覺風格</h3>
                             <span class="section-hint">選擇最能襯托故事氛圍的影像調性</span>
                         </div>
-                        <div class="style-cards-wrap" id="style-cards-grid"></div>
+                        <div class="style-cards-wrap" id="style-cards-grid" role="group" aria-labelledby="visual-style-label"></div>
                     </div>
 
                     <!-- 畫面比例區塊 -->
                     <div class="direction-section" id="section-aspect-ratio">
                         <div class="section-label-row">
-                            <label class="section-label">畫面比例</label>
+                            <h3 class="section-label" id="aspect-ratio-label">畫面比例</h3>
                             <span class="section-hint">依發布平台選擇最佳影音畫幅</span>
                         </div>
-                        <div class="ratio-chips-wrap" id="ratio-chips-grid">
+                        <div class="ratio-chips-wrap" id="ratio-chips-grid" role="group" aria-labelledby="aspect-ratio-label">
                             <button type="button" class="ratio-chip" data-ratio="直向9:16" onclick="selectRatioOption(this)">
                                 <span class="ratio-icon ratio-icon-9-16"></span>
                                 <span class="ratio-text-num">9:16</span>
@@ -180,7 +180,7 @@
                 <div class="phase-panel phase-3-panel" id="phase-panel-3">
                     <div class="template-header">
                         <div class="template-header-left">
-                            <h2 class="template-title">✦ 選擇模板</h2>
+                            <h2 class="template-title" data-phase-heading tabindex="-1">✦ 選擇模板</h2>
                             <p class="template-subtitle">套用爆款節奏結構，或跳過模板直接以自由結構生成</p>
                         </div>
                         <div class="template-header-right">
@@ -193,7 +193,7 @@
                     <!-- AI 推薦提示橫條 -->
                     <div class="template-recommend-bar" id="template-recommend-bar">
                         <span class="rec-sparkle">✦</span>
-                        <span class="rec-title" id="template-rec-text">AI 已為你的故事配對最佳模板</span>
+                        <span class="rec-title" id="template-rec-text">選擇適合故事的鏡頭結構</span>
                     </div>
 
                     <!-- 模板分類標籤與卡片庫 -->
@@ -217,6 +217,7 @@
                      Spec items 18, 19
                 ════════════════════════════════════════════════════ -->
                 <div class="phase-panel phase-4-panel" id="phase-panel-4">
+                    <h2 class="generation-phase-title" data-phase-heading tabindex="-1">生成分鏡</h2>
                     <!-- 生成進行中狀態 -->
                     <div class="generation-progress-wrap" id="generation-progress-wrap">
                         <div class="math-loader-box">
@@ -229,11 +230,11 @@
                         </div>
 
                         <div class="gen-progress-bar-wrap">
-                            <div class="gen-progress-track">
+                            <div class="gen-progress-track" id="gen-progress-track" role="progressbar" aria-label="分鏡生成進度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
                                 <div class="gen-progress-fill" id="gen-progress-fill"></div>
                             </div>
                             <div class="gen-progress-meta">
-                                <span class="gen-status-text" id="gen-status-text">正在規劃腳本結構...</span>
+                                <span class="gen-status-text" id="gen-status-text" role="status" aria-live="polite">正在規劃腳本結構...</span>
                                 <span class="gen-status-pct" id="gen-status-pct">0%</span>
                             </div>
                         </div>

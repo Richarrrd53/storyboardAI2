@@ -60,7 +60,7 @@ const server = http.createServer(async (req, res) => {
       assert.ok((await page.locator('#template-information').textContent()).includes(template.promptTemplate.base));
       assert.ok((await page.locator('#local-inspector-body').textContent()).includes(template.structure[0].action));
       assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector('.nle-media-bin')).display), 'flex');
-      assert.equal(await page.evaluate(() => getComputedStyle(document.getElementById('page-main')).overflowY), 'auto');
+      assert.equal(await page.evaluate(() => getComputedStyle(document.getElementById('template-detail-body') || document.getElementById('page-main')).overflowY), 'auto');
       const total = template.structure.reduce((sum, shot) => sum + parseFloat(shot.duration), 0);
       assert.equal(await page.locator('#analysis-kpi-duration').textContent(), `${total}s`);
       await page.locator('#editor-shot-list .editor-shot-item').nth(1).click();
@@ -120,14 +120,14 @@ const server = http.createServer(async (req, res) => {
       await page.locator('#editor-media-tab').click();
       await page.locator('#btn-mode-story').click();
       await page.locator('#btn-apply-template-bottom').scrollIntoViewIfNeeded();
-      assert.ok(await page.evaluate(() => document.getElementById('page-main').scrollTop > 0));
+      assert.ok(await page.evaluate(() => (document.getElementById('template-detail-body')?.scrollTop || document.getElementById('page-main').scrollTop) > 0));
       assert.ok(await page.evaluate(() => document.getElementById('page-main').scrollWidth <= document.getElementById('page-main').clientWidth + 1));
       const output = path.resolve(__dirname, '../.codex-backup/ui-validation');
       await fs.mkdir(output, { recursive: true });
-      await page.evaluate(() => { document.getElementById('page-main').scrollTop = 0; });
+      await page.evaluate(() => { const el = document.getElementById('template-detail-body') || document.getElementById('page-main'); el.scrollTop = 0; });
       await page.screenshot({ path: path.join(output, `template-${viewport.width}.png`), fullPage: true });
       await page.locator('#btn-mode-professional').click();
-      await page.evaluate(() => { const root = document.getElementById('page-main'); root.scrollTop = document.getElementById('template-editor-studio').offsetTop - 70; });
+      await page.evaluate(() => { const root = document.getElementById('template-detail-body') || document.getElementById('page-main'); root.scrollTop = document.getElementById('template-editor-studio').offsetTop - 70; });
       await page.screenshot({ path: path.join(output, `editor-${viewport.width}.png`) });
       await page.locator('#btn-mode-story').click();
       await page.locator('.editor-board-intro').scrollIntoViewIfNeeded();

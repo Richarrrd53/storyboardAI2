@@ -211,6 +211,13 @@ window.renderTemplateDetailTimeline = function(template, detailContainer) {
   const pageMain = document.getElementById('page-main');
   pageMain?.classList.add('is-template-detail-mode');
   if (pageMain) pageMain.scrollTop = 0;
+  const detailBody = document.getElementById('template-detail-body') || detailImmersive?.querySelector?.('.template-detail-body');
+  if (detailBody) {
+    detailBody.scrollTop = 0;
+    if (window.DynamicMaskSystem && typeof window.DynamicMaskSystem.attach === 'function') {
+      window.DynamicMaskSystem.attach(detailBody, { maskSize: 36, direction: 'vertical' });
+    }
+  }
   updatePlayPauseButtonUI(false);
   window.closeInspectorDrawer();
 
@@ -238,9 +245,12 @@ window.renderTemplateDetailTimeline = function(template, detailContainer) {
   if (durationTimecodeEl) durationTimecodeEl.textContent = formatEditorTimecode(timelineDuration);
 
   // Update badges
-  document.getElementById('detail-category-badge').textContent = CAT_MAP[template.category] || template.category || '未分類';
-  document.getElementById('detail-shots-count-badge').textContent = `${template.shotsCount || shots.length} 鏡頭`;
-  document.getElementById('detail-duration-badge').textContent = totalSec > 0 ? `${totalSec}s` : '未提供時長';
+  const catBadge = document.getElementById('detail-category-badge');
+  if (catBadge) catBadge.textContent = CAT_MAP[template.category] || template.category || '未分類';
+  const shotsBadge = document.getElementById('detail-shots-count-badge');
+  if (shotsBadge) shotsBadge.textContent = `${template.shotsCount || shots.length} 鏡頭`;
+  const durBadge = document.getElementById('detail-duration-badge');
+  if (durBadge) durBadge.textContent = totalSec > 0 ? `${totalSec}s` : '未提供時長';
 
   renderAnalysisOverview(template, shots);
 
@@ -1068,6 +1078,10 @@ window.destroyTemplateTimeline = function() {
   isPlaying = false;
   selectedItemId = null;
   window.closeInspectorDrawer?.();
+  const detailBody = document.getElementById('template-detail-body') || document.querySelector('.template-detail-body');
+  if (detailBody && window.DynamicMaskSystem && typeof window.DynamicMaskSystem.detach === 'function') {
+    window.DynamicMaskSystem.detach(detailBody);
+  }
   document.getElementById('page-main')?.classList.remove('is-template-detail-mode');
 };
 

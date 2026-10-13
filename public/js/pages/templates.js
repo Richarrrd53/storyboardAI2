@@ -149,6 +149,8 @@
       detailEl.style.display = 'none';
       if (recoveryEl) recoveryEl.hidden = true;
       if (pageMain) pageMain.scrollTop = 0;
+      const detailBody = getEl('template-detail-body');
+      if (detailBody) detailBody.scrollTop = 0;
       if (storeView) storeView.scrollTop = state.scrollTop;
       document.title = '模板庫 — Storyboard AI';
       const focusLink = Array.from(gridEl.querySelectorAll('.template-card')).find(card => card.dataset.id === lastPreviewId)?.querySelector('.card-preview-btn');
@@ -174,6 +176,8 @@
         detailEl.style.display = 'none';
         pageMain?.classList.add('is-template-detail-mode');
         if (pageMain) pageMain.scrollTop = 0;
+        const detailBody = getEl('template-detail-body');
+        if (detailBody) detailBody.scrollTop = 0;
         if (recoveryEl) {
           recoveryEl.hidden = false;
           recoveryEl.innerHTML = '<h1 class="text-section-title" tabindex="-1">' + (loadError ? '模板載入失敗' : '找不到這個模板') + '</h1><p>' + (loadError ? '請檢查連線後再試一次。' : '模板可能已移除，或連結中的 ID 不正確。') + '</p>' + (loadError ? '<button type="button" class="card-preview-btn" data-catalog-action="retry">重新載入</button>' : '') + '<button type="button" class="card-apply-btn" data-catalog-action="browse">返回模板庫</button>';
@@ -263,6 +267,10 @@
         listeners.forEach(off => off());
         if (window.filterStoreTemplates === filterAndDisplay) delete window.filterStoreTemplates;
         if (window.templatePageNavigation === navigation) delete window.templatePageNavigation;
+        const detailBody = getEl('template-detail-body') || root?.querySelector?.('.template-detail-body');
+        if (detailBody && window.DynamicMaskSystem && typeof window.DynamicMaskSystem.detach === 'function') {
+          window.DynamicMaskSystem.detach(detailBody);
+        }
         pageMain?.classList.remove('is-template-detail-mode');
       }
     };

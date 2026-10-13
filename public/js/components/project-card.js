@@ -282,7 +282,7 @@
     const isHistory = options.isHistory || false;
     const shotsCount = p.shotCount || (Array.isArray(p.shots) ? p.shots.length : 0);
     const cleanRatio = normalizeRatio(p.ratio);
-    const ratioText = formatRatioText(p.ratio);
+    const ratioText = escapeHtml(formatRatioText(p.ratio));
     const relativeTime = formatRelativeTime(p.updateAt || p.createAt);
     const titleEsc = escapeHtml(p.title || '未命名分鏡');
 
@@ -300,7 +300,10 @@
 
     const hasSecondary = shotsCount > 1;
 
-    const tags = Array.isArray(p.tags) ? p.tags : ((p.metadata && Array.isArray(p.metadata.tags)) ? p.metadata.tags : []);
+    const rawTags = Array.isArray(p.tags) ? p.tags : p.metadata?.tags;
+    const tags = Array.isArray(rawTags)
+      ? Array.from(new Set(rawTags.filter(t => typeof t === 'string').map(t => t.trim()).filter(Boolean)))
+      : [];
     const hasTags = tags.length > 0;
 
     return `
@@ -319,7 +322,7 @@
              data-expanded-depth="${geom.collapsed.insertDepth}"
              data-hover-lift="${geom.hoverLift}"
              style="--cover-width: ${geom.frame.width}px; --cover-height: ${geom.frame.height}px; --insert-depth: ${geom.frame.insertDepth}px; --collapsed-width: ${geom.collapsed.width}px; --collapsed-height: ${geom.collapsed.height}px; --collapsed-insert-depth: ${geom.collapsed.insertDepth}px; --expanded-width: ${geom.expanded.width}px; --expanded-height: ${geom.expanded.height}px; --expanded-insert-depth: ${geom.collapsed.insertDepth}px; --expanded-x: 0px; --hover-lift: ${geom.hoverLift}px; --hover-rotate: ${geom.hoverRotate}deg;"
-             data-src="/api/projects/${p.id}/cover">
+             data-src="/api/projects/${encodeURIComponent(p.id)}/cover">
           <div class="thumb-fallback">
             <div class="fallback-frame">
               <span class="fallback-clapper">

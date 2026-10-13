@@ -248,7 +248,7 @@ main{
 .card {
     background: var(--card-bg);
     border: var(--border-width-thin) solid var(--card-border);
-    border-radius: var(--radius-sm);
+    border-radius: var(--card-radius);
     box-shadow: var(--card-shadow);
     transition: transform var(--motion-duration-base) var(--motion-ease-spring),
                 box-shadow var(--motion-duration-base) var(--motion-ease-standard),

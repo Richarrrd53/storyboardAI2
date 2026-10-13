@@ -459,6 +459,19 @@ test('ProjectsPage: extractTagsWithCounts gathers unique tags and correct projec
   assert.ok(allTags.includes('短影音'));
 });
 
+test('ProjectsPage: tags count each project once and normalize legacy metadata without prototype collisions', () => {
+  const projects = [
+    { id: '1', metadata: { tags: [' __proto__ ', '__proto__', '短影音', ' 短影音 ', null] } },
+    { id: '2', tags: ['constructor', '短影音'] }
+  ];
+  const { allTags, counts } = ProjectsPage.extractTagsWithCounts(projects);
+  assert.equal(counts.__proto__, 1);
+  assert.equal(counts.constructor, 1);
+  assert.equal(counts['短影音'], 2);
+  assert.ok(allTags.includes('__proto__'));
+  assert.equal(ProjectsPage.getFilteredAndSortedProjects(projects, new Set(['__proto__'])).length, 1);
+});
+
 test('ProjectsPage: renderFilterEmptyState renders filter-specific empty state and binds clear callback', () => {
   const container = createMockElement('div');
   let cleared = false;
@@ -517,12 +530,15 @@ test('ProjectsPage: mount toolbar renders tag filter pills, updates count badge,
   assert.ok(commPill);
   assert.ok(videoPill);
   assert.ok(allPill.className.includes('is-active'));
+  assert.equal(allPill.getAttribute('aria-pressed'), 'true');
+  assert.equal(commPill.getAttribute('aria-pressed'), 'false');
 
   // Click "#短影音" filter pill
   commPill.click(); // toggle 商業廣告
   assert.equal(grid.children.length, 2);
   assert.equal(countBadge.textContent, '2 / 3');
   assert.equal(clearBtn.style.display, 'inline-flex');
+  assert.equal(tagsScroll.querySelector('[data-tag="商業廣告"]').getAttribute('aria-pressed'), 'true');
 
   // Click clear filter button
   clearBtn.click();
@@ -595,5 +611,46 @@ test('ProjectsPage: openProjectTagModal opens dialog, allows adding/removing tag
   // Wait for complete close animation (duration + 50ms)
   await new Promise(r => setTimeout(r, 550));
   assert.equal(mockDocument.body.querySelector('.project-tags-modal-overlay'), null, 'Modal should be removed on save');
+});
+
+test('ProjectsPage: tag modal keeps draft on failed save, blocks duplicate saves, and retries', async () => {
+  let attempts = 0;
+  let release;
+  const modal = ProjectsPage.openProjectTagModal({ id: 'retry-tags', tags: ['原標籤'] }, async tags => {
+    attempts++;
+    assert.deepEqual(tags, ['原標籤', '草稿標籤']);
+    if (attempts === 1) return new Promise(resolve => { release = resolve; });
+    return true;
+  });
+  const overlay = mockDocument.body.querySelector('.project-tags-modal-overlay');
+  const input = overlay.querySelector('#modal-tag-input');
+  input.value = '草稿標籤';
+  const save = overlay.querySelector('#modal-save-btn');
+  save.click();
+  save.click();
+  assert.equal(attempts, 1);
+  assert.equal(save.disabled, true);
+  release(false);
+  await new Promise(resolve => setTimeout(resolve, 20));
+  assert.equal(mockDocument.body.querySelector('.project-tags-modal-overlay'), overlay);
+  assert.ok(overlay.querySelector('#modal-chips-wrap').innerHTML.includes('草稿標籤'));
+  assert.equal(save.disabled, false);
+  assert.equal(overlay.querySelector('#modal-tags-status').hidden, false);
+  save.click();
+  await new Promise(resolve => setTimeout(resolve, 500));
+  assert.equal(attempts, 2);
+  assert.equal(mockDocument.body.querySelector('.project-tags-modal-overlay'), null);
+  modal.close({ immediate: true });
+});
+
+test('ProjectsPage: singleton modal and route cleanup remove overlay and keyboard listener immediately', () => {
+  const before = (windowListeners.keydown || []).length;
+  ProjectsPage.openProjectTagModal({ id: 'first', tags: [] }, async () => true);
+  ProjectsPage.openProjectTagModal({ id: 'second', tags: [] }, async () => true);
+  assert.equal(mockDocument.body.querySelectorAll('.project-tags-modal-overlay').length, 1);
+  assert.equal((windowListeners.keydown || []).length, before + 1);
+  ProjectsPage.closeTagModal({ immediate: true, restoreFocus: false });
+  assert.equal(mockDocument.body.querySelector('.project-tags-modal-overlay'), null);
+  assert.equal((windowListeners.keydown || []).length, before);
 });
 

@@ -171,3 +171,11 @@ test('ProjectCard.renderProjectCard renders tags cleanly and escapes HTML in tag
   assert.ok(!htmlNoTags.includes('project-tags-row'));
 });
 
+test('Dashboard compact card normalizes metadata tags before its two-tag display limit', () => {
+  const html = ProjectCard.buildHomeRecentCardHTML({ id: 'legacy', metadata: { tags: [' A ', 'A', '', 'B', 'C', null] } });
+  assert.equal((html.match(/data-tag="A"/g) || []).length, 1);
+  assert.ok(html.includes('data-tag="B"'));
+  assert.ok(!html.includes('data-tag="C"'));
+  assert.ok(html.includes('project-tag-pill-more">+1'));
+});
+

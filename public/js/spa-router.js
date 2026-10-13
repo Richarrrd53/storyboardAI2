@@ -921,9 +921,8 @@
   async function renderLogin(showRegister) {
     const doc = await fetchPageDoc('/html/login.html');
     const m = initMain();
-    m.className = 'auth-main spa-login-wrap';
     cloneMainContent(doc, m);
-    m.classList.add('auth-main', 'spa-login-wrap');
+    m.className = 'auth-main spa-login-wrap';
     initLoginLogic(showRegister);
   }
 
@@ -1135,9 +1134,8 @@ function initLoginLogic(showRegister) {
     if (signal?.aborted) return null;
 
     const m = initMain();
-    m.className = 'spa-dash-wrap';
-
     cloneMainContent(doc, m);
+    m.className = 'spa-dash-wrap';
 
     await ensureSharedLayout(signal);
     if (signal?.aborted) return null;
@@ -1153,9 +1151,8 @@ function initLoginLogic(showRegister) {
     if (signal?.aborted) return null;
 
     const m = initMain();
-    m.className = 'spa-projects-wrap';
-
     cloneMainContent(doc, m);
+    m.className = 'spa-projects-wrap';
 
     await ensureSharedLayout(signal);
     if (signal?.aborted) return null;
@@ -1205,9 +1202,8 @@ function initLoginLogic(showRegister) {
     if (signal?.aborted) return null;
 
     const m = initMain();
-    m.className = 'spa-history-wrap';
-
     cloneMainContent(doc, m);
+    m.className = 'spa-history-wrap';
 
     await ensureSharedLayout(signal);
     if (signal?.aborted) return null;
@@ -1256,7 +1252,7 @@ function initLoginLogic(showRegister) {
     }
 
     const m = initMain();
-    m.className = 'page-shell page-project-detail spa-project-wrap project-workspace';
+    m.className = 'spa-project-wrap';
 
     await ensureSharedLayout(signal);
     if (signal?.aborted) return null;
@@ -1378,8 +1374,8 @@ function initLoginLogic(showRegister) {
     },
 
     template: {
-      css: ['/css/dashboard.css', '/css/template.css', '/css/template-editor.css?v=20261006-2', '/css/template-detail.css?v=20261013-1'],
-      js: ['/js/generate-prefill-path.js', '/js/template-timeline.js', '/js/template-editor.js?v=20261006-2', '/js/template.js'],
+      css: ['/css/dashboard.css', '/css/template.css', '/css/template-editor.css?v=20261006-2', '/css/template-detail.css?v=20261013-2'],
+      js: ['/js/dynamic-mask.js', '/js/generate-prefill-path.js', '/js/template-timeline.js', '/js/template-editor.js?v=20261006-2', '/js/template.js'],
       mount: (o, signal) => renderTemplate(o, signal),
       render: (o, signal) => renderTemplate(o, signal)
     },
@@ -1530,6 +1526,8 @@ function initLoginLogic(showRegister) {
     } else if (typeof closeGlobalOptionMorph === 'function') {
       closeGlobalOptionMorph();
     }
+
+    window.ProjectsPage?.closeTagModal?.({ immediate: true, restoreFocus: false });
 
     const activeTransition = window.currentCoverTransition || window._activeProjectTransition;
     if (activeTransition) {

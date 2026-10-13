@@ -14,9 +14,9 @@
   .mobile-bottom-nav {
     display: flex !important;
     position: fixed !important;
-    left: 16px !important;
-    right: 16px !important;
-    bottom: calc(20px + env(safe-area-inset-bottom, 14px)) !important;
+    left: var(--space-4) !important;
+    right: var(--space-4) !important;
+    bottom: calc(var(--mobile-nav-offset) + env(safe-area-inset-bottom, 0px)) !important;
     max-width: 440px !important;
     margin: 0 auto !important;
     height: var(--mobile-nav-height, 64px) !important;
@@ -162,7 +162,7 @@
     border: none;
     outline: none;
     text-decoration: none;
-    color: #64748b;
+    color: var(--color-text-secondary);
     cursor: pointer;
     z-index: 2;
     padding: 0;
@@ -203,9 +203,9 @@
   }
 
   .mobile-nav__label {
-    font-size: 0.6875rem; /* 11px */
-    font-weight: 600;
-    line-height: 1;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-snug);
     letter-spacing: -0.01em;
     pointer-events: none;
     touch-action: none;
@@ -218,17 +218,17 @@
     color: var(--color-brand-primary, #2563eb) !important;
   }
 
-  /* Base link icons: ALWAYS remain original grey (#64748b) when item is not selected */
+  /* Base icons retain the readable secondary text color when not selected. */
   .mobile-nav__track--base .mobile-nav__item .mobile-nav__svg {
-    color: #64748b !important;
-    stroke: #64748b !important;
+    color: var(--color-text-secondary) !important;
+    stroke: var(--color-text-secondary) !important;
     stroke-width: 1.8px;
   }
 
   .mobile-nav__track--base .mobile-nav__item .mobile-nav__svg.icon-fill-target {
     stroke: none !important;
     stroke-width: 0 !important;
-    fill: #64748b !important;
+    fill: var(--color-text-secondary) !important;
   }
 
   /* Prevent layer superposition bleed-through:
@@ -260,12 +260,17 @@
     color: var(--color-text-nav-active, #172554) !important;
   }
   .mobile-bottom-nav.is-interacting .mobile-nav__item.active:not(.snap-target) .mobile-nav__label {
-    color: #64748b !important;
+    color: var(--color-text-secondary) !important;
   }
 
   /* Center Create Button: Guaranteed Horizontal Centering */
   .mobile-nav__item--create {
     position: relative;
+    width: 58px;
+    min-width: 58px;
+    height: 100%;
+    margin-top: var(--mobile-nav-create-offset-y);
+    padding: 0;
     z-index: 50;
     display: flex;
     align-items: center;

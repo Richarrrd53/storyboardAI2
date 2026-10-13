@@ -21,6 +21,21 @@
   }
 
   const PRESET_SUGGESTED_TAGS = ['商業廣告', '品牌企劃', '短影音', '個人創作', '畢業專題'];
+  let activeTagModal = null;
+
+  function projectTags(project) {
+    if (global.ProjectsFeature?.getProjectTags) return global.ProjectsFeature.getProjectTags(project);
+    const tags = Array.isArray(project.tags) ? project.tags : project.metadata?.tags;
+    return Array.isArray(tags) ? Array.from(new Set(tags.filter(t => typeof t === 'string').map(t => t.trim()).filter(Boolean))) : [];
+  }
+
+  function closeTagModal(options = {}) {
+    if (activeTagModal) activeTagModal.close(options);
+  }
+
+  function cleanupCards(container) {
+    if (global.ProjectCardInteractions?.destroyWithin) global.ProjectCardInteractions.destroyWithin(container);
+  }
 
   const SKELETON_CARDS_HTML = Array.from({ length: 4 }).map(() => `
     <div class="project-card project-folder-card skeleton">
@@ -88,7 +103,7 @@
   }
 
   function extractTagsWithCounts(projectsList) {
-    const counts = {};
+    const counts = Object.create(null);
     if (!Array.isArray(projectsList)) return { allTags: [], counts };
     const isPendingDelete = (id) => {
       if (global.ProjectDeleteQueue && typeof global.ProjectDeleteQueue.isPending === 'function') {
@@ -99,7 +114,7 @@
 
     projectsList.forEach(p => {
       if (p.is_deleted || isPendingDelete(p.id)) return;
-      const tags = Array.isArray(p.tags) ? p.tags : ((p.metadata && Array.isArray(p.metadata.tags)) ? p.metadata.tags : []);
+      const tags = projectTags(p);
       tags.forEach(t => {
         const clean = String(t || '').trim();
         if (clean) {
@@ -122,13 +137,13 @@
     };
 
     const hasTagFilter = selectedTags && (selectedTags instanceof Set ? selectedTags.size > 0 : selectedTags.length > 0);
-    const tagSet = hasTagFilter ? (selectedTags instanceof Set ? selectedTags : new Set(selectedTags)) : null;
+    const tagSet = hasTagFilter ? new Set(Array.from(selectedTags).map(t => String(t).trim())) : null;
 
     return projectsList
       .filter(p => {
         if (p.is_deleted || isPendingDelete(p.id)) return false;
         if (!tagSet) return true;
-        const tags = Array.isArray(p.tags) ? p.tags : ((p.metadata && Array.isArray(p.metadata.tags)) ? p.metadata.tags : []);
+        const tags = projectTags(p);
         // OR 邏輯：只要符合任一所選標籤即保留
         return tags.some(t => tagSet.has(t));
       })
@@ -137,6 +152,7 @@
 
   function renderProjectsList(projectsGrid, activeProjects, onCardMutate, onTagClick, isFiltered = false, onClearFilters = null) {
     if (!projectsGrid) return;
+    cleanupCards(projectsGrid);
     projectsGrid.innerHTML = '';
     if (activeProjects.length === 0) {
       if (isFiltered) {
@@ -155,7 +171,9 @@
         card.innerHTML = global.buildLightFilmCardHTML(p);
       }
 
-      if (typeof global.setupProjectCardEvents === 'function') {
+      if (global.ProjectCardInteractions?.bind) {
+        global.ProjectCardInteractions.bind(card, p, { isDeleted: false, refreshCallback: onCardMutate, onTagClick });
+      } else if (typeof global.setupProjectCardEvents === 'function') {
         global.setupProjectCardEvents(card, p, false, () => {
           if (typeof onCardMutate === 'function') onCardMutate();
         });
@@ -258,10 +276,13 @@
 
   function openProjectTagModal(project, onSave) {
     if (typeof document === 'undefined' || !document.body || !project) return null;
+    closeTagModal({ immediate: true, restoreFocus: false });
+    const previousFocus = document.activeElement;
+    let isClosing = false;
+    let isSaving = false;
+    let focusTimer = null;
 
-    const initialTags = Array.isArray(project.tags)
-      ? project.tags
-      : ((project.metadata && Array.isArray(project.metadata.tags)) ? project.metadata.tags : []);
+    const initialTags = projectTags(project);
     const localTags = new Set(initialTags.map(t => String(t || '').trim()).filter(Boolean));
 
     const storeProjects = (global.ProjectStore && typeof global.ProjectStore.getProjects === 'function')
@@ -297,7 +318,7 @@
             <div class="project-tags-chips-wrap" id="modal-chips-wrap"></div>
           </div>
           <div class="project-tags-input-group">
-            <input type="text" class="project-tags-input" id="modal-tag-input" placeholder="新增自訂標籤（例如：商業廣告、短影音）" maxlength="24" />
+            <input type="text" class="project-tags-input" id="modal-tag-input" aria-label="新增自訂標籤" placeholder="新增自訂標籤（例如：商業廣告、短影音）" maxlength="24" />
             <button type="button" class="btn btn-secondary project-tags-add-btn" id="modal-tag-add-btn">新增</button>
           </div>
           <div class="project-tags-section project-tags-suggestions-section">
@@ -305,6 +326,7 @@
             <div class="project-tags-suggestions-wrap" id="modal-suggestions-wrap"></div>
           </div>
         </div>
+        <p class="project-tags-empty-hint" id="modal-tags-status" role="status" aria-live="polite" hidden></p>
         <div class="project-tags-modal-footer">
           <button type="button" class="btn btn-ghost project-tags-cancel-btn" id="modal-cancel-btn">取消</button>
           <button type="button" class="btn btn-primary project-tags-save-btn" id="modal-save-btn">儲存標籤</button>
@@ -326,6 +348,13 @@
     const cancelBtn = overlay.querySelector('#modal-cancel-btn');
     const closeBtn = overlay.querySelector('.project-tags-modal-close');
     const backdrop = overlay.querySelector('.project-tags-modal-backdrop');
+    const statusEl = overlay.querySelector('#modal-tags-status');
+
+    function showStatus(message) {
+      if (!statusEl) return;
+      statusEl.textContent = message;
+      statusEl.hidden = !message;
+    }
 
     function renderModalChips() {
       if (!chipsWrap) return;
@@ -347,6 +376,7 @@
           if (removeBtn) {
             removeBtn.addEventListener('click', (e) => {
               e.stopPropagation();
+              if (isSaving) return;
               localTags.delete(t);
               renderModalChips();
               renderModalSuggestions();
@@ -373,6 +403,7 @@
         btn.innerHTML = `+ #${tEsc}`;
         btn.addEventListener('click', (e) => {
           e.stopPropagation();
+          if (isSaving) return;
           localTags.add(t);
           renderModalChips();
           renderModalSuggestions();
@@ -382,10 +413,10 @@
     }
 
     function addTagFromInput() {
-      if (!inputEl) return;
+      if (!inputEl || isSaving) return;
       const val = inputEl.value.trim();
       if (!val) return;
-      localTags.add(val);
+      localTags.add(val.slice(0, 24));
       inputEl.value = '';
       renderModalChips();
       renderModalSuggestions();
@@ -401,25 +432,43 @@
       });
     }
 
-    let isClosing = false;
-    function destroyModal() {
+    function destroyModal(options = {}) {
       if (isClosing) return;
       isClosing = true;
+      if (focusTimer) clearTimeout(focusTimer);
+      if (activeTagModal === modal) activeTagModal = null;
 
       if (typeof window !== 'undefined' && typeof window.removeEventListener === 'function') {
         window.removeEventListener('keydown', onKeyDown);
       }
+      const finishClose = () => {
+        if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+        if (options.restoreFocus !== false && previousFocus?.isConnected && typeof previousFocus.focus === 'function') previousFocus.focus();
+      };
+      if (options.immediate) {
+        finishClose();
+        return;
+      }
       ModalAnimation.close(overlay, panel, {
         duration: 400,
-        onComplete: () => {
-          if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
-        }
+        onComplete: finishClose
       });
     }
 
     function onKeyDown(e) {
       if (e.key === 'Escape') {
+        e.preventDefault?.();
         destroyModal();
+      } else if (e.key === 'Tab') {
+        const focusable = Array.from(overlay.querySelectorAll('button, input')).filter(el => !el.disabled && !el.hidden);
+        if (!focusable.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault(); last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault(); first.focus();
+        }
       }
     }
     if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
@@ -435,14 +484,32 @@
 
     if (saveBtn) {
       saveBtn.addEventListener('click', async () => {
+        if (isSaving || isClosing) return;
+        addTagFromInput();
+        isSaving = true;
         saveBtn.disabled = true;
         saveBtn.textContent = '儲存中...';
+        overlay.setAttribute('aria-busy', 'true');
+        if (inputEl) inputEl.disabled = true;
+        if (addBtn) addBtn.disabled = true;
+        showStatus('');
         try {
           if (typeof onSave === 'function') {
-            await onSave(Array.from(localTags));
+            const result = await onSave(Array.from(localTags));
+            if (result === false) throw new Error('標籤尚未儲存，請稍後重試。');
           }
+          if (!isClosing) destroyModal();
+        } catch (error) {
+          if (!isClosing) showStatus(error.message || '標籤尚未儲存，請稍後重試。');
         } finally {
-          destroyModal();
+          isSaving = false;
+          if (!isClosing) {
+            saveBtn.disabled = false;
+            saveBtn.textContent = '儲存標籤';
+            overlay.setAttribute('aria-busy', 'false');
+            if (inputEl) inputEl.disabled = false;
+            if (addBtn) addBtn.disabled = false;
+          }
         }
       });
     }
@@ -450,12 +517,12 @@
     renderModalChips();
     renderModalSuggestions();
     if (inputEl && typeof inputEl.focus === 'function') {
-      setTimeout(() => inputEl.focus(), 50);
+      focusTimer = setTimeout(() => { if (!isClosing) inputEl.focus(); }, 50);
     }
 
-    return {
-      close: destroyModal
-    };
+    const modal = { close: destroyModal };
+    activeTagModal = modal;
+    return modal;
   }
 
   // 掛載到全域供 Option Morph 等外部模組調用
@@ -468,7 +535,7 @@
     let isMounted = true;
     let selectedTags = new Set();
 
-    global.onProjectCardTagClick = (clickedTag) => {
+    const onCardTagClick = (clickedTag) => {
       if (!isMounted) return;
       if (selectedTags.has(clickedTag)) {
         selectedTags.delete(clickedTag);
@@ -482,6 +549,7 @@
     if (!projectsGrid) {
       return { unmount() {} };
     }
+    global.onProjectCardTagClick = onCardTagClick;
 
     const projectsToolbar = (root ? root.querySelector('#projects-toolbar') : null) || document.getElementById('projects-toolbar');
     const tagsScroll = (root ? root.querySelector('#projects-tags-scroll') : null) || document.getElementById('projects-tags-scroll');
@@ -515,6 +583,7 @@
         allBtn.type = 'button';
         allBtn.className = `project-filter-pill ${selectedTags.size === 0 ? 'is-active' : ''}`;
         allBtn.setAttribute('data-tag', '__ALL__');
+        allBtn.setAttribute('aria-pressed', String(selectedTags.size === 0));
         allBtn.innerHTML = `全部 <span class="filter-count">${totalCount}</span>`;
         allBtn.addEventListener('click', () => {
           if (selectedTags.size > 0) {
@@ -531,6 +600,7 @@
           const isActive = selectedTags.has(tag);
           tagBtn.className = `project-filter-pill ${isActive ? 'is-active' : ''}`;
           tagBtn.setAttribute('data-tag', tag);
+          tagBtn.setAttribute('aria-pressed', String(isActive));
           const tagEsc = escapeHtml(tag);
           tagBtn.innerHTML = `#${tagEsc} <span class="filter-count">${counts[tag] || 0}</span>`;
           tagBtn.addEventListener('click', () => {
@@ -639,7 +709,10 @@
       if (!isMounted) return;
       isMounted = false;
       selectedTags.clear();
-      if (global.onProjectCardTagClick) {
+      closeTagModal({ immediate: true, restoreFocus: false });
+      cleanupCards(projectsGrid);
+      if (clearFilterBtn) clearFilterBtn.onclick = null;
+      if (global.onProjectCardTagClick === onCardTagClick) {
         global.onProjectCardTagClick = null;
       }
       if (signal) {
@@ -674,7 +747,8 @@
     renderProjectsList,
     renderEmptyState,
     renderFilterEmptyState,
-    openProjectTagModal
+    openProjectTagModal,
+    closeTagModal
   };
 
   if (typeof global !== 'undefined') {

@@ -1,0 +1,80 @@
+TAP version 13
+# Subtest: ProjectCoverTransition: Module interface and compatibility bridge
+ok 1 - ProjectCoverTransition: Module interface and compatibility bridge
+  ---
+  duration_ms: 14.545
+  ...
+# Subtest: ProjectCoverTransition: Missing folder shell or primary cover falls back to immediate navigation
+ok 2 - ProjectCoverTransition: Missing folder shell or primary cover falls back to immediate navigation
+  ---
+  duration_ms: 13.3523
+  ...
+# Subtest: ProjectCoverTransition: Card already navigating bails out (idempotency)
+ok 3 - ProjectCoverTransition: Card already navigating bails out (idempotency)
+  ---
+  duration_ms: 4.1709
+  ...
+# Subtest: ProjectCoverTransition: Closes active Option Morph immediately upon launch
+ok 4 - ProjectCoverTransition: Closes active Option Morph immediately upon launch
+  ---
+  duration_ms: 11.9902
+  ...
+# Subtest: ProjectCoverTransition: Creates transition layer and session on launch
+ok 5 - ProjectCoverTransition: Creates transition layer and session on launch
+  ---
+  duration_ms: 5.7616
+  ...
+# Subtest: ProjectCoverTransition: Fires navigation trigger after 200ms
+ok 6 - ProjectCoverTransition: Fires navigation trigger after 200ms
+  ---
+  duration_ms: 232.7342
+  ...
+# Subtest: ProjectCoverTransition: Launching new transition cancels previous active session
+ok 7 - ProjectCoverTransition: Launching new transition cancels previous active session
+  ---
+  duration_ms: 5.0468
+  ...
+# Subtest: ProjectCoverTransition: onFirstShotReady executes return animation and cleans up
+ok 8 - ProjectCoverTransition: onFirstShotReady executes return animation and cleans up
+  ---
+  duration_ms: 166.8078
+  ...
+# Subtest: ProjectCoverTransition: Pending target handled when first shot arrives during flight
+ok 9 - ProjectCoverTransition: Pending target handled when first shot arrives during flight
+  ---
+  duration_ms: 173.7183
+  ...
+# Subtest: ProjectCoverTransition: Fallback dismiss / cancel runs legacy shrink and cleans up
+ok 10 - ProjectCoverTransition: Fallback dismiss / cancel runs legacy shrink and cleans up
+  ---
+  duration_ms: 46.5396
+  ...
+# Subtest: ProjectCoverTransition: Top-level cancel() cancels active session matching projectId
+ok 11 - ProjectCoverTransition: Top-level cancel() cancels active session matching projectId
+  ---
+  duration_ms: 4.3315
+  ...
+# Subtest: ProjectCoverTransition: Cleanup removes DOM nodes and restores card styles
+ok 12 - ProjectCoverTransition: Cleanup removes DOM nodes and restores card styles
+  ---
+  duration_ms: 2.5773
+  ...
+# Subtest: ProjectCoverTransition: Landscape (16:9) transition fills curtain with transform: none and no is-contain-shell
+ok 13 - ProjectCoverTransition: Landscape (16:9) transition fills curtain with transform: none and no is-contain-shell
+  ---
+  duration_ms: 2.2681
+  ...
+# Subtest: ProjectCoverTransition: Portrait (9:16) transition adds is-contain-shell and centers media
+ok 14 - ProjectCoverTransition: Portrait (9:16) transition adds is-contain-shell and centers media
+  ---
+  duration_ms: 4.3385
+  ...
+1..14
+# tests 14
+# suites 0
+# pass 14
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1338.8797

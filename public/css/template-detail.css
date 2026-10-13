@@ -1,28 +1,58 @@
 /* Marketplace detail: light analytical canvas, existing dark editing workspace. */
-body.dashboard-layout #page-main.is-template-detail-mode {
-  /* The shell fixes overflow:hidden !important; detail needs one page scroll owner. */
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
-  padding: var(--space-6) var(--page-gutter, var(--space-8)) var(--space-12) !important;
+:is(body.dashboard-layout #page-main, #page-main).is-template-detail-mode {
+  padding: 0 !important;
+  overflow: hidden !important;
   background: var(--color-bg-page);
   color: var(--color-text-primary);
 }
 .template-detail-immersive-container {
-  min-width: 0; width: 100%; gap: var(--space-8);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  gap: 0;
   container-type: inline-size;
 }
-body.dashboard-layout #page-main.is-template-detail-mode #page-content {
-  /* Release the shell's fixed content height so the page can scroll to the CTA. */
-  flex: none !important;
-  height: auto !important;
-  max-height: none !important;
-  overflow: visible !important;
+:is(body.dashboard-layout #page-main, #page-main).is-template-detail-mode #page-content {
+  flex: 1 1 auto !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
 }
 .template-detail-immersive-container .editor-menubar {
-  position: sticky; top: 0; z-index: var(--layer-sticky);
-  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--space-4);
-  padding-block: var(--space-3); background: var(--color-bg-page);
+  flex-shrink: 0;
+  z-index: var(--layer-sticky);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--page-gutter, var(--space-8));
+  background: var(--color-bg-page);
   border-bottom: 1px solid var(--color-border-default);
+  box-sizing: border-box;
+}
+.template-detail-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  padding: var(--space-6) var(--page-gutter, var(--space-8)) var(--space-12);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  container-type: inline-size;
+}
+.template-detail-body > * {
+  flex-shrink: 0;
+  min-width: 0;
 }
 .template-detail-immersive-container .editor-document-title { min-width: 0; text-align: center; }
 .template-detail-immersive-container .editor-document-title span { display: block; color: var(--color-text-secondary); font-size: var(--font-size-xs); }
@@ -100,10 +130,17 @@ body.dashboard-layout #page-main.is-template-detail-mode #page-content {
   .template-detail-immersive-container .analysis-insight-card { grid-column: 1 / -1; }
 }
 @media (max-width: 768px) {
-  body.dashboard-layout #page-main.is-template-detail-mode { padding: var(--space-4) var(--page-gutter-mobile, var(--space-4)) calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px) + var(--space-8)) !important; }
-  body.dashboard-layout #page-main.is-template-detail-mode { scroll-padding-block: var(--space-20) calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px) + var(--space-8)); }
+  :is(body.dashboard-layout #page-main, #page-main).is-template-detail-mode { padding: 0 !important; }
+  .template-detail-body {
+    padding: var(--space-4) var(--page-gutter-mobile, var(--space-4)) calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px) + var(--space-8));
+    scroll-padding-block: var(--space-20) calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px) + var(--space-8));
+  }
   .template-detail-immersive-container .editor-document-title { display: none; }
-  .template-detail-immersive-container .editor-menubar { grid-template-columns: auto auto; gap: var(--space-2); }
+  .template-detail-immersive-container .editor-menubar {
+    grid-template-columns: auto auto;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--page-gutter-mobile, var(--space-4));
+  }
   .template-detail-immersive-container .editor-menubar :is(.btn-back-to-store, .btn-apply-template-main) { width: auto; padding-inline: var(--space-3); }
   .template-detail-immersive-container .detail-template-title { font-size: var(--font-size-2xl); }
   .template-detail-immersive-container .analysis-command-grid { grid-template-columns: minmax(0, 1fr); }

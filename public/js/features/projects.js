@@ -11,6 +11,16 @@
 (function (global) {
   'use strict';
 
+  function normalizeTags(tags) {
+    return Array.isArray(tags)
+      ? Array.from(new Set(tags.filter(t => typeof t === 'string').map(t => t.trim()).filter(Boolean)))
+      : [];
+  }
+
+  function getProjectTags(project) {
+    return normalizeTags(project && (Array.isArray(project.tags) ? project.tags : project.metadata?.tags));
+  }
+
   // ══════════════════════════════════════════════════════════════
   // 1. ProjectsApi — 網路與資料傳輸層
   // ══════════════════════════════════════════════════════════════
@@ -129,9 +139,7 @@
 
     async updateProjectTags(projectId, tags) {
       const token = this.getAuthToken();
-      const normalizedTags = Array.isArray(tags)
-        ? Array.from(new Set(tags.map(t => String(t || '').trim()).filter(Boolean)))
-        : [];
+      const normalizedTags = normalizeTags(tags);
       try {
         const res = await fetch(`/api/projects/${projectId}`, {
           method: 'PATCH',
@@ -421,9 +429,7 @@
     setProjects(projectsList) {
       if (Array.isArray(projectsList)) {
         projectsList.forEach(p => {
-          if (!Array.isArray(p.tags)) {
-            p.tags = (p.metadata && Array.isArray(p.metadata.tags)) ? p.metadata.tags : [];
-          }
+          p.tags = getProjectTags(p);
         });
         this.projects = projectsList;
       } else {
@@ -501,9 +507,7 @@
           const list = res.projects;
           // 比對最近刪除與還原狀態並正規化標籤
           list.forEach(p => {
-            if (!Array.isArray(p.tags)) {
-              p.tags = (p.metadata && Array.isArray(p.metadata.tags)) ? p.metadata.tags : [];
-            }
+            p.tags = getProjectTags(p);
             if (ProjectDeleteQueue.recentlyDeleted.has(p.id)) {
               p.is_deleted = true;
             }
@@ -787,17 +791,34 @@
       }
     },
 
-    async updateProjectTags(p, tags, refreshCallback) {
+    async updateProjectTags(p, tags, refreshCallback, options = {}) {
       if (!p || !p.id) return false;
-      const normalized = Array.isArray(tags)
-        ? Array.from(new Set(tags.map(t => String(t || '').trim()).filter(Boolean)))
-        : [];
-      const oldTags = Array.isArray(p.tags) ? [...p.tags] : [];
+      const normalized = normalizeTags(tags);
+      const oldTags = getProjectTags(p);
+      const requestEpoch = ProjectStore.resetEpoch;
+      // Card、清單與詳情快取可能持有不同物件，需一併更新及回滾。
+      const targets = Array.from(new Set([
+        p,
+        ...(ProjectStore.getProjects() || []).filter(project => project.id === p.id),
+        ProjectStore.getProjectDetail(p.id)
+      ].filter(Boolean)));
+      const snapshots = targets.map(project => ({
+        project, tags: project.tags, hadTags: Object.prototype.hasOwnProperty.call(project, 'tags'),
+        metadata: project.metadata, hadMetadata: Object.prototype.hasOwnProperty.call(project, 'metadata')
+      }));
+      function applyTags(project, nextTags, serverProject) {
+        project.tags = [...nextTags];
+        const metadata = project.metadata && typeof project.metadata === 'object' && !Array.isArray(project.metadata)
+          ? project.metadata : {};
+        project.metadata = { ...metadata, tags: [...nextTags] };
+        if (serverProject?.updateAt) project.updateAt = serverProject.updateAt;
+      }
 
-      // 樂觀更新
-      p.tags = [...normalized];
-      if (!p.metadata || typeof p.metadata !== 'object') p.metadata = {};
-      p.metadata.tags = [...normalized];
+      // 讓儲存前已出發的舊清單／詳情請求無法覆蓋這次修改。
+      ProjectStore.projectsGeneration++;
+      ProjectStore.detailGenerations[p.id] = (ProjectStore.detailGenerations[p.id] || 0) + 1;
+      delete ProjectStore.inFlightDetailsPromises[p.id];
+      targets.forEach(project => applyTags(project, normalized));
 
       const toastFn = typeof global !== 'undefined' && typeof global.showSpaToast === 'function'
         ? global.showSpaToast
@@ -808,21 +829,35 @@
 
       try {
         const res = await ProjectsApi.updateProjectTags(p.id, normalized);
+        if (requestEpoch !== ProjectStore.resetEpoch) return false;
         if (res.ok) {
+          const serverProject = res.data?.project;
+          const savedTags = serverProject && (Array.isArray(serverProject.tags) || Array.isArray(serverProject.metadata?.tags))
+            ? getProjectTags(serverProject) : normalized;
+          targets.forEach(project => applyTags(project, savedTags, serverProject));
+          // 若頁面在儲存期間重新抓取清單，也要更新其目前物件。
+          (ProjectStore.getProjects() || []).filter(project => project.id === p.id)
+            .forEach(project => applyTags(project, savedTags, serverProject));
           toastFn(`分鏡「${p.title}」標籤已更新。`);
-          ProjectStore.notify({ type: 'tags_updated', project: p, tags: normalized });
+          if (typeof refreshCallback === 'function') refreshCallback();
+          ProjectStore.notify({ type: 'tags_updated', project: p, tags: savedTags });
           return true;
         } else {
-          throw new Error(res.data?.error || '更新標籤失敗');
+          throw new Error(res.data?.error || res.error || '更新標籤失敗');
         }
       } catch (err) {
+        if (requestEpoch !== ProjectStore.resetEpoch) return false;
         console.error('Failed to update project tags on server', err);
         // 失敗回滾
-        p.tags = [...oldTags];
-        p.metadata.tags = [...oldTags];
+        snapshots.forEach(({ project, tags: previousTags, hadTags, metadata, hadMetadata }) => {
+          if (hadTags) project.tags = previousTags;
+          else delete project.tags;
+          if (hadMetadata) project.metadata = metadata;
+          else delete project.metadata;
+        });
         if (typeof refreshCallback === 'function') refreshCallback();
         ProjectStore.notify({ type: 'tags_update_rollback', project: p, tags: oldTags });
-        if (typeof global !== 'undefined' && typeof global.alert === 'function') {
+        if (!options.inlineErrors && typeof global !== 'undefined' && typeof global.alert === 'function') {
           global.alert(err.message || '更新標籤失敗，請稍後再試');
         }
         return false;
@@ -833,7 +868,7 @@
       if (!p) return false;
       if (typeof global !== 'undefined' && typeof global.openProjectTagModal === 'function') {
         global.openProjectTagModal(p, async (newTags) => {
-          return await this.updateProjectTags(p, newTags, refreshCallback);
+          return await ProjectActions.updateProjectTags(p, newTags, refreshCallback, { inlineErrors: true });
         });
         return true;
       }
@@ -851,6 +886,8 @@
   });
 
   const ProjectsFeature = {
+    normalizeTags,
+    getProjectTags,
     api: ProjectsApi,
     store: ProjectStore,
     deleteQueue: ProjectDeleteQueue,

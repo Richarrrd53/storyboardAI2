@@ -1,0 +1,92 @@
+TAP version 13
+# Immediate delete failed on flush: Failed to parse URL from /api/projects/p-flush-1
+# Immediate delete failed on flush: Failed to parse URL from /api/projects/p-flush-2
+# Failed to update project tags on server Error: 伺服器網路錯誤
+#     at Object.updateProjectTags (D:\\My Files\\web\\StoryboardAI2\\public\\js\\features\\projects.js:846:17)
+#     at async TestContext.<anonymous> (D:\\My Files\\web\\StoryboardAI2\\tests\\projects-feature.test.js:265:20)
+#     at async Test.run (node:internal/test_runner/test:935:9)
+#     at async Test.processPendingSubtests (node:internal/test_runner/test:633:7)
+# Failed to update project tags on server Error: 更新標籤失敗
+#     at Object.updateProjectTags (D:\\My Files\\web\\StoryboardAI2\\public\\js\\features\\projects.js:846:17)
+#     at async TestContext.<anonymous> (D:\\My Files\\web\\StoryboardAI2\\tests\\projects-feature.test.js:316:18)
+#     at async Test.run (node:internal/test_runner/test:935:9)
+#     at async Test.processPendingSubtests (node:internal/test_runner/test:633:7)
+# Failed to update project tags on server Error: 更新標籤失敗
+#     at Object.updateProjectTags (D:\\My Files\\web\\StoryboardAI2\\public\\js\\features\\projects.js:846:17)
+#     at async TestContext.<anonymous> (D:\\My Files\\web\\StoryboardAI2\\tests\\projects-feature.test.js:320:18)
+#     at async Test.run (node:internal/test_runner/test:935:9)
+#     at async Test.processPendingSubtests (node:internal/test_runner/test:633:7)
+# Subtest: ProjectStore: stores, filters active/history projects and supports subscriptions
+ok 1 - ProjectStore: stores, filters active/history projects and supports subscriptions
+  ---
+  duration_ms: 5.2028
+  ...
+# Subtest: ProjectDeleteQueue: optimistic enqueue, undo restoration and status tracking
+ok 2 - ProjectDeleteQueue: optimistic enqueue, undo restoration and status tracking
+  ---
+  duration_ms: 4.0115
+  ...
+# Subtest: ProjectDeleteQueue: flushAll commits pending items without duplicate calls
+ok 3 - ProjectDeleteQueue: flushAll commits pending items without duplicate calls
+  ---
+  duration_ms: 87.491
+  ...
+# Subtest: ProjectStore: seedProjectDetail and invalidate detail
+ok 4 - ProjectStore: seedProjectDetail and invalidate detail
+  ---
+  duration_ms: 0.8893
+  ...
+# Subtest: ProjectActions: rename validation rejects empty titles without modifying project
+ok 5 - ProjectActions: rename validation rejects empty titles without modifying project
+  ---
+  duration_ms: 1.2229
+  ...
+# Subtest: ProjectStore: reset clears all caches and timers for clean logout
+ok 6 - ProjectStore: reset clears all caches and timers for clean logout
+  ---
+  duration_ms: 1.1347
+  ...
+# Subtest: ProjectStore: in-flight request resolving after reset() must NOT overwrite store or notify
+ok 7 - ProjectStore: in-flight request resolving after reset() must NOT overwrite store or notify
+  ---
+  duration_ms: 2.9124
+  ...
+# Subtest: ProjectStore: normalizes tags from metadata and defaults to empty array
+ok 8 - ProjectStore: normalizes tags from metadata and defaults to empty array
+  ---
+  duration_ms: 3.4527
+  ...
+# Subtest: ProjectsApi.updateProjectTags: normalizes tags array and invokes PATCH endpoint
+ok 9 - ProjectsApi.updateProjectTags: normalizes tags array and invokes PATCH endpoint
+  ---
+  duration_ms: 2.3652
+  ...
+# Subtest: ProjectActions.updateProjectTags: optimistic update, store notification, and error rollback
+ok 10 - ProjectActions.updateProjectTags: optimistic update, store notification, and error rollback
+  ---
+  duration_ms: 5.698
+  ...
+# Subtest: ProjectActions.editProjectTags works when invoked as an unbound menu action
+ok 11 - ProjectActions.editProjectTags works when invoked as an unbound menu action
+  ---
+  duration_ms: 1.8961
+  ...
+# Subtest: Tag saves preserve metadata and synchronize detail cache; failures restore legacy metadata
+ok 12 - Tag saves preserve metadata and synchronize detail cache; failures restore legacy metadata
+  ---
+  duration_ms: 3.7934
+  ...
+# Subtest: Tag mutation rejects older in-flight list responses and late logout callbacks
+ok 13 - Tag mutation rejects older in-flight list responses and late logout callbacks
+  ---
+  duration_ms: 3.102
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 455.3423
