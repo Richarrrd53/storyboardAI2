@@ -41,8 +41,9 @@
 .template-customization > p { margin: 8px 0; color: var(--gen-text-mid); font-size: 13px; line-height: 1.8; }
 #template-variable-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 20px 0; }
 .template-variable-field { display: flex; flex-direction: column; gap: 8px; color: var(--gen-text-dark); font-size: 13px; }
-.template-variable-field input { width: 100%; padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 8px; background: #ffffff; color: var(--gen-text-dark); font: inherit; }
-.template-variable-field input:focus { outline: 2px solid var(--gen-primary); outline-offset: 2px; }
+.template-variable-field input { width: 100%; padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 8px; background: #ffffff; color: var(--gen-text-dark); font: inherit; outline: none !important; transition: border-color var(--motion-fast, 160ms) ease, box-shadow var(--motion-fast, 160ms) ease; }
+.template-variable-field input:focus,
+.template-variable-field input:focus-visible { outline: none !important; border-color: var(--gen-primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15); }
 .template-customization summary { color: var(--gen-primary); cursor: pointer; font-size: 13px; }
 #template-reference-summary ol { padding-left: 24px; font-size: 13px; color: var(--gen-text-mid); }
 #template-reference-summary li { margin: 12px 0; }

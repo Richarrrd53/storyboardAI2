@@ -16,6 +16,22 @@ body.dashboard-layout {
     scrollbar-color: var(--primary-soft);
 }
 
+/* ── Global Input Focus Reset (Eliminates sharp/blue browser outline) ── */
+input,
+input:focus,
+input:focus-visible,
+input:active,
+textarea,
+textarea:focus,
+textarea:focus-visible,
+textarea:active,
+select,
+select:focus,
+select:focus-visible {
+    outline: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+}
+
 body {
     overflow-y: hidden;
 }

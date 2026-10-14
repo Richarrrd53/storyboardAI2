@@ -1785,7 +1785,7 @@ function initLoginLogic(showRegister) {
         }
       }
       if (!opts?.fromQC) {
-        await rafDelay(page === 'generate' ? 140 : 250);
+        await rafDelay(200);
       }
       
       if (window.TransitionLoader?.startLoaderTimer) {

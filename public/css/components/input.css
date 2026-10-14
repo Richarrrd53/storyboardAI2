@@ -15,14 +15,22 @@
   border-radius: var(--radius-sm, 8px);
   padding: 10px 14px;
   box-sizing: border-box;
-  outline: none;
+  outline: none !important;
   transition: border-color var(--motion-duration-fast, 160ms) var(--motion-ease-standard),
               box-shadow var(--motion-duration-fast, 160ms) var(--motion-ease-standard);
 }
 
 .form-input:focus,
+.form-input:focus-visible,
 .input-text:focus,
-.search-input:focus {
+.input-text:focus-visible,
+.search-input:focus,
+.search-input:focus-visible,
+input:focus,
+input:focus-visible,
+textarea:focus,
+textarea:focus-visible {
+  outline: none !important;
   border-color: var(--color-brand-primary, #2563eb);
   box-shadow: 0 0 0 3px var(--color-brand-primary-soft, rgba(37, 99, 235, 0.15));
 }

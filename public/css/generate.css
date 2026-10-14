@@ -30,7 +30,7 @@
 .dashboard-layout #page-main.page-generate {
     padding: 0 !important;
     overflow: hidden !important;
-    background: transparent !important;
+    background: var(--canvas, var(--color-bg-page, #f8fafc)) !important;
 }
 
 body.dashboard-layout #page-content.spa-gen-wrap,
@@ -343,8 +343,7 @@ body:not(.dashboard-layout) .gen-main,
 }
 
 .generate-workspace .composer-container:focus-within {
-    outline: 2px solid var(--color-border-focus) !important;
-    outline-offset: 3px !important;
+    outline: none !important;
 }
 .generate-workspace :is(button, [role="button"]):focus-visible {
     outline: 2px solid var(--color-border-focus) !important;
