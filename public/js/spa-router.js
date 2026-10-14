@@ -1374,7 +1374,7 @@ function initLoginLogic(showRegister) {
     },
 
     template: {
-      css: ['/css/dashboard.css', '/css/template.css', '/css/template-editor.css?v=20261006-2', '/css/template-detail.css?v=20261013-2'],
+      css: ['/css/dashboard.css', '/css/template.css', '/css/template-editor.css?v=20261006-2', '/css/template-detail.css?v=20261014-1'],
       js: ['/js/dynamic-mask.js', '/js/generate-prefill-path.js', '/js/template-timeline.js', '/js/template-editor.js?v=20261006-2', '/js/template.js'],
       mount: (o, signal) => renderTemplate(o, signal),
       render: (o, signal) => renderTemplate(o, signal)

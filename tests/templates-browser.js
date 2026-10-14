@@ -54,6 +54,15 @@ const server = http.createServer(async (req, res) => {
       await page.locator(`#template-grid .template-card[data-id="${template.id}"]`).click();
       await page.locator('#page-main.is-template-detail-mode').waitFor();
       assert.equal(await page.locator('#detail-template-title').textContent(), template.name);
+      assert.ok(await page.locator('.detail-hero-section').isVisible());
+      assert.ok(await page.locator('.detail-overview-section').isVisible());
+      assert.ok(await page.locator('.detail-shots-section').isVisible());
+      assert.ok(await page.locator('#detail-dynamic-narrative-card').isVisible());
+      assert.equal(await page.locator('#detail-shots-breakdown-list .shot-breakdown-card').count(), template.structure.length);
+
+      // Expand advanced workspace for pro tools
+      await page.locator('#btn-toggle-advanced').click();
+
       assert.equal(await page.locator('#editor-shot-list .editor-shot-item').count(), template.structure.length);
       assert.equal(await page.locator('#template-storyboard-body tr[data-editor-shot]').count(), template.structure.length);
       assert.equal(await page.locator('#track-shots-container .shot-block').count(), template.structure.length);
@@ -134,6 +143,7 @@ const server = http.createServer(async (req, res) => {
       await page.screenshot({ path: path.join(output, `storyboard-${viewport.width}.png`) });
       await page.locator('.btn-back-to-store').click();
       await page.locator('#template-grid .template-card[data-id="sparse"]').click();
+      await page.locator('#btn-toggle-advanced').click();
       assert.equal(await page.locator('#analysis-score-value').textContent(), '—');
       assert.equal(await page.locator('#editor-shot-list .editor-shot-item').count(), 0);
       assert.equal(await page.locator('#editor-export-storyboard').isDisabled(), true);

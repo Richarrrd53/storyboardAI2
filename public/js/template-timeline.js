@@ -26,6 +26,9 @@ let currentViewMode = 'story'; // 'story' | 'professional'
 let selectedItemId = null; // e.g. 'shot_0', 'hook', 'narrative'
 let activeShotIndex = 0;
 let isPlaying = false;
+let currentNormalizedSegments = [];
+let currentActiveSegmentId = null;
+let narrativeCardAnimTimer = null;
 
 // Player references
 let currentSourcePlayer = null;
@@ -192,6 +195,195 @@ async function mountYouTubePlayer(videoId, title, templateId) {
 }
 
 /* ==========================================================================
+/* ==========================================================================
+   DICTIONARIES & PURPOSE MAPPINGS
+   ========================================================================== */
+
+const PURPOSE_MAP = {
+  hook: '開場吸引注意',
+  first_recommendation: '首發推薦',
+  flavor_description: '風味描述',
+  sensory_highlight: '感官重點',
+  complementary_food: '補充介紹',
+  dessert_climax: '甜點高潮',
+  call_to_action: '行動指引',
+  introduction: '主題介紹',
+  demonstration: '示範使用',
+  climax: '高潮亮點',
+  conclusion: '總結收尾',
+  product_showcase: '商品展示',
+  storytelling: '故事推進',
+  narrative: '鋪陳推進',
+  payoff: '高潮轉折'
+};
+
+function describePurpose(purpose) {
+  return PURPOSE_MAP[purpose] || purpose || '畫面呈現';
+}
+
+const CAMERA_MAP = {
+  wide: '廣角全景', medium: '中景', 'close-up': '特寫', 'extreme-close-up': '大特寫',
+  static: '固定鏡頭', handheld: '手持拍攝', tracking: '跟拍', pan: '橫向移動', tilt: '俯仰移動', zoom: '變焦'
+};
+
+function describeCamera(cam) {
+  return CAMERA_MAP[cam] || cam || '未標註';
+}
+
+const ANGLE_MAP = {
+  'eye-level': '平視', 'high-angle': '俯拍', 'low-angle': '仰拍', 'top-down': '正上方俯拍'
+};
+
+function describeAngle(angle) {
+  return ANGLE_MAP[angle] || angle || '平視';
+}
+
+function extractCleanTitleAndTags(rawName, existingTags) {
+  const name = String(rawName || '');
+  const extracted = [];
+  const cleanTitle = name.replace(/[#＃]([^\s#＃]+)/g, (_, tag) => {
+    const trimmed = tag.trim();
+    if (trimmed) extracted.push(trimmed);
+    return '';
+  }).trim().replace(/\s{2,}/g, ' ');
+
+  const seen = new Set();
+  const allTags = [];
+  (Array.isArray(existingTags) ? existingTags : []).concat(extracted).forEach(t => {
+    const clean = String(t || '').replace(/^[#＃]/, '').trim();
+    if (clean && !seen.has(clean.toLowerCase())) {
+      seen.add(clean.toLowerCase());
+      allTags.push(clean);
+    }
+  });
+
+  return {
+    cleanTitle: cleanTitle || name || '無標題',
+    tags: allTags
+  };
+}
+
+function getTemplateSummary(template) {
+  const trueSummary = template.summary || template.narrative?.summary;
+  if (trueSummary) {
+    return {
+      text: trueSummary,
+      fullText: trueSummary,
+      isLong: trueSummary.length > 110
+    };
+  }
+  const desc = template.description || '尚未提供模板描述。';
+  return {
+    text: desc.length > 110 ? desc.slice(0, 105) + '…' : desc,
+    fullText: desc,
+    isLong: desc.length > 110
+  };
+}
+
+function buildNormalizedSegments(template, shots, totalSec) {
+  if (Array.isArray(template.segments) && template.segments.length > 0) {
+    return template.segments.map((seg, idx) => ({
+      id: seg.id || `segment-${idx + 1}`,
+      type: seg.type || 'build',
+      label: seg.label || (seg.type === 'hook' ? 'HOOK · 開場鉤子' : seg.type === 'payoff' ? 'PAYOFF · 轉折高潮' : seg.type === 'close' ? 'OUTRO · 收束行動' : 'NARRATIVE · 鋪陳推進'),
+      start: Number(seg.start) || 0,
+      end: Number(seg.end) || totalSec,
+      title: seg.title || seg.label || '敘事階段',
+      summary: seg.summary || '透過鏡頭節奏呈現影片內容',
+      provenance: 'explicit'
+    }));
+  }
+
+  if (!shots || shots.length === 0) {
+    return [{
+      id: 'segment-1',
+      type: 'hook',
+      label: 'HOOK · 開場鉤子',
+      start: 0,
+      end: totalSec || 15,
+      title: template.name || '影片開場',
+      summary: template.description || '吸引觀眾注意力',
+      provenance: 'inferred'
+    }];
+  }
+
+  let cursor = 0;
+  const shotTimes = shots.map((s, idx) => {
+    const dur = shotSeconds(s);
+    const start = cursor;
+    cursor += dur;
+    return { index: idx, shot: s, start, end: cursor, dur };
+  });
+
+  function classifyShotPurpose(purpose, idx, total) {
+    const p = String(purpose || '').toLowerCase();
+    if (p.includes('hook') || (idx === 0 && (p.includes('intro') || p === ''))) return 'hook';
+    if (p.includes('climax') || p.includes('sensory') || p.includes('payoff') || p.includes('dessert')) return 'payoff';
+    if (p.includes('action') || p.includes('cta') || p.includes('conclusion') || p.includes('outro') || (idx === total - 1 && total > 2)) return 'close';
+    return 'build';
+  }
+
+  function getPhaseMeta(type, t, shot) {
+    if (type === 'hook') {
+      return {
+        label: 'HOOK · 開場鉤子',
+        title: t.hook?.description || '吸引觀眾注意',
+        summary: t.hook?.description
+          ? (t.hook.description.length > 50 ? t.hook.description.slice(0, 48) + '…' : t.hook.description)
+          : '利用黃金前 3 秒迅速建立懸念或共鳴，留住觀眾繼續觀看。'
+      };
+    }
+    if (type === 'payoff') {
+      return {
+        label: 'PAYOFF · 轉折高潮',
+        title: describePurpose(shot?.purpose) || '視覺震撼與亮點爆發',
+        summary: '全片最具記憶點的核心高潮，運用強烈感官細節引發情緒共振。'
+      };
+    }
+    if (type === 'close') {
+      return {
+        label: 'OUTRO · 收束行動',
+        title: '總結與互動指引',
+        summary: '總結核心重點，以明確的行動指引（CTA）促成留言轉發或品牌記憶。'
+      };
+    }
+    return {
+      label: 'NARRATIVE · 鋪陳推進',
+      title: describePurpose(shot?.purpose) || '主體內容展開',
+      summary: '依照故事節奏逐步推進，保持資訊密度與觀眾好奇心。'
+    };
+  }
+
+  const segments = [];
+  let current = null;
+
+  shotTimes.forEach(({ index, shot, start, end }) => {
+    const type = classifyShotPurpose(shot.purpose, index, shots.length);
+    if (!current || current.type !== type) {
+      if (current) segments.push(current);
+      const meta = getPhaseMeta(type, template, shot);
+      current = {
+        id: `segment-${segments.length + 1}`,
+        type,
+        label: meta.label,
+        start,
+        end,
+        title: meta.title,
+        summary: meta.summary,
+        shotIndices: [index],
+        provenance: 'inferred'
+      };
+    } else {
+      current.end = end;
+      current.shotIndices.push(index);
+    }
+  });
+  if (current) segments.push(current);
+
+  return segments;
+}
+
+/* ==========================================================================
    MAIN ENTRANCE: RENDER TEMPLATE DETAIL
    ========================================================================== */
 
@@ -221,16 +413,8 @@ window.renderTemplateDetailTimeline = function(template, detailContainer) {
   updatePlayPauseButtonUI(false);
   window.closeInspectorDrawer();
 
-  const title = template.name || template.title || '無標題';
-  ['detail-template-title', 'nav-template-name'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = title;
-  });
-  const description = document.getElementById('detail-template-desc');
-  if (description) description.textContent = template.description || '尚未提供模板描述';
-  mountSourcePreview(template);
-
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  // Extract clean title and tags
+  const { cleanTitle, tags } = extractCleanTitleAndTags(template.name || template.title || '無標題', template.tags);
 
   // Calculate total duration from shots
   const shots = Array.isArray(template.structure) ? template.structure : [];
@@ -244,17 +428,37 @@ window.renderTemplateDetailTimeline = function(template, detailContainer) {
   const durationTimecodeEl = document.getElementById('detail-monitor-duration');
   if (durationTimecodeEl) durationTimecodeEl.textContent = formatEditorTimecode(timelineDuration);
 
-  // Update badges
-  const catBadge = document.getElementById('detail-category-badge');
-  if (catBadge) catBadge.textContent = CAT_MAP[template.category] || template.category || '未分類';
-  const shotsBadge = document.getElementById('detail-shots-count-badge');
-  if (shotsBadge) shotsBadge.textContent = `${template.shotsCount || shots.length} 鏡頭`;
-  const durBadge = document.getElementById('detail-duration-badge');
-  if (durBadge) durBadge.textContent = totalSec > 0 ? `${totalSec}s` : '未提供時長';
+  // Build decoupled normalized segments
+  currentNormalizedSegments = buildNormalizedSegments(template, shots, timelineDuration);
+  currentActiveSegmentId = null;
 
+  // 1. Render Hero Left (L1 Metadata)
+  renderHeroLeft(template, shots, timelineDuration, cleanTitle, tags);
+
+  // 2. Mount source video preview in Hero right column
+  mountSourcePreview(template);
+
+  // 3. Render Overview Section (L2 Highlights & Narrative Structure)
+  renderOverviewSection(template, shots, currentNormalizedSegments);
+
+  // 4. Render Shot Breakdown Section (L2/L3 Cards)
+  renderShotBreakdownSection(template, shots);
+
+  // 5. Initialize Dynamic Narrative Card with the first segment
+  if (currentNormalizedSegments.length > 0) {
+    currentActiveSegmentId = currentNormalizedSegments[0].id;
+    updateDynamicNarrativeCard(currentNormalizedSegments[0], 0, true);
+  }
+
+  // 6. Initialize Advanced Workspace Toggle, Source Info Modal, and Sticky Header Scroll
+  initAdvancedWorkspaceToggle();
+  initSourceInfoModal(template);
+  initStickyHeaderTransition();
+
+  // 7. Render System & Analysis KPIs in Advanced workspace (L4)
   renderAnalysisOverview(template, shots);
 
-  // Update apply button click behavior
+  // 8. Bind apply button click behavior
   ['btn-apply-template-main', 'btn-apply-template-bottom'].forEach(id => {
     const applyBtn = document.getElementById(id);
     if (applyBtn) applyBtn.onclick = () => {
@@ -262,25 +466,435 @@ window.renderTemplateDetailTimeline = function(template, detailContainer) {
     };
   });
 
-  // 3. Render side overview panel (Right side)
+  // 9. Render side overview panel (Media bin, inspector)
   renderSideMetadata(template);
 
-  // 4. Render Professional View (Timeline & Track Filters)
+  // 10. Render Professional View (Timeline & Track Filters)
   renderProfessionalView(template, shots);
   window.TemplateEditor?.mount(template, {
     seconds: shotSeconds, escape: escapeTemplateText, videoId: sourceVideoId,
     emotion: translateEmotion, seek: window.seekTimeline, inspect: showShotInspector
   });
 
-  // 5. Initialize Mode Switcher
+  // 11. Initialize Mode Switcher
   window.switchDetailViewMode('professional');
 
-  // 6. Reset Playhead & Timeline to 0s
-  window.seekTimeline(0);
+  // 12. Reset Playhead & Timeline to 0s
+  window.seekTimeline(0, { instant: true });
 
-  // 6. Highlight first section (Hook) by default in inspector
+  // 13. Highlight first section (Hook) by default in inspector
   if (shots.length) showShotInspector(shots[0], 0, 0);
 };
+
+function renderHeroLeft(template, shots, totalSec, cleanTitle, tags) {
+  // 1. Badges row
+  const catBadge = document.getElementById('detail-category-badge');
+  if (catBadge) catBadge.textContent = CAT_MAP[template.category] || template.category || '未分類';
+  const shotsBadge = document.getElementById('detail-shots-count-badge');
+  if (shotsBadge) shotsBadge.textContent = `${template.shotsCount || shots.length} 鏡頭`;
+  const durBadge = document.getElementById('detail-duration-badge');
+  if (durBadge) durBadge.textContent = totalSec > 0 ? `${totalSec}s` : '未提供時長';
+
+  // 2. Title
+  const titleEl = document.getElementById('detail-template-title');
+  if (titleEl) titleEl.textContent = cleanTitle;
+  const navTitle = document.getElementById('nav-template-name');
+  if (navTitle) navTitle.textContent = cleanTitle;
+
+  // 3. Summary & Expand toggle
+  const summaryInfo = getTemplateSummary(template);
+  const descEl = document.getElementById('detail-template-desc');
+  const expandBtn = document.getElementById('btn-desc-expand');
+  if (descEl) descEl.textContent = summaryInfo.text;
+  if (expandBtn) {
+    if (summaryInfo.isLong) {
+      expandBtn.hidden = false;
+      let expanded = false;
+      expandBtn.onclick = () => {
+        expanded = !expanded;
+        descEl.textContent = expanded ? summaryInfo.fullText : summaryInfo.text;
+        expandBtn.textContent = expanded ? '收合內容' : '閱讀全文';
+      };
+    } else {
+      expandBtn.hidden = true;
+    }
+  }
+
+  // 4. Hashtags
+  const hashWrap = document.getElementById('detail-hashtags-wrapper');
+  const hashContainer = document.getElementById('detail-hashtags-container');
+  const hashExpand = document.getElementById('btn-hashtags-expand');
+  if (hashWrap && hashContainer) {
+    if (tags.length > 0) {
+      hashWrap.hidden = false;
+      hashContainer.innerHTML = tags.map(tag => `<span class="hashtag-pill">#${escapeTemplateText(tag)}</span>`).join('');
+      if (tags.length > 6 && hashExpand) {
+        hashExpand.hidden = false;
+        let tagsExpanded = false;
+        hashExpand.onclick = () => {
+          tagsExpanded = !tagsExpanded;
+          hashContainer.classList.toggle('is-expanded', tagsExpanded);
+          hashExpand.textContent = tagsExpanded ? '收合標籤' : '展開全部';
+        };
+      } else if (hashExpand) {
+        hashExpand.hidden = true;
+      }
+    } else {
+      hashWrap.hidden = true;
+    }
+  }
+
+  // 5. Use Case
+  const useCaseItem = document.getElementById('hero-spec-usecase');
+  const useCaseVal = document.getElementById('detail-usecase');
+  if (useCaseItem && useCaseVal) {
+    if (template.useCase) {
+      useCaseItem.hidden = false;
+      useCaseVal.textContent = template.useCase;
+    } else {
+      useCaseItem.hidden = true;
+    }
+  }
+
+  // 6. Platform
+  const platItem = document.getElementById('hero-spec-platform');
+  const platContainer = document.getElementById('detail-platforms');
+  if (platItem && platContainer) {
+    const platforms = Array.isArray(template.platform) ? template.platform : (template.platform ? [template.platform] : []);
+    if (platforms.length > 0) {
+      platItem.hidden = false;
+      platContainer.innerHTML = platforms.map(p => {
+        const pLabel = p === 'reels' ? 'Instagram Reels' : p === 'tiktok' ? 'TikTok' : p === 'shorts' || p === 'youtube' ? 'YouTube Shorts' : p;
+        return `<span class="spec-pill">${escapeTemplateText(pLabel)}</span>`;
+      }).join('');
+    } else {
+      platItem.hidden = true;
+    }
+  }
+
+  // 7. Creator Info
+  const creatorVal = document.getElementById('detail-source-creator');
+  if (creatorVal) {
+    creatorVal.textContent = template.source?.channel || '未提供頻道';
+  }
+
+  // 8. Source video link in hero
+  const srcLink = document.getElementById('detail-source-link');
+  if (srcLink) {
+    const videoId = sourceVideoId(template);
+    const url = template.source?.url || template.videoUrl || (videoId ? `https://www.youtube.com/watch?v=${videoId}` : '');
+    if (url) {
+      srcLink.hidden = false;
+      srcLink.href = url;
+    } else {
+      srcLink.hidden = true;
+    }
+  }
+}
+
+function updateDynamicNarrativeCard(segment, shotIdx, isInstant) {
+  const card = document.getElementById('detail-dynamic-narrative-card');
+  if (!card || !segment) return;
+
+  const phaseBadge = document.getElementById('dyn-phase-badge');
+  const timeBadge = document.getElementById('dyn-time-badge');
+  const phaseTitle = document.getElementById('dyn-phase-title');
+  const phaseSummary = document.getElementById('dyn-phase-summary');
+  const shotBadge = document.getElementById('dyn-shot-badge');
+
+  const updateDOM = () => {
+    if (phaseBadge) {
+      phaseBadge.textContent = segment.label || '敘事階段';
+      phaseBadge.className = `narrative-phase-badge is-${segment.type || 'build'}`;
+    }
+    if (timeBadge) {
+      timeBadge.textContent = `${formatEditorTimecode(segment.start)}–${formatEditorTimecode(segment.end)}`;
+    }
+    if (phaseTitle) phaseTitle.textContent = segment.title || '吸引觀眾注意';
+    if (phaseSummary) phaseSummary.textContent = segment.summary || '';
+    if (shotBadge) shotBadge.textContent = `S${String(shotIdx + 1).padStart(2, '0')}`;
+  };
+
+  const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (isInstant || prefersReducedMotion) {
+    updateDOM();
+    return;
+  }
+
+  if (narrativeCardAnimTimer) clearTimeout(narrativeCardAnimTimer);
+  card.classList.add('is-transitioning');
+  narrativeCardAnimTimer = setTimeout(() => {
+    updateDOM();
+    card.classList.remove('is-transitioning');
+    card.classList.add('is-entering');
+    narrativeCardAnimTimer = setTimeout(() => {
+      card.classList.remove('is-entering');
+      narrativeCardAnimTimer = null;
+    }, 220);
+  }, 130);
+}
+
+function renderOverviewSection(template, shots, segments) {
+  // 1. Key Insight
+  const insight = template.analysis?.whyItWorks || template.narrative?.summary || template.description || '尚未提供核心洞察。';
+  const insightEl = document.getElementById('analysis-key-insight');
+  if (insightEl) insightEl.textContent = insight;
+
+  // 2. Target Audience & Tone
+  const audWrapper = document.getElementById('overview-target-audience');
+  const audVal = document.getElementById('val-target-audience');
+  if (audWrapper && audVal) {
+    if (template.analysis?.targetAudience) {
+      audWrapper.hidden = false;
+      audVal.textContent = template.analysis.targetAudience;
+    } else {
+      audWrapper.hidden = true;
+    }
+  }
+
+  const toneWrapper = document.getElementById('overview-tone');
+  const toneVal = document.getElementById('val-tone');
+  if (toneWrapper && toneVal) {
+    if (template.narrative?.tone) {
+      toneWrapper.hidden = false;
+      toneVal.textContent = translateTone(template.narrative.tone);
+    } else {
+      toneWrapper.hidden = true;
+    }
+  }
+
+  // 3. Replicable Elements
+  const tagsEl = document.getElementById('analysis-insight-tags');
+  if (tagsEl) {
+    const replicable = Array.isArray(template.analysis?.replicableElements)
+      ? template.analysis.replicableElements.slice(0, 4)
+      : [];
+    if (replicable.length > 0) {
+      tagsEl.innerHTML = replicable.map((item, idx) => `
+        <div class="replicable-item">
+          <span class="rep-num">${String(idx + 1).padStart(2, '0')}</span>
+          <span class="rep-text">${escapeTemplateText(item)}</span>
+        </div>
+      `).join('');
+    } else {
+      tagsEl.innerHTML = `<p class="overview-empty-hint">此模板未提供可複製手法分析。</p>`;
+    }
+  }
+
+  // 4. Rhythm Track
+  const rhythmTrack = document.getElementById('analysis-rhythm-track');
+  if (rhythmTrack) {
+    rhythmTrack.replaceChildren();
+    if (segments && segments.length > 0) {
+      segments.forEach(seg => {
+        const segDur = Math.max(1, seg.end - seg.start);
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `analysis-rhythm-segment is-${seg.type || 'build'}`;
+        btn.style.flexGrow = String(segDur);
+        btn.setAttribute('aria-label', `${seg.label}，${segDur} 秒，${seg.title}`);
+        btn.title = `${seg.label} · ${segDur}s · ${seg.title}`;
+        btn.innerHTML = `<b>${escapeTemplateText(seg.type.toUpperCase())}</b><span>${segDur}s</span>`;
+        btn.onclick = () => {
+          window.seekTimeline(seg.start);
+        };
+        rhythmTrack.appendChild(btn);
+      });
+    } else {
+      const empty = document.createElement('span');
+      empty.className = 'analysis-rhythm-empty';
+      empty.textContent = '尚無節奏資料';
+      rhythmTrack.appendChild(empty);
+    }
+  }
+  const rhythmMid = document.getElementById('analysis-rhythm-mid');
+  const rhythmEnd = document.getElementById('analysis-rhythm-end');
+  if (rhythmMid) rhythmMid.textContent = formatEditorTimecode(timelineDuration / 2);
+  if (rhythmEnd) rhythmEnd.textContent = formatEditorTimecode(timelineDuration);
+}
+
+function renderShotBreakdownSection(template, shots) {
+  const container = document.getElementById('detail-shots-breakdown-list');
+  if (!container) return;
+
+  if (!shots || shots.length === 0) {
+    container.innerHTML = `<div class="shots-empty-state"><p>此模板尚無鏡頭拆解資料。</p></div>`;
+    return;
+  }
+
+  const sourceCover = template.thumbnail || template.cover || template.source?.thumbnail || (sourceVideoId(template) ? `https://i.ytimg.com/vi/${encodeURIComponent(sourceVideoId(template))}/hqdefault.jpg` : '');
+  const prompts = Array.isArray(template.promptTemplate?.perShot) ? template.promptTemplate.perShot : [];
+
+  let cursor = 0;
+  container.innerHTML = shots.map((shot, index) => {
+    const dur = shotSeconds(shot);
+    const start = cursor;
+    cursor += dur;
+    const end = cursor;
+    const frame = shot.thumbnail || shot.frameUrl || shot.imageUrl || '';
+    const cover = frame || sourceCover;
+    const dialogueVal = shot.dialogue ?? shot.dialogueInfo ?? shot.voiceover ?? shot.narration;
+    const dialogueText = typeof dialogueVal === 'string' ? dialogueVal : Array.isArray(dialogueVal) ? dialogueVal.join('\n') : '';
+    const prompt = prompts[index] || '';
+
+    return `
+      <article class="shot-breakdown-card${index === activeShotIndex ? ' is-active' : ''}" data-shot-index="${index}">
+        <div class="shot-card-header">
+          <div class="shot-card-meta">
+            <span class="shot-number-badge">S${String(index + 1).padStart(2, '0')}</span>
+            <span class="shot-time-range">${formatEditorTimecode(start)}–${formatEditorTimecode(end)}</span>
+            <span class="shot-duration-badge">${dur}s</span>
+          </div>
+          <span class="shot-purpose-badge">${escapeTemplateText(describePurpose(shot.purpose))}</span>
+        </div>
+        <div class="shot-card-body">
+          <div class="shot-thumb-wrapper">
+            ${cover ? `<img src="${escapeTemplateText(cover)}" alt="鏡頭 ${index + 1} 參考畫面" loading="lazy">` : `<div class="shot-thumb-placeholder">S${index + 1}</div>`}
+            <div class="shot-thumb-play-overlay" aria-hidden="true">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            </div>
+          </div>
+          <div class="shot-action-content">
+            <p class="shot-action-text">${escapeTemplateText(shot.action || '未提供畫面描述')}</p>
+          </div>
+        </div>
+        <button type="button" class="btn-shot-expand" aria-expanded="false" data-shot-expand="${index}">
+          <span class="expand-label-text">展開詳情</span>
+          <svg class="chevron-sm" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="shot-card-expanded-content" id="shot-detail-${index}" hidden>
+          ${dialogueText ? `
+            <div class="shot-expanded-row">
+              <span class="expanded-label">對白／旁白</span>
+              <blockquote class="shot-dialogue-quote">${escapeTemplateText(dialogueText)}</blockquote>
+            </div>
+          ` : ''}
+          <div class="shot-expanded-tags">
+            <span class="exp-tag"><b>運鏡：</b>${escapeTemplateText(describeCamera(shot.camera))}</span>
+            <span class="exp-tag"><b>視角：</b>${escapeTemplateText(describeAngle(shot.angle))}</span>
+            <span class="exp-tag"><b>情緒：</b>${escapeTemplateText(translateEmotion(shot.emotion))}</span>
+          </div>
+          ${prompt ? `
+            <div class="shot-expanded-row">
+              <span class="expanded-label">製作提示詞</span>
+              <div class="shot-prompt-code">${escapeTemplateText(prompt)}</div>
+            </div>
+          ` : ''}
+        </div>
+      </article>
+    `;
+  }).join('');
+
+  // Attach click listeners
+  container.querySelectorAll('.shot-breakdown-card').forEach(card => {
+    const idx = Number(card.dataset.shotIndex);
+    const shot = shots[idx];
+    const starts = shots.slice(0, idx).reduce((sum, s) => sum + shotSeconds(s), 0);
+
+    card.onclick = event => {
+      const expandBtn = event.target.closest('.btn-shot-expand');
+      if (expandBtn) {
+        event.stopPropagation();
+        const detail = card.querySelector('.shot-card-expanded-content');
+        if (detail) {
+          const isExpanded = expandBtn.getAttribute('aria-expanded') === 'true';
+          const nextState = !isExpanded;
+          expandBtn.setAttribute('aria-expanded', String(nextState));
+          detail.hidden = !nextState;
+          const labelSpan = expandBtn.querySelector('.expand-label-text');
+          if (labelSpan) labelSpan.textContent = nextState ? '收合詳情' : '展開詳情';
+          expandBtn.classList.toggle('is-open', nextState);
+        }
+        return;
+      }
+      window.seekTimeline(starts);
+      showShotInspector(shot, idx, starts);
+    };
+  });
+}
+
+function initAdvancedWorkspaceToggle() {
+  const btn = document.getElementById('btn-toggle-advanced');
+  const content = document.getElementById('advanced-workspace-content');
+  const label = document.getElementById('toggle-advanced-label');
+  if (!btn || !content) return;
+
+  btn.onclick = () => {
+    const isExpanded = btn.getAttribute('aria-expanded') === 'true';
+    const next = !isExpanded;
+    btn.setAttribute('aria-expanded', String(next));
+    content.hidden = !next;
+    if (label) label.textContent = next ? '收合分析' : '展開分析';
+    btn.classList.toggle('is-expanded', next);
+  };
+}
+
+function initSourceInfoModal(template) {
+  const modal = document.getElementById('source-detail-modal');
+  const openBtn = document.getElementById('btn-open-source-modal');
+  const closeBtn = document.getElementById('btn-close-source-modal');
+  if (!modal) return;
+
+  const titleEl = document.getElementById('src-modal-title');
+  const channelEl = document.getElementById('src-modal-channel');
+  const viewsEl = document.getElementById('src-modal-views');
+  const descEl = document.getElementById('src-modal-desc');
+  const linkEl = document.getElementById('src-modal-link');
+
+  const srcTitle = template.source?.title || template.name || '來源影片';
+  const srcChannel = template.source?.channel || '未提供頻道';
+  const srcViews = template.source?.views != null ? Number(template.source.views).toLocaleString('zh-TW') + ' 次觀看' : '—';
+  const srcDesc = template.source?.description || template.description || '未提供原始說明';
+  const videoId = sourceVideoId(template);
+  const srcUrl = template.source?.url || template.videoUrl || (videoId ? `https://www.youtube.com/watch?v=${videoId}` : '#');
+
+  if (titleEl) titleEl.textContent = srcTitle;
+  if (channelEl) channelEl.textContent = srcChannel;
+  if (viewsEl) viewsEl.textContent = srcViews;
+  if (descEl) descEl.textContent = srcDesc;
+  if (linkEl) {
+    linkEl.href = srcUrl;
+    linkEl.style.display = srcUrl === '#' ? 'none' : 'inline-flex';
+  }
+
+  const openModal = () => {
+    modal.hidden = false;
+    closeBtn?.focus();
+  };
+  const closeModal = () => {
+    modal.hidden = true;
+    openBtn?.focus();
+  };
+
+  if (openBtn) openBtn.onclick = openModal;
+  if (closeBtn) closeBtn.onclick = closeModal;
+  modal.onclick = event => {
+    if (event.target === modal) closeModal();
+  };
+  window.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && !modal.hidden) closeModal();
+  });
+}
+
+function initStickyHeaderTransition() {
+  const detailBody = document.getElementById('template-detail-body');
+  const container = document.getElementById('template-detail-immersive');
+  const heroTitle = document.getElementById('detail-template-title');
+  if (!detailBody || !container || !heroTitle) return;
+
+  let ticking = false;
+  const onScroll = () => {
+    if (!ticking) {
+      window.requestAnimationFrame(() => {
+        const top = detailBody.scrollTop;
+        container.classList.toggle('is-scrolled', top > 50);
+        ticking = false;
+      });
+      ticking = true;
+    }
+  };
+  detailBody.addEventListener('scroll', onScroll, { passive: true });
+}
 
 function renderAnalysisOverview(template, shots) {
   const rawConfidence = template.confidence == null || template.confidence === '' ? NaN : Number(template.confidence);
@@ -302,52 +916,6 @@ function renderAnalysisOverview(template, shots) {
   if (durationEl) durationEl.textContent = shotCount ? `${timelineDuration}s` : '—';
   if (shotsEl) shotsEl.textContent = String(shotCount);
   if (averageEl) averageEl.textContent = shotCount ? `${average.toFixed(1)}s` : '—';
-
-  const insight = template.analysis?.whyItWorks || template.narrative?.summary || template.description || '尚未提供核心洞察。';
-  const insightEl = document.getElementById('analysis-key-insight');
-  if (insightEl) insightEl.textContent = insight;
-  const tagsEl = document.getElementById('analysis-insight-tags');
-  if (tagsEl) {
-    const tags = Array.isArray(template.analysis?.replicableElements) ? template.analysis.replicableElements.slice(0, 3) : [];
-    tagsEl.replaceChildren(...tags.map((value, index) => {
-      const chip = document.createElement('span');
-      chip.textContent = `${String(index + 1).padStart(2, '0')} ${value}`;
-      return chip;
-    }));
-  }
-
-  const rhythmTrack = document.getElementById('analysis-rhythm-track');
-  if (rhythmTrack) {
-    rhythmTrack.replaceChildren();
-    const phases = ['is-hook', 'is-build', 'is-payoff', 'is-close'];
-    shots.forEach((shot, index) => {
-      const duration = shotSeconds(shot);
-      const segment = document.createElement('button');
-      const phaseIndex = Math.min(3, Math.floor(index / Math.max(1, shots.length) * 4));
-      segment.type = 'button';
-      segment.className = `analysis-rhythm-segment ${phases[phaseIndex]}`;
-      segment.style.flexGrow = String(duration);
-      segment.setAttribute('aria-label', `鏡頭 ${index + 1}，${duration} 秒，${shot.purpose || shot.action || '未提供說明'}`);
-      segment.title = `S${String(index + 1).padStart(2, '0')} · ${duration}s · ${shot.purpose || shot.action || '未提供說明'}`;
-      segment.innerHTML = `<b>S${String(index + 1).padStart(2, '0')}</b><span>${duration}s</span>`;
-      segment.onclick = () => {
-        const start = shots.slice(0, index).reduce((sum, item) => sum + (shotSeconds(item)), 0);
-        window.seekTimeline(start);
-        showShotInspector(shot, index, start);
-      };
-      rhythmTrack.appendChild(segment);
-    });
-    if (!shots.length) {
-      const empty = document.createElement('span');
-      empty.className = 'analysis-rhythm-empty';
-      empty.textContent = '尚無鏡頭節奏資料';
-      rhythmTrack.appendChild(empty);
-    }
-  }
-  const rhythmMid = document.getElementById('analysis-rhythm-mid');
-  const rhythmEnd = document.getElementById('analysis-rhythm-end');
-  if (rhythmMid) rhythmMid.textContent = formatEditorTimecode(timelineDuration / 2);
-  if (rhythmEnd) rhythmEnd.textContent = formatEditorTimecode(timelineDuration);
 }
 
 /**
@@ -828,7 +1396,38 @@ window.seekTimeline = function(seconds, options = {}) {
   activeShotIndex = foundIndex;
   window.TemplateEditor?.sync(foundIndex);
 
-  // 4. Update Story View Active Node & Canvas Axis Progress
+  // 4. Update Dynamic Narrative Card (L2 Synchronized Card)
+  if (currentNormalizedSegments && currentNormalizedSegments.length > 0) {
+    const matchingSeg = currentNormalizedSegments.find(seg => seconds >= seg.start && seconds < seg.end)
+      || currentNormalizedSegments[currentNormalizedSegments.length - 1];
+    if (matchingSeg && matchingSeg.id !== currentActiveSegmentId) {
+      currentActiveSegmentId = matchingSeg.id;
+      updateDynamicNarrativeCard(matchingSeg, foundIndex, options.instant);
+    } else if (matchingSeg) {
+      const shotBadge = document.getElementById('dyn-shot-badge');
+      if (shotBadge) shotBadge.textContent = `S${String(foundIndex + 1).padStart(2, '0')}`;
+    }
+
+    // Highlight matching rhythm track segment
+    const rhythmSegs = document.querySelectorAll('#analysis-rhythm-track .analysis-rhythm-segment');
+    if (matchingSeg && rhythmSegs.length > 0) {
+      currentNormalizedSegments.forEach((seg, sIdx) => {
+        if (rhythmSegs[sIdx]) {
+          rhythmSegs[sIdx].classList.toggle('is-active', seg.id === matchingSeg.id);
+        }
+      });
+    }
+  }
+
+  // 5. Update Active Shot Breakdown Card (L2/L3 Cards)
+  const shotCards = document.querySelectorAll('#detail-shots-breakdown-list .shot-breakdown-card');
+  if (shotCards.length > 0) {
+    shotCards.forEach((c, idx) => {
+      c.classList.toggle('is-active', idx === foundIndex);
+    });
+  }
+
+  // 6. Update Story View Active Node & Canvas Axis Progress
   if (currentViewMode === 'story') {
     highlightActiveStoryNode();
   } else {
@@ -1077,6 +1676,13 @@ window.destroyTemplateTimeline = function() {
   visibleTracks = Object.fromEntries(TRACKS_CONFIG.map(track => [track.id, track.default]));
   isPlaying = false;
   selectedItemId = null;
+  currentNormalizedSegments = [];
+  currentActiveSegmentId = null;
+  if (narrativeCardAnimTimer) {
+    clearTimeout(narrativeCardAnimTimer);
+    narrativeCardAnimTimer = null;
+  }
+  document.getElementById('template-detail-immersive')?.classList.remove('is-scrolled');
   window.closeInspectorDrawer?.();
   const detailBody = document.getElementById('template-detail-body') || document.querySelector('.template-detail-body');
   if (detailBody && window.DynamicMaskSystem && typeof window.DynamicMaskSystem.detach === 'function') {
