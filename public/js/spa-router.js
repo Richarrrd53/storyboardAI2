@@ -1374,7 +1374,14 @@ function initLoginLogic(showRegister) {
     },
 
     template: {
-      css: ['/css/dashboard.css', '/css/template.css', '/css/template-editor.css?v=20261006-2', '/css/template-detail.css?v=20261014-1'],
+      css: [
+        '/css/dashboard.css',
+        '/css/generate.css',
+        '/css/math-curve-loader.css',
+        '/css/template.css',
+        '/css/template-editor.css?v=20261006-2',
+        '/css/template-detail.css?v=20261014-2'
+      ],
       js: ['/js/dynamic-mask.js', '/js/generate-prefill-path.js', '/js/template-timeline.js', '/js/template-editor.js?v=20261006-2', '/js/template.js'],
       mount: (o, signal) => renderTemplate(o, signal),
       render: (o, signal) => renderTemplate(o, signal)
@@ -1610,13 +1617,39 @@ function initLoginLogic(showRegister) {
       }
     };
 
-    // List/detail transitions keep the mounted catalog and its scroll/filter state.
+    // List/detail transitions keep the mounted catalog and its scroll/filter state with blur + opacity transition.
     if (page === 'template' && currentPage === 'template' && !targetPage &&
         activePageInstance?.updateRoute && !opts.force) {
       writeHistory();
       syncParentRoute(page, opts);
       currentOpts = opts;
-      activePageInstance.updateRoute(opts);
+
+      const contentEl = getOrCreateContentContainer();
+      if (contentEl) {
+        contentEl.style.transition = 'opacity 180ms ease, filter 180ms ease';
+        contentEl.style.opacity = '0';
+        contentEl.style.filter = 'blur(12px)';
+      }
+      if (window.TransitionLoader?.startLoaderTimer) {
+        window.TransitionLoader.startLoaderTimer(true);
+      }
+      await rafDelay(180);
+      try {
+        await activePageInstance.updateRoute(opts);
+      } finally {
+        if (window.TransitionLoader?.cleanup) {
+          window.TransitionLoader.cleanup();
+        }
+        if (contentEl) {
+          contentEl.style.transition = 'opacity 240ms ease, filter 240ms ease';
+          contentEl.style.opacity = '1';
+          contentEl.style.filter = 'blur(0px)';
+          setTimeout(() => {
+            contentEl.style.removeProperty('filter');
+            contentEl.style.removeProperty('transition');
+          }, 260);
+        }
+      }
       return;
     }
 

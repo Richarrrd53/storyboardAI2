@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="../css/dashboard.css" />
   <link rel="stylesheet" href="../css/template.css" />
   <link rel="stylesheet" href="../css/template-editor.css?v=20261006-2" />
-  <link rel="stylesheet" href="../css/template-detail.css?v=20261014-1" />
+  <link rel="stylesheet" href="../css/template-detail.css?v=20261014-2" />
 </head>
 
 <body>
@@ -77,6 +77,7 @@
         <div class="editor-document-title"><span>模板結構</span><strong id="nav-template-name">正在讀取...</strong></div>
         <button class="btn-apply-template-main" id="btn-apply-template-main">套用模板</button>
       </div>
+      <div class="floating-dock-title" id="floating-dock-title" aria-hidden="true"></div>
 
       <!-- ═══ SCROLLABLE DETAIL BODY (WITH DYNAMIC MASK) ═══ -->
       <div class="content-body template-detail-body" id="template-detail-body" data-dynamic-mask data-mask-direction="vertical" data-mask-size="36">
@@ -140,6 +141,7 @@
                   </button>
                   <span class="player-time-current" id="detail-monitor-timecode">00:00</span>
                   <div class="player-scrubber-track" id="player-scrubber-track" role="slider" tabindex="0" aria-label="來源影片播放位置" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0">
+                    <div class="player-scrubber-segments" id="player-scrubber-segments"></div>
                     <div class="player-scrubber-progress" id="player-scrubber-progress"></div>
                     <div class="player-scrubber-thumb" id="player-scrubber-thumb"></div>
                   </div>
@@ -319,6 +321,40 @@
                   <div id="editor-prompts-page" class="editor-panel-scroll editor-prompts" role="tabpanel" aria-labelledby="editor-prompts-tab" data-bin-page="prompts" hidden><div id="editor-base-prompt"></div><div id="editor-prompt-list"></div></div>
                   <div id="editor-variables-page" class="editor-panel-scroll" role="tabpanel" aria-labelledby="editor-variables-tab" data-bin-page="variables" hidden><p class="editor-help">套用模板時，可替換以下內容以符合你的企劃。</p><div id="editor-variable-list"></div></div>
                 </aside>
+
+                <!-- 工作區即時預覽監看與獨立播放控制 (player-controls-background-container) -->
+                <section class="editor-panel editor-monitor player-controls-background-container" aria-label="工作區預覽監看">
+                  <div class="editor-monitor-stage">
+                    <div class="studio-monitor-wrapper" id="studio-program-monitor">
+                      <div class="studio-monitor-screen" id="studio-monitor-screen">
+                        <img id="studio-shot-preview-img" class="studio-shot-preview-img" src="" alt="預覽畫面" style="display:none;" />
+                        <div class="studio-monitor-fallback" id="studio-monitor-fallback">
+                          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg>
+                          <span>MONITOR READY</span>
+                        </div>
+                        <div class="studio-safe-frame"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="editor-monitor-caption">
+                    <span id="editor-current-shot">S01</span>
+                    <span id="editor-current-action">畫面預覽</span>
+                  </div>
+                  <div class="editor-monitor-tools">
+                    <button type="button" id="editor-prev-shot" title="上一鏡頭">◀ 上一鏡頭</button>
+                    <button type="button" id="btn-studio-playpause" class="btn-studio-playpause" title="同步播放 / 暫停">
+                      <span class="studio-play-label">▶ 播放</span>
+                    </button>
+                    <button type="button" id="editor-next-shot" title="下一鏡頭">下一鏡頭 ▶</button>
+                    <span id="studio-monitor-timecode">00:00 / 00:00</span>
+                  </div>
+                  <div class="studio-scrubber-track-wrap">
+                    <div class="studio-scrubber-track" id="studio-scrubber-track" role="slider" tabindex="0" aria-label="工作區預覽時間軸位置" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0">
+                      <div class="studio-scrubber-progress" id="studio-scrubber-progress"></div>
+                      <div class="studio-scrubber-thumb" id="studio-scrubber-thumb"></div>
+                    </div>
+                  </div>
+                </section>
 
                 <aside class="editor-panel editor-inspector" aria-label="鏡頭與模板屬性">
                   <div class="editor-panel-heading"><h3>屬性檢查器</h3></div>

@@ -4825,6 +4825,28 @@ body.is-navigating #global-create-capsule .ai-pill-btn-glow-rotator,
         transition: opacity 240ms ease;
     }
 
+    .mobile-nav__item--create .ai-unified-capsule:not(.is-expanded) {
+        position: absolute !important;
+        left: 50% !important;
+        bottom: 5px !important;
+        top: auto !important;
+        right: auto !important;
+        transform: translateX(-50%) !important;
+        width: 54px !important;
+        max-width: 54px !important;
+        height: 54px !important;
+        border-radius: 999px !important;
+        opacity: 1 !important;
+        pointer-events: none !important;
+        z-index: 10 !important;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.58) 0%, rgba(243, 246, 252, 0.42) 100%) !important;
+        backdrop-filter: blur(8px) saturate(120%) brightness(1.03) !important;
+        -webkit-backdrop-filter: blur(8px) saturate(120%) brightness(1.03) !important;
+        border: 0 !important;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(15, 23, 42, 0.03), inset 0 1px 1.2px rgba(255, 255, 255, 0.9), inset 0 -1px 2px rgba(148, 163, 184, 0.06) !important;
+        overflow: visible !important;
+    }
+
     .mob-circle-plus {
         font-size: 1.85rem;
         line-height: 1;

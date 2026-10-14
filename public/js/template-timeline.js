@@ -112,11 +112,17 @@ function startPlayerSync() {
 function updatePlayPauseButtonUI(playing) {
   isPlaying = !!playing;
   const btn = document.getElementById('btn-player-playpause');
-  if (!btn) return;
-  const playIcon = btn.querySelector('.play-icon');
-  const pauseIcon = btn.querySelector('.pause-icon');
-  if (playIcon) playIcon.style.display = isPlaying ? 'none' : 'block';
-  if (pauseIcon) pauseIcon.style.display = isPlaying ? 'block' : 'none';
+  if (btn) {
+    const playIcon = btn.querySelector('.play-icon');
+    const pauseIcon = btn.querySelector('.pause-icon');
+    if (playIcon) playIcon.style.display = isPlaying ? 'none' : 'block';
+    if (pauseIcon) pauseIcon.style.display = isPlaying ? 'block' : 'none';
+  }
+  const studioBtn = document.getElementById('btn-studio-playpause');
+  if (studioBtn) {
+    const label = studioBtn.querySelector('.studio-play-label');
+    if (label) label.textContent = isPlaying ? '⏸ 暫停' : '▶ 播放';
+  }
 }
 
 function togglePlayPause() {
@@ -438,6 +444,12 @@ window.renderTemplateDetailTimeline = function(template, detailContainer) {
   // 2. Mount source video preview in Hero right column
   mountSourcePreview(template);
 
+  // 2b. Render Hero Scrubber Segments (YouTube-style chapters)
+  renderHeroScrubberSegments(currentNormalizedSegments, timelineDuration);
+
+  // 2c. Initialize Pro Studio Monitor Transport Controls
+  initStudioTransportControls();
+
   // 3. Render Overview Section (L2 Highlights & Narrative Structure)
   renderOverviewSection(template, shots, currentNormalizedSegments);
 
@@ -501,36 +513,40 @@ function renderHeroLeft(template, shots, totalSec, cleanTitle, tags) {
   const navTitle = document.getElementById('nav-template-name');
   if (navTitle) navTitle.textContent = cleanTitle;
 
-  // 3. Summary & Expand toggle
+  // 3. Summary & Expand toggle (超過兩行自動截斷，點擊切換展開/收合)
   const summaryInfo = getTemplateSummary(template);
   const descEl = document.getElementById('detail-template-desc');
   const expandBtn = document.getElementById('btn-desc-expand');
-  if (descEl) descEl.textContent = summaryInfo.text;
+  if (descEl) {
+    descEl.textContent = summaryInfo.fullText || summaryInfo.text;
+    descEl.classList.remove('is-expanded');
+  }
   if (expandBtn) {
-    if (summaryInfo.isLong) {
-      expandBtn.hidden = false;
-      let expanded = false;
-      expandBtn.onclick = () => {
-        expanded = !expanded;
-        descEl.textContent = expanded ? summaryInfo.fullText : summaryInfo.text;
-        expandBtn.textContent = expanded ? '收合內容' : '閱讀全文';
-      };
-    } else {
-      expandBtn.hidden = true;
-    }
+    const isLongText = (summaryInfo.fullText || '').length > 60;
+    expandBtn.hidden = !isLongText;
+    let expanded = false;
+    expandBtn.textContent = '閱讀全文';
+    expandBtn.onclick = () => {
+      expanded = !expanded;
+      descEl?.classList.toggle('is-expanded', expanded);
+      expandBtn.textContent = expanded ? '收合內容' : '閱讀全文';
+    };
   }
 
-  // 4. Hashtags
+  // 4. Hashtags (超過一行自動截斷，點擊切換展開/收合)
   const hashWrap = document.getElementById('detail-hashtags-wrapper');
   const hashContainer = document.getElementById('detail-hashtags-container');
   const hashExpand = document.getElementById('btn-hashtags-expand');
   if (hashWrap && hashContainer) {
     if (tags.length > 0) {
       hashWrap.hidden = false;
+      hashContainer.classList.remove('is-expanded');
       hashContainer.innerHTML = tags.map(tag => `<span class="hashtag-pill">#${escapeTemplateText(tag)}</span>`).join('');
-      if (tags.length > 6 && hashExpand) {
+      const mayWrap = tags.length > 3 || tags.join('').length > 18;
+      if (mayWrap && hashExpand) {
         hashExpand.hidden = false;
         let tagsExpanded = false;
+        hashExpand.textContent = '展開全部';
         hashExpand.onclick = () => {
           tagsExpanded = !tagsExpanded;
           hashContainer.classList.toggle('is-expanded', tagsExpanded);
@@ -880,14 +896,92 @@ function initStickyHeaderTransition() {
   const detailBody = document.getElementById('template-detail-body');
   const container = document.getElementById('template-detail-immersive');
   const heroTitle = document.getElementById('detail-template-title');
-  if (!detailBody || !container || !heroTitle) return;
+  const dockTitle = document.getElementById('floating-dock-title');
+  const navTitle = document.getElementById('nav-template-name');
+  const menubar = document.getElementById('template-detail-menubar');
+  if (!detailBody || !container || !heroTitle || !dockTitle || !navTitle || !menubar) return;
+
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  let cachedMenubarHeight = 56;
+  let cachedTargetRect = null;
+  let cachedHeroOffsetTop = 0;
+  let cachedHeroRect = null;
+  let startDock = 40;
+  const dockRange = 75; // Smooth 75px scroll distance for docking FLIP
+
+  const updateMeasurements = () => {
+    const mbRect = menubar.getBoundingClientRect();
+    cachedMenubarHeight = mbRect.height || 56;
+    cachedTargetRect = navTitle.getBoundingClientRect();
+    cachedHeroOffsetTop = heroTitle.offsetTop;
+    cachedHeroRect = heroTitle.getBoundingClientRect();
+    startDock = Math.max(10, cachedHeroOffsetTop - cachedMenubarHeight - 16);
+    dockTitle.textContent = heroTitle.textContent || '';
+  };
+
+  updateMeasurements();
+  window.addEventListener('resize', updateMeasurements, { passive: true });
 
   let ticking = false;
   const onScroll = () => {
     if (!ticking) {
       window.requestAnimationFrame(() => {
         const top = detailBody.scrollTop;
-        container.classList.toggle('is-scrolled', top > 50);
+        const endDock = startDock + dockRange;
+
+        if (prefersReducedMotion) {
+          const isScrolled = top > startDock;
+          container.classList.toggle('is-scrolled', isScrolled);
+          navTitle.style.opacity = isScrolled ? '1' : '0';
+          heroTitle.style.opacity = isScrolled ? '0' : '1';
+          dockTitle.style.display = 'none';
+          ticking = false;
+          return;
+        }
+
+        if (top < startDock) {
+          // Resting in Hero
+          dockTitle.style.display = 'none';
+          heroTitle.style.opacity = '1';
+          navTitle.style.opacity = '0';
+          container.classList.remove('is-scrolled');
+        } else if (top >= startDock && top <= endDock) {
+          // In transition: glide towards header center
+          container.classList.add('is-scrolled');
+          const rawProgress = (top - startDock) / dockRange;
+          const progress = Math.min(1, Math.max(0, rawProgress));
+          const ease = progress * (2 - progress); // Ease out quad
+
+          // Viewport position of hero title during scroll
+          const heroCurrentTop = cachedHeroOffsetTop - top + cachedMenubarHeight;
+          const targetTop = cachedTargetRect?.top || 14;
+          const targetLeft = cachedTargetRect?.left || (window.innerWidth / 2 - 120);
+          const targetWidth = cachedTargetRect?.width || 240;
+
+          const startX = cachedHeroRect?.left || 24;
+          const startY = heroCurrentTop;
+          const curX = startX + (targetLeft - startX) * ease;
+          const curY = startY + (targetTop - startY) * ease;
+          const curScale = 1.0 - (1.0 - (15 / 30)) * ease;
+
+          dockTitle.style.display = 'block';
+          dockTitle.style.left = `${curX}px`;
+          dockTitle.style.top = `${curY}px`;
+          dockTitle.style.fontSize = `${30 * curScale}px`;
+          dockTitle.style.maxWidth = ease > 0.5 ? `${targetWidth}px` : 'none';
+          dockTitle.style.opacity = '1';
+
+          heroTitle.style.opacity = String(Math.max(0, 1 - progress * 1.5));
+          navTitle.style.opacity = '0';
+        } else {
+          // Fully docked in header center
+          dockTitle.style.display = 'none';
+          heroTitle.style.opacity = '0';
+          navTitle.style.opacity = '1';
+          container.classList.add('is-scrolled');
+        }
+
         ticking = false;
       });
       ticking = true;
@@ -984,6 +1078,80 @@ function mountSourcePreview(t) {
       event.preventDefault();
       window.seekTimeline(positions[event.key]);
     };
+  }
+}
+
+function renderHeroScrubberSegments(segments, totalDuration) {
+  const container = document.getElementById('player-scrubber-segments');
+  if (!container) return;
+  container.replaceChildren();
+
+  const safeDuration = totalDuration || 15;
+  const segList = Array.isArray(segments) && segments.length > 0
+    ? segments
+    : [{ id: 'seg-1', label: '片段', start: 0, end: safeDuration }];
+
+  segList.forEach(seg => {
+    const segDur = Math.max(0.5, seg.end - seg.start);
+    const segEl = document.createElement('div');
+    segEl.className = 'player-scrubber-segment';
+    segEl.style.flex = String(segDur);
+    segEl.setAttribute('data-seg-id', seg.id);
+    segEl.title = `${seg.label || '片段'} (${formatEditorTimecode(seg.start)} - ${formatEditorTimecode(seg.end)})`;
+    segEl.innerHTML = '<div class="player-scrubber-segment-fill" style="width: 0%;"></div>';
+
+    segEl.onclick = (e) => {
+      e.stopPropagation();
+      const rect = segEl.getBoundingClientRect();
+      const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / (rect.width || 1)));
+      const targetSec = seg.start + ratio * segDur;
+      window.seekTimeline(targetSec);
+    };
+
+    container.appendChild(segEl);
+  });
+}
+
+function getShotStartTime(shotIndex) {
+  const shots = Array.isArray(currentTemplate?.structure) ? currentTemplate.structure : [];
+  let accum = 0;
+  for (let i = 0; i < shotIndex && i < shots.length; i++) {
+    accum += shotSeconds(shots[i]);
+  }
+  return accum;
+}
+
+function initStudioTransportControls() {
+  const playBtn = document.getElementById('btn-studio-playpause');
+  if (playBtn) {
+    playBtn.onclick = togglePlayPause;
+  }
+  const prevBtn = document.getElementById('editor-prev-shot');
+  if (prevBtn) {
+    prevBtn.onclick = () => {
+      const shots = Array.isArray(currentTemplate?.structure) ? currentTemplate.structure : [];
+      if (!shots.length) return;
+      const targetIdx = Math.max(0, activeShotIndex - 1);
+      window.seekTimeline(getShotStartTime(targetIdx));
+    };
+  }
+  const nextBtn = document.getElementById('editor-next-shot');
+  if (nextBtn) {
+    nextBtn.onclick = () => {
+      const shots = Array.isArray(currentTemplate?.structure) ? currentTemplate.structure : [];
+      if (!shots.length) return;
+      const targetIdx = Math.min(shots.length - 1, activeShotIndex + 1);
+      window.seekTimeline(getShotStartTime(targetIdx));
+    };
+  }
+  const scrubber = document.getElementById('studio-scrubber-track');
+  if (scrubber) {
+    const seek = event => {
+      const bounds = scrubber.getBoundingClientRect();
+      if (bounds.width) window.seekTimeline((event.clientX - bounds.left) / bounds.width * timelineDuration);
+    };
+    scrubber.onpointerdown = event => { scrubber.setPointerCapture?.(event.pointerId); seek(event); };
+    scrubber.onpointermove = event => { if (event.buttons === 1) seek(event); };
   }
 }
 
@@ -1369,6 +1537,34 @@ window.seekTimeline = function(seconds, options = {}) {
   if (durEl) durEl.textContent = formatEditorTimecode(timelineDuration);
   if (proTimecodeEl) proTimecodeEl.textContent = formatEditorTimecode(seconds);
 
+  // 1b. Update Segmented Scrubber fills (YouTube-style chapters)
+  const segEls = document.querySelectorAll('#player-scrubber-segments .player-scrubber-segment');
+  if (currentNormalizedSegments && segEls.length === currentNormalizedSegments.length) {
+    currentNormalizedSegments.forEach((seg, idx) => {
+      const el = segEls[idx];
+      const fillEl = el?.querySelector('.player-scrubber-segment-fill');
+      if (fillEl) {
+        if (seconds <= seg.start) {
+          fillEl.style.width = '0%';
+        } else if (seconds >= seg.end) {
+          fillEl.style.width = '100%';
+        } else {
+          const segDur = Math.max(0.1, seg.end - seg.start);
+          const segPct = Math.min(100, Math.max(0, ((seconds - seg.start) / segDur) * 100));
+          fillEl.style.width = `${segPct}%`;
+        }
+      }
+    });
+  }
+
+  // 1c. Update Studio Monitor & Controls (player-controls-background-container)
+  const studioTc = document.getElementById('studio-monitor-timecode');
+  if (studioTc) studioTc.textContent = `${formatEditorTimecode(seconds)} / ${formatEditorTimecode(timelineDuration)}`;
+  const studioProg = document.getElementById('studio-scrubber-progress');
+  const studioThumb = document.getElementById('studio-scrubber-thumb');
+  if (studioProg) studioProg.style.width = `${pct}%`;
+  if (studioThumb) studioThumb.style.left = `${pct}%`;
+
   // 2. Command Player to seek if not triggered from player timeupdate
   if (!options.fromPlayer) {
     if (currentSourcePlayerType === 'youtube' && currentSourcePlayer?.seekTo) {
@@ -1395,6 +1591,27 @@ window.seekTimeline = function(seconds, options = {}) {
   }
   activeShotIndex = foundIndex;
   window.TemplateEditor?.sync(foundIndex);
+
+  // 3b. Update Studio Monitor Preview Image & Shot Action
+  const curShotEl = document.getElementById('editor-current-shot');
+  const curActEl = document.getElementById('editor-current-action');
+  const curImgEl = document.getElementById('studio-shot-preview-img');
+  const fallbackEl = document.getElementById('studio-monitor-fallback');
+  const activeShot = shots[foundIndex];
+  if (curShotEl) curShotEl.textContent = `S${String(foundIndex + 1).padStart(2, '0')}`;
+  if (curActEl) {
+    curActEl.textContent = activeShot ? (activeShot.description || activeShot.visual || activeShot.action || `鏡頭 ${foundIndex + 1}`) : '畫面預覽';
+  }
+  if (activeShot && (activeShot.previewUrl || activeShot.thumbnailUrl)) {
+    if (curImgEl) {
+      curImgEl.src = activeShot.previewUrl || activeShot.thumbnailUrl;
+      curImgEl.style.display = 'block';
+    }
+    if (fallbackEl) fallbackEl.style.display = 'none';
+  } else {
+    if (curImgEl) curImgEl.style.display = 'none';
+    if (fallbackEl) fallbackEl.style.display = 'flex';
+  }
 
   // 4. Update Dynamic Narrative Card (L2 Synchronized Card)
   if (currentNormalizedSegments && currentNormalizedSegments.length > 0) {
@@ -1683,6 +1900,12 @@ window.destroyTemplateTimeline = function() {
     narrativeCardAnimTimer = null;
   }
   document.getElementById('template-detail-immersive')?.classList.remove('is-scrolled');
+  const dockTitle = document.getElementById('floating-dock-title');
+  if (dockTitle) dockTitle.style.display = 'none';
+  const heroTitle = document.getElementById('detail-template-title');
+  if (heroTitle) heroTitle.style.opacity = '1';
+  const navTitle = document.getElementById('nav-template-name');
+  if (navTitle) navTitle.style.opacity = '0';
   window.closeInspectorDrawer?.();
   const detailBody = document.getElementById('template-detail-body') || document.querySelector('.template-detail-body');
   if (detailBody && window.DynamicMaskSystem && typeof window.DynamicMaskSystem.detach === 'function') {
