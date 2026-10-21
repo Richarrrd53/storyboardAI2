@@ -266,7 +266,29 @@
     }, 300);
   }
 
+  function ensureInnerLoader(main) {
+    let loader = document.getElementById('page-inner-loader');
+    if (!loader) {
+      const originalOverlay = document.getElementById('transition-loader-overlay');
+      if (originalOverlay) {
+        loader = originalOverlay.cloneNode(true);
+        loader.id = 'page-inner-loader';
+        const group = loader.querySelector('#transition-loader-group');
+        if (group) group.id = 'page-inner-loader-group';
+        const path = loader.querySelector('#transition-loader-path');
+        if (path) path.id = 'page-inner-loader-path';
+        const text = loader.querySelector('#transition-loader-text');
+        if (text) {
+          text.id = 'page-inner-loader-text';
+          text.textContent = '劇本載入中...';
+        }
+        main.appendChild(loader);
+      }
+    }
+  }
+
   const TransitionLoader = {
+    ensureInnerLoader,
     setupRoseAnimation,
     startTextCycling,
     stopTextCycling,
