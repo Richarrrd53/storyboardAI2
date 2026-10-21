@@ -67,7 +67,6 @@ const ModalAnimation = {
                 overlay.style.webkitBackdropFilter = 'blur(0px)';
             }
             overlay.style.background = 'rgba(15, 23, 42, 0)';
-            overlay.style.opacity = '0';
             if (overlay.classList && typeof overlay.classList.remove === 'function') {
                 overlay.classList.remove('active');
             }
