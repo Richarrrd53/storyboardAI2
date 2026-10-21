@@ -1,5 +1,5 @@
 (() => {
-    window.initDiscoveryPage = function() {
+    window.initDiscoveryPage = function({ signal } = {}) {
         const form = document.getElementById('discovery-form');
         const results = document.getElementById('results');
         const message = document.getElementById('form-message');
@@ -8,14 +8,33 @@
         if (!form || !results || !skillSelect) return;
         if (form.dataset.discoveryInitialized === 'true') return;
         form.dataset.discoveryInitialized = 'true';
+        let disposed = false;
+        const controller = new AbortController();
+        const listeners = [];
+        const listen = (element, type, handler) => {
+            element.addEventListener(type, handler);
+            listeners.push(() => element.removeEventListener(type, handler));
+        };
+        function unmount() {
+            if (disposed) return;
+            disposed = true;
+            controller.abort();
+            listeners.forEach(off => off());
+            delete form.dataset.discoveryInitialized;
+            delete form.dataset.bound;
+            delete results.dataset.bound;
+            signal?.removeEventListener('abort', unmount);
+        }
+        signal?.addEventListener('abort', unmount, { once: true });
         const button = form.querySelector('button');
         let currentVideos = [];
         let currentSkill;
 
         async function api(url, payload) {
-            const response = await fetch(url, { ...(payload ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) } : {}), signal: AbortSignal.timeout(120000) });
+            const response = await fetch(url, { ...(payload ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) } : {}), signal: AbortSignal.any([controller.signal, AbortSignal.timeout(120000)]) });
             let data;
             try { data = await response.json(); } catch { throw new Error('伺服器沒有回傳有效結果，請稍後重試。'); }
+            if (disposed) throw new DOMException('Discovery unmounted', 'AbortError');
             if (!response.ok) throw new Error(data.error || '請求失敗');
             return data;
         }
@@ -38,7 +57,7 @@
                 if (!data.configured && message) message.textContent = '請點選「尚未完成 API 設定」，填寫 YouTube 與 Gemini 金鑰後即可開始。';
                 else if (message && message.textContent.startsWith('請點選「尚未完成 API 設定」')) message.textContent = '';
                 if (button) button.disabled = !data.configured || !skillSelect.children.length;
-            } catch (error) {
+            } catch (error) { if (disposed) return;
                 if (!skillSelect.children.length) {
                     skillSelect.innerHTML = '<option value="short-video-template-lab">Short Video Template Lab</option>';
                 }
@@ -91,18 +110,19 @@
             video.error = null;
             video.state = '正在分析影片畫面與語音…';
             const update = () => {
+                if (disposed) return;
                 const el = document.getElementById(`video-${video.id}`);
                 if (el) el.outerHTML = renderVideo(video);
             };
             update();
             try { video.analysis = (await api('/api/discovery/analyze', { videoId: video.id, skill: currentSkill })).analysis; }
-            catch (error) { video.error = error.name === 'TimeoutError' ? '分析逾時，請重試此影片。' : error.message; }
+            catch (error) { if (disposed) return; video.error = error.name === 'TimeoutError' ? '分析逾時，請重試此影片。' : error.message; }
             update();
         }
 
         if (!results.dataset.bound) {
             results.dataset.bound = 'true';
-            results.addEventListener('click', async event => {
+            listen(results, 'click', async event => {
                 const openLib = event.target.closest('.open-library-button');
                 if (openLib && window.spaNavigate) {
                     event.preventDefault();
@@ -118,6 +138,7 @@
                     if (button) button.disabled = true;
                     try { await analyze(video); }
                     finally {
+                    if (disposed) return;
                         if (button) button.disabled = false;
                         if (count) count.textContent = `${currentVideos.length} 支影片 · ${currentVideos.filter(v => v.analysis).length} 支分析完成`;
                     }
@@ -133,9 +154,10 @@
                         const data = await api('/api/discovery/add-template', { video, analysis: video.analysis });
                         video.template = data.template;
                         if (message) message.textContent = `「${video.title}」已自動歸類為「${data.template.categoryLabel}」並加入爆點模板庫。`;
-                    } catch (error) {
+                    } catch (error) { if (disposed) return;
                         if (message) message.textContent = error.message;
                     } finally {
+                    if (disposed) return;
                         video.savingTemplate = false;
                         const el2 = document.getElementById(`video-${video.id}`);
                         if (el2) el2.outerHTML = renderVideo(video);
@@ -146,7 +168,7 @@
 
         if (!form.dataset.bound) {
             form.dataset.bound = 'true';
-            form.addEventListener('submit', async event => {
+            listen(form, 'submit', async event => {
                 event.preventDefault();
                 if (button && button.disabled) return;
                 if (button) {
@@ -179,13 +201,15 @@
                         }
                         if (count) count.textContent = `已找到 ${currentVideos.length} 支 · 正在分析第 ${index + 1} 支`;
                         await analyze(video);
+                        if (disposed) return;
                     }
                     if (count) count.textContent = `${currentVideos.length} 支影片 · ${currentVideos.filter(v => v.analysis).length} 支分析完成 · ${currentVideos.filter(v => v.error).length} 支失敗`;
-                } catch (error) {
+                } catch (error) { if (disposed) return;
                     if (count) count.textContent = '搜尋失敗';
                     if (message) message.textContent = error.message;
                     results.innerHTML = '';
                 } finally {
+                    if (disposed) return;
                     if (button) {
                         button.disabled = false;
                         const sp = button.querySelector('span');
@@ -195,23 +219,24 @@
             });
         }
 
-        loadSkills().catch(error => { if (message) message.textContent = `無法載入 skill registry：${error.message}`; });
+        loadSkills().catch(error => { if (!disposed && message) message.textContent = `無法載入 skill registry：${error.message}`; });
+        return { unmount };
     };
 
     // Auto-run if discovery-form is present in DOM
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
-            if (document.getElementById('discovery-form')) {
+            if (!window.PageHost && document.getElementById('discovery-form')) {
                 window.initDiscoveryPage();
             }
         });
     } else {
-        if (document.getElementById('discovery-form')) {
+        if (!window.PageHost && document.getElementById('discovery-form')) {
             window.initDiscoveryPage();
         }
     }
     window.addEventListener('pageshow', event => {
-        if (event.persisted && typeof window.initDiscoveryPage === 'function') {
+        if (!window.PageHost && event.persisted && typeof window.initDiscoveryPage === 'function') {
             const form = document.getElementById('discovery-form');
             if (form) delete form.dataset.discoveryInitialized;
             window.initDiscoveryPage();

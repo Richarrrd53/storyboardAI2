@@ -9,15 +9,26 @@ test('discovery.html contains non-empty default option for SKILL dropdown', () =
     assert.match(html, /<select[^>]*id="skill"[^>]*>[\s\S]*?<option[^>]+value="short-video-template-lab"[^>]*>[\s\S]*?<\/select>/);
 });
 
-test('spa-router.js injects discovery.js and invokes initDiscoveryPage', () => {
-    const routerPath = path.join(__dirname, '..', 'public', 'js', 'spa-router.js');
-    const routerCode = fs.readFileSync(routerPath, 'utf-8');
-    // renderDiscovery should ensure discovery.js is loaded
-    assert.match(routerCode, /async function renderDiscovery\b[\s\S]*?injectScripts\(\['\/js\/discovery\.js'\]/);
-    // renderDiscovery should call initDiscoveryPage
-    assert.match(routerCode, /async function renderDiscovery\b[\s\S]*?window\.initDiscoveryPage\(\)/);
-    // post-render hook in navigate() should handle discovery
-    assert.match(routerCode, /else if \(page === 'discovery' && typeof window\.initDiscoveryPage === 'function'\)/);
+test('PageHost mounts Discovery once per visit and returns its lifecycle', async () => {
+    const code = fs.readFileSync(path.join(__dirname, '..', 'public/js/pages/page-host.js'), 'utf8');
+    const content = { className: '', style: {}, innerHTML: '', querySelector: () => null };
+    const main = { style: {} };
+    const calls = [];
+    global.document = { getElementById: id => id === 'page-main' ? main : content };
+    global.window = {
+        PageAssetLoader: { fetchPageDoc: async () => ({ querySelector: () => null }), injectCSS() {}, injectScripts: async scripts => { calls.push(scripts); return [true]; } },
+        TransitionLoader: { ensureInnerLoader() {} },
+        AppShell: { init: async () => {} }, QuickCompose: { mount() {} },
+        initDiscoveryPage(context) { calls.push(context); return { unmount() { calls.push('unmount'); } }; }
+    };
+    eval(code);
+    for (let i = 0; i < 2; i++) {
+        const page = await window.PageHost.mount({ page: 'discovery', signal: new AbortController().signal, scripts: ['/js/discovery.js'] });
+        page.unmount();
+    }
+    assert.equal(calls.filter(call => call?.root === content).length, 2);
+    assert.equal(calls.filter(call => call === 'unmount').length, 2);
+    assert.deepEqual(calls[0], ['/js/discovery.js']);
 });
 
 test('discovery.js populates SKILL dropdown and handles fallback gracefully', async () => {

@@ -218,15 +218,7 @@
       gridEl.setAttribute?.('aria-busy', 'true');
       gridEl.innerHTML = '<div class="template-skeleton" aria-hidden="true"></div>'.repeat(5) + '<span class="template-sr-only" role="status">正在載入模板…</span>';
       try {
-        if (Array.isArray(window.cacheTemplatesList)) templates = window.cacheTemplatesList;
-        else {
-          const response = await fetch('/api/get-templates', { signal });
-          if (!response.ok) throw new Error('Catalog request failed');
-          const data = await response.json();
-          if (!Array.isArray(data)) throw new Error('Invalid catalog response');
-          templates = data;
-          window.cacheTemplatesList = data;
-        }
+        templates = await window.PageAssetLoader.fetchTemplates(signal);
       } catch (error) {
         if (error.name === 'AbortError' || signal?.aborted || disposed) return;
         loadError = true;

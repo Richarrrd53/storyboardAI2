@@ -8,6 +8,7 @@ const path = require('node:path');
 const http = require('node:http');
 const { chromium } = require(process.env.STORYBOARD_PLAYWRIGHT_PATH || 'playwright');
 const publicRoot = path.resolve(__dirname, '../public');
+const writeArtifacts = process.env.STORYBOARD_QA_ARTIFACTS !== '0';
 const output = path.resolve(__dirname, '../.codex-backup/ui-validation/site');
 const mime = { '.html': 'text/html; charset=utf-8', '.js': 'application/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.mp4': 'video/mp4' };
 const server = http.createServer(async (req, res) => {
@@ -29,7 +30,7 @@ const projects = [
   let browser;
   const manifest = [];
   try {
-    await fs.mkdir(output, { recursive: true });
+    if (writeArtifacts) await fs.mkdir(output, { recursive: true });
     const template = JSON.parse(await fs.readFile(path.resolve(__dirname, '../analysis/templates/gemini_outputs/GiZBQzIH6zA.json'), 'utf8'));
     const templates = Array.from({ length: 8 }, (_, index) => ({ ...template, id: index ? 'fixture-' + index : template.id, name: index ? '咖啡品牌的日常敘事 ' + index : template.name, category: index % 2 ? 'product' : 'story', tags: ['日常', '品牌'], thumbnail: '/fixture-cover.svg' }));
     await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
@@ -53,6 +54,7 @@ const projects = [
         if (url.pathname === '/fixture-cover.svg' || /^\/api\/projects\/[^/]+\/cover$/.test(url.pathname)) return route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360"><rect width="640" height="360" fill="#292524"/><rect x="55" y="30" width="225" height="200" rx="6" fill="#a3b8c7"/><path d="M168 32v195M58 125h220" stroke="#f5f5f4" stroke-width="8"/><ellipse cx="440" cy="295" rx="115" ry="20" fill="#a8a29e"/><path d="M367 182h143v92q-72 52-143 0z" fill="#f5f5f4"/><path d="M510 197q70 0 55 53q-15 27-55 8" stroke="#f5f5f4" fill="none" stroke-width="18"/><ellipse cx="439" cy="182" rx="72" ry="14" fill="#57534e"/></svg>' });
         if (!url.pathname.startsWith('/api/')) return route.continue();
         const reply = data => route.fulfill({ contentType: 'application/json', body: JSON.stringify(data) });
+        if (url.pathname === '/api/auth/login' || url.pathname === '/api/auth/register') return reply({ token: 'fixture-session', user: { name: '創作者' } });
         if (url.pathname === '/api/auth/me') return reply({ user: { id: 'fixture', name: '創作者', email: 'creator@example.test', plan: 'free' } });
         if (url.pathname === '/api/projects') return reply({ projects: projectFixture });
         if (url.pathname.startsWith('/api/projects/')) {
@@ -91,7 +93,7 @@ const projects = [
           return { main: rect(main), content: rect(content), mainOverflow: main.scrollWidth > main.clientWidth + 1, canvas: getComputedStyle(main).backgroundColor, shellCount: document.querySelectorAll('#page-main .page-shell').length, capsule: capsule && getComputedStyle(capsule).display !== 'none' ? rect(capsule) : null, nav: nav && getComputedStyle(nav).display !== 'none' ? rect(nav) : null };
         });
         manifest.push({ page: name, width: viewport.width, ...metrics });
-        await page.screenshot({ path: path.join(output, name + '-' + viewport.width + '.png') });
+        if (writeArtifacts) await page.screenshot({ path: path.join(output, name + '-' + viewport.width + '.png') });
         assert.equal(metrics.mainOverflow, false, name + ' must have no outer horizontal overflow');
       };
       await app.locator('#home-greeting-text').waitFor(); await capture('dashboard');
@@ -146,6 +148,25 @@ const projects = [
           await app.locator('#projects-clear-filter-btn').click();
         }
       }
+      // Exercise retained catalog state, real History, re-entry and navigation cancellation.
+      await (await getFrame()).evaluate(() => window.spaNavigate('template'));
+      await settle();
+      await (await getFrame()).evaluate(() => { window.__catalog = document.getElementById('template-grid'); });
+      await (await getFrame()).evaluate(() => window.spaNavigate('template', { templateId: 'GiZBQzIH6zA' }));
+      await app.locator('#template-detail-immersive').waitFor({ state: 'visible' });
+      await page.goBack(); await app.locator('#template-grid').waitFor({ state: 'visible' }); await settle();
+      assert.equal(await (await getFrame()).evaluate(() => __catalog === document.getElementById('template-grid')), true);
+      await page.goForward(); await app.locator('#template-detail-immersive').waitFor({ state: 'visible' }); await settle();
+      await (await getFrame()).evaluate(() => Promise.all(['projects', 'history', 'discovery', 'projects'].map(page => window.spaNavigate(page))));
+      await settle(); await app.locator('#projects-grid').waitFor({ state: 'visible' });
+      await (await getFrame()).evaluate(async () => { await spaNavigate('discovery'); await spaNavigate('dashboard'); await spaNavigate('discovery'); });
+      assert.equal(await app.locator('#discovery-form').getAttribute('data-discovery-initialized'), 'true');
+      if (viewport.width === 390) {
+        await app.locator('#mob-nav-projects').click(); await app.locator('#projects-grid').waitFor({ state: 'visible' }); await settle();
+        await app.locator('#mob-nav-template').click(); await app.locator('#template-grid').waitFor({ state: 'visible' }); await settle();
+      }
+      await (await getFrame()).evaluate(() => window.spaNavigate('generate'));
+      await app.locator('#story-input').waitFor({ state: 'visible' }); await settle();
       // The actual keyboard-driven four-step form, without triggering generation.
       await app.locator('#story-input').fill('為晨光咖啡寫一段城市裡的日常故事。');
       await app.locator('#composer-submit-btn').click(); await app.locator('#phase-panel-2').waitFor({ state: 'visible' }); await capture('generate-direction');
@@ -155,23 +176,50 @@ const projects = [
       assert.deepEqual(errors, [], 'production iframe pages have no uncaught errors');
       await page.goto(origin + '/html/discovery-settings.html');
       await page.locator('#settings-status.is-ready').waitFor();
-      await page.screenshot({ path: path.join(output, 'discovery-settings-' + viewport.width + '.png') });
+      if (writeArtifacts) await page.screenshot({ path: path.join(output, 'discovery-settings-' + viewport.width + '.png') });
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
       await page.goto(origin + '/');
       await page.frameLocator('#ifm').locator('.hero-title').waitFor();
-      await page.screenshot({ path: path.join(output, 'landing-' + viewport.width + '.png') });
+      if (writeArtifacts) await page.screenshot({ path: path.join(output, 'landing-' + viewport.width + '.png') });
       await (await getFrame()).evaluate(() => window.spaNavigate('login'));
       await page.frameLocator('#ifm').locator('#login-email').waitFor({ state: 'visible' });
-      await page.screenshot({ path: path.join(output, 'login-' + viewport.width + '.png') });
+      if (writeArtifacts) await page.screenshot({ path: path.join(output, 'login-' + viewport.width + '.png') });
       await (await getFrame()).evaluate(() => window.spaNavigate('register'));
       await page.frameLocator('#ifm').locator('#register-email').waitFor({ state: 'visible' });
-      await page.screenshot({ path: path.join(output, 'register-' + viewport.width + '.png') });
+      if (writeArtifacts) await page.screenshot({ path: path.join(output, 'register-' + viewport.width + '.png') });
+      // Inline auth handlers must bind again on every mount and invalidate session caches.
+      await app.locator('#register-username').fill('測試創作者');
+      await app.locator('#register-email').fill('creator@example.test');
+      await app.locator('#register-password').fill('password123');
+      await app.locator('#register-password-2').fill('password123');
+      await app.locator('[onclick="handleRegister()"]').click();
+      await app.locator('#home-greeting-text').waitFor({ state: 'visible' }); await settle();
+      await (await getFrame()).evaluate(() => window.spaAuth.logout());
+      await app.locator('.hero-title').waitFor({ state: 'visible' }); await settle();
+      await (await getFrame()).evaluate(() => window.spaNavigate('login'));
+      await app.locator('#login-email').fill('creator@example.test');
+      await app.locator('#login-password').fill('password123');
+      await app.locator('#showBtn1').click();
+      await app.locator('#login-password[type="text"]').waitFor();
+      await app.locator('[onclick="handleLogin()"]').click();
+      await app.locator('#home-greeting-text').waitFor({ state: 'visible' }); await settle();
+      // Cover loading is deduplicated even while images are still pending.
+      await (await getFrame()).evaluate(() => { lazyLoadProjectThumbs(document); lazyLoadProjectThumbs(document); });
+      assert.equal(await (await getFrame()).evaluate(() => [...document.querySelectorAll('.project-thumb')].every(thumb => thumb.querySelectorAll('img.cover-main').length <= 1)), true);
+      await (await getFrame()).evaluate(() => window.spaNavigate('projects'));
+      await app.locator('#projects-grid .project-card[data-id="coffee"] img.cover-main').waitFor(); await settle();
+      await app.locator('#projects-grid .project-card[data-id="coffee"] .project-title').click();
+      await app.locator('.project-workspace-title').waitFor({ state: 'visible' }); await settle();
+      await (await getFrame()).waitForFunction(() => !window.ProjectCoverTransition.getActiveTransition());
+      for (const [url, selector] of [['/template/GiZBQzIH6zA', '#template-detail-immersive'], ['/project/coffee', '.project-workspace-title']]) {
+        await page.goto(origin + url); await app.locator(selector).waitFor({ state: 'visible' }); await settle();
+      }
       assert.deepEqual(errors, [], 'public and settings pages have no uncaught errors');
-      console.log('PASS full site: ' + viewport.width + 'px, production iframe, 15 screens, real page scripts, no horizontal main overflow or uncaught errors');
+      console.log('PASS full site: ' + viewport.width + 'px, production iframe, auth forms/logout, route races, Back/Forward, deep links, covers, real page scripts, no main overflow or uncaught errors');
       await context.close();
     }
   } finally {
-    await fs.writeFile(path.join(output, 'manifest.json'), JSON.stringify(manifest, null, 2));
+    if (writeArtifacts) await fs.writeFile(path.join(output, 'manifest.json'), JSON.stringify(manifest, null, 2));
     await browser?.close();
     await new Promise(resolve => server.close(resolve));
   }

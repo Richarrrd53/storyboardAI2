@@ -215,8 +215,7 @@ main{
     justify-content: center;
 }
 
-/* ✨ 僅在 Primary CTA 與明確指定 .btn-shine 啟用滑過光線掃描特效 (Sweep Shine) */
-.btn-primary::after,
+/* ✨ 僅在明確指定 .btn-shine 啟用滑過光線掃描特效 (Sweep Shine) */
 .btn-shine::after {
     content: '';
     position: absolute;
@@ -235,7 +234,6 @@ main{
     pointer-events: none;
 }
 
-.btn-primary:hover::after,
 .btn-shine:hover::after {
     animation: shineSweepGlobal 0.85s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
