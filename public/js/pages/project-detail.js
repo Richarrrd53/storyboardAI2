@@ -48,13 +48,12 @@
                   <th class="col-th-story">故事內容 / 鏡頭語言</th>
                   <th class="col-th-time">時長</th>
                   <th class="col-th-note">情緒 / 備註</th>
-                  <th class="col-th-action">操作</th>
                 </tr>
               </thead>
               <tbody>
                 ${[1, 2, 3, 4].map(idx => `
                   <tr>
-                    <td class="shot-cell-num">${String(idx).padStart(2, '0')}</td>
+                    <td class="shot-cell-num"><div class="shot-cell-controls"><span>${String(idx).padStart(2, '0')}</span><div class="skeleton-pulse" style="width:72px;height:30px;background:#f1f5f9;border-radius:16px;"></div></div></td>
                     <td><div class="shot-cell-thumb-wrap skeleton-pulse" style="aspect-ratio:16/9;background:#e2e8f0;"></div></td>
                     <td>
                       <div class="skeleton-pulse" style="width:75%;height:16px;background:#e2e8f0;border-radius:4px;margin-bottom:6px;"></div>
@@ -62,7 +61,6 @@
                     </td>
                     <td class="shot-cell-time"><div class="skeleton-pulse" style="width:36px;height:16px;background:#f1f5f9;border-radius:4px;margin:auto;"></div></td>
                     <td><div class="skeleton-pulse" style="width:60px;height:14px;background:#f1f5f9;border-radius:4px;"></div></td>
-                    <td style="text-align:right;"><div class="skeleton-pulse" style="width:60px;height:24px;background:#f1f5f9;border-radius:6px;margin-left:auto;"></div></td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -202,7 +200,12 @@
           : `<div class="shot-cell-thumb-wrap" style="aspect-ratio:${aspectRatio};background:#e2e8f0;width:140px;"></div>`;
         tableRowsHtml += `
           <tr class="project-shot-row" data-shot-id="${s.id}">
-            <td class="shot-cell-num">${String(s.order).padStart(2, '0')}</td>
+            <td class="shot-cell-num">
+              <div class="shot-cell-controls">
+                <span>${String(s.order).padStart(2, '0')}</span>
+                <button type="button" class="shot-cell-edit-btn" data-shot-id="${s.id}" aria-label="編輯鏡頭 ${s.order}">✏️ 編輯</button>
+              </div>
+            </td>
             <td>${thumbHtml}</td>
             <td>
               <div class="shot-cell-story-box">
@@ -215,9 +218,6 @@
             <td class="shot-cell-time">${s.duration}</td>
             <td>
               <div class="shot-cell-note-text">${s.emotion || '—'}</div>
-            </td>
-            <td style="text-align:right;">
-              <button class="shot-cell-edit-btn" data-shot-id="${s.id}">✏️ 編輯</button>
             </td>
           </tr>
         `;
@@ -327,11 +327,10 @@
                     <th class="col-th-story">故事內容 / 鏡頭語言</th>
                     <th class="col-th-time">時長</th>
                     <th class="col-th-note">情緒 / 備註</th>
-                    <th class="col-th-action">操作</th>
                   </tr>
                 </thead>
                 <tbody>
-                  ${tableRowsHtml || '<tr><td colspan="6" style="text-align:center;padding:32px;color:#a8a29e;">尚無鏡頭資料</td></tr>'}
+                  ${tableRowsHtml || '<tr><td colspan="5" style="text-align:center;padding:32px;color:#a8a29e;">尚無鏡頭資料</td></tr>'}
                 </tbody>
               </table>
             </div>

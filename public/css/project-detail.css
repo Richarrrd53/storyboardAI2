@@ -275,12 +275,25 @@
 }
 
 /* 欄位寬度定義 */
-.col-th-num    { width: 70px; }
+.col-th-num    { width: 110px; }
 .col-th-img    { width: 170px; }
 .col-th-story  { width: auto; }
 .col-th-time   { width: 85px; text-align: center; }
 .col-th-note   { width: 160px; }
-.col-th-action { width: 95px; text-align: right; }
+
+/* 編輯操作集中在鏡頭編號下方，避免需要移到表格最右側。 */
+.shot-cell-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.shot-cell-controls .shot-cell-edit-btn {
+  white-space: nowrap;
+  padding: 6px 10px;
+  font-family: var(--font-family-body, sans-serif);
+}
 
 .shot-cell-num {
   font-family: var(--font-family-mono, "DM Mono", monospace);
@@ -1079,6 +1092,17 @@
     content: "鏡頭 ";
   }
 
+  /* 手機卡片將鏡頭編號與編輯按鈕排成一列。 */
+  .project-table .shot-cell-controls {
+    flex: 1;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+  }
+  .project-table .shot-cell-controls .shot-cell-edit-btn {
+    margin-left: auto;
+  }
+
   /* Shot title & camera pill */
   .project-table tbody tr.project-shot-row td:nth-child(3) {
     order: 3 !important;
@@ -1113,15 +1137,6 @@
     padding: 0 0 10px 0 !important;
     font-size: 0.8rem !important;
     color: var(--color-text-tertiary, #64748b) !important;
-  }
-
-  /* Action buttons */
-  .project-table tbody tr.project-shot-row td:nth-child(6) {
-    order: 6 !important;
-    display: flex !important;
-    justify-content: flex-end !important;
-    padding: 8px 0 0 0 !important;
-    border-top: 1px solid var(--color-border-subtle, #f1f5f9) !important;
   }
 
   .project-table tbody tr.project-shot-row .shot-cell-edit-btn {
