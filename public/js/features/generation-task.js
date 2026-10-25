@@ -11,10 +11,11 @@
   let sequence = 0;
   let currentController = null;
   let activePromise = null;
+  const freeform = root.FreeformStoryboard;
   const clone = value => JSON.parse(JSON.stringify(value));
   function initialState() {
     return {
-      taskId: null, projectId: null, projectShotIds: {}, status: 'idle', input: null, error: null,
+      taskId: null, projectId: null, projectShotIds: {}, status: 'idle', input: null, error: null, planDirty: false, stage: 'planning',
       save: { status: 'idle', error: null },
       progress: { pct: 0, statusText: '', activeStepId: null },
       result: { storyboardData: null, generatedImgs: [], generatedStoryTitles: [],
@@ -38,6 +39,7 @@
   }
   function start(options) {
     if (state.status === 'generating') return activePromise;
+    if (state.status === 'awaiting_confirmation') return Promise.resolve(getState());
     if (savePromise) return savePromise;
     if (!options?.story) return Promise.resolve(getState());
     if (!options.style) throw new Error('GenerationTask requires a style snapshot');
@@ -47,14 +49,15 @@
     run.taskId = `generation-${Date.now()}-${++sequence}-${Math.random().toString(36).slice(2, 10)}`;
     run.status = 'generating';
     run.input = clone(options);
-    run.progress = { pct: 5, statusText: '解析故事靈感與結構...', activeStepId: 'step-analyze' };
+    if (!options.selectedTemplate) run.input.duration = freeform.duration(options.duration);
+    run.progress = { pct: 0, statusText: '正在規劃分鏡…', activeStepId: 'step-analyze' };
     state = run;
     activePromise = Promise.resolve().then(() => execute(run, controller));
     notify();
     return activePromise;
   }
   function cancel() {
-    if (state.status !== 'generating') return false;
+    if (!['generating', 'awaiting_confirmation'].includes(state.status)) return false;
     const controller = currentController;
     currentController = null;
     state.status = 'cancelled';
@@ -74,7 +77,47 @@
   }
   function retry() {
     if (state.status === 'generating') return activePromise;
+    if (!state.input?.selectedTemplate && state.result.storyboardData && ['error', 'cancelled'].includes(state.status)) {
+      state.status = 'awaiting_confirmation'; state.error = null; notify();
+      return Promise.resolve(getState());
+    }
     return state.input ? start(state.input) : Promise.resolve(getState());
+  }
+  function updatePlan(data) {
+    if (state.status !== 'awaiting_confirmation') return false;
+    const before = state.result.storyboardData;
+    // Text/camera edits need fresh English prompts. Reordering and timing do not.
+    state.planDirty ||= data.shots.some(shot => {
+      const original = before.shots.find(item => item.id === shot.id);
+      return !original || original.story !== shot.story || original.camera !== shot.camera || original.emotion !== shot.emotion;
+    });
+    if (state.result.generatedShotData.length) {
+      const previous = state.result;
+      const kept = data.shots.map(shot => {
+        const index = before.shots.findIndex(item => item.id === shot.id && item.story === shot.story && item.camera === shot.camera && item.emotion === shot.emotion && item.shotPrompt === shot.shotPrompt);
+        return index < 0 ? null : previous.generatedShotData[index];
+      });
+      previous.generatedShotData = kept.map((shot, index) => shot ? {
+        ...shot, order: index + 1, duration: data.shots[index].duration,
+        payload: { ...shot.payload, emotion: data.shots[index].emotion, purpose: data.shots[index].purpose, dialogue: data.shots[index].dialogue || '' }
+      } : null);
+      previous.generatedImgs = kept.map(shot => shot?.payload.image || '../icon/error.jpg');
+      previous.failedShotIndexes = kept.flatMap((shot, i) => shot?.payload.imageStatus === 'failed' ? [i] : []);
+    }
+    state.result.storyboardData = clone(data);
+    state.error = null;
+    notify();
+    return true;
+  }
+  function confirmPlan() {
+    if (state.status === 'generating') return activePromise;
+    if (state.status !== 'awaiting_confirmation') return Promise.resolve(getState());
+    try { freeform.validate(state.result.storyboardData, state.input.duration); }
+    catch (error) { state.error = { message: error.message }; notify(); return Promise.resolve(getState()); }
+    const run = state, controller = new AbortController();
+    currentController = controller; run.status = 'generating'; run.stage = 'images'; run.error = null;
+    activePromise = Promise.resolve().then(() => execute(run, controller, true));
+    notify(); return activePromise;
   }
   function positiveSeconds(value) {
     const seconds = parseFloat(value);
@@ -126,7 +169,8 @@
         const metadata = {
           originalStory: input.story, generationMode: input.selectedTemplate ? 'template' : 'freeform',
           templateId: input.selectedTemplate?.id || null, templateValues: input.templateValues || {}, generationTaskId: run.taskId,
-          templateSnapshot: input.selectedTemplate || null
+          templateSnapshot: input.selectedTemplate || null,
+          ...(!input.selectedTemplate ? { targetDuration: input.duration } : {})
         };
         const data = await requestJSON(run, controller, '/api/projects', {
           method: 'POST', headers, body: JSON.stringify({
@@ -163,17 +207,17 @@
     }).finally(() => { if (currentController === controller) currentController = null; if (state === run) savePromise = null; });
     return savePromise;
   }
-  function retryFailedImages() {
+  function retryFailedImages(shotIndex) {
     if (state.status === 'generating') return activePromise;
     if (savePromise || state.status !== 'completed' || !state.result.failedShotIndexes.length) return Promise.resolve(getState());
     const run = state, controller = new AbortController();
     currentController = controller; run.status = 'generating'; run.error = null;
     activePromise = (async () => {
-      const failures = [...run.result.failedShotIndexes];
+      const failures = Number.isInteger(shotIndex) ? run.result.failedShotIndexes.filter(i => i === shotIndex) : [...run.result.failedShotIndexes];
       for (let index = 0; index < failures.length; index++) {
         const i = failures[index];
         assertRun(run, controller);
-        run.progress = { pct: index / failures.length * 90, statusText: `重試鏡頭 ${i + 1} 的圖片...`, activeStepId: 'step-render' }; notify();
+        run.progress = imageProgress(run, `重試鏡頭 ${i + 1}`); notify();
         try {
           const response = await requestJSON(run, controller, '/api/ask-gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question: run.result.generatedPrompts[i], type: 'image', ratio: run.input.ratio }) });
           if (!response.image?.[0]) throw new Error('圖像服務沒有回傳圖片');
@@ -184,17 +228,24 @@
           assertRun(run, controller);
           run.result.generatedShotData[i].payload.imageError = error.message;
         }
+        run.progress = imageProgress(run); notify();
       }
       await persistResult(run, controller);
       assertRun(run, controller);
-      run.status = 'completed'; run.progress.pct = 100; notify(); return getState();
+      run.status = 'completed'; run.progress = imageProgress(run, '圖片重試完成'); notify(); return getState();
     })().catch(error => {
       if (state === run && !controller.signal.aborted) { run.status = 'error'; run.error = { message: error.message }; notify(); }
       return getState();
     }).finally(() => { if (currentController === controller) currentController = null; });
     return activePromise;
   }
-  async function execute(run, controller) {
+  function imageProgress(run, prefix = '正在生成畫面') {
+    const total = run.result.storyboardData.shots.length;
+    const completed = run.result.generatedShotData.filter(shot => shot?.payload.imageStatus === 'succeeded').length;
+    const processed = run.result.generatedShotData.filter(shot => ['succeeded', 'failed'].includes(shot?.payload.imageStatus)).length;
+    return { pct: completed / total * 100, completed, processed, total, statusText: `${prefix}，${completed} / ${total} 已完成`, activeStepId: 'step-render' };
+  }
+  async function execute(run, controller, confirmed = false) {
     const input = run.input;
     const result = run.result;
     function assertActive() {
@@ -208,24 +259,6 @@
       assertActive();
       run.progress = { pct, statusText, activeStepId };
       notify();
-    }
-    function delay(ms) {
-      assertActive();
-      return new Promise((resolve, reject) => {
-        const finish = () => {
-          controller.signal.removeEventListener('abort', abort);
-          try { assertActive(); resolve(); } catch (error) { reject(error); }
-        };
-        const timer = setTimeout(finish, ms);
-        const abort = () => {
-          clearTimeout(timer);
-          controller.signal.removeEventListener('abort', abort);
-          const error = new Error('Generation cancelled');
-          error.name = 'AbortError';
-          reject(error);
-        };
-        controller.signal.addEventListener('abort', abort, { once: true });
-      });
     }
     function getStoryboardPrompt() {
         const styleDetail = input.style.prompt;
@@ -298,9 +331,21 @@
     }
 
     async function runFreeformGeneration() {
-      const response = await askGemini(getStoryboardPrompt(), 'story');
-      result.storyboardData = validateStoryboard(safeParseJson(response.response));
-      await renderShots();
+      let question = freeform.prompt(input);
+      // At most one repair. Invalid scripts are never trimmed or sent to image generation.
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const response = await askGemini(question, 'story');
+        try {
+          result.storyboardData = freeform.validate(safeParseJson(response.response), input.duration);
+          run.status = 'awaiting_confirmation';
+          run.progress = { pct: 0, statusText: '分鏡企劃已就緒，確認後才會生成圖片', activeStepId: null };
+          notify(); return;
+        } catch (error) {
+          if (attempt === 1) throw error;
+          question = `${freeform.prompt(input)}\n上一份輸出未通過驗證：${error.message}\n請修正並重新輸出完整 JSON，不可截斷鏡頭。上一份輸出：${String(response.response).slice(0, 45000)}`;
+          updateGenProgress(0, '正在修正分鏡規劃…', 'step-analyze');
+        }
+      }
     }
 
     async function runTemplateGeneration() {
@@ -340,14 +385,14 @@ shots 可另外提供 angle、purpose、dialogue（中文對白或旁白）、em
     async function renderShots() {
       const shots = result.storyboardData.shots;
       const total = shots.length;
-      updateGenProgress(30, '已完成分鏡腳本，正在編排角色與鏡頭...', 'step-structure');
-      await delay(600);
-      result.generatedImgs = Array(total).fill('../icon/error.jpg');
+      run.stage = 'images';
+      if (!result.generatedImgs.length) result.generatedImgs = Array(total).fill('../icon/error.jpg');
       result.generatedStoryTitles = shots.map(shot => shot.story);
       result.generatedStoryCams = shots.map(shot => shot.camera || 'medium shot');
-      updateGenProgress(50, '正在準備逐鏡圖像提示詞...', 'step-prompt');
+      run.progress = imageProgress(run); notify();
       for (let i = 0; i < total; i++) {
         const shot = shots[i];
+        if (result.generatedShotData[i]?.payload.imageStatus === 'succeeded') continue;
         const finalPrompt = await buildFinalPrompt(shot);
         assertActive();
         shot.finalPrompt = finalPrompt;
@@ -373,13 +418,11 @@ shots 可另外提供 angle、purpose、dialogue（中文對白或旁白）、em
           result.generatedShotData[i].payload.imageStatus = 'failed';
           result.generatedShotData[i].payload.imageError = error.message;
         }
-        updateGenProgress(50 + ((i + 1) / total) * 42, `正在生成第 ${i + 1} / ${total} 張分鏡...`, 'step-render');
-        if (i < total - 1) await delay(800);
+        run.progress = imageProgress(run); notify();
       }
-      updateGenProgress(95, '正在儲存分鏡與企劃資料...', 'step-render');
+      run.progress = imageProgress(run, '正在儲存分鏡'); notify();
       await persistResult(run, controller);
-      updateGenProgress(100, result.failedShotIndexes.length ? `分鏡腳本完成，${result.failedShotIndexes.length} 張圖片可重試` : '分鏡生成完成！', 'step-render');
-      await delay(500);
+      run.progress = imageProgress(run, result.failedShotIndexes.length ? '部分圖片可重試' : '分鏡生成完成'); notify();
     }
 
     async function askGemini(question, type) {
@@ -414,15 +457,29 @@ shots 可另外提供 angle、purpose、dialogue（中文對白或旁白）、em
 
     try {
       assertActive();
-      if (input.selectedTemplate) await runTemplateGeneration();
-      else await runFreeformGeneration();
+      if (confirmed) {
+        if (run.planDirty) {
+          run.progress = { pct: 0, statusText: '正在同步修改後的英文圖片提示詞…', activeStepId: 'step-prompt' }; notify();
+          const response = await askGemini(`依以下已確認分鏡，只更新每鏡 shotPrompt 為反映 story 與 camera 的具體英文圖片提示詞。不得修改任何其他欄位，不得新增角色或改變順序。輸出完整 JSON：${JSON.stringify(result.storyboardData)}`, 'story');
+          const revised = safeParseJson(response.response);
+          if (!Array.isArray(revised?.shots) || revised.shots.length !== result.storyboardData.shots.length || revised.shots.some((shot, i) => shot.id !== result.storyboardData.shots[i].id)) throw new Error('提示詞同步結果不完整，請重試確認。');
+          const merged = clone(result.storyboardData);
+          merged.shots.forEach((shot, i) => { shot.shotPrompt = revised.shots[i].shotPrompt; });
+          freeform.validate(merged, input.duration);
+          result.storyboardData = merged; run.planDirty = false;
+        }
+        freeform.validate(result.storyboardData, input.duration);
+        result.failedShotIndexes = [];
+        await renderShots();
+      } else if (input.selectedTemplate) await runTemplateGeneration();
+      else { await runFreeformGeneration(); return getState(); }
       assertActive();
       run.status = 'completed';
       notify();
     } catch (error) {
       // An obsolete run must never publish over a new task/reset/logout.
       if (state !== run || controller.signal.aborted) return getState();
-      run.status = 'error';
+      run.status = confirmed ? 'awaiting_confirmation' : 'error';
       run.error = { message: error.message || '請稍後再試', status: error.status || null };
       run.progress = { pct: 0, statusText: '生成發生錯誤，請重試', activeStepId: null };
       notify();
@@ -431,5 +488,5 @@ shots 可另外提供 angle、purpose、dialogue（中文對白或旁白）、em
     }
     return getState();
   }
-  root.GenerationTask = { start, retry, retrySave, retryFailedImages, cancel, reset, cleanup: reset, getState, subscribe };
+  root.GenerationTask = { start, retry, retrySave, retryFailedImages, updatePlan, confirmPlan, cancel, reset, cleanup: reset, getState, subscribe };
 })(typeof window !== 'undefined' ? window : globalThis);

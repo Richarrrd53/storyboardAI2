@@ -4,7 +4,8 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>生成分鏡 — Storyboard AI</title>
+    <title>生成分鏡｜Storyboard AI</title>
+    <meta name="description" content="從構思到分鏡企劃，確認文字腳本後再逐鏡生成畫面。" />
     <link rel="stylesheet" href="../css/style.css" />
     <link rel="stylesheet" href="../css/generate.css" />
     <link rel="stylesheet" href="../css/template.css" />
@@ -27,17 +28,19 @@
                 </div>
                 
                 <nav class="workspace-stage-nav" id="workspace-stage-nav" aria-label="創作流程進度">
-                    <span class="stage-step active" id="step-nav-1" data-phase="1">想法</span>
+                    <span class="stage-step active" id="step-nav-1" data-phase="1">構思</span>
                     <span class="stage-sep">―</span>
-                    <span class="stage-step" id="step-nav-2" data-phase="2">創作方向</span>
+                    <span class="stage-step" id="step-nav-2" data-phase="2">創作設定</span>
                     <span class="stage-sep">―</span>
-                    <span class="stage-step" id="step-nav-3" data-phase="3">模板</span>
+                    <span class="stage-step" id="step-nav-3" data-phase="3">分鏡企劃</span>
                     <span class="stage-sep">―</span>
-                    <span class="stage-step" id="step-nav-4" data-phase="4">生成</span>
+                    <span class="stage-step" id="step-nav-4" data-phase="4">生成畫面</span>
+                    <span class="stage-sep">―</span>
+                    <span class="stage-step" id="step-nav-5">完成</span>
                 </nav>
                 
                 <div class="workspace-progress-indicator">
-                    <span class="phase-count-badge" id="phase-count-badge">1 / 4</span>
+                    <span class="phase-count-badge" id="phase-count-badge">1 / 5</span>
                 </div>
             </header>
 
@@ -55,7 +58,7 @@
                         <span class="context-icon">✦</span>
                         <span class="context-story-text" id="context-story-text"></span>
                         <span class="context-check">✓</span>
-                        <button type="button" class="context-edit-btn" id="context-edit-btn" title="修改故事" aria-label="修改故事" onclick="editStoryFromHeader()">✎</button>
+                        <button type="button" class="context-edit-btn" id="context-edit-btn" title="修改故事" aria-label="修改故事" onclick="editStoryFromHeader()">修改</button>
                     </div>
                     
                     <div class="context-pill context-meta-pill" id="context-meta-pill" style="display: none;">
@@ -92,8 +95,9 @@
                     </div>
 
                     <!-- 主 Composer 容器 -->
+                    <label for="story-input" class="section-label">故事與創作想法</label>
                     <div class="composer-container" id="phase1-composer">
-                        <textarea id="story-input" class="story-composer-textarea" aria-label="故事或創作方向" placeholder="描述故事或創作方向... ✦" rows="3" oninput="onStoryInput()"></textarea>
+                        <textarea id="story-input" class="story-composer-textarea" aria-label="故事或創作方向" placeholder="描述故事或創作方向... ✦" rows="1" oninput="onStoryInput()"></textarea>
                         <button type="button" class="composer-submit-btn" id="composer-submit-btn" disabled aria-label="送出故事" onclick="submitPhase1Story()">
                             <div class="btn-icon-wrapper">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -108,10 +112,10 @@
                      Phase 2 — Direction (創作方向)
                      Spec items 11, 12, 13
                 ════════════════════════════════════════════════════ -->
-                <div class="phase-panel phase-2-panel" id="phase-panel-2" role="region" aria-label="創作方向，可捲動選擇風格與畫面比例" tabindex="0">
+                <div class="phase-panel phase-2-panel" id="phase-panel-2" role="region" aria-label="創作設定">
                     <div class="direction-header">
                         <div class="direction-badge-wrap">
-                            <h2 class="direction-title-badge" id="direction-heading" data-phase-heading tabindex="-1">✦ 創作方向</h2>
+                            <h2 class="direction-title-badge" id="direction-heading" data-phase-heading tabindex="-1">決定故事的影像語言</h2>
                             <span class="direction-scroll-hint">選擇影像調性與發布平台的畫面比例</span>
                         </div>
                         <!-- AI 推薦文字 (打字機效果) -->
@@ -166,10 +170,19 @@
                         </div>
                     </div>
 
+                    <div class="direction-section" id="section-duration">
+                        <div class="section-label-row"><h3 class="section-label" id="duration-label">影片長度</h3><span class="section-hint">依故事節奏展開鏡頭，預設 30 秒</span></div>
+                        <div class="duration-options" role="group" aria-labelledby="duration-label">
+                            <button type="button" data-duration="15">15 秒 <small>5–7 鏡</small></button>
+                            <button type="button" data-duration="30" aria-pressed="true">30 秒 <small>8–12 鏡</small></button>
+                            <button type="button" data-duration="45">45 秒 <small>10–15 鏡</small></button>
+                            <button type="button" data-duration="60">60 秒 <small>12–18 鏡</small></button>
+                        </div>
+                    </div>
                     <!-- 動作按鈕 -->
                     <div class="phase-actions-footer">
-                        <button type="button" class="btn btn-ghost" id="btn-direction-back" onclick="switchPhase(1)">← 重新描述故事</button>
-                        <button type="button" class="btn btn-primary" id="btn-direction-next" onclick="confirmDirectionAndAdvance()">下一步：選擇模板 →</button>
+                        <button type="button" class="btn btn-ghost" id="btn-direction-back" onclick="switchPhase(1)">返回構思</button>
+                        <button type="button" class="btn btn-primary" id="btn-direction-next" onclick="confirmDirectionAndAdvance()">規劃文字分鏡</button>
                     </div>
                 </div>
 
@@ -180,12 +193,12 @@
                 <div class="phase-panel phase-3-panel" id="phase-panel-3">
                     <div class="template-header">
                         <div class="template-header-left">
-                            <h2 class="template-title" data-phase-heading tabindex="-1">✦ 選擇模板</h2>
+                            <h2 class="template-title" data-phase-heading tabindex="-1">選擇模板</h2>
                             <p class="template-subtitle">套用爆款節奏結構，或跳過模板直接以自由結構生成</p>
                         </div>
                         <div class="template-header-right">
                             <button type="button" class="btn btn-outline btn-sm" id="btn-skip-template" onclick="skipTemplateAndGenerate()">
-                                跳過模板（自由結構） ➔
+                                改用自由生成
                             </button>
                         </div>
                     </div>
@@ -207,7 +220,7 @@
                     <div class="phase-actions-footer template-actions-footer">
                         <button type="button" class="btn btn-ghost" id="btn-template-back" onclick="switchPhase(2)">← 返回創作方向</button>
                         <button type="button" class="btn btn-primary" id="btn-template-confirm" onclick="applySelectedTemplateAndGenerate()" disabled>
-                            ✦ 套用模板並開始生成 →
+                            套用模板並開始生成
                         </button>
                     </div>
                 </div>
@@ -216,26 +229,31 @@
                      Phase 4 — Generate (分析、規劃、提示詞、沖洗)
                      Spec items 18, 19
                 ════════════════════════════════════════════════════ -->
+                <div class="phase-panel plan-panel" id="phase-panel-5">
+                    <div class="plan-heading"><h2 data-phase-heading tabindex="-1">分鏡企劃</h2><p>先把故事說好，再生成畫面。你可以直接修改每一鏡。</p></div>
+                    <label class="plan-title-field" for="plan-title">影片標題<input id="plan-title" type="text" maxlength="200"></label>
+                    <p id="plan-summary" class="plan-summary" role="status"></p>
+                    <p id="plan-error" class="plan-error" role="alert" hidden></p>
+                    <div id="plan-shots" class="plan-shots"></div>
+                    <div class="phase-actions-footer"><button type="button" class="btn btn-ghost" id="btn-plan-back">返回設定</button><button type="button" class="btn btn-primary" id="btn-confirm-plan">確認分鏡，生成畫面</button></div>
+                </div>
                 <div class="phase-panel phase-4-panel" id="phase-panel-4">
                     <h2 class="generation-phase-title" data-phase-heading tabindex="-1">生成分鏡</h2>
                     <!-- 生成進行中狀態 -->
                     <div class="generation-progress-wrap" id="generation-progress-wrap">
                         <div class="math-loader-box">
                             <svg class="loader math-loader-svg" viewBox="0 0 100 100" fill="none" aria-hidden="true">
-                                <g class="math-loader-group">
-                                    <path class="math-loader-path" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" opacity="0.1"></path>
-                                </g>
+                                <g class="math-loader-group"><path class="math-loader-path" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" opacity="0.1"></path></g>
                                 <g class="math-loader-sucked"></g>
                             </svg>
                         </div>
-
                         <div class="gen-progress-bar-wrap">
                             <div class="gen-progress-track" id="gen-progress-track" role="progressbar" aria-label="分鏡生成進度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
                                 <div class="gen-progress-fill" id="gen-progress-fill"></div>
                             </div>
                             <div class="gen-progress-meta">
                                 <span class="gen-status-text" id="gen-status-text" role="status" aria-live="polite">正在規劃腳本結構...</span>
-                                <span class="gen-status-pct" id="gen-status-pct">0%</span>
+                                <span class="gen-status-pct" id="gen-status-pct"></span>
                             </div>
                         </div>
 
@@ -303,10 +321,12 @@
         SCRIPTS
     ══════════════════════════════════ -->
     <script src="../js/math-curve-loader.js"></script>
+    <script src="../js/features/inspiration-field.js"></script>
     <script src="../js/token-manager.js"></script>
     <script src="../js/prompt-translate.js"></script>
     <script src="../js/dynamic-mask.js"></script>
     <script src="../js/features/creation.js"></script>
+    <script src="../js/features/freeform-storyboard.js"></script>
     <script src="../js/features/generation-task.js"></script>
     <script src="../js/features/template-workflow.js?v=20261006-3"></script>
     <script src="../js/generate.js?v=20261006-4"></script>
