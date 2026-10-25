@@ -5,7 +5,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const taskSource = fs.readFileSync(path.join(__dirname, '../public/js/features/generation-task.js'), 'utf8');
 const creationSource = fs.readFileSync(path.join(__dirname, '../public/js/features/creation.js'), 'utf8');
-const options = () => ({ story: 'A small journey', style: { name: '預設風格', prompt: 'natural light' }, ratio: '橫向16:9', selectedTemplate: null });
+const options = () => ({ story: 'A small journey', style: { name: '預設風格', prompt: 'natural light' }, ratio: '橫向16:9', selectedTemplate: { id: 'automatic-fixture', structure: [{ duration: '4s', camera: 'wide' }, { duration: '4s', camera: 'wide' }] } });
 const storyboard = {
   meta: { title: 'Journey' }, characters: { hero: { appearance: 'young woman', outfit: 'blue jacket' } },
   shots: [1, 2].map(id => ({ id, story: `Shot ${id}`, camera: 'wide', duration: '4s', emotion: 'joy', shotPrompt: 'a walk', characters: ['hero'] }))
@@ -122,18 +122,18 @@ function fixture(customFetch) {
   return { context, task, calls, timers, pill, drain, get invalidations() { return invalidations; } };
 }
 
-test('start, sequential requests, progress, completed and original save contract', async () => {
+test('automatic template requests, real image progress and original save contract', async () => {
   const f = fixture(); const states = [];
   f.task.subscribe(state => states.push(state));
   const pending = f.task.start(options());
   assert.equal(f.task.getState().status, 'generating');
-  assert.equal(f.task.getState().progress.pct, 5);
+  assert.equal(f.task.getState().progress.pct, 0);
   const taskId = f.task.getState().taskId;
   await f.drain(); await pending;
   const state = f.task.getState();
   assert.equal(state.taskId, taskId);
   assert.equal(state.status, 'completed'); assert.equal(state.projectId, 'project-42');
-  assert.deepEqual([...new Set(states.filter(s => s.status === 'generating').map(s => s.progress.pct))], [5, 30, 50, 71, 92, 95, 100]);
+  assert.deepEqual([...new Set(states.filter(s => s.status === 'generating').map(s => s.progress.pct))], [0, 15, 50, 100]);
   assert.deepEqual(f.calls.map(c => c.url), ['/api/ask-gemini', '/api/ask-gemini', '/api/ask-gemini', '/api/projects']);
   assert.deepEqual(f.calls.slice(0, 3).map(c => c.body.type), ['story', 'image', 'image']);
   assert.equal(f.calls[0].body.ratio, '橫向16:9');
@@ -192,11 +192,10 @@ test('cancel owns fetch signal; late uncooperative response cannot revive cancel
   assert.equal(f.task.getState().status, 'cancelled'); assert.equal(f.calls.length, 1); assert.equal(f.timers.size, 0);
 });
 
-test('cancel during delay clears timer and prevents later API/save', async () => {
-  const f = fixture(); const pending = f.task.start(options()); await tick();
-  assert.equal(f.timers.size, 1); f.task.cancel();
-  assert.equal(f.timers.size, 0); await pending;
-  assert.equal(f.calls.length, 1); assert.equal(f.task.getState().status, 'cancelled');
+test('generation has no artificial delay timers', async () => {
+  const f = fixture(); await f.task.start(options());
+  assert.equal(f.timers.size, 0);
+  assert.equal(f.task.getState().status, 'completed');
 });
 
 test('abort during image request escapes fallback and never starts next image or save', async () => {

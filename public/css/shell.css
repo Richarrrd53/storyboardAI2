@@ -205,7 +205,8 @@ body.dashboard-layout #page-content {
   height: 100% !important;
   max-height: 100% !important;
   min-height: 0 !important;
-  overflow: hidden !important;
+  overflow-y: var(--page-content-overflow-y, hidden) !important;
+  overflow-x: clip !important;
   position: relative !important;
   padding: 0 !important;
   margin: 0 !important;

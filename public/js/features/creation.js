@@ -16,6 +16,7 @@
       story: '',
       styleIndex: 0,
       ratio: '橫向16:9',
+      duration: 30,
       selectedTemplate: null,
       templateValues: {},
       currentPhase: 1,

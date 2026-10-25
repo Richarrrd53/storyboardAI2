@@ -18,13 +18,6 @@
       { name: '極簡室內風格', dot: '#eceff1', desc: '侘寂高級感', gradient: 'linear-gradient(135deg, #e0eafc, #cfdef3)', icon: '🏛️', prompt: "minimalist aesthetic, soft natural light, Wabi-sabi style, high-end interior design photography, neutral tones" }
   ];
 
-  const AI_RESPONSE_TEMPLATES = [
-      s => `依「${s}」的故事關鍵字推薦風格，你可以選擇適合的影像調性與畫面比例。`,
-      s => `先為「${s}」決定視覺方向，再選擇模板或以自由結構生成分鏡。`,
-      s => `為「${s}」選擇創作風格；生成時會依你的設定規劃角色與鏡頭。`,
-      s => `針對「${s}」的核心元素，建議強化光影對比與人物情感共鳴。`
-  ];
-
   const STYLE_KEYWORD_MAP = [
       { keywords: ['食物', '餐廳', '美食', '咖啡', '飲料', '甜點', '料理', '吃'], styles: [0, 4] },
       { keywords: ['旅遊', '旅行', '風景', '自然', '戶外', '山', '海', '森林'], styles: [0, 6] },
@@ -52,36 +45,30 @@
       if (template) selectTemplateCard(template);
       else { templateError ||= '無法載入此模板，請重試或選擇其他模板。'; renderTemplateSelection(); }
   }
-  let isTransitioningPhase = false;
   let pageController = null;
   let unsubscribeTask = null;
-  let pageTimers = new Set();
   let boundNodes = new Set();
   let routeCleanup = null;
-  let lastErrorTaskId = null;
   let mathLoader = null;
+  let inspirationField = null;
 
   function syncMathLoader(task = window.GenerationTask.getState()) {
       const visible = CreationSessionStore.currentPhase === 4 && task.status === 'generating';
       if (!visible) {
           mathLoader?.stop();
           mathLoader = null;
-      } else if (!mathLoader) {
-          mathLoader = window.initMathCurveLoader?.({
+          inspirationField?.stop(); inspirationField = null;
+      } else {
+          if (!mathLoader) mathLoader = window.initMathCurveLoader?.({
               root: document.getElementById('generation-progress-wrap'),
               signal: pageController?.signal
           }) || null;
+          if (!inspirationField) inspirationField = window.InspirationField?.mount({
+              root: document.querySelector('#generation-progress-wrap .math-loader-box'),
+              signal: pageController?.signal, story: task.input?.story, storyboard: task.result.storyboardData
+          }) || null;
+          inspirationField?.update(task.input?.story, task.result.storyboardData);
       }
-  }
-
-  function pageTimeout(callback, ms) {
-      const controller = pageController;
-      const timer = setTimeout(() => {
-          pageTimers.delete(timer);
-          if (controller && pageController === controller && !controller.signal.aborted) callback();
-      }, ms);
-      pageTimers.add(timer);
-      return timer;
   }
 
   function bindPageEvent(node, type, callback) {
@@ -91,38 +78,6 @@
       node.addEventListener(type, callback, { signal: pageController.signal });
   }
 
-  // 桌面空白處可拖曳捲動；觸控使用瀏覽器原生滑動，保留卡片與按鈕操作。
-  function bindDirectionScrolling() {
-      const panel = document.getElementById('phase-panel-2');
-      if (!panel) return;
-      let drag = null;
-      const finish = () => {
-          if (drag && panel.hasPointerCapture(drag.id)) panel.releasePointerCapture(drag.id);
-          drag = null;
-          panel.classList.remove('is-drag-scrolling');
-      };
-      bindPageEvent(panel, 'pointerdown', event => {
-          if (event.pointerType !== 'mouse' || event.button !== 0 ||
-              event.target.closest('button, a, input, textarea, select, .style-card, .ratio-chip')) return;
-          // 保留原生捲軸的拖曳，避免與空白處拖曳互相干擾。
-          if (event.clientX >= panel.getBoundingClientRect().left + panel.clientWidth) return;
-          drag = { id: event.pointerId, y: event.clientY, scroll: panel.scrollTop };
-      });
-      bindPageEvent(panel, 'pointermove', event => {
-          if (!drag || event.pointerId !== drag.id || !(event.buttons & 1)) return;
-          const distance = event.clientY - drag.y;
-          if (Math.abs(distance) < 5 && !panel.classList.contains('is-drag-scrolling')) return;
-          panel.setPointerCapture(drag.id);
-          panel.classList.add('is-drag-scrolling');
-          panel.scrollTop = drag.scroll - distance;
-          event.preventDefault();
-      });
-      bindPageEvent(panel, 'pointerup', finish);
-      bindPageEvent(panel, 'pointercancel', finish);
-      bindPageEvent(panel, 'lostpointercapture', () => { drag = null; panel.classList.remove('is-drag-scrolling'); });
-      pageController.signal.addEventListener('abort', finish, { once: true });
-  }
-
   function unmountGeneratePage() {
       if (window.GenerationTask?.getState().status === 'idle') {
           CreationSessionStore.targetPhase = 1;
@@ -130,131 +85,101 @@
       }
       mathLoader?.stop();
       mathLoader = null;
+      inspirationField?.stop(); inspirationField = null;
       routeCleanup?.();
       routeCleanup = null;
       pageController?.abort();
       pageController = null;
       unsubscribeTask?.();
       unsubscribeTask = null;
-      pageTimers.forEach(clearTimeout);
-      pageTimers.clear();
-      if (typewriterTimer) clearTimeout(typewriterTimer);
-      typewriterTimer = null;
+      phaseAnimations.forEach(animation => animation.cancel());
+      phaseAnimations = [];
+      exitLayer?.remove(); exitLayer = null;
       boundNodes.forEach(node => { delete node.dataset.bound; });
       boundNodes.clear();
       const container = document.getElementById('template-cards-container');
       window.DynamicMaskSystem?.detach?.(container);
-      isTransitioningPhase = false;
   }
-  let typewriterTimer = null;
 
   // ════════════════════════════════════════════════════════════
   // 2. Persistent Creation Surface Phase Transition Engine
   // ════════════════════════════════════════════════════════════
-  async function switchPhase(targetPhase, animate = true) {
-      if (![1, 2, 3, 4].includes(targetPhase)) return;
-      if (isTransitioningPhase && animate) return;
-      const mount = pageController;
-      if (!mount || mount.signal.aborted) return;
-      const currentPhase = CreationSessionStore.currentPhase || 1;
-      if (animate && targetPhase === currentPhase && document.getElementById(`phase-panel-${targetPhase}`)?.classList.contains('active')) {
-          return;
+  // Panel 3 keeps the existing template hooks; panel 5 hosts the freeform plan.
+  let phaseAnimations = [];
+  let exitLayer = null;
+  function switchPhase(targetPhase, animate = true) {
+      if (![1, 2, 3, 4, 5].includes(targetPhase) || !pageController || pageController.signal.aborted) return;
+      const current = document.querySelector('.phase-panel.active');
+      const next = document.getElementById('phase-panel-' + targetPhase);
+      if (!next) return;
+      const changed = current !== next;
+      const surface = document.getElementById('creation-surface');
+      const before = surface.getBoundingClientRect();
+      const skinTransform = getComputedStyle(surface, '::before').transform;
+      const skinMatrix = skinTransform !== 'none' && typeof DOMMatrixReadOnly !== 'undefined' ? new DOMMatrixReadOnly(skinTransform) : null;
+      const previousHeight = before.height * (skinMatrix?.d || 1);
+      phaseAnimations.forEach(animation => animation.cancel());
+      phaseAnimations = [];
+      exitLayer?.remove(); exitLayer = null;
+      const motion = changed && animate && !matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const motionTokens = getComputedStyle(document.documentElement);
+      const swapDuration = parseFloat(motionTokens.getPropertyValue('--creation-swap')) || 520;
+      const exitDuration = parseFloat(motionTokens.getPropertyValue('--creation-exit')) || 320;
+      const morphDuration = parseFloat(motionTokens.getPropertyValue('--creation-morph')) || 500;
+      const morphEase = motionTokens.getPropertyValue('--creation-morph-ease').trim() || 'cubic-bezier(.4,0,.2,1)';
+      if (motion && current) {
+          const surface = document.getElementById('creation-surface');
+          const bounds = current.getBoundingClientRect(), parent = surface.getBoundingClientRect();
+          const layer = current.cloneNode(true);
+          layer.removeAttribute('id');
+          layer.querySelectorAll('[id]').forEach(node => node.removeAttribute('id'));
+          layer.className = 'phase-exit-layer';
+          layer.inert = true; layer.setAttribute('aria-hidden', 'true');
+          Object.assign(layer.style, { top: `${bounds.top - parent.top}px`, left: `${bounds.left - parent.left}px`, width: `${bounds.width}px` });
+          surface.appendChild(layer); exitLayer = layer;
+          const outgoing = layer.animate([{ opacity: 1, filter: 'blur(0)', transform: 'translateY(0) scale(1)' }, { opacity: 0, filter: 'blur(10px)', transform: 'translateY(-5px) scale(.985)' }], { duration: exitDuration, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' });
+          outgoing.finished.then(() => layer.remove()).catch(() => layer.remove());
+          phaseAnimations.push(outgoing);
       }
-
-      const isReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      const shouldAnimate = animate && !isReducedMotion;
-
-      isTransitioningPhase = true;
       CreationSessionStore.currentPhase = targetPhase;
       CreationSessionStore.targetPhase = targetPhase;
-      syncMathLoader();
-
-      const surface = document.getElementById('creation-surface');
-      if (surface) {
-          surface.setAttribute('data-phase', String(targetPhase));
-      }
-
-      // 1. Update Top Bar Nav
-      updateTopNav(targetPhase);
-
-      // 2. Update Persistent Story Context Header
-      updateContextHeader(targetPhase);
-
-      // 3. Morph between panels
-      const currentPanel = document.getElementById(`phase-panel-${currentPhase}`);
-      const nextPanel = document.getElementById(`phase-panel-${targetPhase}`);
-
-      if (shouldAnimate && currentPanel && nextPanel && currentPanel !== nextPanel) {
-          // Outgoing panel collapse / fade
-          currentPanel.classList.add('phase-leaving');
-          currentPanel.style.transition = 'opacity 220ms ease, transform 220ms ease';
-          currentPanel.style.opacity = '0';
-          currentPanel.style.transform = 'translateY(-12px)';
-
-          await new Promise(resolve => {
-              const finish = () => {
-                  mount.signal.removeEventListener('abort', finish);
-                  resolve();
-              };
-              pageTimeout(finish, 220);
-              mount.signal.addEventListener('abort', finish, { once: true });
-          });
-          if (pageController !== mount || mount.signal.aborted) {
-              CreationSessionStore.currentPhase = currentPhase;
-              CreationSessionStore.targetPhase = currentPhase;
-              return;
-          }
-
-          currentPanel.classList.remove('active', 'phase-leaving');
-          currentPanel.style.display = 'none';
-          currentPanel.style.opacity = '';
-          currentPanel.style.transform = '';
-
-          // Incoming panel reveal
-          nextPanel.style.display = 'flex';
-          nextPanel.classList.add('phase-entering');
-          nextPanel.style.opacity = '0';
-          nextPanel.style.transform = 'translateY(16px)';
-          void nextPanel.offsetHeight; // reflow
-
-          nextPanel.classList.add('active');
-          nextPanel.style.transition = 'opacity 340ms cubic-bezier(0.16, 1, 0.3, 1), transform 340ms cubic-bezier(0.16, 1, 0.3, 1)';
-          nextPanel.style.opacity = '1';
-          nextPanel.style.transform = 'translateY(0)';
-
-          pageTimeout(() => {
-              nextPanel.classList.remove('phase-entering');
-              nextPanel.style.transition = '';
-              nextPanel.style.opacity = '';
-              nextPanel.style.transform = '';
-              isTransitioningPhase = false;
-          }, 360);
-      } else {
-          document.querySelectorAll('.phase-panel').forEach(p => {
-              p.classList.remove('active', 'phase-leaving', 'phase-entering');
-              p.style.display = 'none';
-              p.style.transition = '';
-              p.style.opacity = '';
-              p.style.transform = '';
-          });
-          if (nextPanel) {
-              nextPanel.style.display = 'flex';
-              nextPanel.classList.add('active');
-          }
-          isTransitioningPhase = false;
-      }
-
+      document.getElementById('creation-surface').dataset.phase = String(targetPhase);
       document.querySelectorAll('.phase-panel').forEach(panel => {
-          const selected = panel === nextPanel;
-          panel.setAttribute('aria-hidden', String(!selected));
+          const selected = panel === next;
+          panel.classList.toggle('active', selected);
+          panel.hidden = !selected;
           panel.inert = !selected;
+          panel.setAttribute('aria-hidden', String(!selected));
+          panel.style.removeProperty('display');
       });
-      const scroller = nextPanel?.closest('.spa-gen-wrap, .gen-main');
-      if (scroller) scroller.scrollTop = 0;
-      if (animate && targetPhase !== 1) nextPanel?.querySelector('[data-phase-heading]')?.focus({ preventScroll: true });
-
-      // 4. Initialize target phase features
+      updateTopNav(targetPhase);
+      updateContextHeader(targetPhase);
       initPhaseFeatures(targetPhase);
+      if (CreationSessionStore.currentPhase !== targetPhase) return;
+      if (motion) {
+          const after = surface.getBoundingClientRect();
+          // Morph the surface skin, keeping editable controls unscaled in normal flow.
+          // Long scripts use the visible height envelope instead of a many-screen scale.
+          const envelope = Math.max(240, window.innerHeight - Math.max(0, after.top));
+          const from = Math.min(previousHeight, envelope) / Math.min(after.height, envelope);
+          phaseAnimations.push(surface.animate([
+              { transform: `scaleY(${from})` },
+              { transform: 'scaleY(1)' }
+          ], { duration: morphDuration, easing: morphEase, pseudoElement: '::before' }));
+          const blocks = [...next.children];
+          blocks.forEach((block, i) => {
+              phaseAnimations.push(block.animate([{ opacity: 0, filter: 'blur(12px)', transform: 'translateY(9px) scale(.99)' }, { opacity: 1, filter: 'blur(0)', transform: 'translateY(0) scale(1)' }], {
+                  duration: swapDuration, delay: 80 + Math.min(i * 32, 96), easing: 'cubic-bezier(.4,0,.2,1)', fill: 'backwards'
+              }));
+          });
+      }
+      if (changed) {
+          const scroller = next.closest('.spa-gen-wrap');
+          if (scroller) scroller.scrollTop = 0;
+          else window.scrollTo(0, 0);
+          if (animate) next.querySelector('[data-phase-heading]')?.focus({ preventScroll: true });
+      }
+      syncMathLoader();
   }
   window.switchPhase = switchPhase;
 
@@ -266,11 +191,15 @@
                   input.value = CreationSessionStore.story;
               }
               onStoryInput();
-              pageTimeout(() => input.focus(), 150);
+              input.focus({ preventScroll: true });
           }
       } else if (targetPhase === 2) {
           buildStyleCards();
           syncRatioChips();
+          syncDuration();
+          const templateMode = !!CreationSessionStore.selectedTemplate;
+          document.getElementById("section-duration").hidden = templateMode;
+          syncDirectionAction();
           triggerDirectionAiText();
       } else if (targetPhase === 3) {
           const mount = pageController;
@@ -286,26 +215,26 @@
                   }
               }
           });
+      } else if (targetPhase === 5) {
+          renderPlan(window.GenerationTask.getState());
       } else if (targetPhase === 4) {
           startGenerationWorkflow();
       }
   }
 
   function updateTopNav(phase) {
-      const steps = [1, 2, 3, 4];
-      steps.forEach(p => {
-          const navEl = document.getElementById(`step-nav-${p}`);
-          if (navEl) {
-              navEl.classList.toggle('active', p === phase);
-              navEl.classList.toggle('completed', p < phase);
-              if (p === phase) navEl.setAttribute('aria-current', 'step');
-              else navEl.removeAttribute('aria-current');
-          }
+      const task = window.GenerationTask.getState();
+      const template = !!CreationSessionStore.selectedTemplate;
+      const position = phase === 5 ? 3 : phase === 4 ? (task.status === 'completed' ? 5 : task.stage === 'images' ? 4 : 3) : phase;
+      [1,2,3,4,5].forEach(p => {
+          const el = document.getElementById('step-nav-' + p);
+          if (!el) return;
+          el.classList.toggle('active', p === position);
+          el.classList.toggle('completed', p < position);
+          if (p === position) el.setAttribute('aria-current', 'step'); else el.removeAttribute('aria-current');
       });
-      const badge = document.getElementById('phase-count-badge');
-      if (badge) {
-          badge.textContent = `${phase} / 4`;
-      }
+      document.getElementById('step-nav-3').textContent = template ? '模板' : '分鏡企劃';
+      document.getElementById('phase-count-badge').textContent = position + ' / 5';
   }
 
   function updateContextHeader(phase) {
@@ -340,7 +269,7 @@
           if (metaText) {
               const st = STYLES[CreationSessionStore.styleIndex] || STYLES[0];
               const r = (CreationSessionStore.ratio || '16:9').replace('橫向', '').replace('直向', '');
-              metaText.textContent = `${st.name} · ${r}`;
+              metaText.textContent = `${st.name} / ${r}`;
           }
       } else {
           if (metaPill) metaPill.style.display = 'none';
@@ -373,6 +302,9 @@
       if (!input || !btn) return;
 
       const val = input.value.trim();
+      input.style.height = 'auto';
+      const maxHeight = parseFloat(getComputedStyle(input).maxHeight) || 132;
+      input.style.height = `${Math.max(40, Math.min(input.scrollHeight, maxHeight))}px`;
       const hasVal = val.length > 0;
       btn.disabled = !hasVal || templateLoading;
       btn.setAttribute('data-active', hasVal ? 'true' : 'false');
@@ -397,6 +329,7 @@
       const story = (input ? input.value.trim() : '') || CreationSessionStore.draft.story;
       if (!story || templateLoading) return;
 
+      if (story !== CreationSessionStore.story && window.GenerationTask.getState().status !== 'idle') window.GenerationTask.reset();
       CreationSessionStore.story = story;
       CreationSessionStore.draft.story = story;
       switchPhase(2);
@@ -407,45 +340,10 @@
   // 4. Phase 2 — Creative Direction
   // ════════════════════════════════════════════════════════════
   function triggerDirectionAiText() {
-      const textEl = document.getElementById('direction-ai-text');
-      const cursorEl = document.getElementById('direction-ai-cursor');
-      if (!textEl) return;
-
-      if (typewriterTimer) {
-          clearTimeout(typewriterTimer);
-          typewriterTimer = null;
-      }
-
-      const short = CreationSessionStore.story.length > 20 
-          ? CreationSessionStore.story.slice(0, 20) + '…' 
-          : CreationSessionStore.story;
-      const templateFn = AI_RESPONSE_TEMPLATES[Math.floor(Math.random() * AI_RESPONSE_TEMPLATES.length)];
-      const targetText = templateFn(short);
-
-      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-          textEl.textContent = targetText;
-          if (cursorEl) cursorEl.style.display = 'none';
-          return;
-      }
-
-      textEl.textContent = '';
-      if (cursorEl) {
-          cursorEl.style.display = 'inline';
-          cursorEl.style.opacity = '1';
-      }
-
-      let i = 0;
-      const tick = () => {
-          if (i < targetText.length) {
-              textEl.textContent += targetText[i++];
-              typewriterTimer = pageTimeout(tick, 22 + Math.random() * 15);
-          } else {
-              typewriterTimer = pageTimeout(() => {
-                  if (cursorEl) cursorEl.style.opacity = '0';
-              }, 600);
-          }
-      };
-      tick();
+      const text = document.getElementById('direction-ai-text');
+      if (text) text.textContent = '選好影像語言後，先預覽完整文字分鏡。';
+      const cursor = document.getElementById('direction-ai-cursor');
+      if (cursor) cursor.hidden = true;
   }
 
   function detectRecommendedStyles(story) {
@@ -477,17 +375,7 @@
           card.className = `style-card ${isSelected ? 'active' : ''} ${isRec ? 'is-recommended' : ''}`;
           card.dataset.index = idx;
           card.setAttribute('aria-pressed', String(isSelected));
-          card.innerHTML = `
-              <div class="style-card-thumb" style="background: ${s.gradient};">
-                  <span class="style-card-icon">${s.icon}</span>
-                  ${isRec ? '<span class="style-card-rec-pill">✦ 推薦</span>' : ''}
-                  <span class="style-card-check">✓</span>
-              </div>
-              <div class="style-card-info">
-                  <div class="style-card-name">${s.name}</div>
-                  <div class="style-card-desc">${s.desc}</div>
-              </div>
-          `;
+          card.innerHTML = `<span class="style-card-info"><span class="style-card-name">${s.name}</span><span class="style-card-desc">${s.desc}</span></span><span class="style-card-check" aria-hidden="true">${isSelected ? '✓' : ''}</span>`;
           bindPageEvent(card, 'click', () => selectStyleCard(idx));
           grid.appendChild(card);
       });
@@ -499,7 +387,10 @@
           const isTarget = Number(c.dataset.index) === index;
           c.classList.toggle('active', isTarget);
           c.setAttribute('aria-pressed', String(isTarget));
+          const check = c.querySelector('.style-card-check');
+          if (check) check.textContent = isTarget ? '✓' : '';
       });
+      syncDirectionAction();
   }
 
   function syncRatioChips() {
@@ -509,6 +400,7 @@
           c.classList.toggle('active', selected);
           c.setAttribute('aria-pressed', String(selected));
       });
+      syncDirectionAction();
   }
 
   function selectRatioOption(btn) {
@@ -520,7 +412,9 @@
   window.selectRatioOption = selectRatioOption;
 
   function confirmDirectionAndAdvance() {
-      switchPhase(3);
+      if (CreationSessionStore.selectedTemplate) switchPhase(3);
+      else if (currentPlanMatches()) switchPhase(5);
+      else skipTemplateAndGenerate();
   }
   window.confirmDirectionAndAdvance = confirmDirectionAndAdvance;
 
@@ -791,7 +685,7 @@
       const pctEl = document.getElementById('gen-status-pct');
       const statusEl = document.getElementById('gen-status-text');
 
-      if (barEl) barEl.style.width = `${Math.min(100, Math.max(0, pct))}%`;
+      if (barEl) barEl.style.transform = `scaleX(${Math.min(100, Math.max(0, pct)) / 100})`;
       if (pctEl) pctEl.textContent = `${Math.round(pct)}%`;
       if (statusEl && statusText) statusEl.textContent = statusText;
       const track = document.getElementById('gen-progress-track');
@@ -819,7 +713,7 @@
 
   function startGenerationWorkflow() {
       const task = window.GenerationTask.getState();
-      if (task.status === 'generating' || task.status === 'completed') {
+      if (['generating', 'completed', 'awaiting_confirmation', 'error', 'cancelled'].includes(task.status)) {
           presentTask(task);
           return;
       }
@@ -828,6 +722,7 @@
           story: CreationSessionStore.story,
           style: STYLES[CreationSessionStore.styleIndex] || STYLES[0],
           ratio: CreationSessionStore.ratio,
+          duration: CreationSessionStore.duration || 30,
           selectedTemplate: CreationSessionStore.selectedTemplate,
           templateValues: { ...CreationSessionStore.templateValues }
       });
@@ -842,10 +737,6 @@
       if (progressWrap) progressWrap.style.display = 'none';
       if (resultWrap) {
           resultWrap.style.display = 'flex';
-          resultWrap.style.opacity = '0';
-          void resultWrap.offsetHeight;
-          resultWrap.style.transition = 'opacity 400ms ease';
-          resultWrap.style.opacity = '1';
       }
 
       window.TemplateWorkflow.results(task);
@@ -886,31 +777,92 @@
   // ════════════════════════════════════════════════════════════
   // 8. Page Initialization & Shared Handoff Receptor
   // ════════════════════════════════════════════════════════════
+  const escapePlan = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  let renderedPlan = '';
+  function currentPlanMatches() {
+      const task = window.GenerationTask.getState(), session = CreationSessionStore;
+      return task.status === 'awaiting_confirmation' && !task.input.selectedTemplate &&
+          task.input.story === session.story && task.input.style.name === STYLES[session.styleIndex || 0].name &&
+          task.input.ratio === session.ratio && task.input.duration === (session.duration || 30);
+  }
+  function syncDirectionAction() {
+      const button = document.getElementById('btn-direction-next');
+      if (button) button.textContent = CreationSessionStore.selectedTemplate ? '下一步：模板設定' : currentPlanMatches() ? '返回分鏡企劃' : '規劃文字分鏡';
+  }
+  function syncDuration() {
+      document.querySelectorAll('[data-duration]').forEach(button => {
+          button.setAttribute('aria-pressed', String(Number(button.dataset.duration) === (CreationSessionStore.duration || 30)));
+      });
+      syncDirectionAction();
+  }
+  function renderPlan(task) {
+      const data = task.result.storyboardData;
+      if (!data) return;
+      const total = data.shots.reduce((sum, shot) => sum + (window.FreeformStoryboard.seconds(shot.duration) || 0), 0);
+      document.getElementById('plan-summary').textContent = `${data.shots.length} 個鏡頭 / 預估 ${Number(total.toFixed(2))} 秒 / 目標 ${task.input.duration} 秒`;
+      const error = document.getElementById('plan-error');
+      error.hidden = !task.error;
+      error.textContent = task.error?.message || '';
+      const signature = JSON.stringify(data);
+      const title = document.getElementById('plan-title');
+      const list = document.getElementById('plan-shots');
+      if (document.activeElement !== title) title.value = data.meta.title;
+      if (signature === renderedPlan && list.children.length) return;
+      renderedPlan = signature;
+      if (list.contains(document.activeElement) && document.activeElement.matches('input, textarea')) return;
+      const field = (shot, key, label, index, multiline = false) => `<label for="plan-${index}-${key}"><span>${label}</span>${multiline
+          ? `<textarea id="plan-${index}-${key}" data-field="${key}" rows="2">${escapePlan(shot[key])}</textarea>`
+          : `<input id="plan-${index}-${key}" data-field="${key}" value="${escapePlan(shot[key])}">`}</label>`;
+      list.innerHTML = data.shots.map((shot, index) => `<article class="plan-shot" data-shot-index="${index}" aria-label="鏡頭 ${index + 1}">
+          <div class="plan-shot-order"><h3>鏡頭 ${index + 1}</h3><div class="plan-order-actions"><button type="button" data-move="-1" ${index === 0 ? 'disabled' : ''} aria-label="鏡頭 ${index + 1} 上移">上移</button><button type="button" data-move="1" ${index === data.shots.length - 1 ? 'disabled' : ''} aria-label="鏡頭 ${index + 1} 下移">下移</button></div></div>
+          <div class="plan-shot-fields">${field(shot, 'story', '畫面內容與動作', index, true)}
+          <div class="plan-tech-fields">${field({ duration: window.FreeformStoryboard.seconds(shot.duration) }, 'duration', '時長（秒）', index)}${field(shot, 'camera', '拍攝方式', index)}</div>
+          <div class="plan-tech-fields">${field(shot, 'emotion', '情緒', index)}${field(shot, 'purpose', '敘事目的', index)}</div>
+          ${field(shot, 'dialogue', '對白／旁白（選填）', index)}
+          <details><summary>英文圖片提示詞</summary>${field(shot, 'shotPrompt', '圖片提示詞', index, true)}</details></div></article>`).join('');
+      list.querySelectorAll('[data-field="duration"]').forEach(input => { input.type = 'number'; input.min = '0.1'; input.step = '0.1'; });
+  }
+  function savePlanFromUI() {
+      const data = window.GenerationTask.getState().result.storyboardData;
+      if (!data) return;
+      data.meta.title = document.getElementById('plan-title').value;
+      document.querySelectorAll('#plan-shots [data-shot-index]').forEach(row => {
+          const shot = data.shots[Number(row.dataset.shotIndex)];
+          row.querySelectorAll('[data-field]').forEach(input => {
+              shot[input.dataset.field] = input.dataset.field === 'duration' ? `${input.value}s` : input.value;
+          });
+      });
+      window.GenerationTask.updatePlan(data);
+  }
   function presentTask(task) {
       if (!pageController || pageController.signal.aborted) return;
       syncMathLoader(task);
       const edit = document.getElementById('context-edit-btn');
       if (edit) edit.disabled = task.status === 'generating';
       if (task.status === 'idle') return;
+      updateTopNav(CreationSessionStore.currentPhase);
+      if (task.status === 'awaiting_confirmation') {
+          if (CreationSessionStore.currentPhase !== 5) switchPhase(5);
+          renderPlan(task);
+          return;
+      }
       updateGenProgress(task.progress.pct, task.progress.statusText, task.progress.activeStepId);
+      const track = document.getElementById('gen-progress-track');
+      const count = document.getElementById('gen-status-pct');
+      if (track) track.hidden = !task.progress.total;
+      if (count) count.textContent = task.progress.total ? task.progress.completed + ' / ' + task.progress.total : '';
       if (task.status === 'completed' && CreationSessionStore.currentPhase === 4) {
           renderResults(task);
       } else if (task.status === 'generating') {
           document.getElementById('generation-error-banner').hidden = true;
-          const progress = document.getElementById('generation-progress-wrap');
-          const result = document.getElementById('generation-result-wrap');
-          const phaseTitle = document.querySelector('.generation-phase-title');
-          if (phaseTitle) phaseTitle.style.display = '';
-          if (progress) progress.style.display = 'flex';
-          if (result) result.style.display = 'none';
-      } else if (task.status === 'error') {
-          if (lastErrorTaskId !== task.taskId) {
-              lastErrorTaskId = task.taskId;
-              document.getElementById('generation-error-banner').hidden = false;
-              document.getElementById('generation-error-message').textContent = '生成發生異常：' + task.error.message;
-          }
-          switchPhase(2, false);
-      } else if (task.status === 'cancelled') {
+          document.getElementById('generation-progress-wrap').style.display = 'flex';
+          document.getElementById('generation-result-wrap').style.display = 'none';
+          const title = document.querySelector('.generation-phase-title');
+          title.style.display = '';
+          title.textContent = task.stage === 'images' ? '逐鏡生成畫面' : '正在規劃分鏡';
+      } else if (['error', 'cancelled'].includes(task.status)) {
+          document.getElementById('generation-error-banner').hidden = false;
+          document.getElementById('generation-error-message').textContent = task.error?.message || '生成已取消，已完成的鏡頭保留。可繼續這次生成或修改企劃。';
           switchPhase(2, false);
       }
   }
@@ -919,9 +871,42 @@
       unmountGeneratePage();
       if (options.signal?.aborted) return null;
       pageController = new AbortController();
+      document.getElementById('generate-workspace').dataset.ready = 'true';
+      matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', event => {
+          mathLoader?.stop(); mathLoader = null; syncMathLoader();
+          if (!event.matches) return;
+          phaseAnimations.forEach(animation => animation.cancel());
+          phaseAnimations = [];
+          exitLayer?.remove(); exitLayer = null;
+      }, { signal: pageController.signal });
       const mount = pageController;
       const unmount = () => { if (pageController === mount) unmountGeneratePage(); };
-      bindDirectionScrolling();
+      renderedPlan = '';
+      document.querySelectorAll('[data-duration]').forEach(button => bindPageEvent(button, 'click', () => {
+          CreationSessionStore.duration = Number(button.dataset.duration); syncDuration();
+      }));
+      bindPageEvent(document.getElementById('plan-title'), 'input', savePlanFromUI);
+      bindPageEvent(document.getElementById('plan-shots'), 'input', savePlanFromUI);
+      bindPageEvent(document.getElementById('plan-shots'), 'click', event => {
+          const button = event.target.closest('[data-move]');
+          if (!button) return;
+          const index = Number(button.closest('[data-shot-index]').dataset.shotIndex);
+          const next = index + Number(button.dataset.move);
+          const data = window.GenerationTask.getState().result.storyboardData;
+          if (next < 0 || next >= data.shots.length) return;
+          [data.shots[index], data.shots[next]] = [data.shots[next], data.shots[index]];
+          renderedPlan = ''; window.GenerationTask.updatePlan(data);
+          const row = document.querySelector(`#plan-shots [data-shot-index="${next}"]`);
+          const preferred = row?.querySelector(`[data-move="${button.dataset.move}"]`);
+          (preferred && !preferred.disabled ? preferred : row?.querySelector('button:not(:disabled)'))?.focus();
+      });
+      bindPageEvent(document.getElementById('btn-plan-back'), 'click', () => switchPhase(2));
+      bindPageEvent(document.getElementById('btn-confirm-plan'), 'click', () => {
+          savePlanFromUI();
+          window.GenerationTask.confirmPlan();
+          if (window.GenerationTask.getState().status === 'generating') switchPhase(4);
+      });
+
       options.signal?.addEventListener('abort', unmount, { once: true });
       routeCleanup = () => options.signal?.removeEventListener('abort', unmount);
       requestedTemplateId = options.templateId || window.preselectedTemplateId || null;
@@ -1044,7 +1029,7 @@
           window.GenerationTask.reset();
       }
       const task = window.GenerationTask.getState();
-      const targetPhase = ['generating', 'completed'].includes(task.status)
+      const targetPhase = task.status === 'awaiting_confirmation' ? 5 : ['generating', 'completed'].includes(task.status)
           ? 4 : (['error', 'cancelled'].includes(task.status) ? 2
               : (options.targetPhase || CreationSessionStore.targetPhase || 1));
 
