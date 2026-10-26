@@ -72,7 +72,7 @@ test('Creative Stack: four viewports, moving cards, captions, retries, edits, fa
             const story = index === 3 ? '原始想法：' + '拍朋友聚會，保留自然光與手部動作，不要太暗。'.repeat(35) : '一支朋友聚會的咖啡廳短片，保留自然光與生活感。';
             await start(story);
             const initial = await page.evaluate(() => {
-                const root = document.querySelector('#creative-copilot'), card = root.querySelector('.copilot-user-message'), loader = root.querySelector('.math-loader-box'), caption = root.querySelector('.ai-thinking-caption');
+                const root = document.querySelector('#creative-copilot'), card = document.querySelector('.copilot-user-message'), loader = root.querySelector('.math-loader-box'), caption = root.querySelector('.ai-thinking-caption');
                 window.__originalCard = card;
                 return { root: root.clientWidth, card: card.getBoundingClientRect().width, loader: loader.getBoundingClientRect().width, svg: loader.querySelector('svg').getBoundingClientRect().width,
                     captionHeight: caption.clientHeight, lineHeight: parseFloat(getComputedStyle(caption).lineHeight),
@@ -95,7 +95,8 @@ test('Creative Stack: four viewports, moving cards, captions, retries, edits, fa
             await screenshot(width + '-thinking'); await release('proposal');
             await page.waitForFunction(() => CreationSessionStore.copilot.phase === 'responded');
             assert.equal(await page.evaluate(() => __captionTimers.size), 0);
-            assert.equal(await page.locator('.copilot-brief').isVisible(), true);
+            assert.equal(await page.locator('.copilot-brief').count(), 0);
+            assert.equal(await page.locator('.copilot-brief-slot').isVisible(), false);
             assert.equal(await page.evaluate(() => document.querySelector('.copilot-user-message') === __originalCard), true);
             await page.locator('#creative-copilot .copilot-option').first().click();
             const source = await page.locator('#creative-copilot .copilot-option').first().boundingBox();
@@ -127,7 +128,7 @@ test('Creative Stack: four viewports, moving cards, captions, retries, edits, fa
                     animations: main.getAnimations().filter(animation => animation.playState === 'running').length, overflow: document.documentElement.scrollWidth > innerWidth,
                     opaque: getComputedStyle(main).backgroundColor, overlapOwner: document.elementFromPoint(card.getBoundingClientRect().left + 16, card.getBoundingClientRect().top + 2)?.closest('.copilot-user-message') === main };
             });
-            assert.ok(Math.abs(stack.width / stack.mainWidth - .9) < .01); assert.equal(stack.overlap, 5);
+            assert.ok(Math.abs(stack.width / stack.mainWidth - .94) < .005); assert.ok(Math.abs(stack.overlap - 5.2) < .1);
             assert.ok(stack.zMain > stack.zCard); assert.equal(stack.original, true); assert.equal(stack.animations, 0); assert.equal(stack.overflow, false);
             assert.equal(stack.opaque, 'rgb(255, 255, 255)');
             if (index !== 3) assert.equal(stack.overlapOwner, true);
@@ -139,7 +140,14 @@ test('Creative Stack: four viewports, moving cards, captions, retries, edits, fa
             await release(index === 0 ? 'multi' : 'ready');
             assert.deepEqual(calls.at(-1), failed);
             assert.equal(await page.evaluate(() => CreationSessionStore.creativeBrief.answers.length), 1);
-            if (index !== 0) { await page.waitForFunction(() => CreationSessionStore.currentPhase === 2); continue; }
+            if (index !== 0) {
+                await page.waitForFunction(() => CreationSessionStore.currentPhase === 2);
+                assert.equal(await page.locator('#creation-discussion-stack').isVisible(), true);
+                assert.equal(await page.evaluate(() => document.querySelector('.copilot-user-message') === __originalCard), true);
+                assert.equal(await page.locator('.copilot-stack-supplements .copilot-stack-card').count(), 1);
+                await screenshot(width + '-settings');
+                continue;
+            }
             await page.waitForFunction(() => CreationSessionStore.copilot.phase === 'responded');
             await page.locator('#creative-copilot .copilot-option').nth(0).click();
             await page.locator('#creative-copilot .copilot-option').nth(1).click();
@@ -156,6 +164,13 @@ test('Creative Stack: four viewports, moving cards, captions, retries, edits, fa
             assert.equal(await page.evaluate(() => CreationSessionStore.copilot.stackRounds.length), 4);
             assert.equal(await page.locator('.copilot-stack-supplements .copilot-stack-card').count(), 3);
             assert.deepEqual(await page.locator('.copilot-stack-supplements .copilot-stack-card').evaluateAll(cards => cards.map(card => Number(getComputedStyle(card).zIndex))), [3, 2, 1]);
+            const sizes = await page.locator('.copilot-stack-supplements .copilot-stack-card').evaluateAll(cards => cards.map(card => ({
+                width: card.getBoundingClientRect().width, height: card.getBoundingClientRect().height,
+                font: parseFloat(getComputedStyle(card).fontSize), radius: parseFloat(getComputedStyle(card).borderRadius)
+            })));
+            for (let depth = 1; depth < sizes.length; depth++) {
+                for (const key of ['width', 'height', 'font', 'radius']) assert.ok(Math.abs(sizes[depth][key] / sizes[depth - 1][key] - .94) < .002, key);
+            }
             assert.equal(await page.locator('.stack-history-link').isVisible(), true);
             await page.locator('.stack-history-link').click();
             await page.locator('[data-edit-answer="1"]').fill('修改後的光線與手持鏡頭');
@@ -167,6 +182,8 @@ test('Creative Stack: four viewports, moving cards, captions, retries, edits, fa
             await page.locator('#copilot-answer-form button[type=submit]').click();
             // A result can arrive before the 500ms archive flight ends; it must never delay ready.
             await release('ready'); await page.waitForFunction(() => CreationSessionStore.currentPhase === 2);
+            assert.equal(await page.locator('#creation-discussion-stack').isVisible(), true);
+            assert.equal(await page.evaluate(() => document.querySelector('.copilot-user-message') === __originalCard), true);
             assert.equal(await page.locator('.copilot-archive-flight').count(), 0);
             assert.equal(await page.evaluate(() => __captionTimers.size), 0);
         }

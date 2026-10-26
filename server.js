@@ -1136,6 +1136,9 @@ app.post('/api/ask-gemini', async (req, res) => {
     const structured = task === 'story' && req.body.contract === 'freeform-v2';
     if (structured && ![15, 30, 45, 60].includes(req.body.duration)) return res.status(400).json({ error: '無效的自由分鏡時長' });
     const summaries = task !== 'image' && req.body.includeThoughts === true;
+    const requestId = typeof req.body.requestId === 'string' && /^[A-Za-z0-9_-]{1,120}$/.test(req.body.requestId)
+        ? req.body.requestId : require('node:crypto').randomUUID();
+    const started = Date.now();
     try {
         const ai = getGenAI();
         const result = task === 'image' ? await generateImage(ai, { question, ratio })
@@ -1145,8 +1148,11 @@ app.post('/api/ask-gemini', async (req, res) => {
         if (task !== 'image' && !result.response.trim()) throw emptyContent('模型未回傳有效文字，請重試。');
         res.json(result);
     } catch (error) {
-        const failure = reportAIError(error, { task, provider: 'vertex-ai', model: getModel(task) });
-        res.status(failure.status).json({ error: 'Internal Server Error', details: failure.message, code: failure.code });
+        const failure = reportAIError(error, { requestId, task, provider: 'vertex-ai', model: getModel(task),
+            stage: 'call_vertex', contract: structured ? 'freeform-v2' : 'legacy', elapsedMs: Date.now() - started });
+        res.status(failure.status).json({ error: 'Internal Server Error', details: failure.message, code: failure.code,
+            diagnostics: { requestId, stage: 'call_vertex', upstreamStatus: Number(error?.status || error?.error?.code) || null,
+                ...require('./lib/ai/generation').requestIssue(error) } });
     }
 });
 

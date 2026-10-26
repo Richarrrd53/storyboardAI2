@@ -1,7 +1,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { DEFAULT_MODELS, getModel, getModelConfig } = require('../lib/ai/model-config');
-const { parseResponse, generateImage, validatePrompt, classifyAIError } = require('../lib/ai/generation');
+const { parseResponse, generateImage, validatePrompt, classifyAIError, requestIssue } = require('../lib/ai/generation');
 const { vertexAuthOptions, vertexAvailable } = require('../lib/google-credentials');
 const { ApiSettings } = require('../lib/discovery/api-settings');
 
@@ -99,6 +99,19 @@ test('AI errors distinguish model, credentials, quota, temporary service and emp
         [{ code: 'AI_EMPTY_CONTENT' }, 'AI_EMPTY_CONTENT'],
         [{ status: 403, message: 'Agent Platform API has not been used in project before or it is disabled.' }, 'AI_API_DISABLED'] ]) assert.equal(classifyAIError(error).code, code);
     assert.ok(!classifyAIError({ message: 'secret-token' }).message.includes('secret-token'));
+});
+
+test('upstream 400 distinguishes schema complexity, scalar unions and other invalid arguments without echoing content', () => {
+    for (const [message, code, reason] of [
+        ['responseJsonSchema constraint has too many states and too much branching', 'AI_SCHEMA_ERROR', 'schema_too_complex'],
+        ['responseJsonSchema properties.shots.items.properties.id.type uses an unsupported type array', 'AI_SCHEMA_ERROR', 'schema_type_union'],
+        ['INVALID_ARGUMENT thinking_level is invalid', 'AI_INVALID_REQUEST', 'invalid_argument']
+    ]) {
+        const error = { status: 400, message: message + ' private story secret token' };
+        assert.equal(classifyAIError(error).code, code); assert.equal(requestIssue(error).argumentReason, reason);
+        assert.ok(!JSON.stringify(requestIssue(error)).includes('private story secret token'));
+    }
+    assert.ok(!JSON.stringify(requestIssue({ status: 400, message: 'responseJsonSchema.SecretToken' })).includes('SecretToken'));
 });
 
 test('credential path takes precedence and base64 deployment credentials stay in memory', () => {

@@ -28,7 +28,15 @@
   const session = () => root.CreationSessionStore;
   const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
   const labels = { subject: '創作主題', purpose: '影片目的', direction: '敘事方向', audience: '目標觀眾', tone: '敘事調性', baseStyle: '基礎風格', visualStyle: '視覺風格', styleNotes: '視覺條件', avoid: '避免元素', constraints: '角色與場景限制', duration: '影片秒數', ratio: '畫面比例', settingsReason: '設定建議', visualKeywords: '視覺元素' };
-  const summaryMarkup = summaries => Array.isArray(summaries) && summaries.length ? `<details class="ai-thought-summary"><summary>Gemini 思考摘要</summary>${summaries.map(t => `<p>${esc(t)}</p>`).join('')}</details>` : '';
+  const summaryMarkup = summaries => Array.isArray(summaries) && summaries.length ? `<details class="ai-thought-summary"><summary>思考摘要</summary>${summaries.map(t => `<p>${esc(t)}</p>`).join('')}</details>` : '';
+  function requestError(data) {
+    const message = data.error || 'AI 暫時無法回應，請重試或略過討論。';
+    // Provider diagnostics stay in the backend; do not expose them through an error banner.
+    if (!/gemini|google|vertex/i.test(message)) return message;
+    return ({ AI_RATE_LIMIT: 'AI 請求過多，請稍後重試。', AI_AUTH_PERMISSION: 'AI 服務的連線驗證暫時無法完成，請稍後再試。',
+      AI_API_DISABLED: 'AI 服務尚未完成設定，請稍後再試。', AI_SCHEMA_ERROR: 'AI 服務設定暫時無法使用，請稍後再試。',
+      AI_MODEL_UNAVAILABLE: 'AI 服務目前無法使用，請稍後再試。' })[data.code] || 'AI 暫時無法回應，請重試或略過討論。';
+  }
   // Presentation wrapper only. The shared initMathCurveLoader owns the original SVG algorithm.
   const loaderMarkup = `<svg class="loader math-loader-svg" viewBox="0 0 100 100" fill="none" aria-hidden="true"><g class="math-loader-group"><path class="math-loader-path" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" opacity="0.1"></path></g><g class="math-loader-sucked"></g></svg>`;
   root.AIActivity = { loaderMarkup, summaryMarkup };
@@ -128,6 +136,7 @@
     overlay.setAttribute('aria-hidden', 'true'); overlay.inert = true;
     Object.assign(overlay.style, { width: to.width + 'px', height: to.height + 'px' });
     overlay.style.setProperty('--stack-depth', target.style.getPropertyValue('--stack-depth'));
+    overlay.style.setProperty('--stack-scale', target.style.getPropertyValue('--stack-scale'));
     const preview = document.createElement('div'); preview.className = 'copilot-flight-summary'; preview.innerHTML = target.innerHTML;
     const original = origin.node; original.classList.add('copilot-flight-original');
     original.removeAttribute('id'); original.querySelectorAll?.('[id]').forEach(node => node.removeAttribute('id'));
@@ -163,6 +172,7 @@
         card.innerHTML = '<strong></strong><span></span>'; list.appendChild(card);
       }
       card.style.setProperty('--stack-depth', index);
+      card.style.setProperty('--stack-scale', Math.pow(.94, index));
       card.querySelector('strong').textContent = '討論 ' + (c.stackRounds.indexOf(round) + 1) + '：';
       card.querySelector('span').textContent = roundText(round, b);
     });
@@ -171,11 +181,11 @@
     more.textContent = '查看完整討論（' + c.stackRounds.length + '）';
   }
   function historyMarkup(c, b) {
-    return '<summary>查看完整討論與修改答案（' + c.discussionLog.length + '）</summary>' + c.discussionLog.map(m => '<p><strong>' + (m.role === 'user' ? '你' : 'Ask Gemini') + '：</strong>' + esc(m.text) + '</p>').join('') + b.answers.map((a, i) => '<div class="copilot-answer-edit"><label>' + esc(a.question) + '<textarea data-edit-answer="' + i + '" maxlength="2000">' + esc([...a.values.map(v => v.label), a.other].filter(Boolean).join('；')) + '</textarea></label><button type="button" class="btn btn-ghost" data-save-answer="' + i + '">儲存答案修改</button></div>').join('');
+    return '<summary>查看完整討論與修改答案（' + c.discussionLog.length + '）</summary>' + c.discussionLog.map(m => '<p><strong>' + (m.role === 'user' ? '你' : '創作助手') + '：</strong>' + esc(m.text) + '</p>').join('') + b.answers.map((a, i) => '<div class="copilot-answer-edit"><label>' + esc(a.question) + '<textarea data-edit-answer="' + i + '" maxlength="2000">' + esc([...a.values.map(v => v.label), a.other].filter(Boolean).join('；')) + '</textarea></label><button type="button" class="btn btn-ghost" data-save-answer="' + i + '">儲存答案修改</button></div>').join('');
   }
   function responseMarkup(c) {
     const r = c.response, questions = r?.form?.questions || [];
-    return '<div class="copilot-response"><div class="copilot-heading"><h2 tabindex="-1">Ask Gemini</h2>' + (r ? '<p class="copilot-message">' + esc(r.message) + '</p>' + summaryMarkup(r.thoughtSummaries) : '') + '</div>' +
+    return '<div class="copilot-response"><div class="copilot-heading"><h2 tabindex="-1">創作助手</h2>' + (r ? '<p class="copilot-message">' + esc(r.message) + '</p>' + summaryMarkup(r.thoughtSummaries) : '') + '</div>' +
       (c.error ? '<div class="plan-error" role="alert">' + esc(c.error) + '<button type="button" class="btn btn-ghost" data-copilot="retry">重試</button></div>' : '') +
       (questions.length || c.continuing ? '<form id="copilot-answer-form"><fieldset><legend class="section-label">' + esc(c.continuing ? '還有哪個地方想調整？你可以直接告訴我。' : r.form.title) + '</legend>' +
         (c.continuing ? '<label class="copilot-other" for="copilot-message">補充或調整<textarea id="copilot-message" maxlength="2000" rows="3">' + esc(c.message) + '</textarea></label>' : questions.map(q => questionMarkup(q, c.drafts)).join('')) +
@@ -185,29 +195,26 @@
   function render({ archive } = {}) {
     const el = document.getElementById('creative-copilot'), s = session(), c = s.copilot;
     if (!el) return;
+    const stackHost = document.getElementById('creation-discussion-stack');
     const entering = c?.active && !s.selectedTemplate && !c.stackEntered;
     const inputBounds = entering ? document.getElementById('phase1-composer')?.getBoundingClientRect() : null;
     el.hidden = !c?.active || !!s.selectedTemplate;
     el.closest('.phase-panel')?.classList.toggle('is-discussing', !el.hidden);
-    if (el.hidden) { stopVisuals(); return; }
+    if (el.hidden) { if (stackHost) stackHost.hidden = true; stopVisuals(); return; }
     if (el.copilotSession !== c) {
       stopVisuals();
       el.innerHTML = '<div class="copilot-stack" aria-label="你的創作紀錄"><div class="copilot-user-message"><div><span>你的想法</span><p></p></div><button type="button" data-copilot="edit-story" class="copilot-text-action" aria-label="修改原始想法">修改原始想法</button></div><div class="copilot-stack-supplements"></div><button type="button" class="copilot-text-action stack-history-link" data-copilot="history" hidden></button></div><div class="copilot-body"><div class="copilot-main"></div><div class="copilot-brief-slot" hidden></div></div><details class="copilot-history" hidden></details>';
       el.copilotSession = c;
+      if (stackHost) stackHost.replaceChildren(el.querySelector('.copilot-stack'));
     }
-    const b = s.creativeBrief, stack = el.querySelector('.copilot-stack'), main = el.querySelector('.copilot-main');
+    if (stackHost) stackHost.hidden = ![1, 2].includes(s.currentPhase);
+    const b = s.creativeBrief, stack = (stackHost || el).querySelector('.copilot-stack'), main = el.querySelector('.copilot-main');
     renderStack(stack, c, b, s.story);
     el.dataset.activity = c.phase || 'responded';
     const hasReply = c.discussionLog.some(message => message.role === 'assistant');
-    const hasBrief = hasReply && (b.answers.length || b.requirements.length || B.fields.some(key => b.confirmed[key] != null || b.suggestions[key] != null));
     const body = el.querySelector('.copilot-body'), briefSlot = el.querySelector('.copilot-brief-slot');
-    body.classList.toggle('has-brief', !!hasBrief);
-    if (hasBrief) {
-      const firstBrief = briefSlot.hidden; briefSlot.hidden = false;
-      const briefHTML = briefMarkup(b);
-      if (briefSlot.briefHTML !== briefHTML) { briefSlot.innerHTML = briefHTML; briefSlot.briefHTML = briefHTML; }
-      if (firstBrief) animate(briefSlot, [{ opacity: 0, filter: 'blur(3px)' }, { opacity: 1, filter: 'blur(0)' }], { duration: motion('--motion-duration-base', 300), easing: 'ease-out' });
-    } else briefSlot.hidden = true;
+    // Brief remains authoritative data, but neither discussion nor settings exposes a sidebar.
+    body.classList.remove('has-brief'); briefSlot.hidden = true;
     const history = el.querySelector('.copilot-history'); history.hidden = !hasReply;
     const historyHTML = hasReply ? historyMarkup(c, b) : '';
     if (history.historyHTML !== historyHTML) { history.innerHTML = historyHTML; history.historyHTML = historyHTML; }
@@ -300,9 +307,9 @@
       const token = root.spaAuth?.getToken?.();
       const response = await fetch('/api/creation/copilot', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) }, body: JSON.stringify(payload), signal });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Ask Gemini 暫時無法回應，請重試或略過討論。');
+      if (!response.ok) throw new Error(requestError(data));
       if (ticket !== version || signal.aborted || s.copilot !== c || s.creativeBrief.revision !== payload.revision) return;
-      if (data.requestId !== payload.requestId || data.revision !== payload.revision) throw new Error('Ask Gemini 回應版本不符，請重試。');
+      if (data.requestId !== payload.requestId || data.revision !== payload.revision) throw new Error('AI 回應版本不符，請重試。');
       c.response = B.validateResponse(data);
       c.response.thoughtSummaries = Array.isArray(data.thoughtSummaries) ? data.thoughtSummaries.filter(t => typeof t === 'string').slice(0, 8).map(t => t.slice(0, 12000)) : [];
       B.suggest(s.creativeBrief, c.response.briefPatch);
@@ -326,7 +333,7 @@
   }
   function advance() { captureStory(); cancel(); syncSettings(); notify('advance'); }
   function discuss() { const c = prepare(session().story); c.active = true; c.continuing = true; notify('discuss'); render(); document.getElementById('copilot-message')?.focus(); }
-  function editStory() { cancel(); const c = session().copilot; if (c) { c.active = false; c.stackEntered = false; } render(); const input = document.getElementById('story-input'); if (input) { input.value = session().story; input.focus(); } }
+  function editStory() { cancel(); const c = session().copilot; if (c) { c.active = false; c.stackEntered = false; } render(); notify('edit-story'); const input = document.getElementById('story-input'); if (input) { input.value = session().story; input.focus({ preventScroll: true }); } }
   function mount(signal, onAction) {
     notify = onAction;
     const el = document.getElementById('creative-copilot'); if (!el) return;
@@ -362,7 +369,7 @@
         } catch(e) { session().copilot.error = e.message; render(); }
       } else request(session().copilot.continuing ? 'continue' : 'answer');
     }, { signal });
-    el.addEventListener('click', event => {
+    const onClick = event => {
       const button = event.target.closest('button'); if (!button) return;
       if (button.dataset.saveAnswer != null) {
         const index = Number(button.dataset.saveAnswer), b = session().creativeBrief, old = b.answers[index];
@@ -377,10 +384,13 @@
       else if (action === 'close-adjust') { session().copilot.continuing = false; render(); }
       else if (action === 'edit-story') editStory();
       else if (action === 'history') {
+        if (session().currentPhase !== 1) notify('discuss');
         const history = el.querySelector('.copilot-history');
         if (history) { history.open = true; history.querySelector('summary')?.focus({ preventScroll: true }); }
       }
-    }, { signal });
+    };
+    el.addEventListener('click', onClick, { signal });
+    document.getElementById('creation-discussion-stack')?.addEventListener('click', onClick, { signal });
     render();
   }
   root.CreativeCopilot = { prepare, render, request, cancel, mount, advance, syncSettings, discuss, editStory };

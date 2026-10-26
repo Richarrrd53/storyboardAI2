@@ -15,7 +15,8 @@
       meta: { type: 'object', required: ['title'], properties: { title: str, targetDuration: { type: 'integer', enum: [target] } } },
       characters: { type: 'array', maxItems: 20, items: { type: 'object', required: ['id', 'appearance', 'outfit'], properties: { id: str, appearance: str, outfit: str, personality: str } } },
       shots: { type: 'array', minItems: min, maxItems: max, items: { type: 'object', required: ['id', 'story', 'camera', 'duration', 'emotion', 'purpose', 'dialogue', 'shotPrompt', 'characters'], properties: {
-        id: { type: ['string', 'integer'] }, beat: str, story: str, camera: str, duration: str, emotion: str, purpose: str, dialogue: str, shotPrompt: str,
+        // Generated IDs have one wire type; legacy string IDs remain accepted by validate().
+        id: { type: 'integer' }, beat: str, story: str, camera: str, duration: str, emotion: str, purpose: str, dialogue: str, shotPrompt: str,
         characters: { type: 'array', items: str }
       } } }
     } };

@@ -76,6 +76,7 @@
                 ════════════════════════════════════════════════════ -->
                 <div class="template-entry-banner" id="template-entry-banner" role="status" hidden><div><strong id="template-entry-title"></strong><p id="template-entry-description"></p></div><button type="button" id="btn-reload-template" hidden>重試載入</button></div>
                 <div class="generation-error-banner" id="generation-error-banner" role="alert" hidden><p id="generation-error-message"></p><button type="button" id="btn-retry-generation">重試這次生成</button><button type="button" id="btn-edit-generation-brief">修改企劃</button></div>
+                <div id="creation-discussion-stack" class="creation-discussion-stack" hidden></div>
                 <div class="phase-panel phase-1-panel active" id="phase-panel-1">
                     <div class="phase-hero-headline" id="phase1-headline">
                         <h1 class="hero-title">建立新的分鏡</h1>
@@ -107,7 +108,7 @@
                         </button>
                     </div>
                     <div class="copilot-entry-actions" id="copilot-entry-actions"><button type="button" class="btn btn-ghost" id="btn-skip-copilot">略過討論，直接創作</button></div>
-                    <section id="creative-copilot" class="copilot-workspace" aria-label="Ask Gemini 創作討論" hidden></section>
+                    <section id="creative-copilot" class="copilot-workspace" aria-label="AI 創作討論" hidden></section>
                 </div>
 
                 <!-- ════════════════════════════════════════════════════
@@ -129,7 +130,7 @@
                     </div>
                     <p id="direction-settings-reason" class="section-hint" hidden></p>
                     <div id="direction-thought-summary"></div>
-                    <button type="button" class="copilot-text-action" id="btn-direction-discuss">繼續和 Ask Gemini 調整</button>
+                    <button type="button" class="copilot-text-action" id="btn-direction-discuss">繼續和 AI 調整</button>
 
                     <!-- 視覺風格區塊 -->
                     <div class="direction-section" id="section-visual-style">
@@ -139,7 +140,10 @@
                         </div>
                         <div class="style-cards-wrap" id="style-cards-grid" role="group" aria-labelledby="visual-style-label"></div>
                     </div>
-                    <div class="direction-section" id="section-personal-style"><label for="direction-style-notes">個人化視覺條件<textarea id="direction-style-notes" rows="2" maxlength="2000" placeholder="例如光線、色彩、拍攝感"></textarea></label><label for="direction-avoid">明確避免的元素<input id="direction-avoid" maxlength="2000" placeholder="多個條件以「、」分隔"></label></div>
+                    <div class="direction-section" id="section-personal-style">
+                        <details class="direction-condition" id="direction-style-conditions"><summary><span><strong>個人化視覺條件</strong><span id="direction-style-notes-summary">沿用目前選擇的視覺風格</span></span><small>修改</small></summary><label for="direction-style-notes">調整視覺條件<textarea id="direction-style-notes" rows="2" maxlength="2000" placeholder="例如光線、色彩、拍攝感"></textarea></label></details>
+                        <details class="direction-condition" id="direction-avoid-conditions"><summary><span><strong>避免元素</strong><span id="direction-avoid-summary">尚未指定避免元素</span></span><small>修改</small></summary><label for="direction-avoid">調整避免元素<input id="direction-avoid" maxlength="2000" placeholder="多個條件以「、」分隔"></label></details>
+                    </div>
 
                     <!-- 畫面比例區塊 -->
                     <div class="direction-section" id="section-aspect-ratio">

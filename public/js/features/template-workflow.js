@@ -55,7 +55,7 @@
     const shots = task.result.generatedShotData;
     const failed = task.result.failedShotIndexes || [];
     const save = task.save || { status: task.projectId ? 'saved' : 'local' };
-    $('result-heading').textContent = failed.length ? `腳本完成，${failed.length} 張圖片待重試` : '分鏡生成完成';
+    $('result-heading').textContent = failed.length ? `圖片尚未完成，${failed.length} 張待重試` : '分鏡生成完成';
     $('result-save-status').textContent = save.status === 'saved' ? '已儲存至專案，可隨時回來編輯。' : save.status === 'saving' ? '正在儲存分鏡…' : save.error || '分鏡保留在目前頁面，尚未儲存至專案。';
     $('result-save-status').dataset.status = save.status;
     $('btn-retry-save').hidden = save.status === 'saved' || save.status === 'saving';

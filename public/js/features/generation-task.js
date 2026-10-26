@@ -80,6 +80,7 @@
   }
   function retry() {
     if (state.status === 'generating') return activePromise;
+    if (state.stage === 'images' && state.result.failedShotIndexes.length && state.result.generatedShotData.length === state.result.storyboardData?.shots.length && Array.from(state.result.generatedShotData).every(shot => ['succeeded', 'failed'].includes(shot?.payload.imageStatus))) return retryFailedImages();
     if (!state.input?.selectedTemplate && state.result.storyboardData && ['error', 'cancelled'].includes(state.status)) {
       state.status = 'awaiting_confirmation'; state.error = null; notify();
       return Promise.resolve(getState());
@@ -144,8 +145,87 @@
     assertRun(run, controller);
     const data = await response.json();
     assertRun(run, controller);
-    if (!response.ok) { const error = new Error(data.error || '服務暫時無法處理，請稍後再試'); error.status = response.status; throw error; }
+    if (!response.ok) {
+      const error = new Error(data.details || data.error || '服務暫時無法處理，請稍後再試');
+      error.status = response.status; error.code = data.code;
+      const retryAfter = response.headers?.get?.('retry-after');
+      if (retryAfter) {
+        const seconds = Number(retryAfter);
+        error.retryAfterMs = Number.isFinite(seconds) ? Math.max(0, seconds * 1000) : Math.max(0, Date.parse(retryAfter) - Date.now());
+      }
+      throw error;
+    }
     return data;
+  }
+  function waitForImageRetry(run, controller, milliseconds) {
+    return new Promise((resolve, reject) => {
+      const stop = () => {
+        clearTimeout(timer); controller.signal.removeEventListener('abort', stop);
+        const error = new Error('Generation cancelled'); error.name = 'AbortError'; reject(error);
+      };
+      const timer = setTimeout(() => {
+        controller.signal.removeEventListener('abort', stop);
+        try { assertRun(run, controller); resolve(); } catch (error) { reject(error); }
+      }, milliseconds);
+      controller.signal.addEventListener('abort', stop, { once: true });
+      if (controller.signal.aborted) stop();
+    });
+  }
+  function verifyImage(run, controller, source) {
+    if (typeof source !== 'string' || !source.trim() || source === '../icon/error.jpg') return Promise.reject(new Error('圖片回應無效'));
+    // Browser decoding checks that a nonempty response is actually a readable image.
+    if (!root.Image) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+      const image = new root.Image();
+      const finish = error => {
+        clearTimeout(timer);
+        controller.signal.removeEventListener('abort', cancel);
+        image.onload = image.onerror = null;
+        if (error) { image.src = ''; reject(error); } else resolve();
+      };
+      const cancel = () => finish(Object.assign(new Error('Generation cancelled'), { name: 'AbortError' }));
+      const timer = setTimeout(() => finish(new Error('圖片驗證逾時')), 15000);
+      image.onload = () => {
+        try {
+          assertRun(run, controller);
+          if (!image.naturalWidth || !image.naturalHeight) throw new Error('圖片尺寸無效');
+          finish();
+        } catch (error) { finish(error); }
+      };
+      image.onerror = () => finish(new Error('圖片無法讀取'));
+      controller.signal.addEventListener('abort', cancel, { once: true });
+      if (controller.signal.aborted) cancel(); else image.src = source;
+    });
+  }
+  function requireCompleteImages(run) {
+    const shots = run.result.generatedShotData;
+    if (run.result.failedShotIndexes.length || shots.length !== run.result.storyboardData.shots.length || Array.from(shots).some(shot => shot?.payload.imageStatus !== 'succeeded')) {
+      throw Object.assign(new Error('伺服器繁忙，部分圖片仍未生成成功；已成功的圖片已保留，請繼續重試。'), { code: 'AI_IMAGES_INCOMPLETE' });
+    }
+  }
+  async function requestImage(run, controller, question, shotIndex) {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      assertRun(run, controller);
+      try {
+        const data = await requestJSON(run, controller, '/api/ask-gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question, type: 'image', ratio: run.input.ratio, requestId: run.taskId }) });
+        if (!data.image?.[0]) throw Object.assign(new Error('圖片回應為空'), { code: 'AI_EMPTY_CONTENT', status: 502 });
+        await verifyImage(run, controller, data.image[0]);
+        return data;
+      } catch (error) {
+        assertRun(run, controller);
+        if (error.name === 'AbortError') throw error;
+        const retryable = !error.status || [408, 429, 500, 502, 503, 504].includes(error.status);
+        const permanent = ['AI_AUTH_PERMISSION', 'AI_API_DISABLED', 'AI_MODEL_UNAVAILABLE', 'AI_SCHEMA_ERROR', 'AI_INVALID_REQUEST'].includes(error.code);
+        if (!retryable || permanent || attempt === 2 || error.retryAfterMs > 60000) {
+          error.message = retryable && !permanent ? '伺服器繁忙，圖片暫時無法生成，請稍後重試。' : '圖片服務暫時無法使用，請稍後重試。';
+          throw error;
+        }
+        const delay = Math.max(10000 * 2 ** attempt, error.retryAfterMs || 0);
+        run.progress = imageProgress(run, `伺服器繁忙，約 ${Math.ceil(delay / 1000)} 秒後自動重試鏡頭 ${shotIndex + 1}（${attempt + 1}/2）`); notify();
+        await waitForImageRetry(run, controller, delay);
+      }
+    }
   }
   async function persistResult(run, controller) {
     assertRun(run, controller);
@@ -212,7 +292,7 @@
   }
   function retryFailedImages(shotIndex) {
     if (state.status === 'generating') return activePromise;
-    if (savePromise || state.status !== 'completed' || !state.result.failedShotIndexes.length) return Promise.resolve(getState());
+    if (savePromise || !['completed', 'error', 'cancelled'].includes(state.status) || !state.result.failedShotIndexes.length) return Promise.resolve(getState());
     const run = state, controller = new AbortController();
     currentController = controller; run.status = 'generating'; run.error = null;
     activePromise = (async () => {
@@ -222,8 +302,7 @@
         assertRun(run, controller);
         run.progress = imageProgress(run, `重試鏡頭 ${i + 1}`); notify();
         try {
-          const response = await requestJSON(run, controller, '/api/ask-gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question: run.result.generatedPrompts[i], type: 'image', ratio: run.input.ratio }) });
-          if (!response.image?.[0]) throw new Error('圖像服務沒有回傳圖片');
+          const response = await requestImage(run, controller, run.result.generatedPrompts[i], i);
           run.result.generatedImgs[i] = response.image[0];
           Object.assign(run.result.generatedShotData[i].payload, { image: response.image[0], imageStatus: 'succeeded', imageError: '' });
           run.result.failedShotIndexes = run.result.failedShotIndexes.filter(value => value !== i);
@@ -235,9 +314,10 @@
       }
       await persistResult(run, controller);
       assertRun(run, controller);
+      requireCompleteImages(run);
       run.status = 'completed'; run.progress = imageProgress(run, '圖片重試完成'); notify(); return getState();
     })().catch(error => {
-      if (state === run && !controller.signal.aborted) { run.status = 'error'; run.error = { message: error.message }; notify(); }
+      if (state === run && !controller.signal.aborted) { run.status = 'error'; run.error = { message: error.message, code: error.code }; notify(); }
       return getState();
     }).finally(() => { if (currentController === controller) currentController = null; });
     return activePromise;
@@ -415,8 +495,7 @@ shots 可另外提供 angle、purpose、dialogue（中文對白或旁白）、em
           }
         };
         try {
-          const response = await askGemini(finalPrompt, 'image');
-          if (!response?.image?.[0]) throw new Error('圖像服務沒有回傳圖片');
+          const response = await requestImage(run, controller, finalPrompt, i);
           result.generatedImgs[i] = response.image[0];
           result.generatedShotData[i].payload.image = response.image[0];
           result.generatedShotData[i].payload.imageStatus = 'succeeded';
@@ -431,7 +510,8 @@ shots 可另外提供 angle、purpose、dialogue（中文對白或旁白）、em
       }
       run.progress = imageProgress(run, '正在儲存分鏡'); notify();
       await persistResult(run, controller);
-      run.progress = imageProgress(run, result.failedShotIndexes.length ? '部分圖片可重試' : '分鏡生成完成'); notify();
+      requireCompleteImages(run);
+      run.progress = imageProgress(run, '分鏡生成完成'); notify();
     }
 
     async function askGemini(question, type) {
@@ -439,7 +519,7 @@ shots 可另外提供 angle、purpose、dialogue（中文對白或旁白）、em
             signal: controller.signal,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ question, type, ratio: input.ratio,
+            body: JSON.stringify({ question, type, ratio: input.ratio, requestId: run.taskId,
                 ...(!input.selectedTemplate && type === 'story' ? { contract: 'freeform-v2', duration: input.duration, includeThoughts: true } : {}) })
         });
         assertActive();
@@ -448,6 +528,8 @@ shots 可另外提供 angle、purpose、dialogue（中文對白或旁白）、em
         if (!res.ok) {
             const err = new Error(data.details || data.error || '請求異常');
             err.status = res.status;
+            err.code = data.code;
+            err.requestId = data.diagnostics?.requestId;
             throw err;
         }
         if (type === 'story' && !input.selectedTemplate) {
@@ -492,9 +574,10 @@ shots 可另外提供 angle、purpose、dialogue（中文對白或旁白）、em
     } catch (error) {
       // An obsolete run must never publish over a new task/reset/logout.
       if (state !== run || controller.signal.aborted) return getState();
-      run.status = confirmed ? 'awaiting_confirmation' : 'error';
-      run.error = { message: error.message || '請稍後再試', status: error.status || null };
-      run.progress = { pct: 0, statusText: '生成發生錯誤，請重試', activeStepId: null };
+      run.status = confirmed && error.code !== 'AI_IMAGES_INCOMPLETE' ? 'awaiting_confirmation' : 'error';
+      run.error = { message: error.message || '請稍後再試', status: error.status || null,
+        ...(error.code ? { code: error.code } : {}), ...(error.requestId ? { requestId: error.requestId } : {}) };
+      run.progress = error.code === 'AI_IMAGES_INCOMPLETE' ? imageProgress(run, '伺服器繁忙，圖片尚未全部完成') : { pct: 0, statusText: '生成發生錯誤，請重試', activeStepId: null };
       notify();
     } finally {
       if (currentController === controller) currentController = null;

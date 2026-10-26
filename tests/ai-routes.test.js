@@ -63,6 +63,7 @@ test('AI routes preserve task contracts, edited shots and provider isolation', a
         assert.deepEqual(JSON.parse(structured.data.response).characters, []);
         assert.equal(request.config.responseJsonSchema.properties.characters.type, 'array');
         assert.ok(request.config.responseJsonSchema.properties.characters.items.required.includes('appearance'));
+        assert.equal(request.config.responseJsonSchema.properties.shots.items.properties.id.type, 'integer');
         assert.equal(request.config.thinkingConfig.includeThoughts, true);
         assert.equal((await post('/api/ask-gemini', { type: 'story', question: 'invalid', contract: 'freeform-v2', duration: 99 })).status, 400);
         for (const [type, task] of [['flash', 'fast'], ['story', 'story']]) {
@@ -109,6 +110,14 @@ test('AI routes preserve task contracts, edited shots and provider isolation', a
             assert.equal(failure.data.code, code);
             assert.ok(!JSON.stringify(failure).includes('private-key-secret'));
         }
+        thrown = undefined;
+        thrown = Object.assign(new Error(JSON.stringify({ error: { status: 'INVALID_ARGUMENT', message: 'responseJsonSchema properties.shots.items.properties.id.type has an unsupported type array; private-story-secret' } })), { status: 400 });
+        const schemaRejected = await post('/api/ask-gemini', { type: 'story', contract: 'freeform-v2', duration: 30, question: 'private-story-secret', requestId: 'story-schema-check' });
+        assert.equal(schemaRejected.status, 502); assert.equal(schemaRejected.data.code, 'AI_SCHEMA_ERROR');
+        assert.equal(schemaRejected.data.diagnostics.upstreamStatus, 400);
+        assert.equal(schemaRejected.data.diagnostics.requestId, 'story-schema-check');
+        assert.equal(schemaRejected.data.diagnostics.argumentReason, 'schema_type_union');
+        assert.ok(!JSON.stringify(schemaRejected).includes('private-story-secret'));
         thrown = undefined;
         const sections = Object.fromEntries(['setup', 'problem', 'solution', 'ending'].map(name => [name, { status: 'unknown', text: '無法觀察', timestamp: '00:00' }]));
         response = parts([{ thought: true, text: 'summary' }, { text: JSON.stringify({ sections }) }]);

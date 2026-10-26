@@ -9,7 +9,7 @@ const { generateDecision, validateInput } = require('../lib/ai/copilot');
 
 test('live Vertex: creative discussion, confirmed choice and valid structured continuation', {
     skip: process.env.RUN_VERTEX_LIVE !== '1' ? 'Explicit paid test opt-in is required' : !credentials.vertexAvailable() ? 'Vertex project or usable ADC is unavailable' : false,
-    timeout: 175000
+    timeout: 3 * (require('../lib/ai/creative-request').getRequestPolicy().totalMs + 5000)
 }, async () => {
     const { GoogleGenAI } = require('@google/genai');
     const client = new GoogleGenAI({ vertexai: true, project: process.env.GOOGLE_CLOUD_PROJECT_ID, location: 'global', ...credentials.vertexAuthOptions() });

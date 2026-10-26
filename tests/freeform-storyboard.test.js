@@ -44,6 +44,63 @@ test('all duration options validate their ranges and totals; prompt distinguishe
   assert.throws(() => free.validate(plan(30, 4), 30), /8–12/);
   assert.throws(() => free.validate(plan(30, 13), 30), /8–12/);
 });
+
+test('generated wire schemas use one ID type across every duration; legacy saved string IDs still validate', () => {
+  for (const target of [15, 30, 45, 60]) {
+    const schema = free.schema(target);
+    assert.equal(schema.properties.shots.items.properties.id.type, 'integer');
+    assert.equal(schema.properties.shots.minItems, free.ranges[target][0]);
+    assert.equal(schema.properties.shots.maxItems, free.ranges[target][1]);
+    assert.equal(schema.properties.characters.type, 'array');
+    function visit(node) {
+      if (!node || typeof node !== 'object') return;
+      if (node.type) assert.equal(typeof node.type, 'string', 'Provider output schemas must avoid mixed scalar type arrays');
+      Object.values(node).forEach(visit);
+    }
+    visit(schema);
+  }
+  const legacy = plan(); legacy.shots.forEach((shot, i) => { shot.id = 'saved-' + i; });
+  assert.equal(free.validate(legacy).shots[0].id, 'saved-0');
+});
+
+test('installed SDK sends the corrected story schema and MEDIUM settings to Vertex unchanged', async () => {
+  const { GoogleGenAI } = require('@google/genai');
+  const { getModelConfig } = require('../lib/ai/model-config');
+  const originalFetch = global.fetch; const sent = [];
+  global.fetch = async (url, options) => {
+    sent.push(JSON.parse(options.body));
+    return new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: JSON.stringify(plan()) }] } }] }), { headers: { 'Content-Type': 'application/json' } });
+  };
+  try {
+    const client = new GoogleGenAI({ vertexai: true, project: 'fixture', location: 'global', googleAuthOptions: { authClient: { getRequestHeaders: async () => new Headers() } } });
+    for (const target of [15, 30, 45, 60]) {
+      const options = getModelConfig('story', { includeThoughts: true });
+      await client.models.generateContent({ ...options, config: { ...options.config, responseJsonSchema: free.schema(target) }, contents: [{ text: 'fixture' }] });
+      const config = sent.at(-1).generationConfig;
+      assert.deepEqual(config.responseJsonSchema, free.schema(target));
+      assert.equal(config.thinkingConfig.thinkingLevel, 'MEDIUM');
+      assert.equal(config.responseMimeType, 'application/json');
+    }
+  } finally { global.fetch = originalFetch; }
+});
+
+test('upstream schema rejection stops without a JSON repair or image requests; manual retry retains the brief', async () => {
+  let rejected = true;
+  const f = fixture((url, body) => rejected && body.type === 'story' ? { ok: false, status: 502, json: async () => ({
+    code: 'AI_SCHEMA_ERROR', details: '分鏡輸出格式設定未被服務接受', diagnostics: { requestId: body.requestId, upstreamStatus: 400 }
+  }) } : null);
+  const creativeBrief = { originalStory: input.story, confirmed: { avoid: ['太暗'] }, answers: [], requirements: ['不要太商業化'], revision: 3 };
+  await f.task.start({ ...input, creativeBrief });
+  let state = f.task.getState();
+  assert.equal(state.status, 'error'); assert.equal(state.error.code, 'AI_SCHEMA_ERROR');
+  assert.equal(state.error.requestId, f.calls[0].body.requestId);
+  assert.equal(f.calls.length, 1); assert.equal(state.activity.phase, 'requesting');
+  assert.equal(JSON.stringify(state.input.creativeBrief), JSON.stringify(creativeBrief));
+  rejected = false; await f.task.retry(); state = f.task.getState();
+  assert.equal(state.status, 'awaiting_confirmation'); assert.equal(f.calls.length, 2);
+  assert.equal(f.calls.some(call => call.body.type === 'image'), false);
+  assert.match(f.calls[1].body.question, /不要太商業化/);
+});
 test('pre-image validation rejects empty visuals, bad timing, invalid characters, non-English prompts and placeholders', () => {
   for (const edit of [
     p => { p.shots[0].story = ''; }, p => { p.shots[0].duration = 'three'; },
@@ -126,12 +183,13 @@ test('cancel/reset during planning rejects late responses and confirmation remai
 });
 test('single failed shot retry preserves successful images and does not regenerate script', async () => {
   let count = 0;
-  const f = fixture((url, body) => body.type === 'image' && ++count === 2 ? { ok: false, json: async () => ({ error: 'image failure' }) } : null);
+  const f = fixture((url, body) => body.type === 'image' && ++count >= 2 && count <= 4 ? { ok: false, json: async () => ({ error: 'image failure' }) } : null);
   await f.task.start(input); await f.task.confirmPlan();
   assert.equal(f.task.getState().progress.completed, 9);
+  assert.equal(f.task.getState().status, 'error');
   assert.equal(f.task.getState().result.failedShotIndexes.length, 1);
   await f.task.retryFailedImages(1);
-  assert.equal(f.task.getState().progress.completed, 10); assert.equal(count, 11);
+  assert.equal(f.task.getState().progress.completed, 10); assert.equal(count, 13);
   assert.equal(f.calls.filter(c => c.body.type === 'story').length, 1);
 });
 

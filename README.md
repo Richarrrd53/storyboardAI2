@@ -612,6 +612,7 @@ GEMINI_MODEL_FAST="gemini-3.5-flash-lite"
 GEMINI_MODEL_CREATIVE="gemini-3.8-flash"
 GEMINI_CREATIVE_THINKING_LEVEL="MEDIUM" # LOW / MEDIUM / HIGH；不提供前端模型選項
 GEMINI_CREATIVE_INCLUDE_THOUGHTS="true" # 可獨立關閉摘要，不影響正式 JSON
+# GEMINI_CREATIVE_TIMEOUT_MS="100000" # 可選：整體討論期限；部署時須低於函式執行上限
 GEMINI_MODEL_STORY="gemini-3.8-flash"
 GEMINI_MODEL_IMAGE="gemini-nano-banana-2.1"
 DISCOVERY_GEMINI_MODEL="gemini-3.8-flash"
@@ -625,11 +626,19 @@ GEMINI_MODEL_PREMIUM_STORY="gemini-4-argon" # 僅預留，普通生成不會使�
 
 SDK 使用 `@google/genai` 2.31.0（Node.js ≥20；本專案現有 Prisma 環境使用 Node.js 22.12.0）。Ask Gemini 創作討論／Story／Discovery 預設 MEDIUM thinking；圖片固定 1K，未傳入 sampling 參數。官方參考：[SDK](https://github.com/googleapis/js-genai)、[Gemini 3.8 Flash](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/gemini/3-8-flash)、[Nano Banana 2.1](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/gemini/nano-banana-2-1)。
 
-Ask Gemini 保留 `/api/creation/copilot` 的多輪契約，與 `/api/ask-gemini` 的分鏡／圖片契約分開。每次討論總期限 55 秒、首個模型呼叫上限 35 秒、恢復呼叫上限 20 秒，至少剩 10 秒才會開始恢復；最多兩次模型呼叫。僅對真正的上游 503／504 等待 500ms 後重試一次，或對已收到但不符合契約的 JSON 修復一次，兩者共用恢復次數。SDK 額外重試已停用。本機由應用控制期限。`vercel.json` 未指定 maxDuration，線上期限取決於專案方案與 Fluid Compute 設定；部署時需確認函式至少有 60 秒，並保留圖片生成所需的較長期限。所有 API 共用 `api/index.js`，本次不為討論功能降低共用入口的期限。參考：[Vercel 函式期限](https://vercel.com/docs/functions/configuring-functions/duration)。
+創作助手保留 `/api/creation/copilot` 的多輪契約，與 `/api/ask-gemini` 的分鏡／圖片契約分開。本機預設總期限 100 秒，單次正常推論與上游重試各最多 60 秒，JSON 修復最多 25 秒；所有呼叫仍受總期限約束，最多兩次模型呼叫。僅對真正的上游 503／504 等待 500ms 後重試一次，或對已收到但不符合契約的 JSON 修復一次，兩者共用恢復次數。上游重試不再套用較短的 JSON 修復期限，至少剩 10 秒才會開始恢復。SDK 額外重試已停用。
 
-後端會記錄 requestId、intent、model、attempt、elapsedMs、stage、錯誤分類與可用的用量，不記錄故事、完整回應或憑證。成功回應的 `meta` 提供用量、修復次數和摘要筆數供診斷；HTTP status 未由 SDK 提供時為 null。摘要僅取自供應商的 thought parts，不保證每次都有，沒有時維持一般載入狀態。模型或設定不支援時會明確失敗，不自動更換模型。
+SDK 的 `httpOptions.timeout` 也會形成上游 `X-Server-Timeout`。目前 SDK 期限比應用單次期限多留 10 秒，應用自己的 AbortController 與計時器負責真正的截止，避免上游先縮短模型生成時間。完成主動討論後使用僅有 ready 的輸出契約，不再產生問卷結構，並要求設定建議簡潔、避免重抄歷史及已確認限制。
+
+最後整理使用獨立的短指令與固定必填設定欄位，僅保留最新一則助手上下文，完整已選答案、要求與 Brief 仍傳入模型。供應商回傳的無效靈感短詞會被過濾，不會使有效的創作回覆觸發整輪修復。SDK 的 automaticContinuation 預設會自動續寫；此功能明確關閉隱性續寫，遇到 checkpoint 時最多在同一操作內顯式續寫一次，計入兩次模型呼叫與總期限。未完成回覆有獨立錯誤碼，不當作 JSON 格式錯誤重送。
+
+`GEMINI_CREATIVE_TIMEOUT_MS` 可覆寫整體期限（30000–300000 毫秒），不是前端模型選項。未覆寫時，Vercel 維持保守的總期限 55 秒、推論／重試最多 35 秒、修復最多 20 秒。`vercel.json` 未指定 maxDuration，線上期限取決於專案方案與 Fluid Compute 設定；若在 Vercel 使用 100 秒預算，需先確認函式期限大於 100 秒並預留回應時間，同時保留圖片生成所需期限。所有 API 共用 `api/index.js`，本次不修改共用入口的執行上限。參考：[Vercel 函式期限](https://vercel.com/docs/functions/configuring-functions/duration)。
+
+後端會記錄 requestId、executionId（區分同一請求的手動重試）、intent、model、attempt、elapsedMs、stage、timeoutMs、upstreamTimeoutMs、timeoutSource、錯誤分類與可用的用量，不記錄故事、完整回應或憑證。錯誤回應的 `diagnostics` 僅包含執行識別碼、階段、耗時和期限來源，不含模型名稱或故事。成功回應的 `meta` 提供用量、修復次數和摘要筆數供診斷；HTTP status 未由 SDK 提供時為 null。摘要僅取自供應商的 thought parts，不保證每次都有，沒有時維持一般載入狀態。模型或設定不支援時會明確失敗，不自動更換模型。
 
 真實 Vertex 多輪驗證位於 `tests/creative-conversation.live.js`，不包含在一般單元測試中。具備有效 ADC 後，以 PowerShell 執行 `$env:RUN_VERTEX_LIVE='1'; node --test tests/creative-conversation.live.js`，會產生少量付費模型呼叫並輸出每輪診斷；沒有可用認證時明確跳過。
+
+文字分鏡的真實 Structured Output 驗證位於 `tests/storyboard-generation.live.js`，同樣需設定 `RUN_VERTEX_LIVE=1`；只產生文字企劃並驗證鏡頭、角色與時長，不生成圖片或儲存專案。上游 400 會分為 Schema 或一般參數拒絕，後端只記錄安全的原因分類及固定參數路徑，不輸出原始錯誤中的提示詞內容。
 
 ### 8.2 本地端啟動流程
 

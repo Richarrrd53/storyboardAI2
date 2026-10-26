@@ -2,8 +2,8 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { EventEmitter } = require('node:events');
 const B = require('../public/js/features/creative-brief');
-const { generateDecision, createCopilotHandler, validateInput } = require('../lib/ai/copilot');
-const { policy, classifyCreativeError, callWithinDeadline } = require('../lib/ai/creative-request');
+const { generateDecision, createCopilotHandler, validateInput, responseSchemaFor } = require('../lib/ai/copilot');
+const { policy, getRequestPolicy, classifyCreativeError, callWithinDeadline } = require('../lib/ai/creative-request');
 const ready = { action: 'ready', message: '以朋友接過咖啡的特寫串起桌邊互動，讓聚會的溫度來自動作。', briefPatch: { ratio: '9:16', duration: 30 } };
 const input = { story: '朋友聚會短片', brief: B.create('朋友聚會短片'), history: [], message: '', intent: 'answer', autoRounds: 1 };
 const body = () => ({ ...input, requestId: 'round-two', revision: 1 });
@@ -18,10 +18,122 @@ test('slow invalid first response retains a real repair window, not the old 1001
     const f = fixture(async (_, attempt) => { if (attempt === 1) { elapsed = 33999; return { text: 'not JSON' }; } return { text: JSON.stringify(ready) }; }, { now: () => elapsed });
     const result = await f.run();
     assert.equal(result.action, 'ready');
-    assert.deepEqual(f.calls.map(call => call.config.httpOptions.timeout), [35000, 20000]);
+    assert.deepEqual(f.calls.map(call => call.config.httpOptions.timeout), [70000, 35000]);
     assert.ok(f.calls.every(call => call.config.httpOptions.retryOptions.attempts === 1));
     assert.equal(result.meta.repairCount, 1);
     assert.equal(f.events[0].stage, 'parse_json');
+});
+
+test('local, hosted and explicitly configured budgets keep retries separate from JSON repair', () => {
+    const local = getRequestPolicy({}), hosted = getRequestPolicy({ VERCEL: '1' });
+    assert.equal(local.totalMs, 100000); assert.equal(local.initialMs, 60000);
+    assert.equal(local.retryMs, 60000); assert.equal(local.recoveryMs, 25000);
+    assert.equal(hosted.totalMs, 55000); assert.equal(hosted.initialMs, 35000); assert.equal(hosted.recoveryMs, 20000);
+    assert.equal(getRequestPolicy({ VERCEL: '1', GEMINI_CREATIVE_TIMEOUT_MS: '100000' }).initialMs, 60000);
+    for (const value of ['NaN', '1', '300001', '60000.5', 'Infinity']) assert.throws(() => getRequestPolicy({ GEMINI_CREATIVE_TIMEOUT_MS: value }), { code: 'AI_SCHEMA_ERROR' });
+});
+
+test('reproduced 32-second upstream 504 gets a full retry window, not the former 20 seconds', async () => {
+    let elapsed = 0;
+    const f = fixture(async (args, attempt) => {
+        if (attempt === 1) { elapsed = 32000; throw Object.assign(new Error('Gateway deadline exceeded'), { status: 504 }); }
+        assert.ok(args.config.httpOptions.timeout >= 70000);
+        elapsed += 31000;
+        return { text: JSON.stringify(ready) };
+    }, { now: () => elapsed, sleep: async ms => { elapsed += ms; } });
+    const result = await f.run();
+    assert.equal(result.action, 'ready'); assert.equal(result.meta.retryCount, 1);
+    assert.equal(result.meta.repairCount, 0); assert.equal(result.meta.elapsedMs, 63500);
+    assert.equal(f.events[0].timeoutSource, 'upstream_http_504');
+    assert.equal(f.events[0].timeoutMs, 60000);
+});
+
+test('ready-only finalization omits question planning while explicit continuation keeps the full contract', () => {
+    for (const value of [{ ...input, autoRounds: 2 }, { ...input, intent: 'delegate' }]) {
+        const schema = responseSchemaFor(value);
+        assert.deepEqual(schema.properties.action.enum, ['ready']);
+        assert.equal(schema.properties.form, undefined);
+        assert.deepEqual(schema.properties.briefPatch.required, Object.keys(schema.properties.briefPatch.properties));
+        assert.equal(schema.properties.briefPatch.properties.purpose, undefined);
+    }
+    assert.deepEqual(responseSchemaFor({ ...input, autoRounds: 2, intent: 'continue' }).properties.action.enum, ['ask', 'propose', 'ready']);
+});
+
+test('finalization uses a dedicated compact instruction and only the latest assistant context', async () => {
+    let sent;
+    const finalInput = { ...input, autoRounds: 2, history: [{ role: 'assistant', text: '舊提案' }, { role: 'user', text: '已選方向' }, { role: 'assistant', text: '最新情境問題' }] };
+    const result = await generateDecision({ models: { generateContent: async args => { sent = args; return { text: JSON.stringify(ready) }; } } }, finalInput, { logger() {} });
+    assert.equal(result.action, 'ready'); assert.equal(result.meta.finalizing, true);
+    assert.equal(sent.config.automaticContinuation, false);
+    assert.doesNotMatch(sent.config.systemInstruction, /proposal_choice|single_choice/);
+    assert.deepEqual(JSON.parse(sent.contents[0].parts[0].text).history, [{ role: 'assistant', text: '最新情境問題' }]);
+    assert.deepEqual(JSON.parse(sent.contents[0].parts[0].text).brief, finalInput.brief);
+});
+
+test('invalid decorative keywords are discarded without repairing or altering the real creative decision', async () => {
+    const f = fixture(async () => ({ text: JSON.stringify({ ...ready, briefPatch: { ...ready.briefPatch, avoid: ['太暗'], visualKeywords: ['門', '走廊', '走廊', '床', '手電筒', 123, 'x'.repeat(13)] } }) }));
+    const result = await f.run();
+    assert.equal(f.calls.length, 1); assert.equal(result.meta.repairCount, 0);
+    assert.deepEqual(result.briefPatch.visualKeywords, ['走廊', '手電筒']);
+    assert.deepEqual(result.briefPatch.avoid, ['太暗']); assert.equal(result.message, ready.message);
+});
+
+test('installed SDK continuation is explicit, counted, and combines partial JSON with separated thoughts', async () => {
+    const { GoogleGenAI } = require('@google/genai'); const originalFetch = global.fetch;
+    const calls = [], events = [];
+    global.fetch = async (url, options) => {
+        calls.push(JSON.parse(options.body));
+        const first = calls.length === 1;
+        return new Response(JSON.stringify({ candidates: [{ finishReason: first ? 'CONTINUATION' : 'STOP',
+            ...(first ? { continuationToken: 'fixture-private-checkpoint' } : {}), content: { parts: [
+                { thought: true, text: first ? '供應商摘要 A' : '供應商摘要 B' },
+                { text: first ? '{"action":"ready","message":"具體創作見解",' : '"briefPatch":{}}' }
+            ] } }], usageMetadata: { totalTokenCount: first ? 20 : 30 } }), { headers: { 'Content-Type': 'application/json' } });
+    };
+    try {
+        const client = new GoogleGenAI({ vertexai: true, project: 'fixture', location: 'global', googleAuthOptions: { authClient: { getRequestHeaders: async () => new Headers() } } });
+        const result = await generateDecision(client, { ...input, autoRounds: 2 }, { logger: (event, data) => events.push({ event, ...data }) });
+        assert.equal(calls.length, 2); assert.equal(result.meta.attempt, 2);
+        assert.equal(result.meta.resumeCount, 1); assert.equal(result.meta.repairCount, 0);
+        assert.equal(result.meta.attempts.length, 2); assert.equal(result.action, 'ready');
+        assert.deepEqual(result.thoughtSummaries, ['供應商摘要 A', '供應商摘要 B']);
+        assert.ok(!JSON.stringify(events).includes('fixture-private-checkpoint'));
+    } finally { global.fetch = originalFetch; }
+});
+
+test('repeated checkpoints stop after two upstream calls instead of continuing inside the SDK', async () => {
+    const f = fixture(async () => ({ candidates: [{ finishReason: 'CONTINUATION', continuationToken: 'private-checkpoint', content: { parts: [{ text: '{' }] } }] }));
+    await assert.rejects(f.run(), { code: 'AI_INCOMPLETE_RESPONSE', responseReason: 'generation_incomplete', stage: 'receive_response' });
+    assert.equal(f.calls.length, 2); assert.equal(f.calls[1].config.continuationToken, 'private-checkpoint');
+    assert.equal(f.events.at(-1).resumeCount, 1);
+    assert.ok(!JSON.stringify(f.events).includes('private-checkpoint'));
+});
+
+test('SDK X-Server-Timeout is longer than the application timer, without enabling hidden retries', async () => {
+    const { GoogleGenAI } = require('@google/genai');
+    const originalFetch = global.fetch; let sent;
+    global.fetch = async (url, init) => {
+        sent = new Headers(init.headers);
+        return new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: JSON.stringify(ready) }] } }] }), { headers: { 'Content-Type': 'application/json' } });
+    };
+    try {
+        const client = new GoogleGenAI({ vertexai: true, project: 'fixture', location: 'global', googleAuthOptions: { authClient: { getRequestHeaders: async () => new Headers() } } });
+        await callWithinDeadline(client, { model: 'gemini-3.8-flash', config: {}, contents: [{ text: 'fixture' }] }, 60000);
+        assert.equal(sent.get('x-server-timeout'), '70');
+    } finally { global.fetch = originalFetch; }
+});
+
+test('active identity quota survives the 60-second rate window during a longer operation', async t => {
+    let current = 100000, finish, calls = 0;
+    t.mock.method(Date, 'now', () => current);
+    const handler = createCopilotHandler(() => ({ models: { generateContent: () => { calls++; return new Promise(resolve => { finish = resolve; }); } } }), { logger() {} });
+    const call = requestId => handler({ body: { ...body(), requestId }, ip: 'same-user', get: () => null, is: () => true },
+        { status(code) { this.code = code; return this; }, json(data) { return { status: this.code, data }; } });
+    const first = call('pending'); current += 61000;
+    assert.equal((await call('new-submission')).status, 429);
+    const duplicate = call('pending'); assert.equal(calls, 1);
+    finish({ text: JSON.stringify(ready) });
+    assert.equal((await first).status, 200); assert.equal((await duplicate).status, 200);
 });
 
 test('insufficient recovery budget never starts a repair with milliseconds remaining', async () => {
@@ -70,10 +182,26 @@ test('timeout, network, authentication, cancellation and upstream failure remain
     ]) assert.equal(classifyCreativeError(error).code, code);
     // Even a provider that ignores its signal cannot keep the operation alive indefinitely.
     const client = { models: { generateContent: () => new Promise(() => {}) } };
-    await assert.rejects(callWithinDeadline(client, { config: {} }, 5), { code: 'AI_UPSTREAM_TIMEOUT' });
+    await assert.rejects(callWithinDeadline(client, { config: {} }, 5), { code: 'AI_UPSTREAM_TIMEOUT', timeoutSource: 'application_deadline', timeoutMs: 5 });
     const controller = new AbortController();
     const pending = callWithinDeadline(client, { config: {} }, 1000, controller.signal); controller.abort();
     await assert.rejects(pending, { code: 'AI_REQUEST_CANCELLED' });
+});
+
+test('failed manual retries have distinct execution IDs and safe response diagnostics', async () => {
+    const events = [];
+    const handler = createCopilotHandler(() => ({ models: { generateContent: async () => {
+        throw Object.assign(new Error('private story and token must never appear'), { status: 504 });
+    } } }), { logger: (event, data) => events.push({ event, ...data }), sleep: async () => {} });
+    const call = () => handler({ body: body(), ip: 'local', get: () => null, is: () => true },
+        { status(code) { this.code = code; return this; }, json(data) { return { status: this.code, data }; } });
+    const first = await call(), second = await call();
+    assert.equal(first.status, 504); assert.equal(first.data.requestId, body().requestId);
+    assert.equal(first.data.diagnostics.timeoutSource, 'upstream_http_504');
+    assert.equal(first.data.diagnostics.attempt, 2);
+    assert.notEqual(first.data.diagnostics.executionId, second.data.diagnostics.executionId);
+    assert.doesNotMatch(JSON.stringify(first.data.diagnostics), /gemini|private|story|token/i);
+    assert.doesNotMatch(JSON.stringify(events), /private story and token/);
 });
 
 test('model input drops UI metadata and duplicate IDs but keeps the latest choice and every restriction', () => {

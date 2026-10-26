@@ -33,16 +33,107 @@ test('save failure preserves output; retry saves without generating again', asyn
 });
 test('failed image repair reuses script, only renders failed shots and updates saved project', async () => {
   let imageCount = 0;
-  const f = fixture((url, body) => body.type === 'image' && ++imageCount === 1 ? response({ error: 'image unavailable' }, false, 503) : undefined);
+  const f = fixture((url, body) => body.type === 'image' && ++imageCount <= 3 ? response({ error: 'image unavailable' }, false, 503) : undefined);
   const run = f.task.start(options()); await f.drain(); await run;
   assert.equal(f.task.getState().result.failedShotIndexes.length, 1);
-  await f.task.retryFailedImages();
+  assert.equal(f.task.getState().status, 'error');
+  await f.task.retry();
+  assert.equal(f.task.getState().status, 'completed');
   assert.equal(f.task.getState().result.failedShotIndexes.length, 0);
-  assert.equal(imageCount, 3);
+  assert.equal(imageCount, 5);
   assert.equal(f.calls.filter(c => c.body.type === 'story').length, 1);
   assert.equal(f.calls.filter(c => c.url === '/api/projects').length, 1);
   assert.equal(f.calls.filter(c => c.url.includes('/shots/')).length, 2);
   assert.equal(f.task.getState().save.status, 'saved');
+});
+
+test('temporary image failure retries automatically with busy text and preserves successful shots', async () => {
+  let images = 0;
+  const f = fixture((url, body) => body.type === 'image' && ++images === 2 ? response({ error: 'private upstream failure' }, false, 503) : undefined);
+  const updates = []; f.task.subscribe(state => updates.push(state.progress.statusText));
+  const pending = f.task.start(options()); await tick();
+  assert.match(f.task.getState().progress.statusText, /伺服器繁忙.*自動重試/);
+  assert.equal(f.task.getState().status, 'generating');
+  assert.equal(f.timers.size, 1); assert.equal([...f.timers.values()][0].ms, 10000);
+  await f.drain(); await pending;
+  assert.equal(f.task.getState().status, 'completed');
+  assert.equal(f.task.getState().result.failedShotIndexes.length, 0);
+  assert.equal(images, 3); assert.equal(f.calls.filter(call => call.body.type === 'story').length, 1);
+  const imageCalls = f.calls.filter(call => call.body.type === 'image');
+  assert.deepEqual(imageCalls[1].body, imageCalls[2].body);
+  assert.ok(updates.some(text => /伺服器繁忙/.test(text))); assert.equal(f.timers.size, 0);
+});
+
+test('image retry stops after three attempts and never exposes raw provider errors', async () => {
+  let images = 0;
+  const f = fixture((url, body) => body.type === 'image' && ++images <= 3 ? response({ error: 'private provider error' }, false, 500) : undefined);
+  const pending = f.task.start(options()); await tick();
+  assert.equal([...f.timers.values()][0].ms, 10000);
+  const [id, timer] = [...f.timers][0]; f.timers.delete(id); timer.fn(); await tick();
+  assert.equal([...f.timers.values()][0].ms, 20000);
+  await f.drain(); await pending;
+  assert.equal(images, 4); assert.equal(f.task.getState().result.failedShotIndexes.length, 1);
+  assert.equal(f.task.getState().status, 'error');
+  assert.equal(f.task.getState().error.code, 'AI_IMAGES_INCOMPLETE');
+  assert.match(f.task.getState().result.generatedShotData[0].payload.imageError, /伺服器繁忙/);
+  assert.doesNotMatch(f.task.getState().result.generatedShotData[0].payload.imageError, /private provider/);
+});
+
+test('cancel or reset during image retry clears the wait and never requests another image', async () => {
+  for (const action of ['cancel', 'reset']) {
+    let images = 0;
+    const f = fixture((url, body) => {
+      if (body.type !== 'image') return;
+      images++;
+      return response({}, false, 503);
+    });
+    const pending = f.task.start(options()); await tick(); assert.equal(f.timers.size, 1);
+    f.task[action](); await pending;
+    assert.equal(images, 1); assert.equal(f.timers.size, 0);
+    assert.equal(f.calls.some(call => call.url === '/api/projects'), false);
+  }
+});
+
+test('image rate limits respect Retry-After and permanent configuration errors are not repeated', async () => {
+  let images = 0;
+  const f = fixture((url, body) => body.type === 'image' && ++images === 1 ? { ...response({}, false, 429), headers: { get: () => '12' } } : undefined);
+  const pending = f.task.start(options()); await tick();
+  assert.equal([...f.timers.values()][0].ms, 12000); await f.drain(); await pending;
+  assert.equal(f.task.getState().result.failedShotIndexes.length, 0);
+  const permanent = fixture((url, body) => body.type === 'image' ? response({ code: 'AI_AUTH_PERMISSION' }, false, 502) : undefined);
+  const stopped = permanent.task.start(options()); await permanent.drain(); await stopped;
+  assert.equal(permanent.calls.filter(call => call.body.type === 'image').length, 2);
+  assert.equal(permanent.timers.size, 0);
+});
+
+test('unreadable image responses stay generating and are regenerated before completion', async () => {
+  const f = fixture(); let decodes = 0;
+  f.context.Image = class {
+    set src(value) {
+      if (!value) return;
+      const broken = ++decodes <= 2;
+      this.naturalWidth = this.naturalHeight = broken ? 0 : 1;
+      Promise.resolve().then(() => broken ? this.onerror?.() : this.onload?.());
+    }
+  };
+  const updates = []; f.task.subscribe(state => updates.push(state));
+  const pending = f.task.start(options()); await tick();
+  assert.equal(f.task.getState().status, 'generating');
+  assert.equal([...f.timers.values()][0].ms, 10000);
+  await f.drain(); await pending;
+  assert.equal(f.task.getState().status, 'completed');
+  assert.equal(decodes, 4);
+  assert.ok(updates.filter(state => state.status === 'completed').every(state => state.progress.completed === state.progress.total && state.result.failedShotIndexes.length === 0));
+});
+
+test('cancel during image validation clears validation timeout and cannot complete', async () => {
+  const f = fixture();
+  f.context.Image = class { set src(value) {} };
+  const pending = f.task.start(options()); await tick();
+  assert.equal([...f.timers.values()][0].ms, 15000);
+  f.task.cancel(); await pending;
+  assert.equal(f.task.getState().status, 'cancelled');
+  assert.equal(f.timers.size, 0);
 });
 test('template inputs reach adaptation; original fractional timing and cameras are preserved', async () => {
   const f = fixture();
@@ -160,7 +251,7 @@ test('template path retains normalized payload and image failure fallback', asyn
   const input = { ...options(), selectedTemplate: { id: 'tpl', name: 'Template', structure: [{ action: 'Open', camera: 'close', duration: '2s' }] } };
   const done = f.task.start(input); await f.drain(); await done;
   const state = f.task.getState();
-  assert.equal(state.status, 'completed'); assert.equal(state.result.generatedImgs[0], '../icon/error.jpg');
+  assert.equal(state.status, 'error'); assert.equal(state.result.generatedImgs[0], '../icon/error.jpg');
   assert.equal(f.calls.some(c => c.body.type === 'story'), true);
   const saved = f.calls.at(-1).body;
   assert.equal(saved.title, 'Journey'); assert.equal(saved.metadata.templateId, 'tpl');

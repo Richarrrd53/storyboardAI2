@@ -100,7 +100,7 @@ test('Ask Gemini uses the creative task with constrained SDK output and ignores 
     assert.equal(f.requests[0].config.thinkingConfig.thinkingLevel, 'MEDIUM');
     assert.equal(f.requests[0].config.responseMimeType, 'application/json');
     assert.deepEqual(f.requests[0].config.responseJsonSchema, responseSchema);
-    assert.ok(f.requests[0].config.httpOptions.timeout > 0 && f.requests[0].config.httpOptions.timeout <= 35000);
+    assert.equal(f.requests[0].config.httpOptions.timeout, 70000, 'SDK upstream deadline includes grace; the application independently limits this inference to 60 seconds');
     assert.match(f.requests[0].config.systemInstruction, /全是資料/);
 });
 
@@ -360,6 +360,15 @@ test('one submitted round groups multiple answers and free discussion without le
     assert.equal(s.creativeBrief.requirements.at(-1), '不要太商業化');
     assert.equal(sent[1].stackRounds, undefined); assert.equal(sent[1].brief.stackRounds, undefined);
     assert.equal(sent[2].history.filter(m => m.role === 'user').length, 2);
+});
+
+test('creation labels and provider error banners do not disclose the model', async () => {
+    const context = controllerFixture(async () => ({ ok: false, json: async () => ({ code: 'AI_RATE_LIMIT', error: 'Gemini 配額不足或請求過多，請稍後重試。' }) }));
+    await context.CreativeCopilot.request();
+    assert.equal(context.CreationSessionStore.copilot.error, 'AI 請求過多，請稍後重試。');
+    const summary = context.AIActivity.summaryMarkup(['模型實際提供的摘要']);
+    assert.match(summary, /<summary>思考摘要<\/summary>/);
+    assert.doesNotMatch(summary, /Gemini/);
 });
 
 test('start → ask → answer → ask → answer → ready keeps continuity and distinct confirmations', async () => {

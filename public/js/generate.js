@@ -113,6 +113,15 @@
       const current = document.querySelector('.phase-panel.active');
       const next = document.getElementById('phase-panel-' + targetPhase);
       if (!next) return;
+      const stackHost = document.getElementById('creation-discussion-stack');
+      const sharedStack = !CreationSessionStore.selectedTemplate && !!CreationSessionStore.story && [1, 2].includes(targetPhase);
+      if (sharedStack && targetPhase === 2) {
+          const discussion = window.CreativeCopilot?.prepare(CreationSessionStore.story);
+          if (discussion) { discussion.active = true; window.CreativeCopilot.render(); }
+      }
+      if (stackHost) stackHost.hidden = !sharedStack || !CreationSessionStore.copilot?.active;
+      const continuous = sharedStack && !!CreationSessionStore.copilot?.active &&
+          ['phase-panel-1', 'phase-panel-2'].includes(current?.id) && current !== next;
       const changed = current !== next;
       const surface = document.getElementById('creation-surface');
       const before = surface.getBoundingClientRect();
@@ -138,7 +147,7 @@
           layer.inert = true; layer.setAttribute('aria-hidden', 'true');
           Object.assign(layer.style, { top: `${bounds.top - parent.top}px`, left: `${bounds.left - parent.left}px`, width: `${bounds.width}px` });
           surface.appendChild(layer); exitLayer = layer;
-          const outgoing = layer.animate([{ opacity: 1, filter: 'blur(0)', transform: 'translateY(0) scale(1)' }, { opacity: 0, filter: 'blur(10px)', transform: 'translateY(-5px) scale(.985)' }], { duration: exitDuration, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' });
+          const outgoing = layer.animate([{ opacity: 1, filter: 'blur(0)', transform: 'translateY(0) scale(1)' }, { opacity: 0, filter: continuous ? 'blur(3px)' : 'blur(10px)', transform: continuous ? 'translateY(-3px)' : 'translateY(-5px) scale(.985)' }], { duration: continuous ? 200 : exitDuration, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' });
           outgoing.finished.then(() => layer.remove()).catch(() => layer.remove());
           phaseAnimations.push(outgoing);
       }
@@ -157,7 +166,12 @@
       updateContextHeader(targetPhase);
       initPhaseFeatures(targetPhase);
       if (CreationSessionStore.currentPhase !== targetPhase) return;
-      if (motion) {
+      if (motion && continuous) {
+          phaseAnimations.push(next.animate([
+              { opacity: 0, filter: 'blur(3px)', transform: 'translateY(4px)' },
+              { opacity: 1, filter: 'blur(0)', transform: 'translateY(0)' }
+          ], { duration: 300, easing: 'cubic-bezier(.22,1,.36,1)' }));
+      } else if (motion) {
           const after = surface.getBoundingClientRect();
           // Morph the surface skin, keeping editable controls unscaled in normal flow.
           // Long scripts use the visible height envelope instead of a many-screen scale.
@@ -174,7 +188,7 @@
               }));
           });
       }
-      if (changed) {
+      if (changed && !continuous) {
           const scroller = next.closest('.spa-gen-wrap');
           if (scroller) scroller.scrollTop = 0;
           else window.scrollTo(0, 0);
@@ -250,7 +264,7 @@
 
       if (!header) return;
 
-      if (phase === 1) {
+      if (phase === 1 || (phase === 2 && !CreationSessionStore.selectedTemplate && CreationSessionStore.copilot?.active)) {
           header.style.display = 'none';
           header.classList.remove('active');
           return;
@@ -291,8 +305,8 @@
   }
 
   function editStoryFromHeader() {
-      window.CreativeCopilot?.editStory();
-      switchPhase(1);
+      if (window.CreativeCopilot?.editStory) window.CreativeCopilot.editStory();
+      else switchPhase(1);
   }
   window.editStoryFromHeader = editStoryFromHeader;
 
@@ -370,10 +384,19 @@
       const notes = document.getElementById('direction-style-notes'), avoid = document.getElementById('direction-avoid');
       if (notes) notes.value = b?.styleNotes || '';
       if (avoid) avoid.value = b?.avoid?.join('、') || '';
+      syncPersonalConditionSummaries();
+      document.querySelectorAll('.direction-condition').forEach(details => { details.open = false; });
       const extra = document.getElementById('section-personal-style'); if (extra) extra.hidden = !!s.selectedTemplate;
       const discuss = document.getElementById('btn-direction-discuss'); if (discuss) discuss.hidden = !!s.selectedTemplate;
       const cursor = document.getElementById('direction-ai-cursor');
       if (cursor) cursor.hidden = true;
+  }
+
+  function syncPersonalConditionSummaries() {
+      const notes = document.getElementById('direction-style-notes'), avoid = document.getElementById('direction-avoid');
+      const notesSummary = document.getElementById('direction-style-notes-summary'), avoidSummary = document.getElementById('direction-avoid-summary');
+      if (notesSummary) notesSummary.textContent = notes?.value.trim() || '沿用目前選擇的視覺風格';
+      if (avoidSummary) avoidSummary.textContent = avoid?.value.trim() || '尚未指定避免元素';
   }
 
   function detectRecommendedStyles(story) {
@@ -922,6 +945,7 @@
       window.CreativeCopilot?.mount(pageController.signal, action => {
           if (action === 'advance' || action === 'ready') switchPhase(2);
           if (action === 'discuss') switchPhase(1);
+          if (action === 'edit-story') switchPhase(1);
       });
       bindPageEvent(document.getElementById('btn-direction-discuss'), 'click', () => window.CreativeCopilot?.discuss());
       const updateStyleConditions = () => {
@@ -931,10 +955,14 @@
               styleNotes: document.getElementById('direction-style-notes').value.trim(),
               avoid: document.getElementById('direction-avoid').value.split('、').map(t => t.trim()).filter(Boolean)
           });
+          syncPersonalConditionSummaries();
           syncDirectionAction();
       };
       bindPageEvent(document.getElementById('direction-style-notes'), 'input', updateStyleConditions);
       bindPageEvent(document.getElementById('direction-avoid'), 'input', updateStyleConditions);
+      document.querySelectorAll('.direction-condition').forEach(details => bindPageEvent(details, 'toggle', () => {
+          details.querySelector('summary small').textContent = details.open ? '收合' : '修改';
+      }));
       bindPageEvent(document.getElementById('btn-skip-copilot'), 'click', () => submitPhase1Story(true));
       document.getElementById('generate-workspace').dataset.ready = 'true';
       matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', event => {
