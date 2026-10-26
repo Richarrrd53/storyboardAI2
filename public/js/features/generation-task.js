@@ -170,7 +170,7 @@
           originalStory: input.story, generationMode: input.selectedTemplate ? 'template' : 'freeform',
           templateId: input.selectedTemplate?.id || null, templateValues: input.templateValues || {}, generationTaskId: run.taskId,
           templateSnapshot: input.selectedTemplate || null,
-          ...(!input.selectedTemplate ? { targetDuration: input.duration } : {})
+          ...(!input.selectedTemplate ? { targetDuration: input.duration, creativeBrief: input.creativeBrief || null } : {})
         };
         const data = await requestJSON(run, controller, '/api/projects', {
           method: 'POST', headers, body: JSON.stringify({
@@ -308,7 +308,8 @@
     }
 
     async function buildFinalPrompt(shot) {
-        const styleDetail = input.style.prompt;
+        // Reviewed freeform shotPrompt already includes the user's visual constraints.
+        const styleDetail = !input.selectedTemplate && input.creativeBrief ? '' : input.style.prompt;
         const rPrompt = getRatioPrompt();
         const characterData = (shot.characters || [])
             .map(id => result.storyboardData?.characters?.[id])
@@ -460,7 +461,7 @@ shots 可另外提供 angle、purpose、dialogue（中文對白或旁白）、em
       if (confirmed) {
         if (run.planDirty) {
           run.progress = { pct: 0, statusText: '正在同步修改後的英文圖片提示詞…', activeStepId: 'step-prompt' }; notify();
-          const response = await askGemini(`依以下已確認分鏡，只更新每鏡 shotPrompt 為反映 story 與 camera 的具體英文圖片提示詞。不得修改任何其他欄位，不得新增角色或改變順序。輸出完整 JSON：${JSON.stringify(result.storyboardData)}`, 'story');
+          const response = await askGemini(`依以下已確認分鏡，只更新每鏡 shotPrompt 為反映 story 與 camera 的具體英文圖片提示詞。保留並遵守原 shotPrompt 已指定的視覺風格與限制，不可套用與使用者限制衝突的預設光線。不得修改任何其他欄位，不得新增角色或改變順序。輸出完整 JSON：${JSON.stringify(result.storyboardData)}`, 'story');
           const revised = safeParseJson(response.response);
           if (!Array.isArray(revised?.shots) || revised.shots.length !== result.storyboardData.shots.length || revised.shots.some((shot, i) => shot.id !== result.storyboardData.shots[i].id)) throw new Error('提示詞同步結果不完整，請重試確認。');
           const merged = clone(result.storyboardData);

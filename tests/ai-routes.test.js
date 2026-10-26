@@ -41,6 +41,20 @@ test('AI routes preserve task contracts, edited shots and provider isolation', a
     };
     const parts = values => ({ candidates: [{ content: { parts: values } }] });
     try {
+        const creative = require('../public/js/features/creative-brief');
+        const copilotInput = { story: '咖啡廳，明亮電影感，避免太暗', brief: creative.create('咖啡廳'), history: [], message: '', intent: 'start', autoRounds: 0, requestId: 'http-copilot', revision: 0 };
+        response = parts([{ text: JSON.stringify({ action: 'ready', message: '用顧客入店的動作開始，保持明亮自然光。', briefPatch: { visualStyle: '明亮電影感', avoid: ['太暗'] } }) }]);
+        const copilot = await post('/api/creation/copilot', copilotInput);
+        assert.equal(copilot.status, 200);
+        assert.equal(copilot.data.action, 'ready');
+        assert.equal(request.model, getModel('fast'));
+        assert.equal(request.config.responseMimeType, 'application/json');
+        assert.ok(request.config.responseJsonSchema.properties.form);
+        assert.equal(clientOptions.vertexai, true);
+        const unauthorized = await fetch(base + '/api/creation/copilot', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer invalid' }, body: JSON.stringify(copilotInput) });
+        assert.equal(unauthorized.status, 401);
+        const oversized = await post('/api/creation/copilot', { ...copilotInput, story: 'a'.repeat(70000) });
+        assert.equal(oversized.status, 413);
         for (const [type, task] of [['flash', 'fast'], ['story', 'story']]) {
             response = parts([{ thought: true, text: 'ignore this summary' }, { text: '{"shots":' }, { text: '[]}' }]);
             const result = await post('/api/ask-gemini', { type, question: 'plan', model: 'untrusted-client-model' });

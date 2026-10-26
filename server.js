@@ -38,6 +38,7 @@ const { GoogleGenAI } = require('@google/genai');
 const { getModel, getModelConfig } = require('./lib/ai/model-config');
 const { parseResponse, generateImage, emptyContent, validatePrompt, reportAIError } = require('./lib/ai/generation');
 const { vertexAuthOptions } = require('./lib/google-credentials');
+const { createCopilotHandler } = require('./lib/ai/copilot');
 
 const app = express();
 
@@ -60,7 +61,7 @@ app.use((req, res, next) => {
     // 2. 若由 Vercel 或其他 proxy 轉發時遺失 /api 前綴，自動補充
     if (!req.url.startsWith('/api') && req.url !== '/' && !req.url.startsWith('/public') && !req.url.startsWith('/css') && !req.url.startsWith('/js') && !req.url.startsWith('/images') && !req.url.startsWith('/html') && !req.url.startsWith('/video') && !req.url.startsWith('/icon')) {
         const isDiscoveryApi = req.url.startsWith('/discovery/search') || req.url.startsWith('/discovery/analyze') || req.url.startsWith('/discovery/skills') || req.url.startsWith('/discovery/add-template');
-        if (req.url.startsWith('/auth') || req.url.startsWith('/projects') || req.url.startsWith('/ask-gemini') || req.url.startsWith('/get-templates') || req.url.startsWith('/templates') || isDiscoveryApi) {
+        if (req.url.startsWith('/auth') || req.url.startsWith('/projects') || req.url.startsWith('/creation/copilot') || req.url.startsWith('/ask-gemini') || req.url.startsWith('/get-templates') || req.url.startsWith('/templates') || isDiscoveryApi) {
             req.url = '/api' + (req.url.startsWith('/') ? req.url : '/' + req.url);
         }
     }
@@ -99,10 +100,21 @@ app.get('/', (req, res) => {
 
 const publicPath = path.join(process.cwd(), 'public');
 app.use(express.static(publicPath));
+// Copilot has a smaller parser before the legacy image payload parser.
+app.use('/api/creation/copilot', express.json({ limit: '64kb' }));
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ limit: '100mb', extended: true })); // 增加 URL 編碼限制
 
 const discoverySettings = new ApiSettings();
+// Existing text generation permits guests; authenticated callers use their verified identity.
+app.post('/api/creation/copilot', (req, res, next) => {
+    const authorization = req.get('authorization');
+    if (authorization) {
+        try { req.copilotIdentity = 'user:' + jwt.verify(authorization.replace(/^Bearer /, ''), JWT_SECRET).id; }
+        catch { return res.status(401).json({ error: '登入已失效，請重新登入。' }); }
+    }
+    next();
+}, createCopilotHandler(getGenAI));
 const DISCOVERY_PLATFORMS = new Set(['youtube-shorts']);
 const DISCOVERY_TIME_RANGES = new Set(['7', '30', '90', 'all']);
 const DISCOVERY_MAX_DURATIONS = new Set(['60', '180']);

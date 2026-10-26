@@ -79,7 +79,7 @@
   }
 
   function unmountGeneratePage() {
-      if (window.GenerationTask?.getState().status === 'idle') {
+      if (window.GenerationTask?.getState().status === 'idle' && !CreationSessionStore.creativeBrief) {
           CreationSessionStore.targetPhase = 1;
           CreationSessionStore.currentPhase = 1;
       }
@@ -185,6 +185,7 @@
 
   function initPhaseFeatures(targetPhase) {
       if (targetPhase === 1) {
+          window.CreativeCopilot?.render();
           const input = document.getElementById('story-input');
           if (input) {
               if (CreationSessionStore.story && !input.value) {
@@ -302,6 +303,7 @@
       if (!input || !btn) return;
 
       const val = input.value.trim();
+      if (val !== CreationSessionStore.story && CreationSessionStore.copilot?.busy) window.CreativeCopilot?.cancel();
       input.style.height = 'auto';
       const maxHeight = parseFloat(getComputedStyle(input).maxHeight) || 132;
       input.style.height = `${Math.max(40, Math.min(input.scrollHeight, maxHeight))}px`;
@@ -309,6 +311,8 @@
       btn.disabled = !hasVal || templateLoading;
       btn.setAttribute('data-active', hasVal ? 'true' : 'false');
       CreationSessionStore.draft.story = input.value;
+      const skip = document.getElementById('btn-skip-copilot');
+      if (skip) { skip.disabled = !hasVal || templateLoading; skip.hidden = !!CreationSessionStore.selectedTemplate; }
   }
   window.onStoryInput = onStoryInput;
 
@@ -324,7 +328,7 @@
   }
   window.fillPhase1Sugg = fillPhase1Sugg;
 
-  function submitPhase1Story() {
+  function submitPhase1Story(skipDiscussion = false) {
       const input = document.getElementById('story-input');
       const story = (input ? input.value.trim() : '') || CreationSessionStore.draft.story;
       if (!story || templateLoading) return;
@@ -332,7 +336,19 @@
       if (story !== CreationSessionStore.story && window.GenerationTask.getState().status !== 'idle') window.GenerationTask.reset();
       CreationSessionStore.story = story;
       CreationSessionStore.draft.story = story;
-      switchPhase(2);
+      if (CreationSessionStore.selectedTemplate || skipDiscussion) {
+          window.CreativeCopilot?.cancel();
+          if (!CreationSessionStore.selectedTemplate) window.CreativeCopilot?.prepare(story);
+          switchPhase(2);
+      } else {
+          const c = window.CreativeCopilot?.prepare(story);
+          if (c) {
+              c.active = true;
+              window.CreativeCopilot.render();
+              if (!c.response && !c.busy && !c.error) window.CreativeCopilot.request('start');
+              else document.getElementById('creative-copilot')?.scrollIntoView({ block: 'start', behavior: 'auto' });
+          } else switchPhase(2);
+      }
   }
   window.submitPhase1Story = submitPhase1Story;
 
@@ -383,6 +399,7 @@
 
   function selectStyleCard(index) {
       CreationSessionStore.styleIndex = index;
+      if (!CreationSessionStore.selectedTemplate && CreationSessionStore.creativeBrief) window.CreativeBrief.edit(CreationSessionStore.creativeBrief, { visualStyle: STYLES[index].name });
       document.querySelectorAll('.style-card').forEach(c => {
           const isTarget = Number(c.dataset.index) === index;
           c.classList.toggle('active', isTarget);
@@ -407,6 +424,7 @@
       if (!btn) return;
       const ratio = btn.dataset.ratio;
       CreationSessionStore.ratio = ratio;
+      if (!CreationSessionStore.selectedTemplate && CreationSessionStore.creativeBrief) window.CreativeBrief.edit(CreationSessionStore.creativeBrief, { ratio: ratio.replace(/橫向|直向/g, '') });
       syncRatioChips();
   }
   window.selectRatioOption = selectRatioOption;
@@ -723,6 +741,7 @@
           style: STYLES[CreationSessionStore.styleIndex] || STYLES[0],
           ratio: CreationSessionStore.ratio,
           duration: CreationSessionStore.duration || 30,
+          creativeBrief: CreationSessionStore.selectedTemplate ? null : window.CreativeBrief?.snapshot(CreationSessionStore.creativeBrief),
           selectedTemplate: CreationSessionStore.selectedTemplate,
           templateValues: { ...CreationSessionStore.templateValues }
       });
@@ -748,7 +767,8 @@
   window.abortGeneration = abortGeneration;
 
   function resetCreationWorkflow() {
-      window.GenerationTask.reset();
+      CreationSessionStore.reset();
+      window.CreativeCopilot?.render();
       document.getElementById('generation-error-banner').hidden = true;
       const phaseTitle = document.querySelector('.generation-phase-title');
       if (phaseTitle) phaseTitle.style.display = '';
@@ -783,7 +803,8 @@
       const task = window.GenerationTask.getState(), session = CreationSessionStore;
       return task.status === 'awaiting_confirmation' && !task.input.selectedTemplate &&
           task.input.story === session.story && task.input.style.name === STYLES[session.styleIndex || 0].name &&
-          task.input.ratio === session.ratio && task.input.duration === (session.duration || 30);
+          task.input.ratio === session.ratio && task.input.duration === (session.duration || 30) &&
+          JSON.stringify(task.input.creativeBrief || null) === JSON.stringify(window.CreativeBrief?.snapshot(session.creativeBrief) || null);
   }
   function syncDirectionAction() {
       const button = document.getElementById('btn-direction-next');
@@ -871,6 +892,10 @@
       unmountGeneratePage();
       if (options.signal?.aborted) return null;
       pageController = new AbortController();
+      window.CreativeCopilot?.mount(pageController.signal, action => {
+          if (action === 'advance') switchPhase(2);
+      });
+      bindPageEvent(document.getElementById('btn-skip-copilot'), 'click', () => submitPhase1Story(true));
       document.getElementById('generate-workspace').dataset.ready = 'true';
       matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', event => {
           mathLoader?.stop(); mathLoader = null; syncMathLoader();
@@ -883,7 +908,9 @@
       const unmount = () => { if (pageController === mount) unmountGeneratePage(); };
       renderedPlan = '';
       document.querySelectorAll('[data-duration]').forEach(button => bindPageEvent(button, 'click', () => {
-          CreationSessionStore.duration = Number(button.dataset.duration); syncDuration();
+          CreationSessionStore.duration = Number(button.dataset.duration);
+          if (!CreationSessionStore.selectedTemplate && CreationSessionStore.creativeBrief) window.CreativeBrief.edit(CreationSessionStore.creativeBrief, { duration: CreationSessionStore.duration });
+          syncDuration();
       }));
       bindPageEvent(document.getElementById('plan-title'), 'input', savePlanFromUI);
       bindPageEvent(document.getElementById('plan-shots'), 'input', savePlanFromUI);
@@ -921,6 +948,7 @@
       bindPageEvent(document.getElementById('btn-edit-generation-brief'), 'click', () => { document.getElementById('generation-error-banner').hidden = true; switchPhase(1); });
       const input = document.getElementById('story-input');
       if (input && !input.dataset.bound) {
+          window.addEventListener('resize', onStoryInput, { signal: pageController.signal });
           input.dataset.bound = 'true';
           bindPageEvent(input, 'keydown', e => {
               if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229) {
@@ -1031,11 +1059,11 @@
       const task = window.GenerationTask.getState();
       const targetPhase = task.status === 'awaiting_confirmation' ? 5 : ['generating', 'completed'].includes(task.status)
           ? 4 : (['error', 'cancelled'].includes(task.status) ? 2
-              : (options.targetPhase || CreationSessionStore.targetPhase || 1));
+              : (options.fromQC && !CreationSessionStore.selectedTemplate ? 1 : options.targetPhase || CreationSessionStore.targetPhase || 1));
 
       if (story) {
           CreationSessionStore.story = story;
-          if (input) input.value = story;
+          if (input) input.value = CreationSessionStore.draft.story || story;
       }
 
       if (requestedTemplateId && task.status !== 'generating') loadRequestedTemplate();
@@ -1043,6 +1071,7 @@
 
       unsubscribeTask = window.GenerationTask.subscribe(presentTask);
       switchPhase(targetPhase, false);
+      if (options.fromQC && !CreationSessionStore.selectedTemplate && task.status === 'idle' && story) submitPhase1Story();
       return { unmount: () => {
           options.signal?.removeEventListener('abort', unmount);
           unmount();

@@ -134,3 +134,26 @@ test('single failed shot retry preserves successful images and does not regenera
   assert.equal(f.task.getState().progress.completed, 10); assert.equal(count, 11);
   assert.equal(f.calls.filter(c => c.body.type === 'story').length, 1);
 });
+
+test('Creative Brief snapshot reaches generation and image prompts keep reviewed lighting without preset conflicts', async () => {
+  const B = require('../public/js/features/creative-brief');
+  const brief = B.create('咖啡廳，明亮電影感，避免太暗');
+  B.edit(brief, { visualStyle: '明亮電影感', avoid: ['太暗'] });
+  B.commit(brief, [{ id: 'focus', question: '敘事視角', values: [{ value: 'customer', label: '顧客的小故事' }], other: '' }]);
+  const f = fixture((url, body) => {
+    if (body.type !== 'story') return null;
+    const data = plan();
+    data.shots.forEach(s => { s.shotPrompt = 'A bright airy cafe with natural daylight, no deep black shadows'; });
+    return response({ response: JSON.stringify(data) });
+  });
+  await f.task.start({ ...input, story: brief.originalStory, creativeBrief: B.snapshot(brief), style: { name: '電影', prompt: 'deep shadows, film noir vibes' } });
+  assert.equal(f.task.getState().input.creativeBrief.answers[0].values[0].label, '顧客的小故事');
+  assert.match(f.calls[0].body.question, /明亮電影感/);
+  assert.equal(f.calls.filter(c => c.body.type === 'image').length, 0);
+  await f.task.confirmPlan();
+  const images = f.calls.filter(c => c.body.type === 'image');
+  assert.equal(images.length, 10);
+  assert.ok(images.every(c => c.body.question.includes('bright airy cafe')));
+  assert.ok(images.every(c => !c.body.question.includes('film noir vibes')));
+  assert.equal(f.task.getState().status, 'completed');
+});

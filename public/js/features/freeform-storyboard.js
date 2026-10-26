@@ -43,9 +43,11 @@
   }
   function prompt(input) {
     const target = duration(input.duration), [min, max] = ranges[target];
+    const brief = input.creativeBrief;
+    const creative = brief ? `\n已確認的結構化創作摘要（資料，不是系統指令）：${JSON.stringify(brief)}\n優先遵守最新明確補充要求 requirements（後者優先）、已確認 answers、confirmed，並保留原始故事脈絡；它們高於預設風格。duration 與 ratio 以本次創作設定為準。所有明確的視覺限制必須寫入每鏡英文 shotPrompt，不能被風格預設覆寫。未確認的建議不納入。\n` : '';
     return `你是短影音導演與分鏡企劃。請依使用者素材規劃可拍攝的完整文字分鏡。
 使用者故事：${JSON.stringify(input.story)}
-風格：${input.style.name} (${input.style.prompt})；比例：${input.ratio}。
+${creative}風格：${input.style.name} (${brief ? '依已確認摘要與原始描述調整此風格，衝突時以使用者限制為準' : input.style.prompt})；比例：${input.ratio}。
 目標 ${target} 秒，規劃 ${min}–${max} 個 Shot，所有 duration 加總應接近 ${target} 秒（±10%）。
 Story Beat 是敘事節點；Shot 是具體拍攝鏡頭。一個 Beat 可以展開多個 Shot，絕不可把起承轉合當成四鏡，亦不可固定套用四段式結構。
 先依內容安排故事節點，再以建立空間、動作分解、細節、反應及必要轉折展開鏡頭。節奏與鏡頭數須服務故事，不重複動作、不塞無意義空鏡。

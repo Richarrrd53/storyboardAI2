@@ -14,6 +14,8 @@
     return {
       entryMode: 'full', // 'quick' | 'full'
       story: '',
+      creativeBrief: null,
+      copilot: null,
       styleIndex: 0,
       ratio: '橫向16:9',
       duration: 30,
@@ -45,6 +47,7 @@
   }
 
   session.reset = function() {
+    root.CreativeCopilot?.cancel();
     root.GenerationTask?.reset();
     const fresh = createInitialSession();
     Object.keys(fresh).forEach(key => {
@@ -106,7 +109,9 @@
     isSubmitting = true;
 
     // Update authoritative CreationSessionStore
+    if (session.story && session.story !== story) session.reset();
     session.story = story;
+    root.CreativeCopilot?.prepare(story);
     if (session.draft) {
       session.draft.story = '';
     }
@@ -184,11 +189,12 @@
         <div class="proxy-header-row">
           <div class="proxy-badge">
             <span class="proxy-sparkle">✦</span>
-            <span class="proxy-text">${displayText}</span>
+            <span class="proxy-text"></span>
             <span class="proxy-check">✓</span>
           </div>
         </div>
       `;
+      proxy.querySelector?.('.proxy-text') && (proxy.querySelector('.proxy-text').textContent = displayText);
       proxy.style.position = 'fixed';
       proxy.style.top = `${startRect.top}px`;
       proxy.style.left = `${startRect.left}px`;
