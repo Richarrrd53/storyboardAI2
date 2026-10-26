@@ -12,8 +12,10 @@
 
 - `YOUTUBE_API_KEY`：啟用 YouTube Data API v3 的金鑰。
 - `GOOGLE_CLOUD_PROJECT_ID`：啟用 Vertex AI 的專案。
-- `GOOGLE_APPLICATION_CREDENTIALS`：具備 Vertex AI 權限的 Google 認證檔案路徑；雲端部署也可沿用 `GCP_SERVICE_ACCOUNT_BASE64`。
-- `DISCOVERY_GEMINI_MODEL`：可選，預設 `gemini-2.5-flash`，需支援影片輸入。
+- `GOOGLE_APPLICATION_CREDENTIALS`：可選的既有認證路徑；未設定時沿用標準 ADC／部署環境認證。雲端也可沿用 `GCP_SERVICE_ACCOUNT_BASE64`（記憶體解碼）。
+- `DISCOVERY_GEMINI_MODEL`：可選，預設 `gemini-3.8-flash`，需支援影片輸入。
+
+模型來自 `lib/ai/model-config.js`，分析與設定驗證使用同一常數。預設 MEDIUM thinking，可由後端任務改為 LOW／HIGH。有 Gemini API Key 時明確使用 Developer API，先確認該 provider 可存取設定模型；未設定時只使用 Vertex AI ADC，不會自動切換 provider。設定頁會顯示 provider；Developer API 獨立計費，不能使用 Vertex AI 抵用額。
 
 `POST /api/discovery/search` 回傳真實影片與資料來源；瀏覽器接著逐支呼叫 `POST /api/discovery/analyze`，將 YouTube URL 作為 `fileData` 傳給 Gemini，分析畫面與語音，回傳開場、問題、解法、結尾及時間戳。單支失敗不影響其他影片，可個別重試；不會以示範資料或標題推測取代失敗結果。分析需使用 API 配額，20 支影片可能需數分鐘。結果目前只保留在頁面中。
 

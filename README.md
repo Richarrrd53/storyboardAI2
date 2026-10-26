@@ -191,7 +191,7 @@ flowchart TB
 | **後端核心** | Node.js + Express 5.x | RESTful API、Vercel Serverless 中介層、支援 100MB 大資料負載 |
 | **資料持久化**| Prisma ORM 7.8 + PostgreSQL (`pg`) | 配合 `@prisma/adapter-pg` 連線池管理，支援 UUID 與 8 碼 ShortId |
 | **身分驗證** | JWT (`jsonwebtoken`) + `bcrypt` | Bearer Token 傳輸、安全性密碼雜湊、過期自動倒退登入與快取重置 |
-| **AI 模型整合**| Google GenAI SDK (`@google/genai`) | `gemini-2.5-flash-lite` (超低延遲)、`gemini-3.5-flash` (劇本拆解)、`gemini-3.1-flash-image` (1K 生圖) |
+| **AI 模型整合**| Google GenAI SDK (`@google/genai`) | `gemini-3.5-flash-lite` (超低延遲)、`gemini-3.8-flash` (劇本拆解)、`gemini-nano-banana-2.1` (1K 生圖) |
 | **影音探索** | YouTube Data API v3 + 多模態分析 | 搜尋 Shorts 數據，多模態剖析前 3 秒爆點鉤子、轉場節奏與分鏡 |
 
 ---
@@ -452,7 +452,7 @@ $$\text{insertDepth} = \text{round}\Big(\text{Height} \times (1 - \text{visibleR
 - **Phase 1: 故事輸入與意圖啟動**：支援長文本，智慧預選合適風格。
 - **Phase 2: 視覺調性與畫幅比例確立**：8 種精選風格，支援 16:9, 9:16, 1:1, 3:2, 2:3。
 - **Phase 3: 爆點 HOOK 模板推薦與注入**：結合前 3 秒留存公式。
-- **Phase 4: 多模態分鏡編排與即時繪製**：由 `gemini-3.5-flash` 拆解劇本，`gemini-3.1-flash-image` 渲染精美 1K 分鏡圖。
+- **Phase 4: 多模態分鏡編排與即時繪製**：由 `gemini-3.8-flash` 拆解劇本，`gemini-nano-banana-2.1` 渲染精美 1K 分鏡圖。
 
 ### 5.4 爆點模板庫與時間軸模組 (Hook Templates & Timeline)
 - 結構化短影音爆款公式，可視化時間軸標記鏡頭節奏，一鍵帶入參數前往生成。
@@ -597,8 +597,8 @@ JWT_SECRET="your-super-secret-jwt-key"
 # Google Cloud / Vertex AI 設定 (生圖與劇本生成)
 GOOGLE_CLOUD_PROJECT_ID="your-gcp-project-id"
 
-# 認證方式 A (本地開發): 指定 GCP 服務帳戶 JSON 金鑰路徑
-GOOGLE_APPLICATION_CREDENTIALS="./application_default_credentials.json"
+# 本機開發：沿用已驗證的 ADC，不需重新登入；也可指定既有認證檔案
+# GOOGLE_APPLICATION_CREDENTIALS="/absolute/path/to/credentials.json"
 
 # 認證方式 B (雲端部屬/Vercel): Base64 編碼的 GCP 服務帳戶 JSON
 # GCP_SERVICE_ACCOUNT_BASE64="eyJrZXlfaWQiOi..."
@@ -606,12 +606,21 @@ GOOGLE_APPLICATION_CREDENTIALS="./application_default_credentials.json"
 # 短影音探索實驗室 (可選)
 YOUTUBE_API_KEY="your-youtube-data-api-key"
 DISCOVERY_SETTINGS_SECRET="your-discovery-secret-32-chars"
+
+# 各用途獨立覆寫；共用設定在 lib/ai/model-config.js
+GEMINI_MODEL_FAST="gemini-3.5-flash-lite"
+GEMINI_MODEL_STORY="gemini-3.8-flash"
+GEMINI_MODEL_IMAGE="gemini-nano-banana-2.1"
+DISCOVERY_GEMINI_MODEL="gemini-3.8-flash"
+GEMINI_MODEL_PREMIUM_STORY="gemini-4-argon" # 僅預留，普通生成不會使用
 ```
 
 > [!IMPORTANT]
-> 若在本地環境執行，請務必確認 `.env` 中的 `GOOGLE_APPLICATION_CREDENTIALS` 檔案路徑正確，否則 Gemini 影像生成與 Vertex AI 調用將無法通過認證。
+> 本機沿用 ADC；若指定 `GOOGLE_APPLICATION_CREDENTIALS`，該路徑優先且必須有效。本機標準 ADC 優先於殘留的 Base64 雲端金鑰；部署時未指定路徑可使用 `GCP_SERVICE_ACCOUNT_BASE64`（只在記憶體中解碼）。不會自動切換到 Developer API。
 
 ---
+
+SDK 使用 `@google/genai` 2.31.0（Node.js ≥20；本專案現有 Prisma 環境使用 Node.js 22.12.0）。Story／Discovery 預設 MEDIUM thinking；圖片固定 1K，未傳入 sampling 參數。官方參考：[SDK](https://github.com/googleapis/js-genai)、[Gemini 3.8 Flash](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/gemini/3-8-flash)、[Nano Banana 2.1](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/gemini/nano-banana-2-1)。
 
 ### 8.2 本地端啟動流程
 
@@ -647,7 +656,7 @@ DISCOVERY_SETTINGS_SECRET="your-discovery-secret-32-chars"
 
 1. **靜態檔案與 API 重寫**：專案根目錄已包含 `vercel.json`，負責將靜態資源指向 `public/`，其餘 API 請求轉發至 `server.js`。
 2. **Serverless 相容性中介層**：`server.js` 內建專用中介層，自動解析 `x-matched-path` 與 `x-forwarded-uri`，防止 Vercel 路徑重寫導致 `/api` 前綴遺失。
-3. **無伺服器金鑰解析**：在 Vercel 設定 `GCP_SERVICE_ACCOUNT_BASE64`，伺服器啟動時自動解碼並寫入 `/tmp/gcp-key.json`。
+3. **無伺服器金鑰解析**：在 Vercel 設定 `GCP_SERVICE_ACCOUNT_BASE64`，透過 SDK `googleAuthOptions.credentials` 在記憶體中解碼，不寫入金鑰檔案。
 4. **PostgreSQL 連線池管理**：針對 Serverless 環境，`pg.Pool` 配置了 `idleTimeoutMillis: 10000` 與 `keepAlive: true`，有效預防死連線佔用。
 
 ---

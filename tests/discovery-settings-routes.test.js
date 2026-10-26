@@ -10,6 +10,7 @@ test('settings page, validated save, reload and search use browser credentials w
     });
     const YouTubeCollector = require('../lib/discovery/youtube-collector');
     const { GoogleGenAI } = require('@google/genai');
+    const { getModel } = require('../lib/ai/model-config');
     const modelPrototype = Object.getPrototypeOf(new GoogleGenAI({ vertexai: false, apiKey: 'test' }).models);
     let checkedYouTube;
     let checkedGemini = 0;
@@ -20,7 +21,7 @@ test('settings page, validated save, reload and search use browser credentials w
         return { items: [] };
     };
     YouTubeCollector.prototype.search = async function () { searchedKey = this.apiKey; return { videos: [] }; };
-    modelPrototype.get = async () => { checkedGemini++; return { name: 'gemini-2.5-flash' }; };
+    modelPrototype.get = async ({ model }) => { checkedGemini++; assert.equal(model, getModel('discovery')); return { name: model }; };
     const app = require('../server');
     const server = app.listen(0, '127.0.0.1');
     await new Promise(resolve => server.once('listening', resolve));
