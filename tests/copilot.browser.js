@@ -35,6 +35,7 @@ test('browser: round-two copilot, real loader, automatic settings, structured pl
         const body = route.request().postDataJSON(); calls.push(body);
         if (hold) await new Promise(resolve => { release = resolve; });
         if (mode === 'error') return route.fulfill({ status: 429, json: { error: '配額不足，請稍後重試。' } });
+        if (mode === 'timeout') return route.fulfill({ status: 504, json: { code: 'AI_UPSTREAM_TIMEOUT', error: '思考時間較長，請重試；你的選擇已保留。' } });
         let response = mode === 'ready' ? ready : mode === 'malformed' ? { action: 'ask', message: '格式錯誤', form: {} } : ask;
         if (mode === 'next') response = { ...ask, message: '桌邊互動可以用反應鏡頭建立節奏，再確認對話與動作的比例。' };
         if (mode === 'multi' || mode === 'free' || mode === 'proposal') response = { ...ask, action: mode === 'proposal' ? 'propose' : 'ask', form: { title: '補充創作元素', questions: [{ ...ask.form.questions[0], type: { multi: 'multi_choice', free: 'free_text', proposal: 'proposal_choice' }[mode], min: 0, max: 3 }] } };
@@ -63,7 +64,9 @@ test('browser: round-two copilot, real loader, automatic settings, structured pl
         const story = '藏鏡人視角的飲品影片，朋友聚會，明亮自然電影感，不要太暗。';
         await start(story);
         await page.waitForFunction(() => !!document.querySelector('.ai-activity-panel .math-loader-path')?.getAttribute('d'));
-        assert.match(await page.locator('.ai-activity-panel').innerText(), /正在思考/);
+        assert.match(await page.locator('.ai-activity-panel').innerText(), /已收到你的創作想法/);
+        assert.equal(await page.locator('.copilot-brief').count(), 0);
+        assert.equal(await page.locator('.copilot-history').isVisible(), false);
         assert.ok(!(await page.locator('.ai-activity-panel').innerText()).includes('Gemini'));
         assert.equal(await page.evaluate(() => document.querySelector('.copilot-user-message').getAnimations().some(a => a.playState === 'running')), true);
         assert.equal(await page.locator('#phase1-composer').isVisible(), false);
@@ -72,7 +75,10 @@ test('browser: round-two copilot, real loader, automatic settings, structured pl
         await page.screenshot({ path: path.join(screenshots, 'thinking.png'), fullPage: true });
         hold = false; release();
         await page.waitForFunction(() => CreationSessionStore.copilot.phase === 'responded');
-        assert.equal(await page.locator('.ai-activity-panel').count(), 0);
+        assert.equal(await page.locator('.copilot-heading h2').textContent(), 'Ask Gemini');
+        assert.equal(await page.locator('#creative-copilot').getAttribute('aria-label'), 'Ask Gemini 創作討論');
+        assert.equal(await page.evaluate(() => AskGeminiConversation === CreativeCopilot), true);
+        assert.equal(await page.locator('#creative-copilot .ai-activity-panel').count(), 0);
         assert.equal(await page.locator('.ai-thought-summary').count(), 0);
         for (const [width, height] of [[1440, 900], [1280, 800], [390, 844], [375, 667]]) {
             await page.setViewportSize({ width, height }); await settled();
@@ -92,8 +98,15 @@ test('browser: round-two copilot, real loader, automatic settings, structured pl
         await page.locator('.copilot-option').first().click();
         assert.equal(calls.length, beforeDraft);
         assert.equal(await page.evaluate(() => CreationSessionStore.creativeBrief.answers.length), 0);
-        mode = 'next'; await page.locator('#copilot-answer-form button[type=submit]').click();
+        mode = 'timeout'; await page.locator('#copilot-answer-form button[type=submit]').click();
+        await page.locator('#creative-copilot [role=alert]').waitFor();
+        assert.equal(await page.evaluate(() => CreationSessionStore.creativeBrief.answers.length), 1);
+        assert.equal(calls.at(-1).brief.answers[0].values[0].value, 'friends');
+        const failed = calls.at(-1);
+        mode = 'next'; await page.locator('[data-copilot=retry]').click();
         await page.waitForFunction(() => !CreationSessionStore.copilot.busy);
+        assert.deepEqual(calls.at(-1), failed);
+        assert.equal(await page.evaluate(() => CreationSessionStore.creativeBrief.answers.length), 1);
         assert.equal(await page.evaluate(() => CreationSessionStore.currentPhase), 1);
         assert.equal(calls.at(-1).brief.answers[0].values[0].value, 'friends');
         assert.equal(calls.at(-1).brief.answers[0].other, '');

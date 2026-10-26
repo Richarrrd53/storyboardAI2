@@ -82,7 +82,7 @@ function routeFixture(generate) {
     const requests = [];
     const handler = createCopilotHandler(() => ({ models: { generateContent: async args => {
         requests.push(args); return generate ? generate(args) : { text: JSON.stringify(ready) };
-    } } }));
+    } } }), { logger() {} });
     async function call(body = payload(), identity = 'user:u', headers = {}) {
         const req = { body, ip: '127.0.0.1', copilotIdentity: identity, get: name => headers[name], is: type => type === 'application/json' };
         const res = { statusCode: 200, status(value) { this.statusCode = value; return this; }, json(data) { return { status: this.statusCode, data }; } };
@@ -91,12 +91,13 @@ function routeFixture(generate) {
     return { call, requests };
 }
 
-test('copilot route uses Fast Text with constrained SDK output and ignores client model IDs', async () => {
+test('Ask Gemini uses the creative task with constrained SDK output and ignores client model IDs', async () => {
     const f = routeFixture();
     const result = await f.call(payload({ model: 'arbitrary-expensive-model' }));
     assert.equal(result.status, 200);
     assert.equal(result.data.requestId, 'request-1');
-    assert.equal(f.requests[0].model, require('../lib/ai/model-config').getModel('fast'));
+    assert.equal(f.requests[0].model, require('../lib/ai/model-config').getModel('creative'));
+    assert.equal(f.requests[0].config.thinkingConfig.thinkingLevel, 'MEDIUM');
     assert.equal(f.requests[0].config.responseMimeType, 'application/json');
     assert.deepEqual(f.requests[0].config.responseJsonSchema, responseSchema);
     assert.ok(f.requests[0].config.httpOptions.timeout > 0 && f.requests[0].config.httpOptions.timeout <= 35000);
@@ -120,7 +121,7 @@ test('invalid JSON, malformed forms, quota, permission and timeout failures are 
         const result = await f.call();
         assert.equal(result.status, error.status === 403 ? 502 : error.status);
         assert.ok(!JSON.stringify(result).includes('private-upstream-value'));
-        await f.call(); assert.equal(f.requests.length, 2);
+        await f.call(); assert.equal(f.requests.length, error.status === 503 ? 4 : 2);
     }
     for (const text of ['not JSON', JSON.stringify({ ...ask(), form: null })]) {
         const f = routeFixture(() => ({ text }));
@@ -270,7 +271,7 @@ test('schema follows three-option limits; one invalid Gemini decision is repaire
     const result = await f.call();
     assert.equal(result.status, 200); assert.equal(result.data.action, 'ready');
     assert.equal(f.requests.length, 2);
-    assert.ok(f.requests.every(r => r.model === require('../lib/ai/model-config').getModel('fast')));
+    assert.ok(f.requests.every(r => r.model === require('../lib/ai/model-config').getModel('creative')));
     const repair = JSON.parse(f.requests[1].contents.at(-1).parts[0].text);
     assert.equal(repair.repair, true); assert.match(repair.validationIssue, /選項數量/);
 });
@@ -307,4 +308,133 @@ test('a proposal missing its options is repaired; free text remains a separate v
     assert.ok(schemas[0].required.includes('options'));
     assert.equal(schemas[1].properties.type.enum[0], 'free_text');
     assert.ok(!schemas[1].required.includes('options'));
+});
+
+test('propose → confirmed friends → second-round timeout → retry → ready commits the answer once', async () => {
+    const payloads = [];
+    const proposal = ask('proposal_choice'); proposal.action = 'propose';
+    proposal.form.questions[0].options[0].label = '朋友聚會';
+    const context = controllerFixture(async (url, options) => {
+        const body = JSON.parse(options.body); payloads.push(body);
+        if (payloads.length === 2) return { ok: false, json: async () => ({ code: 'AI_UPSTREAM_TIMEOUT', error: '思考逾時；選擇已保留。' }) };
+        return { ok: true, json: async () => ({ ...(payloads.length === 1 ? proposal : ready), requestId: body.requestId, revision: body.revision }) };
+    });
+    const actions = [];
+    context.CreativeCopilot.mount(new AbortController().signal, action => actions.push(action));
+    await context.CreativeCopilot.request();
+    const s = context.CreationSessionStore, original = s.creativeBrief.originalStory;
+    s.copilot.drafts = { story_focus: { values: ['first'], other: '' } };
+    await context.CreativeCopilot.request('answer');
+    assert.match(s.copilot.error, /逾時/);
+    assert.equal(s.creativeBrief.answers.length, 1);
+    assert.equal(s.creativeBrief.answers[0].values[0].label, '朋友聚會');
+    assert.equal(s.copilot.stackRounds.length, 1);
+    const revision = s.creativeBrief.revision;
+    await context.CreativeCopilot.request('start', true);
+    assert.deepEqual(payloads[1], payloads[2]);
+    assert.equal(payloads[2].intent, 'answer'); assert.equal(payloads[2].revision, revision);
+    assert.equal(s.creativeBrief.answers.length, 1); assert.equal(s.creativeBrief.originalStory, original);
+    assert.equal(s.copilot.history.filter(m => m.role === 'user').length, 1);
+    assert.equal(s.copilot.retry, null); assert.deepEqual(actions, ['ready']);
+    assert.equal(s.copilot.stackRounds.length, 1);
+    assert.deepEqual(Array.from(s.copilot.stackRounds[0].answerIds), ['story_focus']);
+    assert.equal(s.copilot.discussionLog.filter(m => m.role === 'user').length, 1);
+});
+
+test('one submitted round groups multiple answers and free discussion without leaking UI data into API payloads', async () => {
+    const sent = [];
+    const context = controllerFixture(async (url, options) => {
+        const body = JSON.parse(options.body); sent.push(body);
+        return { ok: true, json: async () => ({ ...ask('multi_choice'), requestId: body.requestId, revision: body.revision }) };
+    });
+    await context.CreativeCopilot.request();
+    const s = context.CreationSessionStore;
+    s.copilot.drafts = { story_focus: { values: ['first', 'second'], other: '自然光', otherActive: true } };
+    await context.CreativeCopilot.request('answer');
+    assert.equal(s.copilot.stackRounds.length, 1);
+    assert.equal(s.creativeBrief.answers[0].values.length, 2);
+    s.copilot.message = '不要太商業化';
+    await context.CreativeCopilot.request('continue');
+    assert.equal(s.copilot.stackRounds.length, 2);
+    assert.equal(s.copilot.stackRounds[1].message, '不要太商業化');
+    assert.equal(s.creativeBrief.requirements.at(-1), '不要太商業化');
+    assert.equal(sent[1].stackRounds, undefined); assert.equal(sent[1].brief.stackRounds, undefined);
+    assert.equal(sent[2].history.filter(m => m.role === 'user').length, 2);
+});
+
+test('start → ask → answer → ask → answer → ready keeps continuity and distinct confirmations', async () => {
+    const payloads = [];
+    const context = controllerFixture(async (url, options) => {
+        const body = JSON.parse(options.body); payloads.push(body);
+        const response = payloads.length === 3 ? ready : ask();
+        if (payloads.length === 2) response.form.questions[0].id = 'visual_focus';
+        return { ok: true, json: async () => ({ ...response, requestId: body.requestId, revision: body.revision }) };
+    });
+    await context.CreativeCopilot.request();
+    const s = context.CreationSessionStore;
+    s.copilot.drafts = { story_focus: { values: ['first'], other: '' } };
+    await context.CreativeCopilot.request('answer');
+    s.copilot.drafts = { visual_focus: { values: ['second'], other: '' } };
+    await context.CreativeCopilot.request('answer');
+    assert.deepEqual(payloads.map(p => p.intent), ['start', 'answer', 'answer']);
+    assert.deepEqual(payloads.map(p => p.autoRounds), [0, 1, 2]);
+    assert.equal(s.creativeBrief.answers.length, 2);
+    assert.equal(payloads[2].history.length, 4);
+    assert.equal(s.copilot.response.action, 'ready');
+});
+
+test('unexpected fetch AbortError is recoverable; a revised retry retains intent without recommitting answers', async () => {
+    const payloads = [];
+    const context = controllerFixture(async (url, options) => {
+        const body = JSON.parse(options.body); payloads.push(body);
+        if (payloads.length === 1) throw Object.assign(new Error('browser timeout'), { name: 'AbortError' });
+        return { ok: true, json: async () => ({ ...ready, requestId: body.requestId, revision: body.revision }) };
+    });
+    await context.CreativeCopilot.request('delegate');
+    const s = context.CreationSessionStore;
+    assert.match(s.copilot.error, /可以重試/);
+    context.CreativeBrief.edit(s.creativeBrief, { tone: '溫暖' });
+    await context.CreativeCopilot.request('start', true);
+    assert.equal(payloads[1].intent, 'delegate'); assert.notEqual(payloads[0].requestId, payloads[1].requestId);
+    assert.equal(payloads[1].revision, payloads[0].revision + 1);
+    assert.equal(payloads[1].brief.confirmed.tone, '溫暖');
+});
+
+test('an in-flight result cannot overwrite a newer brief revision', async () => {
+    let finish;
+    const context = controllerFixture(async (url, options) => {
+        const body = JSON.parse(options.body); await new Promise(resolve => { finish = resolve; });
+        return { ok: true, json: async () => ({ ...ready, requestId: body.requestId, revision: body.revision }) };
+    });
+    const pending = context.CreativeCopilot.request();
+    const s = context.CreationSessionStore;
+    context.CreativeBrief.edit(s.creativeBrief, { tone: '沉靜', avoid: ['太暗'] });
+    finish(); await pending;
+    assert.equal(s.creativeBrief.confirmed.tone, '沉靜');
+    assert.equal(s.creativeBrief.suggestions.visualStyle, undefined);
+    assert.equal(s.copilot.response, null); assert.ok(s.copilot.retry);
+});
+
+test('controller and backend together complete a structured two-round proposal conversation', async () => {
+    const seen = [];
+    const f = routeFixture(args => {
+        const input = JSON.parse(args.contents[0].parts[0].text); seen.push(input);
+        const response = input.intent === 'start' ? { ...ask('proposal_choice'), action: 'propose' } : ready;
+        return { candidates: [{ content: { parts: [{ thought: true, text: 'provider summary' }, { text: JSON.stringify(response) }] } }] };
+    });
+    const context = controllerFixture(async (url, options) => {
+        const result = await f.call(JSON.parse(options.body));
+        return { ok: result.status === 200, json: async () => result.data };
+    });
+    await context.CreativeCopilot.request();
+    const s = context.CreationSessionStore;
+    assert.equal(s.copilot.response.action, 'propose');
+    s.copilot.drafts = { story_focus: { values: ['first'], other: '' } };
+    await context.CreativeCopilot.request('answer');
+    assert.equal(s.copilot.response.action, 'ready');
+    assert.equal(seen[1].brief.answers.length, 1);
+    assert.equal(seen[1].brief.answers[0].values[0].value, 'first');
+    assert.equal(seen[1].history.length, 2);
+    assert.ok(!JSON.stringify(seen[1]).includes('provider summary'));
+    assert.equal(s.creativeBrief.confirmed.visualStyle, '明亮電影感');
 });

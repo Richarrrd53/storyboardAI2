@@ -47,7 +47,8 @@ test('AI routes preserve task contracts, edited shots and provider isolation', a
         const copilot = await post('/api/creation/copilot', copilotInput);
         assert.equal(copilot.status, 200);
         assert.equal(copilot.data.action, 'ready');
-        assert.equal(request.model, getModel('fast'));
+        assert.equal(request.model, getModel('creative'));
+        assert.equal(request.config.thinkingConfig.thinkingLevel, 'MEDIUM');
         assert.equal(request.config.responseMimeType, 'application/json');
         assert.ok(request.config.responseJsonSchema.properties.form);
         assert.equal(clientOptions.vertexai, true);

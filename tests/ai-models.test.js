@@ -6,9 +6,9 @@ const { vertexAuthOptions, vertexAvailable } = require('../lib/google-credential
 const { ApiSettings } = require('../lib/discovery/api-settings');
 
 test('task defaults and environment overrides are independent', () => {
-    assert.deepEqual(DEFAULT_MODELS, { fast: 'gemini-3.5-flash-lite', story: 'gemini-3.8-flash',
+    assert.deepEqual(DEFAULT_MODELS, { fast: 'gemini-3.5-flash-lite', creative: 'gemini-3.8-flash', story: 'gemini-3.8-flash',
         image: 'gemini-nano-banana-2.1', discovery: 'gemini-3.8-flash', premiumStory: 'gemini-4-argon' });
-    const names = { fast: 'GEMINI_MODEL_FAST', story: 'GEMINI_MODEL_STORY', image: 'GEMINI_MODEL_IMAGE',
+    const names = { fast: 'GEMINI_MODEL_FAST', creative: 'GEMINI_MODEL_CREATIVE', story: 'GEMINI_MODEL_STORY', image: 'GEMINI_MODEL_IMAGE',
         discovery: 'DISCOVERY_GEMINI_MODEL', premiumStory: 'GEMINI_MODEL_PREMIUM_STORY' };
     for (const [task, name] of Object.entries(names)) {
         const env = { [name]: ' custom-model ' };
@@ -19,7 +19,7 @@ test('task defaults and environment overrides are independent', () => {
 
 test('text thinking and image settings cannot leak into other task types', () => {
     assert.equal(getModelConfig('fast').config.thinkingConfig, undefined);
-    for (const task of ['story', 'discovery']) {
+    for (const task of ['creative', 'story', 'discovery']) {
         assert.equal(getModelConfig(task).config.thinkingConfig.thinkingLevel, 'MEDIUM');
         assert.equal(getModelConfig(task, { thinkingLevel: 'LOW' }).config.thinkingConfig.thinkingLevel, 'LOW');
         assert.equal(getModelConfig(task, { thinkingLevel: 'HIGH' }).config.thinkingConfig.thinkingLevel, 'HIGH');
@@ -31,6 +31,22 @@ test('text thinking and image settings cannot leak into other task types', () =>
         });
     }
     assert.equal(getModelConfig('image', { ratio: 'invalid' }).config.imageConfig.aspectRatio, '16:9');
+});
+
+test('creative thinking and summaries have independent backend settings with no silent fallback', () => {
+    const creative = getModelConfig('creative', {}, {});
+    assert.equal(creative.model, 'gemini-3.8-flash');
+    assert.deepEqual(creative.config.thinkingConfig, { thinkingLevel: 'MEDIUM', includeThoughts: true });
+    assert.equal(creative.config.responseMimeType, 'application/json');
+    const env = { GEMINI_CREATIVE_THINKING_LEVEL: 'LOW', GEMINI_CREATIVE_INCLUDE_THOUGHTS: 'false', GEMINI_MODEL_CREATIVE: 'explicit-model' };
+    assert.deepEqual(getModelConfig('creative', {}, env).config.thinkingConfig, { thinkingLevel: 'LOW' });
+    assert.equal(getModelConfig('creative', {}, env).model, 'explicit-model');
+    assert.equal(getModelConfig('story', {}, env).config.thinkingConfig.thinkingLevel, 'MEDIUM');
+    assert.equal(getModelConfig('fast', {}, env).config.thinkingConfig, undefined);
+    assert.equal(getModelConfig('creative', { includeThoughts: false }, {}).config.thinkingConfig.includeThoughts, undefined);
+    for (const overrides of [{ GEMINI_CREATIVE_THINKING_LEVEL: 'INVALID' }, { GEMINI_CREATIVE_INCLUDE_THOUGHTS: 'maybe' }]) {
+        assert.throws(() => getModelConfig('creative', {}, overrides), { code: 'AI_SCHEMA_ERROR' });
+    }
 });
 
 test('response parsing excludes thoughts and joins all final parts without merging candidate alternatives', () => {

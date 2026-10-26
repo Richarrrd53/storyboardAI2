@@ -609,6 +609,9 @@ DISCOVERY_SETTINGS_SECRET="your-discovery-secret-32-chars"
 
 # 各用途獨立覆寫；共用設定在 lib/ai/model-config.js
 GEMINI_MODEL_FAST="gemini-3.5-flash-lite"
+GEMINI_MODEL_CREATIVE="gemini-3.8-flash"
+GEMINI_CREATIVE_THINKING_LEVEL="MEDIUM" # LOW / MEDIUM / HIGH；不提供前端模型選項
+GEMINI_CREATIVE_INCLUDE_THOUGHTS="true" # 可獨立關閉摘要，不影響正式 JSON
 GEMINI_MODEL_STORY="gemini-3.8-flash"
 GEMINI_MODEL_IMAGE="gemini-nano-banana-2.1"
 DISCOVERY_GEMINI_MODEL="gemini-3.8-flash"
@@ -620,7 +623,13 @@ GEMINI_MODEL_PREMIUM_STORY="gemini-4-argon" # 僅預留，普通生成不會使�
 
 ---
 
-SDK 使用 `@google/genai` 2.31.0（Node.js ≥20；本專案現有 Prisma 環境使用 Node.js 22.12.0）。Story／Discovery 預設 MEDIUM thinking；圖片固定 1K，未傳入 sampling 參數。官方參考：[SDK](https://github.com/googleapis/js-genai)、[Gemini 3.8 Flash](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/gemini/3-8-flash)、[Nano Banana 2.1](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/gemini/nano-banana-2-1)。
+SDK 使用 `@google/genai` 2.31.0（Node.js ≥20；本專案現有 Prisma 環境使用 Node.js 22.12.0）。Ask Gemini 創作討論／Story／Discovery 預設 MEDIUM thinking；圖片固定 1K，未傳入 sampling 參數。官方參考：[SDK](https://github.com/googleapis/js-genai)、[Gemini 3.8 Flash](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/gemini/3-8-flash)、[Nano Banana 2.1](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/gemini/nano-banana-2-1)。
+
+Ask Gemini 保留 `/api/creation/copilot` 的多輪契約，與 `/api/ask-gemini` 的分鏡／圖片契約分開。每次討論總期限 55 秒、首個模型呼叫上限 35 秒、恢復呼叫上限 20 秒，至少剩 10 秒才會開始恢復；最多兩次模型呼叫。僅對真正的上游 503／504 等待 500ms 後重試一次，或對已收到但不符合契約的 JSON 修復一次，兩者共用恢復次數。SDK 額外重試已停用。本機由應用控制期限。`vercel.json` 未指定 maxDuration，線上期限取決於專案方案與 Fluid Compute 設定；部署時需確認函式至少有 60 秒，並保留圖片生成所需的較長期限。所有 API 共用 `api/index.js`，本次不為討論功能降低共用入口的期限。參考：[Vercel 函式期限](https://vercel.com/docs/functions/configuring-functions/duration)。
+
+後端會記錄 requestId、intent、model、attempt、elapsedMs、stage、錯誤分類與可用的用量，不記錄故事、完整回應或憑證。成功回應的 `meta` 提供用量、修復次數和摘要筆數供診斷；HTTP status 未由 SDK 提供時為 null。摘要僅取自供應商的 thought parts，不保證每次都有，沒有時維持一般載入狀態。模型或設定不支援時會明確失敗，不自動更換模型。
+
+真實 Vertex 多輪驗證位於 `tests/creative-conversation.live.js`，不包含在一般單元測試中。具備有效 ADC 後，以 PowerShell 執行 `$env:RUN_VERTEX_LIVE='1'; node --test tests/creative-conversation.live.js`，會產生少量付費模型呼叫並輸出每輪診斷；沒有可用認證時明確跳過。
 
 ### 8.2 本地端啟動流程
 
