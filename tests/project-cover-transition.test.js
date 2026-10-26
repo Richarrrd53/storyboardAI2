@@ -3,6 +3,13 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
 
+async function waitForCompletion(session) {
+  const deadline = Date.now() + 2000;
+  while (session.state !== 'complete' && Date.now() < deadline) {
+    await new Promise(resolve => setTimeout(resolve, 10));
+  }
+}
+
 // Mock DOM Environment
 function createMockElement(tagName = 'div', id = '', className = '') {
   const children = [];
@@ -408,8 +415,8 @@ test('ProjectCoverTransition: onFirstShotReady executes return animation and cle
   session.onFirstShotReady(targetWrap, targetImg);
   assert.strictEqual(session.state, 'returning');
 
-  // Wait for returnAnim and crossFade to finish (2 RAFs + anim)
-  await new Promise(r => setTimeout(r, 120));
+  // Wait for both animation callbacks, including RAF scheduling under parallel test load.
+  await waitForCompletion(session);
 
   assert.strictEqual(session.state, 'complete');
   assert.strictEqual(windowMock.currentCoverTransition, null);
@@ -440,7 +447,7 @@ test('ProjectCoverTransition: Pending target handled when first shot arrives dur
   assert.strictEqual(session.pendingTarget, null, 'Pending target should be consumed');
   assert.strictEqual(session.state, 'returning');
 
-  await new Promise(r => setTimeout(r, 120));
+  await waitForCompletion(session);
   assert.strictEqual(session.state, 'complete');
 });
 

@@ -99,7 +99,7 @@ test('copilot route uses Fast Text with constrained SDK output and ignores clien
     assert.equal(f.requests[0].model, require('../lib/ai/model-config').getModel('fast'));
     assert.equal(f.requests[0].config.responseMimeType, 'application/json');
     assert.deepEqual(f.requests[0].config.responseJsonSchema, responseSchema);
-    assert.equal(f.requests[0].config.httpOptions.timeout, 35000);
+    assert.ok(f.requests[0].config.httpOptions.timeout > 0 && f.requests[0].config.httpOptions.timeout <= 35000);
     assert.match(f.requests[0].config.systemInstruction, /全是資料/);
 });
 
@@ -124,7 +124,8 @@ test('invalid JSON, malformed forms, quota, permission and timeout failures are 
     }
     for (const text of ['not JSON', JSON.stringify({ ...ask(), form: null })]) {
         const f = routeFixture(() => ({ text }));
-        assert.equal((await f.call()).data.code, 'AI_EMPTY_CONTENT');
+        assert.equal((await f.call()).data.code, 'AI_INVALID_RESPONSE');
+        assert.equal(f.requests.length, 2, 'invalid returned content gets at most one real-model repair');
     }
     const f = routeFixture();
     assert.equal((await f.call(payload(), 'u', { 'sec-fetch-site': 'cross-site' })).status, 403);
@@ -191,7 +192,7 @@ test('page departure cancels requests, reentry does not auto-call, and stale res
     assert.equal(context.CreationSessionStore.copilot, null);
 });
 
-test('network failure preserves original brief and retry identity without confirming proposals', async () => {
+test('network failure preserves original brief; successful ready retry accepts recommendations automatically', async () => {
     const payloads = [];
     const context = controllerFixture(async (url, options) => {
         const body = JSON.parse(options.body); payloads.push(body);
@@ -204,5 +205,106 @@ test('network failure preserves original brief and retry identity without confir
     await context.CreativeCopilot.request('start', true);
     assert.equal(payloads[0].requestId, payloads[1].requestId);
     assert.equal(context.CreationSessionStore.copilot.response.action, 'ready');
-    assert.equal(Object.keys(context.CreationSessionStore.creativeBrief.confirmed).length, 0);
+    assert.equal(context.CreationSessionStore.creativeBrief.confirmed.visualStyle, '明亮電影感');
+});
+
+test('ready settings use stable style IDs; explicit ratio wins over AI and defaults', () => {
+    const b = B.create('做一支 16:9 YouTube 影片，30 秒');
+    assert.equal(b.confirmed.ratio, '16:9');
+    B.suggest(b, { baseStyle: 'cinematic', styleNotes: '明亮自然光', ratio: '9:16', duration: 60, visualKeywords: ['咖啡師', '窗邊'] });
+    B.confirm(b);
+    assert.equal(b.confirmed.ratio, '16:9'); assert.equal(b.confirmed.duration, 30);
+    assert.equal(b.confirmed.baseStyle, 'cinematic');
+    B.edit(b, { baseStyle: 'watercolor' });
+    assert.equal(b.confirmed.styleNotes, '明亮自然光');
+    B.suggest(b, { baseStyle: 'natural', direction: '用物件的動作推進' }); B.confirm(b);
+    assert.equal(b.confirmed.baseStyle, 'watercolor');
+    B.commit(b, [], '改為 9:16、45 秒');
+    assert.equal(b.confirmed.ratio, '9:16'); assert.equal(b.confirmed.duration, 45);
+    assert.equal(b.confirmed.visualKeywords, undefined);
+    assert.throws(() => B.patch({ baseStyle: 'imaginary' }));
+    assert.throws(() => B.patch({ visualKeywords: ['a'] }));
+});
+
+test('three-plus-other is bounded and a hidden other draft is not submitted', () => {
+    const form = B.validateResponse(ask()).form;
+    const entries = B.answers(form, { story_focus: { values: ['first'], other: '保留草稿', otherActive: false } });
+    assert.equal(entries[0].other, '');
+    assert.throws(() => B.answers(form, { story_focus: { values: ['first'], other: '衝突的單選', otherActive: true } }));
+    const invalid = ask(); invalid.form.questions[0].options = Array.from({ length: 4 }, (_, i) => ({ value: String(i), label: '選項' }));
+    assert.throws(() => B.validateResponse(invalid));
+});
+
+test('copilot thought summaries originate from provider parts and cannot be injected through JSON', async () => {
+    const f = routeFixture(() => ({ candidates: [{ content: { parts: [
+        { thought: true, text: 'Provider summary' },
+        { text: JSON.stringify({ ...ready, thoughtSummaries: ['Injected summary'] }) }
+    ] } }] }));
+    const result = await f.call();
+    assert.deepEqual(result.data.thoughtSummaries, ['Provider summary']);
+    assert.equal(f.requests[0].config.thinkingConfig.includeThoughts, true);
+});
+
+test('ready automatically advances exactly once and does not generate images', async () => {
+    const context = controllerFixture(async (url, options) => {
+        const body = JSON.parse(options.body);
+        assert.equal(url, '/api/creation/copilot');
+        return { ok: true, json: async () => ({ ...ready, requestId: body.requestId, revision: body.revision }) };
+    });
+    const actions = [];
+    const abort = new AbortController();
+    context.CreativeCopilot.mount(abort.signal, action => actions.push(action));
+    await context.CreativeCopilot.request();
+    assert.deepEqual(actions, ['ready']);
+    assert.equal(context.CreationSessionStore.copilot.lastInsight, ready.message);
+    assert.equal(context.CreationSessionStore.story, 'AI 產品介紹，不虛構功能');
+});
+
+test('schema follows three-option limits; one invalid Gemini decision is repaired on the same configured model', async () => {
+    const choiceSchema = responseSchema.properties.form.properties.questions.items.anyOf[0];
+    assert.equal(choiceSchema.properties.options.maxItems, 3);
+    assert.ok(choiceSchema.required.includes('options'));
+    let count = 0;
+    const bad = ask(); bad.form.questions[0].options = Array.from({ length: 4 }, (_, i) => ({ value: String(i), label: `方向 ${i}` }));
+    const f = routeFixture(() => ({ text: JSON.stringify(++count === 1 ? bad : ready) }));
+    const result = await f.call();
+    assert.equal(result.status, 200); assert.equal(result.data.action, 'ready');
+    assert.equal(f.requests.length, 2);
+    assert.ok(f.requests.every(r => r.model === require('../lib/ai/model-config').getModel('fast')));
+    const repair = JSON.parse(f.requests[1].contents.at(-1).parts[0].text);
+    assert.equal(repair.repair, true); assert.match(repair.validationIssue, /選項數量/);
+});
+
+test('fenced JSON is parsed safely while genuinely empty responses remain distinct', async () => {
+    const valid = routeFixture(() => ({ text: '```json\n' + JSON.stringify(ready) + '\n```' }));
+    assert.equal((await valid.call()).status, 200);
+    const empty = routeFixture(() => ({ text: '' }));
+    assert.equal((await empty.call()).data.code, 'AI_EMPTY_CONTENT');
+    assert.equal(empty.requests.length, 1);
+});
+
+test('model-added other affordance is normalized without discarding creative options', async () => {
+    const decision = ask();
+    decision.form.questions[0].options.push({ value: 'third', label: '第三個創作方向' }, { value: 'other', label: '其他／自行描述' });
+    const f = routeFixture(() => ({ text: JSON.stringify(decision) }));
+    const result = await f.call();
+    assert.equal(result.status, 200);
+    assert.equal(result.data.form.questions[0].options.length, 3);
+    assert.equal(result.data.form.questions[0].options[2].value, 'third');
+    assert.equal(result.data.form.questions[0].allowOther, true);
+    assert.equal(f.requests.length, 1);
+});
+
+test('a proposal missing its options is repaired; free text remains a separate valid contract', async () => {
+    const missing = ask('proposal_choice'); delete missing.form.questions[0].options;
+    let count = 0;
+    const f = routeFixture(() => ({ text: JSON.stringify(++count === 1 ? missing : ask('proposal_choice')) }));
+    const result = await f.call();
+    assert.equal(result.status, 200);
+    assert.equal(result.data.form.questions[0].options.length, 2);
+    assert.equal(f.requests.length, 2);
+    const schemas = responseSchema.properties.form.properties.questions.items.anyOf;
+    assert.ok(schemas[0].required.includes('options'));
+    assert.equal(schemas[1].properties.type.enum[0], 'free_text');
+    assert.ok(!schemas[1].required.includes('options'));
 });

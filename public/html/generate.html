@@ -95,7 +95,7 @@
                     </div>
 
                     <!-- 主 Composer 容器 -->
-                    <label for="story-input" class="section-label">故事與創作想法</label>
+                    <label for="story-input" class="section-label" id="story-input-label">故事與創作想法</label>
                     <div class="composer-container" id="phase1-composer">
                         <textarea id="story-input" class="story-composer-textarea" aria-label="故事或創作方向" placeholder="描述故事或創作方向... ✦" rows="1" oninput="onStoryInput()"></textarea>
                         <button type="button" class="composer-submit-btn" id="composer-submit-btn" disabled aria-label="送出故事" onclick="submitPhase1Story()">
@@ -117,8 +117,8 @@
                 <div class="phase-panel phase-2-panel" id="phase-panel-2" role="region" aria-label="創作設定">
                     <div class="direction-header">
                         <div class="direction-badge-wrap">
-                            <h2 class="direction-title-badge" id="direction-heading" data-phase-heading tabindex="-1">決定故事的影像語言</h2>
-                            <span class="direction-scroll-hint">選擇影像調性與發布平台的畫面比例</span>
+                            <h2 class="direction-title-badge" id="direction-heading" data-phase-heading tabindex="-1">接下來，讓故事有畫面。</h2>
+                            <span class="direction-scroll-hint">從這份設定出發，你可以直接接受，也可以繼續調整。</span>
                         </div>
                         <!-- AI 推薦文字 (打字機效果) -->
                         <div class="direction-ai-box" id="direction-ai-box">
@@ -127,6 +127,9 @@
                             <span class="ai-box-cursor" id="direction-ai-cursor">|</span>
                         </div>
                     </div>
+                    <p id="direction-settings-reason" class="section-hint" hidden></p>
+                    <div id="direction-thought-summary"></div>
+                    <button type="button" class="copilot-text-action" id="btn-direction-discuss">繼續和 AI 調整</button>
 
                     <!-- 視覺風格區塊 -->
                     <div class="direction-section" id="section-visual-style">
@@ -136,6 +139,7 @@
                         </div>
                         <div class="style-cards-wrap" id="style-cards-grid" role="group" aria-labelledby="visual-style-label"></div>
                     </div>
+                    <div class="direction-section" id="section-personal-style"><label for="direction-style-notes">個人化視覺條件<textarea id="direction-style-notes" rows="2" maxlength="2000" placeholder="例如光線、色彩、拍攝感"></textarea></label><label for="direction-avoid">明確避免的元素<input id="direction-avoid" maxlength="2000" placeholder="多個條件以「、」分隔"></label></div>
 
                     <!-- 畫面比例區塊 -->
                     <div class="direction-section" id="section-aspect-ratio">
@@ -144,12 +148,12 @@
                             <span class="section-hint">依發布平台選擇最佳影音畫幅</span>
                         </div>
                         <div class="ratio-chips-wrap" id="ratio-chips-grid" role="group" aria-labelledby="aspect-ratio-label">
-                            <button type="button" class="ratio-chip" data-ratio="直向9:16" onclick="selectRatioOption(this)">
+                            <button type="button" class="ratio-chip active" data-ratio="直向9:16" onclick="selectRatioOption(this)">
                                 <span class="ratio-icon ratio-icon-9-16"></span>
                                 <span class="ratio-text-num">9:16</span>
                                 <span class="ratio-text-sub">Shorts / Reels</span>
                             </button>
-                            <button type="button" class="ratio-chip active" data-ratio="橫向16:9" onclick="selectRatioOption(this)">
+                            <button type="button" class="ratio-chip" data-ratio="橫向16:9" onclick="selectRatioOption(this)">
                                 <span class="ratio-icon ratio-icon-16-9"></span>
                                 <span class="ratio-text-num">16:9</span>
                                 <span class="ratio-text-sub">YouTube / 橫向</span>
@@ -235,6 +239,7 @@
                     <div class="plan-heading"><h2 data-phase-heading tabindex="-1">分鏡企劃</h2><p>先把故事說好，再生成畫面。你可以直接修改每一鏡。</p></div>
                     <label class="plan-title-field" for="plan-title">影片標題<input id="plan-title" type="text" maxlength="200"></label>
                     <p id="plan-summary" class="plan-summary" role="status"></p>
+                    <div id="plan-thought-summary"></div>
                     <p id="plan-error" class="plan-error" role="alert" hidden></p>
                     <div id="plan-shots" class="plan-shots"></div>
                     <div class="phase-actions-footer"><button type="button" class="btn btn-ghost" id="btn-plan-back">返回設定</button><button type="button" class="btn btn-primary" id="btn-confirm-plan">確認分鏡，生成畫面</button></div>
@@ -258,6 +263,7 @@
                                 <span class="gen-status-pct" id="gen-status-pct"></span>
                             </div>
                         </div>
+                        <div id="planning-thought-summary"></div>
 
                         <!-- 4 步驟狀態機 -->
                         <div class="gen-timeline" id="gen-timeline">

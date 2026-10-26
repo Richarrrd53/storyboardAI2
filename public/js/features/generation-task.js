@@ -15,7 +15,7 @@
   const clone = value => JSON.parse(JSON.stringify(value));
   function initialState() {
     return {
-      taskId: null, projectId: null, projectShotIds: {}, status: 'idle', input: null, error: null, planDirty: false, stage: 'planning',
+      taskId: null, projectId: null, projectShotIds: {}, status: 'idle', input: null, error: null, planDirty: false, stage: 'planning', activity: { phase: 'requesting', thoughtSummaries: [] },
       save: { status: 'idle', error: null },
       progress: { pct: 0, statusText: '', activeStepId: null },
       result: { storyboardData: null, generatedImgs: [], generatedStoryTitles: [],
@@ -49,7 +49,10 @@
     run.taskId = `generation-${Date.now()}-${++sequence}-${Math.random().toString(36).slice(2, 10)}`;
     run.status = 'generating';
     run.input = clone(options);
-    if (!options.selectedTemplate) run.input.duration = freeform.duration(options.duration);
+    if (!options.selectedTemplate) {
+      run.input.duration = freeform.duration(options.duration);
+      run.input.ratio ||= '直向9:16';
+    }
     run.progress = { pct: 0, statusText: '正在規劃分鏡…', activeStepId: 'step-analyze' };
     state = run;
     activePromise = Promise.resolve().then(() => execute(run, controller));
@@ -243,7 +246,8 @@
     const total = run.result.storyboardData.shots.length;
     const completed = run.result.generatedShotData.filter(shot => shot?.payload.imageStatus === 'succeeded').length;
     const processed = run.result.generatedShotData.filter(shot => ['succeeded', 'failed'].includes(shot?.payload.imageStatus)).length;
-    return { pct: completed / total * 100, completed, processed, total, statusText: `${prefix}，${completed} / ${total} 已完成`, activeStepId: 'step-render' };
+    const failed = run.result.failedShotIndexes.length;
+    return { pct: completed / total * 100, completed, processed, total, failed, statusText: `${prefix}，${completed} / ${total} 已完成${failed ? `，${failed} 張可重試` : ''}`, activeStepId: 'step-render' };
   }
   async function execute(run, controller, confirmed = false) {
     const input = run.input;
@@ -335,7 +339,10 @@
       let question = freeform.prompt(input);
       // At most one repair. Invalid scripts are never trimmed or sent to image generation.
       for (let attempt = 0; attempt < 2; attempt++) {
+        run.activity.phase = attempt ? 'repairing' : 'requesting';
+        run.progress.statusText = attempt ? '正在修復分鏡資料…' : '正在規劃文字分鏡…'; notify();
         const response = await askGemini(question, 'story');
+        run.activity.phase = 'validating'; run.progress.statusText = '正在驗證角色、鏡頭與時長…'; notify();
         try {
           result.storyboardData = freeform.validate(safeParseJson(response.response), input.duration);
           run.status = 'awaiting_confirmation';
@@ -394,6 +401,7 @@ shots 可另外提供 angle、purpose、dialogue（中文對白或旁白）、em
       for (let i = 0; i < total; i++) {
         const shot = shots[i];
         if (result.generatedShotData[i]?.payload.imageStatus === 'succeeded') continue;
+        run.progress = imageProgress(run, `正在生成第 ${i + 1} / ${total} 張畫面`); notify();
         const finalPrompt = await buildFinalPrompt(shot);
         assertActive();
         shot.finalPrompt = finalPrompt;
@@ -431,15 +439,19 @@ shots 可另外提供 angle、purpose、dialogue（中文對白或旁白）、em
             signal: controller.signal,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ question, type, ratio: input.ratio })
+            body: JSON.stringify({ question, type, ratio: input.ratio,
+                ...(!input.selectedTemplate && type === 'story' ? { contract: 'freeform-v2', duration: input.duration, includeThoughts: true } : {}) })
         });
         assertActive();
         const data = await res.json();
         assertActive();
         if (!res.ok) {
-            const err = new Error(data.error || '請求異常');
+            const err = new Error(data.details || data.error || '請求異常');
             err.status = res.status;
             throw err;
+        }
+        if (type === 'story' && !input.selectedTemplate) {
+          run.activity.thoughtSummaries = Array.isArray(data.thoughtSummaries) ? data.thoughtSummaries.filter(s => typeof s === 'string').slice(0, 8).map(s => s.slice(0, 12000)) : [];
         }
         return data;
     }

@@ -46,6 +46,17 @@ test('response parsing excludes thoughts and joins all final parts without mergi
     assert.equal(parseResponse({ usageMetadata: { totalTokenCount: 4 } }).usage.totalTokens, 4);
 });
 
+test('opt-in summaries stay separate from JSON and images; default parsing is unchanged', () => {
+    const response = { candidates: [{ content: { parts: [{ thought: true, text: 'Real provider summary' }, { text: '{"value":1}' }] } }] };
+    assert.equal(parseResponse(response).thoughtSummaries, undefined);
+    const result = parseResponse(response, { includeThoughts: true });
+    assert.deepEqual(result.thoughtSummaries, ['Real provider summary']);
+    assert.deepEqual(JSON.parse(result.response), { value: 1 });
+    assert.deepEqual(parseResponse({ text: '{}' }, { includeThoughts: true }).thoughtSummaries, []);
+    assert.equal(getModelConfig('fast', { includeThoughts: true }).config.thinkingConfig.includeThoughts, true);
+    assert.equal(getModelConfig('image', { includeThoughts: true }).config.thinkingConfig, undefined);
+});
+
 test('shared image generation finds images after text, preserves MIME and rejects empty output', async () => {
     let request;
     const client = { models: { generateContent: async args => {

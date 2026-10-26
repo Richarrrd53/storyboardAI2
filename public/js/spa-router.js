@@ -228,6 +228,11 @@
       syncHistory(page, opts, browse);
       if ((currentPage === 'login' || currentPage === 'register') && isDashboardPage(page) && localStorage.getItem('sidebar_projects_expanded') === 'true') window.AppShell.collapseProjectsGroup();
 
+      // Let the current page leave before teardown/layout changes remove its visible content.
+      animation = transition.create({ signal, internal, fromQC: !!opts.fromQC, routeUpdate: !!reuse });
+      await animation.start();
+      if (stale()) return;
+
       if (!reuse) {
         if (pageController) pageController.abort();
         pageController = controller;
@@ -240,9 +245,6 @@
         if (currentPage === 'landing' && page !== 'landing') transition.leaveLanding();
         transition.setLayout(page, isDashboardPage(page), opts);
       }
-      animation = transition.create({ signal, internal, fromQC: !!opts.fromQC, routeUpdate: !!reuse });
-      await animation.start();
-      if (stale()) return;
       if (reuse) {
         await activePageInstance.updateRoute(opts);
       } else {

@@ -34,6 +34,7 @@
   function renderTemplateSelection() {
       window.TemplateWorkflow?.selection(CreationSessionStore, { loading: templateLoading, error: templateError }, pageController?.signal);
       onStoryInput();
+      window.CreativeCopilot?.render();
   }
   async function loadRequestedTemplate() {
       templateLoading = true; templateError = null; renderTemplateSelection();
@@ -65,9 +66,9 @@
           }) || null;
           if (!inspirationField) inspirationField = window.InspirationField?.mount({
               root: document.querySelector('#generation-progress-wrap .math-loader-box'),
-              signal: pageController?.signal, story: task.input?.story, storyboard: task.result.storyboardData
+              signal: pageController?.signal, story: task.input?.story, storyboard: task.result.storyboardData, brief: task.input?.creativeBrief
           }) || null;
-          inspirationField?.update(task.input?.story, task.result.storyboardData);
+          inspirationField?.update(task.input?.story, task.result.storyboardData, task.input?.creativeBrief);
       }
   }
 
@@ -192,7 +193,7 @@
                   input.value = CreationSessionStore.story;
               }
               onStoryInput();
-              input.focus({ preventScroll: true });
+              if (!CreationSessionStore.copilot?.active) input.focus({ preventScroll: true });
           }
       } else if (targetPhase === 2) {
           buildStyleCards();
@@ -290,6 +291,7 @@
   }
 
   function editStoryFromHeader() {
+      window.CreativeCopilot?.editStory();
       switchPhase(1);
   }
   window.editStoryFromHeader = editStoryFromHeader;
@@ -344,9 +346,11 @@
           const c = window.CreativeCopilot?.prepare(story);
           if (c) {
               c.active = true;
-              window.CreativeCopilot.render();
               if (!c.response && !c.busy && !c.error) window.CreativeCopilot.request('start');
-              else document.getElementById('creative-copilot')?.scrollIntoView({ block: 'start', behavior: 'auto' });
+              else {
+                  window.CreativeCopilot.render();
+                  document.getElementById('creative-copilot')?.scrollIntoView({ block: 'start', behavior: 'auto' });
+              }
           } else switchPhase(2);
       }
   }
@@ -357,7 +361,17 @@
   // ════════════════════════════════════════════════════════════
   function triggerDirectionAiText() {
       const text = document.getElementById('direction-ai-text');
-      if (text) text.textContent = '選好影像語言後，先預覽完整文字分鏡。';
+      const s = CreationSessionStore, b = s.creativeBrief?.confirmed;
+      if (text) text.textContent = !s.selectedTemplate && s.copilot?.lastInsight || '接下來選好影像語言，先預覽完整文字分鏡。';
+      const reason = document.getElementById('direction-settings-reason');
+      if (reason) { reason.textContent = !s.selectedTemplate && b?.settingsReason || ''; reason.hidden = !reason.textContent; }
+      const summary = document.getElementById('direction-thought-summary');
+      if (summary) summary.innerHTML = !s.selectedTemplate ? window.AIActivity?.summaryMarkup(s.copilot?.response?.thoughtSummaries) || '' : '';
+      const notes = document.getElementById('direction-style-notes'), avoid = document.getElementById('direction-avoid');
+      if (notes) notes.value = b?.styleNotes || '';
+      if (avoid) avoid.value = b?.avoid?.join('、') || '';
+      const extra = document.getElementById('section-personal-style'); if (extra) extra.hidden = !!s.selectedTemplate;
+      const discuss = document.getElementById('btn-direction-discuss'); if (discuss) discuss.hidden = !!s.selectedTemplate;
       const cursor = document.getElementById('direction-ai-cursor');
       if (cursor) cursor.hidden = true;
   }
@@ -377,7 +391,8 @@
       if (!grid) return;
       grid.innerHTML = '';
 
-      const recs = detectRecommendedStyles(CreationSessionStore.story);
+      const suggestedStyle = CreationSessionStore.creativeBrief?.confirmed.baseStyle;
+      const recs = !CreationSessionStore.selectedTemplate && suggestedStyle ? [window.CreativeBrief.styleIds.indexOf(suggestedStyle)] : detectRecommendedStyles(CreationSessionStore.story);
       if (CreationSessionStore.styleIndex === undefined) {
           CreationSessionStore.styleIndex = recs[0];
       }
@@ -399,7 +414,7 @@
 
   function selectStyleCard(index) {
       CreationSessionStore.styleIndex = index;
-      if (!CreationSessionStore.selectedTemplate && CreationSessionStore.creativeBrief) window.CreativeBrief.edit(CreationSessionStore.creativeBrief, { visualStyle: STYLES[index].name });
+      if (!CreationSessionStore.selectedTemplate && CreationSessionStore.creativeBrief) window.CreativeBrief.edit(CreationSessionStore.creativeBrief, { baseStyle: window.CreativeBrief.styleIds[index], visualStyle: STYLES[index].name });
       document.querySelectorAll('.style-card').forEach(c => {
           const isTarget = Number(c.dataset.index) === index;
           c.classList.toggle('active', isTarget);
@@ -411,7 +426,7 @@
   }
 
   function syncRatioChips() {
-      const ratio = CreationSessionStore.ratio || '橫向16:9';
+      const ratio = CreationSessionStore.ratio || (CreationSessionStore.selectedTemplate ? '橫向16:9' : '直向9:16');
       document.querySelectorAll('.ratio-chip').forEach(c => {
           const selected = c.dataset.ratio === ratio;
           c.classList.toggle('active', selected);
@@ -755,7 +770,11 @@
       if (phaseTitle) phaseTitle.style.display = 'none';
       if (progressWrap) progressWrap.style.display = 'none';
       if (resultWrap) {
+          const entering = resultWrap.style.display !== 'flex';
           resultWrap.style.display = 'flex';
+          if (entering && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+              phaseAnimations.push(resultWrap.animate([{ opacity: 0, filter: 'blur(5px)', transform: 'translateY(8px)' }, { opacity: 1, filter: 'blur(0)', transform: 'translateY(0)' }], { duration: 320, easing: 'cubic-bezier(.4,0,.2,1)' }));
+          }
       }
 
       window.TemplateWorkflow.results(task);
@@ -865,6 +884,8 @@
       if (task.status === 'awaiting_confirmation') {
           if (CreationSessionStore.currentPhase !== 5) switchPhase(5);
           renderPlan(task);
+          const summary = document.getElementById('plan-thought-summary');
+          if (summary) summary.innerHTML = window.AIActivity?.summaryMarkup(task.activity?.thoughtSummaries) || '';
           return;
       }
       updateGenProgress(task.progress.pct, task.progress.statusText, task.progress.activeStepId);
@@ -872,6 +893,8 @@
       const count = document.getElementById('gen-status-pct');
       if (track) track.hidden = !task.progress.total;
       if (count) count.textContent = task.progress.total ? task.progress.completed + ' / ' + task.progress.total : '';
+      const summary = document.getElementById('planning-thought-summary');
+      if (summary) summary.innerHTML = task.stage === 'images' ? '' : window.AIActivity?.summaryMarkup(task.activity?.thoughtSummaries) || '';
       if (task.status === 'completed' && CreationSessionStore.currentPhase === 4) {
           renderResults(task);
       } else if (task.status === 'generating') {
@@ -884,7 +907,11 @@
       } else if (['error', 'cancelled'].includes(task.status)) {
           document.getElementById('generation-error-banner').hidden = false;
           document.getElementById('generation-error-message').textContent = task.error?.message || '生成已取消，已完成的鏡頭保留。可繼續這次生成或修改企劃。';
-          switchPhase(2, false);
+          if (CreationSessionStore.currentPhase !== 4) switchPhase(4, false);
+          const title = document.querySelector('.generation-phase-title');
+          if (title) title.textContent = task.stage === 'images' ? '圖片生成已中斷' : '分鏡規劃需要調整';
+          document.getElementById('generation-progress-wrap').style.display = 'none';
+          document.getElementById('generation-result-wrap').style.display = 'none';
       }
   }
 
@@ -893,8 +920,21 @@
       if (options.signal?.aborted) return null;
       pageController = new AbortController();
       window.CreativeCopilot?.mount(pageController.signal, action => {
-          if (action === 'advance') switchPhase(2);
+          if (action === 'advance' || action === 'ready') switchPhase(2);
+          if (action === 'discuss') switchPhase(1);
       });
+      bindPageEvent(document.getElementById('btn-direction-discuss'), 'click', () => window.CreativeCopilot?.discuss());
+      const updateStyleConditions = () => {
+          if (CreationSessionStore.selectedTemplate) return;
+          window.CreativeCopilot?.prepare(CreationSessionStore.story);
+          window.CreativeBrief.edit(CreationSessionStore.creativeBrief, {
+              styleNotes: document.getElementById('direction-style-notes').value.trim(),
+              avoid: document.getElementById('direction-avoid').value.split('、').map(t => t.trim()).filter(Boolean)
+          });
+          syncDirectionAction();
+      };
+      bindPageEvent(document.getElementById('direction-style-notes'), 'input', updateStyleConditions);
+      bindPageEvent(document.getElementById('direction-avoid'), 'input', updateStyleConditions);
       bindPageEvent(document.getElementById('btn-skip-copilot'), 'click', () => submitPhase1Story(true));
       document.getElementById('generate-workspace').dataset.ready = 'true';
       matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', event => {
@@ -1058,7 +1098,7 @@
       }
       const task = window.GenerationTask.getState();
       const targetPhase = task.status === 'awaiting_confirmation' ? 5 : ['generating', 'completed'].includes(task.status)
-          ? 4 : (['error', 'cancelled'].includes(task.status) ? 2
+          ? 4 : (['error', 'cancelled'].includes(task.status) ? 4
               : (options.fromQC && !CreationSessionStore.selectedTemplate ? 1 : options.targetPhase || CreationSessionStore.targetPhase || 1));
 
       if (story) {

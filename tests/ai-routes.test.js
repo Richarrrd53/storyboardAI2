@@ -55,6 +55,15 @@ test('AI routes preserve task contracts, edited shots and provider isolation', a
         assert.equal(unauthorized.status, 401);
         const oversized = await post('/api/creation/copilot', { ...copilotInput, story: 'a'.repeat(70000) });
         assert.equal(oversized.status, 413);
+        response = parts([{ thought: true, text: 'Provider planning summary' }, { text: JSON.stringify({ meta: { title: 'POV' }, characters: [], shots: [] }) }]);
+        const structured = await post('/api/ask-gemini', { type: 'story', question: 'POV without an on-screen observer', contract: 'freeform-v2', duration: 30, includeThoughts: true });
+        assert.equal(structured.status, 200);
+        assert.deepEqual(structured.data.thoughtSummaries, ['Provider planning summary']);
+        assert.deepEqual(JSON.parse(structured.data.response).characters, []);
+        assert.equal(request.config.responseJsonSchema.properties.characters.type, 'array');
+        assert.ok(request.config.responseJsonSchema.properties.characters.items.required.includes('appearance'));
+        assert.equal(request.config.thinkingConfig.includeThoughts, true);
+        assert.equal((await post('/api/ask-gemini', { type: 'story', question: 'invalid', contract: 'freeform-v2', duration: 99 })).status, 400);
         for (const [type, task] of [['flash', 'fast'], ['story', 'story']]) {
             response = parts([{ thought: true, text: 'ignore this summary' }, { text: '{"shots":' }, { text: '[]}' }]);
             const result = await post('/api/ask-gemini', { type, question: 'plan', model: 'untrusted-client-model' });

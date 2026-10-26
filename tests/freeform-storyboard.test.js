@@ -157,3 +157,38 @@ test('Creative Brief snapshot reaches generation and image prompts keep reviewed
   assert.ok(images.every(c => !c.body.question.includes('film noir vibes')));
   assert.equal(f.task.getState().status, 'completed');
 });
+
+test('typed wire characters, legacy object maps and JSON-encoded objects normalize without inventing details', () => {
+  for (const shape of [
+    [{ id: 'hero', appearance: 'barista', outfit: 'blue apron' }],
+    { hero: { appearance: 'barista', outfit: 'blue apron' } },
+    { hero: JSON.stringify({ appearance: 'barista', outfit: 'blue apron' }) },
+    JSON.stringify({ hero: { description: 'barista', clothing: 'blue apron' } })
+  ]) {
+    const data = plan(); data.characters = shape;
+    const valid = free.validate(data);
+    assert.equal(valid.characters.hero.appearance, 'barista');
+    assert.equal(valid.characters.hero.outfit, 'blue apron');
+    assert.deepEqual(valid.shots[0].characters, ['hero']);
+  }
+  for (const characters of [{ hero: 'barista' }, { hero: { appearance: 'barista' } }, [{ id: 'hero', appearance: 'barista', outfit: 'blue apron' }, { id: 'hero', appearance: 'other', outfit: 'coat' }]]) {
+    assert.throws(() => free.validate({ ...plan(), characters }));
+  }
+  const pov = plan(); pov.characters = []; pov.shots.forEach(s => { s.characters = []; });
+  assert.deepEqual(free.validate(pov).characters, {});
+  assert.equal(free.schema(30).properties.characters.items.required.includes('outfit'), true);
+  assert.match(free.prompt(input), /藏鏡人 POV/);
+});
+
+test('planning sends the explicit contract and real summaries separately, including its repair status', async () => {
+  let count = 0;
+  const f = fixture((url, body) => body.type === 'story' ? response({ response: JSON.stringify(++count === 1 ? { ...plan(), characters: { hero: 'invalid description' } } : plan()), thoughtSummaries: ['Provider thought summary'] }) : null);
+  const phases = []; f.task.subscribe(s => { phases.push(s.activity.phase); });
+  await f.task.start({ ...input, ratio: undefined });
+  assert.equal(f.task.getState().input.ratio, '直向9:16');
+  assert.equal(f.calls[0].body.contract, 'freeform-v2');
+  assert.equal(f.calls[0].body.includeThoughts, true);
+  assert.ok(phases.includes('repairing')); assert.ok(phases.includes('validating'));
+  assert.deepEqual(JSON.parse(JSON.stringify(f.task.getState().activity.thoughtSummaries)), ['Provider thought summary']);
+  assert.equal(f.task.getState().status, 'awaiting_confirmation');
+});

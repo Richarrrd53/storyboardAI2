@@ -1133,10 +1133,15 @@ app.post('/api/ask-gemini', async (req, res) => {
     if (typeof question !== 'string' || !question.trim()) return res.status(400).json({ error: '缺少有效提示詞', details: 'question 必須是非空白文字' });
     // The client selects a task only; model IDs and parameters stay on the server.
     const task = type === 'image' ? 'image' : type === 'story' ? 'story' : 'fast';
+    const structured = task === 'story' && req.body.contract === 'freeform-v2';
+    if (structured && ![15, 30, 45, 60].includes(req.body.duration)) return res.status(400).json({ error: '無效的自由分鏡時長' });
+    const summaries = task !== 'image' && req.body.includeThoughts === true;
     try {
         const ai = getGenAI();
         const result = task === 'image' ? await generateImage(ai, { question, ratio })
-            : parseResponse(await ai.models.generateContent({ ...getModelConfig(task), contents: [{ text: question }] }));
+            : parseResponse(await ai.models.generateContent({ ...getModelConfig(task, { includeThoughts: summaries }),
+                config: { ...getModelConfig(task, { includeThoughts: summaries }).config, ...(structured ? { responseJsonSchema: require('./public/js/features/freeform-storyboard').schema(req.body.duration) } : {}) },
+                contents: [{ text: question }] }), { includeThoughts: summaries });
         if (task !== 'image' && !result.response.trim()) throw emptyContent('模型未回傳有效文字，請重試。');
         res.json(result);
     } catch (error) {

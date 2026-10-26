@@ -35,6 +35,22 @@ function routerFixture(path = '/', embedded = false) {
 }
 const settle = async () => { for (let i = 0; i < 30; i++) await Promise.resolve(); };
 
+test('route transitions finish the old page exit before teardown and layout changes', async () => {
+  const f = routerFixture('/dashboard');
+  await f.events.DOMContentLoaded(); await settle();
+  let finishExit;
+  f.window.NavigationTransition.create = () => ({ start: () => new Promise(resolve => { finishExit = resolve; }), complete: async () => {}, cleanup() {}, cancel() {} });
+  let prepared = false; f.window.PageHost.prepare = () => { prepared = true; };
+  const pending = f.window.spaNavigate('generate');
+  await settle();
+  assert.equal(prepared, false);
+  assert.equal(f.unmounts.length, 0);
+  finishExit(); await pending;
+  assert.equal(prepared, true);
+  assert.deepEqual(f.unmounts, ['dashboard']);
+  assert.equal(f.mounts.at(-1).page, 'generate');
+});
+
 test('template pathname and legacy hash deep links mount the canonical ID', async () => {
   for (const path of ['/template/GiZBQzIH6zA', '/html/index.html', '/']) {
     const f = routerFixture(path);

@@ -6,7 +6,7 @@
       position: relative;
     }
     #page-content {
-      transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), filter 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: opacity 280ms cubic-bezier(.4,0,.2,1), filter 280ms cubic-bezier(.4,0,.2,1), transform 280ms cubic-bezier(.4,0,.2,1);
     }
     #page-inner-loader {
       position: absolute !important;
@@ -62,14 +62,19 @@
   const landingNav = () => document.querySelector('.nav');
   const loader = window.TransitionLoader;
   let active = null;
+  const reduced = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
 
   function maskClose(valid = () => true) {
+    if (reduced()) {
+      if (valid()) [maskTop(), maskBot()].forEach(mask => { if (mask) Object.assign(mask.style, { transition: 'none', opacity: '1', pointerEvents: 'auto' }); });
+      return Promise.resolve();
+    }
     return new Promise(resolve => {
       const easing = 'cubic-bezier(.4,0,.2,1)';
       requestAnimationFrame(() => {
         if (!valid() || !maskTop() || !maskBot()) { resolve(); return; }
-        maskTop().style.transition = `all 0.4s ${easing}`;
-        maskBot().style.transition = `all 0.4s ${easing}`;
+        maskTop().style.transition = `opacity 0.4s ${easing}, backdrop-filter 0.4s ${easing}`;
+        maskBot().style.transition = `opacity 0.4s ${easing}`;
 
         maskTop().style.pointerEvents = 'auto';
         maskBot().style.pointerEvents = 'auto';
@@ -85,12 +90,16 @@
   }
 
   function maskOpen(valid = () => true) {
+    if (reduced()) {
+      if (valid()) [maskTop(), maskBot()].forEach(mask => { if (mask) Object.assign(mask.style, { transition: 'none', opacity: '0', pointerEvents: 'none', backdropFilter: 'blur(0px)', webkitBackdropFilter: 'blur(0px)' }); });
+      return Promise.resolve();
+    }
     return new Promise(resolve => {
       const easing = 'cubic-bezier(.4,0,.2,1)';
       requestAnimationFrame(() => {
         if (!valid() || !maskTop() || !maskBot()) { resolve(); return; }
-        maskTop().style.transition = `all 0.4s ${easing}`;
-        maskBot().style.transition = `all 0.4s ${easing}`;
+        maskTop().style.transition = `opacity 0.4s ${easing}, backdrop-filter 0.4s ${easing}`;
+        maskBot().style.transition = `opacity 0.4s ${easing}`;
 
         maskTop().style.opacity = '0';
         maskTop().style.backdropFilter = 'blur(0px)';
@@ -111,7 +120,7 @@
   function showDashTopbar() {
     const nav = landingNav();
     if (nav) {
-      nav.style.transition = 'transform 0.45s cubic-bezier(0.76,0,0.24,1)';
+      nav.style.transition = reduced() ? 'none' : 'transform 0.45s cubic-bezier(0.76,0,0.24,1)';
       nav.style.transform = 'translateY(-100%)';
     }
   }
@@ -119,7 +128,7 @@
   function showLandingNav() {
     const nav = landingNav();
     if (nav) {
-      nav.style.transition = 'transform 0.45s cubic-bezier(0.16,1,0.3,1)';
+      nav.style.transition = reduced() ? 'none' : 'transform 0.45s cubic-bezier(0.16,1,0.3,1)';
       nav.style.transform = 'translateY(0)';
     }
   }
@@ -167,10 +176,11 @@
     const session = {
       async start() {
         if (!valid()) return;
+        content.inert = true;
         if (internal) {
-          apply({ transition: 'opacity 180ms ease, filter 180ms ease', opacity: '0', filter: 'blur(12px)', visibility: fromQC ? 'hidden' : '' });
+          apply({ transition: reduced() ? 'none' : 'opacity 180ms ease, filter 180ms ease, transform 180ms ease', opacity: '0', filter: reduced() ? '' : 'blur(5px)', transform: reduced() || fromQC ? '' : 'translateY(-5px)', visibility: fromQC ? 'hidden' : '' });
           if (routeUpdate) loader.startLoaderTimer(true);
-          if (!fromQC) await rafDelay(routeUpdate ? 180 : 200);
+          if (!fromQC && !reduced()) await rafDelay(180);
           if (!valid()) return;
           if (!routeUpdate) loader.startLoaderTimer(true);
         } else {
@@ -183,28 +193,33 @@
       async complete() {
         if (!valid()) return;
         loader.hideInnerLoader();
-        if (!routeUpdate) await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        if (internal && !fromQC && !reduced()) apply({ transition: 'none', opacity: '0', filter: 'blur(5px)', transform: 'translateY(7px)' });
+        if (!reduced() && !fromQC) await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
         if (!valid()) return;
         cleanLoaders();
-        apply({ transition: internal ? (fromQC ? 'none' : `opacity ${routeUpdate ? 240 : 250}ms ease, filter ${routeUpdate ? 240 : 250}ms ease`) : '', opacity: '1', visibility: fromQC ? 'visible' : '', filter: fromQC ? '' : 'blur(0px)' });
+        content.inert = false;
+        apply({ transition: reduced() || fromQC ? 'none' : 'opacity 280ms ease, filter 280ms ease, transform 280ms ease', opacity: '1', visibility: fromQC ? 'visible' : '', filter: 'blur(0px)', transform: 'translateY(0)' });
         if (!internal) await maskOpen(valid);
         if (!valid()) return;
         cleanupTimer = setTimeout(() => {
           if (valid() && content?.isConnected) {
             content.style.removeProperty('filter');
             content.style.removeProperty('transition');
+            content.style.removeProperty('transform');
           }
-        }, routeUpdate ? 260 : 280);
+        }, reduced() ? 0 : 300);
       },
       cleanup() {
         if (!valid()) return;
         cleanLoaders();
+        content.inert = false;
         apply({ opacity: '1', visibility: '', filter: '', transform: '' });
       },
       cancel() {
         if (cancelled) return;
         if (active === session) {
           cleanLoaders();
+          content.inert = false;
           if (content?.isConnected) Object.assign(content.style, { opacity: '1', visibility: '', filter: '', transform: '', transition: '' });
           // A cancelled full-screen transition must never block input on its successor.
           [maskTop(), maskBot()].forEach(mask => {

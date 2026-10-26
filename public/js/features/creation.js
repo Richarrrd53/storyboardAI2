@@ -17,7 +17,7 @@
       creativeBrief: null,
       copilot: null,
       styleIndex: 0,
-      ratio: '橫向16:9',
+      ratio: '直向9:16',
       duration: 30,
       selectedTemplate: null,
       templateValues: {},
@@ -26,7 +26,7 @@
       draft: {
         story: '',
         styleIndex: 0,
-        ratio: '橫向16:9',
+        ratio: '直向9:16',
         selectedTemplate: null
       }
     };
