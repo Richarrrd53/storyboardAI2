@@ -26,7 +26,7 @@ function routerFixture(path = '/', embedded = false) {
     NavigationTransition: { initialize() {}, setLayout() {}, leaveLanding() {}, open: async () => {}, create: () => ({ start: async () => {}, complete: async () => {}, cancel() {}, cleanup() {} }) },
     ProjectOptionMorph: { close() {} }, ProjectsPage: { closeTagModal() {} }, ProjectDeleteQueue: { flushAll() {} },
     GlobalToast: { hideSpaToast() {} }, AppShell: { collapseProjectsGroup() {}, updateRailHoles() {} },
-    CreationController: { openQuickCompose() {}, syncRoute() {} }, showSpaToast() {}, scrollTo() {}
+    CreationController: { openQuickCompose() {}, syncRoute() {}, cleanupTransition() {}, resolveEntry: options => options }, showSpaToast() {}, scrollTo() {}
   };
   window.parent = embedded ? { location, history, addEventListener() {}, removeEventListener() {} } : window;
   const context = vm.createContext({ window, document, history, URLSearchParams, AbortController, localStorage: { getItem: () => null }, console: { error: (...args) => errors.push(args) }, requestAnimationFrame: fn => fn(), setTimeout, clearTimeout });
@@ -158,4 +158,12 @@ test('production and development entrypoints both serve template deep links', ()
   const config = JSON.parse(fs.readFileSync(require.resolve('../vercel.json'), 'utf8'));
   assert.equal(config.rewrites.find(rule => rule.source === '/(.*)').destination, '/main.html');
   assert.match(fs.readFileSync(require.resolve('../server.js'), 'utf8'), /'\/template\/:id'/);
+});
+
+
+test('saved completion can use the same general generate entry to start fresh', async () => {
+  const f = routerFixture('/generate'); await f.events.DOMContentLoaded(); await settle();
+  f.window.GenerationTask = { getState: () => ({ status: 'completed', save: { status: 'saved' } }) };
+  const before = f.mounts.length; await f.window.spaNavigate('generate');
+  assert.equal(f.mounts.length, before + 1);
 });

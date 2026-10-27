@@ -267,7 +267,7 @@ test('story error and malformed JSON are terminal, retry keeps original task inp
   assert.equal(f.calls.length, 1); const oldId = f.task.getState().taskId;
   fail = false;
   const retry = f.task.retry(); await f.drain(); await retry;
-  assert.equal(f.task.getState().status, 'completed'); assert.notEqual(f.task.getState().taskId, oldId);
+  assert.equal(f.task.getState().status, 'completed'); assert.equal(f.task.getState().taskId, oldId);
   const malformed = fixture(() => response({ response: 'not JSON' }));
   const bad = malformed.task.start(options()); await malformed.drain(); await bad;
   assert.equal(malformed.task.getState().status, 'error'); assert.equal(malformed.calls.length, 1);
@@ -359,10 +359,34 @@ test('unsubscribe simulates leave; resubscribe restores running and completed ta
 
 test('CreationSessionStore reset and CreationController cleanup cancel app task; idle direct entry is inert', async () => {
   const f = fixture(); assert.equal(f.task.getState().status, 'idle'); assert.equal(f.calls.length, 0);
-  for (const reset of [() => f.context.CreationSessionStore.reset(), () => f.context.CreationController.reset(), () => f.task.cleanup()]) {
+  for (const reset of [() => f.context.CreationSessionStore.reset({ force: true }), () => f.context.CreationController.reset(), () => f.task.cleanup()]) {
     const pending = f.task.start(options()); await tick(); const last = f.calls.at(-1);
     reset(); await pending;
     assert.equal(last.signal.aborted, true); assert.equal(f.task.getState().status, 'idle');
     assert.equal(f.timers.size, 0); assert.equal(f.task.getState().result.generatedImgs.length, 0);
   }
+});
+
+
+test('retry deadline projection follows wall clock without scheduling an extra API timer', async () => {
+  let images = 0;
+  const f = fixture((url, body) => body.type === 'image' && ++images === 2 ? response({}, false, 429) : undefined);
+  const pending = f.task.start(options()); await tick();
+  const waiting = f.task.getState(); const id = waiting.taskId;
+  assert.equal(waiting.retry.shotIndex, 1); assert.equal(waiting.retry.attempt, 1); assert.equal(waiting.retry.maxAttempts, 3);
+  assert.match(f.task.retryStatus(waiting, waiting.retry.retryAt - 1901), /2 秒/);
+  assert.match(f.task.retryStatus(waiting, waiting.retry.retryAt - 901), /1 秒/);
+  assert.match(f.task.retryStatus(waiting, waiting.retry.retryAt), /正在重新生成第 2 個分鏡/);
+  assert.equal(f.timers.size, 1); assert.equal(images, 2);
+  const messages = []; const leave = f.task.subscribe(s => messages.push(s.progress.statusText)); leave();
+  await f.drain(); await pending;
+  assert.equal(f.task.getState().retry, null); assert.equal(f.task.getState().taskId, id); assert.equal(images, 3);
+});
+
+test('planning retry retains task ID and cannot create a second task', async () => {
+  let fail = true;
+  const f = fixture((url, body) => fail && body.type === 'story' ? response({}, false, 400) : undefined);
+  await f.task.start(options()); const id = f.task.getState().taskId;
+  fail = false; await f.task.retry(); assert.equal(f.task.getState().taskId, id);
+  assert.equal(f.task.getState().status, 'completed');
 });

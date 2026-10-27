@@ -15,7 +15,7 @@
   const clone = value => JSON.parse(JSON.stringify(value));
   function initialState() {
     return {
-      taskId: null, projectId: null, projectShotIds: {}, status: 'idle', input: null, error: null, planDirty: false, stage: 'planning', activity: { phase: 'requesting', thoughtSummaries: [] },
+      taskId: null, projectId: null, projectShotIds: {}, status: 'idle', input: null, error: null, planDirty: false, retry: null, stage: 'planning', activity: { phase: 'requesting', thoughtSummaries: [] },
       save: { status: 'idle', error: null },
       progress: { pct: 0, statusText: '', activeStepId: null },
       result: { storyboardData: null, generatedImgs: [], generatedStoryTitles: [],
@@ -64,7 +64,8 @@
     const controller = currentController;
     currentController = null;
     state.status = 'cancelled';
-    state.progress = { pct: 0, statusText: '生成已中斷', activeStepId: null };
+    state.retry = null;
+    state.progress = { ...state.progress, statusText: '生成已中斷', activeStepId: null };
     controller?.abort();
     notify();
     return true;
@@ -81,11 +82,22 @@
   function retry() {
     if (state.status === 'generating') return activePromise;
     if (state.stage === 'images' && state.result.failedShotIndexes.length && state.result.generatedShotData.length === state.result.storyboardData?.shots.length && Array.from(state.result.generatedShotData).every(shot => ['succeeded', 'failed'].includes(shot?.payload.imageStatus))) return retryFailedImages();
-    if (!state.input?.selectedTemplate && state.result.storyboardData && ['error', 'cancelled'].includes(state.status)) {
-      state.status = 'awaiting_confirmation'; state.error = null; notify();
-      return Promise.resolve(getState());
+    if (state.result.storyboardData && ['error', 'cancelled'].includes(state.status)) {
+      if (state.input.confirmBeforeImages) {
+        state.status = 'awaiting_confirmation'; state.error = null; notify();
+        return Promise.resolve(getState());
+      }
+      const run = state, controller = new AbortController();
+      currentController = controller; run.status = 'generating'; run.error = null;
+      activePromise = execute(run, controller, true);
+      notify(); return activePromise;
     }
-    return state.input ? start(state.input) : Promise.resolve(getState());
+    if (state.input && ['error', 'cancelled'].includes(state.status)) {
+      const run = state, controller = new AbortController();
+      currentController = controller; run.status = 'generating'; run.error = null; run.retry = null;
+      activePromise = execute(run, controller); notify(); return activePromise;
+    }
+    return Promise.resolve(getState());
   }
   function updatePlan(data) {
     if (state.status !== 'awaiting_confirmation') return false;
@@ -119,7 +131,7 @@
     try { freeform.validate(state.result.storyboardData, state.input.duration); }
     catch (error) { state.error = { message: error.message }; notify(); return Promise.resolve(getState()); }
     const run = state, controller = new AbortController();
-    currentController = controller; run.status = 'generating'; run.stage = 'images'; run.error = null;
+    currentController = controller; run.status = 'generating'; run.error = null;
     activePromise = Promise.resolve().then(() => execute(run, controller, true));
     notify(); return activePromise;
   }
@@ -206,6 +218,8 @@
   async function requestImage(run, controller, question, shotIndex) {
     for (let attempt = 0; attempt < 3; attempt++) {
       assertRun(run, controller);
+      run.retry = null;
+      if (attempt) { run.progress = imageProgress(run, `正在重新生成第 ${shotIndex + 1} 個分鏡…`); notify(); }
       try {
         const data = await requestJSON(run, controller, '/api/ask-gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ question, type: 'image', ratio: run.input.ratio, requestId: run.taskId }) });
@@ -222,7 +236,8 @@
           throw error;
         }
         const delay = Math.max(10000 * 2 ** attempt, error.retryAfterMs || 0);
-        run.progress = imageProgress(run, `伺服器繁忙，約 ${Math.ceil(delay / 1000)} 秒後自動重試鏡頭 ${shotIndex + 1}（${attempt + 1}/2）`); notify();
+        run.retry = { retryAt: Date.now() + delay, shotIndex, attempt: attempt + 1, maxAttempts: 3 };
+        run.progress = imageProgress(run, `伺服器繁忙中，將在 ${Math.ceil(delay / 1000)} 秒後自動重試`); notify();
         await waitForImageRetry(run, controller, delay);
       }
     }
@@ -232,6 +247,7 @@
     if (!root.spaAuth?.isLoggedIn()) {
       run.save = { status: 'local', error: '尚未登入，分鏡保留在目前頁面，可先匯出。' }; notify(); return;
     }
+    run.retry = null;
     run.save = { status: 'saving', error: null }; notify();
     const input = run.input, result = run.result;
     const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${root.spaAuth.getToken()}` };
@@ -425,9 +441,12 @@
         run.activity.phase = 'validating'; run.progress.statusText = '正在驗證角色、鏡頭與時長…'; notify();
         try {
           result.storyboardData = freeform.validate(safeParseJson(response.response), input.duration);
-          run.status = 'awaiting_confirmation';
-          run.progress = { pct: 0, statusText: '分鏡企劃已就緒，確認後才會生成圖片', activeStepId: null };
-          notify(); return;
+          if (input.confirmBeforeImages) {
+            run.status = 'awaiting_confirmation';
+            run.progress = { pct: 0, statusText: '分鏡企劃已就緒，確認後才會生成圖片', activeStepId: null };
+            notify();
+          }
+          return;
         } catch (error) {
           if (attempt === 1) throw error;
           question = `${freeform.prompt(input)}\n上一份輸出未通過驗證：${error.message}\n請修正並重新輸出完整 JSON，不可截斷鏡頭。上一份輸出：${String(response.response).slice(0, 45000)}`;
@@ -471,6 +490,7 @@ shots 可另外提供 angle、purpose、dialogue（中文對白或旁白）、em
     }
 
     async function renderShots() {
+      assertActive();
       const shots = result.storyboardData.shots;
       const total = shots.length;
       run.stage = 'images';
@@ -510,6 +530,7 @@ shots 可另外提供 angle、purpose、dialogue（中文對白或旁白）、em
       }
       run.progress = imageProgress(run, '正在儲存分鏡'); notify();
       await persistResult(run, controller);
+      assertActive();
       requireCompleteImages(run);
       run.progress = imageProgress(run, '分鏡生成完成'); notify();
     }
@@ -563,18 +584,24 @@ shots 可另外提供 angle、purpose、dialogue（中文對白或旁白）、em
           freeform.validate(merged, input.duration);
           result.storyboardData = merged; run.planDirty = false;
         }
-        freeform.validate(result.storyboardData, input.duration);
+        if (!input.selectedTemplate) freeform.validate(result.storyboardData, input.duration);
         result.failedShotIndexes = [];
         await renderShots();
       } else if (input.selectedTemplate) await runTemplateGeneration();
-      else { await runFreeformGeneration(); return getState(); }
+      else {
+        await runFreeformGeneration();
+        if (input.confirmBeforeImages) return getState();
+        assertActive();
+        await renderShots();
+      }
       assertActive();
       run.status = 'completed';
       notify();
     } catch (error) {
       // An obsolete run must never publish over a new task/reset/logout.
       if (state !== run || controller.signal.aborted) return getState();
-      run.status = confirmed && error.code !== 'AI_IMAGES_INCOMPLETE' ? 'awaiting_confirmation' : 'error';
+      run.retry = null;
+      run.status = confirmed && input.confirmBeforeImages && run.stage !== 'images' ? 'awaiting_confirmation' : 'error';
       run.error = { message: error.message || '請稍後再試', status: error.status || null,
         ...(error.code ? { code: error.code } : {}), ...(error.requestId ? { requestId: error.requestId } : {}) };
       run.progress = error.code === 'AI_IMAGES_INCOMPLETE' ? imageProgress(run, '伺服器繁忙，圖片尚未全部完成') : { pct: 0, statusText: '生成發生錯誤，請重試', activeStepId: null };
@@ -584,5 +611,10 @@ shots 可另外提供 angle、purpose、dialogue（中文對白或旁白）、em
     }
     return getState();
   }
-  root.GenerationTask = { start, retry, retrySave, retryFailedImages, updatePlan, confirmPlan, cancel, reset, cleanup: reset, getState, subscribe };
+  function retryStatus(task = state, now = Date.now()) {
+    if (!task.retry || task.status !== 'generating') return task.progress.statusText;
+    const seconds = Math.max(0, Math.ceil((task.retry.retryAt - now) / 1000));
+    return seconds ? `伺服器繁忙中，將在 ${seconds} 秒後自動重試` : `正在重新生成第 ${task.retry.shotIndex + 1} 個分鏡…`;
+  }
+  root.GenerationTask = { retryStatus, start, retry, retrySave, retryFailedImages, updatePlan, confirmPlan, cancel, reset, cleanup: reset, getState, subscribe };
 })(typeof window !== 'undefined' ? window : globalThis);

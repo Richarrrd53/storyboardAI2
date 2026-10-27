@@ -38,9 +38,9 @@
   }
   async function loadRequestedTemplate() {
       templateLoading = true; templateError = null; renderTemplateSelection();
-      const mount = pageController;
+      const mount = pageController, sessionId = CreationSessionStore.sessionId;
       const templates = await ensureTemplatesLoaded();
-      if (mount !== pageController || mount?.signal.aborted) return;
+      if (mount !== pageController || mount?.signal.aborted || sessionId !== CreationSessionStore.sessionId) return;
       templateLoading = false;
       const template = templates.find(t => t.id === requestedTemplateId);
       if (template) selectTemplateCard(template);
@@ -48,6 +48,7 @@
   }
   let pageController = null;
   let unsubscribeTask = null;
+  let retryDisplayTimer = null;
   let boundNodes = new Set();
   let routeCleanup = null;
   let mathLoader = null;
@@ -84,6 +85,8 @@
           CreationSessionStore.targetPhase = 1;
           CreationSessionStore.currentPhase = 1;
       }
+      clearInterval(retryDisplayTimer); retryDisplayTimer = null;
+      if (pageController) window.CreationController.cleanupTransition();
       mathLoader?.stop();
       mathLoader = null;
       inspirationField?.stop(); inspirationField = null;
@@ -153,6 +156,7 @@
       }
       CreationSessionStore.currentPhase = targetPhase;
       CreationSessionStore.targetPhase = targetPhase;
+      window.CreationController.publish();
       document.getElementById('creation-surface').dataset.phase = String(targetPhase);
       document.querySelectorAll('.phase-panel').forEach(panel => {
           const selected = panel === next;
@@ -326,7 +330,7 @@
       const hasVal = val.length > 0;
       btn.disabled = !hasVal || templateLoading;
       btn.setAttribute('data-active', hasVal ? 'true' : 'false');
-      CreationSessionStore.draft.story = input.value;
+      CreationSessionStore.draft.story = CreationSessionStore.submitted && input.value.trim() === CreationSessionStore.story ? '' : input.value;
       const skip = document.getElementById('btn-skip-copilot');
       if (skip) { skip.disabled = !hasVal || templateLoading; skip.hidden = !!CreationSessionStore.selectedTemplate; }
   }
@@ -349,9 +353,12 @@
       const story = (input ? input.value.trim() : '') || CreationSessionStore.draft.story;
       if (!story || templateLoading) return;
 
+      if (window.GenerationTask.getState().status === 'generating' || window.GenerationTask.getState().save.status === 'saving') { presentTask(window.GenerationTask.getState()); return; }
       if (story !== CreationSessionStore.story && window.GenerationTask.getState().status !== 'idle') window.GenerationTask.reset();
       CreationSessionStore.story = story;
-      CreationSessionStore.draft.story = story;
+      CreationSessionStore.submitted = true;
+      CreationSessionStore.draft.story = '';
+      window.CreationController.publish();
       if (CreationSessionStore.selectedTemplate || skipDiscussion) {
           window.CreativeCopilot?.cancel();
           if (!CreationSessionStore.selectedTemplate) window.CreativeCopilot?.prepare(story);
@@ -779,6 +786,7 @@
           style: STYLES[CreationSessionStore.styleIndex] || STYLES[0],
           ratio: CreationSessionStore.ratio,
           duration: CreationSessionStore.duration || 30,
+          confirmBeforeImages: CreationSessionStore.confirmBeforeImages,
           creativeBrief: CreationSessionStore.selectedTemplate ? null : window.CreativeBrief?.snapshot(CreationSessionStore.creativeBrief),
           selectedTemplate: CreationSessionStore.selectedTemplate,
           templateValues: { ...CreationSessionStore.templateValues }
@@ -808,8 +816,16 @@
   }
   window.abortGeneration = abortGeneration;
 
-  function resetCreationWorkflow() {
-      CreationSessionStore.reset();
+  async function resetCreationWorkflow() {
+      if (!await window.CreationController.newCreation()) return;
+      renderedPlan = ''; requestedTemplateId = null; templateLoading = false;
+      document.getElementById('generation-result-wrap').style.display = 'none';
+      document.getElementById('generation-progress-wrap').style.display = 'none';
+      for (const id of ['storyboard-grid', 'generated-storyboard-body', 'plan-shots']) document.getElementById(id)?.replaceChildren();
+      const confirmation = document.getElementById('confirm-before-images');
+      if (confirmation) confirmation.checked = false;
+      document.getElementById('storyboard-grid').hidden = false;
+      document.getElementById('generated-storyboard-table').hidden = true;
       window.CreativeCopilot?.render();
       document.getElementById('generation-error-banner').hidden = true;
       const phaseTitle = document.querySelector('.generation-phase-title');
@@ -850,7 +866,7 @@
   }
   function syncDirectionAction() {
       const button = document.getElementById('btn-direction-next');
-      if (button) button.textContent = CreationSessionStore.selectedTemplate ? '下一步：模板設定' : currentPlanMatches() ? '返回分鏡企劃' : '規劃文字分鏡';
+      if (button) button.textContent = CreationSessionStore.selectedTemplate ? '下一步：模板設定' : currentPlanMatches() ? '返回分鏡企劃' : CreationSessionStore.confirmBeforeImages ? '規劃文字分鏡' : '開始生成分鏡';
   }
   function syncDuration() {
       document.querySelectorAll('[data-duration]').forEach(button => {
@@ -899,6 +915,14 @@
   }
   function presentTask(task) {
       if (!pageController || pageController.signal.aborted) return;
+      clearInterval(retryDisplayTimer); retryDisplayTimer = null;
+      if (task.retry && task.status === 'generating') {
+          retryDisplayTimer = setInterval(() => {
+              const current = window.GenerationTask.getState();
+              const caption = document.getElementById('gen-status-text');
+              if (caption) caption.textContent = window.GenerationTask.retryStatus(current);
+          }, 250);
+      }
       syncMathLoader(task);
       const edit = document.getElementById('context-edit-btn');
       if (edit) edit.disabled = task.status === 'generating';
@@ -911,7 +935,7 @@
           if (summary) summary.innerHTML = window.AIActivity?.summaryMarkup(task.activity?.thoughtSummaries) || '';
           return;
       }
-      updateGenProgress(task.progress.pct, task.progress.statusText, task.progress.activeStepId);
+      updateGenProgress(task.progress.pct, window.GenerationTask.retryStatus(task), task.progress.activeStepId);
       const track = document.getElementById('gen-progress-track');
       const count = document.getElementById('gen-status-pct');
       if (track) track.hidden = !task.progress.total;
@@ -939,6 +963,7 @@
   }
 
   function initGeneratePage(options = {}) {
+      if (options.sessionId && options.sessionId !== CreationSessionStore.sessionId) return null;
       unmountGeneratePage();
       if (options.signal?.aborted) return null;
       pageController = new AbortController();
@@ -963,6 +988,9 @@
       document.querySelectorAll('.direction-condition').forEach(details => bindPageEvent(details, 'toggle', () => {
           details.querySelector('summary small').textContent = details.open ? '收合' : '修改';
       }));
+      const confirmPlanOption = document.getElementById('confirm-before-images');
+      if (confirmPlanOption) confirmPlanOption.checked = CreationSessionStore.confirmBeforeImages;
+      bindPageEvent(confirmPlanOption, 'change', () => { CreationSessionStore.confirmBeforeImages = confirmPlanOption.checked; syncDirectionAction(); });
       bindPageEvent(document.getElementById('btn-skip-copilot'), 'click', () => submitPhase1Story(true));
       document.getElementById('generate-workspace').dataset.ready = 'true';
       matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', event => {
@@ -974,7 +1002,7 @@
       }, { signal: pageController.signal });
       const mount = pageController;
       const unmount = () => { if (pageController === mount) unmountGeneratePage(); };
-      renderedPlan = '';
+      renderedPlan = ''; requestedTemplateId = null; templateLoading = false;
       document.querySelectorAll('[data-duration]').forEach(button => bindPageEvent(button, 'click', () => {
           CreationSessionStore.duration = Number(button.dataset.duration);
           if (!CreationSessionStore.selectedTemplate && CreationSessionStore.creativeBrief) window.CreativeBrief.edit(CreationSessionStore.creativeBrief, { duration: CreationSessionStore.duration });
@@ -1007,8 +1035,7 @@
       requestedTemplateId = options.templateId || window.preselectedTemplateId || null;
       window.preselectedTemplateId = null;
       templateLoading = false; templateError = null;
-      if (requestedTemplateId && window.GenerationTask.getState().status !== 'generating') {
-          CreationSessionStore.reset();
+      if (requestedTemplateId && window.GenerationTask.getState().status === 'idle') {
           CreationSessionStore.ratio = '直向9:16';
       }
       bindPageEvent(document.getElementById('btn-reload-template'), 'click', () => requestedTemplateId ? loadRequestedTemplate() : ensureTemplatesLoaded().then(() => { renderTemplateBrowser(); renderTemplateSelection(); }));
@@ -1121,16 +1148,12 @@
 
       // Check if session already has a story (e.g. from QC Shared Handoff)
       const story = CreationSessionStore.story || CreationSessionStore.draft?.story || '';
-      if (options.fromQC && window.GenerationTask.getState().status !== 'generating') {
-          window.GenerationTask.reset();
-      }
       const task = window.GenerationTask.getState();
       const targetPhase = task.status === 'awaiting_confirmation' ? 5 : ['generating', 'completed'].includes(task.status)
           ? 4 : (['error', 'cancelled'].includes(task.status) ? 4
-              : (options.fromQC && !CreationSessionStore.selectedTemplate ? 1 : options.targetPhase || CreationSessionStore.targetPhase || 1));
+              : (options.creationIntent === 'new' && !CreationSessionStore.selectedTemplate ? 1 : options.targetPhase || CreationSessionStore.targetPhase || 1));
 
       if (story) {
-          CreationSessionStore.story = story;
           if (input) input.value = CreationSessionStore.draft.story || story;
       }
 
@@ -1139,7 +1162,12 @@
 
       unsubscribeTask = window.GenerationTask.subscribe(presentTask);
       switchPhase(targetPhase, false);
-      if (options.fromQC && !CreationSessionStore.selectedTemplate && task.status === 'idle' && story) submitPhase1Story();
+      const c = CreationSessionStore.copilot;
+      const pendingQC = CreationSessionStore.entryMode === 'quick' && CreationSessionStore.submitted && !c?.active && !c?.retry && !c?.response && !c?.error;
+      if (((options.creationIntent === 'new' && options.fromQC) || pendingQC) && !CreationSessionStore.selectedTemplate && task.status === 'idle' && story) {
+          if (CreationSessionStore.copilot) CreationSessionStore.copilot.stackEntered = true;
+          submitPhase1Story();
+      }
       return { unmount: () => {
           options.signal?.removeEventListener('abort', unmount);
           unmount();

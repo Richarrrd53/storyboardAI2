@@ -298,13 +298,14 @@ test('CreationController: QuickCompose submit -> Generate route handoff', async 
   // Verify CreationSessionStore updated
   assert.equal(CreationSessionStore.story, '一個關於時間旅行的故事');
   assert.equal(CreationSessionStore.entryMode, 'quick');
-  assert.equal(CreationSessionStore.targetPhase, 2);
+  assert.equal(CreationSessionStore.targetPhase, 1);
 
   // Verify navigation to generate Phase 2
   assert.equal(navHistory.length, 1);
   assert.equal(navHistory[0].route, 'generate');
   assert.equal(navHistory[0].opts.fromQC, true);
-  assert.equal(navHistory[0].opts.targetPhase, 2);
+  assert.equal(navHistory[0].opts.targetPhase, 1);
+  assert.equal(navHistory[0].opts.creationIntent, 'new');
 });
 
 test('CreationController: Enter key in textarea triggers submit', () => {
@@ -483,4 +484,105 @@ test('ordinary route sync closes the actual mobile QC surface without resetting 
   CreationController.syncRoute('projects');
   assert.equal(QuickCompose.state, 'closed'); assert.equal(doc.body.style.position, '');
   assert.equal(CreationSessionStore.story, 'persist across navigation'); assert.equal(resets, 0);
+});
+
+
+test('QC derives its labels and entry intents from submitted sessions and task/save state', () => {
+  const { win, CreationController: c, CreationSessionStore: s } = setupMockEnvironment();
+  let task = { status: 'idle', save: { status: 'idle' }, progress: {} };
+  win.GenerationTask = { getState: () => task };
+  assert.equal(c.workState().label, '開始創作');
+  s.draft.story = 'unsubmitted'; assert.equal(c.workState().label, '繼續輸入'); assert.equal(c.workState().hasWork, false);
+  s.story = 'submitted'; s.submitted = true; s.copilot = { busy: true, active: true };
+  assert.equal(c.workState().label, '正在構思…');
+  s.copilot.busy = false; assert.equal(c.workState().label, '待確認創作方向');
+  s.currentPhase = 2; assert.equal(c.workState().label, '創作設定中');
+  for (const [patch, label, intent] of [
+    [{ status: 'generating', stage: 'planning' }, '正在規劃分鏡', 'resume'],
+    [{ stage: 'images', progress: { completed: 4, total: 10 } }, '生成中 · 4/10', 'resume'],
+    [{ retry: { retryAt: Date.now() + 10000 } }, '等待自動重試', 'resume'],
+    [{ status: 'error' }, '待繼續生成', 'resume'],
+    [{ status: 'cancelled' }, '待繼續生成', 'resume'],
+    [{ status: 'awaiting_confirmation' }, '待確認文字分鏡', 'resume'],
+    [{ status: 'completed', save: { status: 'failed' } }, '待儲存成果', 'view_result'],
+    [{ save: { status: 'saved' } }, '開始新創作', 'new']
+  ]) { Object.assign(task, patch); assert.equal(c.workState().label, label); assert.equal(c.workState().intent, intent); }
+});
+
+test('new creation guards running progress and unsaved results before any destructive reset', async () => {
+  const { win, CreationController: c, CreationSessionStore: s } = setupMockEnvironment();
+  let resets = 0, prompt = '';
+  const task = { status: 'generating', save: { status: 'idle' }, progress: { completed: 4, total: 10 }, result: { generatedShotData: [{}] } };
+  win.GenerationTask = { getState: () => task, reset: () => resets++ };
+  win.confirm = message => { prompt = message; return false; };
+  s.story = 'old'; s.submitted = true; const id = s.sessionId;
+  assert.equal(s.reset(), false);
+  assert.equal(await c.submitFromQuickCompose('new'), false);
+  assert.equal(resets, 0); assert.equal(s.sessionId, id); assert.equal(s.story, 'old');
+  assert.match(prompt, /4\/10/); assert.match(prompt, /尚未儲存/);
+  task.status = 'completed'; task.save.status = 'failed';
+  assert.equal(c.newCreation(), false); assert.equal(resets, 0);
+  win.confirm = () => true; assert.equal(c.newCreation(), true);
+  assert.equal(resets, 1); assert.notEqual(s.sessionId, id); assert.equal(s.ratio, '直向9:16');
+});
+
+test('QC resumes existing work without discussion preparation, task reset or new session', async () => {
+  const { win, CreationController: c, CreationSessionStore: s, QuickCompose: qc, navHistory } = setupMockEnvironment();
+  qc.mount(); let resets = 0, prepares = 0;
+  s.submitted = true; s.story = 'existing'; s.currentPhase = s.targetPhase = 2;
+  const id = s.sessionId; s.creativeBrief = { answers: ['keep'] };
+  win.GenerationTask = { getState: () => ({ status: 'idle', save: {}, progress: {} }), reset: () => resets++ };
+  win.CreativeCopilot = { prepare: () => prepares++ };
+  await qc.open();
+  assert.equal(navHistory.length, 1); assert.equal(navHistory[0].opts.creationIntent, 'resume');
+  assert.equal(navHistory[0].opts.targetPhase, 2); assert.equal(s.sessionId, id);
+  assert.equal(resets, 0); assert.equal(prepares, 0); assert.deepEqual(s.creativeBrief.answers, ['keep']);
+});
+
+test('saved completion opens an empty QC; same story submission receives a fresh session', async () => {
+  const { win, doc, CreationController: c, CreationSessionStore: s, QuickCompose: qc } = setupMockEnvironment();
+  qc.mount(); s.story = 'same story'; s.submitted = true; s.draft.story = 'stale story';
+  const old = s.sessionId; let task = { status: 'completed', save: { status: 'saved' }, progress: {} };
+  win.GenerationTask = { getState: () => task, reset: () => { task = { status: 'idle', save: {}, progress: {} }; } };
+  qc.open(); assert.equal(doc.getElementById('qc-story-input').value, ''); assert.notEqual(s.sessionId, old);
+  const opened = s.sessionId; await c.submitFromQuickCompose('same story');
+  assert.notEqual(s.sessionId, opened); assert.equal(s.story, 'same story'); assert.equal(s.submitted, true);
+});
+
+test('entry resolution ignores phase hints on resume and only clears saved results for a general new entry', () => {
+  const { win, CreationController: c, CreationSessionStore: s } = setupMockEnvironment();
+  s.submitted = true; s.currentPhase = s.targetPhase = 2;
+  let task = { status: 'idle', save: {}, progress: {} }; let resets = 0;
+  win.GenerationTask = { getState: () => task, reset: () => { resets++; task = { status: 'idle', save: {}, progress: {} }; } };
+  assert.equal(c.resolveEntry({ creationIntent: 'resume', targetPhase: 1 }).targetPhase, 2);
+  task.status = 'completed'; task.save.status = 'saved';
+  c.resolveEntry({ creationIntent: 'view_result' }); assert.equal(resets, 0);
+  c.resolveEntry(); assert.equal(resets, 1); assert.equal(s.story, '');
+});
+
+test('handoff navigation failure always removes text/shell layers and submission lock', async () => {
+  const { doc, CreationController: c } = setupMockEnvironment();
+  await assert.rejects(c.submitFromQuickCompose('retained story', { navigate: async () => { throw new Error('mount failed'); } }), /mount failed/);
+  assert.equal(c.isSubmitting, false);
+  assert.equal(doc.querySelector('.qc-story-flight'), null); assert.equal(doc.querySelector('.qc-workspace-morph'), null);
+  assert.equal(doc.body.classList.contains('qc-text-handoff'), false);
+});
+
+
+test('async app confirmation preserves work until accepted and rejects a stale approval', async () => {
+  const { win, CreationController: c, CreationSessionStore: s } = setupMockEnvironment();
+  s.story = 'in progress'; s.submitted = true;
+  let decide; win.confirm = () => new Promise(resolve => { decide = resolve; });
+  const old = s.sessionId; const pending = c.newCreation();
+  assert.equal(s.sessionId, old); assert.equal(s.story, 'in progress');
+  decide(true); assert.equal(await pending, true); assert.notEqual(s.sessionId, old);
+  s.submitted = true; const late = c.newCreation(); c.reset(); const fresh = s.sessionId;
+  decide(true); assert.equal(await late, false); assert.equal(s.sessionId, fresh);
+});
+
+
+test('stale QC route intents cannot enter a newer session', () => {
+  const { CreationController: c, CreationSessionStore: s } = setupMockEnvironment();
+  const old = s.sessionId; c.reset();
+  assert.equal(c.resolveEntry({ fromQC: true, creationIntent: 'new', sessionId: old }), null);
 });

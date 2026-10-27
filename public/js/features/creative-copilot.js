@@ -90,7 +90,7 @@
     }
     return s.copilot;
   }
-  function dirty() { if (root.GenerationTask?.getState().status !== 'idle') root.GenerationTask?.reset(); }
+  function dirty() { const task = root.GenerationTask?.getState(); if (task && !['idle', 'generating'].includes(task.status) && task.save?.status !== 'saving') root.GenerationTask.reset(); }
   function captureStory() {
     const s = session(), input = document.getElementById('story-input');
     const story = input?.value.trim();
@@ -193,6 +193,7 @@
       '<div class="copilot-secondary-actions">' + (!c.continuing ? '<button type="button" class="copilot-text-action" data-copilot="continue">繼續調整</button>' : '') + '<button type="button" class="copilot-text-action" data-copilot="advance">略過討論</button></div></div>';
   }
   function render({ archive } = {}) {
+    root.CreationController?.publish();
     const el = document.getElementById('creative-copilot'), s = session(), c = s.copilot;
     if (!el) return;
     const stackHost = document.getElementById('creation-discussion-stack');
@@ -335,9 +336,15 @@
   function discuss() { const c = prepare(session().story); c.active = true; c.continuing = true; notify('discuss'); render(); document.getElementById('copilot-message')?.focus(); }
   function editStory() { cancel(); const c = session().copilot; if (c) { c.active = false; c.stackEntered = false; } render(); notify('edit-story'); const input = document.getElementById('story-input'); if (input) { input.value = session().story; input.focus({ preventScroll: true }); } }
   function mount(signal, onAction) {
-    notify = onAction;
+    notify = action => {
+      if (action === 'advance' || action === 'ready') session().currentPhase = session().targetPhase = 2;
+      if (!signal.aborted) onAction(action);
+      root.CreationController?.publish();
+    };
     const el = document.getElementById('creative-copilot'); if (!el) return;
-    signal.addEventListener('abort', cancel, { once: true });
+    signal.addEventListener('abort', () => {
+      stopVisuals(); introAnimations.forEach(animation => animation.cancel()); introAnimations = [];
+    }, { once: true });
     el.addEventListener('change', event => {
       const group = event.target.closest('[data-question]'), c = session().copilot; if (!group || !c?.response?.form) return;
       const q = c.response.form.questions.find(q => q.id === group.dataset.question);

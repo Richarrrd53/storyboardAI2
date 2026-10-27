@@ -6,7 +6,7 @@ const path = require('node:path');
 const free = require('../public/js/features/freeform-storyboard');
 const source = name => fs.readFileSync(path.join(__dirname, '../public/js/features', name + '.js'), 'utf8');
 const clone = value => JSON.parse(JSON.stringify(value));
-const input = { story: '咖啡師磨豆並沖煮咖啡', style: { name: '電影', prompt: 'cinematic light' }, ratio: '橫向16:9', duration: 30 };
+const input = { confirmBeforeImages: true, story: '咖啡師磨豆並沖煮咖啡', style: { name: '電影', prompt: 'cinematic light' }, ratio: '橫向16:9', duration: 30 };
 function plan(duration = 30, count = { 15: 6, 30: 10, 45: 12, 60: 15 }[duration]) {
   return { meta: { title: '咖啡的早晨' }, characters: { hero: { appearance: 'barista', outfit: 'blue apron' } }, shots: Array.from({ length: count }, (_, index) => ({
     id: index + 1, story: `咖啡師的具體動作 ${index + 1}`, camera: 'overhead close-up', duration: duration / count + 's',
@@ -249,4 +249,25 @@ test('planning sends the explicit contract and real summaries separately, includ
   assert.ok(phases.includes('repairing')); assert.ok(phases.includes('validating'));
   assert.deepEqual(JSON.parse(JSON.stringify(f.task.getState().activity.thoughtSummaries)), ['Provider thought summary']);
   assert.equal(f.task.getState().status, 'awaiting_confirmation');
+});
+
+
+test('default freeform validates and generates automatically without a confirmation stop', async () => {
+  const f = fixture(); const states = []; f.task.subscribe(s => states.push(s.status));
+  await f.task.start({ ...input, confirmBeforeImages: false });
+  assert.equal(f.task.getState().status, 'completed');
+  assert.equal(states.includes('awaiting_confirmation'), false);
+  assert.equal(f.calls.filter(c => c.body.type === 'story').length, 1);
+  assert.equal(f.calls.filter(c => c.body.type === 'image').length, 10);
+});
+
+test('default cancel/resume keeps task identity, plan and successful images', async () => {
+  let release, images = 0;
+  const f = fixture((url, body) => body.type === 'image' && ++images === 2 ? new Promise(resolve => { release = resolve; }) : null);
+  const pending = f.task.start({ ...input, confirmBeforeImages: false });
+  while (!release) await tick();
+  const id = f.task.getState().taskId; f.task.cancel(); release(response({ image: ['obsolete.png'] })); await pending;
+  await f.task.retry();
+  assert.equal(f.task.getState().status, 'completed'); assert.equal(f.task.getState().taskId, id);
+  assert.equal(images, 11); assert.equal(f.calls.filter(c => c.body.type === 'story').length, 1);
 });

@@ -124,6 +124,8 @@ html, body { overflow-x: clip; }
 .direction-header { display: flex; flex-direction: column; gap: var(--space-3); }
 .direction-badge-wrap { display: flex; flex-direction: column; gap: var(--space-2); }
 .direction-scroll-hint, .section-hint { color: var(--color-text-secondary); font-size: var(--font-size-sm); }
+.generate-workspace .plan-confirm-option { display: inline-flex; align-items: center; gap: var(--space-2); min-height: 44px; cursor: pointer; }
+.generate-workspace .plan-confirm-option input[type="checkbox"] { flex: 0 0 16px; width: 16px; height: 16px; min-height: 0; margin: 0; padding: 0; appearance: auto; accent-color: var(--color-brand-primary); }
 .direction-ai-box { color: var(--color-text-secondary); font-size: var(--font-size-sm); }
 .ai-box-sparkle, .ai-box-cursor { display: none; }
 .direction-section { display: flex; flex-direction: column; gap: var(--space-3); }

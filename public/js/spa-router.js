@@ -203,8 +203,18 @@
     }
     const activePage = targetPage || currentPage;
     const activeOpts = targetPage ? targetOpts : currentOpts;
-    if ((targetPage || currentRouteMounted) && !opts.force && page === activePage && opts.id === activeOpts?.id && opts.templateId === activeOpts?.templateId) return;
+    if ((targetPage || currentRouteMounted) && !opts.force && page === activePage && opts.id === activeOpts?.id && opts.templateId === activeOpts?.templateId) {
+      const task = window.GenerationTask?.getState();
+      if (page !== 'generate' || (opts.creationIntent !== 'new' && !(task?.status === 'completed' && task.save.status === 'saved'))) return;
+      opts = { ...opts, force: true };
+    }
 
+    if (page !== 'generate' || !opts.fromQC) window.CreationController.cleanupTransition();
+    if (page === 'generate') {
+      const entry = await window.CreationController.resolveEntry(opts.templateId && !opts.sessionId ? { ...opts, creationIntent: 'new' } : opts);
+      if (!entry) return;
+      opts = entry;
+    }
     const browse = activePageInstance?.getHistoryState?.();
     if (page === 'template' && opts.templateId && activePage === 'template' && !activeOpts?.templateId) opts = { ...opts, templateFromBrowse: true };
     const reuse = page === 'template' && currentPage === 'template' && activePageInstance?.updateRoute && !opts.force;
@@ -420,6 +430,7 @@
     }
   });
 
+  window.spaRouter = { get currentPage() { return targetPage || currentPage; } };
   window.spaNavigate = navigate;
   window.navigate = navigate;
 

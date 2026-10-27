@@ -447,3 +447,27 @@ test('controller and backend together complete a structured two-round proposal c
     assert.ok(!JSON.stringify(seen[1]).includes('provider summary'));
     assert.equal(s.creativeBrief.confirmed.visualStyle, '明亮電影感');
 });
+
+
+test('SPA unmount stops presentation while the discussion request completes in the same session', async () => {
+    let finish, signal, calls = 0;
+    const context = controllerFixture(async (url, options) => {
+        calls++; signal = options.signal; const body = JSON.parse(options.body);
+        await new Promise(resolve => { finish = resolve; });
+        return { ok: true, json: async () => ({ ...ready, requestId: body.requestId, revision: body.revision }) };
+    });
+    const page = new AbortController(); let nodeAvailable = true, actions = 0;
+    context.document.getElementById = id => {
+        if (id === 'creative-copilot' && nodeAvailable) { nodeAvailable = false; return { addEventListener() {} }; }
+        return null;
+    };
+    context.CreativeCopilot.mount(page.signal, () => actions++);
+    const pending = context.CreativeCopilot.request(); const session = context.CreationSessionStore.sessionId;
+    page.abort(); assert.equal(signal.aborted, false); assert.equal(context.CreationSessionStore.copilot.busy, true);
+    finish(); await pending;
+    assert.equal(context.CreationSessionStore.sessionId, session);
+    assert.equal(context.CreationSessionStore.copilot.response.action, 'ready');
+    assert.equal(context.CreationSessionStore.currentPhase, 2); assert.equal(actions, 0);
+    nodeAvailable = true; context.CreativeCopilot.mount(new AbortController().signal, () => actions++);
+    assert.equal(calls, 1);
+});

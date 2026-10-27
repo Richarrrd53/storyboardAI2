@@ -3,101 +3,6 @@
 @import url('./tokens.css');
 @import url('./creation-workspace.css');
 
-/* ── 11. Temporary Shared Transition Proxy (Spec item 36) ── */
-.qc-transition-proxy {
-    background: rgba(255, 255, 255, 0.94);
-    backdrop-filter: blur(28px);
-    -webkit-backdrop-filter: blur(28px);
-    border: 1.5px solid rgba(255, 255, 255, 0.85);
-    box-shadow: 0 24px 60px -12px rgba(37, 99, 235, 0.18), 0 8px 24px rgba(15, 23, 42, 0.08);
-    display: flex;
-    flex-direction: column;
-    padding: 12px 24px;
-    box-sizing: border-box;
-    overflow: hidden;
-    will-change: top, left, width, height, border-radius, padding, opacity;
-    z-index: 99999;
-    pointer-events: none;
-    border-radius: 26px;
-    transition: top 850ms cubic-bezier(0.16, 1, 0.3, 1),
-                left 850ms cubic-bezier(0.16, 1, 0.3, 1),
-                width 850ms cubic-bezier(0.16, 1, 0.3, 1),
-                height 850ms cubic-bezier(0.16, 1, 0.3, 1),
-                border-radius 850ms cubic-bezier(0.16, 1, 0.3, 1),
-                padding 850ms cubic-bezier(0.16, 1, 0.3, 1),
-                opacity 380ms 520ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.qc-transition-proxy.is-expanded-page-main {
-    padding: 36px 40px;
-    background:
-        radial-gradient(circle 1000px at 15% 10%, rgba(59, 130, 246, 0.04) 0%, transparent 60%),
-        radial-gradient(circle 900px at 85% 85%, rgba(99, 102, 241, 0.035) 0%, transparent 55%),
-        linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-    opacity: 0;
-}
-
-@media (max-width: 768px) {
-    .qc-transition-proxy {
-        border-radius: 27px !important;
-    }
-    .qc-transition-proxy.is-expanded-page-main {
-        border-radius: 27px !important;
-        padding: 20px 16px;
-    }
-}
-
-.qc-transition-proxy .proxy-header-row {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-}
-
-.qc-transition-proxy .proxy-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 18px;
-    background: rgba(37, 99, 235, 0.08);
-    border: 1px solid rgba(37, 99, 235, 0.18);
-    border-radius: 999px;
-    max-width: 100%;
-    box-sizing: border-box;
-}
-
-.qc-transition-proxy .proxy-sparkle {
-    color: var(--gen-primary);
-    font-size: 0.95rem;
-    flex-shrink: 0;
-}
-
-.qc-transition-proxy .proxy-text {
-    font-weight: 700;
-    font-size: 0.92rem;
-    color: var(--gen-text-dark);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    flex: 1;
-}
-
-.qc-transition-proxy .proxy-check {
-    color: #10b981;
-    font-weight: 800;
-    font-size: 0.95rem;
-    flex-shrink: 0;
-}
-
-.qc-transition-hidden {
-    visibility: hidden !important;
-    opacity: 0 !important;
-    transition: none !important;
-    pointer-events: none !important;
-}
-
-
-
 /* ==========================================================================
    14. Quick Creation Layer & Global Trigger Capsule (Desktop & Mobile)
    ========================================================================== */
@@ -1200,3 +1105,11 @@ body.ai-quick-compose-closing .ai-pill-btn-glow-container,
     }
 }
 
+
+/* QC owns only temporary visuals. The real story remains in CreationSessionStore. */
+.qc-workspace-morph, .qc-story-flight { position: fixed; pointer-events: none; box-sizing: border-box; z-index: 100000; }
+.qc-workspace-morph { border-radius: 28px; background: var(--bg-card, #faf9f6); border: 1px solid rgba(128,128,128,.14); box-shadow: 0 12px 48px #0001; }
+.qc-story-flight { white-space: pre-wrap; overflow: hidden; overflow-wrap: anywhere; }
+.qc-text-handoff .copilot-user-message p { visibility: hidden; }
+.qc-resume-handoff .generate-workspace { opacity: 0; }
+@media (prefers-reduced-motion: reduce) { .qc-workspace-morph, .qc-story-flight { display: none; } }
