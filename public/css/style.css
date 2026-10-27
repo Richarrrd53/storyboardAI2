@@ -17,6 +17,7 @@
 @import url('./components/mobile-nav.css');
 @import url('./components/option-morph.css');
 @import url('./components/quick-create.css');
+@import url('./components/continuous-corners.css');
 
 * {
     box-sizing: border-box;
@@ -760,7 +761,7 @@ main{
     width: 170px;
     background: var(--color-surface-elevated);
     border: var(--border-width-thin) solid var(--color-border-subtle);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-continuous-md);
     box-shadow: var(--elevation-3);
     padding: var(--space-1);
     display: flex;
@@ -928,7 +929,7 @@ main{
   width: 100% !important;
   position: relative !important;
   z-index: 20 !important;
-  background: var(--off-white, #f8fafc);
+  background: var(--content-header-bg, var(--off-white, #f8fafc));
   box-sizing: border-box !important;
 }
 

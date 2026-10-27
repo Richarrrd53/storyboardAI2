@@ -30,10 +30,8 @@
   position: sticky;
   top: 0;
   z-index: 90;
-  background: var(--color-surface-primary);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid var(--color-border-default, #e2e8f0);
+  background: var(--content-header-bg, var(--color-surface-primary));
+  border-bottom: 1px solid var(--content-header-border, var(--color-border-default, #e2e8f0));
   padding: var(--space-4, 16px) var(--page-gutter, var(--space-8, 32px)) var(--space-3, 12px);
   display: flex;
   flex-direction: column;
@@ -223,7 +221,7 @@
   width: 100%;
   background: var(--color-surface-primary, #ffffff);
   border: 1px solid var(--color-border-default, #e2e8f0);
-  border-radius: var(--radius-md, 16px);
+  border-radius: var(--radius-continuous-md);
   box-shadow: var(--elevation-1, 0 4px 14px rgba(15, 23, 42, 0.04));
   overflow: hidden;
 }
@@ -291,7 +289,7 @@
 
 .shot-cell-thumb-wrap {
   width: 140px;
-  border-radius: var(--radius-sm, 8px);
+  border-radius: var(--radius-continuous-sm);
   overflow: hidden;
   background: #1c1917;
   border: 1px solid rgba(0,0,0,0.06);
@@ -386,7 +384,7 @@
 .project-film-container {
   width: 100%;
   background: #0f0f11;
-  border-radius: 20px;
+  border-radius: var(--radius-continuous-20);
   padding: 18px 0;
   box-shadow: 0 10px 40px rgba(0,0,0,0.18);
   overflow: hidden;
@@ -436,7 +434,7 @@
   width: 320px;
   background: #18181b;
   border: 1px solid #27272a;
-  border-radius: 12px;
+  border-radius: var(--radius-continuous-12);
   overflow: hidden;
   cursor: pointer;
   transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
@@ -636,7 +634,7 @@
 /* 當前圖片預覽區 */
 .editor-preview-card {
   width: 100%;
-  border-radius: var(--radius-md, 12px);
+  border-radius: var(--radius-continuous-md);
   overflow: hidden;
   background: #09090b;
   border: 1px solid var(--color-border-default, #e2e8f0);
@@ -713,7 +711,7 @@
   gap: var(--space-3);
   background: var(--color-surface-secondary, #f8fafc);
   padding: var(--space-3);
-  border-radius: var(--radius-md, 12px);
+  border-radius: var(--radius-continuous-md);
   border: 1px solid var(--color-border-default, #e2e8f0);
 }
 
@@ -752,7 +750,7 @@
   gap: var(--space-3);
   background: var(--color-surface-secondary, #f8fafc);
   border: 1px solid var(--color-border-default, #e2e8f0);
-  border-radius: var(--radius-md, 12px);
+  border-radius: var(--radius-continuous-md);
   padding: var(--space-4);
 }
 
@@ -994,7 +992,7 @@
     height: 92dvh;
     border-left: none;
     border-top: 1px solid var(--color-border-default);
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    border-radius: var(--radius-continuous-lg) var(--radius-continuous-lg) 0 0;
     transform: translateY(100%);
   }
 
@@ -1042,7 +1040,7 @@
     flex-direction: column !important;
     background: var(--color-surface-primary, #ffffff) !important;
     border: 1px solid var(--color-border-default, #e2e8f0) !important;
-    border-radius: var(--radius-md, 16px) !important;
+    border-radius: var(--radius-continuous-md) !important;
     box-shadow: var(--elevation-1, 0 4px 14px rgba(15, 23, 42, 0.04)) !important;
     padding: 16px !important;
     box-sizing: border-box !important;
@@ -1061,7 +1059,7 @@
   .project-table tbody tr.project-shot-row .shot-cell-thumb-wrap {
     width: 100% !important;
     max-width: 100% !important;
-    border-radius: var(--radius-sm, 8px) !important;
+    border-radius: var(--radius-continuous-sm) !important;
     overflow: hidden !important;
   }
 

@@ -229,7 +229,7 @@ body.dashboard-layout.sidebar-open #page-main,
   width: 100% !important;
   position: relative !important;
   z-index: 20 !important;
-  background: var(--color-bg-page, #f8fafc);
+  background: var(--content-header-bg, var(--color-bg-page, #f8fafc));
   box-sizing: border-box !important;
   padding: var(--space-6) var(--page-gutter) var(--space-8) !important;
   display: flex !important;
@@ -238,6 +238,60 @@ body.dashboard-layout.sidebar-open #page-main,
 }
 
 /* Optical Baseline Alignment for Header titles */
+.has-scroll-backdrop {
+  --content-header-bg: transparent;
+  --content-header-border: transparent;
+  position: relative;
+  overflow: visible;
+}
+
+/* Extend the existing scroll owner behind its header. Equal padding compensates
+   the overlap, preserving the first content position and maximum scroll offset.
+   These two scoped priorities override the existing page padding/margin resets. */
+.content-body.has-header-underlay {
+  margin-top: calc(-1 * var(--header-underlap)) !important;
+  padding-top: var(--header-body-padding-top) !important;
+  scroll-padding-top: var(--header-underlap);
+}
+
+.projects-toolbar.has-scroll-backdrop {
+  background: transparent;
+}
+
+/* One shared layer sits above the scrolling content and below both header rows.
+   Splitting backdrop filters at the toolbar boundary creates a visible seam. */
+.has-header-backdrop {
+  --header-blur-extent: 56px;
+  position: relative;
+}
+
+.has-header-backdrop::after {
+  content: '';
+  position: absolute;
+  top: var(--header-backdrop-top, 0px);
+  inset-inline: 0;
+  height: calc(var(--header-backdrop-height, 0px) + var(--header-blur-extent));
+  z-index: 10;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--color-bg-page, #f8fafc) 52%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  mask-image: linear-gradient(to bottom, black calc(100% - var(--header-blur-extent)), rgba(0, 0, 0, .8) calc(100% - var(--header-blur-extent) * .75), rgba(0, 0, 0, .3) calc(100% - var(--header-blur-extent) * .35), transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black calc(100% - var(--header-blur-extent)), rgba(0, 0, 0, .8) calc(100% - var(--header-blur-extent) * .75), rgba(0, 0, 0, .3) calc(100% - var(--header-blur-extent) * .35), transparent 100%);
+  opacity: 0;
+  transition: opacity 240ms var(--motion-ease-standard, ease);
+}
+
+.has-header-backdrop.is-content-scrolled::after { opacity: 1; }
+
+/* Preserve the entrance and its delay, then release the opacity Backdrop Root
+   created by a forwards-filled animation so the layer can sample its sibling. */
+.has-scroll-backdrop.anim-fadeInUp { animation-fill-mode: backwards; }
+
+@media (prefers-reduced-motion: reduce) {
+  .has-header-backdrop::after { transition: none; }
+}
+
 .page-header .page-title,
 .content-header h1,
 .content-header .home-greeting-title,

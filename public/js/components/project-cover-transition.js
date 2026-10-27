@@ -21,6 +21,13 @@
   // Active transition tracking
   let activeTransitionSession = null;
 
+  // Keep shared-element clones on the same progressive corner scale as their cards.
+  function coverRadius(size) {
+    const token = root.getComputedStyle?.(document.documentElement)
+      .getPropertyValue(`--radius-continuous-${size}`).trim();
+    return token || `${size === 'sm' ? 8 : size}px`;
+  }
+
   function removeNode(node) {
     if (!node) return;
     const parent = node.parentNode || node.parentElement;
@@ -165,7 +172,7 @@
     flyingCover.style.width = `${startW}px`;
     flyingCover.style.height = `${startH}px`;
     flyingCover.style.zIndex = '999999';
-    flyingCover.style.borderRadius = '14px';
+    flyingCover.style.borderRadius = coverRadius(14);
     flyingCover.style.border = '1px solid rgba(255, 255, 255, 0.45)';
     flyingCover.style.overflow = 'hidden';
     flyingCover.style.boxShadow = '0 16px 36px rgba(15, 23, 42, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.35)';
@@ -351,7 +358,7 @@
         const to = canReturn ? this.primaryCover.getBoundingClientRect() : null;
         const keyframes = to && to.width > 0 && to.height > 0 ? [
           { left: `${from.left}px`, top: `${from.top}px`, width: `${from.width}px`, height: `${from.height}px`, opacity: 1 },
-          { left: `${to.left}px`, top: `${to.top}px`, width: `${to.width}px`, height: `${to.height}px`, borderRadius: '14px', opacity: 1 }
+          { left: `${to.left}px`, top: `${to.top}px`, width: `${to.width}px`, height: `${to.height}px`, borderRadius: coverRadius(14), opacity: 1 }
         ] : [{ opacity: 1, filter: 'blur(0px)' }, { opacity: 0, filter: 'blur(18px)', transform: 'scale(.97)' }];
         this.scrim.style.opacity = '0';
         const exit = this.flyingCover.animate?.(keyframes, { duration: reducedMotion ? 0 : 380, easing: 'cubic-bezier(.4, 0, .2, 1)', fill: 'forwards' });
@@ -417,7 +424,8 @@
               targetWrap.style.opacity = '0';
             }
 
-            const endRadius = Math.max(2, Math.round(8 / scale));
+            const targetRadius = root.getComputedStyle?.(targetWrap).borderTopLeftRadius || coverRadius('sm');
+            const endRadius = Math.max(2, Math.round(parseFloat(targetRadius) / scale));
 
             // Plan Section 2 & 9: Return ONLY animates translate + uniform scale + border-radius + shadow.
             if (!this.flyingCover || typeof this.flyingCover.animate !== 'function') {
@@ -428,7 +436,7 @@
             const returnAnim = this.flyingCover.animate([
               {
                 transform: 'translate(0px, 0px) scale(1)',
-                borderRadius: '10px',
+                borderRadius: coverRadius(10),
                 boxShadow: '0 32px 80px rgba(0, 0, 0, 0.45)'
               },
               {
@@ -614,7 +622,7 @@
         width: `${startW}px`,
         height: `${startH}px`,
         transform: 'rotate(-4.5deg) scale(1)',
-        borderRadius: '14px',
+        borderRadius: coverRadius(14),
         borderWidth: '1px',
         boxShadow: '0 16px 36px rgba(15, 23, 42, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.35)'
       },
@@ -625,7 +633,7 @@
         width: `${startW}px`,
         height: `${startH}px`,
         transform: 'rotate(-3.5deg) scale(1.02)',
-        borderRadius: '13px',
+        borderRadius: `calc((${coverRadius(14)} + ${coverRadius(12)}) / 2)`,
         borderWidth: '1px',
         boxShadow: '0 24px 52px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.25)'
       },
@@ -636,7 +644,7 @@
         width: `${targetW}px`,
         height: `${targetH}px`,
         transform: 'rotate(-0.8deg) scale(1.01)',
-        borderRadius: '10px',
+        borderRadius: coverRadius(10),
         borderWidth: '0.5px',
         boxShadow: '0 32px 72px rgba(0, 0, 0, 0.42), 0 0 0 1px rgba(255, 255, 255, 0.15)'
       },
@@ -647,7 +655,7 @@
         width: `${targetW}px`,
         height: `${targetH}px`,
         transform: 'rotate(0deg) scale(1)',
-        borderRadius: '10px',
+        borderRadius: coverRadius(10),
         borderWidth: '0px',
         boxShadow: '0 32px 80px rgba(0, 0, 0, 0.45), 0 0 0 0px rgba(255, 255, 255, 0)'
       }
@@ -719,7 +727,7 @@
         flyingCover.style.width = `${targetW}px`;
         flyingCover.style.height = `${targetH}px`;
         flyingCover.style.transform = 'none';
-        flyingCover.style.borderRadius = '10px';
+        flyingCover.style.borderRadius = coverRadius(10);
         flyingCover.style.borderWidth = '0px';
         flyingCover.style.opacity = '1';
         flyingCover.style.background = 'transparent';

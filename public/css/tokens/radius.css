@@ -13,3 +13,54 @@
   --radius-pill:   999px; /* Buttons, search bar, tags, tabs */
   --radius-circle: 50%;   /* Avatar, round icon buttons */
 }
+
+/* Opt-in continuous surfaces. Circular tokens above stay unchanged. */
+:root {
+  --radius-squircle-xs: 7px;
+  --radius-continuous-xs: var(--radius-xs);
+  --radius-squircle-sm: 14px;
+  --radius-continuous-sm: var(--radius-sm);
+  --radius-squircle-md: 27px;
+  --radius-continuous-md: var(--radius-md);
+  --radius-squircle-lg: 40px;
+  --radius-continuous-lg: var(--radius-lg);
+  --radius-squircle-xl: 54px;
+  --radius-continuous-xl: var(--radius-xl);
+  --radius-squircle-2xl: 68px;
+  --radius-continuous-2xl: var(--radius-2xl);
+  --radius-squircle-6: 10px;
+  --radius-continuous-6: 6px;
+  --radius-squircle-9: 15px;
+  --radius-continuous-9: 9px;
+  --radius-squircle-10: 17px;
+  --radius-continuous-10: 10px;
+  --radius-squircle-12: 20px;
+  --radius-continuous-12: 12px;
+  --radius-squircle-14: 24px;
+  --radius-continuous-14: 14px;
+  --radius-squircle-18: 30px;
+  --radius-continuous-18: 18px;
+  --radius-squircle-20: 34px;
+  --radius-continuous-20: 20px;
+  --radius-squircle-28: 47px;
+  --radius-continuous-28: 28px;
+}
+
+@supports (corner-shape: squircle) {
+  :root {
+    --radius-continuous-xs: var(--radius-squircle-xs);
+    --radius-continuous-sm: var(--radius-squircle-sm);
+    --radius-continuous-md: var(--radius-squircle-md);
+    --radius-continuous-lg: var(--radius-squircle-lg);
+    --radius-continuous-xl: var(--radius-squircle-xl);
+    --radius-continuous-2xl: var(--radius-squircle-2xl);
+    --radius-continuous-6: var(--radius-squircle-6);
+    --radius-continuous-9: var(--radius-squircle-9);
+    --radius-continuous-10: var(--radius-squircle-10);
+    --radius-continuous-12: var(--radius-squircle-12);
+    --radius-continuous-14: var(--radius-squircle-14);
+    --radius-continuous-18: var(--radius-squircle-18);
+    --radius-continuous-20: var(--radius-squircle-20);
+    --radius-continuous-28: var(--radius-squircle-28);
+  }
+}

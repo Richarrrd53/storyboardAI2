@@ -173,7 +173,7 @@ body.auth-layout #page-content {
   overflow: hidden;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-continuous-md);
   box-shadow: var(--shadow-card);
 }
 

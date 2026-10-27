@@ -6,8 +6,8 @@
  * 自動根據容器內部內容的滾動溢出狀況，精確動態計算遮罩邊緣：
  * 
  * 1. 滾動到最頂端時：若下方有溢出，只顯示下方遮罩；
- * 2. 滾動到最底端時：若上方有溢出，只顯示最頂遮罩；
- * 3. 滾動至中間時：若上下皆溢出，則上下皆呈現漸層遮罩；
+ * 2. .content-body 預設只保留下方遮罩，到底時移除；其他垂直容器維持上下遮罩；
+ * 3. 可透過 edgeMode / data-mask-edges 指定 bottom 或 both，水平方向不受影響；
  * 4. 溢出跟隨機制：若溢出高度 <= 遮罩設定高度 (M)，遮罩位移至與溢出齊平 (effectiveMask = min(M, overflow))；
  * 5. 支援垂直 (vertical) 與水平 (horizontal) 容器；
  * 6. 整合為全域系統，支援 data-dynamic-mask 自動綁定，或以 DynamicMaskSystem.attach(el, options) 手動接入。
@@ -17,6 +17,8 @@
   'use strict';
 
   const instances = new Map();
+  const headerHosts = new WeakMap();
+  const maskSelector = '[data-dynamic-mask], .dynamic-gradient-mask, .content-body';
 
   class DynamicMask {
     constructor(element, options = {}) {
@@ -24,6 +26,7 @@
       this.options = Object.assign({
         maskSize: 36, // 遮罩預設高度/寬度 (px)
         direction: 'vertical', // 'vertical' | 'horizontal'
+        edgeMode: 'auto', // 'auto' | 'both' | 'bottom'; content-body defaults to bottom
         scrollElement: null, // 自訂滾動元素 (若容器本身不滾動但內部滾動)
         fadeExponent: 1.0, // 漸層平滑曲線
         activeClass: 'has-dynamic-mask'
@@ -38,11 +41,13 @@
         if (element.dataset.maskDirection) {
           this.options.direction = element.dataset.maskDirection;
         }
+        if (element.dataset.maskEdges) this.options.edgeMode = element.dataset.maskEdges;
       }
 
       this.scrollElement = this.resolveScrollElement();
       this.rafId = null;
       this.isUpdating = false;
+      this.headerLayoutDirty = true;
 
       this.onScroll = this.onScroll.bind(this);
       this.scheduleUpdate = this.scheduleUpdate.bind(this);
@@ -67,10 +72,12 @@
 
       // 監聽滾動事件 (使用 passive 以保證最高幀率)
       this.scrollElement.addEventListener('scroll', this.onScroll, { passive: true });
+      this.scrollElement.addEventListener('load', this.scheduleUpdate, true);
 
       // 監聽視窗或內部尺寸變化
       if (window.ResizeObserver) {
         this.resizeObserver = new ResizeObserver(() => {
+          this.headerLayoutDirty = true;
           this.scheduleUpdate();
         });
         this.resizeObserver.observe(this.element);
@@ -95,6 +102,71 @@
       this.update();
     }
 
+    updateHeader(scrollTop, maxScroll) {
+      // A header and its viewport are siblings in the existing flex layout.
+      // Horizontal and special standalone masks never acquire header ownership.
+      const header = this.element.classList.contains('content-body')
+        ? this.element.parentElement?.querySelector?.(':scope > .content-header, :scope > .editor-menubar')
+        : null;
+      const toolbar = header?.nextElementSibling?.classList.contains('projects-toolbar')
+        ? header.nextElementSibling : null;
+      if (header !== this.header || toolbar !== this.headerToolbar) {
+        if (this.header) this.resizeObserver?.unobserve(this.header);
+        if (this.headerToolbar) this.resizeObserver?.unobserve(this.headerToolbar);
+        this.clearHeaderPresentation();
+        this.header = header;
+        this.headerToolbar = toolbar;
+        this.headerHost = header?.parentElement;
+        if (this.headerHost) headerHosts.set(this.headerHost, this);
+        this.headerScrolled = false;
+        this.headerLayoutDirty = true;
+        if (header) this.resizeObserver?.observe(header);
+        if (toolbar) this.resizeObserver?.observe(toolbar);
+      }
+      if (!header) return;
+      header.classList.add('has-scroll-backdrop');
+      this.headerHost?.classList.add('has-header-backdrop');
+      toolbar?.classList.add('has-scroll-backdrop');
+      if (this.headerLayoutDirty) {
+        // Measure the original flow before compensating the viewport. A transparent
+        // header needs content behind it; otherwise the sibling viewport clips it away.
+        const savedScrollTop = this.scrollElement.scrollTop;
+        this.element.classList.remove('has-header-underlay');
+        const paddingTop = parseFloat(window.getComputedStyle?.(this.element).paddingTop) || 0;
+        const gap = this.element.offsetParent === header.offsetParent
+          ? this.element.offsetTop - header.offsetTop - header.offsetHeight
+          : this.element.getBoundingClientRect().top - header.getBoundingClientRect().bottom;
+        const overlap = header.offsetHeight + Math.max(0, gap);
+        this.element.style.setProperty('--header-underlap', `${overlap}px`);
+        this.element.style.setProperty('--header-body-padding-top', `${paddingTop + overlap}px`);
+        this.headerHost?.style.setProperty('--header-backdrop-height', `${overlap}px`);
+        this.headerHost?.style.setProperty('--header-backdrop-top', `${header.offsetTop}px`);
+        this.element.classList.add('has-header-underlay');
+        this.scrollElement.scrollTop = savedScrollTop;
+        this.headerLayoutDirty = false;
+      }
+      // Hysteresis absorbs subpixel scroll positions and touch overscroll at the top.
+      this.headerScrolled = maxScroll > 1 && (this.headerScrolled ? scrollTop > 1 : scrollTop > 6);
+      header.classList.toggle('is-content-scrolled', this.headerScrolled);
+      toolbar?.classList.toggle('is-content-scrolled', this.headerScrolled);
+      this.headerHost?.classList.toggle('is-content-scrolled', this.headerScrolled);
+    }
+
+    clearHeaderPresentation() {
+      // A late teardown must not clear a successor using the same SPA container.
+      if (!this.headerHost || headerHosts.get(this.headerHost) === this) {
+        this.header?.classList.remove('has-scroll-backdrop', 'is-content-scrolled');
+        this.headerToolbar?.classList.remove('has-scroll-backdrop', 'is-content-scrolled');
+        this.headerHost?.classList.remove('has-header-backdrop', 'is-content-scrolled');
+        this.headerHost?.style.removeProperty('--header-backdrop-height');
+        this.headerHost?.style.removeProperty('--header-backdrop-top');
+        if (this.headerHost) headerHosts.delete(this.headerHost);
+      }
+      this.element.classList.remove('has-header-underlay');
+      this.element.style.removeProperty('--header-underlap');
+      this.element.style.removeProperty('--header-body-padding-top');
+    }
+
     onScroll() {
       this.scheduleUpdate();
     }
@@ -109,6 +181,7 @@
 
     update() {
       if (!this.element || !this.scrollElement) return;
+      if (this.element.isConnected === false) { this.destroy(); return; }
 
       const isVertical = this.options.direction === 'vertical';
       const M = Math.max(1, this.options.maskSize);
@@ -118,6 +191,7 @@
         const scrollHeight = this.scrollElement.scrollHeight;
         const clientHeight = this.scrollElement.clientHeight;
         const maxScroll = Math.max(0, scrollHeight - clientHeight);
+        this.updateHeader(scrollTop, maxScroll);
 
         // 若無任何溢出 (或小於 1px 誤差)，取消遮罩
         if (maxScroll <= 1) {
@@ -128,7 +202,9 @@
         const overflowTop = Math.max(0, scrollTop);
         const overflowBottom = Math.max(0, maxScroll - scrollTop);
 
-        this.applyVerticalMask(overflowTop, overflowBottom, M);
+        const bottomOnly = this.options.edgeMode === 'bottom' ||
+          (this.options.edgeMode === 'auto' && this.element.classList.contains('content-body'));
+        this.applyVerticalMask(bottomOnly ? 0 : overflowTop, overflowBottom, M);
       } else {
         // 水平方向
         const scrollLeft = this.scrollElement.scrollLeft;
@@ -273,6 +349,7 @@
       }
       if (this.scrollElement) {
         this.scrollElement.removeEventListener('scroll', this.onScroll);
+        this.scrollElement.removeEventListener('load', this.scheduleUpdate, true);
       }
       if (this.resizeObserver) {
         this.resizeObserver.disconnect();
@@ -283,6 +360,10 @@
         this.mutationObserver = null;
       }
       this.clearMask();
+      this.clearHeaderPresentation();
+      this.header = null;
+      this.headerToolbar = null;
+      this.headerHost = null;
       if (this.element) {
         this.element.classList.remove(this.options.activeClass);
       }
@@ -290,10 +371,17 @@
     }
   }
 
+  function pruneDetached() {
+    instances.forEach(instance => {
+      if (instance.element.isConnected === false || instance.scrollElement.isConnected === false) instance.destroy();
+    });
+  }
+
   // 全域管理器
   const DynamicMaskSystem = {
     attach(element, options = {}) {
       if (!element) return null;
+      pruneDetached();
       if (instances.has(element)) {
         const inst = instances.get(element);
         inst.update();
@@ -322,28 +410,37 @@
     },
 
     updateAll() {
-      instances.forEach(inst => inst.update());
+      pruneDetached();
+      instances.forEach(inst => { inst.headerLayoutDirty = true; inst.update(); });
     },
 
     /**
      * 自動掃描綁定帶有 [data-dynamic-mask]、.dynamic-gradient-mask 或 .content-body 的容器
      */
     initAuto() {
-      const targets = document.querySelectorAll('[data-dynamic-mask], .dynamic-gradient-mask, .content-body');
+      pruneDetached();
+      const targets = document.querySelectorAll(maskSelector);
       targets.forEach(el => {
         if (!instances.has(el)) {
           DynamicMaskSystem.attach(el);
+        } else {
+          const instance = instances.get(el);
+          instance.headerLayoutDirty = true;
+          instance.scheduleUpdate();
         }
       });
     },
 
     refresh(root = document) {
-      const targets = root.querySelectorAll ? root.querySelectorAll('[data-dynamic-mask], .dynamic-gradient-mask, .content-body') : [];
+      pruneDetached();
+      const targets = root.querySelectorAll ? root.querySelectorAll(maskSelector) : [];
+      if (root.matches?.(maskSelector)) DynamicMaskSystem.attach(root);
       targets.forEach(el => {
         let inst = instances.get(el);
         if (!inst) {
           inst = DynamicMaskSystem.attach(el);
         } else {
+          inst.headerLayoutDirty = true;
           inst.scheduleUpdate();
         }
       });
@@ -351,6 +448,23 @@
   };
 
   window.DynamicMaskSystem = DynamicMaskSystem;
+
+  // One shared observer handles SPA replacement, not one document observer per page.
+  // Ignore normal text/particle changes; instance observers already handle content.
+  if (window.MutationObserver) {
+    let reconcileFrame = null;
+    const lifecycleObserver = new window.MutationObserver(records => {
+      const affectsViewport = records.some(record => [...record.addedNodes, ...record.removedNodes].some(node =>
+        node.nodeType === 1 && (node.matches?.(`${maskSelector}, .content-header, .editor-menubar, .projects-toolbar`) ||
+          node.querySelector?.(`${maskSelector}, .content-header, .editor-menubar, .projects-toolbar`))));
+      if (!affectsViewport || reconcileFrame !== null) return;
+      reconcileFrame = window.requestAnimationFrame(() => {
+        reconcileFrame = null;
+        DynamicMaskSystem.initAuto();
+      });
+    });
+    lifecycleObserver.observe(document.documentElement, { childList: true, subtree: true });
+  }
 
   // 自動在 DOM 準備就緒時初始化
   if (document.readyState === 'loading') {

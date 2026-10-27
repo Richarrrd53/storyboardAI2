@@ -31,7 +31,7 @@
   --card-border:                 var(--color-border-default);
   --card-shadow:                 var(--elevation-1);
   --card-hover-shadow:           var(--elevation-2);
-  --card-radius:                 var(--radius-md);
+  --card-radius:                 var(--radius-continuous-md);
   --card-thumbnail-ratio:        16 / 9;
 
   /* ── Form Input Tokens ── */

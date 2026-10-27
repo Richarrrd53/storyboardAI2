@@ -83,7 +83,7 @@
   aspect-ratio: 16 / 9 !important;
   max-width: 295px;
   max-height: 180px;
-  border-radius: 14px;
+  border-radius: var(--radius-continuous-14);
   background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
   border: 1px solid rgba(255, 255, 255, 0.45);
   box-shadow: 0 6px 18px rgba(15, 23, 42, 0.10);
@@ -107,7 +107,7 @@
   width: auto;
   aspect-ratio: 16 / 9;
   max-width: 244px;
-  border-radius: 14px;
+  border-radius: var(--radius-continuous-14);
   background: rgba(255, 255, 255, 0.55);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -308,6 +308,47 @@
   border-bottom: 1px solid var(--surface-folder-border);
   border-left: 1px solid var(--surface-folder-border);
   pointer-events: none;
+}
+
+@supports (corner-shape: squircle) {
+  .project-folder-shell {
+    corner-shape: squircle;
+    border-radius: 0 var(--radius-continuous-lg) var(--radius-continuous-lg) var(--radius-continuous-lg);
+  }
+
+  .project-folder-tab {
+    corner-shape: squircle;
+    border-radius: var(--radius-continuous-lg) var(--radius-continuous-lg) 0 0;
+  }
+
+  .project-folder-header-row {
+    left: -1px;
+    width: calc(100% + 2px);
+  }
+
+  .project-folder-tab::before {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    height: 2px;
+    background: var(--surface-folder);
+    pointer-events: none;
+  }
+
+  /* This is a negative fillet, not a convex card corner. Keep a circular cutout
+     with a full-depth fill below the arc. The tab's bridge covers the shell seam. */
+  .project-folder-tab::after {
+    --folder-fillet: 18px;
+    corner-shape: round;
+    right: calc(-1 * var(--folder-fillet));
+    bottom: 0;
+    transform: none;
+    width: var(--folder-fillet);
+    height: var(--folder-fillet);
+    border-bottom-left-radius: var(--folder-fillet);
+    box-shadow: -8px 8px 0 -1px var(--surface-folder);
+  }
 }
 
 .project-folder-tab-dot {
@@ -562,7 +603,7 @@
              translateX(0)
              rotate(var(--hover-rotate, -4.5deg))
              scale(1.02);
-  border-radius: 14px;
+  border-radius: var(--radius-continuous-14);
   box-shadow: 0 16px 36px rgba(15, 23, 42, 0.18);
 }
 
@@ -574,7 +615,7 @@
              translateX(0)
              rotate(var(--hover-rotate, -4.5deg))
              scale(1.02);
-  border-radius: 14px;
+  border-radius: var(--radius-continuous-14);
   box-shadow: 0 14px 30px rgba(15, 23, 42, 0.16);
 }
 

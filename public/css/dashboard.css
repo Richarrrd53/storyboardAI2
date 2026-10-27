@@ -147,7 +147,7 @@ body.dashboard-layout .spa-discovery-wrap > * {
     width: 100% !important;
     position: relative !important;
     z-index: 20 !important;
-    background: var(--off-white);
+    background: var(--content-header-bg, var(--off-white));
     box-sizing: border-box !important;
 }
 
@@ -721,7 +721,7 @@ body.dashboard-layout .spa-discovery-wrap > * {
     min-width: 200px;
     background: var(--white);
     border: 2px solid var(--card-border);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-continuous-lg);
     box-shadow: var(--shadow-soft);
     opacity: 1;
     pointer-events: none;
@@ -919,7 +919,7 @@ body.dashboard-layout .spa-discovery-wrap > * {
 .idea-box {
     background: var(--off-white) !important;
     border: 4px solid var(--white) !important;
-    border-radius: var(--radius-md) !important;
+    border-radius: var(--radius-continuous-md) !important;
     padding: 0;
     margin-bottom: 40px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
@@ -1024,7 +1024,7 @@ body.dashboard-layout .spa-discovery-wrap > * {
     padding: 16px 24px;
     background: var(--card-bg);
     border-top: 2px solid var(--card-border);
-    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    border-radius: 0 0 var(--radius-continuous-md) var(--radius-continuous-md);
 }
 
 .idea-tools {
@@ -1298,7 +1298,7 @@ body.dashboard-layout .spa-discovery-wrap > * {
     padding: 20px;
     background: var(--white);
     border: 2px solid var(--card-border);
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-continuous-sm);
     text-align: center;
 }
 
@@ -1345,7 +1345,7 @@ body.dashboard-layout .spa-discovery-wrap > * {
 .tmpl-card {
     background: var(--white);
     border: 2px solid var(--card-border);
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-continuous-sm);
     overflow: hidden;
     cursor: pointer;
     transition: all 0.3s;
@@ -1462,7 +1462,7 @@ body.dashboard-layout .spa-discovery-wrap > * {
     margin-top: 0;
     padding: 28px var(--page-gutter, 32px) 16px;
     z-index: 20;
-    background: var(--off-white);
+    background: var(--content-header-bg, var(--off-white));
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -1660,7 +1660,7 @@ body.dashboard-layout .spa-discovery-wrap > * {
     position: relative;
     z-index: 1;
     background: #ffffff;
-    border-radius: var(--radius-xl, 24px);
+    border-radius: var(--radius-continuous-xl);
     border: 1px solid var(--color-border-subtle, #e2e8f0);
     box-shadow: 0 24px 64px rgba(15, 23, 42, 0.18);
     width: 92%;
@@ -1941,7 +1941,7 @@ body.dashboard-layout .spa-discovery-wrap > * {
    ══════════════════════════════════════════════════════════════ */
 .project-card:not(.project-folder-card) {
     background: #ffffff;
-    border-radius: 14px;
+    border-radius: var(--radius-continuous-14);
     border: 1px solid rgba(226, 232, 240, 0.85);
     box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
     overflow: hidden;
@@ -2144,7 +2144,7 @@ body.dashboard-layout .spa-discovery-wrap > * {
 }
 
 .img-cell .project-view-thumb {
-    border-radius: 6px;
+    border-radius: var(--radius-continuous-6);
 }
 
 .skeleton-text {
@@ -2239,7 +2239,7 @@ body.dashboard-layout .spa-discovery-wrap > * {
     padding: 60px 20px;
     background: var(--white);
     border: 2px dashed var(--card-border);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-continuous-lg);
     color: var(--text-mid);
 }
 
@@ -2298,7 +2298,7 @@ body.dashboard-layout .spa-discovery-wrap > * {
 
 .project-cover {
     min-height: 280px;
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-continuous-lg);
     overflow: hidden;
     border: 1px solid var(--card-border);
     background: var(--card-bg);
@@ -2350,7 +2350,7 @@ body.dashboard-layout .spa-discovery-wrap > * {
 .shot-card {
     padding: 22px;
     background: var(--white);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-continuous-lg);
     border: 1px solid var(--card-border);
     box-shadow: 0 12px 24px rgba(0, 0, 0, 0.05);
 }
@@ -2372,7 +2372,7 @@ body.dashboard-layout .spa-discovery-wrap > * {
     margin: 0;
     background: var(--bg);
     border: 1px solid var(--card-border);
-    border-radius: 14px;
+    border-radius: var(--radius-continuous-14);
     padding: 16px;
     font-size: 0.9rem;
     line-height: 1.6;
@@ -2430,7 +2430,7 @@ body.dashboard-layout .spa-discovery-wrap > * {
     display: grid;
     gap: 10px;
     padding: 16px;
-    border-radius: 16px;
+    border-radius: var(--radius-continuous-md);
     background: var(--bg);
     border: 1px solid var(--card-border);
 }
@@ -2449,7 +2449,7 @@ body.dashboard-layout .spa-discovery-wrap > * {
 }
 
 .shot-image-wrapper {
-    border-radius: 16px;
+    border-radius: var(--radius-continuous-md);
     overflow: hidden;
     border: 1px solid var(--card-border);
 }
@@ -2795,7 +2795,7 @@ body.dashboard-layout .spa-discovery-wrap > * {
     box-sizing: border-box;
     position: relative;
     z-index: 20;
-    background: var(--off-white);
+    background: var(--content-header-bg, var(--off-white));
     flex-shrink: 0;
 }
 
@@ -2919,7 +2919,7 @@ body.dashboard-layout .spa-discovery-wrap > * {
 /* Cinematic Hero Card */
 .home-hero-card {
     position: relative;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-continuous-md);
     overflow: hidden;
     min-height: 350px;
     display: flex;
@@ -3055,7 +3055,7 @@ body.dashboard-layout .spa-discovery-wrap > * {
 
 .quick-action-item {
     flex: 1;
-    border-radius: 18px;
+    border-radius: var(--radius-continuous-18);
     padding: 16px 20px;
     display: flex;
     align-items: center;
@@ -3263,7 +3263,7 @@ body.dashboard-layout .spa-discovery-wrap > * {
 /* Simplified Recent Project Card */
 .home-project-card {
     background: var(--color-surface-primary);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-continuous-md);
     overflow: hidden;
     border: 1px solid rgba(226, 232, 240, 0.85);
     box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
@@ -3426,7 +3426,7 @@ body.dashboard-layout .spa-discovery-wrap > * {
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1.5px dashed rgba(203, 213, 225, 0.85);
-    border-radius: 18px;
+    border-radius: var(--radius-continuous-18);
     padding: 36px 20px;
     text-align: center;
     display: flex;
@@ -3512,7 +3512,7 @@ body.dashboard-layout .spa-discovery-wrap > * {
     .home-hero-card {
         min-height: 240px;
         padding: var(--space-6) var(--space-5);
-        border-radius: var(--radius-md);
+        border-radius: var(--radius-continuous-md);
     }
 
     .hero-main-title {
@@ -3562,7 +3562,7 @@ body.dashboard-layout .spa-discovery-wrap > * {
         max-width: 300px;
         flex-shrink: 0;
         scroll-snap-align: start;
-        border-radius: 16px;
+        border-radius: var(--radius-continuous-md);
     }
 
     /* Legacy home-card option button hidden on mobile - Project Folder Card keeps its notch option button */
@@ -4590,7 +4590,7 @@ body.is-navigating #global-create-capsule .ai-pill-btn-glow-rotator,
         flex-direction: column !important;
         align-items: stretch !important;
         padding: 20px 18px 18px 18px !important;
-        border-radius: 18px !important;
+        border-radius: var(--radius-continuous-18) !important;
         gap: 16px !important;
     }
 
@@ -4648,7 +4648,7 @@ body.is-navigating #global-create-capsule .ai-pill-btn-glow-rotator,
         max-width: 320px !important;
         aspect-ratio: 16 / 9 !important;
         max-height: 160px !important;
-        border-radius: 12px !important;
+        border-radius: var(--radius-continuous-12) !important;
         margin: 0 auto !important;
     }
 
@@ -4666,7 +4666,7 @@ body.is-navigating #global-create-capsule .ai-pill-btn-glow-rotator,
     .quick-widget-card {
         padding: 14px 12px !important;
         gap: 10px !important;
-        border-radius: 16px !important;
+        border-radius: var(--radius-continuous-md) !important;
     }
 
     .widget-icon {
@@ -4749,7 +4749,7 @@ body.is-navigating #global-create-capsule .ai-pill-btn-glow-rotator,
         bottom: 0 !important;
         width: 100% !important;
         max-width: 100% !important;
-        border-radius: 28px 28px 0 0 !important;
+        border-radius: var(--radius-continuous-28) var(--radius-continuous-28) 0 0 !important;
         box-shadow: 0 -10px 40px rgba(15, 23, 42, 0.22) !important;
         transform: translateY(100%);
         scale: 1 !important;
