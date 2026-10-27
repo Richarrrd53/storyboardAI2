@@ -135,10 +135,12 @@
       viewportWidth,
       viewportHeight
     });
-    const targetW = targetGeom.width;
-    const targetH = targetGeom.height;
-    const targetLeft = targetGeom.left;
-    const targetTop = targetGeom.top;
+    // Keep room below a centered portrait cover for status and the cancel control.
+    const holdScale = Math.min(1, Math.max(40, viewportHeight - 244) / targetGeom.height);
+    const targetW = targetGeom.width * holdScale;
+    const targetH = targetGeom.height * holdScale;
+    const targetLeft = targetGeom.left + (targetGeom.width - targetW) / 2;
+    const targetTop = targetGeom.top + (targetGeom.height - targetH) / 2;
 
     // 2. Folder Shell & Secondary Preview drop down and fade out
     if (folderShell.style) {
@@ -236,6 +238,56 @@
     transitionLayer.appendChild(scrim);
     transitionLayer.appendChild(flyingCover);
 
+    const waitingUI = document.createElement('div');
+    waitingUI.className = 'project-cover-waiting';
+    waitingUI.style.left = `${targetLeft + targetW / 2}px`;
+    waitingUI.style.top = `${targetTop + targetH + 24}px`;
+    const waitingRow = document.createElement('div');
+    waitingRow.className = 'project-cover-waiting-row';
+    let rose = null;
+    if (document.createElementNS) {
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('viewBox', '0 0 100 100');
+      svg.setAttribute('aria-hidden', 'true');
+      svg.classList.add('project-cover-mini-curve');
+      const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('fill', 'none');
+      path.setAttribute('stroke', 'currentColor');
+      path.setAttribute('opacity', '0.18');
+      path.setAttribute('stroke-width', '4.5');
+      path.setAttribute('d', Array.from({ length: 181 }, (_, index) => {
+        const t = index / 180 * Math.PI * 2;
+        const r = 30 * Math.cos(5 * t);
+        return `${index ? 'L' : 'M'} ${50 + Math.cos(t) * r} ${50 + Math.sin(t) * r}`;
+      }).join(' '));
+      group.appendChild(path);
+      svg.appendChild(group);
+      waitingRow.appendChild(svg);
+      rose = root.TransitionLoader?.setupRoseAnimation(group, path, 32);
+    }
+    const waitingText = document.createElement('span');
+    waitingText.className = 'project-cover-waiting-text';
+    waitingText.setAttribute('role', 'status');
+    waitingText.setAttribute('aria-live', 'polite');
+    waitingText.textContent = '正在載入專案…';
+    waitingRow.appendChild(waitingText);
+    waitingUI.appendChild(waitingRow);
+    const cancelButton = document.createElement('button');
+    cancelButton.className = 'qc-close-btn project-cover-cancel';
+    cancelButton.type = 'button';
+    cancelButton.textContent = 'X';
+    cancelButton.setAttribute('aria-label', '中斷開啟專案，返回原頁面');
+    cancelButton.title = '中斷開啟專案';
+    waitingUI.appendChild(cancelButton);
+    transitionLayer.appendChild(waitingUI);
+    const reducedMotion = root.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    let textTimer = null;
+    let blurTimer = null;
+    let navTimer = null;
+    let textIndex = 0;
+    const waitingMessages = ['正在載入專案…', '讓故事的每一幕，回到眼前…', '為你的創作，準備好舞台…', '載入需要多一點時間，請稍候…'];
+
     if (primaryCover.style) primaryCover.style.visibility = 'hidden';
     requestAnimationFrame(() => {
       if (scrim.style) scrim.style.opacity = '1';
@@ -261,6 +313,52 @@
       cancelled: false,
       pendingTarget: null,
 
+      showWaiting() {
+        if (this.cancelled || this.state !== 'waiting-project') return;
+        waitingUI.classList.add('is-visible');
+        if (!reducedMotion) rose?.start();
+        textTimer = setInterval(() => {
+          waitingText.classList.add('is-blurring');
+          blurTimer = setTimeout(() => {
+            waitingText.textContent = waitingMessages[++textIndex % waitingMessages.length];
+            waitingText.classList.remove('is-blurring');
+          }, reducedMotion ? 0 : 240);
+        }, 5000);
+      },
+
+      hideWaiting() {
+        waitingUI.classList.remove('is-visible');
+        cancelButton.disabled = true;
+        clearInterval(textTimer);
+        clearTimeout(blurTimer);
+        rose?.stop();
+      },
+
+      interrupt() {
+        if (this.cancelled || this.state === 'complete' || this.state === 'returning' || this.state === 'handoff') return;
+        this.cancelled = true;
+        this.state = 'cancelled';
+        this.hideWaiting();
+        clearTimeout(navTimer);
+        // Freeze the current visual before removing the flight animation's fill.
+        const from = this.flyingCover.getBoundingClientRect();
+        this.flightAnim?.cancel();
+        if (this.flyingCover.style) {
+          Object.assign(this.flyingCover.style, { left: `${from.left}px`, top: `${from.top}px`, width: `${from.width}px`, height: `${from.height}px`, transform: 'none' });
+        }
+        this.cancelOpening?.();
+        const canReturn = this.card.isConnected !== false && document.body.contains(this.card);
+        const to = canReturn ? this.primaryCover.getBoundingClientRect() : null;
+        const keyframes = to && to.width > 0 && to.height > 0 ? [
+          { left: `${from.left}px`, top: `${from.top}px`, width: `${from.width}px`, height: `${from.height}px`, opacity: 1 },
+          { left: `${to.left}px`, top: `${to.top}px`, width: `${to.width}px`, height: `${to.height}px`, borderRadius: '14px', opacity: 1 }
+        ] : [{ opacity: 1, filter: 'blur(0px)' }, { opacity: 0, filter: 'blur(18px)', transform: 'scale(.97)' }];
+        this.scrim.style.opacity = '0';
+        const exit = this.flyingCover.animate?.(keyframes, { duration: reducedMotion ? 0 : 380, easing: 'cubic-bezier(.4, 0, .2, 1)', fill: 'forwards' });
+        if (exit) exit.onfinish = () => this.cleanup();
+        else this.cleanup();
+      },
+
       onFirstShotReady(targetWrap, targetImg) {
         if (this.state === 'complete' || this.state === 'returning' || this.cancelled) return;
         if (this.state === 'extracting' || this.state === 'flying') {
@@ -273,6 +371,7 @@
       executeReturn(targetWrap, targetImg) {
         if (this.state === 'complete' || this.state === 'returning' || this.cancelled) return;
         this.state = 'returning';
+        this.hideWaiting();
 
         // Wait 2 requestAnimationFrame frames to guarantee layout stability
         requestAnimationFrame(() => {
@@ -380,6 +479,7 @@
       cancel() {
         if (this.state === 'complete' || this.cancelled) return;
         this.cancelled = true;
+        this.hideWaiting();
         this.state = 'cancelled';
         this.runLegacyCoverShrink();
       },
@@ -428,6 +528,10 @@
 
       cleanup() {
         if (this.state === 'complete') return;
+        this.hideWaiting();
+        clearTimeout(navTimer);
+        removeNode(waitingUI);
+        cancelButton.onclick = null;
         this.state = 'complete';
 
         removeNode(this.scrim);
@@ -471,6 +575,7 @@
     };
 
     activeTransitionSession = session;
+    cancelButton.onclick = () => session.interrupt();
     if (typeof window !== 'undefined') {
       window.currentCoverTransition = session;
       window._activeProjectTransition = session;
@@ -487,6 +592,7 @@
     // Spec Section 18: Trigger SPA Navigation at ~200ms (~40% into flight morph)
     let navTriggered = false;
     const triggerNav = () => {
+      if (session.cancelled || session.state === 'complete') return;
       if (!navTriggered) {
         navTriggered = true;
         if (typeof navFn === 'function') {
@@ -496,7 +602,7 @@
         }
       }
     };
-    setTimeout(triggerNav, 200);
+    navTimer = setTimeout(triggerNav, 200);
 
     // Spec Section 9, 11, 12, 13: Flight Morph Keyframes (0 - 520ms)
     session.state = 'flying';
@@ -654,12 +760,13 @@
           const { targetWrap, targetImg } = session.pendingTarget;
           session.pendingTarget = null;
           session.executeReturn(targetWrap, targetImg);
-        }
+        } else session.showWaiting();
       };
     } else {
       // Headless / Non-animation fallback
       triggerNav();
       session.state = 'waiting-project';
+      session.showWaiting();
     }
 
     return session;

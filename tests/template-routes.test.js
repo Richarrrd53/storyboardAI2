@@ -35,6 +35,35 @@ function routerFixture(path = '/', embedded = false) {
 }
 const settle = async () => { for (let i = 0; i < 30; i++) await Promise.resolve(); };
 
+test('interrupting project opening aborts its mount and restores the source route despite a late response', async () => {
+  const f = routerFixture('/projects');
+  await f.events.DOMContentLoaded(); await settle();
+  let resolveProject, projectSignal;
+  const mount = f.window.PageHost.mount;
+  f.window.PageHost.mount = context => {
+    if (context.page !== 'project') return mount(context);
+    projectSignal = context.signal;
+    return new Promise(resolve => { resolveProject = resolve; });
+  };
+  const cover = { projectId: 'slow', cancelled: false, cancel() {} };
+  f.window.currentCoverTransition = cover;
+  const pending = f.window.spaNavigate('project', { id: 'slow' });
+  await settle();
+  assert.equal(projectSignal.aborted, false);
+  cover.cancelled = true;
+  cover.cancelOpening();
+  await settle();
+  assert.equal(projectSignal.aborted, true);
+  assert.equal(f.window.spaRouter.currentPage, 'projects');
+  assert.equal(f.history.state.page, 'projects');
+  let staleUnmounted = false;
+  resolveProject({ unmount() { staleUnmounted = true; } });
+  await pending;
+  assert.equal(staleUnmounted, true);
+  assert.equal(f.window.spaRouter.currentPage, 'projects');
+  assert.deepEqual(f.errors, []);
+});
+
 test('route transitions finish the old page exit before teardown and layout changes', async () => {
   const f = routerFixture('/dashboard');
   await f.events.DOMContentLoaded(); await settle();

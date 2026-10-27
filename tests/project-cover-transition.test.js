@@ -3,6 +3,8 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
 
+test.afterEach(() => global.window?.ProjectCoverTransition?.cleanup());
+
 async function waitForCompletion(session) {
   const deadline = Date.now() + 2000;
   while (session.state !== 'complete' && Date.now() < deadline) {
@@ -569,4 +571,59 @@ test('ProjectCoverTransition: Portrait (9:16) transition adds is-contain-shell a
   assert.ok(mainImgWrap.style.transform.includes('translate(-50%, -50%)'), 'Portrait mainImgWrap must be centered with translate(-50%, -50%)');
 
   session.cleanup();
+});
+
+test('waiting controls appear below the cover and leave when the first shot is ready', async () => {
+  const { body } = setupMockEnvironment();
+  const PCT = loadProjectCoverTransition();
+  const { card } = createTestCard();
+  body.appendChild(card);
+  const session = PCT.launch(card, { id: 'waiting' });
+  const ui = body.querySelector('.project-cover-waiting');
+  assert.equal(ui.classList.contains('is-visible'), false);
+  await new Promise(resolve => setTimeout(resolve, 25));
+  assert.equal(ui.classList.contains('is-visible'), true);
+  assert.equal(ui.style.top, `${session.targetTop + session.targetH + 24}px`);
+  assert.equal(ui.querySelector('.project-cover-waiting-text').textContent, '正在載入專案…');
+  assert.equal(ui.querySelector('button').classList.contains('qc-close-btn'), true);
+  session.onFirstShotReady(createMockElement('div'));
+  assert.equal(ui.classList.contains('is-visible'), false);
+});
+
+test('interrupt aborts opening once, flies to the original card and prevents delayed navigation', async () => {
+  const { body } = setupMockEnvironment();
+  const PCT = loadProjectCoverTransition();
+  const { card } = createTestCard();
+  body.appendChild(card);
+  let navigations = 0, cancellations = 0;
+  const session = PCT.launch(card, { id: 'interrupt' }, { navigate: () => navigations++ });
+  session.cancelOpening = () => cancellations++;
+  const cover = session.flyingCover;
+  let exitFrames;
+  const animate = cover.animate;
+  cover.animate = (frames, options) => { exitFrames = frames; return animate(frames, options); };
+  body.querySelector('.project-cover-cancel').onclick();
+  session.interrupt();
+  assert.equal(cancellations, 1);
+  assert.equal(exitFrames.at(-1).left, '100px');
+  assert.equal(exitFrames.at(-1).width, '282px');
+  await waitForCompletion(session);
+  await new Promise(resolve => setTimeout(resolve, 220));
+  assert.equal(navigations, 0);
+  assert.equal(body.querySelector('.project-cover-waiting'), null);
+});
+
+test('interrupt uses a blur exit when the source card has been unmounted', async () => {
+  const { body } = setupMockEnvironment();
+  const PCT = loadProjectCoverTransition();
+  const { card } = createTestCard();
+  body.appendChild(card);
+  const session = PCT.launch(card, { id: 'detached' });
+  card.remove();
+  let exitFrames;
+  const animate = session.flyingCover.animate;
+  session.flyingCover.animate = (frames, options) => { exitFrames = frames; return animate(frames, options); };
+  session.interrupt();
+  assert.equal(exitFrames.at(-1).filter, 'blur(18px)');
+  await waitForCompletion(session);
 });

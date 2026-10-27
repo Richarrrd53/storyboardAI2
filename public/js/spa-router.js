@@ -235,6 +235,20 @@
       window.ProjectsPage.closeTagModal({ immediate: true, restoreFocus: false });
       const cover = window.currentCoverTransition || window._activeProjectTransition;
       if (cover && !(page === 'project' && String(opts.id) === String(cover.projectId))) cover.cancel();
+      if (cover && !cover.cancelled && page === 'project' && String(opts.id) === String(cover.projectId)) {
+        const originPage = currentPage;
+        const originOpts = { ...currentOpts, browseState: browse };
+        const historyHost = getHistoryHost();
+        const originState = historyHost.history.state;
+        const originUrl = historyHost.location.href;
+        cover.cancelOpening = () => {
+          // Abort fetches and invalidate this mount before restoring the source route.
+          if (mySeq !== navSeq) return;
+          controller.abort();
+          historyHost.history.replaceState(originState, '', originUrl);
+          navigate(originPage, { ...originOpts, force: true, noHistory: true, noOpenQC: true });
+        };
+      }
       syncHistory(page, opts, browse);
       if ((currentPage === 'login' || currentPage === 'register') && isDashboardPage(page) && localStorage.getItem('sidebar_projects_expanded') === 'true') window.AppShell.collapseProjectsGroup();
 
