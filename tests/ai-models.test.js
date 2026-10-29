@@ -126,6 +126,20 @@ test('credential path takes precedence and base64 deployment credentials stay in
     assert.equal(status.gemini.model, DEFAULT_MODELS.discovery);
 });
 
+test('a missing developer credential path does not hide the Vercel service account', () => {
+    const credentials = { type: 'service_account', client_email: 'fixture@example.com', private_key: 'fixture' };
+    const env = { VERCEL: '1', GOOGLE_APPLICATION_CREDENTIALS: require('node:path').join(__dirname, 'missing-adc.json'),
+        GCP_SERVICE_ACCOUNT_BASE64: Buffer.from(JSON.stringify(credentials)).toString('base64') };
+    assert.deepEqual(vertexAuthOptions(env).googleAuthOptions.credentials, credentials);
+    assert.throws(() => vertexAuthOptions({ ...env, GCP_SERVICE_ACCOUNT_BASE64: '' }),
+        error => error.code === 'AI_AUTH_PERMISSION' && error.credentialReason === 'credential_file_missing');
+    assert.throws(() => vertexAuthOptions({ VERCEL: '1' }),
+        error => error.credentialReason === 'deployment_credentials_missing');
+    assert.throws(() => vertexAuthOptions({ ...env, GCP_SERVICE_ACCOUNT_BASE64: 'invalid-secret' }),
+        error => error.credentialReason === 'service_account_encoding_or_fields_invalid' && !error.message.includes('invalid-secret'));
+    assert.deepEqual(vertexAuthOptions({ K_SERVICE: 'fixture' }), {}, 'Cloud Run retains metadata ADC');
+});
+
 test('well-known local ADC works without an explicit credential path and wins over a stale cloud key', () => {
     const fs = require('node:fs');
     const path = require('node:path');
