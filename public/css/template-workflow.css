@@ -1,78 +1,55 @@
-/* 模板套用至生成結果：僅作用於生成頁，不改模板庫儀表板。 */
-/* 創作方向有獨立捲動區：避免外層版面裁切，確認按鈕固定在區域底部。 */
-.generate-workspace #phase-panel-2 {
-  max-height: max(220px, calc(100dvh - 300px));
-  overflow-y: auto !important;
-  overflow-x: hidden;
-  overscroll-behavior-y: contain;
-  touch-action: pan-x pan-y;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: auto;
-  scrollbar-color: #94a3b8 #eff6ff;
-  scrollbar-gutter: stable;
-  padding-right: 10px;
-}
-.generate-workspace #phase-panel-2 > * { flex-shrink: 0; }
-.generate-workspace #phase-panel-2::-webkit-scrollbar { width: 10px; }
-.generate-workspace #phase-panel-2::-webkit-scrollbar-track { background: #eff6ff; border-radius: 8px; }
-.generate-workspace #phase-panel-2::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 8px; border: 2px solid #eff6ff; }
-.generate-workspace #phase-panel-2:focus-visible { outline: 2px solid var(--gen-primary); outline-offset: 4px; }
-.generate-workspace #phase-panel-2.is-drag-scrolling { cursor: grabbing; user-select: none; }
-.generate-workspace #phase-panel-2 .phase-actions-footer {
-  position: sticky;
-  bottom: 0;
-  z-index: 2;
-  background: #f8fafc;
-  padding: 14px 0;
-  border-top: 1px solid #dbe3ef;
-}
-.direction-scroll-hint { display: block; margin-top: 8px; color: var(--gen-text-mid); font-size: 12px; }
-@media (max-width: 760px) {
-  .generate-workspace #phase-panel-2 { max-height: max(220px, calc(100dvh - 280px)); }
-}
-.generate-workspace [hidden] { display: none !important; }
-.template-entry-banner, .generation-error-banner { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 18px 22px; margin-bottom: 20px; border: 1px solid var(--gen-primary-border); border-radius: 16px; background: var(--gen-primary-soft); }
-.template-entry-banner strong { font-size: 14px; color: var(--gen-primary); }
-.template-entry-banner p, .generation-error-banner p { font-size: 13px; line-height: 1.8; margin: 6px 0 0; color: var(--gen-text-mid); }
-.generation-error-banner { background: #fff1f2; border-color: #fecdd3; flex-wrap: wrap; }
-.generation-error-banner p { flex: 1 1 100%; color: #9f1239; }
-.template-customization { width: 100%; border: 1px solid var(--gen-primary-border); border-radius: 16px; background: #f8faff; padding: 24px; margin: 20px 0; }
-.template-customization h3 { margin: 0 0 8px; font-size: 17px; color: var(--gen-primary); }
-.template-customization > p { margin: 8px 0; color: var(--gen-text-mid); font-size: 13px; line-height: 1.8; }
-#template-variable-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 20px 0; }
-.template-variable-field { display: flex; flex-direction: column; gap: 8px; color: var(--gen-text-dark); font-size: 13px; }
-.template-variable-field input { width: 100%; padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 8px; background: #ffffff; color: var(--gen-text-dark); font: inherit; outline: none !important; transition: border-color var(--motion-fast, 160ms) ease, box-shadow var(--motion-fast, 160ms) ease; }
-.template-variable-field input:focus,
-.template-variable-field input:focus-visible { outline: none !important; border-color: var(--gen-primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15); }
-.template-customization summary { color: var(--gen-primary); cursor: pointer; font-size: 13px; }
-#template-reference-summary ol { padding-left: 24px; font-size: 13px; color: var(--gen-text-mid); }
-#template-reference-summary li { margin: 12px 0; }
-#template-reference-summary span { display: block; color: var(--gen-text-mid); margin-top: 4px; font-size: 12px; }
-.result-workflow-status { width: 100%; padding: 18px 22px; border: 1px solid #dbe3ef; border-radius: 14px; background: #f8fafc; }
-.result-workflow-status p { margin: 0 0 12px; color: var(--gen-text-mid); font-size: 13px; line-height: 1.8; }
-.result-workflow-status p[data-status="saved"] { color: #047857; }
-.result-workflow-status p[data-status="failed"], .result-workflow-status p[data-status="local"] { color: #92400e; }
-.result-workflow-status > div { display: flex; flex-wrap: wrap; gap: 10px; }
-:is(.result-workflow-status, .template-entry-banner, .generation-error-banner) button, .result-view-switch button { padding: 9px 13px; border: 1px solid var(--gen-primary-border); border-radius: 8px; background: var(--gen-primary-soft); color: var(--gen-primary); font: inherit; font-size: 12px; cursor: pointer; }
-.result-view-switch { display: flex; gap: 8px; width: 100%; padding: 10px 0; }
-.result-view-switch button[aria-selected="true"] { color: var(--gen-primary); background: #dbeafe; }
-.generation-image-failure { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 20px; gap: 10px; text-align: center; background: #fff1f2; color: #9f1239; }
-.generation-image-failure span { color: var(--gen-text-mid); font-size: 12px; line-height: 1.8; }
-.shot-card-meta details { margin-top: 12px; color: var(--gen-text-mid); font-size: 12px; }
-.shot-card-meta summary { cursor: pointer; }
-.shot-card-meta details p { line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere; }
-.generated-storyboard-table { width: 100%; overflow: auto; max-height: 640px; border: 1px solid #dbe3ef; border-radius: 12px; }
-.generated-storyboard-table table { width: 100%; min-width: 860px; border-collapse: collapse; text-align: left; font-size: 13px; }
-.generated-storyboard-table caption { padding: 16px; text-align: left; color: var(--gen-primary); }
-.generated-storyboard-table th { position: sticky; top: 0; padding: 14px; background: #eff6ff; color: var(--gen-text-mid); }
-.generated-storyboard-table td { padding: 16px 14px; border-top: 1px solid #e2e8f0; color: var(--gen-text-dark); vertical-align: top; line-height: 1.8; }
-.generated-storyboard-table td:nth-child(2) { min-width: 320px; max-width: 450px; }
-.generated-storyboard-table :is(small, summary) { display: block; color: var(--gen-text-mid); }
-.generated-storyboard-table summary { cursor: pointer; }
+/* Hallmark · v2.0.0 · shape: app screen · theme: brand · redesign: full · scope: app */
+/* Hallmark · pre-emit critique: P4 H4 E4 S4 R5 V4 · weakest: E, flattened result controls and made mobile tables readable */
+.template-entry-banner, .generation-error-banner { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-4); padding: var(--space-4); margin-bottom: var(--space-5); background: var(--color-brand-primary-soft); border-radius: var(--radius-sm); }
+.template-entry-banner strong { font-size: var(--font-size-sm); color: var(--color-brand-primary); }
+.template-entry-banner p, .generation-error-banner p { font-size: var(--font-size-sm); line-height: var(--line-height-loose); margin-top: var(--space-2); color: var(--color-text-secondary); }
+.generation-error-banner { background: var(--color-status-error-bg); }
+.generation-error-banner p { flex: 1 1 100%; color: var(--creation-error-ink); }
+.template-customization { width: 100%; border-top: 1px solid var(--color-border-default); padding-top: var(--space-6); }
+.template-customization h3 { font-size: var(--font-size-md); }
+.template-customization > p { margin-block: var(--space-2); color: var(--color-text-secondary); font-size: var(--font-size-sm); }
+#template-variable-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); margin-block: var(--space-5); }
+.template-variable-field { display: flex; flex-direction: column; gap: var(--space-2); color: var(--color-text-primary); font-size: var(--font-size-sm); }
+.template-customization summary { color: var(--color-brand-primary); cursor: pointer; font-size: var(--font-size-sm); min-height: 44px; }
+#template-reference-summary ol { padding-left: var(--space-6); font-size: var(--font-size-sm); color: var(--color-text-secondary); }
+#template-reference-summary li { margin-block: var(--space-3); }
+#template-reference-summary span { display: block; color: var(--color-text-secondary); margin-top: var(--space-1); font-size: var(--font-size-sm); }
+.result-workflow-status { width: 100%; border-top: 1px solid var(--color-border-default); padding-top: var(--space-5); }
+.result-workflow-status p { margin-bottom: var(--space-3); color: var(--color-text-secondary); font-size: var(--font-size-sm); line-height: var(--line-height-loose); }
+.result-workflow-status p[data-status="saved"] { color: var(--emerald-700); }
+.result-workflow-status p[data-status="failed"], .result-workflow-status p[data-status="local"] { color: var(--creation-warning-ink); }
+.result-workflow-status > div { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+:is(.result-workflow-status, .template-entry-banner, .generation-error-banner) button, .result-view-switch button { padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border-default); border-radius: var(--radius-sm); background: var(--color-surface-primary); color: var(--color-text-primary); cursor: pointer; }
+.result-view-switch { display: flex; gap: var(--space-2); width: 100%; }
+.result-view-switch button[aria-selected="true"] { color: var(--color-brand-primary); background: var(--color-brand-primary-soft); border-color: var(--color-brand-primary); }
+.generation-image-failure { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: var(--space-5); gap: var(--space-2); text-align: center; background: var(--color-status-error-bg); color: var(--creation-error-ink); }
+.generation-image-failure span { color: var(--color-text-secondary); font-size: var(--font-size-sm); line-height: var(--line-height-loose); }
+.shot-card-meta details { color: var(--color-text-secondary); }
+.shot-card-meta summary { cursor: pointer; min-height: 44px; }
+.shot-card-meta details p { line-height: var(--line-height-loose); white-space: pre-wrap; overflow-wrap: anywhere; }
+.generated-storyboard-table { width: 100%; overflow-x: auto; }
+.generated-storyboard-table table { width: 100%; border-collapse: collapse; text-align: left; font-size: var(--font-size-sm); }
+.generated-storyboard-table caption { padding: var(--space-4); text-align: left; color: var(--color-text-primary); }
+.generated-storyboard-table th { padding: var(--space-3); background: var(--color-surface-secondary); color: var(--color-text-secondary); }
+.generated-storyboard-table td { padding: var(--space-4) var(--space-3); border-top: 1px solid var(--color-border-default); color: var(--color-text-primary); vertical-align: top; line-height: var(--line-height-loose); }
+.generated-storyboard-table td:nth-child(2) { width: 35%; }
+.generated-storyboard-table :is(small, summary) { display: block; color: var(--color-text-secondary); }
+.generated-storyboard-table summary { cursor: pointer; min-height: 44px; }
 .generated-storyboard-table p { white-space: pre-wrap; overflow-wrap: anywhere; }
 @media (max-width: 760px) {
-  #template-variable-fields { grid-template-columns: 1fr; }
-  .template-customization { padding: 18px; }
-  .template-entry-banner { align-items: flex-start; flex-direction: column; padding: 16px; }
-  .result-workflow-status { padding: 16px; }
+  #template-variable-fields { grid-template-columns: minmax(0, 1fr); }
+  .template-entry-banner { align-items: flex-start; flex-direction: column; }
+  .generated-storyboard-table { overflow: visible; }
+  .generated-storyboard-table :is(table,tbody,tr,td) { display: block; width: 100%; min-width: 0; }
+  .generated-storyboard-table thead { display: none; }
+  .generated-storyboard-table tr { padding-block: var(--space-4); border-top: 1px solid var(--color-border-default); }
+  .generated-storyboard-table td { border: 0; padding: var(--space-2) 0; }
+  .generated-storyboard-table td:nth-child(2) { width: 100%; }
+  .generated-storyboard-table td::before { display: block; font-weight: var(--font-weight-medium); color: var(--color-text-secondary); }
+  .generated-storyboard-table td:nth-child(1)::before { content: '鏡頭'; }
+  .generated-storyboard-table td:nth-child(2)::before { content: '畫面與對白'; }
+  .generated-storyboard-table td:nth-child(3)::before { content: '拍攝方式'; }
+  .generated-storyboard-table td:nth-child(4)::before { content: '時長'; }
+  .generated-storyboard-table td:nth-child(5)::before { content: '情緒與目的'; }
+  .generated-storyboard-table td:nth-child(6)::before { content: '圖片狀態'; }
 }

@@ -32,8 +32,8 @@
             input.placeholder = state.configured ? '已設定，留空保留；貼上新金鑰可更新' : `貼上 ${provider === 'youtube' ? 'YouTube' : 'Gemini'} API Key`;
         }
         document.getElementById('gemini-hint').textContent = data.gemini.mode === 'vertex'
-            ? '已使用伺服器的 Google Cloud 認證，可直接沿用；也可填寫 Gemini API Key 切換。'
-            : '使用 Google AI Studio 建立的 Gemini API Key。';
+            ? '目前使用 Vertex AI／Google Cloud ADC 與 Google Cloud 計費。填入 Gemini API Key 後將切換至獨立計費的 Gemini Developer API。'
+            : '使用 Google AI Studio 的 Gemini Developer API Key；此模式獨立計費，不使用 Vertex AI 抵用額。';
         returnLink.hidden = !data.configured;
     }
 

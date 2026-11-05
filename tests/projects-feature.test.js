@@ -357,3 +357,19 @@ test('Tag mutation rejects older in-flight list responses and late logout callba
   }
 });
 
+
+test('ProjectDeleteQueue: an old committing delete cannot restore flags after a session reset', async () => {
+  ProjectStore.reset();
+  const original = ProjectsApi.deleteProject;
+  let release, committed = 0;
+  ProjectsApi.deleteProject = () => new Promise(resolve => { release = resolve; });
+  try {
+    ProjectDeleteQueue.enqueue({ id: 'old-session' }, { delay: 0, transitionDelay: 0, onCommit: () => committed++ });
+    await new Promise(resolve => setTimeout(resolve, 10));
+    ProjectStore.reset();
+    release({ ok: true });
+    await new Promise(resolve => setTimeout(resolve, 0));
+    assert.equal(ProjectDeleteQueue.recentlyDeleted.has('old-session'), false);
+    assert.equal(committed, 0);
+  } finally { ProjectsApi.deleteProject = original; ProjectStore.reset(); }
+});

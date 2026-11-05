@@ -34,34 +34,11 @@ const prisma = new PrismaClient({ adapter });
 
 const JWT_SECRET = process.env.JWT_SECRET || 'storyboard-secret-key-123';
 
-if(process.env.GCP_SERVICE_ACCOUNT_BASE64) {
-    console.log("👉偵測到使用雲端部屬，正在進行認證...");
-    try{
-        const credentialsJson = Buffer.from(process.env.GCP_SERVICE_ACCOUNT_BASE64, 'base64').toString('utf-8');
-        const keyPath = path.join('/tmp', 'gcp-key.json');
-        fs.writeFileSync(keyPath, credentialsJson);
-        process.env.GOOGLE_APPLICATION_CREDENTIALS = keyPath;
-        console.log("👌認證成功！");
-    }
-    catch (error) {
-        console.error("🫸認證失敗：", error.message);
-    }
-}
-else if(process.env.GOOGLE_APPLICATION_CREDENTIALS){
-    console.log("👉偵測到使用本地端部屬，正在進行認證...");
-    try{
-        if (!fs.existsSync(process.env.GOOGLE_APPLICATION_CREDENTIALS)) {
-            throw new Error(`找不到指定的金鑰檔案：${process.env.GOOGLE_APPLICATION_CREDENTIALS}`);
-        }
-        console.log("👌認證成功！");
-    }
-    catch (error) {
-        console.error("🫸認證失敗：", error.message);
-    }
-}
-
-
 const { GoogleGenAI } = require('@google/genai');
+const { getModel, getModelConfig } = require('./lib/ai/model-config');
+const { parseResponse, generateImage, emptyContent, validatePrompt, reportAIError } = require('./lib/ai/generation');
+const { vertexAuthOptions } = require('./lib/google-credentials');
+const { createCopilotHandler } = require('./lib/ai/copilot');
 
 const app = express();
 
@@ -84,7 +61,7 @@ app.use((req, res, next) => {
     // 2. 若由 Vercel 或其他 proxy 轉發時遺失 /api 前綴，自動補充
     if (!req.url.startsWith('/api') && req.url !== '/' && !req.url.startsWith('/public') && !req.url.startsWith('/css') && !req.url.startsWith('/js') && !req.url.startsWith('/images') && !req.url.startsWith('/html') && !req.url.startsWith('/video') && !req.url.startsWith('/icon')) {
         const isDiscoveryApi = req.url.startsWith('/discovery/search') || req.url.startsWith('/discovery/analyze') || req.url.startsWith('/discovery/skills') || req.url.startsWith('/discovery/add-template');
-        if (req.url.startsWith('/auth') || req.url.startsWith('/projects') || req.url.startsWith('/ask-gemini') || req.url.startsWith('/get-templates') || req.url.startsWith('/templates') || isDiscoveryApi) {
+        if (req.url.startsWith('/auth') || req.url.startsWith('/projects') || req.url.startsWith('/creation/copilot') || req.url.startsWith('/ask-gemini') || req.url.startsWith('/get-templates') || req.url.startsWith('/templates') || isDiscoveryApi) {
             req.url = '/api' + (req.url.startsWith('/') ? req.url : '/' + req.url);
         }
     }
@@ -105,6 +82,7 @@ function getGenAI() {
             vertexai: true,
             project: projectId,
             location: location,
+            ...vertexAuthOptions(),
         });
     }
     return genAIInstance;
@@ -122,10 +100,21 @@ app.get('/', (req, res) => {
 
 const publicPath = path.join(process.cwd(), 'public');
 app.use(express.static(publicPath));
+// Copilot has a smaller parser before the legacy image payload parser.
+app.use('/api/creation/copilot', express.json({ limit: '64kb' }));
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ limit: '100mb', extended: true })); // 增加 URL 編碼限制
 
 const discoverySettings = new ApiSettings();
+// Existing text generation permits guests; authenticated callers use their verified identity.
+app.post('/api/creation/copilot', (req, res, next) => {
+    const authorization = req.get('authorization');
+    if (authorization) {
+        try { req.copilotIdentity = 'user:' + jwt.verify(authorization.replace(/^Bearer /, ''), JWT_SECRET).id; }
+        catch { return res.status(401).json({ error: '登入已失效，請重新登入。' }); }
+    }
+    next();
+}, createCopilotHandler(getGenAI));
 const DISCOVERY_PLATFORMS = new Set(['youtube-shorts']);
 const DISCOVERY_TIME_RANGES = new Set(['7', '30', '90', 'all']);
 const DISCOVERY_MAX_DURATIONS = new Set(['60', '180']);
@@ -159,9 +148,12 @@ app.post('/api/discovery/settings', async (req, res) => {
         if (req.body.geminiApiKey?.trim()) {
             try {
                 await new GoogleGenAI({ vertexai: false, apiKey: next.geminiApiKey }).models.get({
-                    model: process.env.DISCOVERY_GEMINI_MODEL || 'gemini-2.5-flash', config: { httpOptions: { timeout: 20000 } }
+                    model: getModel('discovery'), config: { httpOptions: { timeout: 20000 } }
                 });
-            } catch { throw new Error('Gemini 連線檢查失敗，請確認 API Key、模型權限與網路連線。'); }
+            } catch (error) {
+                const failure = reportAIError(error, { task: 'discovery-settings', provider: 'gemini-developer-api', model: getModel('discovery') });
+                throw new Error('Gemini Developer API 連線檢查失敗：' + failure.message);
+            }
         }
         next.savedAt = new Date().toISOString();
         discoverySettings.write(res, next, req.secure || req.get('x-forwarded-proto') === 'https');
@@ -243,12 +235,12 @@ app.post('/api/discovery/analyze', async (req, res) => {
     try {
         const keys = discoverySettings.effective(discoverySettings.read(req));
         const client = keys.geminiApiKey ? new GoogleGenAI({ vertexai: false, apiKey: keys.geminiApiKey }) : getGenAI();
-        res.json({ analysis: await analyzeVideo(client, videoId, skill) });
+        if (keys.geminiApiKey) await client.models.get({ model: getModel('discovery'), config: { httpOptions: { timeout: 20000 } } });
+        res.json({ analysis: await analyzeVideo(client, videoId, skill),
+            provider: keys.geminiApiKey ? 'gemini-developer-api' : 'vertex-ai', model: getModel('discovery') });
     } catch (error) {
-        const status = Number(error.status || error.code);
-        res.status(502).json({ error: status === 429
-            ? 'Gemini 配額不足或請求過多，請稍後重試。'
-            : '影片分析失敗：影片可能無法存取、請求逾時，或 Gemini 權限／模型設定有誤。請重試或檢查伺服器設定。' });
+        const failure = reportAIError(error, { task: 'discovery', model: getModel('discovery') });
+        res.status(failure.status).json({ error: failure.message, code: failure.code });
     }
 });
 
@@ -749,38 +741,7 @@ app.post('/api/projects/:id/duplicate', async (req, res) => {
 
 // 共用 Gemini 圖片生成 helper
 async function runGeminiImageGeneration({ question, ratio }) {
-    let targetRatio = '16:9';
-    if (ratio) {
-        if (ratio.includes('16:9')) targetRatio = '16:9';
-        else if (ratio.includes('9:16')) targetRatio = '9:16';
-        else if (ratio.includes('3:2')) targetRatio = '3:2';
-        else if (ratio.includes('2:3')) targetRatio = '2:3';
-        else if (ratio.includes('1:1')) targetRatio = '1:1';
-    }
-
-    const ai = getGenAI();
-    const response = await ai.models.generateContent({
-        model: 'gemini-3.1-flash-image',
-        contents: [{ text: question }],
-        config: {
-            responseModalities: ['TEXT', 'IMAGE'],
-            imageConfig: { aspectRatio: targetRatio, imageSize: '1K' }
-        }
-    });
-
-    const candidate = response.candidates && response.candidates.length > 0 ? response.candidates[0] : null;
-    if (!candidate || !candidate.content || !candidate.content.parts) {
-        throw new Error('Gemini 未回傳圖片');
-    }
-
-    for (const part of candidate.content.parts) {
-        if (part.inlineData) {
-            const imageData = part.inlineData.data;
-            const mimeType = part.inlineData.mimeType || 'image/png';
-            return `data:${mimeType};base64,${imageData}`;
-        }
-    }
-    throw new Error('Gemini 回傳中沒有圖片資料');
+    return (await generateImage(getGenAI(), { question, ratio })).image[0];
 }
 
 // PATCH Shot（編輯鏡頭資料）
@@ -953,8 +914,8 @@ app.post('/api/projects/:projectId/shots/:shotId/regenerate', async (req, res) =
             }
         });
     } catch (error) {
-        console.error('Regenerate Shot Error:', error);
-        res.status(500).json({ error: '重新生成圖片失敗: ' + (error.message || '') });
+        const failure = reportAIError(error, { task: 'regenerate-image', model: getModel('image') });
+        res.status(failure.status).json({ error: '重新生成圖片失敗：' + failure.message, code: failure.code });
     }
 });
 
@@ -1001,18 +962,20 @@ Requirements:
 - Include cinematic lighting, environment composition, framing, and mood.`;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-lite',
-            contents: [{ text: promptGenRequest }]
+            ...getModelConfig('fast'),
+            contents: [{ text: promptGenRequest }],
+            config: { ...getModelConfig('fast').config,
+                systemInstruction: 'Return only the complete English image prompt. No headings, introduction, markdown, JSON, surrounding quotes or explanations.' }
         });
 
-        const generatedPrompt = response.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+        const generatedPrompt = validatePrompt(parseResponse(response).response);
 
         res.json({
             prompt: generatedPrompt
         });
     } catch (error) {
-        console.error('Optimize Prompt Error:', error);
-        res.status(500).json({ error: 'AI 優化提示詞失敗' });
+        const failure = reportAIError(error, { task: 'optimize-prompt', model: getModel('fast') });
+        res.status(failure.status).json({ error: failure.message, code: failure.code });
     }
 });
 
@@ -1166,82 +1129,30 @@ app.post('/api/projects', async (req, res) => {
 
 
 app.post('/api/ask-gemini', async (req, res) => {
-    const { question, type, ratio } = req.body;
-
-    let targetRatio = "16:9";
-    if (ratio) {
-        if (ratio.includes("16:9")) targetRatio = "16:9";
-        else if (ratio.includes("9:16")) targetRatio = "9:16";
-        else if (ratio.includes("3:2")) targetRatio = "3:2";
-        else if (ratio.includes("2:3")) targetRatio = "2:3";
-        else if (ratio.includes("1:1")) targetRatio = "1:1";
-    }
-
-    const modelConfigs = {
-        'flash': {
-            model: 'gemini-2.5-flash-lite',
-            config: { responseModalities: ['TEXT'] }
-        },
-        'image': {
-            model: 'gemini-3.1-flash-image',
-            config: { 
-                responseModalities: ['TEXT', 'IMAGE'],
-                imageConfig: {
-                    aspectRatio: targetRatio,
-                    imageSize: '1K'
-                }
-            }
-        },
-        'story': {
-            model: 'gemini-3.5-flash',
-            config: { responseModalities: ['TEXT'] }
-        }
-    };
-
-    const selectedConfig = modelConfigs[type] || modelConfigs['flash'];
-
+    const { question, type, ratio } = req.body || {};
+    if (typeof question !== 'string' || !question.trim()) return res.status(400).json({ error: '缺少有效提示詞', details: 'question 必須是非空白文字' });
+    // The client selects a task only; model IDs and parameters stay on the server.
+    const task = type === 'image' ? 'image' : type === 'story' ? 'story' : 'fast';
+    const structured = task === 'story' && req.body.contract === 'freeform-v2';
+    if (structured && ![15, 30, 45, 60].includes(req.body.duration)) return res.status(400).json({ error: '無效的自由分鏡時長' });
+    const summaries = task !== 'image' && req.body.includeThoughts === true;
+    const requestId = typeof req.body.requestId === 'string' && /^[A-Za-z0-9_-]{1,120}$/.test(req.body.requestId)
+        ? req.body.requestId : require('node:crypto').randomUUID();
+    const started = Date.now();
     try {
-        const contents = [{ text: question }];
-
         const ai = getGenAI();
-        const response = await ai.models.generateContent({
-            model: selectedConfig.model,
-            contents: contents,
-            config: selectedConfig.config,
-        });
-
-        let responseText = "";
-        let imgs = [];
-
-        const candidate = response.candidates && response.candidates.length > 0 ? response.candidates[0] : null;
-
-        if (candidate && candidate.content && candidate.content.parts) {
-            for (const part of candidate.content.parts) {
-                if (part.text) {
-                    responseText += part.text;
-                } else if (part.inlineData) {
-                    const imageData = part.inlineData.data;
-                    const mimeType = part.inlineData.mimeType || 'image/png';
-                    const base64Image = `data:${mimeType};base64,${imageData}`;
-                    imgs.push(base64Image);
-                }
-            }
-        }
-        const usage = response.usageMetadata;
-
-        res.json({
-            response: responseText,
-            image: imgs,
-            usage: {
-                promptTokens: usage.promptTokenCount,
-                candidatesTokens: usage.candidatesTokenCount,
-                totalTokens: usage.totalTokenCount
-            }
-        });
-
+        const result = task === 'image' ? await generateImage(ai, { question, ratio })
+            : parseResponse(await ai.models.generateContent({ ...getModelConfig(task, { includeThoughts: summaries }),
+                config: { ...getModelConfig(task, { includeThoughts: summaries }).config, ...(structured ? { responseJsonSchema: require('./public/js/features/freeform-storyboard').schema(req.body.duration) } : {}) },
+                contents: [{ text: question }] }), { includeThoughts: summaries });
+        if (task !== 'image' && !result.response.trim()) throw emptyContent('模型未回傳有效文字，請重試。');
+        res.json(result);
     } catch (error) {
-        console.error('Error:', error);
-        res.status(500).json({ error: 'Internal Server Error', details: error.message });
+        const failure = reportAIError(error, { requestId, task, provider: 'vertex-ai', model: getModel(task),
+            stage: 'call_vertex', contract: structured ? 'freeform-v2' : 'legacy', elapsedMs: Date.now() - started });
+        res.status(failure.status).json({ error: 'Internal Server Error', details: failure.message, code: failure.code,
+            diagnostics: { requestId, stage: 'call_vertex', upstreamStatus: Number(error?.status || error?.error?.code) || null,
+                ...require('./lib/ai/generation').requestIssue(error) } });
     }
 });
 

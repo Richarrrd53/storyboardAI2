@@ -36,7 +36,7 @@
 .template-modal-panel {
   background: var(--color-surface-primary, #ffffff);
   border: 1px solid var(--color-border-default, #e2e8f0);
-  border-radius: var(--radius-lg, 24px);
+  border-radius: var(--radius-continuous-lg);
   box-shadow: var(--elevation-4, 0 24px 64px rgba(15, 23, 42, 0.16));
   width: 90%;
   max-width: 480px;

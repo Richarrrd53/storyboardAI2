@@ -46,7 +46,7 @@
   align-items: center;
   gap: var(--space-4);
   padding: var(--space-3) var(--page-gutter, var(--space-8));
-  background: var(--color-bg-page);
+  background: var(--content-header-bg, var(--color-bg-page));
   border-bottom: none;
   box-sizing: border-box;
 }
@@ -393,7 +393,7 @@
 .hero-player-card {
   background: var(--color-surface-primary);
   border: 1px solid var(--color-border-default);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-continuous-lg);
   overflow: hidden;
   box-shadow: var(--elevation-1);
 }
@@ -533,7 +533,7 @@
 .dynamic-narrative-card {
   background: var(--color-surface-primary);
   border: 1px solid var(--color-border-default);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-continuous-md);
   padding: var(--space-4);
   box-shadow: var(--elevation-1);
   display: flex;
@@ -684,7 +684,7 @@
   min-width: 0;
   padding: var(--space-5);
   border: 1px solid var(--color-border-default);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-continuous-md);
   background: var(--color-surface-primary);
   box-shadow: none;
   display: flex;
@@ -786,7 +786,7 @@
   min-width: 0;
   padding: var(--space-5);
   border: 1px solid var(--color-border-default);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-continuous-md);
   background: var(--color-surface-primary);
 }
 
@@ -918,7 +918,7 @@
 .shot-breakdown-card {
   background: var(--color-surface-primary);
   border: 1px solid var(--color-border-default);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-continuous-md);
   padding: var(--space-4);
   display: flex;
   flex-direction: column;
@@ -988,7 +988,7 @@
   position: relative;
   width: 88px;
   height: 110px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-continuous-sm);
   overflow: hidden;
   background: #000;
   flex-shrink: 0;
@@ -1138,7 +1138,7 @@
 .advanced-workspace-header {
   background: var(--color-surface-primary);
   border: 1px solid var(--color-border-default);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-continuous-md);
   overflow: hidden;
 }
 
@@ -1241,7 +1241,7 @@
   min-width: 0;
   padding: var(--space-5);
   border: 1px solid var(--color-border-default);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-continuous-md);
   background: var(--color-surface-primary);
   box-shadow: none;
 }
@@ -1386,7 +1386,7 @@
   aspect-ratio: 9 / 16;
   background: #05070a;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--radius-sm, 6px);
+  border-radius: var(--radius-continuous-sm);
   overflow: hidden;
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5);
   display: flex;
@@ -1592,7 +1592,7 @@
   max-height: 85vh;
   background: var(--color-surface-primary);
   border: 1px solid var(--color-border-default);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-continuous-lg);
   box-shadow: var(--surface-floating-shadow, 0 16px 40px rgba(0, 0, 0, 0.16));
   display: flex;
   flex-direction: column;
@@ -1676,7 +1676,7 @@
 
 .source-modal-desc-box {
   background: var(--color-bg-subtle);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-continuous-sm);
   padding: var(--space-3) var(--space-4);
   font-size: var(--font-size-xs);
   line-height: 1.6;

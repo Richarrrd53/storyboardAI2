@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light">
+<title>Storyboard AI · 靈感匯聚動畫 Demo</title>
+<style>
+:root { --ink:#172337; --muted:#718097; --bg:#f5f7fc; --brand:#5487dd; --line:#e5eaf3; --shadow:0 26px 80px rgba(45,70,110,.075); color-scheme:light; }
+* { box-sizing:border-box; }
+body { margin:0; min-height:100vh; font-family:Inter,-apple-system,BlinkMacSystemFont,"Noto Sans TC","Microsoft JhengHei",sans-serif; color:var(--ink); background:radial-gradient(ellipse 60% 42% at 48% -6%,#e8eeff 0%,transparent 100%),#f7f8fc; }
+button { font:inherit; }
+.page { max-width:1120px; padding:32px 28px 52px; margin:0 auto; }
+.nav { display:flex;align-items:center;justify-content:space-between; gap:16px; margin-bottom:49px; }
+.brand { display:flex; align-items:center; gap:12px; color:#34455e; font-size:14px; font-weight:750; letter-spacing:.025em; }
+.brand-icon { width:34px;height:34px;border-radius:12px;display:grid;place-items:center;color:white; background:linear-gradient(148deg,#a2b8f3,#6588cf);box-shadow:0 4px 12px #7393d754; }
+.badge { background:#fff; border:1px solid #e4e9f4; box-shadow:0 2px 7px #405c8510; font-size:11px; color:#657790; letter-spacing:.08em; padding:9px 12px; border-radius:999px; font-weight:700; white-space:nowrap; }
+.heading { margin-bottom:27px; }
+.eyebrow { display:flex; align-items:center;gap:10px;font-size:11px;letter-spacing:.18em;font-weight:750;color:#7b93b8; margin-bottom:13px; }
+.eyebrow::before { content:"";width:23px;height:1px;background:#8aa9d8; }
+h1 { font-size:clamp(25px,3.2vw,36px);line-height:1.28;font-weight:750;letter-spacing:-.045em;margin:0 0 10px; }
+.desc {color:#758299;font-size:14px;line-height:1.85;margin:0;}
+.stage-shell {position:relative;min-height:510px;border:1px solid rgba(190,203,228,.74);border-radius:25px; overflow:hidden;background:radial-gradient(ellipse 42% 52% at 50% 49%, rgba(225,237,255,.78),transparent 75%),radial-gradient(ellipse 24% 35% at 80% 70%,rgba(240,225,249,.26),transparent 100%),linear-gradient(142deg,rgba(255,255,255,.96),rgba(250,252,255,.9));box-shadow:var(--shadow); isolation:isolate; }
+.stage-shell:before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.40;background-image:radial-gradient(#b4c4df 0.75px,transparent 0.75px);background-size:24px 24px;mask-image:linear-gradient(to bottom,transparent,#000 10%,#000 87%,transparent)}
+.stage-shell:after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;box-shadow:inset 0 2px 3px #fff,inset 0 -1px 0 #dce3f1; }
+.stage-top{position:absolute;z-index:10;top:22px;left:26px;right:26px;display:flex;align-items:center;justify-content:space-between;gap:10px;pointer-events:none; }
+.stage-kicker{display:flex;align-items:center;gap:9px;font-size:11px;font-weight:700;letter-spacing:.12em;color:#99a5b6; }
+.stage-kicker .live {width:7px;height:7px;border-radius:50%;background:#93c6ad; box-shadow:0 0 0 4px #93c6ad21;}
+.stage-count{font-size:11px;color:#a3b0c5;letter-spacing:.06em;font-variant-numeric:tabular-nums; }
+.field { position:absolute;inset:0;z-index:2;overflow:hidden; }
+.field:before{content:"";position:absolute;inset:9% 29%;border:1px solid rgba(149,175,215,.13);border-radius:50%;transform:scaleX(1.6);pointer-events:none;}
+.field:after{content:"";position:absolute;inset:22% 38%;border:1px dashed rgba(149,175,215,.22);border-radius:50%;transform:scaleX(1.45);pointer-events:none; }
+.flare {position:absolute;left:50%;top:50%;width:330px;height:330px;transform:translate(-50%,-50%);pointer-events:none;z-index:1;border-radius:50%; background:radial-gradient(circle,rgba(174,201,246,.27),rgba(208,226,255,.13) 31%,transparent 70%);filter:blur(24px); animation:ambient 5s ease-in-out infinite alternate;}
+@keyframes ambient {to{opacity:.64;transform:translate(-50%,-50%) scale(1.16)}}
+.core {position:absolute;left:50%;top:50%;width:175px;height:175px;z-index:6; transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;pointer-events:none; }
+.core .core-halo{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.86) 8%,rgba(247,250,255,.82) 28%,rgba(215,230,250,.33) 50%,transparent 69%);box-shadow:0 0 54px 8px #b5c9ee17;opacity:.8;transform:scale(.84);transition:transform 650ms cubic-bezier(.2,.9,.2,1),opacity 550ms ease;}
+.core.ready .core-halo {transform:scale(1.2);opacity:1;}
+.core-ring {position:absolute;inset:19px;border:1px solid #9dbde42b;border-radius:50%;transform:scale(.88);transition:transform .6s ease,opacity .6s ease;opacity:.45;}
+.core.ready .core-ring {transform:scale(1.08);opacity:.95;}
+.math-loader-wrap{position:relative;z-index:4;width:108px;height:108px;color:#6d93d5;opacity:.48;transform:scale(.82);transition:opacity 700ms ease,transform 800ms cubic-bezier(.16,1,.3,1);}
+.core.ready .math-loader-wrap{opacity:1;transform:scale(1);}
+.math-loader-svg.loader{color-scheme:dark;width:100%;height:100%;overflow:visible;box-sizing:border-box}
+.math-loader-svg.loader *{box-sizing:border-box}
+.core-name{position:absolute;left:50%;top:calc(50% + 87px);transform:translateX(-50%);z-index:10;font-size:9px;font-weight:800;letter-spacing:.25em;color:#a3b0c4;white-space:nowrap;opacity:.8;}
+.fragment {position:absolute;z-index:5;left:0;top:0;will-change:opacity,transform,filter;pointer-events:none;white-space:nowrap;transform-origin:center; opacity:0; }
+.token {display:flex;align-items:center;gap:9px;min-height:35px;padding:8px 12px 8px 10px; font-size:12px;font-weight:680;letter-spacing:.01em;color:#566880;border-radius:12px;background:rgba(255,255,255,.87);border:1px solid rgba(205,215,232,.85);box-shadow:0 5px 17px rgba(65,88,129,.08),inset 0 1px 0 rgba(255,255,255,.94);backdrop-filter:blur(6px);}
+.token-icon{width:20px;height:20px;display:grid;place-items:center;border-radius:7px;background:var(--chip-bg,#e9effb);color:var(--chip-color,#7f9ece);flex:none;}
+.token-icon svg{display:block;width:13px;height:13px;stroke:currentColor;stroke-width:1.85;stroke-linecap:round;stroke-linejoin:round;fill:none;}
+.fragment.tiny .token {font-size:10px;min-height:31px;padding:7px 10px 7px 8px;border-radius:10px;}
+.fragment.tiny .token-icon{width:17px;height:17px;border-radius:5px;}
+.fragment.tiny .token-icon svg{width:11px;height:11px;}
+.droplet-layer{position:absolute;inset:0;z-index:4;pointer-events:none;filter:url(#fluid-goo);}
+.droplet{position:absolute;left:0;top:0;border-radius:50%;opacity:0;will-change:transform,opacity;background:var(--drop,#a4c4f3);}
+.center-drop{position:absolute;width:54px;height:54px;border-radius:50%;left:50%;top:50%;transform:translate(-50%,-50%) scale(.5);background:#bdd2ed;opacity:.07;transition:opacity .6s ease,transform .65s ease;}
+.droplet-layer.active .center-drop{opacity:.21;transform:translate(-50%,-50%) scale(.9);}
+.droplet-layer.done .center-drop{opacity:.04;transform:translate(-50%,-50%) scale(.52);}
+.scene-foot{position:absolute;left:25px;right:25px;bottom:24px;display:flex;align-items:flex-end;justify-content:space-between;z-index:10;gap:14px;pointer-events:none;}
+.status{display:flex;align-items:center;gap:9px;font-size:12px;color:#677a95;line-height:1.5;letter-spacing:.01em;background:rgba(255,255,255,.73);border:1px solid #eaf0f6;padding:10px 12px;border-radius:999px;box-shadow:0 4px 14px #5276a00c;}
+.status .wave{height:7px;width:7px;border-radius:50%;background:#90bbd7;box-shadow:0 0 0 4px #90bbd51e;}
+.stage-note{font-size:11px;color:#a1adbf;letter-spacing:.02em;max-width:220px;text-align:right;line-height:1.65;}
+.controls{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:20px;margin-top:20px;}
+.steps{display:flex;align-items:center;gap:11px; flex-wrap:wrap;}
+.step{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:670;color:#abb7c8;transition:color 230ms ease;}
+.step.active{color:#557dad;}
+.step.done{color:#75a18b;}
+.step-n{width:21px;height:21px;display:grid;place-items:center;border:1px solid #dce4ef;border-radius:50%;font-size:10px;transition:all 200ms;}
+.step.active .step-n{background:#e5edfc;color:#5b84b9;border-color:#b9ccec;}
+.step.done .step-n{background:#eaf3ed;color:#6c9a82;border-color:#d1e4d8;}
+.step-sep{width:24px;height:1px;background:#dfe5ed;}
+.replay{display:flex;align-items:center;gap:9px;border:1px solid #cfdbeb;color:#476c9b;background:white;border-radius:12px;font-weight:730;font-size:12px;padding:11px 15px;cursor:pointer;box-shadow:0 3px 12px #5b79ab14;transition:transform 140ms ease,box-shadow 160ms ease,border-color 160ms ease;}
+.replay:hover{border-color:#a7bee0;box-shadow:0 6px 17px #6c8db42c;transform:translateY(-1px)}
+.replay:active{transform:translateY(0) scale(.98)}
+.replay:focus-visible{outline:3px solid #96b8f0;outline-offset:3px}
+.replay svg{width:15px;height:15px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round;}
+.flow-caption{display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-size:12px;font-weight:650;color:#7d90ab;}
+.flow-live{width:7px;height:7px;border-radius:50%;background:#77b69b;box-shadow:0 0 0 4px rgba(119,182,155,.13);animation:livePulse 2.4s ease-in-out infinite;}
+.flow-sep{color:#b8c6d7;}
+@keyframes livePulse{50%{box-shadow:0 0 0 7px rgba(119,182,155,.04);opacity:.75}}
+.outro{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-top:18px;color:#97a3b5;font-size:11px;line-height:1.65;}
+.outro strong{color:#728aa8;font-weight:650;}
+@media(max-width:660px){.page{padding:20px 16px 36px}.nav{margin-bottom:31px}.heading{margin-bottom:22px}h1{font-size:27px}.desc{font-size:13px}.stage-shell{min-height:480px;border-radius:20px}.stage-top{top:18px;left:17px;right:17px}.scene-foot{left:13px;right:13px;bottom:15px}.stage-note{max-width:120px;font-size:10px}.status{font-size:10px;padding:9px 10px}.token{font-size:10px;min-height:31px;gap:6px;padding:6px 9px;border-radius:10px}.token-icon{width:17px;height:17px}.token-icon svg{width:11px;height:11px}.core{width:148px;height:148px}.math-loader-wrap{width:90px;height:90px}.core-name{top:calc(50% + 74px)}.field:before{inset:20% 9%;transform:none}.field:after{inset:31% 27%;transform:none}.step-sep{width:10px}.steps{gap:7px}.controls{gap:14px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important;scroll-behavior:auto!important}.fragment,.droplet{will-change:auto}}
+</style>
+</head>
+<body>
+<main class="page">
+  <nav class="nav" aria-label="展示導覽">
+    <div class="brand"><div class="brand-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round"><path d="M12 2.5 13.9 9.3 20.7 11.2l-6.8 1.9-1.9 6.8-1.9-6.8-6.8-1.9 6.8-1.9L12 2.5Z"/><path d="m20 18 .6 1.6 1.6.6-1.6.6L20 22.4l-.6-1.6-1.6-.6 1.6-.6L20 18Z"/></svg></div><span>STORYBOARD AI</span></div>
+    <span class="badge">MOTION STUDY · 02</span>
+  </nav>
+  <header class="heading"><div class="eyebrow">INSPIRATION CONVERGENCE</div><h1>讓零散的靈感，匯聚成故事。</h1><p class="desc">靈感不會一次全部湧入。每次只有一至兩個想法慢慢浮現、液化並融入中央，隨著數學曲線持續運作。</p></header>
+  <section class="stage-shell" aria-label="靈感匯聚動畫預覽">
+    <div class="stage-top"><div class="stage-kicker"><span class="live"></span><span>CREATION ENGINE</span></div><span class="stage-count" id="stageCount">INSPIRATION · CONTINUOUS</span></div>
+    <div class="field" id="field">
+      <div class="flare"></div>
+      <div class="droplet-layer" id="dropletLayer"><div class="center-drop"></div></div>
+      <div class="core" id="core">
+        <div class="core-halo"></div><div class="core-ring"></div>
+        <div class="math-loader-wrap">
+          <svg class="loader math-loader-svg" viewBox="0 0 100 100" fill="none" aria-hidden="true"><g class="math-loader-group"><path class="math-loader-path" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" opacity="0.1"></path></g><g class="math-loader-sucked"></g></svg>
+        </div>
+        <div class="core-name">MATH CURVE</div>
+      </div>
+    </div>
+    <div class="scene-foot"><div class="status" role="status" aria-live="polite"><span class="wave"></span><span id="statusText">正在接收靈感…</span></div><span class="stage-note" id="note">靈感隨機浮現<br>一次最多兩個</span></div>
+  </section>
+  <div class="controls">
+    <div class="flow-caption" aria-label="持續匯流示意"><span class="flow-live"></span><span>緩緩浮現</span><span class="flow-sep">·</span><span>液態融入</span><span class="flow-sep">·</span><span>持續演算</span></div>
+    <button class="replay" type="button" id="replay"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11a9 9 0 1 1 2.6 6.4"/><path d="M3 4v7h7"/></svg>重新開始匯流</button>
+  </div>
+  <div class="outro"><span>單檔 HTML · 持續循環 · 可直接開啟</span><span><strong>原有 Math Curve Loader：</strong>保留玫瑰曲線與向心粒子視覺</span></div>
+</main>
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute;pointer-events:none" aria-hidden="true"><defs><filter id="fluid-goo" x="-55%" y="-55%" width="210%" height="210%" color-interpolation-filters="sRGB"><feGaussianBlur in="SourceGraphic" stdDeviation="5.2" result="blur"/><feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -8.0" result="goo"/><feComposite in="SourceGraphic" in2="goo" operator="atop"/></filter></defs></svg>
+<!-- Math Curve Loader engine: copied from public/js/math-curve-loader.js. The demo does not alter this engine. -->
+<script>
+(function () {
+  'use strict';
+
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+  const config = {
+      name: "Rose Curve",
+      tag: "r = a cos(kθ)",
+      rotate: true,
+      particleCount: 78,
+      trailSpan: 0.32,
+      durationMs: 5400,
+      rotationDurationMs: 28000,
+      pulseDurationMs: 4600,
+      strokeWidth: 4.5,
+      roseA: 9.2,
+      roseABoost: 0.6,
+      roseBreathBase: 0.72,
+      roseBreathBoost: 0.28,
+      roseK: 5,
+      roseScale: 3.25,
+      formula(config) {
+          return [
+              `r(t) = (${config.roseA.toFixed(1)} + ${config.roseABoost.toFixed(2)}s)(${config.roseBreathBase.toFixed(2)} + ${config.roseBreathBoost.toFixed(2)}s) cos(${Math.round(config.roseK)}t)`,
+              `x(t) = 50 + cos t · r(t) · ${config.roseScale.toFixed(2)}`,
+              `y(t) = 50 + sin t · r(t) · ${config.roseScale.toFixed(2)}`,
+          ].join("\n");
+      },
+      point(progress, detailScale, config) {
+          const t = progress * Math.PI * 2;
+          const a = config.roseA + detailScale * config.roseABoost;
+          const k = Math.round(config.roseK);
+          const r = a * (config.roseBreathBase + detailScale * config.roseBreathBoost) * Math.cos(k * t);
+          return {
+              x: 50 + Math.cos(t) * r * config.roseScale,
+              y: 50 + Math.sin(t) * r * config.roseScale,
+          };
+      },
+  };
+
+  const assetColors = [
+      '#DC9C47', // gold
+      '#d86b49', // peach
+      '#7fba7a', // green
+      '#b8d4ff', // blue
+      '#ffffff'  // white
+  ];
+
+  function normalizeProgress(progress) {
+      return ((progress % 1) + 1) % 1;
+  }
+  function getDetailScale(time) {
+      const pulseProgress = (time % config.pulseDurationMs) / config.pulseDurationMs;
+      const pulseAngle = pulseProgress * Math.PI * 2;
+      return 0.52 + ((Math.sin(pulseAngle + 0.55) + 1) / 2) * 0.48;
+  }
+  function getRotation(time) {
+      if (!config.rotate) return 0;
+      return -((time % config.rotationDurationMs) / config.rotationDurationMs) * 360;
+  }
+  function buildPath(detailScale, steps = 480) {
+      return Array.from({ length: steps + 1 }, (_, index) => {
+          const point = config.point(index / steps, detailScale, config);
+          return `${index === 0 ? 'M' : 'L'} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
+      }).join(' ');
+  }
+  function getParticle(index, progress, detailScale) {
+      const tailOffset = index / (config.particleCount - 1);
+      const point = config.point(normalizeProgress(progress - tailOffset * config.trailSpan), detailScale, config);
+      const fade = Math.pow(1 - tailOffset, 0.56);
+      return {
+          x: point.x,
+          y: point.y,
+          radius: 0.9 + fade * 2.7,
+          opacity: 0.04 + fade * 0.96,
+      };
+  }
+
+  let activeLoader = null;
+
+  window.initMathCurveLoader = function (options = {}) {
+      activeLoader?.stop();
+      if (options.signal?.aborted) return null;
+      let animId = null, stopped = false;
+      const scope = options.root || document;
+      const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+      const loaders = [];
+      const svgEls = scope.querySelectorAll('.math-loader-svg');
+
+      svgEls.forEach(svg => {
+          const group = svg.querySelector('.math-loader-group');
+          const path = svg.querySelector('.math-loader-path');
+          const suckedContainer = svg.querySelector('.math-loader-sucked');
+
+          if (!group || !path) return;
+
+          group.querySelectorAll('circle').forEach(c => c.remove());
+          if (suckedContainer) suckedContainer.innerHTML = '';
+
+          path.setAttribute('stroke-width', String(config.strokeWidth));
+
+          const particles = Array.from({ length: config.particleCount }, () => {
+              const circle = document.createElementNS(SVG_NS, 'circle');
+              circle.setAttribute('fill', 'currentColor');
+              group.appendChild(circle);
+              return circle;
+          });
+
+          loaders.push({
+              svg,
+              group,
+              path,
+              suckedContainer,
+              particles,
+              suckedAssets: []
+          });
+      });
+
+      if (loaders.length === 0) return null;
+
+      const handle = { stop };
+      activeLoader = handle;
+      function stop() {
+          if (stopped) return;
+          stopped = true;
+          if (animId !== null) cancelAnimationFrame(animId);
+          animId = null;
+          document.removeEventListener('visibilitychange', onVisibility);
+          options.signal?.removeEventListener('abort', stop);
+          loaders.forEach(loader => {
+              loader.particles.forEach(node => node.remove());
+              loader.suckedAssets.forEach(asset => asset.el.remove());
+              loader.suckedAssets.length = 0;
+          });
+          if (activeLoader === handle) activeLoader = null;
+      }
+      function onVisibility() {
+          if (animId !== null) cancelAnimationFrame(animId);
+          animId = null;
+          if (!stopped && !document.hidden && !reducedMotion) animId = requestAnimationFrame(render);
+      }
+      document.addEventListener('visibilitychange', onVisibility);
+      options.signal?.addEventListener('abort', stop, { once: true });
+
+      const startedAt = performance.now();
+
+      function updateSuckedAssets(loader) {
+          if (!loader.suckedContainer) return;
+          if (Math.random() < 0.04 && loader.suckedAssets.length < 10) {
+              const angle = Math.random() * Math.PI * 2;
+              const startRadius = 75 + Math.random() * 20;
+              const speed = 0.5 + Math.random() * 0.5;
+              const color = assetColors[Math.floor(Math.random() * assetColors.length)];
+              const radius = 1.0 + Math.random() * 1.5;
+
+              const el = document.createElementNS(SVG_NS, 'circle');
+              el.setAttribute('r', String(radius));
+              el.setAttribute('fill', color);
+              el.setAttribute('opacity', '0');
+              loader.suckedContainer.appendChild(el);
+
+              loader.suckedAssets.push({
+                  el,
+                  radius: startRadius,
+                  angle,
+                  speed
+              });
+          }
+
+          for (let i = loader.suckedAssets.length - 1; i >= 0; i--) {
+              const asset = loader.suckedAssets[i];
+              asset.radius -= asset.speed;
+
+              const x = 50 + Math.cos(asset.angle) * asset.radius;
+              const y = 50 + Math.sin(asset.angle) * asset.radius;
+
+              let opacity = 0;
+              if (asset.radius > 70) {
+                  opacity = (95 - asset.radius) / 25;
+              } else if (asset.radius > 15) {
+                  opacity = 0.8;
+              } else {
+                  opacity = asset.radius / 15 * 0.8;
+              }
+              opacity = Math.max(0, Math.min(0.8, opacity));
+
+              asset.el.setAttribute('cx', x.toFixed(2));
+              asset.el.setAttribute('cy', y.toFixed(2));
+              asset.el.setAttribute('opacity', opacity.toFixed(3));
+
+              if (asset.radius <= 2) {
+                  asset.el.remove();
+                  loader.suckedAssets.splice(i, 1);
+              }
+          }
+      }
+
+      function render(now) {
+          animId = null;
+          if (stopped) return;
+          if (loaders.every(loader => !loader.svg.isConnected)) { stop(); return; }
+          const time = now - startedAt;
+          const progress = (time % config.durationMs) / config.durationMs;
+          const detailScale = getDetailScale(time);
+          const rotation = getRotation(time);
+          const pathD = buildPath(detailScale);
+
+          loaders.forEach(loader => {
+              loader.group.setAttribute('transform', `rotate(${rotation} 50 50)`);
+              loader.path.setAttribute('d', pathD);
+              loader.particles.forEach((node, index) => {
+                  const particle = getParticle(index, progress, detailScale);
+                  node.setAttribute('cx', particle.x.toFixed(2));
+                  node.setAttribute('cy', particle.y.toFixed(2));
+                  node.setAttribute('r', particle.radius.toFixed(2));
+                  node.setAttribute('opacity', particle.opacity.toFixed(3));
+              });
+              if (!reducedMotion) updateSuckedAssets(loader);
+          });
+
+          if (!reducedMotion && !document.hidden) animId = requestAnimationFrame(render);
+      }
+
+      render(startedAt);
+      return handle;
+  };
+
+})();
+</script>
+<script>
+(() => {
+  'use strict';
+  // Inspiration overlay only; Math Curve Loader implementation above is untouched.
+  const field = document.getElementById('field');
+  const liquid = document.getElementById('dropletLayer');
+  const core = document.getElementById('core');
+  const statusText = document.getElementById('statusText');
+  const stageCount = document.getElementById('stageCount');
+  const note = document.getElementById('note');
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const icons = {
+    spark: '<path d="M12 2 14.3 9.7 22 12l-7.7 2.3L12 22l-2.3-7.7L2 12l7.7-2.3L12 2Z"/>',
+    aperture:'<circle cx="12" cy="12" r="9"/><path d="m14 3-3.3 5.7M21 10h-6.3M17.4 19l-3.3-5.7M10 21l3.3-5.7M3 14h6.3M6.6 5l3.3 5.7"/>',
+    script:'<path d="M6 4h12v16H6zM9 8h6M9 12h6M9 16h3"/>',
+    frame:'<path d="M4 4h16v16H4zM4 9h16M9 4v16"/>',
+    rhythm:'<path d="M4 15c3-8 5 8 8 0s5-8 8 0"/>',
+    sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>',
+    eye:'<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>',
+    heart:'<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 1 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/>'
+  };
+  const ideas = [
+    {name:'一個念頭',x:.16,y:.28,icon:'spark',color:'#bdd3f3',tone:'#e9f0fd'},
+    {name:'光影',x:.81,y:.23,icon:'sun',color:'#ebc8a0',tone:'#fbf1e4'},
+    {name:'鏡頭語言',x:.85,y:.44,icon:'aperture',color:'#a9c8be',tone:'#eaf5ef'},
+    {name:'情緒',x:.16,y:.74,icon:'heart',color:'#ecc4c6',tone:'#fcf0f0'},
+    {name:'敘事節奏',x:.78,y:.74,icon:'rhythm',color:'#c4b8e8',tone:'#f2edfb'},
+    {name:'畫面構圖',x:.34,y:.19,icon:'frame',color:'#a9c8eb',tone:'#ebf3fc'},
+    {name:'故事片段',x:.62,y:.79,icon:'script',color:'#c8d3a6',tone:'#f2f6e8'},
+    {name:'角色',x:.15,y:.53,icon:'eye',color:'#d9b9d5',tone:'#f7edf5'}
+  ];
+  let active = [];
+  let frameId = 0;
+  let version = 0;
+  let elapsed = 0;
+  let previousTime = 0;
+  let nextSpawnAt = 0;
+  let cursor = 0;
+  let absorbed = 0;
+  let bag = [];
+  const clamp = (v,a=0,b=1)=>Math.max(a,Math.min(b,v));
+  function smooth(v){const x=clamp(v);return x*x*(3-2*x);}
+  function bez(a,b,c,d,t){const q=1-t;return q*q*q*a+3*q*q*t*b+3*q*t*t*c+t*t*t*d;}
+  function refillBag() {
+    bag = ideas.map((_, i)=>i);
+    for(let i=bag.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[bag[i],bag[j]]=[bag[j],bag[i]];}
+  }
+  function pickIdea(){if(!bag.length)refillBag();return ideas[bag.pop()];}
+  function dispose(node){node.element.remove();node.drops.forEach(d=>d.remove());}
+  function clearIdeas(){active.forEach(dispose);active=[];}
+  function makeIdea(now){
+    const idea=pickIdea();
+    const rect=field.getBoundingClientRect();
+    if(!rect.width || !rect.height)return;
+    const cx=rect.width*.5,cy=rect.height*.5;
+    const element=document.createElement('div');
+    element.className='fragment' + (Math.random()<.25?' tiny':'');
+    element.innerHTML=`<div class="token" style="--chip-bg:${idea.tone};--chip-color:${idea.color}"><span class="token-icon"><svg viewBox="0 0 24 24" aria-hidden="true">${icons[idea.icon]}</svg></span><span>${idea.name}</span></div>`;
+    field.appendChild(element);
+    const drops=Array.from({length:3},(_,j)=>{
+      const drop=document.createElement('i');
+      drop.className='droplet';
+      const size=[22,13,16][j];
+      drop.style.width=drop.style.height=size+'px';
+      drop.style.setProperty('--drop',idea.color);
+      liquid.appendChild(drop);return drop;
+    });
+    const mobile=rect.width<500;
+    const jitter=mobile?9:17;
+    const x=clamp(idea.x*rect.width+(Math.random()-.5)*jitter*2,mobile?65:84,rect.width-(mobile?65:84));
+    const y=clamp(idea.y*rect.height+(Math.random()-.5)*jitter*1.8,87,rect.height-86);
+    const dx=cx-x,dy=cy-y, norm=Math.hypot(dx,dy)||1;
+    const side=(++cursor%2?1:-1);
+    const normalX=-dy/norm,normalY=dx/norm;
+    const sway=(mobile?18:40)*side;
+    const c1={x:x+dx*.27+normalX*sway,y:y+dy*.24+normalY*sway};
+    const c2={x:x+dx*.79-normalX*sway*.67,y:y+dy*.82-normalY*sway*.67};
+    active.push({element,drops,x,y,c1,c2,cx,cy,born:now,duration:3100+Math.random()*460,side});
+  }
+  function position(node,p){return {x:bez(node.x,node.c1.x,node.c2.x,node.cx,p),y:bez(node.y,node.c1.y,node.c2.y,node.cy,p)};}
+  function transformAt(element,x,y,extra=''){
+    element.style.transform=`translate3d(${x.toFixed(2)}px,${y.toFixed(2)}px,0) translate(-50%,-50%) ${extra}`;
+  }
+  function updateIdea(node,now){
+    const progress=clamp((now-node.born)/node.duration);
+    const appear=smooth(progress/.20);
+    // A brief readable pause before the card begins to curve towards the loader.
+    const travel=smooth((progress-.27)/.69);
+    const melt=smooth((travel-.50)/.39);
+    const opacity=appear*(1-smooth((travel-.60)/.36));
+    const pos=position(node,travel);
+    const stretch=1+Math.sin(Math.PI*travel)*.095;
+    transformAt(node.element,pos.x,pos.y,`rotate(${(node.side*Math.sin(Math.PI*travel)*7).toFixed(2)}deg) scale(${((1-.53*travel)*stretch).toFixed(3)},${((1-.52*travel)/stretch).toFixed(3)})`);
+    node.element.style.opacity=opacity.toFixed(3);
+    node.element.style.filter=`blur(${(melt*7.2).toFixed(2)}px)`;
+    node.element.firstElementChild.style.borderRadius=(12+Math.round(melt*25))+'px';
+    node.drops.forEach((d,j)=>{
+      const q=clamp(travel-j*.07);
+      const xy=position(node,q);
+      const visible=smooth((travel-.43)/.22)*(1-smooth((travel-.84)/.16));
+      const size=(j===0?1:.63)*(0.76+Math.sin(Math.PI*q)*.38);
+      transformAt(d,xy.x,xy.y,`scale(${size.toFixed(3)})`);
+      d.style.opacity=(visible*(j===0?.74:.45)).toFixed(3);
+    });
+    return progress>=1;
+  }
+  function updateDisplay(){
+    stageCount.textContent=`LIVE · ${String(active.length).padStart(2,'0')} FLOATING`;
+    statusText.textContent=absorbed?`已匯聚 ${absorbed} 個靈感，持續推演中…`:'正在接收靈感…';
+    note.innerHTML='緩緩浮現 · 自然匯流<br>每次最多兩個';
+  }
+  function frame(now,run){
+    if(version!==run)return;
+    const delta=previousTime?Math.min(Math.max(now-previousTime,0),48):16;
+    previousTime=now;
+    if(!document.hidden){
+      elapsed+=delta;
+      for(let i=active.length-1;i>=0;i--){
+        if(updateIdea(active[i],elapsed)){
+          dispose(active[i]);active.splice(i,1);absorbed++;
+        }
+      }
+      // Spawn is staggered and rate-limited; never more than two ideas at once.
+      if(elapsed>=nextSpawnAt && active.length<2){
+        makeIdea(elapsed);
+        nextSpawnAt=elapsed+1350+Math.random()*490;
+      }
+      updateDisplay();
+    }
+    frameId=requestAnimationFrame(t=>frame(t,run));
+  }
+  function restart(){
+    if(frameId)cancelAnimationFrame(frameId);
+    const run=++version;
+    clearIdeas();
+    elapsed=0;previousTime=0;nextSpawnAt=190;cursor=0;absorbed=0;
+    refillBag();
+    core.classList.add('ready');
+    liquid.classList.add('active');
+    liquid.classList.remove('done');
+    if(reduced.matches){
+      // Respect reduced motion: stable central curve and a static explanation.
+      stageCount.textContent='INSPIRATION · CONTINUOUS';
+      statusText.textContent='靈感正在持續轉化為故事';
+      note.innerHTML='已使用減少動態效果設定';
+      return;
+    }
+    updateDisplay();
+    frameId=requestAnimationFrame(t=>frame(t,run));
+  }
+  document.getElementById('replay').addEventListener('click',restart);
+  reduced.addEventListener?.('change',restart);
+  window.initMathCurveLoader({root:field});
+  restart();
+})();
+</script>
+</body>
+</html>

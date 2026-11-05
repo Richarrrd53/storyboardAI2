@@ -209,6 +209,7 @@
   // 2. ProjectDeleteQueue — 撤銷刪除佇列與計時管理
   // ══════════════════════════════════════════════════════════════
   const ProjectDeleteQueue = {
+    epoch: 0,
     pending: new Map(), // projectId -> { id, project, deleteTimer, transitionTimer, status }
     recentlyDeleted: new Set(),
     recentlyRestored: new Set(),
@@ -252,6 +253,7 @@
       }
 
       const entry = {
+        epoch: this.epoch,
         id,
         project,
         status: 'pending',
@@ -275,6 +277,7 @@
 
         try {
           const res = await ProjectsApi.deleteProject(id);
+          if (entry.epoch !== this.epoch) return;
           if (res.ok) {
             entry.status = 'committed';
             project.is_deleted = true;
@@ -287,6 +290,7 @@
             console.error('DeleteQueue commit failed:', res.error);
           }
         } catch (err) {
+          if (entry.epoch !== this.epoch) return;
           entry.status = 'failed';
           console.error('DeleteQueue commit error:', err);
         }
@@ -346,6 +350,7 @@
     },
 
     clear() {
+      this.epoch++;
       // 登出或重置時：取消所有計時器，不送出 DELETE
       for (const entry of this.pending.values()) {
         clearTimeout(entry.deleteTimer);
@@ -604,6 +609,7 @@
   const ProjectActions = {
     async deleteProject(p, card, refreshCallback) {
       if (!p) return false;
+      const requestEpoch = ProjectStore.resetEpoch;
       const confirmFn = typeof global !== 'undefined' && typeof global.confirm === 'function' ? global.confirm : async () => true;
       const isConfirmed = await confirmFn(
         '是否刪除此分鏡？',
@@ -612,7 +618,7 @@
         '刪除',
         card
       );
-      if (!isConfirmed) return false;
+      if (!isConfirmed || requestEpoch !== ProjectStore.resetEpoch) return false;
 
       if (card && card.style) {
         card.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
@@ -631,6 +637,7 @@
         },
         onCommit: async () => {
           await ProjectStore.fetchProjects({ force: true });
+          if (requestEpoch !== ProjectStore.resetEpoch) return false;
           toastFn(`分鏡「${p.title}」已移至資源回收桶。`);
           if (typeof refreshCallback === 'function') refreshCallback();
           ProjectStore.notify({ type: 'delete_commit', project: p });
@@ -654,9 +661,10 @@
 
     async restoreProject(p, card, refreshCallback) {
       if (!p) return false;
+      const requestEpoch = ProjectStore.resetEpoch;
       const confirmFn = typeof global !== 'undefined' && typeof global.confirm === 'function' ? global.confirm : async () => true;
       const isConfirmed = await confirmFn('是否還原此分鏡？', '', 'default', '還原', null);
-      if (!isConfirmed) return false;
+      if (!isConfirmed || requestEpoch !== ProjectStore.resetEpoch) return false;
 
       // 樂觀更新
       p.is_deleted = false;
@@ -672,8 +680,10 @@
 
       try {
         const res = await ProjectsApi.restoreProject(p.id);
+        if (requestEpoch !== ProjectStore.resetEpoch) return false;
         if (res.ok) {
           await ProjectStore.fetchProjects({ force: true });
+          if (requestEpoch !== ProjectStore.resetEpoch) return false;
           if (typeof refreshCallback === 'function') refreshCallback();
           ProjectStore.notify({ type: 'restore_commit', project: p });
           return true;
@@ -681,6 +691,7 @@
           throw new Error(res.error || '還原失敗');
         }
       } catch (err) {
+        if (requestEpoch !== ProjectStore.resetEpoch) return false;
         console.error('Failed to restore project on server', err);
         // 失敗回滾
         p.is_deleted = true;
@@ -697,6 +708,7 @@
 
     async renameProject(p, card, refreshCallback) {
       if (!p) return false;
+      const requestEpoch = ProjectStore.resetEpoch;
       const promptFn = typeof global !== 'undefined' && typeof global.prompt === 'function'
         ? global.prompt
         : (msg, def) => def;
@@ -714,6 +726,7 @@
       const oldTitle = p.title;
       try {
         const res = await ProjectsApi.renameProject(p.id, trimmed);
+        if (requestEpoch !== ProjectStore.resetEpoch) return false;
         if (res.ok) {
           p.title = trimmed;
           const toastFn = typeof global !== 'undefined' && typeof global.showSpaToast === 'function'
@@ -721,6 +734,7 @@
             : () => {};
           toastFn(`分鏡已更名為「${trimmed}」。`);
           await ProjectStore.fetchProjects({ force: true });
+          if (requestEpoch !== ProjectStore.resetEpoch) return false;
           if (typeof refreshCallback === 'function') refreshCallback();
           ProjectStore.notify({ type: 'renamed', project: p, oldTitle, newTitle: trimmed });
           return true;
@@ -732,6 +746,7 @@
           return false;
         }
       } catch (err) {
+        if (requestEpoch !== ProjectStore.resetEpoch) return false;
         console.error('Failed to rename project', err);
         if (typeof global !== 'undefined' && typeof global.alert === 'function') {
           global.alert('重新命名失敗，請稍後再試');
@@ -742,6 +757,7 @@
 
     async duplicateProject(p, card, refreshCallback) {
       if (!p) return false;
+      const requestEpoch = ProjectStore.resetEpoch;
       const toastFn = typeof global !== 'undefined' && typeof global.showSpaToast === 'function'
         ? global.showSpaToast
         : () => {};
@@ -749,8 +765,10 @@
 
       try {
         const res = await ProjectsApi.duplicateProject(p.id);
+        if (requestEpoch !== ProjectStore.resetEpoch) return false;
         if (res.ok) {
           await ProjectStore.fetchProjects({ force: true });
+          if (requestEpoch !== ProjectStore.resetEpoch) return false;
           if (typeof refreshCallback === 'function') refreshCallback();
           const newTitle = res.project?.title || (p.title + ' (副本)');
           toastFn(`已成功建立「${newTitle}」！`);
@@ -764,6 +782,7 @@
           return false;
         }
       } catch (err) {
+        if (requestEpoch !== ProjectStore.resetEpoch) return false;
         console.error('Failed to duplicate project', err);
         if (typeof global !== 'undefined' && typeof global.alert === 'function') {
           global.alert('複製分鏡失敗，請稍後再試');
@@ -774,15 +793,18 @@
 
     async exportProject(p) {
       if (!p) return false;
+      const requestEpoch = ProjectStore.resetEpoch;
       const toastFn = typeof global !== 'undefined' && typeof global.showSpaToast === 'function'
         ? global.showSpaToast
         : () => {};
       toastFn(`正在準備匯出分鏡「${p.title}」...`);
       try {
         await ProjectsApi.exportProject(p);
+        if (requestEpoch !== ProjectStore.resetEpoch) return false;
         toastFn(`分鏡「${p.title}」已匯出為 JSON 檔。`);
         return true;
       } catch (err) {
+        if (requestEpoch !== ProjectStore.resetEpoch) return false;
         console.error('Failed to export project', err);
         if (typeof global !== 'undefined' && typeof global.alert === 'function') {
           global.alert('匯出失敗，請稍後再試');
@@ -900,6 +922,7 @@
     global.ProjectStore = ProjectStore;
     global.ProjectDeleteQueue = ProjectDeleteQueue;
     global.ProjectActions = ProjectActions;
+    global.restoreProject = (project, card, refresh) => ProjectActions.restoreProject(project, card, refresh);
   }
 
   if (typeof module !== 'undefined' && module.exports) {

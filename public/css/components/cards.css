@@ -6,7 +6,7 @@
 .card {
   background: var(--color-surface-primary, #ffffff);
   border: 1px solid var(--color-border-default, #e2e8f0);
-  border-radius: var(--radius-md, 16px);
+  border-radius: var(--radius-continuous-md);
   box-shadow: var(--elevation-1, 0 4px 14px rgba(15, 23, 42, 0.04));
   overflow: hidden;
   position: relative;
@@ -64,6 +64,6 @@
   backdrop-filter: var(--surface-floating-blur, blur(16px));
   -webkit-backdrop-filter: var(--surface-floating-blur, blur(16px));
   border: 1px solid rgba(255, 255, 255, 0.8);
-  border-radius: var(--radius-lg, 24px);
+  border-radius: var(--radius-continuous-lg);
   box-shadow: var(--elevation-3, 0 16px 40px rgba(15, 23, 42, 0.12));
 }

@@ -191,7 +191,7 @@ flowchart TB
 | **後端核心** | Node.js + Express 5.x | RESTful API、Vercel Serverless 中介層、支援 100MB 大資料負載 |
 | **資料持久化**| Prisma ORM 7.8 + PostgreSQL (`pg`) | 配合 `@prisma/adapter-pg` 連線池管理，支援 UUID 與 8 碼 ShortId |
 | **身分驗證** | JWT (`jsonwebtoken`) + `bcrypt` | Bearer Token 傳輸、安全性密碼雜湊、過期自動倒退登入與快取重置 |
-| **AI 模型整合**| Google GenAI SDK (`@google/genai`) | `gemini-2.5-flash-lite` (超低延遲)、`gemini-3.5-flash` (劇本拆解)、`gemini-3.1-flash-image` (1K 生圖) |
+| **AI 模型整合**| Google GenAI SDK (`@google/genai`) | `gemini-3.5-flash-lite` (超低延遲)、`gemini-3.8-flash` (劇本拆解)、`gemini-nano-banana-2.1` (1K 生圖) |
 | **影音探索** | YouTube Data API v3 + 多模態分析 | 搜尋 Shorts 數據，多模態剖析前 3 秒爆點鉤子、轉場節奏與分鏡 |
 
 ---
@@ -452,7 +452,7 @@ $$\text{insertDepth} = \text{round}\Big(\text{Height} \times (1 - \text{visibleR
 - **Phase 1: 故事輸入與意圖啟動**：支援長文本，智慧預選合適風格。
 - **Phase 2: 視覺調性與畫幅比例確立**：8 種精選風格，支援 16:9, 9:16, 1:1, 3:2, 2:3。
 - **Phase 3: 爆點 HOOK 模板推薦與注入**：結合前 3 秒留存公式。
-- **Phase 4: 多模態分鏡編排與即時繪製**：由 `gemini-3.5-flash` 拆解劇本，`gemini-3.1-flash-image` 渲染精美 1K 分鏡圖。
+- **Phase 4: 多模態分鏡編排與即時繪製**：由 `gemini-3.8-flash` 拆解劇本，`gemini-nano-banana-2.1` 渲染精美 1K 分鏡圖。
 
 ### 5.4 爆點模板庫與時間軸模組 (Hook Templates & Timeline)
 - 結構化短影音爆款公式，可視化時間軸標記鏡頭節奏，一鍵帶入參數前往生成。
@@ -597,8 +597,8 @@ JWT_SECRET="your-super-secret-jwt-key"
 # Google Cloud / Vertex AI 設定 (生圖與劇本生成)
 GOOGLE_CLOUD_PROJECT_ID="your-gcp-project-id"
 
-# 認證方式 A (本地開發): 指定 GCP 服務帳戶 JSON 金鑰路徑
-GOOGLE_APPLICATION_CREDENTIALS="./application_default_credentials.json"
+# 本機開發：沿用已驗證的 ADC，不需重新登入；也可指定既有認證檔案
+# GOOGLE_APPLICATION_CREDENTIALS="/absolute/path/to/credentials.json"
 
 # 認證方式 B (雲端部屬/Vercel): Base64 編碼的 GCP 服務帳戶 JSON
 # GCP_SERVICE_ACCOUNT_BASE64="eyJrZXlfaWQiOi..."
@@ -606,12 +606,39 @@ GOOGLE_APPLICATION_CREDENTIALS="./application_default_credentials.json"
 # 短影音探索實驗室 (可選)
 YOUTUBE_API_KEY="your-youtube-data-api-key"
 DISCOVERY_SETTINGS_SECRET="your-discovery-secret-32-chars"
+
+# 各用途獨立覆寫；共用設定在 lib/ai/model-config.js
+GEMINI_MODEL_FAST="gemini-3.5-flash-lite"
+GEMINI_MODEL_CREATIVE="gemini-3.8-flash"
+GEMINI_CREATIVE_THINKING_LEVEL="MEDIUM" # LOW / MEDIUM / HIGH；不提供前端模型選項
+GEMINI_CREATIVE_INCLUDE_THOUGHTS="true" # 可獨立關閉摘要，不影響正式 JSON
+# GEMINI_CREATIVE_TIMEOUT_MS="100000" # 可選：整體討論期限；部署時須低於函式執行上限
+GEMINI_MODEL_STORY="gemini-3.8-flash"
+GEMINI_MODEL_IMAGE="gemini-nano-banana-2.1"
+DISCOVERY_GEMINI_MODEL="gemini-3.8-flash"
+GEMINI_MODEL_PREMIUM_STORY="gemini-4-argon" # 僅預留，普通生成不會使用
 ```
 
 > [!IMPORTANT]
-> 若在本地環境執行，請務必確認 `.env` 中的 `GOOGLE_APPLICATION_CREDENTIALS` 檔案路徑正確，否則 Gemini 影像生成與 Vertex AI 調用將無法通過認證。
+> 本機沿用 ADC；若指定 `GOOGLE_APPLICATION_CREDENTIALS`，該路徑優先且必須有效。本機標準 ADC 優先於殘留的 Base64 雲端金鑰；部署時未指定路徑可使用 `GCP_SERVICE_ACCOUNT_BASE64`（只在記憶體中解碼）。不會自動切換到 Developer API。
 
 ---
+
+SDK 使用 `@google/genai` 2.31.0（Node.js ≥20；本專案現有 Prisma 環境使用 Node.js 22.12.0）。Ask Gemini 創作討論／Story／Discovery 預設 MEDIUM thinking；圖片固定 1K，未傳入 sampling 參數。官方參考：[SDK](https://github.com/googleapis/js-genai)、[Gemini 3.8 Flash](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/gemini/3-8-flash)、[Nano Banana 2.1](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/gemini/nano-banana-2-1)。
+
+創作助手保留 `/api/creation/copilot` 的多輪契約，與 `/api/ask-gemini` 的分鏡／圖片契約分開。本機預設總期限 100 秒，單次正常推論與上游重試各最多 60 秒，JSON 修復最多 25 秒；所有呼叫仍受總期限約束，最多兩次模型呼叫。僅對真正的上游 503／504 等待 500ms 後重試一次，或對已收到但不符合契約的 JSON 修復一次，兩者共用恢復次數。上游重試不再套用較短的 JSON 修復期限，至少剩 10 秒才會開始恢復。SDK 額外重試已停用。
+
+SDK 的 `httpOptions.timeout` 也會形成上游 `X-Server-Timeout`。目前 SDK 期限比應用單次期限多留 10 秒，應用自己的 AbortController 與計時器負責真正的截止，避免上游先縮短模型生成時間。完成主動討論後使用僅有 ready 的輸出契約，不再產生問卷結構，並要求設定建議簡潔、避免重抄歷史及已確認限制。
+
+最後整理使用獨立的短指令與固定必填設定欄位，僅保留最新一則助手上下文，完整已選答案、要求與 Brief 仍傳入模型。供應商回傳的無效靈感短詞會被過濾，不會使有效的創作回覆觸發整輪修復。SDK 的 automaticContinuation 預設會自動續寫；此功能明確關閉隱性續寫，遇到 checkpoint 時最多在同一操作內顯式續寫一次，計入兩次模型呼叫與總期限。未完成回覆有獨立錯誤碼，不當作 JSON 格式錯誤重送。
+
+`GEMINI_CREATIVE_TIMEOUT_MS` 可覆寫整體期限（30000–300000 毫秒），不是前端模型選項。未覆寫時，Vercel 維持保守的總期限 55 秒、推論／重試最多 35 秒、修復最多 20 秒。`vercel.json` 未指定 maxDuration，線上期限取決於專案方案與 Fluid Compute 設定；若在 Vercel 使用 100 秒預算，需先確認函式期限大於 100 秒並預留回應時間，同時保留圖片生成所需期限。所有 API 共用 `api/index.js`，本次不修改共用入口的執行上限。參考：[Vercel 函式期限](https://vercel.com/docs/functions/configuring-functions/duration)。
+
+後端會記錄 requestId、executionId（區分同一請求的手動重試）、intent、model、attempt、elapsedMs、stage、timeoutMs、upstreamTimeoutMs、timeoutSource、錯誤分類與可用的用量，不記錄故事、完整回應或憑證。錯誤回應的 `diagnostics` 僅包含執行識別碼、階段、耗時和期限來源，不含模型名稱或故事。成功回應的 `meta` 提供用量、修復次數和摘要筆數供診斷；HTTP status 未由 SDK 提供時為 null。摘要僅取自供應商的 thought parts，不保證每次都有，沒有時維持一般載入狀態。模型或設定不支援時會明確失敗，不自動更換模型。
+
+真實 Vertex 多輪驗證位於 `tests/creative-conversation.live.js`，不包含在一般單元測試中。具備有效 ADC 後，以 PowerShell 執行 `$env:RUN_VERTEX_LIVE='1'; node --test tests/creative-conversation.live.js`，會產生少量付費模型呼叫並輸出每輪診斷；沒有可用認證時明確跳過。
+
+文字分鏡的真實 Structured Output 驗證位於 `tests/storyboard-generation.live.js`，同樣需設定 `RUN_VERTEX_LIVE=1`；只產生文字企劃並驗證鏡頭、角色與時長，不生成圖片或儲存專案。上游 400 會分為 Schema 或一般參數拒絕，後端只記錄安全的原因分類及固定參數路徑，不輸出原始錯誤中的提示詞內容。
 
 ### 8.2 本地端啟動流程
 
@@ -647,7 +674,7 @@ DISCOVERY_SETTINGS_SECRET="your-discovery-secret-32-chars"
 
 1. **靜態檔案與 API 重寫**：專案根目錄已包含 `vercel.json`，負責將靜態資源指向 `public/`，其餘 API 請求轉發至 `server.js`。
 2. **Serverless 相容性中介層**：`server.js` 內建專用中介層，自動解析 `x-matched-path` 與 `x-forwarded-uri`，防止 Vercel 路徑重寫導致 `/api` 前綴遺失。
-3. **無伺服器金鑰解析**：在 Vercel 設定 `GCP_SERVICE_ACCOUNT_BASE64`，伺服器啟動時自動解碼並寫入 `/tmp/gcp-key.json`。
+3. **無伺服器金鑰解析**：在 Vercel 設定 `GCP_SERVICE_ACCOUNT_BASE64`，透過 SDK `googleAuthOptions.credentials` 在記憶體中解碼，不寫入金鑰檔案。
 4. **PostgreSQL 連線池管理**：針對 Serverless 環境，`pg.Pool` 配置了 `idleTimeoutMillis: 10000` 與 `keepAlive: true`，有效預防死連線佔用。
 
 ---

@@ -222,6 +222,7 @@ global.DynamicMaskSystem = global.window.DynamicMaskSystem = {
 };
 
 // Require the modules
+require('../public/js/features/page-asset-loader.js');
 const TemplatesPage = require('../public/js/pages/templates.js');
 const timelineModule = require('../public/js/template-timeline.js');
 

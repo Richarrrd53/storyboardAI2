@@ -144,8 +144,7 @@
   font-weight: var(--font-weight-semibold, 600);
 }
 
-/* ── Sweep Shine on Primary CTA Hover ── */
-.btn-primary::after,
+/* ── Opt-in Sweep Shine ── */
 .btn-shine::after {
   content: '';
   position: absolute;
@@ -164,7 +163,6 @@
   pointer-events: none;
 }
 
-.btn-primary:hover::after,
 .btn-shine:hover::after {
   animation: shineSweepGlobal 0.85s cubic-bezier(0.2, 0.8, 0.2, 1);
 }

@@ -17,6 +17,7 @@
 @import url('./components/mobile-nav.css');
 @import url('./components/option-morph.css');
 @import url('./components/quick-create.css');
+@import url('./components/continuous-corners.css');
 
 * {
     box-sizing: border-box;
@@ -158,16 +159,7 @@ main{
     box-shadow: var(--focus-ring-shadow);
 }
 
-.btn-primary {
-    background: var(--button-primary-bg);
-    color: var(--button-primary-text);
-    box-shadow: var(--elevation-1);
-    z-index: 1;
-}
-
-.btn-primary:hover {
-    box-shadow: var(--button-primary-hover-shadow);
-}
+/* Primary appearance and interaction states come from components/button.css. */
 
 .btn-ghost {
     background: var(--button-ghost-bg);
@@ -215,8 +207,7 @@ main{
     justify-content: center;
 }
 
-/* ✨ 僅在 Primary CTA 與明確指定 .btn-shine 啟用滑過光線掃描特效 (Sweep Shine) */
-.btn-primary::after,
+/* ✨ 僅在明確指定 .btn-shine 啟用滑過光線掃描特效 (Sweep Shine) */
 .btn-shine::after {
     content: '';
     position: absolute;
@@ -235,7 +226,6 @@ main{
     pointer-events: none;
 }
 
-.btn-primary:hover::after,
 .btn-shine:hover::after {
     animation: shineSweepGlobal 0.85s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
@@ -771,7 +761,7 @@ main{
     width: 170px;
     background: var(--color-surface-elevated);
     border: var(--border-width-thin) solid var(--color-border-subtle);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-continuous-md);
     box-shadow: var(--elevation-3);
     padding: var(--space-1);
     display: flex;
@@ -939,7 +929,7 @@ main{
   width: 100% !important;
   position: relative !important;
   z-index: 20 !important;
-  background: var(--off-white, #f8fafc);
+  background: var(--content-header-bg, var(--off-white, #f8fafc));
   box-sizing: border-box !important;
 }
 

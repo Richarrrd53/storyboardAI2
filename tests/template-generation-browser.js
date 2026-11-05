@@ -51,33 +51,31 @@ const server = http.createServer(async (req, res) => {
     assert.match(await page.locator('#template-entry-title').textContent(), /咖啡品牌模板/);
     await page.locator('#story-input').fill('為新咖啡品牌製作廣告');
     await page.locator('#composer-submit-btn').click();
-    // Short screens must expose real scroll interaction, not rely on Playwright auto-scrolling buttons.
+    // The outer workspace owns scrolling; the direction panel grows with content.
     await page.setViewportSize({ width: mobile ? 390 : 1366, height: 600 });
     const panel = page.locator('#phase-panel-2');
-    await panel.scrollIntoViewIfNeeded();
-    assert.equal(await panel.evaluate(el => el.scrollHeight > el.clientHeight), true);
-    await panel.evaluate(el => { el.scrollTop = 0; });
+    const scroller = page.locator('#page-content.spa-gen-wrap');
+    assert.equal(await panel.evaluate(el => el.scrollHeight > el.clientHeight + 2), false);
+    assert.equal(await scroller.evaluate(el => el.scrollHeight > el.clientHeight), true);
+    await scroller.evaluate(el => { el.scrollTop = 0; });
+    await page.locator('.direction-header').scrollIntoViewIfNeeded();
     const header = await page.locator('.direction-header').boundingBox();
-    const x = header.x + header.width - 25, y = header.y + 35;
+    const x = header.x + header.width - 25, y = header.y + Math.min(20, header.height / 2);
     if (mobile) {
       const cdp = await context.newCDPSession(page);
       await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
       for (let step = 1; step <= 6; step++) await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y: y - step * 15 }] });
       await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-      await page.waitForFunction(() => document.getElementById('phase-panel-2').scrollTop > 0);
+      await page.waitForFunction(() => document.getElementById('page-content').scrollTop > 0);
       await cdp.detach();
     } else {
-      await page.mouse.move(x, y); await page.mouse.down(); await page.mouse.move(x, y - 90, { steps: 10 }); await page.mouse.up();
-      assert.equal(await panel.evaluate(el => el.scrollTop > 0), true, 'mouse drag scrolls creative direction');
-      await panel.evaluate(el => { el.scrollTop = 0; });
       await page.mouse.move(x, y); await page.mouse.wheel(0, 300);
-      await page.waitForFunction(() => document.getElementById('phase-panel-2').scrollTop > 0);
+      await page.waitForFunction(() => document.getElementById('page-content').scrollTop > 0);
     }
-    await panel.evaluate(el => { el.scrollTop = el.scrollHeight; });
+    await page.locator('#btn-direction-next').scrollIntoViewIfNeeded();
     const next = await page.locator('#btn-direction-next').boundingBox();
-    assert.ok(next.y >= 0 && next.y + next.height <= 600, 'confirm button stays within short viewport');
-    await page.screenshot({ path: path.resolve(`.codex-backup/ui-validation/direction-scroll-${mobile ? '390' : '1366'}.png`) });
-    console.log(`PASS: ${mobile ? 'native touch' : 'mouse drag and wheel'} scrolling; confirm visible in 600px-high viewport`);
+    assert.ok(next.y >= 0 && next.y + next.height <= 600, 'confirm button stays accessible in short viewport');
+    console.log('PASS: native workspace scrolling; direction has no nested scroller');
     await page.locator('#btn-direction-next').click();
     await page.setViewportSize({ width: mobile ? 390 : 1366, height: 960 });
     await page.locator('[data-template-variable="product"]').fill('晨光咖啡');
@@ -104,8 +102,10 @@ const server = http.createServer(async (req, res) => {
       const download = await downloadPromise; const text = await fs.readFile(await download.path(), 'utf8');
       assert.match(text, /新企劃旁白/); assert.match(text, /coffee scene/);
     }
-    const folder = path.resolve('.codex-backup/ui-validation'); await fs.mkdir(folder, { recursive: true });
-    await page.screenshot({ path: path.join(folder, `generation-results-${mobile ? '390' : '1366'}.png`), fullPage: true });
+    if (process.env.STORYBOARD_QA_OUTPUT) {
+      await fs.mkdir(process.env.STORYBOARD_QA_OUTPUT, { recursive: true });
+      await page.screenshot({ path: path.join(process.env.STORYBOARD_QA_OUTPUT, 'template-result-' + (mobile ? '390' : '1366') + '.png'), fullPage: true });
+    }
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true, 'table scroll must stay inside its container');
     await page.evaluate(() => spaNavigate('dashboard')); await page.evaluate(() => spaNavigate('generate'));
     await page.waitForFunction(() => document.getElementById('result-heading')?.textContent === '分鏡生成完成');

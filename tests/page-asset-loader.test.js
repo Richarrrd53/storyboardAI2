@@ -236,3 +236,121 @@ test('PageAssetLoader: prefetchPage() and prefetchAuthResources()', async () => 
   PageAssetLoader.prefetchAuthResources();
   assert.ok(fetchedUrls.some(u => u.includes('/html/login.html')));
 });
+
+test('session cache clearing preserves loaded CSS/JS and rejects late catalog responses', async () => {
+  const { body, PageAssetLoader } = setupMockEnvironment();
+  await PageAssetLoader.injectCSS('/css/sample.css');
+  await PageAssetLoader.injectScript('/js/sample.js');
+  let release;
+  global.fetch = () => new Promise(resolve => { release = resolve; });
+  const old = PageAssetLoader.fetchTemplates();
+  const rejected = assert.rejects(old, { name: 'AbortError' });
+  PageAssetLoader.clearMemoryCache();
+  release({ ok: true, json: async () => [{ id: 'old-session' }] });
+  await rejected;
+  assert.equal(window.cacheTemplatesList, null);
+  assert.equal(PageAssetLoader.loadedCSS.has('/css/sample.css'), true);
+  assert.equal(PageAssetLoader.loadedScripts.has('/js/sample.js'), true);
+  await PageAssetLoader.injectScript('/js/sample.js');
+  assert.equal(body.children.length, 1);
+  global.fetch = async () => ({ ok: true, json: async () => [{ id: 'new-session' }] });
+  assert.equal((await PageAssetLoader.fetchTemplates())[0].id, 'new-session');
+});
+
+test('aborted catalog consumers cannot poison a shared prefetch or overwrite invalidated data', async () => {
+  const { PageAssetLoader } = setupMockEnvironment();
+  let release;
+  global.fetch = () => new Promise(resolve => { release = resolve; });
+  const prefetch = PageAssetLoader.fetchTemplates();
+  const controller = new AbortController();
+  const consumer = PageAssetLoader.fetchTemplates(controller.signal);
+  controller.abort();
+  await assert.rejects(consumer, { name: 'AbortError' });
+  release({ ok: true, json: async () => [{ id: 'shared' }] });
+  await prefetch;
+  assert.equal(window.cacheTemplatesList[0].id, 'shared');
+  window.cacheTemplatesList = null;
+  const stale = PageAssetLoader.fetchTemplates();
+  const rejected = assert.rejects(stale, { name: 'AbortError' });
+  window.cacheTemplatesList = [{ id: 'replacement' }];
+  release({ ok: true, json: async () => [{ id: 'stale' }] });
+  await rejected;
+  assert.equal(window.cacheTemplatesList[0].id, 'replacement');
+});
+
+test('late HTML responses cannot repopulate a cleared session cache', async () => {
+  const { PageAssetLoader } = setupMockEnvironment();
+  let release;
+  global.fetch = () => new Promise(resolve => { release = resolve; });
+  const old = PageAssetLoader.fetchPageDoc('/html/dashboard.html');
+  const rejected = assert.rejects(old, { name: 'AbortError' });
+  PageAssetLoader.clearMemoryCache();
+  release({ ok: true, text: async () => '<main>stale</main>' });
+  await rejected;
+  assert.equal(window.htmlMemoryCache['/html/dashboard.html'], undefined);
+});
+
+test('concurrent script consumers await real completion and execute dependencies in order', async () => {
+  const { body, PageAssetLoader } = setupMockEnvironment();
+  body.appendChild = script => { body.children.push(script); };
+  const first = PageAssetLoader.injectScript('/js/a.js');
+  const controller = new AbortController();
+  const aborted = PageAssetLoader.injectScript('/js/a.js', controller.signal);
+  let ready = false;
+  const second = PageAssetLoader.injectScripts(['/js/a.js', '/js/b.js']).then(() => { ready = true; });
+  controller.abort();
+  assert.equal(await aborted, false);
+  assert.equal(ready, false);
+  assert.equal(body.children.length, 1);
+  body.children[0].onload(); await first;
+  for (let i = 0; i < 10; i++) await Promise.resolve();
+  assert.equal(body.children.length, 2);
+  assert.equal(ready, false);
+  body.children[1].onload(); await second;
+  assert.equal(ready, true);
+});
+
+function authFixture() {
+  const vm = require('node:vm');
+  const storage = new Map([['spa_auth_token', 'old-token']]);
+  let resets = 0, clears = 0;
+  const window = { CreationController: { reset() { resets++; } },
+    ProjectStore: { reset() {}, invalidateProjectDetail() {}, invalidateProjects() {} },
+    PageAssetLoader: { clearMemoryCache() { clears++; } }, location: {}, spaNavigate: async () => {} };
+  window.parent = window;
+  const context = vm.createContext({ window, document: { getElementById: () => null, body: { classList: { remove() {} } } },
+    localStorage: { getItem: key => storage.get(key) || null, setItem: (key, value) => storage.set(key, value), removeItem: key => storage.delete(key) },
+    fetch: async () => ({ ok: true, json: async () => ({ token: 'new-token' }) }) });
+  vm.runInContext(fs.readFileSync(path.resolve('public/js/features/auth-service.js'), 'utf8'), context);
+  return { window, context, storage, resets: () => resets, clears: () => clears };
+}
+
+test('late session validation cannot log out a newer login and empty social login is rejected', async () => {
+  const f = authFixture();
+  let release;
+  f.context.fetch = url => url === '/api/auth/me' ? new Promise(resolve => { release = resolve; }) : Promise.resolve({ ok: true, json: async () => ({ token: 'new-token' }) });
+  const oldUser = f.window.spaAuth.fetchUser();
+  await f.window.spaAuth.login('creator@example.test', 'password123');
+  release({ ok: false, status: 401 });
+  assert.equal((await oldUser).stale, true);
+  assert.equal(f.storage.get('spa_auth_token'), 'new-token');
+  assert.equal(f.resets(), 1);
+  assert.equal(f.clears(), 1);
+  await assert.rejects(f.window.spaAuth.login());
+});
+
+test('logout invalidates a pending login and registration establishes one clean session', async () => {
+  const f = authFixture();
+  let release;
+  f.context.fetch = url => url === '/api/auth/login' ? new Promise(resolve => { release = resolve; }) : Promise.resolve({ ok: true, json: async () => ({ token: 'registered-token' }) });
+  const pending = f.window.spaAuth.login('creator@example.test', 'password123');
+  const rejected = assert.rejects(pending, /登入已取消/);
+  await f.window.spaAuth.logout();
+  release({ ok: true, json: async () => ({ token: 'late-token' }) });
+  await rejected;
+  assert.equal(f.storage.has('spa_auth_token'), false);
+  await f.window.spaAuth.register('創作者', 'creator@example.test', 'password123');
+  assert.equal(f.storage.get('spa_auth_token'), 'registered-token');
+  assert.equal(f.resets(), 2);
+  assert.equal(f.clears(), 2);
+});

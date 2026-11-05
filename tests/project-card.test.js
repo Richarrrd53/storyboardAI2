@@ -179,3 +179,51 @@ test('Dashboard compact card normalizes metadata tags before its two-tag display
   assert.ok(html.includes('project-tag-pill-more">+1'));
 });
 
+
+function thumbnailFixture(ratio = '9:16') {
+  const vm = require('node:vm'), fs = require('node:fs');
+  const images = [], frames = [], children = [], classes = new Set(['loading', 'project-preview-primary']);
+  const thumb = { isConnected: true, dataset: { src: 'project-id', ratio }, style: { setProperty(key, value) { this[key] = value; } },
+    classList: { contains: key => classes.has(key), add: key => classes.add(key), remove: key => classes.delete(key) },
+    querySelector: selector => selector === '.lazy-thumb' ? children.find(child => child.className?.includes('lazy-thumb')) : null,
+    closest: () => null, appendChild: child => children.push(child) };
+  const root = { contains: node => node === thumb && thumb.isConnected, querySelectorAll: () => classes.has('loading') ? [thumb] : [] };
+  const window = { ProjectCard, AppShell: { isMobileView: () => false } };
+  const context = vm.createContext({ window, requestAnimationFrame: fn => frames.push(fn), Image: class { constructor() { this.style = {}; this.naturalWidth = 360; this.naturalHeight = 640; images.push(this); } } });
+  vm.runInContext(fs.readFileSync(require.resolve('../public/js/components/project-thumbnails.js'), 'utf8'), context);
+  return { window, root, thumb, images, frames, children, classes };
+}
+
+test('project thumbnails deduplicate in-flight loads and retain portrait background and geometry', () => {
+  const f = thumbnailFixture();
+  f.window.lazyLoadProjectThumbs(f.root); f.window.lazyLoadProjectThumbs(f.root);
+  assert.equal(f.images.length, 1);
+  assert.equal(f.images[0].src, '/api/projects/project-id/cover');
+  f.images[0].onload();
+  assert.equal(f.children.length, 2);
+  assert.equal(f.classes.has('has-contain-preview'), true);
+  assert.ok(f.children[1].className.includes('fit-contain'));
+  assert.ok(f.thumb.style['--cover-height']);
+  f.frames.shift()();
+  assert.equal(f.classes.has('loading'), false);
+  f.window.lazyLoadProjectThumbs(f.root);
+  assert.equal(f.images.length, 2, 'only main image and blurred background were constructed');
+});
+
+test('project thumbnail callbacks never insert into detached pages or reveal detached images', () => {
+  const f = thumbnailFixture('16:9');
+  f.window.lazyLoadProjectThumbs(f.root);
+  f.thumb.isConnected = false; f.images[0].onload();
+  assert.equal(f.children.length, 0);
+  f.thumb.isConnected = true; f.window.lazyLoadProjectThumbs(f.root); f.images[1].onload();
+  assert.equal(f.children.length, 1);
+  f.thumb.isConnected = false; f.frames.shift()();
+  assert.equal(f.children[0].style.opacity, '0');
+  assert.equal(f.classes.has('loading'), true);
+});
+
+test('failed thumbnail loads retain fallback content and clear loading state', () => {
+  const f = thumbnailFixture(); f.window.lazyLoadProjectThumbs(f.root); f.images[0].onerror();
+  assert.equal(f.children.length, 0);
+  assert.equal(f.classes.has('loading'), false);
+});

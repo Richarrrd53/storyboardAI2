@@ -232,3 +232,52 @@ test('TransitionLoader: startLoaderTimer() and cleanup() lifecycle', async () =>
   TransitionLoader.cleanup();
   assert.strictEqual(overlay.classList.contains('active'), false);
 });
+
+test('navigation transitions cancel stale mask frames and keep successor loader ownership', async () => {
+  const vm = require('node:vm');
+  const frames = [], masks = { 'black-mask-top': { style: {} }, 'black-mask-bottom': { style: {} } };
+  const content = { isConnected: true, style: { removeProperty(key) { delete this[key]; } } };
+  let hidden = 0, shown = 0;
+  const window = { PageHost: { getContent: () => content }, TransitionLoader: {
+    initDashboardLoader() {}, initTransitionLoader() {}, startLoaderTimer() {},
+    showInnerLoader() { shown++; }, hideInnerLoader() { hidden++; }, cleanup() {}
+  } };
+  const context = vm.createContext({ window, document: { createElement: () => ({}), head: { appendChild() {} }, getElementById: id => masks[id] },
+    performance: { now: () => 0 }, requestAnimationFrame: fn => frames.push(fn), setTimeout, clearTimeout });
+  vm.runInContext(fs.readFileSync(path.resolve('public/js/components/navigation-transition.js'), 'utf8'), context);
+  window.NavigationTransition.initialize();
+  assert.equal(typeof window.spaMaskOpen, 'function');
+  const oldController = new AbortController();
+  const old = window.NavigationTransition.create({ signal: oldController.signal, internal: false });
+  const started = old.start();
+  oldController.abort();
+  const next = window.NavigationTransition.create({ signal: new AbortController().signal, internal: true, fromQC: true });
+  await next.start();
+  const before = hidden;
+  frames.shift()(1000); await started;
+  old.cleanup(); old.cancel();
+  assert.equal(hidden, before, 'stale completion must not hide the successor loader');
+  assert.equal(shown, 1);
+  assert.equal(masks['black-mask-top'].style.pointerEvents, 'none');
+  next.cancel();
+});
+
+test('reduced-motion navigation skips timed masks and releases content input', async () => {
+  const vm = require('node:vm');
+  const masks = { 'black-mask-top': { style: {} }, 'black-mask-bottom': { style: {} } };
+  const content = { isConnected: true, style: { removeProperty(key) { delete this[key]; } } };
+  const window = { matchMedia: () => ({ matches: true }), PageHost: { getContent: () => content }, TransitionLoader: {
+    initDashboardLoader() {}, initTransitionLoader() {}, startLoaderTimer() {}, showInnerLoader() {}, hideInnerLoader() {}, cleanup() {}
+  } };
+  const context = vm.createContext({ window, document: { createElement: () => ({}), head: { appendChild() {} }, getElementById: id => masks[id] },
+    requestAnimationFrame: () => { throw new Error('reduced motion must not wait for mask frames'); }, setTimeout, clearTimeout });
+  vm.runInContext(fs.readFileSync(path.resolve('public/js/components/navigation-transition.js'), 'utf8'), context);
+  for (const internal of [false, true]) {
+    const transition = window.NavigationTransition.create({ signal: new AbortController().signal, internal });
+    await transition.start(); assert.equal(content.inert, true);
+    await transition.complete(); assert.equal(content.inert, false);
+    assert.equal(content.style.opacity, '1');
+    if (!internal) assert.equal(masks['black-mask-top'].style.pointerEvents, 'none');
+    transition.cancel();
+  }
+});

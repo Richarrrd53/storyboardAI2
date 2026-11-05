@@ -34,16 +34,36 @@
 
   let pendingTemplatesPromise = null;
   let cacheTemplatesList = null;
-  const cacheProjectDetails = {};
+  let cacheEpoch = 0;
+  let templateEpoch = 0;
+  let cacheController = new AbortController();
+  const pendingScripts = new Map();
+  const pendingCSS = new Map();
+  const pendingDocs = new Map();
+  // Legacy readers/writers share this exact value; invalidation also retires pending requests.
+  Object.defineProperty(root, 'cacheTemplatesList', {
+    configurable: true,
+    get: () => cacheTemplatesList,
+    set(value) { cacheTemplatesList = value; templateEpoch++; pendingTemplatesPromise = null; }
+  });
+
+  function abortError() { return new DOMException('Navigation aborted', 'AbortError'); }
+  function waitFor(promise, signal) {
+    if (!signal) return promise;
+    if (signal.aborted) return Promise.reject(abortError());
+    return new Promise((resolve, reject) => {
+      const abort = () => reject(abortError());
+      signal.addEventListener('abort', abort, { once: true });
+      promise.then(resolve, reject).finally(() => signal.removeEventListener('abort', abort));
+    });
+  }
 
   function injectCSS(href) {
-    return new Promise((resolve) => {
-      const origin = (typeof window !== 'undefined' && window.location?.origin) ? window.location.origin : 'http://localhost';
-      const fullUrl = new URL(href, origin).pathname;
-      if (loadedCSS.has(fullUrl)) {
-        resolve();
-        return;
-      }
+    const origin = root.location?.origin || 'http://localhost';
+    const fullUrl = new URL(href, origin).pathname;
+    if (loadedCSS.has(fullUrl)) return Promise.resolve();
+    if (pendingCSS.has(fullUrl)) return pendingCSS.get(fullUrl);
+    const promise = new Promise((resolve) => {
       const link = document.createElement('link');
       link.rel = 'stylesheet';
       link.href = href;
@@ -58,6 +78,9 @@
       };
       document.head.appendChild(link);
     });
+    pendingCSS.set(fullUrl, promise);
+    promise.finally(() => pendingCSS.delete(fullUrl));
+    return promise;
   }
 
   function removePageCSS(nextCSS = []) {
@@ -73,117 +96,46 @@
   }
 
   function injectScript(src, signal) {
-    return new Promise((resolve) => {
-      if (signal?.aborted) {
-        resolve(false);
-        return;
-      }
-
-      const base = (typeof window !== 'undefined' && window.location?.href) ? window.location.href : 'http://localhost/';
-      const pathname = new URL(src, base).pathname;
-
-      if (loadedScripts.has(pathname)) {
-        resolve(true);
-        return;
-      }
-
-      const existing = document.querySelector(`script[data-spa-script][data-src="${pathname}"]`);
-      if (existing) {
-        loadedScripts.add(pathname);
-        resolve(true);
-        return;
-      }
-
-      const s = document.createElement('script');
-      s.dataset.spaScript = '1';
-      s.dataset.src = pathname;
-
-      if (src.includes('landing-animation.js')) {
-        s.type = 'module';
-      }
-
-      s.src = src;
-
-      const cleanup = () => {
-        s.onload = null;
-        s.onerror = null;
-      };
-
-      s.onload = () => {
-        cleanup();
-        if (!signal?.aborted) {
-          loadedScripts.add(pathname);
-        }
-        resolve(true);
-      };
-
-      s.onerror = () => {
-        cleanup();
-        resolve(false);
-      };
-
-      document.body.appendChild(s);
+    if (signal?.aborted) return Promise.resolve(false);
+    const base = root.location?.href || 'http://localhost/';
+    const pathname = new URL(src, base).pathname;
+    if (loadedScripts.has(pathname)) return Promise.resolve(true);
+    if (!pendingScripts.has(pathname)) {
+      const promise = new Promise(resolve => {
+        const script = document.createElement('script');
+        script.dataset.spaScript = '1';
+        script.dataset.src = pathname;
+        script.async = false;
+        if (src.includes('landing-animation.js')) script.type = 'module';
+        script.src = src;
+        const finish = loaded => {
+          script.onload = null;
+          script.onerror = null;
+          if (loaded) loadedScripts.add(pathname);
+          else script.remove();
+          resolve(loaded);
+        };
+        script.onload = () => finish(true);
+        script.onerror = () => finish(false);
+        document.body.appendChild(script);
+      });
+      pendingScripts.set(pathname, promise);
+      promise.finally(() => pendingScripts.delete(pathname));
+    }
+    return waitFor(pendingScripts.get(pathname), signal).catch(error => {
+      if (error.name === 'AbortError') return false;
+      throw error;
     });
   }
 
-  function injectScripts(scripts, signal) {
-    if (!scripts || scripts.length === 0) return Promise.resolve([]);
-    const promises = scripts.map(src => {
-      return new Promise((resolve) => {
-        if (signal?.aborted) {
-          resolve(false);
-          return;
-        }
-
-        const base = (typeof window !== 'undefined' && window.location?.href) ? window.location.href : 'http://localhost/';
-        const pathname = new URL(src, base).pathname;
-
-        if (loadedScripts.has(pathname)) {
-          resolve(true);
-          return;
-        }
-
-        const existing = document.querySelector(`script[data-spa-script][data-src="${pathname}"]`);
-        if (existing) {
-          loadedScripts.add(pathname);
-          resolve(true);
-          return;
-        }
-
-        const s = document.createElement('script');
-        s.dataset.spaScript = '1';
-        s.dataset.src = pathname;
-
-        if (src.includes('landing-animation.js')) {
-          s.type = 'module';
-        } else {
-          s.async = false;
-        }
-
-        s.src = src;
-
-        const cleanup = () => {
-          s.onload = null;
-          s.onerror = null;
-        };
-
-        s.onload = () => {
-          cleanup();
-          if (!signal?.aborted) {
-            loadedScripts.add(pathname);
-          }
-          resolve(true);
-        };
-
-        s.onerror = () => {
-          cleanup();
-          resolve(false);
-        };
-
-        document.body.appendChild(s);
-      });
-    });
-    return Promise.all(promises);
+  async function injectScripts(scripts = [], signal) {
+    const results = [];
+    for (const src of scripts) {
+      const loaded = await injectScript(src, signal);
+      results.push(loaded);
+      if (!loaded) break;
+    }
+    return results;
   }
 
   function removePageScripts() {
@@ -191,49 +143,49 @@
   }
 
   async function fetchPageDoc(url, signal) {
-    if (root.htmlMemoryCache && root.htmlMemoryCache[url]) {
-      return root.htmlMemoryCache[url];
+    if (signal?.aborted) throw abortError();
+    if (root.htmlMemoryCache[url]) return root.htmlMemoryCache[url];
+    if (!pendingDocs.has(url)) {
+      const epoch = cacheEpoch;
+      const promise = (async () => {
+        const res = await fetch(url + '?v=' + Date.now(), { signal: cacheController.signal });
+        if (!res.ok) throw new Error(`Page request failed: ${res.status}`);
+        const html = await res.text();
+        if (epoch !== cacheEpoch) throw abortError();
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        root.htmlMemoryCache[url] = doc;
+        return doc;
+      })();
+      pendingDocs.set(url, promise);
+      promise.then(() => { if (pendingDocs.get(url) === promise) pendingDocs.delete(url); }, () => { if (pendingDocs.get(url) === promise) pendingDocs.delete(url); });
     }
-    const res = await fetch(url + '?v=' + Date.now(), { signal });
-    const html = await res.text();
-    const doc = new DOMParser().parseFromString(html, 'text/html');
-    if (root.htmlMemoryCache) {
-      root.htmlMemoryCache[url] = doc;
-    }
-    return doc;
+    return waitFor(pendingDocs.get(url), signal);
   }
 
   async function fetchTemplates(signal) {
-    if (cacheTemplatesList) return cacheTemplatesList;
-    if (pendingTemplatesPromise) return pendingTemplatesPromise;
-
-    pendingTemplatesPromise = (async () => {
-      try {
-        const res = await fetch('/api/get-templates', { signal });
-        if (res.ok) {
-          const templates = await res.json();
-          cacheTemplatesList = templates;
-          root.cacheTemplatesList = templates;
-          return templates;
-        }
-        return [];
-      } catch (e) {
-        return [];
-      } finally {
-        pendingTemplatesPromise = null;
-      }
-    })();
-
-    return pendingTemplatesPromise;
+    if (signal?.aborted) throw abortError();
+    if (Array.isArray(cacheTemplatesList)) return cacheTemplatesList;
+    if (!pendingTemplatesPromise) {
+      const epoch = cacheEpoch;
+      const revision = templateEpoch;
+      const promise = (async () => {
+        const res = await fetch('/api/get-templates', { signal: cacheController.signal });
+        if (!res.ok) throw new Error('Catalog request failed');
+        const templates = await res.json();
+        if (epoch !== cacheEpoch || revision !== templateEpoch) throw abortError();
+        if (!Array.isArray(templates)) throw new Error('Invalid catalog response');
+        cacheTemplatesList = templates;
+        return templates;
+      })();
+      pendingTemplatesPromise = promise;
+      const done = () => { if (pendingTemplatesPromise === promise) pendingTemplatesPromise = null; };
+      promise.then(done, done);
+    }
+    return waitFor(pendingTemplatesPromise, signal);
   }
 
-  async function fetchProjectDetail(projectId, signal) {
-    if (root.ProjectStore && typeof root.ProjectStore.fetchProjectDetail === 'function') {
-      const p = await root.ProjectStore.fetchProjectDetail(projectId, { signal });
-      if (p) cacheProjectDetails[projectId] = p;
-      return p;
-    }
-    return null;
+  function fetchProjectDetail(projectId, signal) {
+    return root.ProjectStore.fetchProjectDetail(projectId, { signal });
   }
 
   async function prefetchPage(page, opts = {}) {
@@ -275,10 +227,15 @@
   }
 
   function clearMemoryCache() {
+    cacheEpoch++;
+    templateEpoch++;
+    cacheController.abort();
+    cacheController = new AbortController();
     root.htmlMemoryCache = {};
     cacheTemplatesList = null;
-    loadedCSS.clear();
-    loadedScripts.clear();
+    pendingTemplatesPromise = null;
+    pendingDocs.clear();
+    // CSS/JS registrations survive session cache invalidation.
   }
 
   const PageAssetLoader = {

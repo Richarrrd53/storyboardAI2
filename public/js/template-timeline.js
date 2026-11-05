@@ -1947,20 +1947,9 @@ window.playTemplateSegment = function(seconds) {
 window.triggerTemplateDetail = async function(templateId) {
   if (window.templatePageNavigation) return window.templatePageNavigation.preview(templateId);
   if (window.spaNavigate) return window.spaNavigate('template', { templateId });
-  let templates = [];
-  if (window.cacheTemplatesList) {
-    templates = window.cacheTemplatesList;
-  } else {
-    try {
-      const res = await fetch('/api/get-templates');
-      if (res.ok) {
-        templates = await res.json();
-        window.cacheTemplatesList = templates;
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  }
+  let templates;
+  try { templates = await window.PageAssetLoader.fetchTemplates(); }
+  catch (error) { console.error(error); return; }
 
   const t = templates.find(x => x.id === templateId);
   if (t) {

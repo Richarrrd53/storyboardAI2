@@ -425,6 +425,8 @@
 
   // ── Expand & Open UI State ──
   function open() {
+    if (root.CreationController?.workState().hasWork) return root.CreationController.resumeWorkspace();
+    if (root.CreationController?.workState().task.status === 'completed') root.CreationController.newCreation({ preserveSurface: true });
     ensureDOM();
     mountCapsule();
     bindEvents();
@@ -459,9 +461,7 @@
 
     // Populate draft story first so measurement can immediately inspect true content
     if (qcInput) {
-      if (root.CreationSessionStore && root.CreationSessionStore.draft && root.CreationSessionStore.draft.story) {
-        qcInput.value = root.CreationSessionStore.draft.story;
-      }
+      qcInput.value = root.CreationSessionStore?.draft?.story || '';
       if (sendBtn) {
         const hasVal = !!qcInput.value.trim();
         sendBtn.disabled = !hasVal;
@@ -541,6 +541,7 @@
       qcInput.blur();
       if (root.CreationSessionStore && root.CreationSessionStore.draft && !force) {
         root.CreationSessionStore.draft.story = qcInput.value;
+      updateProgress();
       }
       qcInput.style.removeProperty('height');
       qcInput.style.removeProperty('overflow-y');
@@ -697,6 +698,7 @@
 
   // ── Route & State Synchronization ──
   function updateLayerState(page) {
+    updateProgress();
     const isDashboard = isDashboardRoute(page);
 
     if (!isDashboard) {
@@ -773,84 +775,22 @@
   }
 
   // ── Generation Progress Presentation ──
-  function updateProgress(pct, isGenerating) {
-    const gct = getTrigger();
-    const gctProgressFill = document.getElementById('gct-progress-fill');
-    const gctText = document.getElementById('gct-text');
-
-    if (gct) {
-      if (isGenerating) {
-        gct.classList.add('is-generating');
-        if (gctProgressFill) gctProgressFill.style.width = Math.min(100, Math.max(0, pct)) + '%';
-        if (gctText) gctText.textContent = `✦ 正在規劃… ${Math.round(pct)}%`;
-      } else {
-        gct.classList.remove('is-generating');
-        if (gctProgressFill) gctProgressFill.style.width = '0%';
-        if (pct >= 100) {
-          if (gctText) gctText.textContent = '分鏡已完成';
-          triggerPulse();
-        } else {
-          const draftStory = root.CreationSessionStore?.draft?.story || '';
-          if (draftStory.trim().length > 0) {
-            if (gctText) gctText.textContent = '繼續創作';
-          } else {
-            if (gctText) gctText.textContent = '新增分鏡';
-          }
-        }
-      }
+  function updateProgress(pct = 0, isGenerating = false) {
+    const work = root.CreationController?.workState();
+    const label = work?.label || (isGenerating ? `正在規劃… ${Math.round(pct)}%` : pct >= 100 ? '分鏡已完成' : '開始創作');
+    const busy = work ? work.task.status === 'generating' : isGenerating;
+    const progress = work?.task.progress.pct ?? pct;
+    for (const id of ['gct-text', 'ai-pill-text', 'mob-circle-text', 'mob-pill-text']) {
+      const node = document.getElementById(id);
+      if (node) node.textContent = label;
     }
-
-    const pillBtn = document.getElementById('ai-pill-btn');
-    const progressFill = document.getElementById('ai-pill-progress-fill');
-    const pillText = document.getElementById('ai-pill-text');
-
-    if (pillBtn) {
-      if (isGenerating) {
-        pillBtn.classList.add('is-generating');
-        if (progressFill) progressFill.style.width = Math.min(100, Math.max(0, pct)) + '%';
-        if (pillText) pillText.textContent = `✦ 正在規劃… ${Math.round(pct)}%`;
-      } else {
-        pillBtn.classList.remove('is-generating');
-        if (progressFill) progressFill.style.width = '0%';
-        if (pct >= 100) {
-          if (pillText) pillText.textContent = '✦ 分鏡已完成';
-        } else {
-          const draftStory = root.CreationSessionStore?.draft?.story || '';
-          if (draftStory.trim().length > 0) {
-            if (pillText) pillText.textContent = '✦ 繼續創作';
-          } else {
-            if (pillText) pillText.textContent = '✦ AI 創作';
-          }
-        }
-      }
+    for (const id of ['global-create-trigger', 'ai-pill-btn', 'mob-nav-generate']) {
+      const node = document.getElementById(id);
+      if (node) { node.classList[busy ? 'add' : 'remove']('is-generating'); node.setAttribute('aria-label', label); }
     }
-
-    const mobCircle = getCapsule() || document.getElementById('mob-nav-circle-wrap') || document.getElementById('mob-nav-capsule-wrap');
-    const mobProgressFill = document.getElementById('gct-progress-fill') || document.getElementById('mob-circle-progress-fill') || document.getElementById('mob-pill-progress-fill');
-    const mobCircleSpark = mobCircle ? mobCircle.querySelector('.mob-circle-spark') : null;
-    const mobCircleText = document.getElementById('mob-circle-text') || document.getElementById('mob-pill-text');
-    const mobItem = document.getElementById('mob-nav-generate');
-
-    if (mobCircle) {
-      if (isGenerating) {
-        mobCircle.classList.add('is-generating');
-        if (mobItem) mobItem.classList.add('is-generating');
-        if (mobProgressFill) mobProgressFill.style.width = Math.min(100, Math.max(0, pct)) + '%';
-        if (mobCircleSpark) mobCircleSpark.style.display = 'none';
-        if (mobCircleText) {
-          mobCircleText.style.display = 'inline-block';
-          mobCircleText.textContent = `${Math.round(pct)}%`;
-        }
-      } else {
-        mobCircle.classList.remove('is-generating');
-        if (mobItem) mobItem.classList.remove('is-generating');
-        if (mobProgressFill) mobProgressFill.style.width = '0%';
-        if (mobCircleSpark) mobCircleSpark.style.display = '';
-        if (mobCircleText) {
-          mobCircleText.style.display = 'none';
-          mobCircleText.textContent = '';
-        }
-      }
+    for (const id of ['gct-progress-fill', 'ai-pill-progress-fill', 'mob-circle-progress-fill']) {
+      const node = document.getElementById(id);
+      if (node) node.style.width = (busy ? Math.min(100, Math.max(0, progress || 0)) : 0) + '%';
     }
   }
 
@@ -994,6 +934,7 @@
     }
     if (root.CreationSessionStore && root.CreationSessionStore.draft) {
       root.CreationSessionStore.draft.story = qcInput.value;
+      updateProgress();
     }
     autoGrow();
   }
@@ -1203,6 +1144,7 @@
     mountCapsule();
     bindEvents();
     isMounted = true;
+    updateProgress();
     return {
       unmount: () => destroy()
     };

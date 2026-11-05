@@ -55,7 +55,7 @@
     const shots = task.result.generatedShotData;
     const failed = task.result.failedShotIndexes || [];
     const save = task.save || { status: task.projectId ? 'saved' : 'local' };
-    $('result-heading').textContent = failed.length ? `腳本完成，${failed.length} 張圖片待重試` : '分鏡生成完成';
+    $('result-heading').textContent = failed.length ? `圖片尚未完成，${failed.length} 張待重試` : '分鏡生成完成';
     $('result-save-status').textContent = save.status === 'saved' ? '已儲存至專案，可隨時回來編輯。' : save.status === 'saving' ? '正在儲存分鏡…' : save.error || '分鏡保留在目前頁面，尚未儲存至專案。';
     $('result-save-status').dataset.status = save.status;
     $('btn-retry-save').hidden = save.status === 'saved' || save.status === 'saving';
@@ -67,8 +67,9 @@
     $('btn-retry-failed-images').textContent = `重試失敗圖片（${failed.length}）`;
     $('btn-retry-failed-images').onclick = () => { root.GenerationTask.retryFailedImages(); root.switchPhase(4, false); };
     $('btn-export-result-csv').onclick = () => exportCSV(task);
-    $('result-meta-info').textContent = `${shots.length} 個鏡頭 · 圖片 ${shots.length - failed.length}/${shots.length} 完成 · ${task.input.style.name} · ${task.input.ratio}`;
-    $('storyboard-grid').innerHTML = shots.map(shot => `<article class="shot-card"><div class="shot-card-thumb">${shot.payload.imageStatus === 'succeeded' ? `<img src="${escape(shot.payload.image)}" alt="鏡頭 ${shot.order}：${escape(shot.title)}">` : '<div class="generation-image-failure"><strong>圖片尚未完成</strong><span>腳本已保留，可重試圖片生成。</span></div>'}<span class="shot-num-badge">#${shot.order}</span></div><div class="shot-card-meta"><div class="shot-title">${escape(shot.title)}</div><div class="shot-cam">${escape(shot.camera)} · ${escape(shot.duration)}</div><details><summary>查看分鏡資料</summary><p>${escape(shot.payload.dialogue || '未提供對白')}</p><p>情緒：${escape(shot.payload.emotion || '未提供')}</p><p>敘事目的：${escape(shot.payload.purpose || '未提供')}</p><p class="result-shot-prompt">${escape(shot.payload.finalPrompt)}</p></details></div></article>`).join('');
+    $('result-meta-info').textContent = `${shots.length} 個鏡頭 / 圖片 ${shots.length - failed.length}/${shots.length} 完成 / ${task.input.style.name} / ${task.input.ratio}`;
+    $('storyboard-grid').innerHTML = shots.map(shot => `<article class="shot-card"><div class="shot-card-thumb">${shot.payload.imageStatus === 'succeeded' ? `<img src="${escape(shot.payload.image)}" alt="鏡頭 ${shot.order}：${escape(shot.title)}">` : '<div class="generation-image-failure"><strong>圖片尚未完成</strong><span>腳本已保留，可重試圖片生成。</span></div>'}<span class="shot-num-badge">#${shot.order}</span></div><div class="shot-card-meta"><div class="shot-title">${escape(shot.title)}</div><div class="shot-cam">${escape(shot.camera)} · ${escape(shot.duration)}</div><details><summary>查看分鏡資料</summary><p>${escape(shot.payload.dialogue || '未提供對白')}</p><p>情緒：${escape(shot.payload.emotion || '未提供')}</p><p>敘事目的：${escape(shot.payload.purpose || '未提供')}</p><p class="result-shot-prompt">${escape(shot.payload.finalPrompt)}</p></details>${shot.payload.imageStatus === 'failed' ? `<button type="button" class="btn btn-outline btn-sm" data-retry-shot="${shot.order - 1}">重試此鏡圖片</button>` : ''}</div></article>`).join('');
+    document.querySelectorAll('[data-retry-shot]').forEach(button => { button.onclick = () => { root.GenerationTask.retryFailedImages(Number(button.dataset.retryShot)); root.switchPhase(4, false); }; });
     $('generated-storyboard-body').innerHTML = shots.map(shot => `<tr><td>${shot.order}</td><td><strong>${escape(shot.title)}</strong><p>${escape(typeof shot.payload.dialogue === 'string' ? shot.payload.dialogue : JSON.stringify(shot.payload.dialogue))}</p><details><summary>製作提示詞</summary><p>${escape(shot.payload.finalPrompt)}</p></details></td><td>${escape(shot.camera)}<small>${escape(shot.payload.angle)}</small></td><td>${escape(shot.duration)}</td><td>${escape(shot.payload.emotion)}<small>${escape(shot.payload.purpose)}</small></td><td>${shot.payload.imageStatus === 'succeeded' ? '已完成' : '待重試'}</td></tr>`).join('');
     document.querySelectorAll('[data-result-view]').forEach(button => {
       button.onclick = () => {

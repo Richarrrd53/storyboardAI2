@@ -82,6 +82,7 @@
       if (options.signal?.aborted) return null;
       let animId = null, stopped = false;
       const scope = options.root || document;
+      const compact = options.compact === true;
       const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
       const loaders = [];
@@ -217,7 +218,7 @@
                   node.setAttribute('r', particle.radius.toFixed(2));
                   node.setAttribute('opacity', particle.opacity.toFixed(3));
               });
-              if (!reducedMotion) updateSuckedAssets(loader);
+              if (!reducedMotion && !compact) updateSuckedAssets(loader);
           });
           
           if (!reducedMotion && !document.hidden) animId = requestAnimationFrame(render);
