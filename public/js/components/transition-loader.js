@@ -34,13 +34,16 @@
   /**
    * Pure mathematical rose curve particle & SVG path animation engine
    */
-  function setupRoseAnimation(group, path, particleCount = 45) {
+  function setupRoseAnimation(group, path, particleCount = 45, depth = null) {
     if (!group || !path) return null;
     const SVG_NS = 'http://www.w3.org/2000/svg';
     const trailSpan = 0.32;
     const durationMs = 5400;
     const rotationDurationMs = 28000;
-    const pulseDurationMs = 4600;
+    // 50 BPM: one gentle pulse per 1.2s, within the 40–60 BPM sleeping
+    // range described by Sleep Foundation (animation reference, not a sensor).
+    const pulseDurationMs = depth ? 1200 : 4600;
+    const handoffMs = 480;
     const strokeWidth = 4.5;
     const roseA = 9.2;
     const roseABoost = 0.6;
@@ -60,6 +63,89 @@
       return circle;
     });
 
+    const frontParticles = depth ? particles.map(() => {
+      const circle = document.createElementNS(SVG_NS, 'circle');
+      circle.setAttribute('fill', 'currentColor');
+      depth.group.appendChild(circle);
+      return circle;
+    }) : [];
+
+    function project(pt) {
+      // Orthographic projection preserves five equally long petals. Depth
+      // controls occlusion only, without stretching the near-side petals.
+      return {
+        x: pt.x,
+        y: pt.y,
+        z: pt.z,
+        perspective: 1
+      };
+    }
+
+    function paintDepth(detailScale, progress, animateParticles) {
+      const lapSide = lap => ((lap % 2) + 2) % 2 === 0 ? 1 : -1;
+      const smooth = value => {
+        const t = Math.max(0, Math.min(1, value));
+        return t * t * (3 - 2 * t);
+      };
+      const halfWindow = handoffMs / durationMs / 2;
+      const seam = Math.round(progress);
+      const distance = progress - seam;
+      const trackVisibility = seam > 0 && Math.abs(distance) < halfWindow
+        ? smooth(Math.abs(distance) / halfWindow) : 1;
+      const trackSide = lapSide(Math.floor(progress));
+      const paths = ['', ''];
+      let previous = null;
+      for (let i = 0; i <= 360; i++) {
+        const p = project(point(i / 360, detailScale));
+        p.z *= trackSide;
+        const side = p.z >= 0 ? 1 : 0;
+        const command = `${p.x.toFixed(2)} ${p.y.toFixed(2)}`;
+        if (!previous) paths[side] += `M ${command} `;
+        else if ((previous.z >= 0 ? 1 : 0) === side) paths[side] += `L ${command} `;
+        else {
+          const mix = previous.z / (previous.z - p.z);
+          const cross = `${(previous.x + (p.x - previous.x) * mix).toFixed(2)} ${(previous.y + (p.y - previous.y) * mix).toFixed(2)}`;
+          paths[1 - side] += `L ${cross} `;
+          paths[side] += `M ${cross} L ${command} `;
+        }
+        previous = p;
+      }
+      // A complete rear track fills the area vacated as the near track eases
+      // behind the cover, then comes forward with the opposite lap ordering.
+      path.setAttribute('d', buildPath(detailScale, 360));
+      depth.path.setAttribute('d', paths[1]);
+      path.setAttribute('stroke-width', String(strokeWidth));
+      depth.path.setAttribute('stroke-width', String(strokeWidth));
+      path.setAttribute('opacity', '0.18');
+      depth.path.setAttribute('opacity', String(0.18 * trackVisibility));
+      // Remove the rear stroke wherever the front stroke is drawn, so the
+      // same translucent white never accumulates into brighter intersections.
+      if (depth.maskPath) {
+        depth.maskPath.setAttribute('d', paths[1]);
+        depth.maskPath.setAttribute('stroke-width', String(strokeWidth));
+        // Alpha compensation keeps intersections at exactly the same track
+        // opacity throughout the handoff, rather than double-painting them.
+        depth.maskPath.setAttribute('opacity', String(trackVisibility * 0.82 / (1 - 0.18 * trackVisibility)));
+      }
+      particles.forEach((node, index) => {
+        const particle = getParticle(index, progress, detailScale);
+        const p = project(particle);
+        // Each tip-to-tip side has one depth sign; the next side has the
+        // opposite sign. Every trail particle crosses the tip independently.
+        const particleProgress = progress - index / (particleCount - 1) * trailSpan;
+        const z = p.z * lapSide(Math.floor(particleProgress));
+        const nearWeight = smooth((z + 4) / 8);
+        const particleVisibility = animateParticles ? 1 : 0;
+        [node, frontParticles[index]].forEach((circle, side) => {
+          circle.setAttribute('cx', p.x.toFixed(2));
+          circle.setAttribute('cy', p.y.toFixed(2));
+          circle.setAttribute('r', (particle.radius * p.perspective).toFixed(2));
+          const layerWeight = side ? nearWeight : (1 - nearWeight) * 0.45;
+          circle.setAttribute('opacity', (particle.opacity * layerWeight * particleVisibility).toFixed(3));
+        });
+      });
+    }
+
     function normalizeProgress(progress) {
       return ((progress % 1) + 1) % 1;
     }
@@ -67,6 +153,7 @@
     function getDetailScale(time) {
       const pulseProgress = (time % pulseDurationMs) / pulseDurationMs;
       const pulseAngle = pulseProgress * Math.PI * 2;
+      if (depth) return 0.86 + 0.14 * (0.5 - 0.5 * Math.cos(pulseAngle));
       return 0.52 + ((Math.sin(pulseAngle + 0.55) + 1) / 2) * 0.48;
     }
 
@@ -75,12 +162,18 @@
     }
 
     function point(progress, detailScale) {
-      const t = progress * Math.PI * 2;
+      // An odd-petal rose closes after PI. Drawing the second half with a
+      // different depth would duplicate all five petals into extra orbit rails.
+      const t = progress * Math.PI * (depth ? 1 : 2);
       const a = roseA + detailScale * roseABoost;
-      const r = a * (roseBreathBase + detailScale * roseBreathBoost) * Math.cos(roseK * t);
+      const amplitude = a * (roseBreathBase + detailScale * roseBreathBoost);
+      const r = amplitude * Math.cos(roseK * t);
       return {
         x: 50 + Math.cos(t) * r * roseScale,
         y: 50 + Math.sin(t) * r * roseScale,
+        // One sign per tip-to-tip side. Five sides means the next complete
+        // lap naturally reverses their near/far order without rotating petals.
+        z: depth ? amplitude * Math.sin(roseK * t) * roseScale * 0.35 : 0,
       };
     }
 
@@ -98,6 +191,7 @@
       return {
         x: pt.x,
         y: pt.y,
+        z: pt.z,
         radius: 0.6 + fade * 2.2,
         opacity: 0.04 + fade * 0.96,
       };
@@ -110,6 +204,12 @@
       const time = now - startedAt;
       const progress = (time % durationMs) / durationMs;
       const detailScale = getDetailScale(time);
+
+      if (depth) {
+        paintDepth(detailScale, time / durationMs, true);
+        animId = requestAnimationFrame(render);
+        return;
+      }
 
       group.setAttribute('transform', `rotate(${getRotation(time)} 50 50)`);
       path.setAttribute('d', buildPath(detailScale));
@@ -124,6 +224,10 @@
 
       animId = requestAnimationFrame(render);
     }
+
+    // Paint a static curve for reduced-motion users before animation starts.
+    path.setAttribute('d', buildPath(getDetailScale(0)));
+    if (depth) paintDepth(getDetailScale(0), 0, false);
 
     return {
       start() {

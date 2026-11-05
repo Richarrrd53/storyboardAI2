@@ -1,0 +1,2625 @@
+<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>??????????</title><style>/* ============================================================
+   STORYBOARD AI DESIGN SYSTEM v3.5
+   Component: Project Folder Card (Storyboard Production Folder)
+   File: public/css/components/project-card.css
+   Spec: Project Folder Card 修正實作計畫 v0.2
+   ============================================================ */
+
+:root {
+  --surface-folder: var(--color-surface-secondary, #F8F9FB);
+  --surface-folder-highlight: #FFFFFF;
+  --surface-folder-border: var(--color-border-subtle, rgba(203, 213, 225, 0.85));
+  --surface-meta: var(--color-surface-tertiary, #F1F5F9);
+  --folder-text-primary: var(--color-text-primary, #0F172A);
+  --folder-text-secondary: var(--color-text-secondary, #64748B);
+  --folder-shadow-default: 0 4px 16px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.03);
+  --folder-shadow-hover: 0 12px 28px rgba(15, 23, 42, 0.09), 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+/* ── 0. Base Container (.project-folder-card) ── */
+.project-card.project-folder-card,
+.project-folder-card {
+  position: relative;
+  width: 100%;
+  max-width: 316px; /* 8% narrower: eliminates overly elongated ratio */
+  margin: 0 auto;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  display: flex;
+  flex-direction: column;
+  padding-top: var(--folder-headroom, 56px); /* Dedicated preview headroom (48px~72px) */
+  box-sizing: border-box;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+  border-radius: 0 !important;
+  transition: transform var(--motion-duration-fast, 200ms) var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1));
+}
+
+.project-folder-card:active {
+  transform: scale(0.995);
+}
+
+.project-folder-card.is-navigating {
+  pointer-events: none;
+}
+
+/* ── 1. Thin Rear Lip (Removed per v0.3 spec) ── */
+.project-folder-rear-lip {
+  display: none !important;
+}
+
+/* ── 2. Preview Activity Zone (.project-folder-preview-stack) ── */
+.project-folder-preview-stack,
+.project-preview-zone {
+  position: relative;
+  width: 100%;
+  height: 140px;
+  margin-bottom: -46px;
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  overflow: visible !important;
+  pointer-events: none;
+}
+
+/* Base sheet styles */
+.project-preview-primary,
+.project-preview-secondary {
+  transform-origin: center bottom;
+  box-sizing: border-box;
+}
+
+/* ── Fixed 16:9 Cover Frame (Unified Landscape Preview Frame) ── */
+.project-folder-card .project-preview-primary,
+.project-preview-primary,
+.project-cover-frame {
+  position: relative;
+  width: var(--cover-width, var(--collapsed-width, 282px)) !important;
+  height: var(--cover-height, var(--collapsed-height, 158.6px)) !important;
+  aspect-ratio: 16 / 9 !important;
+  max-width: 295px;
+  max-height: 180px;
+  border-radius: var(--radius-continuous-14);
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.10);
+  overflow: hidden;
+  z-index: 20;
+  flex: none;
+  transform-origin: bottom center;
+  transform: translateY(calc(var(--insert-depth, var(--collapsed-insert-depth, 46px)) - 46px)) translateX(0) rotate(0deg) scale(1);
+  transition: transform 320ms var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1)),
+              border-radius 320ms var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1)),
+              box-shadow 320ms var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1)),
+              border-color 320ms var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1)),
+              visibility 100ms ease;
+  will-change: transform;
+}
+
+/* ── 2.1 Secondary Preview (Unified 16:9 Frosted White Glass Sheet - Spec v0.5) ── */
+.project-preview-secondary {
+  position: absolute;
+  height: 128px;
+  width: auto;
+  aspect-ratio: 16 / 9;
+  max-width: 244px;
+  border-radius: var(--radius-continuous-14);
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow: 0 6px 18px rgba(10, 20, 40, 0.06);
+  overflow: hidden;
+  z-index: 10;
+  transform-origin: 85% 90%;
+  transform: translateY(24px) translateX(14px) rotate(5deg) scale(0.96);
+  transition: transform var(--motion-duration-base, 300ms) var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1)),
+              box-shadow var(--motion-duration-base, 300ms) var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1)),
+              opacity var(--motion-duration-base, 300ms) var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1));
+  opacity: 0.88;
+  pointer-events: none;
+}
+
+/* ── 2.2 Primary Cover Ambient Overlay & Layers (Light White Frosted Material) ── */
+.project-preview-primary.has-contain-preview {
+  background: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.65);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.project-preview-primary::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: transparent;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+.project-preview-primary.has-contain-preview::after {
+  opacity: 1;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.58) 0%, rgba(248, 250, 252, 0.48) 100%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Contain Ambient Blurred Background Layer (Light White Frosted Material) */
+.project-preview-primary-bg,
+.project-preview-primary .cover-background {
+  position: absolute;
+  inset: -12px;
+  width: calc(100% + 24px);
+  height: calc(100% + 24px);
+  object-fit: cover;
+  object-position: center;
+  filter: blur(24px) saturate(0.95) brightness(1.06);
+  transform: scale(1.10);
+  opacity: .42;
+  pointer-events: none;
+  border-radius: inherit;
+  z-index: 0;
+  transition: opacity 0.45s ease-in-out;
+}
+
+/* Foreground Main Cover Image */
+.project-preview-primary-image,
+.project-preview-primary .cover-main {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  display: block;
+  border-radius: inherit;
+  z-index: 2;
+  transition: opacity 0.35s ease-in-out;
+}
+
+.project-preview-primary.has-contain-preview .project-preview-primary-image,
+.project-preview-primary.has-contain-preview .cover-main {
+  filter: drop-shadow(0 4px 14px rgba(15, 23, 42, 0.10));
+}
+
+.project-preview-primary-image.fit-contain,
+.project-preview-primary .cover-main.fit-contain {
+  object-fit: contain;
+}
+
+.project-preview-primary-image.fit-cover,
+.project-preview-primary .cover-main.fit-cover {
+  object-fit: cover;
+}
+
+.project-preview-secondary img,
+.project-preview-secondary .preview-secondary-inner {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: brightness(0.95);
+}
+
+.preview-secondary-sheet {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* Fallback Frame (Draft Storyboard) */
+.project-preview-primary .thumb-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  color: var(--color-text-muted, #94a3b8);
+  font-size: 0.75rem;
+  font-family: var(--font-family-body, inherit);
+  gap: 6px;
+  user-select: none;
+}
+
+.project-preview-primary .fallback-clapper {
+  color: rgba(255, 255, 255, 0.7);
+  transition: transform 0.3s ease;
+}
+
+.project-preview-primary .fallback-status {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+.project-preview-primary .fallback-sub {
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+
+/* ── 3. Front Folder Shell (Primary Folder Object) ── */
+.project-folder-shell {
+  position: relative;
+  z-index: 30; /* Front layer covering the inserted sheets */
+  display: flex;
+  flex-direction: column;
+  min-height: 136px;
+  background: var(--surface-folder);
+  border: 1px solid var(--surface-folder-border);
+  border-radius: 0 var(--radius-lg) var(--radius-lg) var(--radius-lg);
+  box-shadow: var(--folder-shadow-default);
+  transition: transform 240ms var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1)),
+              box-shadow 240ms var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1)),
+              border-color 240ms var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1)),
+              opacity 240ms ease;
+}
+
+/* Folder Header Row: 3/4 Header Tab + 1/4 Option Slot */
+.project-folder-header-row {
+  position: absolute;
+  display: flex;
+  align-items: flex-end;
+  height: calc(var(--radius-lg) * 1.5);
+  width: 100%;
+  margin-top: calc(0px - calc(var(--radius-lg) * 1.5));
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* 3/4 Header Tab (74% width) */
+.project-folder-tab {
+  position: relative;
+  height: calc(var(--radius-lg) * 1.5);
+  width: calc(100% - 48px - 16px);
+  background: var(--surface-folder);
+  border-top: 1px solid var(--surface-folder-border);
+  border-left: 1px solid var(--surface-folder-border);
+  border-top-left-radius: var(--radius-lg);
+  border-top-right-radius: var(--radius-lg);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  padding-left: 16px;
+  flex-shrink: 0;
+}
+
+/* Smooth S-curve inverse fillet connecting tab to shelf */
+.project-folder-tab::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  transform: translateX(var(--radius-lg));
+  width: var(--radius-lg);
+  height: calc(var(--radius-lg) * 1.5 / 2);
+  background: transparent;
+  border-bottom-left-radius: var(--radius-lg);
+  box-shadow: -6px 6px 0 0 var(--surface-folder);
+  border-bottom: 1px solid var(--surface-folder-border);
+  border-left: 1px solid var(--surface-folder-border);
+  pointer-events: none;
+}
+
+@supports (corner-shape: squircle) {
+  .project-folder-shell {
+    corner-shape: squircle;
+    border-radius: 0 var(--radius-continuous-lg) var(--radius-continuous-lg) var(--radius-continuous-lg);
+  }
+
+  .project-folder-tab {
+    corner-shape: squircle;
+    border-radius: var(--radius-continuous-lg) var(--radius-continuous-lg) 0 0;
+  }
+
+  .project-folder-header-row {
+    left: -1px;
+    width: calc(100% + 2px);
+  }
+
+  .project-folder-tab::before {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    height: 2px;
+    background: var(--surface-folder);
+    pointer-events: none;
+  }
+
+  /* This is a negative fillet, not a convex card corner. Keep a circular cutout
+     with a full-depth fill below the arc. The tab's bridge covers the shell seam. */
+  .project-folder-tab::after {
+    --folder-fillet: 18px;
+    corner-shape: round;
+    right: calc(-1 * var(--folder-fillet));
+    bottom: 0;
+    transform: none;
+    width: var(--folder-fillet);
+    height: var(--folder-fillet);
+    border-bottom-left-radius: var(--folder-fillet);
+    box-shadow: -8px 8px 0 -1px var(--surface-folder);
+  }
+}
+
+.project-folder-tab-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(148, 163, 184, 0.7);
+}
+
+/* Middle Shelf (remaining ~26% notch zone) */
+.project-folder-shelf {
+  flex: 1;
+  height: 1px;
+  background: var(--surface-folder-border);
+  margin-bottom: 0px;
+  margin-left: 16px;
+}
+
+/* Option Notch Wrap: Embedded with gap A ≈ gap B (10px ~ 14px) */
+.project-folder-notch-wrap {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  margin-bottom: 8px;  /* gap B to folder body ≈ 12px */
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+.project-option-slot {
+  position: relative;
+  z-index: 40;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+/* Option Button: Unified with Folder Front Shell Surface */
+.project-folder-card .project-option-btn,
+.project-option-btn {
+  width: 48px;
+  height: calc(var(--radius-lg) * 1.5);
+  border-radius: 9999px;
+  background: var(--surface-folder);
+  border: 1px solid var(--surface-folder-border);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--folder-text-secondary);
+  cursor: pointer;
+  outline: none;
+  padding: 0;
+  box-sizing: border-box;
+  transition: background 180ms ease,
+              color 180ms ease,
+              box-shadow 180ms ease,
+              transform 180ms ease,
+              border-color 180ms ease;
+}
+
+.project-folder-card .project-option-btn:hover,
+.project-option-btn:hover {
+  background: var(--surface-folder-highlight, #ffffff);
+  color: var(--folder-text-primary, #0f172a);
+  border-color: rgba(148, 163, 184, 0.65);
+  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.07);
+  transform: translateY(-1px);
+}
+
+.project-folder-card .project-option-btn:active,
+.project-option-btn:active {
+  transform: scale(0.96);
+  background: var(--surface-folder);
+}
+
+.project-option-btn.is-hidden-for-morph {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* ── 4. Folder Content ── */
+.project-folder-content {
+  padding: 12px 20px 30px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-sizing: border-box;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.project-updated {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--folder-text-secondary);
+  line-height: 1.2;
+}
+
+.project-title-wrapper {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent 100%);
+  white-space: nowrap;
+  padding: 2px 0;
+}
+
+.project-folder-card .project-title {
+  display: inline-block;
+  font-family: var(--font-family-display, inherit);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--folder-text-primary);
+  line-height: 1.35;
+  white-space: nowrap;
+  transition: transform 0.35s var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1));
+  will-change: transform;
+}
+
+.project-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.project-meta-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 9999px;
+  background: var(--surface-meta);
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--folder-text-secondary);
+  line-height: 1;
+}
+
+.project-meta-pill.project-restore-badge {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.25);
+  color: #dc2626;
+  font-weight: 600;
+}
+
+/* ── 4.1 Project Tags Row & Pills ── */
+.project-tags-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+  margin-bottom: 2px;
+}
+
+.project-tag-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: var(--radius-pill, 9999px);
+  background: rgba(241, 245, 249, 0.85);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: #475569;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+  font-family: inherit;
+}
+
+.project-tag-pill:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+}
+
+.project-tag-pill:active {
+  transform: translateY(0);
+}
+
+.project-tag-pill-more {
+  background: transparent;
+  border: 1px dashed #cbd5e1;
+  color: #94a3b8;
+  font-size: 0.7rem;
+  cursor: default;
+}
+
+.project-tags-row.project-tags-row-compact {
+  gap: 4px;
+  margin-top: 2px;
+  margin-bottom: 0;
+}
+
+/* ── 5. Variants: Compact (Dashboard) vs Default / Full (Projects) ── */
+.project-folder-card.variant-compact {
+  max-width: 290px;
+  padding-top: var(--folder-headroom-compact, 50px);
+}
+
+.project-folder-card.variant-compact .project-folder-shell {
+  min-height: 124px;
+}
+
+.project-folder-card.variant-compact .project-folder-content {
+  padding: 10px 16px 22px 16px;
+  gap: 6px;
+}
+
+.project-folder-card.variant-compact .project-folder-preview-stack {
+  height: 128px;
+  margin-bottom: -44px;
+}
+
+.project-folder-card.variant-compact .project-preview-primary {
+  width: var(--cover-width, var(--collapsed-width, 254px)) !important;
+  height: var(--cover-height, var(--collapsed-height, 142.9px)) !important;
+  aspect-ratio: 16 / 9 !important;
+  max-width: 268px;
+  max-height: 160px;
+  transform: translateY(calc(var(--insert-depth, var(--collapsed-insert-depth, 42px)) - 44px)) translateX(0) rotate(0deg) scale(1);
+}
+
+.project-folder-card.variant-compact .project-preview-secondary {
+  height: 124px;
+  width: auto;
+  aspect-ratio: 16 / 9;
+}
+
+/* ── 6. Hover Motion (Physical Storyboard Pull - Keep 16:9 Frame) ── */
+.project-folder-card:hover .project-folder-shell,
+.project-folder-card.is-expanded .project-folder-shell {
+  transform: translateY(-2px);
+  box-shadow: var(--folder-shadow-hover);
+}
+
+/* Primary Cover lifts and tilts without changing 16:9 aspect ratio */
+.project-folder-card:hover .project-preview-primary,
+.project-folder-card.is-expanded .project-preview-primary {
+  width: var(--cover-width, var(--collapsed-width, 282px)) !important;
+  height: var(--cover-height, var(--collapsed-height, 158.6px)) !important;
+  transform: translateY(calc(var(--insert-depth, var(--collapsed-insert-depth, 46px)) - 46px - var(--hover-lift, 16px)))
+             translateX(0)
+             rotate(var(--hover-rotate, -4.5deg))
+             scale(1.02);
+  border-radius: var(--radius-continuous-14);
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.18);
+}
+
+.project-folder-card.variant-compact:hover .project-preview-primary,
+.project-folder-card.variant-compact.is-expanded .project-preview-primary {
+  width: var(--cover-width, var(--collapsed-width, 254px)) !important;
+  height: var(--cover-height, var(--collapsed-height, 142.9px)) !important;
+  transform: translateY(calc(var(--insert-depth, var(--collapsed-insert-depth, 42px)) - 44px - var(--hover-lift, 14px)))
+             translateX(0)
+             rotate(var(--hover-rotate, -4.5deg))
+             scale(1.02);
+  border-radius: var(--radius-continuous-14);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.16);
+}
+
+.project-folder-card:hover .project-preview-secondary,
+.project-folder-card.is-expanded .project-preview-secondary {
+  transform: translateY(-8px) translateX(18px) rotate(6deg) scale(0.98);
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.12);
+  opacity: 0.96;
+}
+
+.project-folder-card:hover .fallback-clapper {
+  transform: scale(1.08) rotate(4deg);
+}
+
+/* ── 7. App-Level Transition Layer & Reveal Curtain (Phase 1～6) ── */
+#transition-layer,
+.app-transition-layer {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 999998 !important;
+  pointer-events: none !important;
+  overflow: hidden !important;
+}
+
+.project-reveal-scrim {
+  position: fixed !important;
+  inset: 0 !important;
+  background: rgba(12, 19, 36, 0.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  opacity: 0;
+  transition: opacity 320ms var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1));
+  pointer-events: auto;
+  z-index: 1;
+}
+
+.project-cover-waiting {
+  position: fixed;
+  z-index: 1000000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  width: min(340px, calc(100vw - 32px));
+  transform: translateX(-50%) translateY(5px);
+  color: rgba(255, 255, 255, .72);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 240ms ease, transform 240ms ease, visibility 240ms;
+  pointer-events: none;
+}
+
+.project-cover-waiting.is-visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%);
+}
+
+.project-cover-rose-orbit {
+  position: fixed;
+  z-index: 999998;
+  color: #fff;
+  overflow: visible;
+  fill: none;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 240ms ease, visibility 240ms;
+}
+
+.project-cover-rose-orbit.is-visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.project-cover-rose-front {
+  z-index: 1000000;
+}
+
+.project-cover-rose-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.project-cover-cancel { color: #fff !important; }
+.project-cover-waiting.is-visible .project-cover-cancel { pointer-events: auto; }
+.project-cover-cancel:focus-visible { outline: 2px solid #fff !important; outline-offset: 4px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .project-cover-waiting, .project-cover-rose-orbit { transition: none; }
+}
+
+.project-reveal-curtain,
+.transition-cover-shell {
+  position: fixed !important;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.35);
+  transform-origin: 45% 100%;
+  background: #0f172a;
+  pointer-events: none;
+  will-change: left, top, width, height, transform, opacity;
+  z-index: 2;
+  box-sizing: border-box;
+}
+
+.project-reveal-curtain.is-contain-shell,
+.transition-cover-shell.is-contain-shell {
+  background: #ffffff;
+}
+
+.project-reveal-curtain .cover-background,
+.transition-cover-shell .transition-cover-bg {
+  position: absolute;
+  inset: -12px;
+  width: calc(100% + 24px);
+  height: calc(100% + 24px);
+  object-fit: cover;
+  filter: blur(24px) saturate(.95) brightness(1.06);
+  transform: scale(1.10);
+  opacity: .42;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.project-reveal-curtain .transition-cover-overlay,
+.transition-cover-shell .transition-cover-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.58) 0%, rgba(248, 250, 252, 0.48) 100%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  pointer-events: none;
+  border-radius: inherit;
+  z-index: 1;
+}
+
+.project-reveal-curtain .cover-main-wrap,
+.transition-cover-shell .transition-cover-media {
+  position: absolute;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+/* Contain mode (portrait / square): media is centered and scaled proportionally with frosted backdrop */
+.project-reveal-curtain.is-contain-shell .cover-main-wrap,
+.transition-cover-shell.is-contain-shell .transition-cover-media {
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Default / landscape non-contain mode: media fills the entire curtain container */
+.project-reveal-curtain:not(.is-contain-shell) .cover-main-wrap,
+.transition-cover-shell:not(.is-contain-shell) .transition-cover-media {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  transform: none;
+}
+
+.project-reveal-curtain img,
+.transition-cover-shell img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.project-reveal-curtain.is-contain-shell .transition-cover-image,
+.transition-cover-shell.is-contain-shell .transition-cover-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  display: block;
+}
+
+.project-reveal-curtain:not(.is-contain-shell) .transition-cover-image,
+.transition-cover-shell:not(.is-contain-shell) .transition-cover-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+.project-reveal-curtain .thumb-fallback,
+.transition-cover-shell .thumb-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  color: var(--color-text-muted, #94a3b8);
+  font-size: 0.85rem;
+  gap: 8px;
+  user-select: none;
+}
+
+/* ── 8. Responsive Rules ── */
+@media (max-width: 768px) {
+  .project-folder-card .project-folder-tab {
+    flex: 0 0 70%;
+    width: 70%;
+    padding-left: 12px;
+  }
+
+  .project-folder-preview-stack {
+    height: 144px;
+    margin-bottom: -40px;
+  }
+
+  .project-preview-primary {
+    width: var(--cover-width, 248px) !important;
+    height: var(--cover-height, 139.5px) !important;
+    aspect-ratio: 16 / 9 !important;
+    transform: translateY(calc(var(--insert-depth, 40px) - 40px)) rotate(0deg) scale(1);
+  }
+
+  .project-preview-secondary {
+    height: 118px;
+    width: auto;
+    aspect-ratio: 16 / 9;
+    transform: translateY(20px) translateX(8px) rotate(4deg) scale(0.96);
+  }
+
+  .project-folder-card:hover .project-preview-primary {
+    width: var(--cover-width, 248px) !important;
+    height: var(--cover-height, 139.5px) !important;
+    transform: translateY(calc(var(--insert-depth, 40px) - 40px - var(--hover-lift, 14px))) rotate(-3.5deg) scale(1.02);
+  }
+
+  .project-folder-card:hover .project-preview-secondary {
+    transform: translateY(-4px) translateX(12px) rotate(4deg) scale(0.98);
+  }
+}
+
+@media (max-width: 480px) {
+  .project-folder-card {
+    padding-top: 8px;
+    max-width: 100%;
+  }
+
+  .project-folder-tab {
+    flex: 0 0 68%;
+    width: 68%;
+    padding-left: 10px;
+  }
+
+  .project-title-wrapper {
+    mask-image: none;
+    -webkit-mask-image: none;
+  }
+
+  .project-folder-card .project-title {
+    text-overflow: ellipsis;
+    overflow: hidden;
+  }
+}
+
+/* ── 9. Reduced Motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .project-folder-card,
+  .project-folder-shell,
+  .project-preview-primary,
+  .project-preview-secondary,
+  .project-title {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    transform: none !important;
+  }
+
+  .project-folder-card:hover .project-preview-primary,
+  .project-folder-card:hover .project-preview-secondary,
+  .project-folder-card:hover .project-folder-shell {
+    transform: none !important;
+  }
+}
+body{margin:0;background:#f8fafc;font-family:Arial}.project-preview-primary{position:fixed;left:40px;top:80px;width:282px;height:159px}.project-preview-primary img{width:100%;height:100%;object-fit:cover}.qc-close-btn{border:0;border-radius:50%;background:#ffffff22;color:white;width:32px;height:32px;cursor:pointer}</style><div class="project-card"><div class="project-folder-shell"></div><div class="project-preview-primary" data-true-ratio="16:9"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NDAiIGhlaWdodD0iMzYwIj48cmVjdCB3aWR0aD0iNjQwIiBoZWlnaHQ9IjM2MCIgZmlsbD0iIzMzNDE1NSIvPjxjaXJjbGUgY3g9IjMyMCIgY3k9IjE4MCIgcj0iMTAwIiBmaWxsPSIjOTRhM2I4Ii8+PHBhdGggZD0iTTAgMzEwTDI0MCAxMjBMNjQwIDM2MEgwIiBmaWxsPSIjNjQ3NDhiIi8+PC9zdmc+"></div></div><script>/**
+ * StoryboardAI — ProjectCard Component & Geometry Module
+ *
+ * 負責專案卡片 (Project Folder Card) 的 HTML 結構渲染、比例正規化、
+ * 時間格式化、固定 16:9 外框幾何運算與轉場尺寸計算。
+ *
+ * 符合 StoryboardAI Design System:
+ * - 實體文件夾隱喻 (Project Folder Card)
+ * - 固定 16:9 封面外框 (Adaptive Cover Frame)
+ * - 懸浮物理抬升 (Hover Lift / Rotate)
+ * - 首鏡跨頁轉場幾何 (Transition Target Size & Contained Rect)
+ */
+
+(function (global) {
+  'use strict';
+
+  function escapeHtml(str) {
+    return String(str || '').replace(/[&<>"']/g, function (m) {
+      return {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[m];
+    });
+  }
+
+  function formatRatioBadge(ratio) {
+    if (!ratio) return '16:9';
+    return ratio;
+  }
+
+  function normalizeRatio(ratio) {
+    if (!ratio) return '16:9';
+    const str = String(ratio).trim();
+    if (str.includes('9:16') || str.includes('9/16')) return '9:16';
+    if (str.includes('2:3') || str.includes('2/3')) return '2:3';
+    if (str.includes('1:1') || str.includes('1/1')) return '1:1';
+    if (str.includes('4:3') || str.includes('4/3')) return '4:3';
+    if (str.includes('3:2') || str.includes('3/2')) return '3:2';
+    if (str.includes('21:9') || str.includes('21/9')) return '21:9';
+    if (str.includes('16:9') || str.includes('16/9')) return '16:9';
+    const match = str.match(/\d+[:/]\d+/);
+    return match ? match[0].replace('/', ':') : '16:9';
+  }
+
+  function parseAspectRatio(ratioInput, width, height) {
+    if (width > 0 && height > 0) {
+      const r = width / height;
+      if (isFinite(r) && r > 0) return r;
+    }
+    if (typeof ratioInput === 'number' && ratioInput > 0 && isFinite(ratioInput)) {
+      return ratioInput;
+    }
+    const str = String(ratioInput || '').trim();
+    if (!str) return 16 / 9;
+
+    const match = str.match(/(\d+(?:\.\d+)?)\s*[:/]\s*(\d+(?:\.\d+)?)/);
+    if (match) {
+      const w = parseFloat(match[1]);
+      const h = parseFloat(match[2]);
+      if (w > 0 && h > 0) return w / h;
+    }
+
+    const floatVal = parseFloat(str);
+    if (!isNaN(floatVal) && floatVal > 0) {
+      return floatVal;
+    }
+
+    if (str.includes('直向')) return 9 / 16;
+    if (str.includes('方形')) return 1;
+    if (str.includes('超寬')) return 21 / 9;
+    return 16 / 9;
+  }
+
+  function calculateProjectCoverGeometry(options = {}) {
+    const {
+      aspectRatio = 16 / 9,
+      variant = 'default',
+      isMobile = false
+    } = options;
+
+    let r = Number(aspectRatio) || (16 / 9);
+    if (r <= 0 || !isFinite(r)) r = 16 / 9;
+
+    // Spec Section 1: Fixed 16:9 Cover Frame
+    // Folder inner width ~92% ~ 95%
+    // Default: 282px, Compact: 254px, Mobile: 248px
+    let frameW = 282;
+    let frameH = 158.6;
+    let insertDepth = 46;
+    let hoverLift = 16;
+    let hoverRotate = -4.5;
+
+    if (variant === 'compact') {
+      frameW = 254;
+      frameH = 142.9;
+      insertDepth = 42;
+      hoverLift = 14;
+      hoverRotate = -4.5;
+    }
+
+    if (isMobile) {
+      frameW = 248;
+      frameH = 139.5;
+      insertDepth = 40;
+      hoverLift = 14;
+      hoverRotate = -3.5;
+    }
+
+    return {
+      frame: {
+        width: frameW,
+        height: frameH,
+        insertDepth,
+        aspectRatio: 16 / 9
+      },
+      // Collapsed and Expanded keep identical 16:9 frame dimensions
+      // Spec Section 6: Hover does NOT change ratio, only translateY/rotate/shadow
+      collapsed: {
+        width: frameW,
+        height: frameH,
+        insertDepth,
+        aspectRatio: 16 / 9
+      },
+      expanded: {
+        width: frameW,
+        height: frameH,
+        insertDepth,
+        x: 0,
+        hoverLift,
+        hoverRotate,
+        aspectRatio: 16 / 9
+      },
+      width: frameW,
+      height: frameH,
+      insertDepth,
+      trueRatio: r,
+      hoverLift,
+      hoverRotate
+    };
+  }
+
+  function calculateTransitionTargetSize(options = {}) {
+    const {
+      aspectRatio = 16 / 9,
+      viewportWidth = (typeof window !== 'undefined' ? window.innerWidth : 1200),
+      viewportHeight = (typeof window !== 'undefined' ? window.innerHeight : 800)
+    } = options;
+
+    let r = Number(aspectRatio) || (16 / 9);
+    if (r <= 0 || !isFinite(r)) r = 16 / 9;
+
+    const vw = viewportWidth;
+    const vh = viewportHeight;
+    const isMob = vw < 768;
+
+    // Spec limits:
+    // max-width: 45% ~ 60% of viewport
+    // max-height: 60% ~ 72% of viewport
+    const maxW = isMob ? Math.min(vw * 0.88, 520) : Math.min(vw * 0.58, 860);
+    const maxH = Math.min(vh * 0.68, 640);
+
+    let targetW, targetH;
+
+    if (r < 0.8) {
+      // Portrait (e.g. 9:16, 2:3, 3:4)
+      targetH = Math.min(maxH, isMob ? vh * 0.62 : 620);
+      targetW = targetH * r;
+      if (targetW > maxW) {
+        targetW = maxW;
+        targetH = targetW / r;
+      }
+    } else if (r <= 1.15) {
+      // Square-ish (e.g. 1:1)
+      const side = Math.min(maxW, maxH, isMob ? 360 : 500);
+      targetW = side;
+      targetH = targetW / r;
+    } else {
+      // Landscape (e.g. 4:3, 16:9, 21:9)
+      targetW = Math.min(maxW, r >= 2.0 ? 840 : 760);
+      targetH = targetW / r;
+      if (targetH > maxH) {
+        targetH = maxH;
+        targetW = targetH * r;
+      }
+    }
+
+    targetW = Math.round(targetW * 10) / 10;
+    targetH = Math.round(targetH * 10) / 10;
+
+    const targetLeft = Math.round((vw - targetW) / 2);
+    const targetTop = Math.round((vh - targetH) / 2);
+
+    return {
+      width: targetW,
+      height: targetH,
+      left: targetLeft,
+      top: targetTop,
+      aspectRatio: r
+    };
+  }
+
+  function getContainedImageRect(img) {
+    if (!img) return null;
+    const box = img.getBoundingClientRect ? img.getBoundingClientRect() : { width: 0, height: 0, left: 0, top: 0 };
+    if (box.width <= 0 || box.height <= 0) return box;
+
+    const naturalWidth = img.naturalWidth || box.width;
+    const naturalHeight = img.naturalHeight || box.height;
+
+    if (!naturalWidth || !naturalHeight) return box;
+
+    const imageRatio = naturalWidth / naturalHeight;
+    const boxRatio = box.width / box.height;
+
+    let width;
+    let height;
+    let left;
+    let top;
+
+    if (imageRatio > boxRatio) {
+      width = box.width;
+      height = width / imageRatio;
+      left = box.left;
+      top = box.top + (box.height - height) / 2;
+    } else {
+      height = box.height;
+      width = height * imageRatio;
+      left = box.left + (box.width - width) / 2;
+      top = box.top;
+    }
+
+    return {
+      left: Math.round(left * 10) / 10,
+      top: Math.round(top * 10) / 10,
+      width: Math.round(width * 10) / 10,
+      height: Math.round(height * 10) / 10
+    };
+  }
+
+  function calculateBalancedPreviewSize(options = {}) {
+    return calculateProjectCoverGeometry(options);
+  }
+
+  function formatRatioText(ratio) {
+    const clean = normalizeRatio(ratio);
+    if (clean === '16:9') return '橫向 16:9';
+    if (clean === '9:16') return '直向 9:16';
+    if (clean === '1:1') return '方形 1:1';
+    if (clean === '4:3') return '橫向 4:3';
+    if (clean === '3:2') return '橫向 3:2';
+    if (clean === '2:3') return '直向 2:3';
+    if (clean === '21:9') return '超寬 21:9';
+    return ratio || '橫向 16:9';
+  }
+
+  function formatRelativeTime(dateInput) {
+    if (!dateInput) return '剛剛編輯';
+    const now = Date.now();
+    const time = new Date(dateInput).getTime();
+    if (isNaN(time)) return '剛剛編輯';
+    const diffSec = Math.max(0, Math.floor((now - time) / 1000));
+
+    if (diffSec < 60) return '剛剛編輯';
+    const diffMin = Math.floor(diffSec / 60);
+    if (diffMin < 60) return `${diffMin} 分鐘前編輯`;
+    const diffHour = Math.floor(diffMin / 60);
+    if (diffHour < 24) return `${diffHour} 小時前編輯`;
+    const diffDay = Math.floor(diffHour / 24);
+    if (diffDay < 30) return `${diffDay} 天前編輯`;
+    const diffMonth = Math.floor(diffDay / 30);
+    if (diffMonth < 12) return `${diffMonth} 個月前編輯`;
+    const diffYear = Math.floor(diffDay / 365);
+    return `${diffYear} 年前編輯`;
+  }
+
+  function renderProjectCard(p, options = {}) {
+    if (!p) return '';
+    const variant = options.variant || (options.isCompact ? 'compact' : 'default');
+    const isHistory = options.isHistory || false;
+    const shotsCount = p.shotCount || (Array.isArray(p.shots) ? p.shots.length : 0);
+    const cleanRatio = normalizeRatio(p.ratio);
+    const ratioText = escapeHtml(formatRatioText(p.ratio));
+    const relativeTime = formatRelativeTime(p.updateAt || p.createAt);
+    const titleEsc = escapeHtml(p.title || '未命名分鏡');
+
+    const numericRatio = parseAspectRatio(p.ratio, p.width, p.height);
+    const isMob = typeof options.isMobile === 'boolean'
+      ? options.isMobile
+      : (typeof global !== 'undefined' && typeof global.isMobileView === 'function'
+          ? global.isMobileView()
+          : false);
+    const geom = calculateProjectCoverGeometry({
+      aspectRatio: numericRatio,
+      variant,
+      isMobile: isMob
+    });
+
+    const hasSecondary = shotsCount > 1;
+
+    const rawTags = Array.isArray(p.tags) ? p.tags : p.metadata?.tags;
+    const tags = Array.isArray(rawTags)
+      ? Array.from(new Set(rawTags.filter(t => typeof t === 'string').map(t => t.trim()).filter(Boolean)))
+      : [];
+    const hasTags = tags.length > 0;
+
+    return `
+      <div class="project-preview-zone project-folder-preview-stack" data-ratio="${cleanRatio}">
+        ${hasSecondary ? `
+          <div class="project-preview-secondary" aria-hidden="true"></div>
+        ` : ''}
+        <div class="project-preview-primary project-cover-frame project-thumb loading"
+             data-ratio="${cleanRatio}"
+             data-true-ratio="${numericRatio}"
+             data-collapsed-w="${geom.collapsed.width}"
+             data-collapsed-h="${geom.collapsed.height}"
+             data-expanded-w="${geom.expanded.width}"
+             data-expanded-h="${geom.expanded.height}"
+             data-expanded-x="0"
+             data-expanded-depth="${geom.collapsed.insertDepth}"
+             data-hover-lift="${geom.hoverLift}"
+             style="--cover-width: ${geom.frame.width}px; --cover-height: ${geom.frame.height}px; --insert-depth: ${geom.frame.insertDepth}px; --collapsed-width: ${geom.collapsed.width}px; --collapsed-height: ${geom.collapsed.height}px; --collapsed-insert-depth: ${geom.collapsed.insertDepth}px; --expanded-width: ${geom.expanded.width}px; --expanded-height: ${geom.expanded.height}px; --expanded-insert-depth: ${geom.collapsed.insertDepth}px; --expanded-x: 0px; --hover-lift: ${geom.hoverLift}px; --hover-rotate: ${geom.hoverRotate}deg;"
+             data-src="/api/projects/${encodeURIComponent(p.id)}/cover">
+          <div class="thumb-fallback">
+            <div class="fallback-frame">
+              <span class="fallback-clapper">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8H4Z"/><path d="m4 11 2.3-4.6A2 2 0 0 1 8.1 5h7.8a2 2 0 0 1 1.8 1.4L20 11H4Z"/><path d="m6.5 5 2 6"/><path d="m11.5 5 2 6"/><path d="m16.5 5 2 6"/></svg>
+              </span>
+              <span class="fallback-status">草稿分鏡</span>
+              <span class="fallback-sub">尚未生成封面</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="project-folder-shell">
+        <div class="project-folder-header-row">
+          <div class="project-folder-tab">
+            <span class="project-folder-tab-dot"></span>
+          </div>
+          <div class="project-folder-notch-wrap">
+            <div class="project-option-slot">
+              <button class="project-option-btn" type="button" title="更多選項" aria-label="更多選項">
+                <span class="option-icon">
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+                    <circle cx="8" cy="5" r="1.5" />
+                    <circle cx="8" cy="11" r="1.5" />
+                  </svg>
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="project-folder-content">
+          <div class="project-updated">${relativeTime}</div>
+          <div class="project-title-wrapper">
+            <div class="project-title" title="${titleEsc}">${titleEsc}</div>
+          </div>
+          ${hasTags ? `
+            <div class="project-tags-row${variant === 'compact' ? ' project-tags-row-compact' : ''}" aria-label="專案標籤">
+              ${(variant === 'compact' ? tags.slice(0, 2) : tags).map(t => {
+                const tagEsc = escapeHtml(t);
+                return `<button type="button" class="project-tag-pill" data-tag="${tagEsc}" title="標籤：${tagEsc}">#${tagEsc}</button>`;
+              }).join('')}
+              ${variant === 'compact' && tags.length > 2 ? `<span class="project-tag-pill project-tag-pill-more">+${tags.length - 2}</span>` : ''}
+            </div>
+          ` : ''}
+          <div class="project-meta">
+            <span class="project-meta-pill project-meta-shot">${shotsCount} 鏡頭</span>
+            <span class="project-meta-pill project-meta-ratio">${ratioText}</span>
+            ${(isHistory || p.is_deleted) ? `<span class="project-meta-pill project-restore-badge">已刪除</span>` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function buildLightFilmCardHTML(p, isHistory = false) {
+    return renderProjectCard(p, { variant: 'default', isHistory });
+  }
+
+  function buildHomeRecentCardHTML(p) {
+    return renderProjectCard(p, { variant: 'compact' });
+  }
+
+  const ProjectCard = {
+    escapeHtml,
+    formatRatioBadge,
+    normalizeRatio,
+    parseAspectRatio,
+    calculateProjectCoverGeometry,
+    calculateTransitionTargetSize,
+    getContainedImageRect,
+    calculateBalancedPreviewSize,
+    formatRatioText,
+    formatRelativeTime,
+    renderProjectCard,
+    buildLightFilmCardHTML,
+    buildHomeRecentCardHTML
+  };
+
+  // Mount on global window
+  if (typeof global !== 'undefined') {
+    global.ProjectCard = ProjectCard;
+    // Top-level compatibility aliases
+    global.calculateProjectCoverGeometry = calculateProjectCoverGeometry;
+    global.calculateBalancedPreviewSize = calculateBalancedPreviewSize;
+    global.calculateTransitionTargetSize = calculateTransitionTargetSize;
+    global.getContainedImageRect = getContainedImageRect;
+    global.parseAspectRatio = parseAspectRatio;
+    global.normalizeRatio = normalizeRatio;
+    global.formatRatioBadge = formatRatioBadge;
+    global.formatRatioText = formatRatioText;
+    global.formatRelativeTime = formatRelativeTime;
+    global.renderProjectCard = renderProjectCard;
+    global.buildLightFilmCardHTML = buildLightFilmCardHTML;
+    global.buildHomeRecentCardHTML = buildHomeRecentCardHTML;
+  }
+
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = ProjectCard;
+  }
+})(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this));
+</script><script>/**
+ * StoryboardAI - Transition Loader Component (P4-5)
+ * Manages loading animations and progress indicators during SPA transitions:
+ * - Mathematical curve Rose Animation (SVG particle & dynamic path engine)
+ * - Fullscreen transition overlay (#transition-loader-overlay)
+ * - In-place dashboard loader spinner (#spa-dash-loader)
+ * - Inset content loader (#page-inner-loader)
+ * - Text cycling with blur transitions
+ * - Seamless start / cleanup lifecycle
+ */
+(function (root) {
+  'use strict';
+
+  const cuteTexts = [
+    "劇目準備中... 🎬",
+    "正在排練精彩分鏡... 🎭",
+    "正在佈置舞台場景... 🎪",
+    "演員配音準備中... 🎙️",
+    "正在為您調配電影色彩... 🎨",
+    "導演正在校對腳本細節... 📝",
+    "膠捲正在沖洗中，請稍候... 🎞️",
+    "正在調度攝影機軌道... 📹",
+    "正在後製調光與合成特效... ✨",
+    "寫作靈感已送達，正在繪製草稿... 💡"
+  ];
+
+  let textCycleInterval = null;
+  let currentTextIndex = 0;
+  let innerLoaderTimer = null;
+  let innerRoseLoaderInstance = null;
+  let showLoaderTimer = null;
+  let loaderShowing = false;
+
+  /**
+   * Pure mathematical rose curve particle & SVG path animation engine
+   */
+  function setupRoseAnimation(group, path, particleCount = 45, depth = null) {
+    if (!group || !path) return null;
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const trailSpan = 0.32;
+    const durationMs = 5400;
+    const rotationDurationMs = 28000;
+    // 50 BPM: one gentle pulse per 1.2s, within the 40–60 BPM sleeping
+    // range described by Sleep Foundation (animation reference, not a sensor).
+    const pulseDurationMs = depth ? 1200 : 4600;
+    const handoffMs = 480;
+    const strokeWidth = 4.5;
+    const roseA = 9.2;
+    const roseABoost = 0.6;
+    const roseBreathBase = 0.72;
+    const roseBreathBoost = 0.28;
+    const roseK = 5;
+    const roseScale = 3.25;
+
+    path.setAttribute('stroke-width', String(strokeWidth));
+    group.innerHTML = '';
+    group.appendChild(path);
+
+    const particles = Array.from({ length: particleCount }, () => {
+      const circle = document.createElementNS(SVG_NS, 'circle');
+      circle.setAttribute('fill', 'currentColor');
+      group.appendChild(circle);
+      return circle;
+    });
+
+    const frontParticles = depth ? particles.map(() => {
+      const circle = document.createElementNS(SVG_NS, 'circle');
+      circle.setAttribute('fill', 'currentColor');
+      depth.group.appendChild(circle);
+      return circle;
+    }) : [];
+
+    function project(pt) {
+      // Orthographic projection preserves five equally long petals. Depth
+      // controls occlusion only, without stretching the near-side petals.
+      return {
+        x: pt.x,
+        y: pt.y,
+        z: pt.z,
+        perspective: 1
+      };
+    }
+
+    function paintDepth(detailScale, progress, animateParticles) {
+      const lapSide = lap => ((lap % 2) + 2) % 2 === 0 ? 1 : -1;
+      const smooth = value => {
+        const t = Math.max(0, Math.min(1, value));
+        return t * t * (3 - 2 * t);
+      };
+      const halfWindow = handoffMs / durationMs / 2;
+      const seam = Math.round(progress);
+      const distance = progress - seam;
+      const trackVisibility = seam > 0 && Math.abs(distance) < halfWindow
+        ? smooth(Math.abs(distance) / halfWindow) : 1;
+      const trackSide = lapSide(Math.floor(progress));
+      const paths = ['', ''];
+      let previous = null;
+      for (let i = 0; i <= 360; i++) {
+        const p = project(point(i / 360, detailScale));
+        p.z *= trackSide;
+        const side = p.z >= 0 ? 1 : 0;
+        const command = `${p.x.toFixed(2)} ${p.y.toFixed(2)}`;
+        if (!previous) paths[side] += `M ${command} `;
+        else if ((previous.z >= 0 ? 1 : 0) === side) paths[side] += `L ${command} `;
+        else {
+          const mix = previous.z / (previous.z - p.z);
+          const cross = `${(previous.x + (p.x - previous.x) * mix).toFixed(2)} ${(previous.y + (p.y - previous.y) * mix).toFixed(2)}`;
+          paths[1 - side] += `L ${cross} `;
+          paths[side] += `M ${cross} L ${command} `;
+        }
+        previous = p;
+      }
+      // A complete rear track fills the area vacated as the near track eases
+      // behind the cover, then comes forward with the opposite lap ordering.
+      path.setAttribute('d', buildPath(detailScale, 360));
+      depth.path.setAttribute('d', paths[1]);
+      path.setAttribute('stroke-width', String(strokeWidth));
+      depth.path.setAttribute('stroke-width', String(strokeWidth));
+      path.setAttribute('opacity', '0.18');
+      depth.path.setAttribute('opacity', String(0.18 * trackVisibility));
+      // Remove the rear stroke wherever the front stroke is drawn, so the
+      // same translucent white never accumulates into brighter intersections.
+      if (depth.maskPath) {
+        depth.maskPath.setAttribute('d', paths[1]);
+        depth.maskPath.setAttribute('stroke-width', String(strokeWidth));
+        // Alpha compensation keeps intersections at exactly the same track
+        // opacity throughout the handoff, rather than double-painting them.
+        depth.maskPath.setAttribute('opacity', String(trackVisibility * 0.82 / (1 - 0.18 * trackVisibility)));
+      }
+      particles.forEach((node, index) => {
+        const particle = getParticle(index, progress, detailScale);
+        const p = project(particle);
+        // Each tip-to-tip side has one depth sign; the next side has the
+        // opposite sign. Every trail particle crosses the tip independently.
+        const particleProgress = progress - index / (particleCount - 1) * trailSpan;
+        const z = p.z * lapSide(Math.floor(particleProgress));
+        const nearWeight = smooth((z + 4) / 8);
+        const particleVisibility = animateParticles ? 1 : 0;
+        [node, frontParticles[index]].forEach((circle, side) => {
+          circle.setAttribute('cx', p.x.toFixed(2));
+          circle.setAttribute('cy', p.y.toFixed(2));
+          circle.setAttribute('r', (particle.radius * p.perspective).toFixed(2));
+          const layerWeight = side ? nearWeight : (1 - nearWeight) * 0.45;
+          circle.setAttribute('opacity', (particle.opacity * layerWeight * particleVisibility).toFixed(3));
+        });
+      });
+    }
+
+    function normalizeProgress(progress) {
+      return ((progress % 1) + 1) % 1;
+    }
+
+    function getDetailScale(time) {
+      const pulseProgress = (time % pulseDurationMs) / pulseDurationMs;
+      const pulseAngle = pulseProgress * Math.PI * 2;
+      if (depth) return 0.86 + 0.14 * (0.5 - 0.5 * Math.cos(pulseAngle));
+      return 0.52 + ((Math.sin(pulseAngle + 0.55) + 1) / 2) * 0.48;
+    }
+
+    function getRotation(time) {
+      return -((time % rotationDurationMs) / rotationDurationMs) * 360;
+    }
+
+    function point(progress, detailScale) {
+      // An odd-petal rose closes after PI. Drawing the second half with a
+      // different depth would duplicate all five petals into extra orbit rails.
+      const t = progress * Math.PI * (depth ? 1 : 2);
+      const a = roseA + detailScale * roseABoost;
+      const amplitude = a * (roseBreathBase + detailScale * roseBreathBoost);
+      const r = amplitude * Math.cos(roseK * t);
+      return {
+        x: 50 + Math.cos(t) * r * roseScale,
+        y: 50 + Math.sin(t) * r * roseScale,
+        // One sign per tip-to-tip side. Five sides means the next complete
+        // lap naturally reverses their near/far order without rotating petals.
+        z: depth ? amplitude * Math.sin(roseK * t) * roseScale * 0.35 : 0,
+      };
+    }
+
+    function buildPath(detailScale, steps = 180) {
+      return Array.from({ length: steps + 1 }, (_, index) => {
+        const pt = point(index / steps, detailScale);
+        return `${index === 0 ? 'M' : 'L'} ${pt.x.toFixed(2)} ${pt.y.toFixed(2)}`;
+      }).join(' ');
+    }
+
+    function getParticle(index, progress, detailScale) {
+      const tailOffset = index / (particleCount - 1);
+      const pt = point(normalizeProgress(progress - tailOffset * trailSpan), detailScale);
+      const fade = Math.pow(1 - tailOffset, 0.56);
+      return {
+        x: pt.x,
+        y: pt.y,
+        z: pt.z,
+        radius: 0.6 + fade * 2.2,
+        opacity: 0.04 + fade * 0.96,
+      };
+    }
+
+    let animId = null;
+    const startedAt = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+
+    function render(now) {
+      const time = now - startedAt;
+      const progress = (time % durationMs) / durationMs;
+      const detailScale = getDetailScale(time);
+
+      if (depth) {
+        paintDepth(detailScale, time / durationMs, true);
+        animId = requestAnimationFrame(render);
+        return;
+      }
+
+      group.setAttribute('transform', `rotate(${getRotation(time)} 50 50)`);
+      path.setAttribute('d', buildPath(detailScale));
+
+      particles.forEach((node, index) => {
+        const p = getParticle(index, progress, detailScale);
+        node.setAttribute('cx', p.x.toFixed(2));
+        node.setAttribute('cy', p.y.toFixed(2));
+        node.setAttribute('r', p.radius.toFixed(2));
+        node.setAttribute('opacity', p.opacity.toFixed(3));
+      });
+
+      animId = requestAnimationFrame(render);
+    }
+
+    // Paint a static curve for reduced-motion users before animation starts.
+    path.setAttribute('d', buildPath(getDetailScale(0)));
+    if (depth) paintDepth(getDetailScale(0), 0, false);
+
+    return {
+      start() {
+        if (!animId) {
+          animId = requestAnimationFrame(render);
+        }
+      },
+      stop() {
+        if (animId) {
+          cancelAnimationFrame(animId);
+          animId = null;
+        }
+      }
+    };
+  }
+
+  function startTextCycling() {
+    const textEl = document.getElementById('transition-loader-text');
+    if (!textEl) return;
+
+    currentTextIndex = 0;
+    textEl.textContent = cuteTexts[currentTextIndex];
+    textEl.classList.remove('blur-out');
+
+    if (textCycleInterval) {
+      clearInterval(textCycleInterval);
+    }
+
+    textCycleInterval = setInterval(() => {
+      textEl.classList.add('blur-out');
+      setTimeout(() => {
+        currentTextIndex = (currentTextIndex + 1) % cuteTexts.length;
+        textEl.textContent = cuteTexts[currentTextIndex];
+        textEl.classList.remove('blur-out');
+      }, 500);
+    }, 2800);
+  }
+
+  function stopTextCycling() {
+    if (textCycleInterval) {
+      clearInterval(textCycleInterval);
+      textCycleInterval = null;
+    }
+  }
+
+  function initDashboardLoader() {
+    if (document.getElementById('spa-dash-loader')) return;
+    const loader = document.createElement('div');
+    loader.id = 'spa-dash-loader';
+    loader.className = 'dash-loader';
+    loader.innerHTML = '<div class="dash-loader-spinner"></div>';
+    document.body.appendChild(loader);
+  }
+
+  function initTransitionLoader() {
+    const overlay = document.getElementById('transition-loader-overlay');
+    const group = document.getElementById('transition-loader-group');
+    const path = document.getElementById('transition-loader-path');
+    if (!overlay || !group || !path) return;
+
+    root.spaTransitionLoader = setupRoseAnimation(group, path);
+    return root.spaTransitionLoader;
+  }
+
+  function showInnerLoader() {
+    if (innerLoaderTimer) clearTimeout(innerLoaderTimer);
+    innerLoaderTimer = setTimeout(() => {
+      const loader = document.getElementById('page-inner-loader');
+      if (loader) {
+        loader.classList.add('active');
+        if (!innerRoseLoaderInstance) {
+          const group = document.getElementById('page-inner-loader-group');
+          const path = document.getElementById('page-inner-loader-path');
+          innerRoseLoaderInstance = setupRoseAnimation(group, path);
+        }
+        if (innerRoseLoaderInstance) {
+          innerRoseLoaderInstance.start();
+        }
+      }
+    }, 250);
+  }
+
+  function hideInnerLoader() {
+    if (innerLoaderTimer) {
+      clearTimeout(innerLoaderTimer);
+      innerLoaderTimer = null;
+    }
+    const loader = document.getElementById('page-inner-loader');
+    if (loader) {
+      loader.classList.remove('active');
+    }
+    if (innerRoseLoaderInstance) {
+      innerRoseLoaderInstance.stop();
+    }
+  }
+
+  function startLoaderTimer(isDashboardTransition) {
+    if (showLoaderTimer) {
+      clearTimeout(showLoaderTimer);
+      showLoaderTimer = null;
+    }
+    loaderShowing = false;
+
+    if (isDashboardTransition) {
+      showLoaderTimer = setTimeout(() => {
+        loaderShowing = true;
+        const dashLoader = document.getElementById('spa-dash-loader');
+        if (dashLoader) dashLoader.classList.add('active');
+      }, 1000);
+    } else {
+      showLoaderTimer = setTimeout(() => {
+        loaderShowing = true;
+        const overlay = document.getElementById('transition-loader-overlay');
+        if (overlay) {
+          overlay.classList.add('active');
+        }
+        if (root.spaTransitionLoader) {
+          root.spaTransitionLoader.start();
+        }
+        startTextCycling();
+      }, 1000);
+    }
+  }
+
+  function cleanup() {
+    if (showLoaderTimer) {
+      clearTimeout(showLoaderTimer);
+      showLoaderTimer = null;
+    }
+    loaderShowing = false;
+    const overlay = document.getElementById('transition-loader-overlay');
+    if (overlay) overlay.classList.remove('active');
+    const dashLoader = document.getElementById('spa-dash-loader');
+    if (dashLoader) dashLoader.classList.remove('active');
+    stopTextCycling();
+    setTimeout(() => {
+      if (!loaderShowing && root.spaTransitionLoader) {
+        root.spaTransitionLoader.stop();
+      }
+    }, 300);
+  }
+
+  function ensureInnerLoader(main) {
+    let loader = document.getElementById('page-inner-loader');
+    if (!loader) {
+      const originalOverlay = document.getElementById('transition-loader-overlay');
+      if (originalOverlay) {
+        loader = originalOverlay.cloneNode(true);
+        loader.id = 'page-inner-loader';
+        const group = loader.querySelector('#transition-loader-group');
+        if (group) group.id = 'page-inner-loader-group';
+        const path = loader.querySelector('#transition-loader-path');
+        if (path) path.id = 'page-inner-loader-path';
+        const text = loader.querySelector('#transition-loader-text');
+        if (text) {
+          text.id = 'page-inner-loader-text';
+          text.textContent = '劇本載入中...';
+        }
+        main.appendChild(loader);
+      }
+    }
+  }
+
+  const TransitionLoader = {
+    ensureInnerLoader,
+    setupRoseAnimation,
+    startTextCycling,
+    stopTextCycling,
+    initDashboardLoader,
+    initTransitionLoader,
+    showInnerLoader,
+    hideInnerLoader,
+    startLoaderTimer,
+    cleanup,
+    get isShowing() { return loaderShowing; }
+  };
+
+  root.TransitionLoader = TransitionLoader;
+  root.setupRoseAnimation = setupRoseAnimation;
+  root.startTextCycling = startTextCycling;
+  root.stopTextCycling = stopTextCycling;
+  root.initDashboardLoader = initDashboardLoader;
+  root.initTransitionLoader = initTransitionLoader;
+  root.showInnerLoader = showInnerLoader;
+  root.hideInnerLoader = hideInnerLoader;
+
+})(typeof window !== 'undefined' ? window : globalThis);
+</script><script>/**
+ * StoryboardAI — Project Cover Transition Module (Project Reveal)
+ *
+ * 負責專案卡片點擊後的 Shared Element 封面轉場 (Project Reveal Transition)：
+ * - 封面從 16:9 卡片抽出並 morph 至專案真實比例 (Flight Morph, 520ms)
+ * - 導航至專案工作區 (200ms SPA navigate)
+ * - 等待工作區第一鏡就緒 (Center Hold & State: 'waiting-project')
+ * - 飛行封面等比縮放並滑行歸位至第一鏡畫面 (Return Anim, 380ms)
+ * - 無縫淡出過渡 (Crossfade Handoff, 90ms)
+ * - 失敗或取消時的優雅縮回降級 (Legacy Shrink Fallback, 380ms)
+ * - 跨頁切換、銷毀時的即時清理 (Immediate Teardown)
+ *
+ * 符合 StoryboardAI Design System & P4-4 規範：
+ * - 嚴格保留原演算法、幾何計算與動畫時序
+ * - 提供 window.ProjectCoverTransition 及向下相容 bridge
+ */
+
+(function (root) {
+  'use strict';
+
+  // Active transition tracking
+  let activeTransitionSession = null;
+
+  // Keep shared-element clones on the same progressive corner scale as their cards.
+  function coverRadius(size) {
+    const token = root.getComputedStyle?.(document.documentElement)
+      .getPropertyValue(`--radius-continuous-${size}`).trim();
+    return token || `${size === 'sm' ? 8 : size}px`;
+  }
+
+  function removeNode(node) {
+    if (!node) return;
+    const parent = node.parentNode || node.parentElement;
+    if (parent && typeof parent.removeChild === 'function') {
+      parent.removeChild(node);
+    } else if (typeof node.remove === 'function') {
+      node.remove();
+    }
+  }
+
+  function parseAspectRatio(ratioInput, width, height) {
+    if (root && root.ProjectCard?.parseAspectRatio) {
+      return root.ProjectCard.parseAspectRatio(ratioInput, width, height);
+    }
+    if (typeof window !== 'undefined' && window.ProjectCard?.parseAspectRatio) {
+      return window.ProjectCard.parseAspectRatio(ratioInput, width, height);
+    }
+    return 16 / 9;
+  }
+
+  function calculateTransitionTargetSize(options) {
+    if (root && root.ProjectCard?.calculateTransitionTargetSize) {
+      return root.ProjectCard.calculateTransitionTargetSize(options);
+    }
+    if (typeof window !== 'undefined' && window.ProjectCard?.calculateTransitionTargetSize) {
+      return window.ProjectCard.calculateTransitionTargetSize(options);
+    }
+    return { width: 760, height: 427.5, left: 100, top: 100, aspectRatio: 16 / 9 };
+  }
+
+  function getContainedImageRect(img) {
+    if (root && root.ProjectCard?.getContainedImageRect) {
+      return root.ProjectCard.getContainedImageRect(img);
+    }
+    if (typeof window !== 'undefined' && window.ProjectCard?.getContainedImageRect) {
+      return window.ProjectCard.getContainedImageRect(img);
+    }
+    return img ? (img.getBoundingClientRect ? img.getBoundingClientRect() : null) : null;
+  }
+
+  /**
+   * 啟動專案封面轉場動畫
+   * @param {HTMLElement} card
+   * @param {Object} p
+   * @param {Object} [options]
+   */
+  function launch(card, p, options = {}) {
+    if (!card || !p) return null;
+    if (card.classList && card.classList.contains('is-navigating')) return null;
+    if (card.classList) card.classList.add('is-navigating');
+
+    // Close any active option morph immediately
+    const pom = (typeof window !== 'undefined' && window.ProjectOptionMorph) || (root && root.ProjectOptionMorph);
+    if (pom && typeof pom.isOpen === 'function' && pom.isOpen()) {
+      pom.close('immediate');
+    } else if (typeof root.closeGlobalOptionMorph === 'function') {
+      root.closeGlobalOptionMorph();
+    } else if (typeof window !== 'undefined' && typeof window.closeGlobalOptionMorph === 'function') {
+      window.closeGlobalOptionMorph();
+    }
+
+    // Cancel any previous active transition
+    if (activeTransitionSession && typeof activeTransitionSession.cancel === 'function') {
+      activeTransitionSession.cancel();
+    }
+
+    const navFn = options.navigate || (typeof window !== 'undefined' && (window.navigate || window.spaNavigate)) || (typeof root.navigate === 'function' ? root.navigate : null);
+
+    const folderShell = card.querySelector ? card.querySelector('.project-folder-shell') : null;
+    const primaryCover = card.querySelector ? card.querySelector('.project-preview-primary') : null;
+    if (!folderShell || !primaryCover) {
+      if (typeof navFn === 'function') {
+        navFn('project', { id: p.id });
+      } else if (typeof window !== 'undefined' && window.location) {
+        window.location.hash = `#/project/${encodeURIComponent(p.id)}`;
+      }
+      return null;
+    }
+
+    // 1. App-Level Transition Layer (strictly outside page-main, child of body)
+    let transitionLayer = document.getElementById('transition-layer');
+    if (!transitionLayer || transitionLayer.parentElement !== document.body) {
+      if (transitionLayer) removeNode(transitionLayer);
+      transitionLayer = document.createElement('div');
+      transitionLayer.id = 'transition-layer';
+      transitionLayer.className = 'app-transition-layer';
+      document.body.appendChild(transitionLayer);
+    }
+
+    if (card.classList) card.classList.add('is-expanded');
+
+    // Spec Section 7 & 8: Transition Origin is the current 16:9 preview frame!
+    const curRect = primaryCover.getBoundingClientRect ? primaryCover.getBoundingClientRect() : { width: 282, height: 158.6, left: 100, top: 100 };
+    const startW = curRect.width || 282;
+    const startH = curRect.height || 158.6;
+    const startLeft = curRect.left || 0;
+    const startTop = curRect.top || 0;
+
+    // Spec Section 2: Project True Ratio
+    const projectRatio = parseAspectRatio(
+      primaryCover.dataset?.trueRatio || primaryCover.dataset?.ratio || p.ratio,
+      p.width,
+      p.height
+    );
+    const isContain = projectRatio < (16 / 9) - 0.01;
+
+    // Spec Section 10: Calculate True Ratio Target Size
+    const viewportWidth = (typeof window !== 'undefined' && window.innerWidth) || 1200;
+    const viewportHeight = (typeof window !== 'undefined' && window.innerHeight) || 800;
+    const targetGeom = calculateTransitionTargetSize({
+      aspectRatio: projectRatio,
+      viewportWidth,
+      viewportHeight
+    });
+    // Centre a smaller cover inside the original, enlarged rose animation.
+    const loaderExtent = Math.min(viewportWidth - 32, viewportHeight - 160);
+    const loaderSize = loaderExtent * 1.4;
+    const holdScale = Math.min(0.55,
+      loaderExtent * 0.42 / targetGeom.width,
+      loaderExtent * 0.42 / targetGeom.height);
+    const targetW = targetGeom.width * holdScale;
+    const targetH = targetGeom.height * holdScale;
+    const targetLeft = targetGeom.left + (targetGeom.width - targetW) / 2;
+    const targetTop = targetGeom.top + (targetGeom.height - targetH) / 2;
+
+    // 2. Folder Shell & Secondary Preview drop down and fade out
+    if (folderShell.style) {
+      folderShell.style.transition = 'transform 300ms cubic-bezier(.4, 0, .2, 1), opacity 240ms ease';
+      folderShell.style.transform = 'translateY(32px)';
+      folderShell.style.opacity = '0';
+    }
+
+    const secondary = card.querySelector ? card.querySelector('.project-preview-secondary') : null;
+    if (secondary && secondary.style) {
+      secondary.style.transition = 'opacity 200ms ease, transform 240ms ease';
+      secondary.style.opacity = '0';
+      secondary.style.transform = 'translateY(20px) scale(0.92)';
+    }
+
+    // 3. Spec Section 8: Transition Flying Cover in App-Level Layer
+    const flyingCover = document.createElement('div');
+    flyingCover.className = 'project-reveal-curtain transition-cover-shell';
+    flyingCover.style.position = 'fixed';
+    flyingCover.style.left = `${startLeft}px`;
+    flyingCover.style.top = `${startTop}px`;
+    flyingCover.style.width = `${startW}px`;
+    flyingCover.style.height = `${startH}px`;
+    flyingCover.style.zIndex = '999999';
+    flyingCover.style.borderRadius = coverRadius(14);
+    flyingCover.style.border = '1px solid rgba(255, 255, 255, 0.45)';
+    flyingCover.style.overflow = 'hidden';
+    flyingCover.style.boxShadow = '0 16px 36px rgba(15, 23, 42, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.35)';
+    flyingCover.style.transformOrigin = '45% 100%'; // Spec Section 12
+    flyingCover.style.background = isContain ? '#ffffff' : '#0f172a';
+    flyingCover.style.boxSizing = 'border-box';
+
+    const mainImgEl = primaryCover.querySelector
+      ? (primaryCover.querySelector('.project-preview-primary-image') ||
+         primaryCover.querySelector('.cover-main') ||
+         primaryCover.querySelector('img.lazy-thumb') ||
+         primaryCover.querySelector('img'))
+      : null;
+
+    let bgImg = null;
+    let frostedOverlay = null;
+    let mainImgWrap = null;
+    let mainImgClone = null;
+
+    if (mainImgEl && mainImgEl.src) {
+      if (isContain) {
+        if (flyingCover.classList) flyingCover.classList.add('is-contain-shell');
+        flyingCover.style.background = '#ffffff';
+
+        // Background Layer Morph (Section 4 & 14 - Light White Frosted Material)
+        bgImg = document.createElement('img');
+        bgImg.src = mainImgEl.src;
+        bgImg.className = 'cover-background transition-cover-bg';
+        bgImg.style.cssText = 'position: absolute; inset: -12px; width: calc(100% + 24px); height: calc(100% + 24px); object-fit: cover; filter: blur(24px) saturate(.95) brightness(1.06); transform: scale(1.10); opacity: 0.42; pointer-events: none; border-radius: inherit; z-index: 1;';
+        flyingCover.appendChild(bgImg);
+
+        frostedOverlay = document.createElement('div');
+        frostedOverlay.className = 'transition-cover-overlay';
+        frostedOverlay.style.cssText = 'position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255, 255, 255, 0.58) 0%, rgba(248, 250, 252, 0.48) 100%); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); pointer-events: none; border-radius: inherit; z-index: 1;';
+        flyingCover.appendChild(frostedOverlay);
+
+        // Main Image Inner Wrap for seamless crop morph (Section 15)
+        const innerW_start = Math.round(startH * projectRatio * 10) / 10;
+        const innerH_start = startH;
+
+        mainImgWrap = document.createElement('div');
+        mainImgWrap.className = 'cover-main-wrap transition-cover-media';
+        mainImgWrap.style.cssText = `position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: ${innerW_start}px; height: ${innerH_start}px; overflow: hidden; border-radius: inherit; z-index: 2; display: flex; align-items: center; justify-content: center;`;
+
+        mainImgClone = document.createElement('img');
+        mainImgClone.src = mainImgEl.src;
+        mainImgClone.className = 'cover-main transition-cover-image';
+        mainImgClone.style.cssText = 'width: 100%; height: 100%; object-fit: cover; display: block; border-radius: inherit; filter: drop-shadow(0 4px 14px rgba(15, 23, 42, 0.10));';
+        mainImgWrap.appendChild(mainImgClone);
+        flyingCover.appendChild(mainImgWrap);
+      } else {
+        // Section 3 & 17: projectRatio >= 16/9
+        mainImgWrap = document.createElement('div');
+        mainImgWrap.className = 'cover-main-wrap transition-cover-media';
+        mainImgWrap.style.cssText = 'position: absolute; inset: 0; width: 100%; height: 100%; left: 0; top: 0; transform: none; overflow: hidden; border-radius: inherit; z-index: 2; display: flex; align-items: center; justify-content: center;';
+
+        mainImgClone = document.createElement('img');
+        mainImgClone.src = mainImgEl.src;
+        mainImgClone.className = 'cover-main transition-cover-image';
+        mainImgClone.style.cssText = 'width: 100%; height: 100%; object-fit: cover; display: block; border-radius: inherit;';
+        mainImgWrap.appendChild(mainImgClone);
+        flyingCover.appendChild(mainImgWrap);
+      }
+    } else {
+      flyingCover.innerHTML = primaryCover.innerHTML;
+    }
+
+    const scrim = document.createElement('div');
+    scrim.className = 'project-reveal-scrim';
+    transitionLayer.appendChild(scrim);
+    transitionLayer.appendChild(flyingCover);
+
+    const waitingUI = document.createElement('div');
+    waitingUI.className = 'project-cover-waiting';
+    waitingUI.setAttribute('aria-label', '正在載入專案');
+    waitingUI.style.left = `${targetLeft + targetW / 2}px`;
+    waitingUI.style.top = `${targetTop + targetH / 2 + loaderExtent * 0.46 + 20}px`;
+    let rose = null;
+    let orbit = null;
+    let frontOrbit = null;
+    if (document.createElementNS) {
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('viewBox', '0 0 100 100');
+      svg.setAttribute('aria-hidden', 'true');
+      svg.classList.add('project-cover-rose-svg');
+      orbit = document.createElement('div');
+      orbit.className = 'project-cover-rose-orbit';
+      Object.assign(orbit.style, {
+        left: `${targetLeft + targetW / 2 - loaderSize / 2}px`,
+        top: `${targetTop + targetH / 2 - loaderSize / 2}px`,
+        width: `${loaderSize}px`, height: `${loaderSize}px`
+      });
+      const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('fill', 'none');
+      path.setAttribute('stroke', 'currentColor');
+      path.setAttribute('opacity', '0.18');
+      path.setAttribute('stroke-width', '4.5');
+      path.setAttribute('stroke-linecap', 'round');
+      path.setAttribute('stroke-linejoin', 'round');
+      group.appendChild(path);
+      svg.appendChild(group);
+      orbit.appendChild(svg);
+      transitionLayer.appendChild(orbit);
+      // Separate layers share one animation clock: far arcs pass behind the
+      // cover, while near arcs and particles pass in front of it.
+      frontOrbit = document.createElement('div');
+      frontOrbit.className = 'project-cover-rose-orbit project-cover-rose-front';
+      Object.assign(frontOrbit.style, {
+        left: orbit.style.left, top: orbit.style.top,
+        width: orbit.style.width, height: orbit.style.height
+      });
+      const frontSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      frontSvg.setAttribute('viewBox', '0 0 100 100');
+      frontSvg.setAttribute('aria-hidden', 'true');
+      frontSvg.classList.add('project-cover-rose-svg');
+      const frontGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      const frontPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      frontPath.setAttribute('fill', 'none');
+      frontPath.setAttribute('stroke', 'currentColor');
+      frontPath.setAttribute('stroke-linecap', 'round');
+      frontPath.setAttribute('stroke-linejoin', 'round');
+      frontGroup.appendChild(frontPath);
+      frontSvg.appendChild(frontGroup);
+      frontOrbit.appendChild(frontSvg);
+      transitionLayer.appendChild(frontOrbit);
+      const svgNS = 'http://www.w3.org/2000/svg';
+      const defs = document.createElementNS(svgNS, 'defs');
+      const trackMask = document.createElementNS(svgNS, 'mask');
+      const maskId = `rose-track-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      trackMask.setAttribute('id', maskId);
+      trackMask.setAttribute('maskUnits', 'userSpaceOnUse');
+      trackMask.setAttribute('x', '-50');
+      trackMask.setAttribute('y', '-50');
+      trackMask.setAttribute('width', '200');
+      trackMask.setAttribute('height', '200');
+      const maskBackground = document.createElementNS(svgNS, 'rect');
+      maskBackground.setAttribute('x', '-50');
+      maskBackground.setAttribute('y', '-50');
+      maskBackground.setAttribute('width', '200');
+      maskBackground.setAttribute('height', '200');
+      maskBackground.setAttribute('fill', '#fff');
+      const maskPath = document.createElementNS(svgNS, 'path');
+      maskPath.setAttribute('fill', 'none');
+      maskPath.setAttribute('stroke', '#000');
+      maskPath.setAttribute('stroke-linecap', 'round');
+      maskPath.setAttribute('stroke-linejoin', 'round');
+      trackMask.appendChild(maskBackground);
+      trackMask.appendChild(maskPath);
+      defs.appendChild(trackMask);
+      svg.appendChild(defs);
+      path.setAttribute('mask', `url(#${maskId})`);
+      rose = root.TransitionLoader?.setupRoseAnimation(group, path, 45, { group: frontGroup, path: frontPath, maskPath });
+    }
+    const cancelButton = document.createElement('button');
+    cancelButton.className = 'qc-close-btn project-cover-cancel';
+    cancelButton.type = 'button';
+    cancelButton.textContent = 'X';
+    cancelButton.setAttribute('aria-label', '中斷開啟專案，返回原頁面');
+    cancelButton.title = '中斷開啟專案';
+    waitingUI.appendChild(cancelButton);
+    transitionLayer.appendChild(waitingUI);
+    const reducedMotion = root.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    let navTimer = null;
+
+
+    if (primaryCover.style) primaryCover.style.visibility = 'hidden';
+    requestAnimationFrame(() => {
+      if (scrim.style) scrim.style.opacity = '1';
+    });
+
+    // Transition Session Controller (Shared Element State Machine)
+    const session = {
+      id: `cover-trans-${p.id}-${Date.now()}`,
+      projectId: p.id,
+      targetRoute: `/project/${p.id}`,
+      card,
+      primaryCover,
+      folderShell,
+      secondary,
+      flyingCover,
+      scrim,
+      flightAnim: null,
+      targetLeft,
+      targetTop,
+      targetW,
+      targetH,
+      state: 'extracting', // 'extracting' | 'flying' | 'waiting-project' | 'returning' | 'handoff' | 'complete' | 'cancelled'
+      cancelled: false,
+      pendingTarget: null,
+
+      showWaiting() {
+        if (this.cancelled || this.state !== 'waiting-project') return;
+        waitingUI.classList.add('is-visible');
+        orbit?.classList.add('is-visible');
+        frontOrbit?.classList.add('is-visible');
+        if (!reducedMotion) rose?.start();
+
+      },
+
+      hideWaiting() {
+        waitingUI.classList.remove('is-visible');
+        orbit?.classList.remove('is-visible');
+        frontOrbit?.classList.remove('is-visible');
+        cancelButton.disabled = true;
+        rose?.stop();
+      },
+
+      interrupt() {
+        if (this.cancelled || this.state === 'complete' || this.state === 'returning' || this.state === 'handoff') return;
+        this.cancelled = true;
+        this.state = 'cancelled';
+        this.hideWaiting();
+        clearTimeout(navTimer);
+        // Freeze the current visual before removing the flight animation's fill.
+        const from = this.flyingCover.getBoundingClientRect();
+        this.flightAnim?.cancel();
+        if (this.flyingCover.style) {
+          Object.assign(this.flyingCover.style, { left: `${from.left}px`, top: `${from.top}px`, width: `${from.width}px`, height: `${from.height}px`, transform: 'none' });
+        }
+        this.cancelOpening?.();
+        const canReturn = this.card.isConnected !== false && document.body.contains(this.card);
+        const to = canReturn ? this.primaryCover.getBoundingClientRect() : null;
+        const keyframes = to && to.width > 0 && to.height > 0 ? [
+          { left: `${from.left}px`, top: `${from.top}px`, width: `${from.width}px`, height: `${from.height}px`, opacity: 1 },
+          { left: `${to.left}px`, top: `${to.top}px`, width: `${to.width}px`, height: `${to.height}px`, borderRadius: coverRadius(14), opacity: 1 }
+        ] : [{ opacity: 1, filter: 'blur(0px)' }, { opacity: 0, filter: 'blur(18px)', transform: 'scale(.97)' }];
+        this.scrim.style.opacity = '0';
+        const exit = this.flyingCover.animate?.(keyframes, { duration: reducedMotion ? 0 : 380, easing: 'cubic-bezier(.4, 0, .2, 1)', fill: 'forwards' });
+        if (exit) exit.onfinish = () => this.cleanup();
+        else this.cleanup();
+      },
+
+      onFirstShotReady(targetWrap, targetImg) {
+        if (this.state === 'complete' || this.state === 'returning' || this.cancelled) return;
+        if (this.state === 'extracting' || this.state === 'flying') {
+          this.pendingTarget = { targetWrap, targetImg };
+          return;
+        }
+        this.executeReturn(targetWrap, targetImg);
+      },
+
+      executeReturn(targetWrap, targetImg) {
+        if (this.state === 'complete' || this.state === 'returning' || this.cancelled) return;
+        this.state = 'returning';
+        this.hideWaiting();
+
+        // Wait 2 requestAnimationFrame frames to guarantee layout stability
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            if (this.cancelled || this.state === 'complete') return;
+            if (!targetWrap || (targetWrap.isConnected !== undefined && !targetWrap.isConnected)) {
+              this.cancel();
+              return;
+            }
+
+            // Plan Section 3 & 4: Get actual visible contained image rect
+            const imgEl = targetImg || (targetWrap.querySelector ? targetWrap.querySelector('img') : null) || targetWrap;
+            const targetRect = getContainedImageRect(imgEl) || (targetWrap.getBoundingClientRect ? targetWrap.getBoundingClientRect() : null);
+            if (!targetRect || targetRect.width <= 0 || targetRect.height <= 0) {
+              this.cancel();
+              return;
+            }
+
+            // Plan Section 1: Lock Cover Dimensions from Center Hold
+            const sourceRect = this.flyingCover?.getBoundingClientRect ? this.flyingCover.getBoundingClientRect() : null;
+            if (!sourceRect || sourceRect.width <= 0 || sourceRect.height <= 0) {
+              this.cancel();
+              return;
+            }
+
+            // Plan Section 2: Uniform Scale & Translation
+            const scale = targetRect.width / sourceRect.width;
+            const dx = targetRect.left - sourceRect.left;
+            const dy = targetRect.top - sourceRect.top;
+
+            if (this.flyingCover?.style) {
+              this.flyingCover.style.transformOrigin = 'top left';
+            }
+
+            // Scrim fades out smoothly
+            if (this.scrim && this.scrim.style) {
+              this.scrim.style.transition = 'opacity 320ms cubic-bezier(.4, 0, .2, 1)';
+              this.scrim.style.opacity = '0';
+            }
+
+            // Plan Section 6: First Shot remains hidden during return
+            if (targetWrap.style) {
+              targetWrap.style.opacity = '0';
+            }
+
+            const targetRadius = root.getComputedStyle?.(targetWrap).borderTopLeftRadius || coverRadius('sm');
+            const endRadius = Math.max(2, Math.round(parseFloat(targetRadius) / scale));
+
+            // Plan Section 2 & 9: Return ONLY animates translate + uniform scale + border-radius + shadow.
+            if (!this.flyingCover || typeof this.flyingCover.animate !== 'function') {
+              this.cleanup();
+              return;
+            }
+
+            const returnAnim = this.flyingCover.animate([
+              {
+                transform: 'translate(0px, 0px) scale(1)',
+                borderRadius: coverRadius(10),
+                boxShadow: '0 32px 80px rgba(0, 0, 0, 0.45)'
+              },
+              {
+                transform: `translate(${dx}px, ${dy}px) scale(${scale})`,
+                borderRadius: `${endRadius}px`,
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)'
+              }
+            ], {
+              duration: 380,
+              easing: 'cubic-bezier(.4, 0, .2, 1)',
+              fill: 'forwards'
+            });
+
+            returnAnim.onfinish = () => {
+              if (this.cancelled) return;
+              this.state = 'handoff';
+
+              // Plan Section 7: Seamless handoff (60~120ms crossfade)
+              if (targetWrap) {
+                if (targetWrap.classList) targetWrap.classList.remove('is-transition-target');
+                if (targetWrap.style) {
+                  targetWrap.style.transition = 'opacity 90ms ease';
+                  targetWrap.style.opacity = '1';
+                }
+              }
+
+              if (!this.flyingCover || typeof this.flyingCover.animate !== 'function') {
+                this.cleanup();
+                return;
+              }
+
+              const crossFade = this.flyingCover.animate([
+                { opacity: 1 },
+                { opacity: 0 }
+              ], {
+                duration: 90,
+                fill: 'forwards'
+              });
+
+              crossFade.onfinish = () => {
+                this.cleanup();
+              };
+            };
+          });
+        });
+      },
+
+      cancel() {
+        if (this.state === 'complete' || this.cancelled) return;
+        this.cancelled = true;
+        this.hideWaiting();
+        this.state = 'cancelled';
+        this.runLegacyCoverShrink();
+      },
+
+      fallbackDismiss() {
+        this.cancel();
+      },
+
+      runLegacyCoverShrink() {
+        if (this.state === 'complete') return;
+        this.state = 'cancelled';
+
+        if (this.flightAnim) {
+          try { this.flightAnim.cancel(); } catch (e) {}
+        }
+
+        if (this.scrim && this.scrim.style) {
+          this.scrim.style.transition = 'opacity 300ms ease';
+          this.scrim.style.opacity = '0';
+        }
+
+        if (!this.flyingCover || typeof this.flyingCover.animate !== 'function') {
+          this.cleanup();
+          return;
+        }
+
+        const exitAnim = this.flyingCover.animate([
+          { transform: 'scale(1)', opacity: 1 },
+          { offset: 0.22, transform: 'scale(1.015)', opacity: 0.98 },
+          { offset: 1, transform: 'scale(0.92) translateY(12px)', opacity: 0 }
+        ], {
+          duration: 380,
+          easing: 'cubic-bezier(0.36, 0, 0.66, -0.56)', // --motion-ease-anticipate
+          fill: 'forwards'
+        });
+
+        exitAnim.onfinish = () => {
+          this.cleanup();
+          const targetWrap = document.querySelector ? document.querySelector('.shot-cell-thumb-wrap.is-transition-target') : null;
+          if (targetWrap) {
+            if (targetWrap.classList) targetWrap.classList.remove('is-transition-target');
+            if (targetWrap.style) targetWrap.style.opacity = '1';
+          }
+        };
+      },
+
+      cleanup() {
+        if (this.state === 'complete') return;
+        this.hideWaiting();
+        clearTimeout(navTimer);
+        removeNode(waitingUI);
+        removeNode(orbit);
+        removeNode(frontOrbit);
+        cancelButton.onclick = null;
+        this.state = 'complete';
+
+        removeNode(this.scrim);
+        this.scrim = null;
+
+        removeNode(this.flyingCover);
+        this.flyingCover = null;
+
+        removeNode(frostedOverlay);
+        frostedOverlay = null;
+
+        if (this.primaryCover && this.primaryCover.style) this.primaryCover.style.visibility = '';
+        if (this.folderShell && this.folderShell.style) {
+          this.folderShell.style.transform = '';
+          this.folderShell.style.opacity = '';
+        }
+        if (this.secondary && this.secondary.style) {
+          this.secondary.style.opacity = '';
+          this.secondary.style.transform = '';
+        }
+        if (this.card && this.card.classList) {
+          this.card.classList.remove('is-navigating', 'is-expanded');
+        }
+
+        if (activeTransitionSession === this) {
+          activeTransitionSession = null;
+        }
+        if (typeof window !== 'undefined') {
+          if (window._activeProjectTransition === this) window._activeProjectTransition = null;
+          if (window.currentCoverTransition === this) window.currentCoverTransition = null;
+        }
+        if (typeof global !== 'undefined') {
+          if (global._activeProjectTransition === this) global._activeProjectTransition = null;
+          if (global.currentCoverTransition === this) global.currentCoverTransition = null;
+        }
+        if (root && root !== window) {
+          if (root._activeProjectTransition === this) root._activeProjectTransition = null;
+          if (root.currentCoverTransition === this) root.currentCoverTransition = null;
+        }
+      }
+    };
+
+    activeTransitionSession = session;
+    cancelButton.onclick = () => session.interrupt();
+    if (typeof window !== 'undefined') {
+      window.currentCoverTransition = session;
+      window._activeProjectTransition = session;
+    }
+    if (typeof global !== 'undefined') {
+      global.currentCoverTransition = session;
+      global._activeProjectTransition = session;
+    }
+    if (root && root !== window) {
+      root.currentCoverTransition = session;
+      root._activeProjectTransition = session;
+    }
+
+    // Spec Section 18: Trigger SPA Navigation at ~200ms (~40% into flight morph)
+    let navTriggered = false;
+    const triggerNav = () => {
+      if (session.cancelled || session.state === 'complete') return;
+      if (!navTriggered) {
+        navTriggered = true;
+        if (typeof navFn === 'function') {
+          navFn('project', { id: p.id });
+        } else if (typeof window !== 'undefined' && window.location) {
+          window.location.hash = `#/project/${encodeURIComponent(p.id)}`;
+        }
+      }
+    };
+    navTimer = setTimeout(triggerNav, 200);
+
+    // Spec Section 9, 11, 12, 13: Flight Morph Keyframes (0 - 520ms)
+    session.state = 'flying';
+    const flightKeyframes = [
+      {
+        offset: 0,
+        left: `${startLeft}px`,
+        top: `${startTop}px`,
+        width: `${startW}px`,
+        height: `${startH}px`,
+        transform: 'rotate(-4.5deg) scale(1)',
+        borderRadius: coverRadius(14),
+        borderWidth: '1px',
+        boxShadow: '0 16px 36px rgba(15, 23, 42, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.35)'
+      },
+      {
+        offset: 0.20,
+        left: `${startLeft + (targetLeft - startLeft) * 0.12}px`,
+        top: `${startTop - 28}px`,
+        width: `${startW}px`,
+        height: `${startH}px`,
+        transform: 'rotate(-3.5deg) scale(1.02)',
+        borderRadius: `calc((${coverRadius(14)} + ${coverRadius(12)}) / 2)`,
+        borderWidth: '1px',
+        boxShadow: '0 24px 52px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.25)'
+      },
+      {
+        offset: 0.60,
+        left: `${startLeft + (targetLeft - startLeft) * 0.78}px`,
+        top: `${Math.min(startTop, targetTop) - 14 + (targetTop - startTop) * 0.65}px`,
+        width: `${targetW}px`,
+        height: `${targetH}px`,
+        transform: 'rotate(-0.8deg) scale(1.01)',
+        borderRadius: coverRadius(10),
+        borderWidth: '0.5px',
+        boxShadow: '0 32px 72px rgba(0, 0, 0, 0.42), 0 0 0 1px rgba(255, 255, 255, 0.15)'
+      },
+      {
+        offset: 1,
+        left: `${targetLeft}px`,
+        top: `${targetTop}px`,
+        width: `${targetW}px`,
+        height: `${targetH}px`,
+        transform: 'rotate(0deg) scale(1)',
+        borderRadius: coverRadius(10),
+        borderWidth: '0px',
+        boxShadow: '0 32px 80px rgba(0, 0, 0, 0.45), 0 0 0 0px rgba(255, 255, 255, 0)'
+      }
+    ];
+
+    if (typeof flyingCover.animate === 'function') {
+      const anim = flyingCover.animate(flightKeyframes, {
+        duration: 520,
+        easing: 'cubic-bezier(.4, 0, .2, 1)',
+        fill: 'forwards'
+      });
+      session.flightAnim = anim;
+
+      // Background Layer Morph (20%: 0.42 -> 40%: 0.18 -> 60%: 0)
+      if (bgImg && typeof bgImg.animate === 'function') {
+        bgImg.animate([
+          { offset: 0, opacity: 0.42 },
+          { offset: 0.20, opacity: 0.42 },
+          { offset: 0.40, opacity: 0.18 },
+          { offset: 0.60, opacity: 0 },
+          { offset: 1, opacity: 0 }
+        ], {
+          duration: 520,
+          easing: 'cubic-bezier(.4, 0, .2, 1)',
+          fill: 'forwards'
+        });
+      }
+
+      if (frostedOverlay && typeof frostedOverlay.animate === 'function') {
+        frostedOverlay.animate([
+          { offset: 0, opacity: 1 },
+          { offset: 0.20, opacity: 1 },
+          { offset: 0.40, opacity: 0.4 },
+          { offset: 0.60, opacity: 0 },
+          { offset: 1, opacity: 0 }
+        ], {
+          duration: 520,
+          easing: 'cubic-bezier(.4, 0, .2, 1)',
+          fill: 'forwards'
+        });
+      }
+
+      // Spec Section 15: Main Image Inner Wrap Morph
+      if (mainImgWrap && isContain && typeof mainImgWrap.animate === 'function') {
+        const innerW_start = Math.round(startH * projectRatio * 10) / 10;
+        const innerH_start = startH;
+
+        mainImgWrap.animate([
+          { offset: 0, width: `${innerW_start}px`, height: `${innerH_start}px` },
+          { offset: 0.20, width: `${innerW_start}px`, height: `${innerH_start}px` },
+          { offset: 0.60, width: `${targetW}px`, height: `${targetH}px` },
+          { offset: 1, width: `${targetW}px`, height: `${targetH}px` }
+        ], {
+          duration: 520,
+          easing: 'cubic-bezier(.4, 0, .2, 1)',
+          fill: 'forwards'
+        });
+      }
+
+      // Spec Section 19: Center Hold & Wait for First Shot Ready
+      anim.onfinish = () => {
+        triggerNav(); // Safety fallback
+
+        if (session.state === 'complete' || session.cancelled) return;
+
+        // Settle fixed in center with true project ratio
+        flyingCover.style.left = `${targetLeft}px`;
+        flyingCover.style.top = `${targetTop}px`;
+        flyingCover.style.width = `${targetW}px`;
+        flyingCover.style.height = `${targetH}px`;
+        flyingCover.style.transform = 'none';
+        flyingCover.style.borderRadius = coverRadius(10);
+        flyingCover.style.borderWidth = '0px';
+        flyingCover.style.opacity = '1';
+        flyingCover.style.background = 'transparent';
+
+        if (bgImg) removeNode(bgImg);
+        bgImg = null;
+        if (frostedOverlay) removeNode(frostedOverlay);
+        frostedOverlay = null;
+
+        // Normalize Media Layer completely at Center Hold
+        if (mainImgWrap && mainImgWrap.style) {
+          mainImgWrap.style.position = 'relative';
+          mainImgWrap.style.inset = '0';
+          mainImgWrap.style.left = '0';
+          mainImgWrap.style.top = '0';
+          mainImgWrap.style.width = '100%';
+          mainImgWrap.style.height = '100%';
+          mainImgWrap.style.transform = 'none';
+          mainImgWrap.style.display = 'flex';
+          mainImgWrap.style.alignItems = 'center';
+          mainImgWrap.style.justifyContent = 'center';
+          mainImgWrap.style.overflow = 'hidden';
+        }
+        if (mainImgClone && mainImgClone.style) {
+          mainImgClone.style.width = '100%';
+          mainImgClone.style.height = '100%';
+          mainImgClone.style.objectFit = isContain ? 'contain' : 'cover';
+          mainImgClone.style.objectPosition = 'center';
+          mainImgClone.style.transform = 'none';
+          mainImgClone.style.filter = 'none';
+          mainImgClone.style.display = 'block';
+        }
+
+        session.state = 'waiting-project';
+
+        // If First Shot already arrived while extracting/flight, execute return immediately
+        if (session.pendingTarget) {
+          const { targetWrap, targetImg } = session.pendingTarget;
+          session.pendingTarget = null;
+          session.executeReturn(targetWrap, targetImg);
+        } else session.showWaiting();
+      };
+    } else {
+      // Headless / Non-animation fallback
+      triggerNav();
+      session.state = 'waiting-project';
+      session.showWaiting();
+    }
+
+    return session;
+  }
+
+  function getActiveTransition(projectId) {
+    if (activeTransitionSession) {
+      if (!projectId || String(activeTransitionSession.projectId) === String(projectId)) {
+        return activeTransitionSession;
+      }
+    }
+    return null;
+  }
+
+  function cancel(projectId) {
+    const active = getActiveTransition(projectId);
+    if (active) {
+      active.cancel();
+    }
+  }
+
+  function cleanup() {
+    if (activeTransitionSession) {
+      activeTransitionSession.cleanup();
+    }
+  }
+
+  const ProjectCoverTransition = {
+    launch,
+    getActiveTransition,
+    cancel,
+    cleanup
+  };
+
+  // Mount on global window / root
+  const rootObj = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : root);
+
+  function createBridges(target) {
+    if (!target) return;
+    target.ProjectCoverTransition = ProjectCoverTransition;
+    target.launchProjectRevealTransition = function launchProjectRevealTransition(card, p, options) {
+      return ProjectCoverTransition.launch(card, p, options);
+    };
+  }
+
+  createBridges(rootObj);
+  if (typeof global !== 'undefined' && global !== rootObj) {
+    createBridges(global);
+  }
+  if (typeof window !== 'undefined' && window !== rootObj) {
+    createBridges(window);
+  }
+
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = ProjectCoverTransition;
+  }
+})(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this));
+</script><script>ProjectCoverTransition.launch(document.querySelector(".project-card"),{id:"preview",ratio:"16:9"},{navigate(){}});</script></html>

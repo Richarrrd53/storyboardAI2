@@ -583,8 +583,8 @@ test('waiting controls appear below the cover and leave when the first shot is r
   assert.equal(ui.classList.contains('is-visible'), false);
   await new Promise(resolve => setTimeout(resolve, 25));
   assert.equal(ui.classList.contains('is-visible'), true);
-  assert.equal(ui.style.top, `${session.targetTop + session.targetH + 24}px`);
-  assert.equal(ui.querySelector('.project-cover-waiting-text').textContent, '正在載入專案…');
+  assert.ok(parseFloat(ui.style.top) > session.targetTop + session.targetH);
+  assert.equal(ui.querySelector('.project-cover-waiting-text'), null);
   assert.equal(ui.querySelector('button').classList.contains('qc-close-btn'), true);
   session.onFirstShotReady(createMockElement('div'));
   assert.equal(ui.classList.contains('is-visible'), false);

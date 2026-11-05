@@ -192,6 +192,77 @@ test('TransitionLoader: setupRoseAnimation() starts and stops particle animation
   anim.stop();
 });
 
+test('particles follow a fixed five-petal spatial rose with front and back occlusion', () => {
+  const { group, pathEl, TransitionLoader } = setupMockEnvironment();
+  const frontGroup = createMockElement('g');
+  const frontPath = createMockElement('path');
+  frontGroup.appendChild(frontPath);
+  const originalFrame = global.requestAnimationFrame;
+  let frame;
+  global.requestAnimationFrame = callback => { frame = callback; return 1; };
+  try {
+    const animation = TransitionLoader.setupRoseAnimation(group, pathEl, 45, { group: frontGroup, path: frontPath });
+    const start = performance.now();
+    animation.start();
+    const snapshots = [0, 1350, 2700, 4050, 5400].map(time => {
+      frame(start + time);
+      const back = group.children[1];
+      const front = frontGroup.children[1];
+      return {
+        x: Number(back.getAttribute('cx')),
+        y: Number(back.getAttribute('cy')),
+        front: Number(front.getAttribute('opacity')),
+        back: Number(back.getAttribute('opacity')),
+        path: `${pathEl.getAttribute('d')} ${frontPath.getAttribute('d')}`
+      };
+    });
+    assert.ok(snapshots.some(p => p.front > 0) && snapshots.some(p => p.back > 0), 'electron passes in front of and behind the cover');
+    assert.ok(snapshots.some(p => Math.hypot(snapshots[0].x - p.x, snapshots[0].y - p.y) > 10), 'electron traverses the three dimensional orbit');
+    assert.ok(Math.hypot(snapshots[0].x - snapshots[4].x, snapshots[0].y - snapshots[4].y) < 4, 'electron completes a full orbit');
+    frame(start + 1200);
+    const repeatedPath = `${pathEl.getAttribute('d')} ${frontPath.getAttribute('d')}`;
+    assert.equal(repeatedPath, snapshots[0].path, 'after a breathing cycle the track has the same orientation');
+    const points = repeatedPath.match(/-?\d+\.\d+/g).map(Number);
+    const petalLengths = Array(5).fill(0);
+    for (let i = 0; i < points.length; i += 2) {
+      const x = points[i] - 50, y = points[i + 1] - 50;
+      const angle = (Math.atan2(y, x) + Math.PI * 2) % (Math.PI * 2);
+      const petal = Math.round(angle / (Math.PI * 2 / 5)) % 5;
+      petalLengths[petal] = Math.max(petalLengths[petal], Math.hypot(x, y));
+    }
+    assert.ok(Math.max(...petalLengths) - Math.min(...petalLengths) < 0.03, 'all five petals have the same visible length');
+    for (let side = 0; side < 12; side++) {
+      frame(start + 5400 * ((side + 0.5) / 5));
+      const near = Number(frontGroup.children[1].getAttribute('opacity')) > 0;
+      const far = Number(group.children[1].getAttribute('opacity')) > 0;
+      assert.equal(near, side % 2 === 0, `tip-to-tip side ${side}: alternate only after finishing that side`);
+      assert.equal(far, !near, 'the particle is on exactly one depth layer away from a tip');
+    }
+    frame(start + 5400 * 1.1);
+    assert.ok(Number(group.children[1].getAttribute('opacity')) > 0, 'head continues on the reversed next lap with no drain pause');
+    // Final trail particle is still at progress 0.78, on the prior side.
+    assert.ok(Number(group.children[45].getAttribute('opacity')) > 0, 'trail particles keep their own side instead of flipping with the head');
+    const samples = [1072, 1080, 1088].map(time => {
+      frame(start + time);
+      return Number(frontGroup.children[1].getAttribute('opacity'));
+    });
+    assert.ok(Math.abs(samples[0] - samples[2]) < 0.12, 'depth handoff is smooth at the shared petal tip');
+    frame(start + 1070);
+    assert.ok(Number(frontPath.getAttribute('opacity')) > 0.17, 'there is no whole-track fade or pause at a side boundary');
+    const radiusAt = time => {
+      frame(start + time);
+      const coordinates = pathEl.getAttribute('d').match(/-?\d+\.\d+/g).map(Number);
+      return Math.max(...coordinates.filter((_, i) => i % 2 === 0)) - 50;
+    };
+    const resting = radiusAt(0), peak = radiusAt(600), nextBeat = radiusAt(1200);
+    assert.ok(Math.abs(nextBeat - resting) < 0.02, '50 BPM pulse repeats every 1200ms');
+    assert.ok(peak / resting > 1.03 && peak / resting < 1.08, 'heartbeat swell is gentle');
+    animation.stop();
+  } finally {
+    global.requestAnimationFrame = originalFrame;
+  }
+});
+
 test('TransitionLoader: startTextCycling() cycles text and stopTextCycling() stops interval', async () => {
   const { textEl, TransitionLoader } = setupMockEnvironment();
 
