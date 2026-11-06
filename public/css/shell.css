@@ -300,7 +300,8 @@ body.dashboard-layout.sidebar-open #page-main,
 .header-blur-layer--tint {
   background: linear-gradient(to bottom,
     color-mix(in srgb, var(--color-bg-page, #f8fafc) 100%, transparent) 0%,
-    color-mix(in srgb, var(--color-bg-page, #f8fafc) 50%, transparent) 40%,
+    color-mix(in srgb, var(--color-bg-page, #f8fafc) 95%, transparent) 50%,
+    color-mix(in srgb, var(--color-bg-page, #f8fafc) 70%, transparent) 75%,
     transparent 100%);
 }
 .has-header-backdrop.is-content-scrolled > .header-blur-layer {
@@ -310,16 +311,7 @@ body.dashboard-layout.sidebar-open #page-main,
 
 :is(.content-header, .editor-menubar).has-scroll-backdrop {
   isolation: isolate;
-  transform-origin: center top;
-  transition: transform 320ms var(--motion-ease-standard, ease), gap 320ms var(--motion-ease-standard, ease), background-color 320ms var(--motion-ease-standard, ease), border-radius 320ms var(--motion-ease-standard, ease);
-}
-:is(.content-header, .editor-menubar).has-scroll-backdrop.is-content-scrolled {
-  transform: scale(.97);
-  background-color: color-mix(in srgb, var(--color-bg-page) 90%, transparent);
-  border-radius: var(--radius-pill);
-}
-.project-workspace-header.has-scroll-backdrop.is-content-scrolled {
-  border-radius: var(--radius-continuous-lg);
+  transition: gap 320ms var(--motion-ease-standard, ease);
 }
 :is(.content-header, .editor-menubar).has-scroll-backdrop :is(.project-workspace-header-sub, .project-workspace-meta, .content-header-subtitle) {
   max-height: var(--header-sub-height, 80px);
