@@ -231,7 +231,7 @@ body.dashboard-layout.sidebar-open #page-main,
   z-index: 20 !important;
   background: var(--content-header-bg, var(--color-bg-page, #f8fafc));
   box-sizing: border-box !important;
-  padding: var(--space-6) var(--page-gutter) var(--space-8) !important;
+  padding: var(--space-6) var(--page-gutter) var(--space-4) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
@@ -258,38 +258,85 @@ body.dashboard-layout.sidebar-open #page-main,
   background: transparent;
 }
 
-/* One shared layer sits above the scrolling content and below both header rows.
-   Splitting backdrop filters at the toolbar boundary creates a visible seam. */
+/* Shared backdrop spans the header and any adjacent toolbar. */
 .has-header-backdrop {
-  --header-blur-extent: 56px;
   position: relative;
 }
 
-.has-header-backdrop::after {
-  content: '';
+.header-blur-layer {
   position: absolute;
   top: var(--header-backdrop-top, 0px);
   inset-inline: 0;
-  height: calc(var(--header-backdrop-height, 0px) + var(--header-blur-extent));
+  height: calc(var(--header-backdrop-height, 0px) + 56px);
   z-index: 10;
   pointer-events: none;
-  background: color-mix(in srgb, var(--color-bg-page, #f8fafc) 52%, transparent);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  mask-image: linear-gradient(to bottom, black calc(100% - var(--header-blur-extent)), rgba(0, 0, 0, .8) calc(100% - var(--header-blur-extent) * .75), rgba(0, 0, 0, .3) calc(100% - var(--header-blur-extent) * .35), transparent 100%);
-  -webkit-mask-image: linear-gradient(to bottom, black calc(100% - var(--header-blur-extent)), rgba(0, 0, 0, .8) calc(100% - var(--header-blur-extent) * .75), rgba(0, 0, 0, .3) calc(100% - var(--header-blur-extent) * .35), transparent 100%);
+  background: linear-gradient(to bottom,
+    color-mix(in srgb, var(--color-bg-page, #f8fafc) 90%, transparent) 0%,
+    color-mix(in srgb, var(--color-bg-page, #f8fafc) 90%, transparent) 40%,
+    transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 calc(100% - 56px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 calc(100% - 56px), transparent 100%);
   opacity: 0;
   transition: opacity 240ms var(--motion-ease-standard, ease);
 }
+.has-header-backdrop.is-content-scrolled > .header-blur-layer {
+  opacity: 1;
+  transition: none;
+}
 
-.has-header-backdrop.is-content-scrolled::after { opacity: 1; }
+/* The capsule is independent of the content and grows out as the header returns. */
+:is(.content-header, .editor-menubar).has-scroll-backdrop {
+  isolation: isolate;
+  transform-origin: center top;
+  transition: transform 320ms var(--motion-ease-standard, ease), gap 320ms var(--motion-ease-standard, ease);
+}
+:is(.content-header, .editor-menubar).has-scroll-backdrop::before {
+  content: '';
+  position: absolute;
+  inset: 8px 16px;
+  z-index: -1;
+  border-radius: 999px;
+  background: var(--color-bg-page, #f8fafc);
+  border: 0;
+  opacity: 0;
+  transform: scale(1.06, 1.12);
+  pointer-events: none;
+  transition: opacity 320ms var(--motion-ease-standard, ease), transform 320ms var(--motion-ease-standard, ease);
+}
+:is(.content-header, .editor-menubar).has-scroll-backdrop.is-content-scrolled {
+  transform: scale(.97);
+}
+:is(.content-header, .editor-menubar).has-scroll-backdrop.is-content-scrolled::before {
+  opacity: 1;
+  transform: scale(1);
+}
+.project-workspace-header.has-scroll-backdrop .project-workspace-header-sub,
+.project-workspace-header.has-scroll-backdrop .project-workspace-meta {
+  max-height: var(--header-sub-height, 80px);
+  overflow: hidden;
+  opacity: 1;
+  transition: max-height 320ms var(--motion-ease-standard, ease), opacity 320ms var(--motion-ease-standard, ease);
+}
+.project-workspace-header.has-scroll-backdrop.is-content-scrolled { gap: 0; }
+.project-workspace-header.has-scroll-backdrop.is-content-scrolled .project-workspace-header-sub,
+.project-workspace-header.has-scroll-backdrop.is-content-scrolled .project-workspace-meta {
+  max-height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
 
 /* Preserve the entrance and its delay, then release the opacity Backdrop Root
    created by a forwards-filled animation so the layer can sample its sibling. */
 .has-scroll-backdrop.anim-fadeInUp { animation-fill-mode: backwards; }
 
 @media (prefers-reduced-motion: reduce) {
-  .has-header-backdrop::after { transition: none; }
+  .header-blur-layer,
+  :is(.content-header, .editor-menubar).has-scroll-backdrop,
+  :is(.content-header, .editor-menubar).has-scroll-backdrop::before,
+  .project-workspace-header.has-scroll-backdrop .project-workspace-header-sub,
+  .project-workspace-header.has-scroll-backdrop .project-workspace-meta { transition: none; }
 }
 
 .page-header .page-title,

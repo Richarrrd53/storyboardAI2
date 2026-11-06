@@ -5,6 +5,7 @@
   let currentRouteMounted = true;
   let currentNavController = null;
   let navSeq = 0;
+  let requestSeq = 0;
   let targetPage = null;
   let targetOpts = null;
   let activePageInstance = null;
@@ -194,12 +195,25 @@
 
   let pageController = null;
   async function navigate(page, opts = {}) {
+    const request = ++requestSeq;
     // Guards run before acquiring navigation state or changing presentation.
     if (opts.openQC) return window.CreationController.openQuickCompose();
     if (!pageDefs[page]) return;
     if (isDashboardPage(page) && !spaAuth.isLoggedIn()) {
       window.showSpaToast('您尚未登入，請先登入以存取該頁面。');
       return navigate('login', { force: true });
+    }
+    if (isDashboardPage(page)) {
+      const result = await spaAuth.fetchUser();
+      if (request !== requestSeq || result?.stale) return;
+      if (!result?.valid) {
+        window.showSpaToast('登入已過期，請重新登入。');
+        return navigate('login', { force: true });
+      }
+      if (result.error || result.aborted || !result.user) {
+        window.showSpaToast('無法驗證登入狀態，請檢查網路連線後再試。');
+        return;
+      }
     }
     const activePage = targetPage || currentPage;
     const activeOpts = targetPage ? targetOpts : currentOpts;

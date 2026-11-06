@@ -17,7 +17,7 @@ function routerFixture(path = '/', embedded = false) {
   const main = { innerHTML: '<section>landing</section>', className: 'landing-content' };
   const document = { body, addEventListener: (name, fn) => { events[name] = fn; }, querySelectorAll: () => [], getElementById: () => main };
   const window = { location, history, addEventListener: (name, fn) => { events[name] = fn; }, removeEventListener() {},
-    spaAuth: { isLoggedIn: () => true },
+    spaAuth: { isLoggedIn: () => true, fetchUser: async () => ({ valid: true, user: { id: 'fixture' } }) },
     PageAssetLoader: { injectCSS: async () => {}, removePageCSS() {}, removePageScripts() {}, injectScripts: async () => [], prefetchAuthResources() {}, prefetchPage() {} },
     PageHost: { captureLanding() {}, prepare() {}, getContent() {}, async mount(context) {
       mounts.push(context);
@@ -149,6 +149,32 @@ test('guards, same routes and QuickCompose leave navigation state clear', async 
   await f.window.navigate('projects');
   assert.equal(f.mounts.at(-1).page, 'login');
   assert.equal(f.classes.has('is-navigating'), false);
+});
+
+test('protected routes validate the session before mounting and reject expired or unavailable sessions', async () => {
+  const f = routerFixture();
+  f.window.spaAuth.fetchUser = async () => ({ valid: false });
+  await f.window.navigate('dashboard');
+  assert.equal(f.mounts.at(-1).page, 'login');
+  assert.equal(f.mounts.some(m => m.page === 'dashboard'), false);
+
+  const offline = routerFixture();
+  offline.window.spaAuth.fetchUser = async () => ({ valid: true, error: true });
+  await offline.window.navigate('dashboard');
+  assert.equal(offline.mounts.length, 0);
+  assert.equal(offline.history.writes.length, 0);
+});
+
+test('a late session check cannot override a newer navigation', async () => {
+  const f = routerFixture();
+  let release;
+  f.window.spaAuth.fetchUser = () => new Promise(resolve => { release = resolve; });
+  const pending = f.window.navigate('dashboard');
+  await f.window.navigate('login');
+  release({ valid: false });
+  await pending;
+  assert.equal(f.mounts.at(-1).page, 'login');
+  assert.equal(f.mounts.length, 1);
 });
 
 test('late mounts unmount only their own instance and cannot clear a newer navigation', async () => {

@@ -674,40 +674,39 @@
   transform: translateX(-50%);
 }
 
-.project-cover-rose-orbit {
-  position: fixed;
-  z-index: 999998;
+ .project-cover-title {
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   color: #fff;
-  overflow: visible;
-  fill: none;
-  pointer-events: none;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 240ms ease, visibility 240ms;
+  font-size: 24px;
+  font-weight: 900;
+  text-align: center;
 }
-
-.project-cover-rose-orbit.is-visible {
-  opacity: 1;
-  visibility: visible;
+.project-cover-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 12px;
 }
-
-.project-cover-rose-front {
-  z-index: 1000000;
+.project-cover-mini-rose { width: 36px; height: 36px; color: #fff; flex: none; }
+.project-cover-loading-text { color: rgba(255, 255, 255, .8); font-size: 14px; transition: opacity 500ms ease, filter 500ms ease; }
+.project-cover-loading-text.blur-out { opacity: 0; filter: blur(6px); }
+.project-cover-cancel {
+  border: 0;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, .2);
+  color: #fff;
+  padding: 8px 24px;
+  font: inherit;
+  cursor: pointer;
 }
-
-.project-cover-rose-svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-}
-
-.project-cover-cancel { color: #fff !important; }
 .project-cover-waiting.is-visible .project-cover-cancel { pointer-events: auto; }
-.project-cover-cancel:focus-visible { outline: 2px solid #fff !important; outline-offset: 4px; }
-
+.project-cover-cancel:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
 @media (prefers-reduced-motion: reduce) {
-  .project-cover-waiting, .project-cover-rose-orbit { transition: none; }
+  .project-cover-waiting, .project-cover-loading-text { transition: none; }
 }
 
 .project-reveal-curtain,

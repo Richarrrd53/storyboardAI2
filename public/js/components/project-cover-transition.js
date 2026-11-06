@@ -142,16 +142,12 @@
       viewportWidth,
       viewportHeight
     });
-    // Centre a smaller cover inside the original, enlarged rose animation.
-    const loaderExtent = Math.min(viewportWidth - 32, viewportHeight - 160);
-    const loaderSize = loaderExtent * 1.4;
-    const holdScale = Math.min(0.55,
-      loaderExtent * 0.42 / targetGeom.width,
-      loaderExtent * 0.42 / targetGeom.height);
-    const targetW = targetGeom.width * holdScale;
-    const targetH = targetGeom.height * holdScale;
-    const targetLeft = targetGeom.left + (targetGeom.width - targetW) / 2;
-    const targetTop = targetGeom.top + (targetGeom.height - targetH) / 2;
+    // Reserve space below the cover for the title, loader and cancel button.
+    const coverScale = Math.min(1, Math.max(0.1, viewportHeight - 220) / targetGeom.height);
+    const targetW = targetGeom.width * coverScale;
+    const targetH = targetGeom.height * coverScale;
+    const targetLeft = (viewportWidth - targetW) / 2;
+    const targetTop = Math.max(16, (viewportHeight - targetH - 190) / 2);
 
     // 2. Folder Shell & Secondary Preview drop down and fade out
     if (folderShell.style) {
@@ -253,88 +249,46 @@
     waitingUI.className = 'project-cover-waiting';
     waitingUI.setAttribute('aria-label', '正在載入專案');
     waitingUI.style.left = `${targetLeft + targetW / 2}px`;
-    waitingUI.style.top = `${targetTop + targetH / 2 + loaderExtent * 0.46 + 20}px`;
+    waitingUI.style.top = `${targetTop + targetH + 20}px`;
+    waitingUI.style.width = `${Math.min(targetW, viewportWidth - 32)}px`;
+
+    const title = document.createElement('div');
+    title.className = 'project-cover-title';
+    title.textContent = p.title || '未命名分鏡';
+    waitingUI.appendChild(title);
+
+    const loading = document.createElement('div');
+    loading.className = 'project-cover-loading';
     let rose = null;
-    let orbit = null;
-    let frontOrbit = null;
     if (document.createElementNS) {
       const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
       svg.setAttribute('viewBox', '0 0 100 100');
       svg.setAttribute('aria-hidden', 'true');
-      svg.classList.add('project-cover-rose-svg');
-      orbit = document.createElement('div');
-      orbit.className = 'project-cover-rose-orbit';
-      Object.assign(orbit.style, {
-        left: `${targetLeft + targetW / 2 - loaderSize / 2}px`,
-        top: `${targetTop + targetH / 2 - loaderSize / 2}px`,
-        width: `${loaderSize}px`, height: `${loaderSize}px`
-      });
+      svg.classList.add('project-cover-mini-rose');
       const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
       const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       path.setAttribute('fill', 'none');
       path.setAttribute('stroke', 'currentColor');
       path.setAttribute('opacity', '0.18');
-      path.setAttribute('stroke-width', '4.5');
-      path.setAttribute('stroke-linecap', 'round');
-      path.setAttribute('stroke-linejoin', 'round');
       group.appendChild(path);
       svg.appendChild(group);
-      orbit.appendChild(svg);
-      transitionLayer.appendChild(orbit);
-      // Separate layers share one animation clock: far arcs pass behind the
-      // cover, while near arcs and particles pass in front of it.
-      frontOrbit = document.createElement('div');
-      frontOrbit.className = 'project-cover-rose-orbit project-cover-rose-front';
-      Object.assign(frontOrbit.style, {
-        left: orbit.style.left, top: orbit.style.top,
-        width: orbit.style.width, height: orbit.style.height
-      });
-      const frontSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      frontSvg.setAttribute('viewBox', '0 0 100 100');
-      frontSvg.setAttribute('aria-hidden', 'true');
-      frontSvg.classList.add('project-cover-rose-svg');
-      const frontGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      const frontPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      frontPath.setAttribute('fill', 'none');
-      frontPath.setAttribute('stroke', 'currentColor');
-      frontPath.setAttribute('stroke-linecap', 'round');
-      frontPath.setAttribute('stroke-linejoin', 'round');
-      frontGroup.appendChild(frontPath);
-      frontSvg.appendChild(frontGroup);
-      frontOrbit.appendChild(frontSvg);
-      transitionLayer.appendChild(frontOrbit);
-      const svgNS = 'http://www.w3.org/2000/svg';
-      const defs = document.createElementNS(svgNS, 'defs');
-      const trackMask = document.createElementNS(svgNS, 'mask');
-      const maskId = `rose-track-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-      trackMask.setAttribute('id', maskId);
-      trackMask.setAttribute('maskUnits', 'userSpaceOnUse');
-      trackMask.setAttribute('x', '-50');
-      trackMask.setAttribute('y', '-50');
-      trackMask.setAttribute('width', '200');
-      trackMask.setAttribute('height', '200');
-      const maskBackground = document.createElementNS(svgNS, 'rect');
-      maskBackground.setAttribute('x', '-50');
-      maskBackground.setAttribute('y', '-50');
-      maskBackground.setAttribute('width', '200');
-      maskBackground.setAttribute('height', '200');
-      maskBackground.setAttribute('fill', '#fff');
-      const maskPath = document.createElementNS(svgNS, 'path');
-      maskPath.setAttribute('fill', 'none');
-      maskPath.setAttribute('stroke', '#000');
-      maskPath.setAttribute('stroke-linecap', 'round');
-      maskPath.setAttribute('stroke-linejoin', 'round');
-      trackMask.appendChild(maskBackground);
-      trackMask.appendChild(maskPath);
-      defs.appendChild(trackMask);
-      svg.appendChild(defs);
-      path.setAttribute('mask', `url(#${maskId})`);
-      rose = root.TransitionLoader?.setupRoseAnimation(group, path, 45, { group: frontGroup, path: frontPath, maskPath });
+      loading.appendChild(svg);
+      rose = root.TransitionLoader?.setupRoseAnimation(group, path);
     }
+    const loadingText = document.createElement('span');
+    loadingText.className = 'project-cover-loading-text';
+    const loadingMessages = ['正在載入專案...', '正在準備分鏡...', '正在佈置場景...', '即將完成...'];
+    let loadingIndex = 0;
+    let loadingInterval = null;
+    let loadingTimeout = null;
+    loadingText.textContent = loadingMessages[0];
+    loading.appendChild(loadingText);
+    waitingUI.appendChild(loading);
+
     const cancelButton = document.createElement('button');
-    cancelButton.className = 'qc-close-btn project-cover-cancel';
+    cancelButton.className = 'project-cover-cancel';
     cancelButton.type = 'button';
-    cancelButton.textContent = 'X';
+    cancelButton.textContent = '取消';
     cancelButton.setAttribute('aria-label', '中斷開啟專案，返回原頁面');
     cancelButton.title = '中斷開啟專案';
     waitingUI.appendChild(cancelButton);
@@ -371,16 +325,26 @@
       showWaiting() {
         if (this.cancelled || this.state !== 'waiting-project') return;
         waitingUI.classList.add('is-visible');
-        orbit?.classList.add('is-visible');
-        frontOrbit?.classList.add('is-visible');
-        if (!reducedMotion) rose?.start();
+        if (!reducedMotion) {
+          rose?.start();
+          loadingInterval = setInterval(() => {
+            loadingText.classList.add('blur-out');
+            loadingTimeout = setTimeout(() => {
+              loadingIndex = (loadingIndex + 1) % loadingMessages.length;
+              loadingText.textContent = loadingMessages[loadingIndex];
+              loadingText.classList.remove('blur-out');
+            }, 500);
+          }, 2800);
+        }
 
       },
 
       hideWaiting() {
         waitingUI.classList.remove('is-visible');
-        orbit?.classList.remove('is-visible');
-        frontOrbit?.classList.remove('is-visible');
+        clearInterval(loadingInterval);
+        clearTimeout(loadingTimeout);
+        loadingInterval = null;
+        loadingTimeout = null;
         cancelButton.disabled = true;
         rose?.stop();
       },
@@ -583,8 +547,6 @@
         this.hideWaiting();
         clearTimeout(navTimer);
         removeNode(waitingUI);
-        removeNode(orbit);
-        removeNode(frontOrbit);
         cancelButton.onclick = null;
         this.state = 'complete';
 

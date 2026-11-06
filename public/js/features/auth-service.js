@@ -118,7 +118,7 @@
 
         if (requestSession !== session || token !== localStorage.getItem(AUTH_TOKEN_KEY)) return { valid: false, stale: true };
         if (!res.ok) {
-          if (res.status === 401 || res.status === 403) {
+          if (res.status === 401 || res.status === 403 || res.status === 404) {
             endSession();
             return { valid: false };
           }

@@ -117,7 +117,13 @@
         this.header = header;
         this.headerToolbar = toolbar;
         this.headerHost = header?.parentElement;
-        if (this.headerHost) headerHosts.set(this.headerHost, this);
+        if (this.headerHost) {
+          headerHosts.set(this.headerHost, this);
+          this.headerBlurLayer = document.createElement('div');
+          this.headerBlurLayer.className = 'header-blur-layer';
+          this.headerBlurLayer.setAttribute('aria-hidden', 'true');
+          this.headerHost.appendChild(this.headerBlurLayer);
+        }
         this.headerScrolled = false;
         this.headerLayoutDirty = true;
         if (header) this.resizeObserver?.observe(header);
@@ -128,6 +134,10 @@
       this.headerHost?.classList.add('has-header-backdrop');
       toolbar?.classList.add('has-scroll-backdrop');
       if (this.headerLayoutDirty) {
+        // Animate from each subtitle's actual height so it finishes with the capsule.
+        header.querySelectorAll('.project-workspace-header-sub, .project-workspace-meta').forEach(sub => {
+          sub.style.setProperty('--header-sub-height', `${sub.scrollHeight}px`);
+        });
         // Measure the original flow before compensating the viewport. A transparent
         // header needs content behind it; otherwise the sibling viewport clips it away.
         const savedScrollTop = this.scrollElement.scrollTop;
@@ -145,14 +155,22 @@
         this.scrollElement.scrollTop = savedScrollTop;
         this.headerLayoutDirty = false;
       }
-      // Hysteresis absorbs subpixel scroll positions and touch overscroll at the top.
-      this.headerScrolled = maxScroll > 1 && (this.headerScrolled ? scrollTop > 1 : scrollTop > 6);
-      header.classList.toggle('is-content-scrolled', this.headerScrolled);
-      toolbar?.classList.toggle('is-content-scrolled', this.headerScrolled);
+      this.setHeaderScrolled(scrollTop, maxScroll);
+    }
+
+    setHeaderScrolled(scrollTop, maxScroll) {
+      this.headerScrolled = maxScroll > 1 && scrollTop > 0;
+      this.header?.classList.toggle('is-content-scrolled', this.headerScrolled);
+      this.headerToolbar?.classList.toggle('is-content-scrolled', this.headerScrolled);
       this.headerHost?.classList.toggle('is-content-scrolled', this.headerScrolled);
     }
 
     clearHeaderPresentation() {
+      this.headerBlurLayer?.remove();
+      this.headerBlurLayer = null;
+      this.header?.querySelectorAll('.project-workspace-header-sub, .project-workspace-meta').forEach(sub => {
+        sub.style.removeProperty('--header-sub-height');
+      });
       // A late teardown must not clear a successor using the same SPA container.
       if (!this.headerHost || headerHosts.get(this.headerHost) === this) {
         this.header?.classList.remove('has-scroll-backdrop', 'is-content-scrolled');
@@ -168,6 +186,12 @@
     }
 
     onScroll() {
+      // Apply the backdrop in the scroll event, before the next paint. Layout and
+      // edge-mask calculations can still be batched in requestAnimationFrame.
+      if (this.header) {
+        this.setHeaderScrolled(this.scrollElement.scrollTop,
+          Math.max(0, this.scrollElement.scrollHeight - this.scrollElement.clientHeight));
+      }
       this.scheduleUpdate();
     }
 
