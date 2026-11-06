@@ -15,6 +15,7 @@
 
 (function () {
   'use strict';
+  const icon = name => window.ProjectDetailIcons?.(name) || '';
 
   window.ProjectDetailController = {
     // ── 內部狀態 ──
@@ -40,6 +41,7 @@
       this._projectId = projectId;
       this._project = project;
       this._selectedShotId = null;
+      this._viewMode = 'table';
       this._editorDirty = false;
       this._saving = false;
 
@@ -58,6 +60,8 @@
         document.removeEventListener('keydown', this._keyHandler);
         this._keyHandler = null;
       }
+      clearTimeout(this._toastTimer);
+      if (typeof document !== 'undefined') document.getElementById('pd-toast')?.remove();
       this._root = null;
       this._project = null;
     },
@@ -115,6 +119,8 @@
         }
 
         this._viewMode = mode;
+        btnTable.setAttribute?.('aria-pressed', String(mode === 'table'));
+        btnFilm.setAttribute?.('aria-pressed', String(mode === 'film'));
         if (mode === 'table') {
           btnTable.classList.add('active');
           btnFilm.classList.remove('active');
@@ -229,6 +235,9 @@
       // 膠捲影格點擊
       const scrollContainer = root.querySelector('.project-filmstrip-scroll');
       root.querySelectorAll('.project-film-frame').forEach(frame => {
+        frame.addEventListener('keydown', event => {
+          if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); frame.click(); }
+        });
         frame.addEventListener('click', () => {
           if (scrollContainer && scrollContainer._didDrag && scrollContainer._didDrag()) return;
           const shotId = frame.dataset.shotId;
@@ -245,6 +254,12 @@
         this._keyHandler = null;
       }
       this._keyHandler = (e) => {
+        if (e.key === 'Tab' && this._editorEl) {
+          const items = [...this._editorEl.querySelectorAll('button:not(:disabled), input:not(:disabled), textarea:not(:disabled), [tabindex="0"]')].filter(el => el.getClientRects().length);
+          const first = items[0], last = items[items.length - 1];
+          if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last?.focus(); }
+          else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus(); }
+        }
         if (e.key === 'Escape' && this._editorEl && this._editorEl.classList.contains('open')) {
           this.closeEditor();
         }
@@ -282,6 +297,13 @@
       const shot = shots.find(s => s.id === shotId);
       if (!shot) return;
 
+      clearTimeout(this._editorRemoveTimer);
+      this._pendingEditorRemoval?.();
+      this._pendingEditorRemoval = null;
+      this._editorEvents?.abort();
+      this._editorEvents = new AbortController();
+      this._saving = this._isOptimizingPrompt = this._isRegeneratingImage = false;
+      this._returnFocus = document.activeElement;
       this._selectedShotId = shotId;
       this._editorDirty = false;
 
@@ -305,17 +327,27 @@
 
         this._editorEl = document.createElement('div');
         this._editorEl.className = 'project-shot-editor';
+        this._editorEl.setAttribute('role', 'dialog');
+        this._editorEl.setAttribute('aria-modal', 'true');
+        this._editorEl.setAttribute('aria-labelledby', 'pd-editor-heading');
         document.body.appendChild(this._editorEl);
       }
 
       this._editorEl.innerHTML = this._buildEditorHTML(shot);
 
+      const editor = this._editorEl;
+      document.body.classList.add('project-editor-open');
+      document.body.style.setProperty('--editor-depth-progress', '1');
+      const page = document.getElementById('page-main');
+      if (page) page.inert = true;
       requestAnimationFrame(() => {
+        if (this._editorEl !== editor || this._editorEvents.signal.aborted) return;
         this._backdropEl.classList.add('visible');
-        this._editorEl.classList.add('open');
+        editor.classList.add('open');
+        editor.querySelector('#pd-editor-close')?.focus({ preventScroll: true });
       });
-
       this._bindEditorEvents(shot);
+      this._bindEditorGestures();
     },
 
     // ── 建構 Shot Inspector HTML ──
@@ -340,30 +372,31 @@
           const isCurrent = item.image === imageUrl;
           const vNum = history.length - idx;
           return `
-            <div class="editor-version-item ${isCurrent ? 'active' : ''}" data-version-img="${this._escHtml(item.image)}" data-version-prompt="${this._escHtml(item.prompt || '')}">
-              <div class="version-radio-dot"></div>
+            <button type="button" class="editor-version-item ${isCurrent ? 'active' : ''}" aria-pressed="${isCurrent}" data-version-img="${this._escHtml(item.image)}" data-version-prompt="${this._escHtml(item.prompt || '')}">
+              <span class="version-radio-dot" aria-hidden="true"></span>
               <span class="version-label">Version ${vNum}</span>
               ${isCurrent ? '<span class="version-tag">目前使用</span>' : ''}
-            </div>
+            </button>
           `;
         }).join('');
       } else {
         versionListHtml = `
-          <div class="editor-version-item active">
-            <div class="version-radio-dot"></div>
+          <button type="button" class="editor-version-item active" aria-pressed="true" disabled>
+            <span class="version-radio-dot" aria-hidden="true"></span>
             <span class="version-label">Version 1</span>
             <span class="version-tag">目前使用</span>
-          </div>
+          </button>
         `;
       }
 
       return `
+        <button type="button" class="project-editor-grab" aria-label="向下拖曳或按下以關閉鏡頭編輯器"><span></span></button>
         <div class="project-shot-editor-header">
           <div class="project-shot-editor-title">
-            <span>🎬</span>
-            <span>Shot ${orderStr}</span>
+            ${icon('film')}
+            <div><strong id="pd-editor-heading">鏡頭 ${orderStr}</strong><small>故事與影像設定</small></div>
           </div>
-          <button class="project-shot-editor-close" id="pd-editor-close" aria-label="關閉分鏡編輯器" title="關閉 (Esc)">✕</button>
+          <button class="project-shot-editor-close" id="pd-editor-close" aria-label="關閉分鏡編輯器" title="關閉 (Esc)">${icon('close')}</button>
         </div>
 
         <div class="project-shot-editor-body">
@@ -422,11 +455,11 @@
             
             <div class="editor-prompt-actions">
               <button class="editor-ai-btn" id="pd-btn-optimize-prompt" title="根據故事內容與鏡頭語言，重新生成精確英文提示詞">
-                <span>✨</span>
+                ${icon('sparkle')}
                 <span id="pd-lbl-optimize">AI 最佳化提示詞</span>
               </button>
               <button class="editor-ai-btn primary" id="pd-btn-regenerate" title="保持現有故事，只為此鏡頭重新產生新圖片">
-                <span>🎨</span>
+                ${icon('image')}
                 <span id="pd-lbl-regen">重新生成圖片</span>
               </button>
             </div>
@@ -441,10 +474,11 @@
           </div>
         </div>
 
+        <p class="project-editor-status" id="pd-editor-status" role="status" aria-live="polite" hidden></p>
         <div class="project-shot-editor-footer">
           <button class="editor-btn-cancel" id="pd-editor-cancel">取消</button>
           <button class="editor-btn-save" id="pd-editor-save">
-            <span id="pd-lbl-save">儲存變更</span>
+            ${icon('check')}<span id="pd-lbl-save">儲存變更</span>
           </button>
         </div>
       `;
@@ -469,7 +503,7 @@
         el.querySelector(sel)?.addEventListener('input', () => {
           this._editorDirty = true;
           const lbl = el.querySelector('#pd-lbl-save');
-          if (lbl) lbl.textContent = '● 儲存變更';
+          if (lbl) lbl.textContent = '儲存變更';
         });
       });
 
@@ -490,8 +524,9 @@
           if (!vImg) return;
 
           // 標記 active
-          el.querySelectorAll('.editor-version-item').forEach(v => v.classList.remove('active'));
+          el.querySelectorAll('.editor-version-item').forEach(v => { v.classList.remove('active'); v.setAttribute('aria-pressed', 'false'); });
           item.classList.add('active');
+          item.setAttribute('aria-pressed', 'true');
 
           // 切換當前大圖預覽
           const previewImg = el.querySelector('#pd-preview-img');
@@ -506,14 +541,87 @@
           this._editorDirty = true;
           this._activeVersionImage = vImg;
           const lbl = el.querySelector('#pd-lbl-save');
-          if (lbl) lbl.textContent = '● 儲存變更 (切換版本)';
+          if (lbl) lbl.textContent = '儲存版本變更';
         });
       });
     },
 
+    _bindEditorGestures() {
+      const editor = this._editorEl, backdrop = this._backdropEl;
+      const handle = editor.querySelector('.project-editor-grab');
+      if (!handle) return;
+      const signal = this._editorEvents.signal;
+      const syncViewport = () => {
+        editor.style.setProperty('--editor-viewport-height', `${window.visualViewport?.height || window.innerHeight}px`);
+        editor.style.setProperty('--editor-viewport-top', `${window.visualViewport?.offsetTop || 0}px`);
+      };
+      syncViewport();
+      window.visualViewport?.addEventListener('resize', syncViewport, { signal, passive: true });
+      window.visualViewport?.addEventListener('scroll', syncViewport, { signal, passive: true });
+      let drag = null, suppressClick = false;
+      const settle = () => {
+        editor.style.removeProperty('transform');
+        editor.style.removeProperty('transition');
+        backdrop.style.removeProperty('opacity');
+        document.body.classList.remove('project-editor-dragging');
+        document.body.style.setProperty('--editor-depth-progress', '1');
+      };
+      handle.addEventListener('pointerdown', event => {
+        if (!window.matchMedia('(max-width: 768px)').matches || (event.button && event.pointerType === 'mouse')) return;
+        event.preventDefault();
+        drag = { id: event.pointerId, start: event.clientY, last: event.clientY, time: performance.now(), velocity: 0, dy: 0 };
+        handle.setPointerCapture(event.pointerId);
+        editor.style.transition = 'none';
+        document.body.classList.add('project-editor-dragging');
+      }, { signal });
+      handle.addEventListener('pointermove', event => {
+        if (!drag || event.pointerId !== drag.id) return;
+        const now = performance.now();
+        drag.velocity = (event.clientY - drag.last) / Math.max(1, now - drag.time);
+        drag.last = event.clientY; drag.time = now;
+        drag.dy = Math.max(0, event.clientY - drag.start);
+        if (drag.dy > 5) suppressClick = true;
+        editor.style.transform = `translate3d(0, ${drag.dy}px, 0)`;
+        const progress = Math.max(0, 1 - drag.dy / editor.clientHeight);
+        backdrop.style.opacity = String(progress);
+        document.body.style.setProperty('--editor-depth-progress', String(progress));
+      }, { signal });
+      const end = (event, cancelled = false) => {
+        if (!drag || drag.id !== event.pointerId) return;
+        const dismiss = !cancelled && (drag.dy > editor.clientHeight * .24 || (drag.dy > 40 && drag.velocity > .65));
+        drag = null;
+        if (dismiss) {
+          document.body.classList.remove('project-editor-dragging');
+          editor.style.removeProperty('transition');
+          this.closeEditor();
+        } else settle();
+      };
+      handle.addEventListener('pointerup', event => end(event), { signal });
+      handle.addEventListener('pointercancel', event => end(event, true), { signal });
+      handle.addEventListener('click', () => {
+        if (suppressClick) { suppressClick = false; return; }
+        this.closeEditor();
+      }, { signal });
+      signal.addEventListener('abort', () => { drag = null; document.body.classList.remove('project-editor-dragging'); }, { once: true });
+    },
+
     // ── 關閉 Shot Inspector ──
     closeEditor(animate = true) {
+      if (!animate) {
+        clearTimeout(this._editorRemoveTimer);
+        this._pendingEditorRemoval?.();
+        this._pendingEditorRemoval = null;
+      }
+      this._editorEvents?.abort();
+      if (typeof document !== 'undefined') {
+        document.body.classList.remove('project-editor-open', 'project-editor-dragging');
+        document.body.style.removeProperty('--editor-depth-progress');
+      }
+      const page = typeof document !== 'undefined' ? document.getElementById('page-main') : null;
+      if (page) page.inert = false;
       if (this._editorEl) {
+        this._editorEl.style.removeProperty('transform');
+        this._editorEl.style.pointerEvents = 'none';
         this._editorEl.classList.remove('open');
         if (this._backdropEl) this._backdropEl.classList.remove('visible');
 
@@ -525,13 +633,19 @@
         };
 
         if (animate) {
-          setTimeout(remove, 300);
+          this._pendingEditorRemoval = remove;
+          this._editorRemoveTimer = setTimeout(() => {
+            remove();
+            if (this._pendingEditorRemoval === remove) this._pendingEditorRemoval = null;
+          }, 300);
         } else {
           remove();
         }
 
         this._editorEl = null;
         this._backdropEl = null;
+        if (animate && this._returnFocus?.isConnected) this._returnFocus.focus?.({ preventScroll: true });
+        this._returnFocus = null;
       }
 
       // 移除選取狀態
@@ -567,6 +681,8 @@
       }
 
       this._saving = true;
+      const status = el.querySelector('#pd-editor-status');
+      if (status) status.hidden = true;
       const saveBtn = el.querySelector('#pd-editor-save');
       const saveLbl = el.querySelector('#pd-lbl-save');
       if (saveBtn) saveBtn.disabled = true;
@@ -588,6 +704,7 @@
         const token = window.spaAuth?.getToken();
         const res = await fetch(`/api/projects/${this._projectId}/shots/${shotId}`, {
           method: 'PATCH',
+          signal: this._editorEvents?.signal,
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
@@ -606,6 +723,7 @@
         }
 
         const data = await res.json();
+        if (this._editorEl !== el || this._selectedShotId !== shotId) return;
         const updatedShot = data.shot;
 
         // 更新本機狀態
@@ -625,11 +743,12 @@
           window.spaInvalidateProjectCache(this._projectId);
         }
       } catch (err) {
+        if (err.name === 'AbortError' || this._editorEl !== el) return;
         console.error('Save shot error:', err);
         this._toast(err.message || '儲存失敗，請重試', 'error');
         if (saveLbl) saveLbl.textContent = '儲存變更';
       } finally {
-        this._saving = false;
+        if (this._editorEl === el) this._saving = false;
         if (saveBtn) saveBtn.disabled = false;
       }
     },
@@ -657,6 +776,7 @@
         const token = window.spaAuth?.getToken();
         const res = await fetch(`/api/projects/${this._projectId}/shots/${shotId}/optimize-prompt`, {
           method: 'POST',
+          signal: this._editorEvents?.signal,
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
@@ -671,21 +791,23 @@
 
         if (!res.ok) throw new Error('無法最佳化提示詞');
         const data = await res.json();
+        if (this._editorEl !== el || this._selectedShotId !== shotId) return;
         if (data.prompt) {
           const promptInput = el.querySelector('#pd-f-prompt');
           if (promptInput) {
             promptInput.value = data.prompt;
             this._editorDirty = true;
             const saveLbl = el.querySelector('#pd-lbl-save');
-            if (saveLbl) saveLbl.textContent = '● 儲存變更';
+            if (saveLbl) saveLbl.textContent = '儲存變更';
           }
           this._toast('Prompt 已最佳化！', 'success');
         }
       } catch (err) {
+        if (err.name === 'AbortError' || this._editorEl !== el) return;
         console.error('Optimize prompt error:', err);
         this._toast('AI 優化提示詞失敗，請稍後再試', 'error');
       } finally {
-        this._isOptimizingPrompt = false;
+        if (this._editorEl === el) this._isOptimizingPrompt = false;
         if (optBtn) optBtn.disabled = false;
         if (optLbl) optLbl.textContent = 'AI 最佳化提示詞';
       }
@@ -720,6 +842,7 @@
         const token = window.spaAuth?.getToken();
         const res = await fetch(`/api/projects/${this._projectId}/shots/${shotId}/regenerate`, {
           method: 'POST',
+          signal: this._editorEvents?.signal,
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
@@ -733,6 +856,7 @@
         }
 
         const data = await res.json();
+        if (this._editorEl !== el || this._selectedShotId !== shotId) return;
         const updatedShot = data.shot;
 
         // 更新本機狀態
@@ -756,11 +880,12 @@
           window.spaInvalidateProjectCache(this._projectId);
         }
       } catch (err) {
+        if (err.name === 'AbortError' || this._editorEl !== el) return;
         console.error('Regenerate image error:', err);
         this._toast(err.message || '生成失敗，請重試', 'error');
       } finally {
         if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
-        this._isRegeneratingImage = false;
+        if (this._editorEl === el) this._isRegeneratingImage = false;
         if (regenBtn) regenBtn.disabled = false;
         if (regenLbl) regenLbl.textContent = '重新生成圖片';
       }
@@ -779,11 +904,11 @@
         const isCurrent = item.image === activeImg;
         const vNum = history.length - idx;
         return `
-          <div class="editor-version-item ${isCurrent ? 'active' : ''}" data-version-img="${this._escHtml(item.image)}" data-version-prompt="${this._escHtml(item.prompt || '')}">
-            <div class="version-radio-dot"></div>
+          <button type="button" class="editor-version-item ${isCurrent ? 'active' : ''}" aria-pressed="${isCurrent}" data-version-img="${this._escHtml(item.image)}" data-version-prompt="${this._escHtml(item.prompt || '')}">
+            <span class="version-radio-dot" aria-hidden="true"></span>
             <span class="version-label">Version ${vNum}</span>
             ${isCurrent ? '<span class="version-tag">目前使用</span>' : ''}
-          </div>
+          </button>
         `;
       }).join('');
 
@@ -794,8 +919,9 @@
           const vPrompt = item.dataset.versionPrompt;
           if (!vImg) return;
 
-          listWrap.querySelectorAll('.editor-version-item').forEach(v => v.classList.remove('active'));
+          listWrap.querySelectorAll('.editor-version-item').forEach(v => { v.classList.remove('active'); v.setAttribute('aria-pressed', 'false'); });
           item.classList.add('active');
+          item.setAttribute('aria-pressed', 'true');
 
           const previewImg = el.querySelector('#pd-preview-img');
           if (previewImg) previewImg.src = vImg;
@@ -808,7 +934,7 @@
           this._editorDirty = true;
           this._activeVersionImage = vImg;
           const saveLbl = el.querySelector('#pd-lbl-save');
-          if (saveLbl) saveLbl.textContent = '● 儲存變更 (切換版本)';
+          if (saveLbl) saveLbl.textContent = '儲存版本變更';
         });
       });
     },
@@ -911,6 +1037,13 @@
 
     // ── Toast 通知 ──
     _toast(msg, type = 'default') {
+      const status = this._editorEl?.querySelector('#pd-editor-status');
+      if (status && type === 'error') {
+        status.textContent = msg;
+        status.hidden = false;
+        status.setAttribute('role', 'alert');
+        return;
+      }
       let toastEl = document.getElementById('pd-toast');
       if (!toastEl) {
         toastEl = document.createElement('div');

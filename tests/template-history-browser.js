@@ -21,7 +21,7 @@ const server = http.createServer(async (req, res) => {
     const templates = Array.from({ length: 18 }, (_, index) => ({ ...source, id: index ? 'fixture-' + index : source.id, category: index < 12 ? 'story' : 'product', tags: ['探店', index < 12 ? '美食' : '廣告'], thumbnail: '/fixture-cover.svg', name: source.name + (index ? ' ' + index : '') }));
     await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
     const origin = 'http://127.0.0.1:' + server.address().port;
-    const output = path.resolve(__dirname, '../.codex-backup/ui-validation');
+    const output = path.resolve(process.env.STORYBOARD_QA_OUTPUT || path.join(require('node:os').tmpdir(), 'storyboard-ui-qa', 'template-history'));
     await fs.mkdir(output, { recursive: true });
     browser = await chromium.launch({ headless: true, executablePath: process.env.STORYBOARD_CHROME_PATH || 'C:/Program Files/Google/Chrome/Application/chrome.exe' });
     for (const viewport of [{ width: 1440, height: 900 }, { width: 1024, height: 768 }, { width: 390, height: 844 }].filter(viewport => !process.env.STORYBOARD_QA_WIDTH || String(viewport.width) === process.env.STORYBOARD_QA_WIDTH)) {
@@ -81,7 +81,7 @@ const server = http.createServer(async (req, res) => {
       await (await frame()).evaluate(() => { window.__catalogGrid = document.getElementById('template-grid'); });
       const link = app.locator('#template-grid .template-card').nth(5).locator('.card-preview-btn');
       await link.scrollIntoViewIfNeeded();
-      const savedScroll = await (await frame()).evaluate(() => document.getElementById('template-store-view').scrollTop);
+      const savedScroll = await (await frame()).evaluate(() => document.getElementById('template-store-body').scrollTop);
       assert.ok(savedScroll > 0);
       const historyLength = await page.evaluate(() => history.length);
       const id = templates[5].id;
@@ -97,11 +97,12 @@ const server = http.createServer(async (req, res) => {
       assert.equal(await app.locator('#store-search-input').inputValue(), '新竹');
       assert.equal(await app.locator('#store-tag-filter').inputValue(), '探店');
       assert.equal(await app.locator('#store-sort').inputValue(), 'duration');
-      assert.ok(Math.abs((await (await frame()).evaluate(() => document.getElementById('template-store-view').scrollTop)) - savedScroll) < 2);
+      assert.ok(Math.abs((await (await frame()).evaluate(() => document.getElementById('template-store-body').scrollTop)) - savedScroll) < 2);
       await page.goForward();
       await app.locator('#template-detail-immersive').waitFor({ state: 'visible' });
       assert.equal(new URL(page.url()).pathname, '/template/' + id);
       const priorDestroy = await (await frame()).evaluate(() => window.__playersDestroyed);
+      await app.locator('#btn-toggle-advanced').click();
       await app.locator('#editor-timeline-zoom').fill('180');
       await (await frame()).evaluate(() => window.spaNavigate('template', { templateId: 'fixture-6' }));
       assert.equal(new URL(page.url()).pathname, '/template/fixture-6');

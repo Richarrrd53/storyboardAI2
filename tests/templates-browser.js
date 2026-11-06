@@ -131,7 +131,7 @@ const server = http.createServer(async (req, res) => {
       await page.locator('#btn-apply-template-bottom').scrollIntoViewIfNeeded();
       assert.ok(await page.evaluate(() => (document.getElementById('template-detail-body')?.scrollTop || document.getElementById('page-main').scrollTop) > 0));
       assert.ok(await page.evaluate(() => document.getElementById('page-main').scrollWidth <= document.getElementById('page-main').clientWidth + 1));
-      const output = path.resolve(__dirname, '../.codex-backup/ui-validation');
+      const output = path.resolve(process.env.STORYBOARD_QA_OUTPUT || path.join(require('node:os').tmpdir(), 'storyboard-ui-qa', 'template-editor'));
       await fs.mkdir(output, { recursive: true });
       await page.evaluate(() => { const el = document.getElementById('template-detail-body') || document.getElementById('page-main'); el.scrollTop = 0; });
       await page.screenshot({ path: path.join(output, `template-${viewport.width}.png`), fullPage: true });

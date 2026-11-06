@@ -15,6 +15,7 @@
 
 (function (window, document) {
   'use strict';
+  if (window.DynamicMaskSystem) return;
 
   const instances = new Map();
   const headerHosts = new WeakMap();
@@ -138,7 +139,7 @@
       toolbar?.classList.add('has-scroll-backdrop');
       if (this.headerLayoutDirty) {
         // Animate from each subtitle's actual height so it finishes with the capsule.
-        header.querySelectorAll('.project-workspace-header-sub, .project-workspace-meta').forEach(sub => {
+        header.querySelectorAll('.project-workspace-header-sub, .project-workspace-meta, .content-header-subtitle').forEach(sub => {
           sub.style.setProperty('--header-sub-height', `${sub.scrollHeight}px`);
         });
         // Measure the original flow before compensating the viewport. A transparent
@@ -171,7 +172,7 @@
     clearHeaderPresentation() {
       this.headerBlurLayers?.forEach(layer => layer.remove());
       this.headerBlurLayers = null;
-      this.header?.querySelectorAll('.project-workspace-header-sub, .project-workspace-meta').forEach(sub => {
+      this.header?.querySelectorAll('.project-workspace-header-sub, .project-workspace-meta, .content-header-subtitle').forEach(sub => {
         sub.style.removeProperty('--header-sub-height');
       });
       // A late teardown must not clear a successor using the same SPA container.

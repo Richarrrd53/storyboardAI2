@@ -35,10 +35,15 @@
     touch-action: none !important;
     transform-origin: center center;
     scale: 1;
-    transition: transform 380ms cubic-bezier(0.16, 1, 0.3, 1), scale 320ms var(--motion-ease-standard, ease), opacity 320ms ease !important;
+    transition: translate 380ms var(--motion-ease-standard, ease), transform 380ms cubic-bezier(0.16, 1, 0.3, 1), scale 320ms var(--motion-ease-standard, ease), opacity 320ms ease !important;
   }
 
   body.mobile-nav-compact .mobile-bottom-nav { scale: .9; }
+  body.workspace-secondary .mobile-bottom-nav {
+    translate: 0 calc(100% + var(--mobile-nav-offset) + env(safe-area-inset-bottom, 0px) + var(--space-16));
+    opacity: 0;
+    pointer-events: none !important;
+  }
 
   .mobile-nav-backdrop { display: none; }
   body.dashboard-layout .mobile-nav-backdrop {
@@ -78,6 +83,10 @@
       transparent 100%);
   }
   body.ai-quick-compose-active .mobile-nav-backdrop { display: none; }
+  body.dashboard-layout.workspace-secondary .mobile-nav-backdrop {
+    transform: translateY(100%);
+    opacity: 0;
+  }
 
   @media (prefers-reduced-motion: reduce) {
     .mobile-bottom-nav, .mobile-nav-backdrop { transition: none !important; }
@@ -274,17 +283,9 @@
     fill: var(--color-text-secondary) !important;
   }
 
-  /* Prevent layer superposition bleed-through:
-     When an item is active, hide its base track line icon so ONLY the focus track's filled icon is visible. */
-  .mobile-nav__track--base .mobile-nav__item.active .mobile-nav__icon-wrap {
-    opacity: 0 !important;
-  }
-
-  /* While dragging/interacting: the indicator follows the snap target */
-  .mobile-bottom-nav.is-interacting .mobile-nav__track--base .mobile-nav__item.active .mobile-nav__icon-wrap {
-    opacity: 1 !important;
-  }
-  .mobile-bottom-nav.is-interacting .mobile-nav__track--base .mobile-nav__item.snap-target .mobile-nav__icon-wrap {
+  /* Keep base icons readable while the clipped focus track travels. Once it
+     settles, only the selected filled icon remains, avoiding doubled outlines. */
+  .mobile-bottom-nav:not(.is-selector-moving):not(.is-interacting) .mobile-nav__track--base .mobile-nav__item.active .mobile-nav__icon-wrap {
     opacity: 0 !important;
   }
 

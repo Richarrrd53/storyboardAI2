@@ -11,6 +11,15 @@
     };
     const isActive = () => !disposed && !signal?.aborted && root.isConnected;
     const releaseEffects = window.AuthEffects.mount(root);
+    let activeTab = showRegister ? 'register' : 'login';
+    const syncPanelHeight = () => {
+      if (!isActive()) return;
+      const panel = root.querySelector('#panel-' + activeTab);
+      const inner = root.querySelector('#auth-inner');
+      if (inner && panel?.offsetHeight > 0) inner.style.height = panel.offsetHeight + 'px';
+    };
+    const panelObserver = window.ResizeObserver ? new window.ResizeObserver(syncPanelHeight) : null;
+    root.querySelectorAll('.auth-panel').forEach(panel => panelObserver?.observe(panel));
 
     const brandLogos = root.querySelectorAll('.brand-logo, .logo');
     brandLogos.forEach(logo => {
@@ -32,6 +41,8 @@
       const tl = document.getElementById('tab-login');
       const tr = document.getElementById('tab-register');
       if (!lp || !rp) return;
+      activeTab = tab;
+      syncPanelHeight();
       if (tab === 'login') {
         tl.classList.add('active'); tr.classList.remove('active');
         inner.style.transform = "rotateY(0)";
@@ -45,6 +56,7 @@
       }
     };
     if (showRegister) later(() => window.switchTab('register'), 50);
+    else syncPanelHeight();
 
     window.togglePwd = function (id, btnId) {
       const inp = document.getElementById(id);
@@ -136,6 +148,7 @@
       listeners.forEach(off => off());
       timers.forEach(clearTimeout);
       timers.clear();
+      panelObserver?.disconnect();
       releaseEffects();
       handlers.forEach(key => { if (window[key] === installed[key]) delete window[key]; });
       signal?.removeEventListener('abort', unmount);

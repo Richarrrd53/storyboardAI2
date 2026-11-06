@@ -16,13 +16,14 @@
   <main id="page-main" class="page-shell page-template dash-main template-main">
 
     <section id="template-store-view" class="template-store-container anim-fadeInUp">
-      <header class="marketplace-header">
+      <header class="content-header marketplace-header">
         <div>
           <h1 class="text-page-title">模板庫</h1>
-          <p>探索影片的鏡頭與敘事結構，找到下一個創作起點。</p>
+          <p class="content-header-subtitle">探索影片的鏡頭與敘事結構，找到下一個創作起點。</p>
         </div>
         <button type="button" class="btn btn-primary new-template-btn" id="new-template-button">建立模板</button>
       </header>
+      <div class="content-body template-store-body" id="template-store-body" data-dynamic-mask>
       <div class="store-search-wrapper">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
         <label class="template-sr-only" for="store-search-input">搜尋模板</label>
@@ -62,6 +63,7 @@
         </div>
         <div class="template-grid" id="template-grid" aria-busy="true"></div>
       </section>
+      </div>
     </section>
 
     <section id="template-recovery" class="template-state template-recovery" hidden aria-live="polite"></section>

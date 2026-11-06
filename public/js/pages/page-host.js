@@ -83,7 +83,7 @@
     main.className = shellClasses[page];
     main.style.padding = '';
   }
-  async function mount({ page, signal, navigate, route = {}, scripts = [] }) {
+  async function mount({ page, signal, navigate, route = {}, scripts = [], onTiming = () => {} }) {
     if (signal.aborted) return null;
     if (page === 'landing') {
       const root = initMain();
@@ -99,7 +99,9 @@
     root.className = className;
     if (['generate', 'template', 'discovery'].includes(page)) document.getElementById('page-main').style.padding = '0';
     if (!['login', 'register'].includes(page)) {
+      const shellStart = performance.now();
       await window.AppShell.init({ navigate, spaAuth: window.spaAuth, signal, fetchDoc: assets.fetchPageDoc });
+      onTiming('shell', performance.now() - shellStart);
       if (signal.aborted) return null;
       assets.injectCSS('/css/generate.css');
       assets.injectCSS('/css/math-curve-loader.css');
@@ -136,5 +138,5 @@
     }
     return null;
   }
-  window.PageHost = { mount, prepare, captureLanding, getContent: getOrCreateContentContainer };
+  window.PageHost = { preload: (page, signal) => views[page]?.[0] ? assets.fetchPageDoc(views[page][0], signal) : Promise.resolve(), mount, prepare, captureLanding, getContent: getOrCreateContentContainer };
 })();

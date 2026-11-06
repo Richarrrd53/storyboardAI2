@@ -146,7 +146,8 @@
       let scrollTimer = null;
       let returnTimer = null;
 
-      const onTitleEnter = () => {
+      const onTitleEnter = (event) => {
+        if (event?.pointerType === 'touch') return;
         const overflow = (titleEl.scrollWidth || 0) - (titleWrapper.clientWidth || 0);
         if (overflow <= 2) return;
 
@@ -181,7 +182,8 @@
     }
 
     // 4. 卡片懸浮展開與 Prefetch
-    const onCardEnter = () => {
+    const onCardEnter = (event) => {
+      if (event?.pointerType === 'touch') return;
       card.classList?.add('is-expanded');
       if (!isDeleted) {
         if (typeof opts.prefetchPage === 'function') {

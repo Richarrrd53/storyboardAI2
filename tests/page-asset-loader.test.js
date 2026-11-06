@@ -354,3 +354,27 @@ test('logout invalidates a pending login and registration establishes one clean 
   assert.equal(f.resets(), 2);
   assert.equal(f.clears(), 2);
 });
+
+
+test('removing an in-flight stylesheet settles its consumers and permits an immediate revisit', async () => {
+  const { PageAssetLoader, head } = setupMockEnvironment();
+  const append = head.appendChild;
+  head.appendChild = function(child) { this.children.push(child); child.parentElement = this; return child; };
+  const pending = PageAssetLoader.injectCSS('/css/slow.css');
+  const removed = head.children[0];
+  PageAssetLoader.removePageCSS([]);
+  const revisit = PageAssetLoader.injectCSS('/css/slow.css');
+  assert.notEqual(head.children[0], removed);
+  head.children[0].onload();
+  await Promise.all([pending, revisit]);
+  assert.equal(PageAssetLoader.loadedCSS.has('/css/slow.css'), true);
+  head.appendChild = append;
+});
+
+test('a parsed stylesheet survives an error from its optional imported font', async () => {
+  const { PageAssetLoader, head } = setupMockEnvironment();
+  const pending = PageAssetLoader.injectCSS('/css/with-font.css');
+  const link = head.children[0]; link.sheet = {}; link.onerror(); await pending;
+  assert.equal(head.children.includes(link), true);
+  await PageAssetLoader.injectCSS('/css/with-font.css'); assert.equal(head.children.length, 1);
+});

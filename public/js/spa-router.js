@@ -5,7 +5,6 @@
   let currentRouteMounted = true;
   let currentNavController = null;
   let navSeq = 0;
-  let requestSeq = 0;
   let targetPage = null;
   let targetOpts = null;
   let activePageInstance = null;
@@ -65,7 +64,7 @@
         '/css/template-editor.css?v=20261006-2',
         '/css/template-detail.css?v=20261014-2'
       ],
-      js: ['/js/dynamic-mask.js', '/js/generate-prefill-path.js', '/js/template-timeline.js', '/js/template-editor.js?v=20261006-2', '/js/template.js'],
+      js: ['/js/generate-prefill-path.js', '/js/template-timeline.js', '/js/template-editor.js?v=20261006-2', '/js/template.js'],
     },
 
     discovery: {
@@ -193,27 +192,16 @@
     syncParentRoute(page, opts);
   }
 
+  const now = () => globalThis.performance?.now() ?? Date.now();
+  const navigationTimings = [];
   let pageController = null;
   async function navigate(page, opts = {}) {
-    const request = ++requestSeq;
-    // Guards run before acquiring navigation state or changing presentation.
+    // Local guards do not wait on network validation.
     if (opts.openQC) return window.CreationController.openQuickCompose();
     if (!pageDefs[page]) return;
     if (isDashboardPage(page) && !spaAuth.isLoggedIn()) {
       window.showSpaToast('您尚未登入，請先登入以存取該頁面。');
       return navigate('login', { force: true });
-    }
-    if (isDashboardPage(page)) {
-      const result = await spaAuth.fetchUser();
-      if (request !== requestSeq || result?.stale) return;
-      if (!result?.valid) {
-        window.showSpaToast('登入已過期，請重新登入。');
-        return navigate('login', { force: true });
-      }
-      if (result.error || result.aborted || !result.user) {
-        window.showSpaToast('無法驗證登入狀態，請檢查網路連線後再試。');
-        return;
-      }
     }
     const activePage = targetPage || currentPage;
     const activeOpts = targetPage ? targetOpts : currentOpts;
@@ -223,12 +211,6 @@
       opts = { ...opts, force: true };
     }
 
-    if (page !== 'generate' || !opts.fromQC) window.CreationController.cleanupTransition();
-    if (page === 'generate') {
-      const entry = await window.CreationController.resolveEntry(opts.templateId && !opts.sessionId ? { ...opts, creationIntent: 'new' } : opts);
-      if (!entry) return;
-      opts = entry;
-    }
     const browse = activePageInstance?.getHistoryState?.();
     if (page === 'template' && opts.templateId && activePage === 'template' && !activeOpts?.templateId) opts = { ...opts, templateFromBrowse: true };
     const reuse = page === 'template' && currentPage === 'template' && activePageInstance?.updateRoute && !opts.force;
@@ -244,7 +226,48 @@
     document.body.classList.add('is-navigating');
     let animation = null;
     let mounted = null;
+    let committed = false;
+    const trace = { page, request: now(), phases: {} };
+    const phase = (name, start) => { trace.phases[name] = now() - start; };
+    window.AppShell.setPendingRoute?.(page);
+    requestAnimationFrame(() => { trace.feedback = now() - trace.request; });
     try {
+      animation = transition.create({ signal, internal, fromQC: !!opts.fromQC, routeUpdate: !!reuse });
+      trace.transitionStart = now() - trace.request;
+      const leaving = animation.start();
+      // Fetch independent CSS/HTML while the existing exit animation finishes.
+      const assetStart = now();
+      const def = pageDefs[page];
+      const prepared = !reuse ? Promise.all([
+        ...def.css.map(href => assets.injectCSS(href)),
+        host.preload?.(page, signal)
+      ]) : Promise.resolve();
+      prepared.then(() => phase('assets', assetStart), () => phase('assets', assetStart));
+      // Observe rejection immediately even if the animation has not finished.
+      prepared.catch(() => {});
+      const authStart = now();
+      if (isDashboardPage(page)) {
+        const result = await spaAuth.fetchUser(signal);
+        phase('auth', authStart);
+        if (stale() || result?.stale) return;
+        if (!result?.valid) {
+          animation.cancel();
+          window.showSpaToast('登入已過期，請重新登入。');
+          return navigate('login', { force: true, noHistory: opts.noHistory });
+        }
+        if (result.error || result.aborted || !result.user) {
+          window.showSpaToast('無法驗證登入狀態，請檢查網路連線後再試。');
+          return;
+        }
+      }
+      if (page !== 'generate' || !opts.fromQC) window.CreationController.cleanupTransition();
+      if (page === 'generate') {
+        const entry = await window.CreationController.resolveEntry(opts.templateId && !opts.sessionId ? { ...opts, creationIntent: 'new' } : opts);
+        if (!entry) return;
+        opts = entry;
+      }
+      if (stale()) return;
+      targetOpts = opts;
       window.ProjectOptionMorph.close('navigation');
       window.ProjectsPage.closeTagModal({ immediate: true, restoreFocus: false });
       const cover = window.currentCoverTransition || window._activeProjectTransition;
@@ -263,13 +286,15 @@
           navigate(originPage, { ...originOpts, force: true, noHistory: true, noOpenQC: true });
         };
       }
-      syncHistory(page, opts, browse);
+
       if ((currentPage === 'login' || currentPage === 'register') && isDashboardPage(page) && localStorage.getItem('sidebar_projects_expanded') === 'true') window.AppShell.collapseProjectsGroup();
 
       // Let the current page leave before teardown/layout changes remove its visible content.
-      animation = transition.create({ signal, internal, fromQC: !!opts.fromQC, routeUpdate: !!reuse });
-      await animation.start();
+      await prepared;
+      animation.prepared?.();
+      await leaving;
       if (stale()) return;
+      animation.mounting?.();
 
       if (!reuse) {
         if (pageController) pageController.abort();
@@ -285,14 +310,16 @@
       }
       if (reuse) {
         await activePageInstance.updateRoute(opts);
+        if (!stale()) transition.setLayout(page, isDashboardPage(page), opts);
       } else {
         const def = pageDefs[page];
-        await Promise.all(def.css.map(href => assets.injectCSS(href)));
         if (stale()) return;
         assets.removePageCSS(def.css);
         assets.removePageScripts();
         if (window._landingKill) { window._landingKill(); window._landingKill = null; }
-        mounted = await host.mount({ page, signal, navigate, route: opts, scripts: def.js });
+        const mountStart = now();
+        mounted = await host.mount({ page, signal, navigate, route: opts, scripts: def.js, onTiming: (name, duration) => { trace.phases[name] = duration; } });
+        phase('mount', mountStart);
         if (stale()) { unmountPage(mounted); mounted = null; return; }
         activePageInstance = mounted;
         if (page === 'landing') {
@@ -309,9 +336,16 @@
       if (stale()) return;
       await animation.complete();
       if (stale()) return;
+      syncHistory(page, opts, browse);
+      committed = true;
       currentPage = page;
       currentOpts = opts;
       currentRouteMounted = true;
+      // Entry CSS transitions finish after the route commits; expose that timing
+      // separately without making the user wait for an artificial routing delay.
+      const entryAnimations = host.getContent?.()?.getAnimations?.() || [];
+      Promise.allSettled(entryAnimations.filter(a => a.effect?.getTiming().iterations !== Infinity).map(a => a.finished))
+        .then(() => { trace.visualComplete = now() - trace.request; });
       window.DynamicMaskSystem?.refresh();
     } catch (error) {
       if (!stale()) {
@@ -324,7 +358,19 @@
     } finally {
       // A superseded navigation cannot clear the successor's loader, DOM or state.
       if (mySeq === navSeq) {
-        animation?.cleanup();
+        if (committed) animation?.cleanup();
+        else {
+          animation?.cancel();
+          // Public assets may have finished in parallel with a rejected auth
+          // check. Restore the source route's CSS as well as its active state.
+          assets.removePageCSS(pageDefs[currentPage].css);
+        }
+        window.AppShell.setPendingRoute?.(committed ? page : currentPage);
+        if (!committed && opts.noHistory) getHistoryHost().history.replaceState(routeHistoryState(currentPage, currentOpts), '', getRouteUrl(currentPage, currentOpts));
+        trace.total = now() - trace.request;
+        trace.committed = committed;
+        navigationTimings.push(trace);
+        if (navigationTimings.length > 40) navigationTimings.shift();
         currentNavController = null;
         targetPage = null;
         targetOpts = null;
@@ -458,7 +504,7 @@
     }
   });
 
-  window.spaRouter = { get currentPage() { return targetPage || currentPage; } };
+  window.spaRouter = { navigationTimings, get currentPage() { return targetPage || currentPage; } };
   window.spaNavigate = navigate;
   window.navigate = navigate;
 

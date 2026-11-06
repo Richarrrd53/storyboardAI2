@@ -46,6 +46,10 @@
   }
 }
 
+@media (max-width: 768px) {
+  body.workspace-secondary { --workspace-bottom-inset: calc(var(--space-6) + env(safe-area-inset-bottom, 0px)); }
+}
+
 /* ── 2. App Shell Structure ── */
 .app-shell {
   width: 100vw;
@@ -189,7 +193,7 @@ body.dashboard-layout #page-main {
   height: calc(100dvh - 2 * clamp(8px, 1.2vh, 12px)) !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.28);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  transition: width 460ms var(--motion-ease-decelerate, cubic-bezier(.16, 1, .3, 1)),
+  transition: scale 320ms var(--motion-ease-standard), width 460ms var(--motion-ease-decelerate, cubic-bezier(.16, 1, .3, 1)),
               max-width 460ms var(--motion-ease-decelerate, cubic-bezier(.16, 1, .3, 1)),
               margin-left 460ms var(--motion-ease-decelerate, cubic-bezier(.16, 1, .3, 1)),
               margin-right 460ms var(--motion-ease-decelerate, cubic-bezier(.16, 1, .3, 1)),
@@ -235,6 +239,8 @@ body.dashboard-layout.sidebar-open #page-main,
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
+  gap: var(--space-3);
+  min-width: 0;
 }
 
 /* Optical Baseline Alignment for Header titles */
@@ -305,21 +311,24 @@ body.dashboard-layout.sidebar-open #page-main,
 :is(.content-header, .editor-menubar).has-scroll-backdrop {
   isolation: isolate;
   transform-origin: center top;
-  transition: transform 320ms var(--motion-ease-standard, ease), gap 320ms var(--motion-ease-standard, ease);
+  transition: transform 320ms var(--motion-ease-standard, ease), gap 320ms var(--motion-ease-standard, ease), background-color 320ms var(--motion-ease-standard, ease), border-radius 320ms var(--motion-ease-standard, ease);
 }
 :is(.content-header, .editor-menubar).has-scroll-backdrop.is-content-scrolled {
   transform: scale(.97);
+  background-color: color-mix(in srgb, var(--color-bg-page) 90%, transparent);
+  border-radius: var(--radius-pill);
 }
-.project-workspace-header.has-scroll-backdrop .project-workspace-header-sub,
-.project-workspace-header.has-scroll-backdrop .project-workspace-meta {
+.project-workspace-header.has-scroll-backdrop.is-content-scrolled {
+  border-radius: var(--radius-continuous-lg);
+}
+:is(.content-header, .editor-menubar).has-scroll-backdrop :is(.project-workspace-header-sub, .project-workspace-meta, .content-header-subtitle) {
   max-height: var(--header-sub-height, 80px);
   overflow: hidden;
   opacity: 1;
   transition: max-height 320ms var(--motion-ease-standard, ease), opacity 320ms var(--motion-ease-standard, ease);
 }
 .project-workspace-header.has-scroll-backdrop.is-content-scrolled { gap: 0; }
-.project-workspace-header.has-scroll-backdrop.is-content-scrolled .project-workspace-header-sub,
-.project-workspace-header.has-scroll-backdrop.is-content-scrolled .project-workspace-meta {
+:is(.content-header, .editor-menubar).has-scroll-backdrop.is-content-scrolled :is(.project-workspace-header-sub, .project-workspace-meta, .content-header-subtitle) {
   max-height: 0;
   opacity: 0;
   pointer-events: none;
@@ -332,8 +341,7 @@ body.dashboard-layout.sidebar-open #page-main,
 @media (prefers-reduced-motion: reduce) {
   .header-blur-layer,
   :is(.content-header, .editor-menubar).has-scroll-backdrop,
-  .project-workspace-header.has-scroll-backdrop .project-workspace-header-sub,
-  .project-workspace-header.has-scroll-backdrop .project-workspace-meta { transition: none; }
+  :is(.content-header, .editor-menubar).has-scroll-backdrop :is(.project-workspace-header-sub, .project-workspace-meta, .content-header-subtitle) { transition: none; }
 }
 
 .page-header .page-title,
@@ -348,9 +356,16 @@ body.dashboard-layout.sidebar-open #page-main,
   color: var(--color-text-primary, #0f172a);
   margin: 0;
   padding: 0;
-  display: flex;
-  align-items: baseline;
+  display: block;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+
+.content-header > :first-child { min-width: 0; }
+.content-header :is(.projects-header-left, .home-header-left) { min-width: 0; }
+.content-header :is(.projects-count-badge, button, .btn) { flex-shrink: 0; }
 
 /* Header Action Right Alignment Anchor */
 .page-header-actions,
@@ -360,6 +375,7 @@ body.dashboard-layout.sidebar-open #page-main,
   align-items: center;
   gap: var(--space-3, 12px);
   margin-left: auto;
+  flex-shrink: 0;
 }
 
 /* ── 5. Single Scroll Ownership ── */
@@ -381,6 +397,9 @@ body.dashboard-layout.sidebar-open #page-main,
   overflow-x: hidden !important;
   padding: 0 var(--page-gutter) var(--workspace-bottom-inset) !important;
   scroll-padding-bottom: var(--workspace-bottom-inset);
+  /* Geometry measurements must read the base padding immediately, including
+     reduced-motion rules that give every element a tiny transition duration. */
+  transition-property: none;
 }
 
 /* ── 6. Outer Grid Alignment & Content Containers ── */

@@ -53,6 +53,7 @@
     const categoriesEl = getEl('store-categories');
     const gridEl = getEl('template-grid');
     const storeView = getEl('template-store-view');
+    const storeBody = getEl('template-store-body') || storeView;
     const detailEl = getEl('template-detail-immersive');
     const recoveryEl = getEl('template-recovery');
     const featuredEl = getEl('template-featured-grid');
@@ -79,7 +80,7 @@
     };
     const isFiltered = () => state.category !== '全部' || !!state.query.trim() || !!state.tag;
     function snapshot() {
-      if (!activeId) state.scrollTop = storeView?.scrollTop || 0;
+      if (!activeId) state.scrollTop = storeBody?.scrollTop || 0;
       return { ...state };
     }
     function syncControls() {
@@ -151,7 +152,8 @@
       if (pageMain) pageMain.scrollTop = 0;
       const detailBody = getEl('template-detail-body');
       if (detailBody) detailBody.scrollTop = 0;
-      if (storeView) storeView.scrollTop = state.scrollTop;
+      if (storeBody) storeBody.scrollTop = state.scrollTop;
+      window.DynamicMaskSystem?.refresh?.();
       document.title = '模板庫 — Storyboard AI';
       const focusLink = Array.from(gridEl.querySelectorAll('.template-card')).find(card => card.dataset.id === lastPreviewId)?.querySelector('.card-preview-btn');
       focusLink?.focus?.({ preventScroll: true });
@@ -242,7 +244,7 @@
         bindCards(featuredEl);
       }
       filterAndDisplay();
-      if (storeView) storeView.scrollTop = state.scrollTop;
+      if (storeBody) storeBody.scrollTop = state.scrollTop;
       activeId = null;
       updateRoute(currentRoute);
     }
@@ -259,6 +261,7 @@
         listeners.forEach(off => off());
         if (window.filterStoreTemplates === filterAndDisplay) delete window.filterStoreTemplates;
         if (window.templatePageNavigation === navigation) delete window.templatePageNavigation;
+        window.DynamicMaskSystem?.detach?.(storeBody);
         const detailBody = getEl('template-detail-body') || root?.querySelector?.('.template-detail-body');
         if (detailBody && window.DynamicMaskSystem && typeof window.DynamicMaskSystem.detach === 'function') {
           window.DynamicMaskSystem.detach(detailBody);

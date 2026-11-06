@@ -544,7 +544,11 @@ body.auth-layout #page-content {
   transition: all 0.4s cubic-bezier(.31, .01, .66, -0.59);
   box-shadow: 0 10px 10px rgba(0, 0, 0, 0.2);
   pointer-events: none;
-  white-space: nowrap;
+  max-width: calc(100% - var(--space-8));
+  width: max-content;
+  box-sizing: border-box;
+  white-space: normal;
+  overflow-wrap: anywhere;
   z-index: 50;
 }
 

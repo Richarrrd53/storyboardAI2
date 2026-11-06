@@ -9,6 +9,20 @@
 
 (function (global) {
   'use strict';
+  const paths = {
+    back: '<path d="m12 5-7 7 7 7M5 12h14"/>',
+    export: '<path d="M12 3v12m-4-4 4 4 4-4M5 15v5h14v-5"/>',
+    edit: '<path d="m15 5 4 4M4 20l4-1L20 7a2.8 2.8 0 0 0-4-4L4 15z"/>',
+    list: '<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 10h18M9 4v16"/>',
+    film: '<rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 3v18M17 3v18M3 8h4m10 0h4M3 16h4m10 0h4"/>',
+    close: '<path d="m6 6 12 12M18 6 6 18"/>',
+    sparkle: '<path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/>',
+    image: '<rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8" cy="8" r="1"/><path d="m3 16 5-5 4 4 3-3 6 6"/>',
+    check: '<path d="m5 12 4 4L19 6"/>'
+  };
+  const icon = name => `<svg class="project-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name] || paths.film}</svg>`;
+  global.ProjectDetailIcons = icon;
+
 
   function renderProjectSkeleton(container) {
     if (!container) return;
@@ -203,7 +217,7 @@
             <td class="shot-cell-num">
               <div class="shot-cell-controls">
                 <span>${String(s.order).padStart(2, '0')}</span>
-                <button type="button" class="shot-cell-edit-btn" data-shot-id="${s.id}" aria-label="編輯鏡頭 ${s.order}">✏️ 編輯</button>
+                <button type="button" class="shot-cell-edit-btn" data-shot-id="${s.id}" aria-label="編輯鏡頭 ${s.order}">${icon('edit')}<span>編輯</span></button>
               </div>
             </td>
             <td>${thumbHtml}</td>
@@ -236,14 +250,14 @@
           ? `<img src="${s.imageUrl}" alt="Shot ${s.order}" loading="lazy">`
           : `<div style="width:100%;aspect-ratio:${aspectRatio};background:#1c1917;"></div>`;
         filmFramesHtml += `
-          <div class="project-film-frame" data-shot-id="${s.id}">
+          <div class="project-film-frame" data-shot-id="${s.id}" role="button" tabindex="0" aria-label="編輯鏡頭 ${s.order}">
             <div class="film-sprocket-header">
               <div class="film-sprocket-dot"></div>
               <div class="film-sprocket-dot"></div>
               <div class="film-sprocket-dot"></div>
-              <span class="film-frame-number">SHOT ${String(s.order).padStart(2, '0')}</span>
+              <span class="film-frame-number">鏡頭 ${String(s.order).padStart(2, '0')}</span>
             </div>
-            <div class="film-media-wrap" style="aspect-ratio:${aspectRatio};">${imgHtml}</div>
+            <div class="film-media-wrap" style="aspect-ratio:${aspectRatio};">${imgHtml}<span class="film-frame-edit">${icon('edit')}<span>編輯</span></span></div>
             <div class="film-info-caption">
               <div class="film-caption-story">${s.title}</div>
               <div class="film-caption-meta">
@@ -283,25 +297,21 @@
       root.innerHTML = `
         <div class="project-workspace">
           <div class="content-header project-workspace-header">
+            <div class="project-workspace-topline">
+              <button class="project-back-btn" id="pd-back-btn" type="button">${icon('back')}<span>所有專案</span></button>
+              <button class="project-workspace-btn" id="pd-export-json-btn" type="button" aria-label="匯出分鏡 JSON">${icon('export')}<span>匯出分鏡 JSON</span></button>
+            </div>
             <div class="project-workspace-header-top">
               <div class="project-workspace-title-area">
-                <button class="project-back-btn" id="pd-back-btn">
-                  <span>←</span>
-                  <span>所有專案</span>
-                </button>
                 <div class="project-workspace-title-box">
-                  <h2 class="project-workspace-title">${p.title}</h2>
+                  <h1 class="project-workspace-title">${global.ProjectCard?.escapeHtml ? global.ProjectCard.escapeHtml(p.title) : p.title}</h1>
                   <div class="project-workspace-meta" id="pd-updated-at">最後編輯：${p.updatedAt ? new Date(p.updatedAt).toLocaleString('zh-TW') : (p.createAt ? new Date(p.createAt).toLocaleString('zh-TW') : '')}</div>
                 </div>
               </div>
               <div class="project-workspace-actions">
-                <button class="project-workspace-btn" id="pd-export-json-btn">
-                  <span>📥</span>
-                  <span>匯出分鏡 JSON</span>
-                </button>
-                <div class="project-workspace-toggle-bar">
-                  <button id="pd-view-list" class="project-workspace-toggle-btn active">表格模式</button>
-                  <button id="pd-view-film" class="project-workspace-toggle-btn">膠捲模式</button>
+                <div class="project-workspace-toggle-bar" role="group" aria-label="分鏡檢視方式">
+                  <button id="pd-view-list" class="project-workspace-toggle-btn active" type="button" aria-pressed="true" aria-label="表格模式">${icon('list')}<span>表格模式</span></button>
+                  <button id="pd-view-film" class="project-workspace-toggle-btn" type="button" aria-pressed="false" aria-label="膠捲模式">${icon('film')}<span>膠捲模式</span></button>
                 </div>
               </div>
             </div>

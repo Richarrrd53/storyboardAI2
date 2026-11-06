@@ -39,6 +39,7 @@
   let cacheController = new AbortController();
   const pendingScripts = new Map();
   const pendingCSS = new Map();
+  const cancelCSS = new Map();
   const pendingDocs = new Map();
   // Legacy readers/writers share this exact value; invalidation also retires pending requests.
   Object.defineProperty(root, 'cacheTemplatesList', {
@@ -68,18 +69,27 @@
       link.rel = 'stylesheet';
       link.href = href;
       link.dataset.spaSheet = '1';
-      link.onload = () => {
-        loadedCSS.add(fullUrl);
+      const finish = loaded => {
+        link.onload = null;
+        link.onerror = null;
+        if (loaded) loadedCSS.add(fullUrl);
+        else link.remove();
         resolve();
       };
-      link.onerror = () => {
-        loadedCSS.add(fullUrl);
-        resolve();
-      };
+      link.onload = () => finish(true);
+      // A failed imported font can fire error even though the stylesheet itself
+      // parsed successfully. Keep that sheet; only retire an absent CSS resource.
+      link.onerror = () => finish(!!link.sheet);
+      cancelCSS.set(fullUrl, () => finish(false));
       document.head.appendChild(link);
     });
     pendingCSS.set(fullUrl, promise);
-    promise.finally(() => pendingCSS.delete(fullUrl));
+    promise.finally(() => {
+      if (pendingCSS.get(fullUrl) === promise) {
+        pendingCSS.delete(fullUrl);
+        cancelCSS.delete(fullUrl);
+      }
+    });
     return promise;
   }
 
@@ -89,6 +99,11 @@
     document.querySelectorAll('link[data-spa-sheet]').forEach(el => {
       const href = new URL(el.href, origin).pathname;
       if (!normalizedNext.includes(href)) {
+        // Removing a loading link may never fire load/error. Retire its promise
+        // now so a rapid revisit can start a fresh stylesheet request.
+        cancelCSS.get(href)?.();
+        pendingCSS.delete(href);
+        cancelCSS.delete(href);
         el.remove();
         loadedCSS.delete(href);
       }

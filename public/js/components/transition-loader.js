@@ -293,6 +293,7 @@
   }
 
   function showInnerLoader() {
+    if (document.getElementById('page-inner-loader')?.classList.contains('active')) return;
     if (innerLoaderTimer) clearTimeout(innerLoaderTimer);
     innerLoaderTimer = setTimeout(() => {
       const loader = document.getElementById('page-inner-loader');
@@ -307,7 +308,7 @@
           innerRoseLoaderInstance.start();
         }
       }
-    }, 250);
+    }, 120);
   }
 
   function hideInnerLoader() {
@@ -325,6 +326,7 @@
   }
 
   function startLoaderTimer(isDashboardTransition) {
+    if (loaderShowing) return;
     if (showLoaderTimer) {
       clearTimeout(showLoaderTimer);
       showLoaderTimer = null;
@@ -336,7 +338,7 @@
         loaderShowing = true;
         const dashLoader = document.getElementById('spa-dash-loader');
         if (dashLoader) dashLoader.classList.add('active');
-      }, 1000);
+      }, 120);
     } else {
       showLoaderTimer = setTimeout(() => {
         loaderShowing = true;
@@ -348,8 +350,17 @@
           root.spaTransitionLoader.start();
         }
         startTextCycling();
-      }, 1000);
+      }, 120);
     }
+  }
+
+  // Preparation finished before the threshold: do not flash a loader merely
+  // because the original exit animation is still playing. Keep visible loaders.
+  function pausePending() {
+    clearTimeout(innerLoaderTimer);
+    clearTimeout(showLoaderTimer);
+    innerLoaderTimer = null;
+    showLoaderTimer = null;
   }
 
   function cleanup() {
@@ -400,6 +411,7 @@
     initTransitionLoader,
     showInnerLoader,
     hideInnerLoader,
+    pausePending,
     startLoaderTimer,
     cleanup,
     get isShowing() { return loaderShowing; }

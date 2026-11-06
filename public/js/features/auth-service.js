@@ -1,6 +1,28 @@
 (function () {
   'use strict';
   let session = 0;
+  const userTTL = 15000;
+  let userRevision = 0;
+  let cachedUser = null;
+  let pendingUser = null;
+  function validationExpiry(token) {
+    let expires = Date.now() + userTTL;
+    try {
+      const claims = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+      if (Number.isFinite(claims.exp)) expires = Math.min(expires, claims.exp * 1000);
+    } catch (_) { /* Opaque tokens still use the short server-validation TTL. */ }
+    return expires;
+  }
+  function invalidateUser() { userRevision++; cachedUser = null; pendingUser = null; }
+  function consumeUser(promise, signal) {
+    if (!signal) return promise;
+    if (signal.aborted) return Promise.resolve({ valid: true, aborted: true });
+    return new Promise(resolve => {
+      const abort = () => resolve({ valid: true, aborted: true });
+      signal.addEventListener('abort', abort, { once: true });
+      promise.then(resolve).finally(() => signal.removeEventListener('abort', abort));
+    });
+  }
   function resetCreationState() {
     window.CreationController.reset();
   }
@@ -11,16 +33,19 @@
   function establishSession(token) {
     if (!token) throw new Error('伺服器未回傳登入憑證');
     session++;
+    invalidateUser();
     resetCreationState();
     localStorage.setItem(AUTH_TOKEN_KEY, token);
     clearSpaCache();
   }
   function endSession() {
     session++;
+    invalidateUser();
     resetCreationState();
     localStorage.removeItem(AUTH_TOKEN_KEY);
     clearSpaCache();
   }
+  window.addEventListener?.('storage', event => { if (event.key === AUTH_TOKEN_KEY || event.key === null) { session++; invalidateUser(); clearSpaCache(); } });
   window.clearSpaCache = clearSpaCache;
   window.spaSeedProjectCache = (id, data) => window.ProjectStore.seedProjectDetail(id, data);
   window.spaInvalidateProjectCache = id => {
@@ -105,37 +130,41 @@
       document.body.classList.remove('dashboard-layout');
       return window.spaNavigate('landing', { force: true });
     },
-    fetchUser: async (signal) => {
+    invalidateUser,
+    fetchUser: (signal, { force = false } = {}) => {
+      if (signal?.aborted) return Promise.resolve({ valid: true, aborted: true });
       const requestSession = session;
+      const revision = userRevision;
       const token = localStorage.getItem(AUTH_TOKEN_KEY);
-      if (!token) return null;
-
-      try {
-        const res = await fetch('/api/auth/me', {
-          signal,
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-
-        if (requestSession !== session || token !== localStorage.getItem(AUTH_TOKEN_KEY)) return { valid: false, stale: true };
-        if (!res.ok) {
-          if (res.status === 401 || res.status === 403 || res.status === 404) {
-            endSession();
-            return { valid: false };
-          }
-          return { valid: true, error: true };
-        }
-
-        try {
-          const data = await res.json();
-          if (requestSession !== session) return { valid: false, stale: true };
-          return { valid: true, user: data.user };
-        } catch {
-          return { valid: true, error: true };
-        }
-      } catch (e) {
-        if (e.name === 'AbortError') return { valid: true, aborted: true };
-        return { valid: true, error: true };
+      if (!token) { invalidateUser(); return Promise.resolve(null); }
+      if (!force && cachedUser?.token === token && cachedUser.session === session && Date.now() < cachedUser.expires) {
+        return consumeUser(Promise.resolve(cachedUser.result), signal);
       }
+      if (!pendingUser || pendingUser.token !== token || pendingUser.session !== session) {
+        const request = { token, session: requestSession };
+        // The request belongs to the session, not an individual navigation consumer.
+        request.promise = (async () => {
+          const stale = () => revision !== userRevision || requestSession !== session || token !== localStorage.getItem(AUTH_TOKEN_KEY);
+          try {
+            const res = await fetch('/api/auth/me', { headers: { Authorization: `Bearer ${token}` } });
+            if (stale()) return { valid: false, stale: true };
+            if (!res.ok) {
+              cachedUser = null;
+              if ([401, 403, 404].includes(res.status)) { endSession(); return { valid: false }; }
+              return { valid: true, error: true };
+            }
+            const data = await res.json();
+            if (stale()) return { valid: false, stale: true };
+            if (!data.user) return { valid: true, error: true };
+            const result = { valid: true, user: data.user };
+            cachedUser = { token, session, result, expires: validationExpiry(token) };
+            return result;
+          } catch (_) { if (stale()) return { valid: false, stale: true }; cachedUser = null; return { valid: true, error: true }; }
+          finally { if (pendingUser === request) pendingUser = null; }
+        })();
+        pendingUser = request;
+      }
+      return consumeUser(pendingUser.promise, signal);
     },
     fetchProjects: async (signal) => {
       if (window.ProjectStore) {

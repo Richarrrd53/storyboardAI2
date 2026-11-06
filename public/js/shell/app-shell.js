@@ -15,6 +15,8 @@
     spaAuth: null
   };
 
+  let selectedRoute = null;
+  let secondaryRoute = false;
   let dashboardSidebar = null;
   let dashboardTopbar = null;
   let dashboardUserPanel = null;
@@ -30,6 +32,7 @@
   let updateMobNavVisual = null;
   let isNavInteracting = false;
   let navSpringRaf = null;
+  let selectorSettleTimer = null;
   let justHandledPointerNav = false;
   let cleanupMobNavGestures = null;
   let cacheMobNavMetrics = null;
@@ -990,6 +993,9 @@
       if (!indicator || !mobNav) return;
       const focusTrack = mobNav.querySelector('.mobile-nav__track--focus');
       if (isSettling) {
+        clearTimeout(selectorSettleTimer);
+        mobNav.classList.add('is-selector-moving');
+        selectorSettleTimer = setTimeout(() => mobNav.classList.remove('is-selector-moving'), window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 260);
         indicator.classList.add('is-settling');
         if (focusTrack) focusTrack.classList.add('is-settling');
       } else {
@@ -1502,13 +1508,14 @@
   function updateMobileBottomNavActive(page) {
     const mobNav = document.getElementById('spa-mobile-nav') || mobileBottomNav;
     if (!mobNav || isNavInteracting) return;
+    cacheMobNavMetrics?.();
 
     const panel = document.getElementById('spa-user-panel') || document.getElementById('user-panel') || dashboardUserPanel;
     const isProfileActive = page === 'profile' || (panel && panel.classList.contains('active'));
 
     let activeMainPage = page;
     if (!activeMainPage || activeMainPage === 'profile') {
-      const hash = window.location.hash || '';
+      const hash = selectedRoute ? '#/' + selectedRoute : window.location.pathname + window.location.hash;
       if (hash.includes('projects')) activeMainPage = 'projects';
       else if (hash.includes('template')) activeMainPage = 'template';
       else if (hash.includes('history')) activeMainPage = 'history';
@@ -1642,6 +1649,10 @@
       if (typeof cacheMobNavMetrics === 'function') {
         try { cacheMobNavMetrics(); } catch (_) {}
       }
+      if (mobileBottomNav) {
+        mobileBottomNav.inert = secondaryRoute && isMobileView();
+        mobileBottomNav.setAttribute('aria-hidden', String(secondaryRoute && isMobileView()));
+      }
       updateMobileBottomNavActive();
     };
     addTrackedListener(window, 'resize', onResize);
@@ -1671,7 +1682,7 @@
     bindSidebarLinks();
     bindGlobalListeners();
     subscribeProjectStore();
-    await syncUserProfile(options.signal);
+    void syncUserProfile(options.signal);
     updateSidebarProjects();
 
     return {
@@ -1679,8 +1690,17 @@
     };
   }
 
+  function setPendingRoute(page) {
+    selectedRoute = page;
+    updateSidebarActive(page);
+    updateMobileBottomNavActive(page);
+  }
+
   function updateRoute(page, opts = {}) {
+    selectedRoute = page;
     const isDashboard = isDashboardPage(page);
+    secondaryRoute = page === 'project' || page === 'generate' || (page === 'template' && !!opts.templateId);
+    document.body.classList.toggle('workspace-secondary', secondaryRoute);
 
     if (dashboardSidebar) {
       dashboardSidebar.style.display = isDashboard ? '' : 'none';
@@ -1691,6 +1711,8 @@
     const mobNav = document.getElementById('spa-mobile-nav') || mobileBottomNav;
     if (mobNav) {
       mobNav.style.display = isDashboard ? '' : 'none';
+      mobNav.inert = secondaryRoute && isMobileView();
+      mobNav.setAttribute('aria-hidden', String(!isDashboard || (secondaryRoute && isMobileView())));
     }
     document.body.classList.remove('mobile-nav-compact');
 
@@ -1731,6 +1753,7 @@
   }
 
   function destroy() {
+    clearTimeout(selectorSettleTimer);
     document.body.classList.remove('mobile-nav-compact');
     if (storeUnsubscribe) {
       try {
@@ -1811,6 +1834,7 @@
 
   const AppShell = {
     init: (...args) => init(...args),
+    setPendingRoute,
     updateRoute: (...args) => updateRoute(...args),
     expandSidebar: (...args) => expandSidebar(...args),
     updateSidebarProjects: (...args) => updateSidebarProjects(...args),

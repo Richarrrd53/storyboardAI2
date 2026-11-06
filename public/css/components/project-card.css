@@ -19,8 +19,11 @@
 /* ── 0. Base Container (.project-folder-card) ── */
 .project-card.project-folder-card,
 .project-folder-card {
+  --folder-tab-height: calc(var(--radius-lg) * 1.5);
+  --folder-fillet: calc(var(--folder-tab-height) / 2);
   position: relative;
   width: 100%;
+  min-width: 0;
   max-width: 316px; /* 8% narrower: eliminates overly elongated ratio */
   margin: 0 auto;
   cursor: pointer;
@@ -269,9 +272,9 @@
   position: absolute;
   display: flex;
   align-items: flex-end;
-  height: calc(var(--radius-lg) * 1.5);
+  height: var(--folder-tab-height);
   width: 100%;
-  margin-top: calc(0px - calc(var(--radius-lg) * 1.5));
+  margin-top: calc(-1 * var(--folder-tab-height));
   padding: 0;
   box-sizing: border-box;
 }
@@ -279,13 +282,13 @@
 /* 3/4 Header Tab (74% width) */
 .project-folder-tab {
   position: relative;
-  height: calc(var(--radius-lg) * 1.5);
+  height: var(--folder-tab-height);
   width: calc(100% - 48px - 16px);
   background: var(--surface-folder);
-  border-top: 1px solid var(--surface-folder-border);
-  border-left: 1px solid var(--surface-folder-border);
+  border: 1px solid var(--surface-folder-border);
+  border-bottom: 0;
   border-top-left-radius: var(--radius-lg);
-  border-top-right-radius: var(--radius-lg);
+  border-top-right-radius: var(--folder-fillet);
   box-sizing: border-box;
   display: flex;
   align-items: center;
@@ -293,20 +296,20 @@
   flex-shrink: 0;
 }
 
-/* Smooth S-curve inverse fillet connecting tab to shelf */
+/* A single masked quarter-circle joins the tab to the shelf. The old offset
+   box-shadow fill exposed rectangular patches and doubled the outline. */
 .project-folder-tab::after {
-  content: "";
+  content: '';
   position: absolute;
-  right: 0;
-  bottom: 0;
-  transform: translateX(var(--radius-lg));
-  width: var(--radius-lg);
-  height: calc(var(--radius-lg) * 1.5 / 2);
-  background: transparent;
-  border-bottom-left-radius: var(--radius-lg);
-  box-shadow: -6px 6px 0 0 var(--surface-folder);
-  border-bottom: 1px solid var(--surface-folder-border);
-  border-left: 1px solid var(--surface-folder-border);
+  right: calc(1px - var(--folder-fillet));
+  bottom: -1px;
+  width: var(--folder-fillet);
+  height: var(--folder-fillet);
+  background: radial-gradient(circle at top right,
+    transparent calc(var(--folder-fillet) - 1px),
+    var(--surface-folder-border) calc(var(--folder-fillet) - 1px),
+    var(--surface-folder-border) var(--folder-fillet),
+    var(--surface-folder) var(--folder-fillet));
   pointer-events: none;
 }
 
@@ -318,7 +321,7 @@
 
   .project-folder-tab {
     corner-shape: squircle;
-    border-radius: var(--radius-continuous-lg) var(--radius-continuous-lg) 0 0;
+    border-radius: var(--radius-continuous-lg) var(--folder-fillet) 0 0;
   }
 
   .project-folder-header-row {
@@ -330,25 +333,14 @@
     content: '';
     position: absolute;
     inset-inline: 0;
-    bottom: 0;
+    bottom: -1px;
     height: 2px;
     background: var(--surface-folder);
     pointer-events: none;
   }
 
-  /* This is a negative fillet, not a convex card corner. Keep a circular cutout
-     with a full-depth fill below the arc. The tab's bridge covers the shell seam. */
-  .project-folder-tab::after {
-    --folder-fillet: 18px;
-    corner-shape: round;
-    right: calc(-1 * var(--folder-fillet));
-    bottom: 0;
-    transform: none;
-    width: var(--folder-fillet);
-    height: var(--folder-fillet);
-    border-bottom-left-radius: var(--folder-fillet);
-    box-shadow: -8px 8px 0 -1px var(--surface-folder);
-  }
+  .project-folder-tab::after { corner-shape: round; }
+
 }
 
 .project-folder-tab-dot {
@@ -390,7 +382,7 @@
 .project-folder-card .project-option-btn,
 .project-option-btn {
   width: 48px;
-  height: calc(var(--radius-lg) * 1.5);
+  height: var(--folder-tab-height);
   border-radius: 9999px;
   background: var(--surface-folder);
   border: 1px solid var(--surface-folder-border);
@@ -588,6 +580,7 @@
 }
 
 /* ── 6. Hover Motion (Physical Storyboard Pull - Keep 16:9 Frame) ── */
+@media (hover: hover) and (pointer: fine) {
 .project-folder-card:hover .project-folder-shell,
 .project-folder-card.is-expanded .project-folder-shell {
   transform: translateY(-2px);
@@ -628,6 +621,8 @@
 
 .project-folder-card:hover .fallback-clapper {
   transform: scale(1.08) rotate(4deg);
+}
+
 }
 
 /* ── 7. App-Level Transition Layer & Reveal Curtain (Phase 1～6) ── */
@@ -823,63 +818,31 @@
 
 /* ── 8. Responsive Rules ── */
 @media (max-width: 768px) {
-  .project-folder-card .project-folder-tab {
-    flex: 0 0 70%;
-    width: 70%;
-    padding-left: 12px;
+  .project-card.project-folder-card {
+    --folder-headroom: var(--space-4);
+    --folder-headroom-compact: var(--space-4);
+    max-width: 316px;
   }
-
-  .project-folder-preview-stack {
-    height: 144px;
-    margin-bottom: -40px;
+  .project-folder-card .project-folder-preview-stack {
+    height: 112px;
+    margin-bottom: -36px;
   }
-
-  .project-preview-primary {
-    width: var(--cover-width, 248px) !important;
-    height: var(--cover-height, 139.5px) !important;
+  .project-folder-card .project-preview-primary {
+    width: min(var(--cover-width, 248px), calc(100% - var(--space-8))) !important;
+    height: auto !important;
     aspect-ratio: 16 / 9 !important;
-    transform: translateY(calc(var(--insert-depth, 40px) - 40px)) rotate(0deg) scale(1);
   }
-
-  .project-preview-secondary {
-    height: 118px;
-    width: auto;
-    aspect-ratio: 16 / 9;
-    transform: translateY(20px) translateX(8px) rotate(4deg) scale(0.96);
+  .project-folder-card .project-preview-secondary {
+    width: calc(100% - var(--space-16));
+    max-width: 224px;
+    height: auto;
+    transform: translateY(20px) translateX(8px) rotate(4deg) scale(.96);
   }
-
-  .project-folder-card:hover .project-preview-primary {
-    width: var(--cover-width, 248px) !important;
-    height: var(--cover-height, 139.5px) !important;
-    transform: translateY(calc(var(--insert-depth, 40px) - 40px - var(--hover-lift, 14px))) rotate(-3.5deg) scale(1.02);
-  }
-
-  .project-folder-card:hover .project-preview-secondary {
-    transform: translateY(-4px) translateX(12px) rotate(4deg) scale(0.98);
-  }
-}
-
-@media (max-width: 480px) {
-  .project-folder-card {
-    padding-top: 8px;
-    max-width: 100%;
-  }
-
-  .project-folder-tab {
-    flex: 0 0 68%;
-    width: 68%;
-    padding-left: 10px;
-  }
-
-  .project-title-wrapper {
-    mask-image: none;
-    -webkit-mask-image: none;
-  }
-
-  .project-folder-card .project-title {
-    text-overflow: ellipsis;
-    overflow: hidden;
-  }
+  .project-folder-card .project-folder-shell { min-height: calc(var(--space-32) + var(--space-6)); }
+  .project-folder-card .project-folder-content { padding: var(--space-3) var(--space-4) var(--space-4); gap: var(--space-1); }
+  .project-folder-card .project-folder-tab { padding-left: var(--space-3); }
+  .project-folder-card .project-title { max-width: 100%; text-overflow: ellipsis; overflow: hidden; }
+  .project-title-wrapper { mask-image: none; -webkit-mask-image: none; }
 }
 
 /* ── 9. Reduced Motion ── */

@@ -707,6 +707,10 @@ main{
 
 /* ── Global Toast Notification ───────────────────────────── */
 .global-toast {
+    max-width: calc(100% - var(--space-8));
+    width: max-content;
+    box-sizing: border-box;
+    overflow-wrap: anywhere;
     position: fixed;
     bottom: 40px;
     left: 50%;
@@ -729,6 +733,9 @@ main{
     font-size: var(--font-size-sm);
 }
 
+#global-toast-text { min-width: 0; }
+#global-toast-undo { flex-shrink: 0; }
+
 .global-toast.show {
     transition: transform var(--motion-duration-medium) var(--motion-ease-spring), opacity var(--motion-duration-medium) var(--motion-ease-standard);
     transform: translateX(-50%) translateY(0);
@@ -736,6 +743,10 @@ main{
     pointer-events: auto;
 }
 
+
+@media (max-width: 768px) {
+    body.dashboard-layout .global-toast { bottom: var(--workspace-bottom-inset); }
+}
 
 /* ── Project Options Dropdown ───────────────────────────── */
 .options-dropdown-overlay {

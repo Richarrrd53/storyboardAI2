@@ -179,16 +179,22 @@
         content.inert = true;
         if (internal) {
           apply({ transition: reduced() ? 'none' : 'opacity 180ms ease, filter 180ms ease, transform 180ms ease', opacity: '0', filter: reduced() ? '' : 'blur(5px)', transform: reduced() || fromQC ? '' : 'translateY(-5px)', visibility: fromQC ? 'hidden' : '' });
-          if (routeUpdate) loader.startLoaderTimer(true);
+          loader.showInnerLoader();
           if (!fromQC && !reduced()) await rafDelay(180);
           if (!valid()) return;
-          if (!routeUpdate) loader.startLoaderTimer(true);
+
         } else {
           const promise = maskClose(valid);
           loader.startLoaderTimer(false);
           await promise;
         }
-        if (valid() && !routeUpdate) loader.showInnerLoader();
+
+      },
+      prepared() { if (valid()) loader.pausePending?.(); },
+      mounting() {
+        if (!valid()) return;
+        if (internal) loader.showInnerLoader();
+        else loader.startLoaderTimer(false);
       },
       async complete() {
         if (!valid()) return;
