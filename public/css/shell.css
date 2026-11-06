@@ -267,50 +267,48 @@ body.dashboard-layout.sidebar-open #page-main,
   position: absolute;
   top: var(--header-backdrop-top, 0px);
   inset-inline: 0;
-  height: calc(var(--header-backdrop-height, 0px) + 56px);
+  height: calc(var(--header-backdrop-height, 0px) + 16px);
   z-index: 10;
   pointer-events: none;
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  background: linear-gradient(to bottom,
-    color-mix(in srgb, var(--color-bg-page, #f8fafc) 90%, transparent) 0%,
-    color-mix(in srgb, var(--color-bg-page, #f8fafc) 90%, transparent) 40%,
-    transparent 100%);
-  mask-image: linear-gradient(to bottom, #000 0%, #000 calc(100% - 56px), transparent 100%);
-  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 calc(100% - 56px), transparent 100%);
   opacity: 0;
   transition: opacity 240ms var(--motion-ease-standard, ease);
+}
+.header-blur-layer--strong {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  mask-image: linear-gradient(to bottom, #000 40%, transparent 40%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 40%, transparent 40%);
+}
+.header-blur-layer--medium {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  mask-image: linear-gradient(to bottom, transparent 40%, #000 40%, #000 70%, transparent 70%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 40%, #000 30%, #000 50%, transparent 70%);
+}
+.header-blur-layer--soft {
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 70%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 70%, transparent 100%);
+}
+.header-blur-layer--tint {
+  background: linear-gradient(to bottom,
+    color-mix(in srgb, var(--color-bg-page, #f8fafc) 100%, transparent) 0%,
+    color-mix(in srgb, var(--color-bg-page, #f8fafc) 50%, transparent) 40%,
+    transparent 100%);
 }
 .has-header-backdrop.is-content-scrolled > .header-blur-layer {
   opacity: 1;
   transition: none;
 }
 
-/* The capsule is independent of the content and grows out as the header returns. */
 :is(.content-header, .editor-menubar).has-scroll-backdrop {
   isolation: isolate;
   transform-origin: center top;
   transition: transform 320ms var(--motion-ease-standard, ease), gap 320ms var(--motion-ease-standard, ease);
 }
-:is(.content-header, .editor-menubar).has-scroll-backdrop::before {
-  content: '';
-  position: absolute;
-  inset: 8px 16px;
-  z-index: -1;
-  border-radius: 999px;
-  background: var(--color-bg-page, #f8fafc);
-  border: 0;
-  opacity: 0;
-  transform: scale(1.06, 1.12);
-  pointer-events: none;
-  transition: opacity 320ms var(--motion-ease-standard, ease), transform 320ms var(--motion-ease-standard, ease);
-}
 :is(.content-header, .editor-menubar).has-scroll-backdrop.is-content-scrolled {
   transform: scale(.97);
-}
-:is(.content-header, .editor-menubar).has-scroll-backdrop.is-content-scrolled::before {
-  opacity: 1;
-  transform: scale(1);
 }
 .project-workspace-header.has-scroll-backdrop .project-workspace-header-sub,
 .project-workspace-header.has-scroll-backdrop .project-workspace-meta {
@@ -334,7 +332,6 @@ body.dashboard-layout.sidebar-open #page-main,
 @media (prefers-reduced-motion: reduce) {
   .header-blur-layer,
   :is(.content-header, .editor-menubar).has-scroll-backdrop,
-  :is(.content-header, .editor-menubar).has-scroll-backdrop::before,
   .project-workspace-header.has-scroll-backdrop .project-workspace-header-sub,
   .project-workspace-header.has-scroll-backdrop .project-workspace-meta { transition: none; }
 }

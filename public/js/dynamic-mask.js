@@ -119,10 +119,13 @@
         this.headerHost = header?.parentElement;
         if (this.headerHost) {
           headerHosts.set(this.headerHost, this);
-          this.headerBlurLayer = document.createElement('div');
-          this.headerBlurLayer.className = 'header-blur-layer';
-          this.headerBlurLayer.setAttribute('aria-hidden', 'true');
-          this.headerHost.appendChild(this.headerBlurLayer);
+          this.headerBlurLayers = ['strong', 'medium', 'soft', 'tint'].map(kind => {
+            const layer = document.createElement('div');
+            layer.className = `header-blur-layer header-blur-layer--${kind}`;
+            layer.setAttribute('aria-hidden', 'true');
+            this.headerHost.appendChild(layer);
+            return layer;
+          });
         }
         this.headerScrolled = false;
         this.headerLayoutDirty = true;
@@ -166,8 +169,8 @@
     }
 
     clearHeaderPresentation() {
-      this.headerBlurLayer?.remove();
-      this.headerBlurLayer = null;
+      this.headerBlurLayers?.forEach(layer => layer.remove());
+      this.headerBlurLayers = null;
       this.header?.querySelectorAll('.project-workspace-header-sub, .project-workspace-meta').forEach(sub => {
         sub.style.removeProperty('--header-sub-height');
       });
