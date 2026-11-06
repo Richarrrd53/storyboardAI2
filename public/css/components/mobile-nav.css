@@ -25,10 +25,7 @@
     -webkit-backdrop-filter: blur(14px) saturate(125%) brightness(1.04) !important;
     border: var(--mobile-nav-border, 1px solid rgba(255, 255, 255, 0.7)) !important;
     border-radius: var(--mobile-nav-radius, var(--radius-pill, 999px)) !important;
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1),
-                0 2px 8px rgba(0, 0, 0, 0.03),
-                inset 0 1px 1.5px rgba(255, 255, 255, 0.85),
-                inset 0 -1.5px 3px rgba(120, 120, 110, 0.05) !important;
+    box-shadow: none !important;
     align-items: center !important;
     justify-content: space-around !important;
     padding: 0 !important;
@@ -37,7 +34,53 @@
     -webkit-user-select: none !important;
     touch-action: none !important;
     transform-origin: center center;
-    transition: transform 380ms cubic-bezier(0.16, 1, 0.3, 1), opacity 320ms ease !important;
+    scale: 1;
+    transition: transform 380ms cubic-bezier(0.16, 1, 0.3, 1), scale 320ms var(--motion-ease-standard, ease), opacity 320ms ease !important;
+  }
+
+  body.mobile-nav-compact .mobile-bottom-nav { scale: .9; }
+
+  .mobile-nav-backdrop { display: none; }
+  body.dashboard-layout .mobile-nav-backdrop {
+    display: block;
+    position: fixed;
+    inset: auto 0 0;
+    height: calc(var(--mobile-nav-height, 64px) + var(--mobile-nav-offset, 16px) + env(safe-area-inset-bottom, 0px) + 32px);
+    z-index: 9999;
+    pointer-events: none;
+    transform-origin: center bottom;
+    transform: scaleY(1);
+    transition: transform 320ms var(--motion-ease-standard, ease);
+  }
+  body.dashboard-layout.mobile-nav-compact .mobile-nav-backdrop { transform: scaleY(.7); }
+  .mobile-nav-backdrop--strong {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    mask-image: linear-gradient(to top, #000 40%, transparent 40%);
+    -webkit-mask-image: linear-gradient(to top, #000 40%, transparent 40%);
+  }
+  .mobile-nav-backdrop--medium {
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    mask-image: linear-gradient(to top, transparent 40%, #000 40%, #000 70%, transparent 70%);
+    -webkit-mask-image: linear-gradient(to top, transparent 40%, #000 30%, #000 50%, transparent 70%);
+  }
+  .mobile-nav-backdrop--soft {
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    mask-image: linear-gradient(to top, transparent 0%, #000 70%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to top, transparent 0%, #000 70%, transparent 100%);
+  }
+  .mobile-nav-backdrop--tint {
+    background: linear-gradient(to top,
+      color-mix(in srgb, var(--color-bg-page, #f8fafc) 100%, transparent) 0%,
+      color-mix(in srgb, var(--color-bg-page, #f8fafc) 50%, transparent) 40%,
+      transparent 100%);
+  }
+  body.ai-quick-compose-active .mobile-nav-backdrop { display: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mobile-bottom-nav, .mobile-nav-backdrop { transition: none !important; }
   }
 
   .mobile-bottom-nav::before {

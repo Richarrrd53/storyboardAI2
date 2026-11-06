@@ -306,6 +306,15 @@
       document.body.appendChild(mobNav);
     }
     mobileBottomNav = mobNav;
+    if (!document.getElementById('mobile-nav-backdrop-strong')) {
+      ['strong', 'medium', 'soft', 'tint'].forEach(kind => {
+        const layer = document.createElement('div');
+        layer.id = `mobile-nav-backdrop-${kind}`;
+        layer.className = `mobile-nav-backdrop mobile-nav-backdrop--${kind}`;
+        layer.setAttribute('aria-hidden', 'true');
+        document.body.appendChild(layer);
+      });
+    }
     initMobileBottomNavGestures();
   }
 
@@ -922,6 +931,26 @@
     const mobNav = document.getElementById('spa-mobile-nav') || mobileBottomNav;
     if (!mobNav || mobNav.dataset.gesturesBound) return;
     mobNav.dataset.gesturesBound = 'true';
+
+    const lastScrollPositions = new WeakMap();
+    addTrackedListener(document, 'scroll', (event) => {
+      const scroller = event.target;
+      if (!isMobileView() || !scroller?.matches?.('.content-body, .page-scroll')) return;
+      const current = Math.max(0, scroller.scrollTop);
+      const previous = lastScrollPositions.get(scroller) ?? 0;
+      lastScrollPositions.set(scroller, current);
+      if (current <= 0 || current < previous - 1) {
+        document.body.classList.remove('mobile-nav-compact');
+      } else if (current > previous + 1) {
+        document.body.classList.add('mobile-nav-compact');
+      }
+    }, { capture: true, passive: true });
+    addTrackedListener(mobNav, 'pointerdown', () => {
+      document.body.classList.remove('mobile-nav-compact');
+    }, { capture: true });
+    addTrackedListener(mobNav, 'click', () => {
+      document.body.classList.remove('mobile-nav-compact');
+    }, { capture: true });
 
     if (typeof window.mountAICreationCapsule === 'function') {
       try { window.mountAICreationCapsule(); } catch (_) {}
@@ -1663,6 +1692,7 @@
     if (mobNav) {
       mobNav.style.display = isDashboard ? '' : 'none';
     }
+    document.body.classList.remove('mobile-nav-compact');
 
     const userPanel = document.getElementById('spa-user-panel') || dashboardUserPanel;
     if (userPanel) {
@@ -1701,6 +1731,7 @@
   }
 
   function destroy() {
+    document.body.classList.remove('mobile-nav-compact');
     if (storeUnsubscribe) {
       try {
         storeUnsubscribe();
