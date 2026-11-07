@@ -20,7 +20,7 @@
 .project-card.project-folder-card,
 .project-folder-card {
   --folder-tab-height: calc(var(--radius-lg) * 1.5);
-  --folder-fillet: calc(var(--folder-tab-height) / 2);
+  --folder-fillet: var(--radius-lg);
   position: relative;
   width: 100%;
   min-width: 0;
@@ -321,7 +321,10 @@
 
   .project-folder-tab {
     corner-shape: squircle;
-    border-radius: var(--radius-continuous-lg) var(--folder-fillet) 0 0;
+    /* The tab is only 36px tall, so cap its vertical radius to avoid
+       CSS scaling both top corners down when using the 40px squircle token. */
+    border-radius: var(--radius-continuous-lg) var(--radius-continuous-lg) 0 0 /
+                   var(--folder-tab-height) var(--folder-tab-height) 0 0;
   }
 
   .project-folder-header-row {
@@ -356,7 +359,7 @@
   height: 1px;
   background: var(--surface-folder-border);
   margin-bottom: 0px;
-  margin-left: 16px;
+  margin-left: calc(var(--folder-fillet) - 2px);
 }
 
 /* Option Notch Wrap: Embedded with gap A ≈ gap B (10px ~ 14px) */

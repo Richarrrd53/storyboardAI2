@@ -299,9 +299,9 @@ body.dashboard-layout.sidebar-open #page-main,
 }
 .header-blur-layer--tint {
   background: linear-gradient(to bottom,
-    color-mix(in srgb, var(--color-bg-page, #f8fafc) 100%, transparent) 0%,
-    color-mix(in srgb, var(--color-bg-page, #f8fafc) 95%, transparent) 50%,
-    color-mix(in srgb, var(--color-bg-page, #f8fafc) 70%, transparent) 75%,
+    color-mix(in srgb, var(--color-bg-page, #f8fafc) 30%, transparent) 0%,
+    color-mix(in srgb, var(--color-bg-page, #f8fafc) 25%, transparent) 50%,
+    color-mix(in srgb, var(--color-bg-page, #f8fafc) 15%, transparent) 75%,
     transparent 100%);
 }
 .has-header-backdrop.is-content-scrolled > .header-blur-layer {
