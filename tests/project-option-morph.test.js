@@ -547,3 +547,24 @@ test('ProjectOptionMorph: Global listeners lifecycle (no duplicate or lingering 
   assert.strictEqual(windowListeners['resize']?.length, 0, 'Resize listener detached on close');
   assert.strictEqual(windowListeners['keydown']?.length, 0, 'Keydown listener detached on close');
 });
+
+
+test('ProjectOptionMorph: generic dropdown shares singleton and restores actual trigger dimensions', () => {
+  const {body,windowListeners} = setupMockEnvironment();
+  const morph=loadProjectOptionMorph();
+  const trigger=createMockElement('button');
+  trigger.getBoundingClientRect=()=>({left:20,right:140,top:30,bottom:70,width:120,height:40});
+  const content=createMockElement('div'); content.appendChild(createMockElement('button'));
+  let closed=0;
+  morph.openSurface(trigger,{content,width:240,label:'標籤',onClose:()=>closed++});
+  assert.equal(trigger.getAttribute('aria-expanded'),'true');
+  assert.equal(body.querySelector('.global-project-option-menu').style.width,'120px');
+  assert.equal(body.querySelector('.global-project-option-menu').getAttribute('role'),'menu');
+  morph.open(createMockElement('button'),{id:'project'},createMockElement('div'));
+  assert.equal(closed,1);
+  assert.equal(trigger.getAttribute('aria-expanded'),'false');
+  assert.equal(windowListeners.keydown.length,1);
+  morph.close('unmount');
+  assert.equal(windowListeners.keydown.length,0);
+  assert.equal(body.querySelector('.project-option-overlay'),null);
+});

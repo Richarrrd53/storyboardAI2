@@ -201,6 +201,7 @@
     if (!pageDefs[page]) return;
     if (isDashboardPage(page) && !spaAuth.isLoggedIn()) {
       window.showSpaToast('您尚未登入，請先登入以存取該頁面。');
+      window.sessionStorage?.setItem('spa_return_route', JSON.stringify({page, opts:{id:opts.id,templateId:opts.templateId}}));
       return navigate('login', { force: true });
     }
     const activePage = targetPage || currentPage;
@@ -253,6 +254,7 @@
         if (!result?.valid) {
           animation.cancel();
           window.showSpaToast('登入已過期，請重新登入。');
+          window.sessionStorage?.setItem('spa_return_route', JSON.stringify({page, opts:{id:opts.id,templateId:opts.templateId}}));
           return navigate('login', { force: true, noHistory: opts.noHistory });
         }
         if (result.error || result.aborted || !result.user) {

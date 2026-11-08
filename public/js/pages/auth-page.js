@@ -1,5 +1,15 @@
 (function () {
   'use strict';
+  function returnAfterLogin(navigate) {
+    let destination;
+    try { destination = JSON.parse(window.sessionStorage?.getItem('spa_return_route') || 'null'); } catch (_) {}
+    window.sessionStorage?.removeItem('spa_return_route');
+    const allowed = ['dashboard','projects','history','template','project','generate','discovery'];
+    navigate(allowed.includes(destination?.page) ? destination.page : 'dashboard', {
+      id: destination?.opts?.id, templateId: destination?.opts?.templateId
+    });
+  }
+
   function mount({ root, signal, navigate, route = {} }) {
     const showRegister = route.showRegister;
     const timers = new Set();
@@ -101,7 +111,7 @@
         if (!isActive()) return;
         const t = document.getElementById('toast');
         if (t) t.classList.remove('show');
-        navigate('dashboard');
+        returnAfterLogin(navigate);
       } catch (error) {
         if (isActive()) showToast(error.message);
       }
@@ -131,7 +141,7 @@
         await window.spaAuth.register(name, email, pass);
         if (!isActive()) return;
         showToast('註冊成功！已為您自動登入。');
-        navigate('dashboard');
+        returnAfterLogin(navigate);
       } catch (error) {
         if (isActive()) showToast(error.message);
       }

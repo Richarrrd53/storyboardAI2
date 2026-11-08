@@ -866,3 +866,28 @@
     transform: none !important;
   }
 }
+
+/* Dense two-column folders are exclusive to the Projects browser. */
+@media(max-width:768px) {
+  .projects-body .project-card.project-folder-card { --folder-tab-height:28px; --folder-fillet:14px; --radius-lg:14px; --radius-continuous-lg:22px; padding-top:16px; }
+  .projects-body .project-folder-card .project-folder-preview-stack { height:clamp(78px,20vw,130px); margin-bottom:-28px; }
+  .projects-body .project-folder-card .project-preview-primary {
+    width:calc(100% - 12px) !important; height:auto !important; aspect-ratio:16/9 !important;
+    --insert-depth:24px !important; --hover-lift:8px !important; --hover-rotate:-2deg !important;
+    border-radius:10px; max-height:none;
+  }
+  .projects-body .project-folder-card .project-preview-secondary { width:calc(100% - 22px); transform:translate(4px,16px) rotate(3deg) scale(.96); }
+  .projects-body .project-folder-card .project-folder-shell { min-height:148px; }
+  .projects-body .project-folder-card .project-folder-content { padding:10px 10px 14px; gap:5px; justify-content:flex-start; }
+  .projects-body .project-folder-card .project-updated { font-size:10px; line-height:1.4; }
+  .projects-body .project-folder-card .project-title-wrapper { white-space:normal; padding:0; mask-image:none; -webkit-mask-image:none; }
+  .projects-body .project-folder-card .project-title { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; white-space:normal; font-size:13px; line-height:1.4; height:36.4px; transform:none !important; }
+  .projects-body .project-folder-card .project-tags-row { flex-wrap:nowrap; overflow:hidden; margin:0; gap:3px; }
+  .projects-body .project-folder-card .project-tag-pill { flex-shrink:0; font-size:9px; padding-inline:5px; height:20px; max-width:100%; overflow:hidden; text-overflow:ellipsis; }
+  .projects-body .project-folder-card .project-meta { gap:4px; margin-top:auto; }
+  .projects-body .project-folder-card .project-meta-pill { height:21px; font-size:10px; padding-inline:5px; }
+  .projects-body .project-folder-card .project-folder-tab { width:calc(100% - 60px); padding-left:10px; }
+  .projects-body .project-folder-card .project-option-btn { width:44px; height:44px; }
+  .projects-body .project-folder-card .project-folder-notch-wrap { margin-left:8px; margin-bottom:4px; }
+  .projects-body .project-folder-card .fallback-status { font-size:10px; }
+}

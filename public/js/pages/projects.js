@@ -20,6 +20,9 @@
     });
   }
 
+  const projectCollator = new Intl.Collator('zh-Hant', {numeric:true,sensitivity:'base'});
+  const cardStates = new WeakMap();
+
   const PRESET_SUGGESTED_TAGS = ['商業廣告', '品牌企劃', '短影音', '個人創作', '畢業專題'];
   let activeTagModal = null;
 
@@ -88,7 +91,7 @@
         </svg>
       </div>
       <h3>無符合的分鏡</h3>
-      <p>沒有符合目前標籤篩選條件的分鏡，嘗試清除篩選或選擇其他標籤。</p>
+      <p>沒有符合目前搜尋或標籤篩選條件的分鏡，嘗試清除篩選或選擇其他標籤。</p>
     `;
     const clearBtn = document.createElement('button');
     clearBtn.type = 'button';
@@ -127,7 +130,7 @@
     return { allTags, counts };
   }
 
-  function getFilteredAndSortedProjects(projectsList, selectedTags = null) {
+  function getFilteredAndSortedProjects(projectsList, selectedTags = null, options = {}) {
     if (!Array.isArray(projectsList)) return [];
     const isPendingDelete = (id) => {
       if (global.ProjectDeleteQueue && typeof global.ProjectDeleteQueue.isPending === 'function') {
@@ -142,41 +145,59 @@
     return projectsList
       .filter(p => {
         if (p.is_deleted || isPendingDelete(p.id)) return false;
-        if (!tagSet) return true;
         const tags = projectTags(p);
-        // OR 邏輯：只要符合任一所選標籤即保留
-        return tags.some(t => tagSet.has(t));
+        const query = String(options.query || '').trim().normalize('NFKC').toLocaleLowerCase('zh-Hant');
+        const searchable = `${p.title || ''} ${tags.join(' ')}`.normalize('NFKC').toLocaleLowerCase('zh-Hant');
+        return (!tagSet || tags.some(t => tagSet.has(t))) && (!query || searchable.includes(query));
       })
-      .sort((a, b) => new Date(b.updateAt || b.createAt) - new Date(a.updateAt || a.createAt));
+      .sort((a, b) => {
+        const collator = projectCollator;
+        const date = (p, created) => {
+          const value = Date.parse(created ? (p.createAt || p.createdAt || '') : (p.updateAt || p.updatedAt || p.createAt || p.createdAt || ''));
+          return Number.isFinite(value) ? value : 0;
+        };
+        const shots = p => Number(p.shotsCount ?? p.shotCount ?? p.shots?.length) || 0;
+        const key = options.sort || 'updated';
+        const comparison = key === 'name' ? collator.compare(a.title || '', b.title || '') :
+          key === 'shots' ? shots(a) - shots(b) : date(a, key === 'created') - date(b, key === 'created');
+        return (options.direction === 'asc' ? comparison : -comparison) || collator.compare(String(a.id), String(b.id));
+      });
   }
 
   function renderProjectsList(projectsGrid, activeProjects, onCardMutate, onTagClick, isFiltered = false, onClearFilters = null) {
     if (!projectsGrid) return;
-    cleanupCards(projectsGrid);
-    projectsGrid.innerHTML = '';
-    if (activeProjects.length === 0) {
-      if (isFiltered) {
-        renderFilterEmptyState(projectsGrid, onClearFilters);
-      } else {
-        renderEmptyState(projectsGrid);
-      }
+    let state = cardStates.get(projectsGrid);
+    if (!state) { state = new Map(); cardStates.set(projectsGrid, state); }
+    // Reconcile by project identity. Sorting and filtering keep the exact same
+    // cover nodes and interaction bindings; only changed project data is rebuilt.
+    const retained = new Set(activeProjects.map(project => String(project.id)));
+    for (const [id, entry] of state) {
+      if (!retained.has(id) && entry.card.parentNode === projectsGrid) entry.card.remove?.();
+    }
+    if (!state.size || !projectsGrid.querySelector?.('.project-card')) projectsGrid.innerHTML = '';
+    if (!activeProjects.length) {
+      if (isFiltered) renderFilterEmptyState(projectsGrid, onClearFilters);
+      else renderEmptyState(projectsGrid);
       return;
     }
-
-    activeProjects.forEach(p => {
-      const card = document.createElement('div');
-      if (global.ProjectCard && typeof global.ProjectCard.buildLightFilmCardHTML === 'function') {
-        card.innerHTML = global.ProjectCard.buildLightFilmCardHTML(p);
-      } else if (typeof global.buildLightFilmCardHTML === 'function') {
-        card.innerHTML = global.buildLightFilmCardHTML(p);
+    projectsGrid.querySelectorAll?.('.projects-empty').forEach(element => element.remove());
+    activeProjects.forEach(project => {
+      const id = String(project.id);
+      const signature = JSON.stringify(project);
+      let entry = state.get(id);
+      if (!entry) { entry = {card:document.createElement('div')}; state.set(id, entry); }
+      const card = entry.card;
+      if (card.parentNode !== projectsGrid) {
+        // Undo can reattach a cached card after the delete animation. Its
+        // transient opacity/transform must never survive into the visible grid.
+        card.style.opacity = ''; card.style.transform = ''; card.style.transition = '';
       }
-
-      if (global.ProjectCardInteractions?.bind) {
-        global.ProjectCardInteractions.bind(card, p, { isDeleted: false, refreshCallback: onCardMutate, onTagClick });
-      } else if (typeof global.setupProjectCardEvents === 'function') {
-        global.setupProjectCardEvents(card, p, false, () => {
-          if (typeof onCardMutate === 'function') onCardMutate();
-        });
+      if (entry.signature !== signature) {
+        global.ProjectCardInteractions?.unbind?.(card);
+        card.innerHTML = global.ProjectCard?.buildLightFilmCardHTML?.(project) || global.buildLightFilmCardHTML?.(project) || '';
+        if (global.ProjectCardInteractions?.bind) global.ProjectCardInteractions.bind(card, project, {isDeleted:false, refreshCallback:onCardMutate, onTagClick});
+        else global.setupProjectCardEvents?.(card, project, false, onCardMutate);
+        entry.signature = signature;
       }
       projectsGrid.appendChild(card);
     });
@@ -534,6 +555,113 @@
     const { root, signal } = context;
     let isMounted = true;
     let selectedTags = new Set();
+    let query = '', sort = 'updated', direction = 'desc';
+    let sortSequence = 0;
+    let animations = [];
+    let searchTimer = null;
+    let tagMenu = null, sortMenu = null;
+    const find = selector => root?.querySelector(selector) || document.querySelector(selector);
+    const tagsTrigger = find('#projects-tags-trigger');
+    const sortTrigger = find('#projects-sort-trigger');
+    const search = find('#projects-search');
+    const tagsLabel = find('#projects-tags-label');
+    const handlers = [];
+    const listen = (element, type, handler) => {
+      element?.addEventListener(type, handler); handlers.push(() => element?.removeEventListener(type, handler));
+    };
+    function clearFilters() { selectedTags.clear(); query = ''; if (search) search.value = ''; updateView(); }
+    function renderTagOptions(container, list, total) {
+      if (!container) return;
+      const {allTags, counts} = extractTagsWithCounts(list);
+      const focused = document.activeElement?.getAttribute?.('data-tag');
+      container.innerHTML = '';
+      const choices = [['__ALL__', '全部標籤', total], ...allTags.map(tag => [tag, tag, counts[tag]])];
+      for (const [tag, label, count] of choices) {
+        const button = document.createElement('button');
+        button.type = 'button'; button.className = 'project-filter-pill morph-item';
+        const active = tag === '__ALL__' ? selectedTags.size === 0 : selectedTags.has(tag);
+        button.classList.toggle('is-active', active);
+        button.setAttribute('data-tag', tag); button.setAttribute('aria-pressed', String(active));
+        button.setAttribute('role','menuitemcheckbox'); button.setAttribute('aria-checked',String(active));
+        button.innerHTML = `<span>${escapeHtml(label)}</span><span class="filter-count">${count}</span>`;
+        button.addEventListener('click', () => {
+          if (tag === '__ALL__') selectedTags.clear();
+          else if (selectedTags.has(tag)) selectedTags.delete(tag); else selectedTags.add(tag);
+          updateView();
+        });
+        container.appendChild(button);
+      }
+      if (focused) [...container.children].find(button => button.getAttribute('data-tag') === focused)?.focus?.({preventScroll:true});
+    }
+    function openMenu(trigger, content, label, onClose) {
+      global.ProjectOptionMorph?.openSurface(trigger, {content,width:240,label,align:trigger === tagsTrigger ? 'start' : 'end',
+        onClose: () => { onClose(); if (isMounted && trigger.isConnected && !global.ProjectOptionMorph.isOpen()) trigger.focus({preventScroll:true}); }});
+    }
+    listen(tagsTrigger, 'click', () => {
+      tagMenu = document.createElement('div'); tagMenu.className = 'projects-dropdown-options';
+      renderTagOptions(tagMenu, global.ProjectStore?.getProjects() || [], getFilteredAndSortedProjects(global.ProjectStore?.getProjects() || []).length);
+      openMenu(tagsTrigger, tagMenu, '標籤篩選', () => { tagMenu = null; });
+    });
+    function renderSortOptions() {
+      if (!sortMenu) return;
+      const focused = document.activeElement?.getAttribute?.('data-sort') || document.activeElement?.getAttribute?.('data-direction');
+      sortMenu.innerHTML = '';
+      const choices = [['updated','修改時間'],['created','建立時間'],['name','專案名稱'],['shots','分鏡數量']];
+      for (const [key,label] of choices) {
+        const button = document.createElement('button'); button.type = 'button'; button.className = 'morph-item';
+        button.setAttribute('data-sort', key); button.setAttribute('role','menuitemradio'); button.setAttribute('aria-checked',String(sort === key));
+        button.textContent = `${sort === key ? '✓ ' : ''}${label}`;
+        button.addEventListener('click', () => { sort = key; renderSortOptions(); sortCards(); }); sortMenu.appendChild(button);
+      }
+      const directions = document.createElement('div'); directions.className = 'projects-sort-directions';
+      for (const [value,label] of [['asc','遞增 ↑'],['desc','遞減 ↓']]) {
+        const button = document.createElement('button'); button.type = 'button'; button.className = 'morph-item';
+        button.setAttribute('data-direction',value); button.setAttribute('aria-pressed', String(direction === value)); button.textContent = label;
+        button.addEventListener('click', () => { direction = value; renderSortOptions(); sortCards(); }); directions.appendChild(button);
+      }
+      sortMenu.appendChild(directions);
+      if (focused) [...sortMenu.querySelectorAll('button')].find(button => button.getAttribute('data-sort') === focused || button.getAttribute('data-direction') === focused)?.focus?.({preventScroll:true});
+    }
+    listen(sortTrigger, 'click', () => {
+      sortMenu = document.createElement('div'); sortMenu.className = 'projects-dropdown-options'; renderSortOptions();
+      openMenu(sortTrigger, sortMenu, '排序分鏡', () => { sortMenu = null; });
+    });
+    listen(search, 'input', () => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => { query = search.value; updateView(); }, 100);
+    });
+    function cancelSort() { sortSequence++; animations.forEach(animation => animation.cancel()); animations = []; }
+    async function sortCards() {
+      const current = new Map(animations.map(animation => {const card=animation.effect.target;return [card,global.getComputedStyle(card).transform];}));
+      cancelSort(); const sequence = sortSequence;
+      if (global.matchMedia?.('(prefers-reduced-motion: reduce)').matches || !projectsGrid.animate) { updateView(); return; }
+      const viewport = projectsGrid.parentElement.getBoundingClientRect();
+      const cards = [...projectsGrid.querySelectorAll('.project-card')].filter(card => { const r = card.getBoundingClientRect(); return r.bottom > viewport.top && r.top < viewport.bottom; });
+      const rects = new Map(cards.map(card => [card,card.getBoundingClientRect()]));
+      const centerX = (viewport.left + viewport.right) / 2;
+      const centerY = cards.length ? (Math.max(viewport.top,Math.min(...cards.map(card=>rects.get(card).top))) + Math.min(viewport.bottom,Math.max(...cards.map(card=>rects.get(card).bottom))))/2 : viewport.top;
+      const gatherScale = .72;
+      const transforms = new Map(cards.map(card => {const r=rects.get(card);return [card,{x:centerX-r.left-r.width/2,y:centerY-r.top-r.height/2}];}));
+      const gather = cards.map(card => {const {x,y}=transforms.get(card);return card.animate([{transform:!current.get(card) || current.get(card) === 'none' ? 'translate(0,0) scale(1)' : current.get(card)},{transform:`translate(${x}px,${y}px) scale(${gatherScale})`}],{duration:240,easing:'cubic-bezier(.4,0,.2,1)',fill:'forwards'});});
+      animations = gather;
+      await Promise.allSettled(gather.map(animation => animation.finished));
+      // Briefly hold the fully overlapping stack before redistributing it.
+      await new Promise(resolve => setTimeout(resolve,40));
+      if (!isMounted || sequence !== sortSequence) return;
+      const gathered = new Map(cards.map(card => [card,card.getBoundingClientRect()]));
+      gather.forEach(animation => animation.cancel());
+      updateView(true);
+      const targets = new Map(cards.map(card => [card,card.getBoundingClientRect()]));
+      animations = cards.map(card => {
+        const from=gathered.get(card),to=targets.get(card);
+        const x=from.left-to.left-to.width*(1-gatherScale)/2;
+        const y=from.top-to.top-to.height*(1-gatherScale)/2;
+        return card.animate([{transform:`translate(${x}px,${y}px) scale(${gatherScale})`},{transform:'translate(0,0) scale(1)'}],{duration:400,easing:'cubic-bezier(.2,.85,.25,1.15)',fill:'none'});
+      });
+      await Promise.allSettled(animations.map(animation => animation.finished));
+      if (sequence === sortSequence) animations = [];
+    }
+
 
     const onCardTagClick = (clickedTag) => {
       if (!isMounted) return;
@@ -556,8 +684,9 @@
     const clearFilterBtn = (root ? root.querySelector('#projects-clear-filter-btn') : null) || document.getElementById('projects-clear-filter-btn');
     const countBadge = (root ? root.querySelector('#projects-count-badge') : null) || document.getElementById('projects-count-badge');
 
-    function updateView() {
+    function updateView(fromSort = false) {
       if (!isMounted) return;
+      if (!fromSort) cancelSort();
       const list = global.ProjectStore && typeof global.ProjectStore.getProjects === 'function'
         ? global.ProjectStore.getProjects()
         : null;
@@ -570,50 +699,12 @@
       const allActive = getFilteredAndSortedProjects(list, null);
       const totalCount = allActive.length;
 
-      const filteredProjects = getFilteredAndSortedProjects(list, selectedTags);
+      const filteredProjects = getFilteredAndSortedProjects(list, selectedTags, {query,sort,direction});
       const filteredCount = filteredProjects.length;
 
-      // 1. 更新標籤篩選列
-      if (tagsScroll) {
-        const { allTags, counts } = extractTagsWithCounts(list);
-        tagsScroll.innerHTML = '';
-
-        // 「全部」按鈕
-        const allBtn = document.createElement('button');
-        allBtn.type = 'button';
-        allBtn.className = `project-filter-pill ${selectedTags.size === 0 ? 'is-active' : ''}`;
-        allBtn.setAttribute('data-tag', '__ALL__');
-        allBtn.setAttribute('aria-pressed', String(selectedTags.size === 0));
-        allBtn.innerHTML = `全部 <span class="filter-count">${totalCount}</span>`;
-        allBtn.addEventListener('click', () => {
-          if (selectedTags.size > 0) {
-            selectedTags.clear();
-            updateView();
-          }
-        });
-        tagsScroll.appendChild(allBtn);
-
-        // 各個個別標籤按鈕
-        allTags.forEach(tag => {
-          const tagBtn = document.createElement('button');
-          tagBtn.type = 'button';
-          const isActive = selectedTags.has(tag);
-          tagBtn.className = `project-filter-pill ${isActive ? 'is-active' : ''}`;
-          tagBtn.setAttribute('data-tag', tag);
-          tagBtn.setAttribute('aria-pressed', String(isActive));
-          const tagEsc = escapeHtml(tag);
-          tagBtn.innerHTML = `#${tagEsc} <span class="filter-count">${counts[tag] || 0}</span>`;
-          tagBtn.addEventListener('click', () => {
-            if (selectedTags.has(tag)) {
-              selectedTags.delete(tag);
-            } else {
-              selectedTags.add(tag);
-            }
-            updateView();
-          });
-          tagsScroll.appendChild(tagBtn);
-        });
-      }
+      if (tagsScroll) renderTagOptions(tagsScroll, list, totalCount);
+      if (tagMenu) renderTagOptions(tagMenu, list, totalCount);
+      if (tagsLabel) tagsLabel.textContent = selectedTags.size === 0 ? '全部標籤' : selectedTags.size === 1 ? [...selectedTags][0] : `${selectedTags.size} 個標籤`;
 
       // 2. 清除篩選按鈕
       if (clearFilterBtn) {
@@ -630,7 +721,7 @@
 
       // 3. 頂部計數徽章
       if (countBadge) {
-        if (selectedTags.size > 0) {
+        if (selectedTags.size > 0 || query.trim()) {
           countBadge.textContent = `${filteredCount} / ${totalCount}`;
         } else {
           countBadge.textContent = `${totalCount}`;
@@ -638,7 +729,7 @@
       }
 
       // 4. 渲染分鏡清單
-      const isFiltered = selectedTags.size > 0;
+      const isFiltered = selectedTags.size > 0 || !!query.trim();
       renderProjectsList(
         projectsGrid,
         filteredProjects,
@@ -648,19 +739,9 @@
             global.updateSidebarProjects();
           }
         },
-        (clickedTag) => {
-          if (selectedTags.has(clickedTag)) {
-            selectedTags.delete(clickedTag);
-          } else {
-            selectedTags.add(clickedTag);
-          }
-          updateView();
-        },
+        onCardTagClick,
         isFiltered,
-        () => {
-          selectedTags.clear();
-          updateView();
-        }
+        clearFilters
       );
     }
 
@@ -709,6 +790,12 @@
       if (!isMounted) return;
       isMounted = false;
       selectedTags.clear();
+      clearTimeout(searchTimer); cancelSort();
+      handlers.forEach(cleanup => cleanup());
+      if (tagMenu || sortMenu) global.ProjectOptionMorph?.close('unmount');
+      const state = cardStates.get(projectsGrid);
+      state?.forEach(entry => global.ProjectCardInteractions?.unbind?.(entry.card));
+      cardStates.delete(projectsGrid);
       closeTagModal({ immediate: true, restoreFocus: false });
       cleanupCards(projectsGrid);
       if (clearFilterBtn) clearFilterBtn.onclick = null;

@@ -163,3 +163,11 @@
 .global-project-option-menu.is-content-visible .morph-divider {
   opacity: 1;
 }
+
+/* Generic toolbar surfaces reuse the card morph's material and trajectory. */
+.project-option-overlay:has(.morph-dropdown-surface) { z-index:10060; }
+.morph-dropdown-surface .morph-menu-content { overscroll-behavior:contain; }
+.morph-dropdown-surface .morph-item:focus-visible { outline:2px solid #93b4ff; outline-offset:-2px; }
+
+.morph-icon--trigger > span:first-child { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.morph-icon--trigger > svg { flex-shrink:0; }

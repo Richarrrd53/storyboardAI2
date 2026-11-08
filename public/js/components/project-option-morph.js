@@ -79,6 +79,23 @@
     };
   }
 
+  function copyTriggerContent(trigger, target) {
+    target.innerHTML = '';
+    target.classList.add('morph-icon--trigger');
+    target.setAttribute('aria-hidden','true');
+    for (const node of Array.from(trigger.childNodes || trigger.children || [])) {
+      const clone = node.cloneNode(true);
+      clone.removeAttribute?.('id');
+      clone.querySelectorAll?.('[id]').forEach(element => element.removeAttribute('id'));
+      target.appendChild(clone);
+    }
+    const style = root.getComputedStyle?.(trigger);
+    if (style) {
+      for (const property of ['font','color','padding','gap','justifyContent']) target.style[property] = style[property];
+      target.style.boxSizing = 'border-box';
+    }
+  }
+
   // Session-bound window listeners
   let globalListenersAttached = false;
   function attachGlobalListeners() {
@@ -126,6 +143,8 @@
     }
 
     // 復原 trigger button 與 card 樣式
+    session.triggerBtn?.setAttribute?.('aria-expanded', 'false');
+    session.onClose?.();
     if (session.triggerBtn && session.triggerBtn.classList) {
       session.triggerBtn.classList.remove('is-hidden-for-morph');
     }
@@ -178,7 +197,7 @@
     }
 
     // 即時關閉情況（路由切換、頁面卸載、組件銷毀）：不執行 440ms 動畫，立即釋放
-    if (reason === 'navigation' || reason === 'unmount' || reason === 'destroy' || reason === 'immediate') {
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches || reason === 'navigation' || reason === 'unmount' || reason === 'destroy' || reason === 'immediate') {
       teardownSession(session);
       if (typeof completeCb === 'function') completeCb();
       return;
@@ -193,6 +212,9 @@
       try {
         const liveRect = triggerBtn.getBoundingClientRect();
         if (liveRect && (liveRect.width > 0 || liveRect.height > 0 || liveRect.top > 0 || liveRect.left > 0)) {
+          session.originWidth = liveRect.width || session.originWidth;
+          session.originHeight = liveRect.height || session.originHeight;
+          if (session.triggerContent) copyTriggerContent(triggerBtn,morphIcon);
           p0_target = {
             x: liveRect.left + liveRect.width / 2,
             y: liveRect.top + liveRect.height / 2
@@ -278,8 +300,8 @@
         const rp = (elapsed - 230) / 210;
         const rEase = easeStandard(rp);
 
-        curW = 20 + (OPTION_BTN_WIDTH - 20) * rEase;
-        curH = 20 + (OPTION_BTN_HEIGHT - 20) * rEase;
+        curW = 20 + ((session.originWidth || OPTION_BTN_WIDTH) - 20) * rEase;
+        curH = 20 + ((session.originHeight || OPTION_BTN_HEIGHT) - 20) * rEase;
         curRadius = 9999;
         curCenterX = p0_target.x;
         curCenterY = p0_target.y;
@@ -305,8 +327,8 @@
         const bump = Math.sin(rEase * Math.PI) * Math.max(0, 1 - 0.5 * rEase);
         curScale = 1 + 0.004 * bump;
       } else {
-        curW = OPTION_BTN_WIDTH;
-        curH = OPTION_BTN_HEIGHT;
+        curW = session.originWidth || OPTION_BTN_WIDTH;
+        curH = session.originHeight || OPTION_BTN_HEIGHT;
         curRadius = 9999;
         curCenterX = p0_target.x;
         curCenterY = p0_target.y;
@@ -347,8 +369,8 @@
    * @param {HTMLElement} card 
    * @param {Object|boolean} options 
    */
-  function open(triggerBtn, project, card, options = {}) {
-    if (!triggerBtn || !project) return;
+  function openSession(triggerBtn, project, card, options = {}) {
+    if (!triggerBtn || (!project && !options.content)) return;
 
     // 正規化參數：相容舊式 open(triggerBtn, project, card, isHistoryPage, refreshCallback)
     let opts = {};
@@ -384,8 +406,8 @@
 
     const menu = document.createElement('div');
     menu.className = 'global-project-option-menu';
-    menu.style.width = `${OPTION_BTN_WIDTH}px`;
-    menu.style.height = `${OPTION_BTN_HEIGHT}px`;
+    menu.style.width = `${rect.width}px`;
+    menu.style.height = `${rect.height}px`;
     menu.style.left = `${rect.left}px`;
     menu.style.top = `${rect.top}px`;
     menu.style.borderRadius = '9999px';
@@ -393,19 +415,25 @@
     // Morphing Icon (••━)
     const morphIcon = document.createElement('span');
     morphIcon.className = 'morph-icon';
-    morphIcon.innerHTML = `
+    if (opts.content) copyTriggerContent(triggerBtn,morphIcon);
+    else morphIcon.innerHTML = `
       <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
         <circle cx="8" cy="5" r="1.5" />
         <circle cx="8" cy="11" r="1.5" />
       </svg>
     `;
 
-    const isHistory = Boolean(opts.isHistoryPage || opts.isHistory || project.is_deleted);
+    const isHistory = Boolean(opts.isHistoryPage || opts.isHistory || project?.is_deleted);
 
     // Menu Content
     const menuContent = document.createElement('div');
     menuContent.className = 'morph-menu-content';
-    if (isHistory) {
+    if (opts.content) {
+      menuContent.appendChild(opts.content);
+      menu.classList.add('morph-dropdown-surface');
+      menu.setAttribute('role', 'menu');
+      menu.setAttribute('aria-label', opts.label || '選單');
+    } else if (isHistory) {
       menuContent.innerHTML = `
         <button class="morph-item restore" type="button" data-action="restore">
           <span class="morph-item-icon">
@@ -474,11 +502,12 @@
     document.body.appendChild(overlay);
 
     // 3. 測量展開高度
+    const expandedWidth = Math.min(opts.width || 156, window.innerWidth - 24);
     let expandedHeight = isHistory ? 48 : 178;
     try {
       const measureWrap = document.createElement('div');
       measureWrap.className = 'global-project-option-menu';
-      measureWrap.style.cssText = 'position:fixed; left:-9999px; top:-9999px; width:156px; height:auto; visibility:hidden; opacity:0; pointer-events:none;';
+      measureWrap.style.cssText = `position:fixed;left:-9999px;top:-9999px;width:${expandedWidth}px;height:auto;visibility:hidden;opacity:0;pointer-events:none;`;
       const cloneMeasure = menuContent.cloneNode(true);
       cloneMeasure.style.position = 'static';
       cloneMeasure.style.opacity = '1';
@@ -492,13 +521,16 @@
       document.body.removeChild(measureWrap);
     } catch (_) {}
 
-    const expandedWidth = 156;
-    let targetTop = rect.top;
-    let targetLeft = rect.right - expandedWidth;
+    expandedHeight = Math.min(expandedHeight, window.innerHeight - 24);
+    menuContent.style.maxHeight = `${expandedHeight}px`;
+    menuContent.style.overflowY = 'auto';
+    let targetTop = opts.content ? rect.bottom + 8 : rect.top;
+    let targetLeft = opts.align === 'start' ? rect.left : rect.right - expandedWidth;
+    targetLeft = Math.min(targetLeft, window.innerWidth - expandedWidth - 12);
 
     const viewportH = (typeof window !== 'undefined' && window.innerHeight) ? window.innerHeight : 800;
     if (targetTop + expandedHeight > viewportH - 12) {
-      targetTop = viewportH - expandedHeight - 12;
+      targetTop = opts.content ? rect.top - expandedHeight - 8 : viewportH - expandedHeight - 12;
     }
     if (targetTop < 12) targetTop = 12;
     if (targetLeft < 12) targetLeft = 12;
@@ -532,6 +564,7 @@
     }
 
     const session = {
+      triggerContent: !!opts.content, originWidth: rect.width, originHeight: rect.height, onClose: opts.onClose,
       card,
       overlay,
       menu,
@@ -546,6 +579,7 @@
       cleanedUp: false
     };
     activeMorphSession = session;
+    triggerBtn.setAttribute?.('aria-expanded', 'true');
 
     // Attach scroll, resize, escape listeners
     attachGlobalListeners();
@@ -560,7 +594,7 @@
       const currentTime = (typeof now === 'number' && !isNaN(now))
         ? now
         : ((typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now());
-      const elapsed = currentTime - openStart;
+      const elapsed = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 480 : currentTime - openStart;
 
       // 1. Icon dissolves immediately without delay (0 - 70ms)
       if (elapsed <= 70) {
@@ -591,8 +625,8 @@
       if (elapsed < 80) {
         // Initial button shrinking phase (48x36px -> 20x20px)
         const sp = easeStandard(elapsed / 80);
-        curW = OPTION_BTN_WIDTH - (OPTION_BTN_WIDTH - 20) * sp;
-        curH = OPTION_BTN_HEIGHT - (OPTION_BTN_HEIGHT - 20) * sp;
+        curW = rect.width - (rect.width - 20) * sp;
+        curH = rect.height - (rect.height - 20) * sp;
         curCenterX = flightPt.x;
         curCenterY = flightPt.y;
         curRadius = 9999;
@@ -647,6 +681,7 @@
         if (menu.style) menu.style.transform = 'scale(1)';
         if (menu.classList) menu.classList.add('is-settled');
         session.rafId = null;
+        if (opts.content) menu.querySelector('button')?.focus({preventScroll:true});
         return;
       } else {
         if (menu.style) menu.style.transform = 'scale(1)';
@@ -667,6 +702,20 @@
       }
     });
 
+    if (opts.content) {
+      menu.addEventListener('keydown', event => {
+        const buttons = [...menu.querySelectorAll('button:not(:disabled)')];
+        const index = buttons.indexOf(document.activeElement);
+        if (['ArrowDown','ArrowUp','Home','End'].includes(event.key)) {
+          event.preventDefault();
+          const next = event.key === 'Home' ? 0 : event.key === 'End' ? buttons.length - 1 :
+            (index + (event.key === 'ArrowDown' ? 1 : -1) + buttons.length) % buttons.length;
+          buttons[next]?.focus();
+        } else if (event.key === 'Tab') close('immediate');
+      });
+      opts.onOpened?.(menu);
+      return;
+    }
     // 6. Menu item action clicks
     const items = menu.querySelectorAll ? menu.querySelectorAll('.morph-item') : [];
     items.forEach(item => {
@@ -723,6 +772,15 @@
     });
   }
 
+  function open(triggerBtn, project, card, options = {}) {
+    return openSession(...arguments);
+  }
+
+  // Reuse the same singleton, trajectory, geometry and lifecycle for any surface.
+  function openSurface(triggerBtn, options) {
+    return openSession(triggerBtn, null, null, options);
+  }
+
   function isOpen() {
     return Boolean(activeMorphSession);
   }
@@ -733,6 +791,7 @@
 
   const ProjectOptionMorph = {
     open,
+    openSurface,
     close,
     isOpen,
     destroy

@@ -1,6 +1,6 @@
-/** Progressive Edge Blur: one renderer for page and nested scroll edges.
- * DynamicMaskSystem remains an API alias for existing SPA page modules.
- * Masks belong only to decorative backdrop layers, never to reading content.
+/** Dynamic Mask for scroll content, with independent navigation backdrops.
+ * Generic vertical/horizontal containers keep their original opacity fade.
+ * Header blur stays above the masked content; bottom blur is opt-in via nav presence.
  */
 (function (window, document) {
   'use strict';
@@ -11,10 +11,10 @@
   const blurHosts = new WeakMap();
   const maskSelector = '[data-dynamic-mask], [data-progressive-blur], .dynamic-gradient-mask, .content-body, .page-scroll';
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
-  const edgePattern = { topBase: 96, topTransition: 72, bottomBase: 176, bottomExtension: 64 };
-  let bottomNavigation = { progress: 1, extent: 152 };
+  const edgePattern = { topBase: 48, topTransition: 24, bottomBase: 88, bottomExtension: 64 };
+  let bottomNavigation = { enabled: false, progress: 1, extent: 152 };
 
-  class ProgressiveEdgeBlur {
+  class DynamicMask {
     constructor(element, options = {}) {
       this.element = element;
       this.options = Object.assign({
@@ -22,7 +22,7 @@
         direction: 'vertical', // 'vertical' | 'horizontal'
         edgeMode: 'auto', // 'auto' | 'both' | 'bottom'
         scrollElement: null, // 自訂滾動元素 (若容器本身不滾動但內部滾動)
-        activeClass: 'has-progressive-edge-blur'
+        activeClass: 'has-dynamic-mask'
       }, options);
 
       // 支援從 HTML 屬性覆寫設定
@@ -68,13 +68,6 @@
       if (!this.element || !this.scrollElement) return;
 
       this.overlayHost = this.element.parentElement || document.body;
-      let host = blurHosts.get(this.overlayHost);
-      if (!host) {
-        host = { count: 0, positioned: window.getComputedStyle(this.overlayHost).position === 'static' };
-        blurHosts.set(this.overlayHost, host);
-        if (host.positioned) this.overlayHost.classList.add('progressive-edge-host');
-      }
-      host.count++;
       this.element.classList.add(this.options.activeClass);
       this.clearMask();
 
@@ -178,7 +171,7 @@
         this.focusHeader?.removeEventListener('focusin', this.onFocus);
         this.focusHeader = header;
         header.addEventListener('focusin', this.onFocus);
-        toolbar?.addEventListener('focusin', this.onFocus);
+        if (toolbar?.dataset.headerToolbar !== 'pinned') toolbar?.addEventListener('focusin', this.onFocus);
       }
       this.headerHost?.classList.add('has-header-backdrop');
       toolbar?.classList.add('has-scroll-backdrop');
@@ -230,7 +223,7 @@
       const before = this.directionDistance;
       this.directionDistance += Math.abs(delta);
       const travel = this.headerTravel || 120;
-      if (top < 12 || maxScroll < travel + 96 || ((this.header?.contains(document.activeElement) || this.headerToolbar?.contains(document.activeElement)) && document.activeElement?.matches?.(':focus-visible'))) {
+      if (top < 12 || maxScroll < travel + 96 || ((this.header?.contains(document.activeElement) || (this.headerToolbar?.dataset.headerToolbar !== 'pinned' && this.headerToolbar?.contains(document.activeElement))) && document.activeElement?.matches?.(':focus-visible'))) {
         this.hiddenDistance = 0;
         this.directionDistance = 0;
       } else if (direction > 0) {
@@ -253,10 +246,11 @@
       this.headerHost?.classList.toggle('is-content-scrolled', this.headerScrolled);
       for (const nav of [this.header, this.headerToolbar]) {
         if (!nav) continue;
-        nav.style.setProperty('--navigation-offset', `${-this.hiddenDistance}px`);
+        const pinned = nav.dataset.headerToolbar === 'pinned';
+        nav.style.setProperty('--navigation-offset', `${-Math.min(this.hiddenDistance, pinned ? Math.max(0, parseFloat(nav.style.getPropertyValue('--edge-navigation-top')) || 0) : this.hiddenDistance)}px`);
         nav.style.setProperty('--navigation-visibility', this.headerVisibility.toFixed(4));
         // Inert only at the endpoint; focusin restores partially visible controls.
-        nav.inert = this.headerVisibility === 0;
+        nav.inert = !pinned && this.headerVisibility === 0;
       }
     }
 
@@ -306,6 +300,12 @@
       const max = Math.max(0, vertical ? owner.scrollHeight - owner.clientHeight : owner.scrollWidth - owner.clientWidth);
       const position = clamp(vertical ? owner.scrollTop : Math.abs(owner.scrollLeft), 0, max);
       if (vertical) this.updateHeader(position, max);
+      // Entry transforms do not trigger ResizeObserver. Track their presentation
+      // through the last frame so cached edge positions cannot retain an offset.
+      const geometryMoving = [...(this.element.getAnimations?.() || []), ...(this.overlayHost.getAnimations?.() || [])]
+        .some(animation => animation.playState === 'running' && animation.effect?.getTiming().iterations !== Infinity);
+      if (geometryMoving || this.geometryWasMoving) this.geometryDirty = true;
+      this.geometryWasMoving = geometryMoving;
       if (this.geometryDirty || !this.rect) {
         const bounds = this.element.getBoundingClientRect();
         const viewport = window.visualViewport;
@@ -342,23 +342,40 @@
       const page = this.element.matches('.content-body, .page-scroll');
       const mobile = window.matchMedia('(max-width: 768px)').matches;
       const size = Math.max(1, this.options.maskSize);
-      let topExtent = size;
-      if (page && this.header) {
-        // Header geometry can change during its existing subtitle morph. Only
-        // this small read is needed; the reading viewport never changes height.
+      const bottomOnly = this.options.edgeMode === 'bottom' || (this.options.edgeMode === 'auto' && page);
+      if (max <= 1) this.clearMask();
+      else if (vertical) this.applyVerticalMask(bottomOnly ? 0 : position, max - position, size);
+      else this.applyHorizontalMask(position, max - position, size);
+
+      // Only navigation owns progressive overlays. Generic scroll containers
+      // retain Dynamic Mask, including both horizontal edges and overflow fading.
+      let topExtent = 0;
+      if (vertical && page && this.header && this.options.edgeMode !== 'bottom') {
         const bottom = this.headerToolbar?.getBoundingClientRect().bottom || this.header.getBoundingClientRect().bottom;
         topExtent = Math.max(edgePattern.topBase, bottom - this.rect.top + edgePattern.topTransition);
-      } else if (page) topExtent = edgePattern.topBase;
-      const bottomExtent = page && mobile ? edgePattern.bottomBase + Math.max(edgePattern.bottomExtension, bottomNavigation.extent - 88) * bottomNavigation.progress : size;
-      const bottomOnly = this.options.edgeMode === 'bottom' || this.element.dataset.maskEdges === 'bottom';
-      this.renderEdge(vertical ? 'top' : 'left', max <= 1 || (vertical && bottomOnly) ? 0 : Math.min(topExtent, position), this.rect);
-      this.renderEdge(vertical ? 'bottom' : 'right', max <= 1 ? 0 : Math.min(bottomExtent, max - position), this.rect);
+      }
+      const nav = document.getElementById('spa-mobile-nav');
+      const bottomEnabled = vertical && page && mobile && bottomNavigation.enabled && nav?.isConnected;
+      const bottomExtent = bottomEnabled ? edgePattern.bottomBase + Math.max(edgePattern.bottomExtension, bottomNavigation.extent - edgePattern.bottomBase) * bottomNavigation.progress : 0;
+      this.renderEdge('top', max <= 1 ? 0 : Math.min(topExtent, position), this.rect);
+      this.renderEdge('bottom', max <= 1 ? 0 : Math.min(bottomExtent, max - position), this.rect);
+      if (geometryMoving) this.scheduleUpdate();
     }
 
     renderEdge(edge, extent, rect) {
       let layers = this.edges.get(edge);
       if (!layers && extent <= 0) return;
       if (!layers) {
+        if (!this.blurHostRegistered) {
+          let host = blurHosts.get(this.overlayHost);
+          if (!host) {
+            host = { count: 0, positioned: window.getComputedStyle(this.overlayHost).position === 'static' };
+            blurHosts.set(this.overlayHost, host);
+            if (host.positioned) this.overlayHost.classList.add('progressive-edge-host');
+          }
+          host.count++;
+          this.blurHostRegistered = true;
+        }
         layers = [1.5, 4, 8].map((blur, index) => {
           const layer = document.createElement('div');
           layer.className = `progressive-edge-blur progressive-edge-blur--${edge}`;
@@ -393,8 +410,116 @@
       }
     }
 
+    applyVerticalMask(overflowTop, overflowBottom, M) {
+      const el = this.element;
+      const hasTop = overflowTop > 0;
+      const hasBottom = overflowBottom > 0;
+
+      if (!hasTop && !hasBottom) {
+        this.clearMask();
+        return;
+      }
+
+      // 上方遮罩位移邏輯：
+      // 遮罩高度 M (如 36px)。當上方溢出 0px -> 36px 時，遮罩位移 36px -> 0px。
+      // 若溢出 10px，遮罩向上位移 26px，容器頂部 0px 處對應漸層位置 26px ((36-10)/36)。
+      let topStops = '';
+      let topShift = M;
+      if (hasTop) {
+        if (overflowTop < M) {
+          const shift = M - overflowTop;
+          topShift = shift;
+          const startAlpha = (shift / M).toFixed(4);
+          const hTop = Math.max(1, Math.round(overflowTop));
+          topStops = `rgba(0, 0, 0, ${startAlpha}) 0px, black ${hTop}px`;
+        } else {
+          topShift = 0;
+          topStops = `transparent 0px, black ${M}px`;
+        }
+      } else {
+        topStops = 'black 0px';
+      }
+
+      // 下方遮罩位移邏輯：
+      // 當下方溢出 0px -> 36px 時，遮罩位移 36px -> 0px。
+      // 若下方溢出 10px，遮罩向下位移 26px，容器底部 100% 處對應漸層透明度 ((36-10)/36)。
+      let bottomStops = '';
+      let bottomShift = M;
+      if (hasBottom) {
+        if (overflowBottom < M) {
+          const shift = M - overflowBottom;
+          bottomShift = shift;
+          const endAlpha = (shift / M).toFixed(4);
+          const hBottom = Math.max(1, Math.round(overflowBottom));
+          bottomStops = `black calc(100% - ${hBottom}px), rgba(0, 0, 0, ${endAlpha}) 100%`;
+        } else {
+          bottomShift = 0;
+          bottomStops = `black calc(100% - ${M}px), transparent 100%`;
+        }
+      } else {
+        bottomStops = 'black 100%';
+      }
+
+      const maskVal = `linear-gradient(to bottom, ${topStops}, ${bottomStops})`;
+      el.style.setProperty('-webkit-mask-image', maskVal);
+      el.style.setProperty('mask-image', maskVal);
+      el.style.setProperty('--mask-top-shift', `${topShift}px`);
+      el.style.setProperty('--mask-bottom-shift', `${bottomShift}px`);
+    }
+
+    applyHorizontalMask(overflowLeft, overflowRight, M) {
+      const el = this.element;
+      const hasLeft = overflowLeft > 0;
+      const hasRight = overflowRight > 0;
+
+      if (!hasLeft && !hasRight) {
+        this.clearMask();
+        return;
+      }
+
+      let leftStops = '';
+      let leftShift = M;
+      if (hasLeft) {
+        if (overflowLeft < M) {
+          const shift = M - overflowLeft;
+          leftShift = shift;
+          const startAlpha = (shift / M).toFixed(4);
+          const wLeft = Math.max(1, Math.round(overflowLeft));
+          leftStops = `rgba(0, 0, 0, ${startAlpha}) 0px, black ${wLeft}px`;
+        } else {
+          leftShift = 0;
+          leftStops = `transparent 0px, black ${M}px`;
+        }
+      } else {
+        leftStops = 'black 0px';
+      }
+
+      let rightStops = '';
+      let rightShift = M;
+      if (hasRight) {
+        if (overflowRight < M) {
+          const shift = M - overflowRight;
+          rightShift = shift;
+          const endAlpha = (shift / M).toFixed(4);
+          const wRight = Math.max(1, Math.round(overflowRight));
+          rightStops = `black calc(100% - ${wRight}px), rgba(0, 0, 0, ${endAlpha}) 100%`;
+        } else {
+          rightShift = 0;
+          rightStops = `black calc(100% - ${M}px), transparent 100%`;
+        }
+      } else {
+        rightStops = 'black 100%';
+      }
+
+      const maskVal = `linear-gradient(to right, ${leftStops}, ${rightStops})`;
+      el.style.setProperty('-webkit-mask-image', maskVal);
+      el.style.setProperty('mask-image', maskVal);
+      el.style.setProperty('--mask-left-shift', `${leftShift}px`);
+      el.style.setProperty('--mask-right-shift', `${rightShift}px`);
+    }
+
     clearMask() {
-      // Compatibility cleanup for pages upgraded without a full document reload.
+      // Remove the owned content mask when overflow ends or the instance detaches.
       for (const key of ['mask-image', '-webkit-mask-image', '--mask-top-shift', '--mask-bottom-shift', '--mask-left-shift', '--mask-right-shift']) this.element.style.removeProperty(key);
     }
 
@@ -419,7 +544,7 @@
       this.edges.forEach(layers => layers.forEach(layer => layer.remove()));
       this.edges.clear();
       const host = blurHosts.get(this.overlayHost);
-      if (host && --host.count === 0) {
+      if (this.blurHostRegistered && host && --host.count === 0) {
         if (host.positioned) this.overlayHost.classList.remove('progressive-edge-host');
         blurHosts.delete(this.overlayHost);
       }
@@ -451,7 +576,7 @@
         inst.update();
         return inst;
       }
-      const instance = new ProgressiveEdgeBlur(element, options);
+      const instance = new DynamicMask(element, options);
       instances.set(element, instance);
       return instance;
     },
@@ -515,7 +640,7 @@
 
   DynamicMaskSystem.setNavigation = (edge, state) => {
     if (edge !== 'bottom') return;
-    bottomNavigation = { progress: clamp(state.progress, 0, 1), extent: state.extent || 152 };
+    bottomNavigation = { enabled: state.enabled === true, progress: clamp(state.progress, 0, 1), extent: state.extent || 152 };
     instances.forEach(instance => instance.scheduleUpdate());
   };
   window.ProgressiveEdgeBlurSystem = window.DynamicMaskSystem = DynamicMaskSystem;

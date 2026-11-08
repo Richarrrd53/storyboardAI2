@@ -944,7 +944,7 @@
     }, { capture: true, passive: true });
 
     // Sample the navigation's presentation during CSS morphs. The page renderer
-    // owns its own layers, including the 176px baseline after navigation exits.
+    // owns its own layers, including the 88px baseline after navigation exits.
     let navigationFrame = null;
     let navigationUntil = 0;
     function publishNavigation(now) {
@@ -954,6 +954,7 @@
       const viewportBottom = window.visualViewport ? window.visualViewport.offsetTop + window.visualViewport.height : window.innerHeight;
       const progress = visible ? Math.max(0, Math.min(1, (viewportBottom - rect.top) / Math.max(1, rect.height))) : 0;
       window.ProgressiveEdgeBlurSystem?.setNavigation('bottom', {
+        enabled: isMobileView() && rect.width > 0 && mobNav.style.display !== 'none' && !document.body.classList.contains('workspace-secondary'),
         progress,
         extent: Math.max(152, viewportBottom - rect.top + 48)
       });

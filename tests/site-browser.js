@@ -11,7 +11,9 @@ const publicRoot = path.resolve(__dirname, '../public');
 const writeArtifacts = process.env.STORYBOARD_QA_ARTIFACTS !== '0';
 const output = path.resolve(process.env.STORYBOARD_QA_OUTPUT || path.join(require('node:os').tmpdir(), 'storyboard-ui-qa', 'site'));
 const mime = { '.html': 'text/html; charset=utf-8', '.js': 'application/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.mp4': 'video/mp4' };
+const productionApp = process.env.STORYBOARD_QA_EXPRESS === '1' ? require('../server') : null;
 const server = http.createServer(async (req, res) => {
+  if (productionApp) return productionApp(req,res);
   const pathname = new URL(req.url, 'http://localhost').pathname;
   const entry = pathname === '/' || /^\/(dashboard|projects|history|generate|template(?:\/[^/]+)?|project\/[^/]+|discovery|login|register)\/?$/.test(pathname);
   const file = path.resolve(publicRoot, '.' + (entry ? '/main.html' : pathname));
@@ -41,12 +43,13 @@ const projects = [
       const watchdog = setTimeout(() => { console.error('Browser test stalled:', viewport.width, stage); void browser.close(); }, process.env.STORYBOARD_QA_MOTION === '1' ? 180000 : 90000);
       const projectFixture = JSON.parse(JSON.stringify(projects));
       let authCalls = 0, authDelay = 0, authStatus = 200;
+      const networkRequests = [];
       let failTagSave = false;
       let tagSaveRequests = 0;
       let failShotSave = false, shotSaveRequests = 0;
       const context = await browser.newContext({ viewport, reducedMotion: process.env.STORYBOARD_QA_MOTION === '1' ? 'no-preference' : 'reduce', hasTouch: viewport.width <= 768 });
       await context.addInitScript(() => {
-        localStorage.setItem('spa_auth_token', 'fixture-token');
+        if (sessionStorage.getItem('qa-no-token') !== '1') localStorage.setItem('spa_auth_token', 'fixture-token');
         window.YT = { PlayerState: { PLAYING: 1 }, Player: function (id) {
           this.destroy = this.pauseVideo = this.playVideo = this.seekTo = () => {};
           const iframe = document.createElement('iframe'); iframe.id = id; iframe.title = 'Local player fixture'; document.getElementById(id).replaceWith(iframe);
@@ -57,10 +60,14 @@ const projects = [
         if (url.origin !== origin) return route.abort();
         if (url.pathname === '/fixture-cover.svg' || /^\/api\/projects\/[^/]+\/cover$/.test(url.pathname)) return route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360"><rect width="640" height="360" fill="#292524"/><rect x="55" y="30" width="225" height="200" rx="6" fill="#a3b8c7"/><path d="M168 32v195M58 125h220" stroke="#f5f5f4" stroke-width="8"/><ellipse cx="440" cy="295" rx="115" ry="20" fill="#a8a29e"/><path d="M367 182h143v92q-72 52-143 0z" fill="#f5f5f4"/><path d="M510 197q70 0 55 53q-15 27-55 8" stroke="#f5f5f4" fill="none" stroke-width="18"/><ellipse cx="439" cy="182" rx="72" ry="14" fill="#57534e"/></svg>' });
         if (!url.pathname.startsWith('/api/')) return route.continue();
+        networkRequests.push(url.pathname);
         const reply = data => route.fulfill({ contentType: 'application/json', body: JSON.stringify(data) });
         if (url.pathname === '/api/auth/login' || url.pathname === '/api/auth/register') return reply({ token: 'fixture-session', user: { name: '創作者' } });
         if (url.pathname === '/api/auth/me') { authCalls++; if (authDelay) await new Promise(resolve => setTimeout(resolve, authDelay)); if(authStatus !== 200) return route.fulfill({status:authStatus,json:{error:'fixture auth error'}}); return reply({ user: { id: 'fixture', name: '創作者', email: 'creator@example.test', plan: 'free' } }); }
-        if (url.pathname === '/api/projects') return reply({ projects: projectFixture });
+        if (url.pathname === '/api/projects') {
+          if (!route.request().headers().authorization?.startsWith('Bearer ')) return route.fulfill({status:401,json:{error:'未授權'}});
+          return reply({ projects: projectFixture });
+        }
         const shotRoute = url.pathname.match(/^\/api\/projects\/([^/]+)\/shots\/([^/]+)(?:\/(optimize-prompt|regenerate))?$/);
         if (shotRoute) {
           const project = projectFixture.find(p=>p.id===shotRoute[1]);
@@ -75,6 +82,8 @@ const projects = [
         }
         if (url.pathname.startsWith('/api/projects/')) {
           const project = projectFixture.find(p => p.id === url.pathname.split('/')[3]) || projectFixture[0];
+          if (route.request().method() === 'DELETE') project.is_deleted = true;
+          if (url.pathname.endsWith('/restore')) project.is_deleted = false;
           if (route.request().method() === 'PATCH') {
             tagSaveRequests++;
             if (failTagSave) return route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ error: '測試暫時無法儲存' }) });
@@ -143,6 +152,31 @@ const projects = [
         }
       };
       await app.locator('#home-greeting-text').waitFor(); await capture('dashboard');
+      if (process.env.STORYBOARD_QA_PROJECTS === '1') {
+        const documentResponse = await page.goto(origin + '/projects');
+        assert.equal(documentResponse.status(),200); assert.match(documentResponse.headers()['content-type'],/text\/html/);
+        await app.locator('#projects-grid .project-card[data-id="coffee"]').waitFor(); await settle();
+        networkRequests.length=0;
+        await page.reload(); await app.locator('#projects-grid .project-card[data-id="coffee"]').waitFor(); await settle();
+        assert.ok(networkRequests.indexOf('/api/auth/me')>=0 && networkRequests.indexOf('/api/auth/me')<networkRequests.indexOf('/api/projects'),'server session validation precedes the authenticated project request');
+        assert.equal(await (await getFrame()).evaluate(()=>spaRouter.currentPage),'projects');
+        await (await getFrame()).evaluate(()=>{sessionStorage.setItem('qa-no-token','1');localStorage.removeItem('spa_auth_token');});
+        await page.goto(origin + '/projects'); await app.locator('#login-email').waitFor(); await settle();
+        assert.equal(await (await getFrame()).evaluate(()=>spaRouter.currentPage),'login');
+        await (await getFrame()).evaluate(()=>sessionStorage.removeItem('qa-no-token'));
+        await app.locator('#login-email').fill('creator@example.test'); await app.locator('#login-password').fill('password123');
+        await app.locator('[onclick="handleLogin()"]').click();
+        await app.locator('#projects-grid .project-card[data-id="coffee"]').waitFor(); await settle();
+        authStatus=401;
+        await page.reload(); await app.locator('#login-email').waitFor(); await settle();
+        assert.equal(await (await getFrame()).evaluate(()=>spaRouter.currentPage),'login');
+        authStatus=200;
+        await app.locator('#login-email').fill('creator@example.test'); await app.locator('#login-password').fill('password123');
+        await app.locator('[onclick="handleLogin()"]').click();
+        await app.locator('#projects-grid .project-card[data-id="coffee"]').waitFor(); await settle();
+        await (await getFrame()).evaluate(()=>spaNavigate('dashboard')); await settle();
+        console.log('PASS direct Projects document, reload, missing/expired session, login return: '+viewport.width);
+      }
       if (process.env.STORYBOARD_QA_EDGES === '1') {
         await (await getFrame()).evaluate(() => spaNavigate('projects'));
         await settle();
@@ -155,9 +189,9 @@ const projects = [
           const instance = DynamicMaskSystem.get(body), header = instance.header;
           const startRect = body.getBoundingClientRect().toJSON();
           const state = () => ({ anchor: body.firstElementChild.getBoundingClientRect().top + body.scrollTop, visibility: instance.headerVisibility, hidden: instance.hiddenDistance,
-            topExtent: instance.edges.get('top')?.[0].getBoundingClientRect().height || 0,
+            topExtent: instance.edges.get('top')?.[0].getBoundingClientRect().height || 0, blurStyle:instance.edges.get('top')?.[0].style.height, hostGeometry:instance.hostGeometry, host:instance.overlayHost.getBoundingClientRect().toJSON(),
             bottomExtent: instance.edges.get('bottom')?.[0].getBoundingClientRect().height || 0,
-            compact: header.classList.contains('is-content-scrolled'), navigation: [header, instance.headerToolbar].filter(Boolean).map(el => ({bottom:el.getBoundingClientRect().bottom,translate:getComputedStyle(el).translate,offset:el.style.getPropertyValue('--navigation-offset')})), rect: body.getBoundingClientRect().toJSON() });
+            compact: header.classList.contains('is-content-scrolled'), navigation: [header, instance.headerToolbar].filter(Boolean).map(el => ({bottom:el.getBoundingClientRect().bottom,height:el.getBoundingClientRect().height,translate:getComputedStyle(el).translate,offset:el.style.getPropertyValue('--navigation-offset')})), rect: body.getBoundingClientRect().toJSON() });
           const scroll = async top => { body.scrollTop = top; await tick(); return state(); };
           const expanded = await scroll(0);
           const compact = await scroll(32);
@@ -174,6 +208,11 @@ const projects = [
           const partial = await scroll(130);
           const reversed = await scroll(106);
           const hidden = await scroll(650);
+          document.getElementById('projects-tags-trigger').focus({preventScroll:true});
+          document.getElementById('projects-tags-trigger').click();
+          await tick();
+          const pinnedTools = instance.headerVisibility === 0 && Math.abs(instance.headerToolbar.getBoundingClientRect().top - body.getBoundingClientRect().top) < 1 && !instance.headerToolbar.inert;
+          ProjectOptionMorph.close('immediate');
           const jitter = await scroll(644);
           const revealed = await scroll(540);
           const top = await scroll(0);
@@ -184,9 +223,16 @@ const projects = [
             const hiddenExtent = state().bottomExtent;
             AppShell.updateRoute('projects');
             await new Promise(resolve => setTimeout(resolve, 550));
-            navigationExtents = {hidden:hiddenExtent, shown:state().bottomExtent};
+            const shownExtent = state().bottomExtent;
+            ProgressiveEdgeBlurSystem.setNavigation('bottom', {enabled:true,progress:0,extent:152});
+            instance.update();
+            const restingExtent = state().bottomExtent;
+            ProgressiveEdgeBlurSystem.setNavigation('bottom', {enabled:true,progress:1,extent:152});
+            instance.update();
+            navigationExtents = {hidden:hiddenExtent, shown:shownExtent, resting:restingExtent};
           }
-          const noMask = getComputedStyle(body).maskImage === 'none';
+          const hasMask = getComputedStyle(body).maskImage.includes('linear-gradient');
+          const noDesktopBottomBlur = innerWidth <= 768 || !instance.edges.has('bottom');
           const stable = Math.abs(body.getBoundingClientRect().height - startRect.height) < 1;
           const systemAlias = ProgressiveEdgeBlurSystem === DynamicMaskSystem;
           // Horizontal edges and no-overflow containers use the same renderer.
@@ -195,12 +241,20 @@ const projects = [
           const wide = document.createElement('div'); wide.style.cssText = 'width:600px;height:30px'; box.appendChild(wide); document.body.appendChild(box);
           const horizontal = DynamicMaskSystem.attach(box, {direction:'horizontal',maskSize:28});
           box.scrollLeft = 70; await tick();
-          const horizontalBoth = horizontal.edges.get('left')?.[0].style.visibility === 'visible' && horizontal.edges.get('right')?.[0].style.visibility === 'visible';
+          const horizontalBoth = getComputedStyle(box).maskImage.includes('linear-gradient') && box.style.getPropertyValue('--mask-left-shift') === '0px' && box.style.getPropertyValue('--mask-right-shift') === '0px' && horizontal.edges.size === 0;
           wide.style.width = '20px'; await tick(); horizontal.update();
-          const noOverflow = [...horizontal.edges.values()].every(layers => layers[0].style.visibility === 'hidden');
-          DynamicMaskSystem.detach(box); box.remove();
+          const noOverflow = getComputedStyle(box).maskImage === 'none' && horizontal.edges.size === 0;
+          DynamicMaskSystem.detach(box);
+          wide.style.height = '300px'; box.scrollLeft = 0;
+          await tick();
+          const vertical = DynamicMaskSystem.attach(box, {direction:'vertical',maskSize:28});
+          box.scrollTop = 70; await tick();
+          const verticalBoth = getComputedStyle(box).maskImage.includes('linear-gradient') && box.style.getPropertyValue('--mask-top-shift') === '0px' && box.style.getPropertyValue('--mask-bottom-shift') === '0px' && vertical.edges.size === 0;
+          DynamicMaskSystem.detach(box);
+          const maskCleaned = !box.style.maskImage;
+          box.remove();
           filler.remove(); body.scrollTop = 0; await tick();
-          return { expanded,compact,partial,reversed,hidden,jitter,revealed,top,noMask,stable,systemAlias,horizontalBoth,noOverflow,navigationExtents,headerAboveBlur };
+          return { expanded,compact,partial,reversed,hidden,jitter,revealed,top,hasMask,stable,systemAlias,horizontalBoth,verticalBoth,maskCleaned,noDesktopBottomBlur,noOverflow,navigationExtents,headerAboveBlur,pinnedTools };
         });
         assert.equal(edgeChecks.expanded.visibility, 1);
         assert.equal(edgeChecks.compact.compact, true);
@@ -210,11 +264,11 @@ const projects = [
         assert.equal(edgeChecks.hidden.visibility, 0);
         assert.equal(edgeChecks.jitter.visibility, 0, 'tiny reverse scroll stays hidden');
         assert.ok(edgeChecks.revealed.visibility > 0, 'intentional reverse scroll restores navigation');
-        assert.ok(Math.abs(edgeChecks.hidden.topExtent - 96) < 1, 'hidden header retains 96px baseline blur: ' + JSON.stringify(edgeChecks.hidden));
+        assert.ok(Math.abs(edgeChecks.hidden.topExtent - Math.max(48,edgeChecks.hidden.navigation.at(-1).bottom - edgeChecks.hidden.rect.top + 24)) < 1, 'hidden header blur follows the pinned toolbar: ' + JSON.stringify(edgeChecks.hidden));
         assert.equal(edgeChecks.top.compact, false);
         assert.ok(Math.abs(edgeChecks.expanded.anchor - edgeChecks.hidden.anchor) < 1, 'reading content does not shift when navigation hides');
-        if (edgeChecks.navigationExtents) { assert.ok(Math.abs(edgeChecks.navigationExtents.hidden - 176) < 1); assert.ok(edgeChecks.navigationExtents.shown >= Math.min(240,viewport.height/2) - 1); }
-        for (const key of ['noMask','stable','systemAlias','horizontalBoth','noOverflow','headerAboveBlur']) assert.equal(edgeChecks[key], true, key);
+        if (edgeChecks.navigationExtents) { assert.equal(edgeChecks.navigationExtents.hidden, 0, 'routes without Bottom Nav have no bottom progressive blur'); assert.ok(Math.abs(edgeChecks.navigationExtents.resting - 88) < 1); assert.ok(edgeChecks.navigationExtents.shown >= Math.min(152,viewport.height/2) - 1); }
+        for (const key of ['hasMask','stable','systemAlias','horizontalBoth','verticalBoth','maskCleaned','noDesktopBottomBlur','noOverflow','headerAboveBlur','pinnedTools']) assert.equal(edgeChecks[key], true, key);
         if (viewport.width <= 768) {
           const gesture = await (await getFrame()).evaluate(async () => {
             const nav = document.getElementById('spa-mobile-nav');
@@ -263,7 +317,7 @@ const projects = [
           await page.screenshot({path:path.join(output, 'header-above-blur-' + viewport.width + '.png')});
           await (await getFrame()).evaluate(() => { document.getElementById('edge-visual-fixture').remove(); document.querySelector('.content-body').scrollTop = 0; });
         }
-        console.log('PASS progressive edges and directional header: ' + viewport.width);
+        console.log('PASS dynamic masks, navigation blur and directional header: ' + viewport.width);
         await (await getFrame()).evaluate(() => spaNavigate('dashboard')); await settle();
       }
       if (process.env.STORYBOARD_QA_INTERACTIONS === '1') {
@@ -367,15 +421,72 @@ const projects = [
           await app.locator('#pd-view-film').click(); await capture('project-film');
         }
         if (target === 'projects') {
-          const filters = app.locator('#projects-tags-scroll');
+          const filters = app.locator('.morph-dropdown-surface');
+          const openTags = async () => { await app.locator('#projects-tags-trigger').click(); await filters.locator('[data-tag="__ALL__"]').waitFor({state:'visible'}); await page.waitForTimeout(500); };
+          await openTags();
+          assert.ok((await filters.locator('.morph-icon').textContent()).includes('全部標籤'),'tag morph copies the trigger label');
+          assert.equal(await app.locator('#projects-tags-label').count(),1,'morph clones do not duplicate IDs');
           await filters.locator('[data-tag="品牌企劃"]').click();
           assert.equal(await app.locator('#projects-grid .project-card').count(), 2);
           await filters.locator('[data-tag="旅行"]').click();
           assert.equal(await app.locator('#projects-grid .project-card').count(), 3, 'Tag filters combine with OR');
           assert.equal(await app.locator('#projects-count-badge').textContent(), '3 / 3');
           await capture('projects-or-filters');
-          await app.locator('#projects-clear-filter-btn').click();
+          await filters.locator('[data-tag="__ALL__"]').click(); await page.keyboard.press('Escape'); await filters.waitFor({state:'detached'});
+          await openTags(); await filters.locator('[data-tag="__ALL__"]').click(); await page.keyboard.press('Escape'); await filters.waitFor({state:'detached'});
 
+          const geometry = await (await getFrame()).evaluate(() => {
+            const grid=document.getElementById('projects-grid'), toolbar=document.getElementById('projects-toolbar');
+            const rect=toolbar.getBoundingClientRect();
+            const cards=[...grid.querySelectorAll('.project-card')];
+            window.__projectCardNodes=new Map(cards.map(card=>[card.dataset.id,card]));
+            window.__projectCoverNodes=new Map(cards.map(card=>[card.dataset.id,card.querySelector('.project-preview-primary')]));
+            return { columns:getComputedStyle(grid).gridTemplateColumns.split(' ').length,toolbarHeight:rect.height,
+              noOverflow:toolbar.scrollWidth<=toolbar.clientWidth+1,
+              frames:cards.map(card=>({card:card.getBoundingClientRect().toJSON(),cover:card.querySelector('.project-preview-primary').getBoundingClientRect().toJSON(),option:card.querySelector('.project-option-btn').getBoundingClientRect().toJSON(), coverRatio:card.querySelector('.project-preview-primary').offsetWidth/card.querySelector('.project-preview-primary').offsetHeight})) };
+          });
+          if(viewport.width<=768) assert.equal(geometry.columns,2);
+          assert.equal(geometry.noOverflow,true); assert.ok(geometry.toolbarHeight>=52);
+          for(const {card,cover,option,coverRatio} of geometry.frames) { assert.ok(cover.width<=card.width); assert.ok(option.right<=card.right+1); assert.ok(Math.abs(coverRatio-16/9)<.08); }
+          await app.locator('#projects-search').focus();
+          const searchAppearance=await app.locator('#projects-search').evaluate(input=>({outline:getComputedStyle(input).outlineStyle,shadow:getComputedStyle(input).boxShadow,width:input.closest('.projects-search').getBoundingClientRect().width,maxWidth:getComputedStyle(input.closest('.projects-search')).maxWidth}));
+          assert.equal(searchAppearance.outline,'none'); assert.equal(searchAppearance.shadow,'none'); assert.equal(searchAppearance.maxWidth,'240px');
+          if(viewport.width>768) assert.ok(Math.abs(searchAppearance.width-240)<1);
+          await app.locator('#projects-search').fill('咖啡');
+          await (await getFrame()).waitForFunction(()=>document.querySelectorAll('#projects-grid .project-card').length===1);
+          await app.locator('#projects-search').fill('不存在的故事'); await app.locator('.projects-empty-filtered').waitFor();
+          await app.locator('#projects-search').fill('');
+          await (await getFrame()).waitForFunction(()=>document.querySelectorAll('#projects-grid .project-card').length===3);
+          await app.locator('#projects-sort-trigger').click();
+          await app.locator('.morph-dropdown-surface.is-settled').waitFor();
+          const sortAppearance = await (await getFrame()).evaluate(() => {
+            const surface=document.querySelector('.morph-dropdown-surface');
+            const trigger=document.getElementById('projects-sort-trigger');
+            const directions=[...surface.querySelectorAll('[data-direction]')].map(element=>element.getBoundingClientRect());
+            return { sameIcon:surface.querySelector('.morph-icon svg')?.outerHTML === trigger.querySelector('svg').outerHTML,
+              vertical:directions[1].top >= directions[0].bottom - 1 };
+          });
+          assert.equal(sortAppearance.sameIcon,true,'morph copies the sort button icon');
+          assert.equal(sortAppearance.vertical,true,'sort directions stack vertically');
+          if (process.env.STORYBOARD_QA_MOTION === '1') {
+            const overlap = await (await getFrame()).evaluate(() => {
+              document.querySelector('.morph-dropdown-surface [data-sort="name"]').click();
+              const animations=[...document.querySelectorAll('#projects-grid .project-card')].flatMap(card=>card.getAnimations()).filter(animation=>animation.effect.getTiming().duration===240);
+              animations.forEach(animation=>{animation.pause();animation.currentTime=239.999;});
+              const rects=animations.map(animation=>animation.effect.target.getBoundingClientRect());
+              const xs=rects.map(rect=>rect.left+rect.width/2),ys=rects.map(rect=>rect.top+rect.height/2);
+              return {count:rects.length,dx:Math.max(...xs)-Math.min(...xs),dy:Math.max(...ys)-Math.min(...ys)};
+            });
+            assert.ok(overlap.count>=2 && overlap.dx<1 && overlap.dy<1,'gather fully overlaps the visible card centers: '+JSON.stringify(overlap));
+            if(writeArtifacts) await page.screenshot({path:path.join(output,'projects-gather-'+viewport.width+'.png')});
+            await (await getFrame()).evaluate(()=>[...document.querySelectorAll('#projects-grid .project-card')].flatMap(card=>card.getAnimations()).filter(animation=>animation.effect.getTiming().duration===240).forEach(animation=>animation.finish()));
+          } else await app.locator('.morph-dropdown-surface [data-sort="name"]').click();
+          await app.locator('.morph-dropdown-surface [data-direction="asc"]').click();
+          await app.locator('.morph-dropdown-surface [data-direction="desc"]').click();
+          await page.keyboard.press('Escape'); await app.locator('.morph-dropdown-surface').waitFor({state:'detached'});
+          await page.waitForTimeout(750);
+          assert.equal(await (await getFrame()).evaluate(()=>[...document.querySelectorAll('#projects-grid .project-card')].every(card=>__projectCardNodes.get(card.dataset.id)===card && __projectCoverNodes.get(card.dataset.id)===card.querySelector('.project-preview-primary') && !card.style.transform)),true,'sort/filter preserve card and cover identity');
+          assert.equal(await (await getFrame()).evaluate(()=>JSON.stringify([...document.querySelectorAll('#projects-grid .project-card')].map(card=>card.dataset.id))===JSON.stringify(ProjectsPage.getFilteredAndSortedProjects(ProjectStore.getProjects(),null,{sort:'name',direction:'desc'}).map(project=>String(project.id)))),true,'settled DOM matches the chosen ordering');
           // Enter the real animated option menu; catches unbound ProjectActions callbacks.
           await app.locator('#projects-grid .project-card[data-id="coffee"] .project-option-btn').click();
           await app.locator('.morph-item[data-action="tags"]').click();
@@ -397,10 +508,33 @@ const projects = [
           await page.reload();
           await app.locator('#projects-grid .project-card[data-id="coffee"] [data-tag="測試持久標籤"]').waitFor();
           await capture('projects-tags-saved');
+          await openTags();
           assert.ok((await filters.locator('[data-tag="測試持久標籤"]').textContent()).includes('1'));
+          await page.keyboard.press('Escape'); await filters.waitFor({state:'detached'});
           await app.locator('#projects-grid .project-card[data-id="coffee"] [data-tag="測試持久標籤"]').click();
           assert.equal(await app.locator('#projects-grid .project-card').count(), 1, 'Card tags delegate to page filters');
-          await app.locator('#projects-clear-filter-btn').click();
+          await openTags(); await filters.locator('[data-tag="__ALL__"]').click(); await page.keyboard.press('Escape'); await filters.waitFor({state:'detached'});
+          if (process.env.STORYBOARD_QA_PROJECTS_ACTIONS === '1') {
+            const deleteCoffee = async () => {
+              await app.locator('#projects-grid .project-card[data-id="coffee"] .project-option-btn').click();
+              await app.locator('.morph-item[data-action="delete"]').click();
+              await app.locator('.sys-bg .sys-btn.primary').click();
+              await (await getFrame()).waitForFunction(()=>!document.querySelector('#projects-grid .project-card[data-id="coffee"]'));
+            };
+            await deleteCoffee();
+            await app.locator('#global-toast-undo').click();
+            await app.locator('#projects-grid .project-card[data-id="coffee"]').waitFor();
+            assert.equal(await app.locator('#projects-grid .project-card[data-id="coffee"]').evaluate(card=>getComputedStyle(card).opacity==='1' && !card.style.transform),true,'undo restores a visible cached folder');
+            await deleteCoffee();
+            await (await getFrame()).evaluate(()=>spaNavigate('history')); await settle();
+            await app.locator('#projects-grid .project-card[data-id="coffee"] .project-option-btn').click();
+            await app.locator('.morph-item[data-action="restore"]').click();
+            await app.locator('.sys-bg .sys-btn.primary').click();
+            await (await getFrame()).waitForFunction(()=>!document.querySelector('#projects-grid .project-card[data-id="coffee"]'));
+            await (await getFrame()).evaluate(()=>spaNavigate('projects')); await settle();
+            await app.locator('#projects-grid .project-card[data-id="coffee"]').waitFor();
+            assert.equal(await app.locator('#projects-grid .project-card').count(),3);
+          }
         }
       }
       if (process.env.STORYBOARD_QA_LAYOUT_ONLY === '1') {
@@ -438,6 +572,7 @@ const projects = [
         assert.ok(await app.locator('#spa-mobile-nav').evaluate(el => el.getBoundingClientRect().top >= innerHeight));
         await (await getFrame()).evaluate(() => spaNavigate('template'));
         assert.equal(await app.locator('#spa-mobile-nav').getAttribute('aria-hidden'), 'false');
+        await (await getFrame()).waitForFunction(()=>document.getElementById('spa-mobile-nav').getBoundingClientRect().bottom <= innerHeight);
         assert.ok(await app.locator('#spa-mobile-nav').evaluate(el => el.getBoundingClientRect().bottom <= innerHeight));
         await (await getFrame()).evaluate(() => spaNavigate('generate'));
         assert.equal(await app.locator('#spa-mobile-nav').getAttribute('aria-hidden'), 'true');

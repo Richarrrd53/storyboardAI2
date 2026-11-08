@@ -58,6 +58,13 @@ app.use((req, res, next) => {
             req.url = original + query;
         }
     }
+    // /projects is both a SPA document and a legacy API alias. Browser
+    // navigation carries no localStorage Bearer token: never rewrite HTML to API.
+    const pathname = req.url.split('?')[0];
+    const accept = req.headers.accept || '';
+    const projectsDocument = ['GET', 'HEAD'].includes(req.method) && /^\/projects\/?$/.test(pathname) &&
+        (accept.includes('text/html') || (!accept.includes('application/json') && !req.headers.authorization));
+    if (projectsDocument) return next();
     // 2. 若由 Vercel 或其他 proxy 轉發時遺失 /api 前綴，自動補充
     if (!req.url.startsWith('/api') && req.url !== '/' && !req.url.startsWith('/public') && !req.url.startsWith('/css') && !req.url.startsWith('/js') && !req.url.startsWith('/images') && !req.url.startsWith('/html') && !req.url.startsWith('/video') && !req.url.startsWith('/icon')) {
         const isDiscoveryApi = req.url.startsWith('/discovery/search') || req.url.startsWith('/discovery/analyze') || req.url.startsWith('/discovery/skills') || req.url.startsWith('/discovery/add-template');
@@ -465,6 +472,9 @@ app.get('/api/projects', async (req, res) => {
 
         res.json({ projects: formattedProjects });
     } catch (error) {
+        if (['JsonWebTokenError','TokenExpiredError','NotBeforeError'].includes(error.name)) {
+            return res.status(401).json({error:'Token 無效或已過期'});
+        }
         console.error('Fetch Projects Error:', error);
         res.status(500).json({ error: '獲取專案失敗' });
     }

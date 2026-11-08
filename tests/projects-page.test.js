@@ -654,3 +654,33 @@ test('ProjectsPage: singleton modal and route cleanup remove overlay and keyboar
   assert.equal((windowListeners.keydown || []).length, before);
 });
 
+
+
+test('ProjectsPage: search intersects OR tags and ordering supports aliases, numeric names and stable ties', () => {
+  const list = [
+    {id:'c',title:'咖啡 10',tags:['品牌'],updatedAt:'2026-01-03',createdAt:'2026-01-01',shotsCount:4},
+    {id:'a',title:'咖啡 2',tags:['品牌'],updateAt:'2026-01-02',createAt:'2026-01-04',shotCount:2},
+    {id:'b',title:'咖啡 2',tags:['旅行'],shots:[{}]},
+    {id:'d',title:'其他',tags:['品牌'],updateAt:'invalid'}
+  ];
+  const sorted = options => ProjectsPage.getFilteredAndSortedProjects(list,null,options).map(p=>p.id);
+  assert.deepEqual(sorted({sort:'name',direction:'asc'}).filter(id=>id!=='d'),['a','b','c']);
+  assert.deepEqual(sorted({sort:'updated'}),['c','a','b','d']);
+  assert.deepEqual(sorted({sort:'created',direction:'desc'}),['a','c','b','d']);
+  assert.deepEqual(sorted({sort:'shots',direction:'asc'}),['d','b','a','c']);
+  assert.deepEqual(ProjectsPage.getFilteredAndSortedProjects(list,new Set(['品牌']),{query:'咖啡',sort:'name',direction:'asc'}).map(p=>p.id),['a','c']);
+});
+
+
+test('ProjectsPage: reattaching a retained folder after undo clears delete presentation without rebuilding its cover', () => {
+  const grid=createMockElement('div');
+  const project={id:'undo-folder',title:'保留封面',updateAt:'2026-01-01'};
+  ProjectsPage.renderProjectsList(grid,[project]);
+  const card=grid.children[0];
+  card.style.opacity='0'; card.style.transform='scale(.9) translateY(20px)';
+  grid.removeChild(card);
+  ProjectsPage.renderProjectsList(grid,[project]);
+  assert.equal(grid.children[0],card);
+  assert.equal(card.style.opacity,'');
+  assert.equal(card.style.transform,'');
+});
