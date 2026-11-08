@@ -5144,15 +5144,15 @@ body.is-navigating #global-create-capsule .ai-pill-btn-glow-rotator,
 @media (prefers-reduced-motion: reduce) {
     .mobile-nav__item,
     .mob-circle-btn,
-    .mobile-nav__indicator,
     .mob-circle-glow::before,
     .mob-circle-spark {
         transition-duration: 0.01ms !important;
         animation: none !important;
         transform: none !important;
     }
-    .mobile-nav__item--create {
-        transform: translateY(-16px) !important;
+    .mobile-nav__indicator {
+        transition: none !important;
+        animation: none !important;
     }
 }
 

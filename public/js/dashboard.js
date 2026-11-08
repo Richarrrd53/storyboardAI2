@@ -1,6 +1,8 @@
 // Dashboard JS - Standalone & Mobile Gesture Controls
 
 (function () {
+  // SPA shell is the sole owner of navigation and panel gestures.
+  if (window.AppShell || document.querySelector('script[src*="shell/app-shell.js"]')) return;
   let lastToggleTime = 0;
   let lastOpenTime = 0;
 

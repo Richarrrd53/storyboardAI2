@@ -255,63 +255,47 @@ body.dashboard-layout.sidebar-open #page-main,
    the overlap, preserving the first content position and maximum scroll offset.
    These two scoped priorities override the existing page padding/margin resets. */
 .content-body.has-header-underlay {
-  margin-top: calc(-1 * var(--header-underlap)) !important;
+  margin-top: 0 !important;
   padding-top: var(--header-body-padding-top) !important;
   scroll-padding-top: var(--header-underlap);
 }
 
 .projects-toolbar.has-scroll-backdrop {
+  z-index: 20;
   background: transparent;
 }
 
-/* Shared backdrop spans the header and any adjacent toolbar. */
-.has-header-backdrop {
-  position: relative;
-}
-
-.header-blur-layer {
+/* Navigation and blur share a host: ancestor stacking contexts can never
+   lift the page blur above its Header/Toolbar. Layers have no filter wrapper. */
+.has-header-backdrop, .progressive-edge-host { position: relative; }
+.progressive-edge-blur {
   position: absolute;
-  top: var(--header-backdrop-top, 0px);
-  inset-inline: 0;
-  height: calc(var(--header-backdrop-height, 0px) + 16px);
-  z-index: 10;
   pointer-events: none;
-  opacity: 0;
-  transition: opacity 240ms var(--motion-ease-standard, ease);
+  z-index: 19;
+  transition-property: none;
+  backdrop-filter: blur(var(--edge-blur));
+  -webkit-backdrop-filter: blur(var(--edge-blur));
 }
-.header-blur-layer--strong {
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  mask-image: linear-gradient(to bottom, #000 40%, transparent 40%);
-  -webkit-mask-image: linear-gradient(to bottom, #000 40%, transparent 40%);
+.has-header-backdrop > .has-edge-navigation {
+  position: absolute !important;
+  z-index: 20 !important;
+  inset-inline: 0;
+  top: var(--edge-navigation-top, 0px);
+  translate: 0 var(--navigation-offset, 0px);
+  will-change: translate;
+  transition-property: gap, scale, border-radius;
 }
-.header-blur-layer--medium {
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  mask-image: linear-gradient(to bottom, transparent 40%, #000 40%, #000 70%, transparent 70%);
-  -webkit-mask-image: linear-gradient(to bottom, transparent 40%, #000 30%, #000 50%, transparent 70%);
-}
-.header-blur-layer--soft {
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
-  mask-image: linear-gradient(to bottom, transparent 0%, #000 70%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 70%, transparent 100%);
-}
-.header-blur-layer--tint {
-  background: linear-gradient(to bottom,
-    color-mix(in srgb, var(--color-bg-page, #f8fafc) 30%, transparent) 0%,
-    color-mix(in srgb, var(--color-bg-page, #f8fafc) 25%, transparent) 50%,
-    color-mix(in srgb, var(--color-bg-page, #f8fafc) 15%, transparent) 75%,
-    transparent 100%);
-}
-.has-header-backdrop.is-content-scrolled > .header-blur-layer {
-  opacity: 1;
-  transition: none;
-}
+.has-edge-navigation[inert] { pointer-events: none; visibility: hidden; }
 
 :is(.content-header, .editor-menubar).has-scroll-backdrop {
   isolation: isolate;
-  transition: gap 320ms var(--motion-ease-standard, ease);
+  transform-origin: top center;
+  border-radius: var(--radius-xl, 24px);
+  transition: gap 320ms var(--motion-ease-standard, ease), scale 320ms var(--motion-ease-standard, ease), border-radius 320ms ease;
+}
+:is(.content-header, .editor-menubar).has-scroll-backdrop.is-content-scrolled {
+  scale: .96;
+  border-radius: var(--radius-pill, 999px);
 }
 :is(.content-header, .editor-menubar).has-scroll-backdrop :is(.project-workspace-header-sub, .project-workspace-meta, .content-header-subtitle) {
   max-height: var(--header-sub-height, 80px);
@@ -328,10 +312,10 @@ body.dashboard-layout.sidebar-open #page-main,
 
 /* Preserve the entrance and its delay, then release the opacity Backdrop Root
    created by a forwards-filled animation so the layer can sample its sibling. */
-.has-scroll-backdrop.anim-fadeInUp { animation-fill-mode: backwards; }
+.has-scroll-backdrop.anim-fadeInUp,
+.has-header-backdrop.anim-fadeInUp { animation-fill-mode: backwards; }
 
 @media (prefers-reduced-motion: reduce) {
-  .header-blur-layer,
   :is(.content-header, .editor-menubar).has-scroll-backdrop,
   :is(.content-header, .editor-menubar).has-scroll-backdrop :is(.project-workspace-header-sub, .project-workspace-meta, .content-header-subtitle) { transition: none; }
 }

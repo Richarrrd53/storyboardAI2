@@ -32,7 +32,8 @@
   let updateMobNavVisual = null;
   let isNavInteracting = false;
   let navSpringRaf = null;
-  let selectorSettleTimer = null;
+  let selectorRaf = null;
+  let cancelMobNavInteraction = null;
   let justHandledPointerNav = false;
   let cleanupMobNavGestures = null;
   let cacheMobNavMetrics = null;
@@ -309,15 +310,6 @@
       document.body.appendChild(mobNav);
     }
     mobileBottomNav = mobNav;
-    if (!document.getElementById('mobile-nav-backdrop-strong')) {
-      ['strong', 'medium', 'soft', 'tint'].forEach(kind => {
-        const layer = document.createElement('div');
-        layer.id = `mobile-nav-backdrop-${kind}`;
-        layer.className = `mobile-nav-backdrop mobile-nav-backdrop--${kind}`;
-        layer.setAttribute('aria-hidden', 'true');
-        document.body.appendChild(layer);
-      });
-    }
     initMobileBottomNavGestures();
   }
 
@@ -352,8 +344,7 @@
   function bindSidebarLinks() {
     const containers = [
       document.getElementById('dash-sidebar') || dashboardSidebar,
-      document.getElementById('spa-topbar') || dashboardTopbar,
-      document.getElementById('spa-mobile-nav') || mobileBottomNav
+      document.getElementById('spa-topbar') || dashboardTopbar
     ];
 
     burgerContainer = burgerContainer || document.getElementById("burger-container");
@@ -935,19 +926,59 @@
     if (!mobNav || mobNav.dataset.gesturesBound) return;
     mobNav.dataset.gesturesBound = 'true';
 
+    // Only actual page scroll owners can compact the persistent shell.
     const lastScrollPositions = new WeakMap();
     addTrackedListener(document, 'scroll', (event) => {
       const scroller = event.target;
       if (!isMobileView() || !scroller?.matches?.('.content-body, .page-scroll')) return;
       const current = Math.max(0, scroller.scrollTop);
-      const previous = lastScrollPositions.get(scroller) ?? 0;
-      lastScrollPositions.set(scroller, current);
-      if (current <= 0 || current < previous - 1) {
-        document.body.classList.remove('mobile-nav-compact');
-      } else if (current > previous + 1) {
-        document.body.classList.add('mobile-nav-compact');
-      }
+      const state = lastScrollPositions.get(scroller) || { top: 0, direction: 0, distance: 0 };
+      const delta = current - state.top;
+      const direction = Math.sign(delta);
+      if (direction && direction !== state.direction) { state.direction = direction; state.distance = 0; }
+      state.distance += Math.abs(delta);
+      state.top = current;
+      lastScrollPositions.set(scroller, state);
+      if (current <= 0 || (direction < 0 && state.distance >= 12)) document.body.classList.remove('mobile-nav-compact');
+      else if (direction > 0 && state.distance >= 12) document.body.classList.add('mobile-nav-compact');
     }, { capture: true, passive: true });
+
+    // Sample the navigation's presentation during CSS morphs. The page renderer
+    // owns its own layers, including the 176px baseline after navigation exits.
+    let navigationFrame = null;
+    let navigationUntil = 0;
+    function publishNavigation(now) {
+      navigationFrame = null;
+      const rect = mobNav.getBoundingClientRect();
+      const visible = isMobileView() && rect.width > 0 && mobNav.style.opacity !== '0';
+      const viewportBottom = window.visualViewport ? window.visualViewport.offsetTop + window.visualViewport.height : window.innerHeight;
+      const progress = visible ? Math.max(0, Math.min(1, (viewportBottom - rect.top) / Math.max(1, rect.height))) : 0;
+      window.ProgressiveEdgeBlurSystem?.setNavigation('bottom', {
+        progress,
+        extent: Math.max(152, viewportBottom - rect.top + 48)
+      });
+      if (now < navigationUntil) navigationFrame = requestAnimationFrame(publishNavigation);
+    }
+    function scheduleNavigation() {
+      navigationUntil = performance.now() + 500;
+      if (navigationFrame === null) navigationFrame = requestAnimationFrame(publishNavigation);
+    }
+    addTrackedListener(mobNav, 'transitionrun', scheduleNavigation);
+    addTrackedListener(mobNav, 'focusin', () => {
+      document.body.classList.remove('mobile-nav-compact');
+      scheduleNavigation();
+    });
+    const navigationObserver = window.MutationObserver ? new MutationObserver(scheduleNavigation) : null;
+    navigationObserver?.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    navigationObserver?.observe(mobNav, { attributes: true, attributeFilter: ['style'] });
+    const navResizeObserver = window.ResizeObserver ? new ResizeObserver(() => {
+      if (isNavInteracting) onPointerRelease(null, true);
+      cacheMetrics();
+      updateMobileBottomNavActive();
+      scheduleNavigation();
+    }) : null;
+    navResizeObserver?.observe(mobNav);
+    scheduleNavigation();
     addTrackedListener(mobNav, 'pointerdown', () => {
       document.body.classList.remove('mobile-nav-compact');
     }, { capture: true });
@@ -974,6 +1005,8 @@
     let failsafeTimer = null;
     let curIndicatorX = 0;
     let pressStartTime = 0;
+    let navMetricScale = 1;
+    let visual = null;
 
     const maxDx = 18;
     const maxDy = 12;
@@ -990,22 +1023,37 @@
     items.forEach(it => it.setAttribute('draggable', 'false'));
 
     function updateIndicatorVisual(x, scale = 1.0, isSettling = false, opacity = 1.0) {
+      if (selectorRaf) cancelAnimationFrame(selectorRaf);
+      selectorRaf = null;
+      mobNav.classList.remove('is-selector-moving');
+      const target = { x, scale, opacity, width: indicatorWidth };
+      if (!visual || !isSettling || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        visual = target;
+        paintIndicator(visual.x, visual.scale, false, visual.opacity, visual.width);
+        return;
+      }
+      const from = { ...visual };
+      const started = performance.now();
+      mobNav.classList.add('is-selector-moving');
+      function step(now) {
+        const t = Math.min(1, (now - started) / 240);
+        const eased = 1 - Math.pow(1 - t, 3);
+        visual = Object.fromEntries(Object.keys(target).map(key => [key, from[key] + (target[key] - from[key]) * eased]));
+        paintIndicator(visual.x, visual.scale, false, visual.opacity, visual.width);
+        if (t < 1) selectorRaf = requestAnimationFrame(step);
+        else { selectorRaf = null; mobNav.classList.remove('is-selector-moving'); }
+      }
+      selectorRaf = requestAnimationFrame(step);
+    }
+
+    function paintIndicator(x, scale = 1.0, isSettling = false, opacity = 1.0, width = indicatorWidth) {
       if (!indicator || !mobNav) return;
       const focusTrack = mobNav.querySelector('.mobile-nav__track--focus');
-      if (isSettling) {
-        clearTimeout(selectorSettleTimer);
-        mobNav.classList.add('is-selector-moving');
-        selectorSettleTimer = setTimeout(() => mobNav.classList.remove('is-selector-moving'), window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 260);
-        indicator.classList.add('is-settling');
-        if (focusTrack) focusTrack.classList.add('is-settling');
-      } else {
-        indicator.classList.remove('is-settling');
-        if (focusTrack) focusTrack.classList.remove('is-settling');
-      }
 
       const opacityStr = opacity.toString();
       indicator.style.opacity = opacityStr;
       if (focusTrack) focusTrack.style.opacity = opacityStr;
+      indicator.style.width = `${width}px`;
       indicator.style.transform = `translate3d(${x.toFixed(2)}px, 0, 0) scale(${scale.toFixed(4)})`;
 
       if (focusTrack) {
@@ -1021,7 +1069,7 @@
 
         const navW = cachedNavRect ? cachedNavRect.width : (mobNav.getBoundingClientRect?.().width || 0);
         const navH = cachedNavRect ? cachedNavRect.height : (mobNav.getBoundingClientRect?.().height || 64);
-        const selW = indicatorWidth;
+        const selW = width;
         const selH = navH - (insetY * 2);
         const centerY = insetY + selH / 2;
         const centerX = x + selW / 2;
@@ -1046,25 +1094,35 @@
 
     function cacheMetrics() {
       if (!mobNav.getBoundingClientRect) return;
-      cachedNavRect = mobNav.getBoundingClientRect();
+      const rect = mobNav.getBoundingClientRect();
+      navMetricScale = mobNav.offsetWidth > 0 ? rect.width / mobNav.offsetWidth : 1;
+      if (!navMetricScale) navMetricScale = 1;
+      cachedNavRect = { left: rect.left + (mobNav.clientLeft || 0) * navMetricScale, top: rect.top, bottom: rect.bottom, width: mobNav.clientWidth || rect.width / navMetricScale, height: mobNav.clientHeight || rect.height / navMetricScale };
       cachedMetrics = items.map(it => {
         const r = it.getBoundingClientRect ? it.getBoundingClientRect() : { left: 0, width: 0 };
         return {
           item: it,
           id: it.id,
-          centerX: r.left + r.width / 2,
+          centerX: cachedNavRect.left + (r.left - cachedNavRect.left + r.width / 2) / navMetricScale,
+          width: r.width / navMetricScale,
           isCreate: it.classList?.contains('mobile-nav__item--create') || it.id === 'mob-nav-generate'
         };
       });
 
+      const focusItems = mobNav.querySelectorAll('.mobile-nav__track--focus > .mobile-nav__item');
+      focusItems.forEach((item, index) => {
+        const metric = cachedMetrics[index];
+        if (!metric) return;
+        item.style.position = 'absolute';
+        item.style.left = `${metric.centerX - cachedNavRect.left - metric.width / 2}px`;
+        item.style.width = `${metric.width}px`;
+      });
+
       if (cachedMetrics.length >= 1 && cachedNavRect && cachedNavRect.width > 0) {
-        const c0 = cachedMetrics[0].centerX - cachedNavRect.left;
-        const calcW = Math.round(2 * (c0 - insetX));
-        if (calcW > 40 && calcW < 120) {
-          indicatorWidth = calcW;
-          indicator.style.width = `${indicatorWidth}px`;
-          mobNav.style.setProperty('--nav-selector-width', `${indicatorWidth}px`);
-        }
+        const target = currentTargetItem || items.find(item => item.classList.contains('active')) || items[0];
+        const metric = cachedMetrics.find(entry => entry.item === target);
+        indicatorWidth = Math.max(1, (metric?.width || 64) - insetX * 2);
+        mobNav.style.setProperty('--nav-selector-width', `${indicatorWidth}px`);
 
         const mobBtn = mobNav.querySelector('#mob-nav-circle-wrap') || mobNav.querySelector('.mob-circle-btn');
         if (mobBtn && mobBtn.getBoundingClientRect) {
@@ -1114,6 +1172,7 @@
     }
 
     function findClosestMetric(clientX) {
+      clientX = cachedNavRect.left + (clientX - cachedNavRect.left) / navMetricScale;
       let closest = cachedMetrics[0] || null;
       let minXDist = Infinity;
       for (const m of cachedMetrics) {
@@ -1135,10 +1194,20 @@
         failsafeTimer = null;
       }
     }
-    cleanupMobNavGestures = cleanupWindowListeners;
+    cleanupMobNavGestures = () => {
+      cleanupWindowListeners();
+      navigationObserver?.disconnect();
+      navResizeObserver?.disconnect();
+      if (navigationFrame !== null) cancelAnimationFrame(navigationFrame);
+      if (selectorRaf) cancelAnimationFrame(selectorRaf);
+      selectorRaf = null;
+      cancelMobNavInteraction = null;
+    };
+    cancelMobNavInteraction = () => onPointerRelease(null, true);
 
     function onPointerDown(e) {
       if (e.button !== 0 && e.pointerType === 'mouse') return;
+      if (isNavInteracting || e.isPrimary === false) return;
 
       if (navSpringRaf) {
         cancelAnimationFrame(navSpringRaf);
@@ -1161,6 +1230,7 @@
       cacheMetrics();
       const closestMetric = findClosestMetric(e.clientX);
       currentTargetItem = directItem || (closestMetric ? closestMetric.item : null);
+      cacheMetrics();
       lastSnappedItem = currentTargetItem;
       highlightTargetItem(currentTargetItem);
 
@@ -1202,7 +1272,7 @@
       const rawDx = e.clientX - startX;
       const rawDy = e.clientY - startY;
 
-      if (cachedNavRect && (e.clientY < cachedNavRect.top - 65 || e.clientY > cachedNavRect.bottom + 65)) {
+      if (cachedNavRect && (isCancelled || e.clientY < cachedNavRect.top - 65 || e.clientY > cachedNavRect.bottom + 65 || e.clientX < cachedNavRect.left - 50 || e.clientX > cachedNavRect.left + cachedNavRect.width * navMetricScale + 50)) {
         if (!isCancelled) {
           isCancelled = true;
           currentTargetItem = null;
@@ -1210,7 +1280,6 @@
           updateMobileBottomNavActive();
         }
       } else {
-        isCancelled = false;
         const closestMetric = findClosestMetric(e.clientX);
         const newTargetItem = closestMetric ? closestMetric.item : null;
 
@@ -1230,7 +1299,8 @@
           if (Math.hypot(rawDx, rawDy) > 4) {
             indicator.classList.remove('is-settling');
           }
-          const fingerRelX = e.clientX - cachedNavRect.left - indicatorWidth / 2;
+          indicatorWidth = Math.max(1, closestMetric.width - insetX * 2);
+          const fingerRelX = (e.clientX - cachedNavRect.left) / navMetricScale - indicatorWidth / 2;
           const closestCenterRelX = closestMetric.centerX - cachedNavRect.left - indicatorWidth / 2;
           const distX = fingerRelX - closestCenterRelX;
           let targetIndX = fingerRelX - distX * 0.35;
@@ -1268,8 +1338,13 @@
       if (!forceCancel && activePointerId !== null && e && e.pointerId !== activePointerId) return;
 
       const releasedTargetItem = currentTargetItem;
-      const isActuallyCancelled = isCancelled || (forceCancel && Math.hypot(curDx, curDy) >= 10);
+      const isActuallyCancelled = isCancelled || forceCancel;
       const releaseCancelled = isActuallyCancelled || !releasedTargetItem;
+      // Browsers synthesize click after pointerup, including abandoned drags.
+      // Suppress that click for cancelled gestures as well as committed ones.
+      window.__justHandledPointerNav = Date.now();
+      justHandledPointerNav = true;
+      setTimeout(() => { justHandledPointerNav = false; }, 450);
 
       cleanupWindowListeners();
       clearSnapHover();
@@ -1277,6 +1352,8 @@
       isNavInteracting = false;
       mobNav.classList.remove('is-interacting');
       activePointerId = null;
+      currentTargetItem = null;
+      indicator?.classList.remove('is-pressed');
 
       if (indicator && releasedTargetItem && cachedNavRect) {
         indicator.classList.add('is-active');
@@ -1337,7 +1414,10 @@
           navSpringRaf = null;
         }
       }
-      navSpringRaf = requestAnimationFrame(springStep);
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        mobNav.style.transform = '';
+        mobNav.style.transformOrigin = 'center center';
+      } else navSpringRaf = requestAnimationFrame(springStep);
 
       if (releaseCancelled) {
         updateMobileBottomNavActive();
@@ -1558,17 +1638,19 @@
       }
     });
 
+    cacheMobNavMetrics?.();
     const indicator = mobNav.querySelector('.mobile-nav__indicator');
     if (indicator) {
       if (activeItem) {
         const itemRect = activeItem.getBoundingClientRect();
         const navRect = mobNav.getBoundingClientRect();
         const insetX = parseFloat(getComputedStyle(mobNav).getPropertyValue('--nav-selector-inset-x')) || 5;
-        const currentIndicatorWidth = parseFloat(indicator.style.width) || parseFloat(getComputedStyle(mobNav).getPropertyValue('--nav-selector-width')) || 64;
+        const currentIndicatorWidth = parseFloat(getComputedStyle(mobNav).getPropertyValue('--nav-selector-width')) || 64;
         if (navRect.width > 0 && itemRect.width > 0) {
-          const itemCenterX = itemRect.left + itemRect.width / 2;
-          const targetOffset = itemCenterX - navRect.left - currentIndicatorWidth / 2;
-          const finalOffset = Math.max(insetX, Math.min(navRect.width - currentIndicatorWidth - insetX, targetOffset));
+          const metricScale = mobNav.offsetWidth > 0 ? navRect.width / mobNav.offsetWidth : 1;
+          const itemCenterX = (itemRect.left - navRect.left + itemRect.width / 2) / metricScale - (mobNav.clientLeft || 0);
+          const targetOffset = itemCenterX - currentIndicatorWidth / 2;
+          const finalOffset = Math.max(insetX, Math.min(navRect.width / metricScale - currentIndicatorWidth - insetX, targetOffset));
           indicator.classList.add('is-active');
           if (updateMobNavVisual) {
             updateMobNavVisual(finalOffset, 1.0, true, 1.0);
@@ -1697,6 +1779,7 @@
   }
 
   function updateRoute(page, opts = {}) {
+    cancelMobNavInteraction?.();
     selectedRoute = page;
     const isDashboard = isDashboardPage(page);
     secondaryRoute = page === 'project' || page === 'generate' || (page === 'template' && !!opts.templateId);
@@ -1753,7 +1836,8 @@
   }
 
   function destroy() {
-    clearTimeout(selectorSettleTimer);
+    if (selectorRaf) cancelAnimationFrame(selectorRaf);
+    selectorRaf = null;
     document.body.classList.remove('mobile-nav-compact');
     if (storeUnsubscribe) {
       try {

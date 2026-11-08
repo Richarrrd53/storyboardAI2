@@ -287,7 +287,7 @@ function setupMockEnvironment() {
   global.document = documentMock;
   global.localStorage = localStorageMock;
   global.getComputedStyle = windowMock.getComputedStyle;
-  global.requestAnimationFrame = (fn) => setTimeout(fn, 0);
+  global.requestAnimationFrame = (fn) => setTimeout(() => fn(performance.now()), 16);
   global.cancelAnimationFrame = (id) => clearTimeout(id);
 
   return { elements, body, documentMock, windowMock, localStorageMock, windowListeners };
@@ -1194,3 +1194,39 @@ test('Mobile Bottom Nav: Route updates synchronize active item and indicator', a
 });
 
 
+
+
+test('Mobile Bottom Nav: pointercancel without displacement never commits or replays a click', async () => {
+  const { windowListeners } = setupMockEnvironment();
+  let navigated = 0;
+  const shell = loadAppShell();
+  await shell.init({ navigate: () => navigated++ });
+  const nav = document.getElementById('spa-mobile-nav');
+  const item = nav.querySelector('#mob-nav-projects');
+  nav.dispatchEvent({ type: 'pointerdown', button: 0, pointerId: 9, clientX: 90, clientY: 30, target: item });
+  [...windowListeners.pointercancel].forEach(fn => fn({ pointerId: 9 }));
+  assert.equal(navigated, 0, 'cancel itself must not navigate');
+  assert.ok(window.__justHandledPointerNav, 'cancel suppresses synthesized click');
+  item.dispatchEvent({ type: 'click', preventDefault() {}, stopPropagation() {} });
+  assert.equal(navigated, 0);
+  assert.equal(nav.classList.contains('is-interacting'), false);
+  assert.equal(nav.querySelector('.mobile-nav__indicator').classList.contains('is-pressed'), false);
+  assert.equal(windowListeners.pointermove.length, 0);
+  shell.destroy();
+});
+
+test('Mobile Bottom Nav: route changes cancel an in-flight pointer before synchronizing active state', async () => {
+  const { windowListeners } = setupMockEnvironment();
+  let navigated = 0;
+  const shell = loadAppShell();
+  await shell.init({ navigate: () => navigated++ });
+  const nav = document.getElementById('spa-mobile-nav');
+  const item = nav.querySelector('#mob-nav-projects');
+  nav.dispatchEvent({ type: 'pointerdown', button: 0, pointerId: 10, clientX: 90, clientY: 30, target: item });
+  shell.updateRoute('template');
+  [...windowListeners.pointerup].forEach(fn => fn({ pointerId: 10 }));
+  assert.equal(navigated, 0);
+  assert.equal(nav.querySelector('#mob-nav-template').classList.contains('active'), true);
+  assert.equal(nav.classList.contains('is-interacting'), false);
+  shell.destroy();
+});

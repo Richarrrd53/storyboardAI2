@@ -36,7 +36,7 @@ const projects = [
     await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
     const origin = 'http://127.0.0.1:' + server.address().port;
     browser = await chromium.launch({ headless: true, executablePath: process.env.STORYBOARD_CHROME_PATH || 'C:/Program Files/Google/Chrome/Application/chrome.exe' });
-    for (const viewport of [[320,700],[360,800],[375,812],[390,844],[414,896],[430,932],[768,1024],[1024,768],[1280,800],[1440,900],[1920,1080]].map(([width,height]) => ({width,height})).filter(v => !process.env.STORYBOARD_QA_WIDTH || String(v.width) === process.env.STORYBOARD_QA_WIDTH)) {
+    for (const viewport of [[320,700],[740,390],[360,800],[375,812],[390,844],[414,896],[430,932],[768,1024],[1024,768],[1280,800],[1440,900],[1920,1080]].map(([width,height]) => ({width,height})).filter(v => !process.env.STORYBOARD_QA_WIDTH || String(v.width) === process.env.STORYBOARD_QA_WIDTH)) {
       let stage = 'initial load';
       const watchdog = setTimeout(() => { console.error('Browser test stalled:', viewport.width, stage); void browser.close(); }, process.env.STORYBOARD_QA_MOTION === '1' ? 180000 : 90000);
       const projectFixture = JSON.parse(JSON.stringify(projects));
@@ -143,6 +143,129 @@ const projects = [
         }
       };
       await app.locator('#home-greeting-text').waitFor(); await capture('dashboard');
+      if (process.env.STORYBOARD_QA_EDGES === '1') {
+        await (await getFrame()).evaluate(() => spaNavigate('projects'));
+        await settle();
+        const edgeChecks = await (await getFrame()).evaluate(async () => {
+          const tick = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+          const body = document.querySelector('.content-body');
+          const filler = document.createElement('div'); filler.style.height = '2400px'; filler.style.flexShrink = '0'; body.appendChild(filler);
+          DynamicMaskSystem.refresh(); await tick();
+          await new Promise(resolve => setTimeout(resolve, 700));
+          const instance = DynamicMaskSystem.get(body), header = instance.header;
+          const startRect = body.getBoundingClientRect().toJSON();
+          const state = () => ({ anchor: body.firstElementChild.getBoundingClientRect().top + body.scrollTop, visibility: instance.headerVisibility, hidden: instance.hiddenDistance,
+            topExtent: instance.edges.get('top')?.[0].getBoundingClientRect().height || 0,
+            bottomExtent: instance.edges.get('bottom')?.[0].getBoundingClientRect().height || 0,
+            compact: header.classList.contains('is-content-scrolled'), navigation: [header, instance.headerToolbar].filter(Boolean).map(el => ({bottom:el.getBoundingClientRect().bottom,translate:getComputedStyle(el).translate,offset:el.style.getPropertyValue('--navigation-offset')})), rect: body.getBoundingClientRect().toJSON() });
+          const scroll = async top => { body.scrollTop = top; await tick(); return state(); };
+          const expanded = await scroll(0);
+          const compact = await scroll(32);
+          await scroll(70);
+          const savedIsolation = instance.headerHost.style.isolation;
+          instance.headerHost.style.isolation = 'isolate';
+          const topLayers = instance.edges.get('top');
+          topLayers.forEach(layer => layer.style.pointerEvents = 'auto');
+          const headerRect = header.getBoundingClientRect();
+          const topElement = document.elementFromPoint(headerRect.left + headerRect.width / 2, headerRect.top + headerRect.height / 2);
+          const headerAboveBlur = header.contains(topElement) && topLayers.every(layer => layer.parentElement === header.parentElement);
+          topLayers.forEach(layer => layer.style.pointerEvents = 'none');
+          instance.headerHost.style.isolation = savedIsolation;
+          const partial = await scroll(130);
+          const reversed = await scroll(106);
+          const hidden = await scroll(650);
+          const jitter = await scroll(644);
+          const revealed = await scroll(540);
+          const top = await scroll(0);
+          let navigationExtents = null;
+          if (innerWidth <= 768) {
+            AppShell.updateRoute('project');
+            await new Promise(resolve => setTimeout(resolve, 550));
+            const hiddenExtent = state().bottomExtent;
+            AppShell.updateRoute('projects');
+            await new Promise(resolve => setTimeout(resolve, 550));
+            navigationExtents = {hidden:hiddenExtent, shown:state().bottomExtent};
+          }
+          const noMask = getComputedStyle(body).maskImage === 'none';
+          const stable = Math.abs(body.getBoundingClientRect().height - startRect.height) < 1;
+          const systemAlias = ProgressiveEdgeBlurSystem === DynamicMaskSystem;
+          // Horizontal edges and no-overflow containers use the same renderer.
+          const box = document.createElement('div');
+          box.style.cssText = 'position:fixed;left:20px;top:200px;width:140px;height:60px;overflow:auto;white-space:nowrap;z-index:30';
+          const wide = document.createElement('div'); wide.style.cssText = 'width:600px;height:30px'; box.appendChild(wide); document.body.appendChild(box);
+          const horizontal = DynamicMaskSystem.attach(box, {direction:'horizontal',maskSize:28});
+          box.scrollLeft = 70; await tick();
+          const horizontalBoth = horizontal.edges.get('left')?.[0].style.visibility === 'visible' && horizontal.edges.get('right')?.[0].style.visibility === 'visible';
+          wide.style.width = '20px'; await tick(); horizontal.update();
+          const noOverflow = [...horizontal.edges.values()].every(layers => layers[0].style.visibility === 'hidden');
+          DynamicMaskSystem.detach(box); box.remove();
+          filler.remove(); body.scrollTop = 0; await tick();
+          return { expanded,compact,partial,reversed,hidden,jitter,revealed,top,noMask,stable,systemAlias,horizontalBoth,noOverflow,navigationExtents,headerAboveBlur };
+        });
+        assert.equal(edgeChecks.expanded.visibility, 1);
+        assert.equal(edgeChecks.compact.compact, true);
+        assert.equal(edgeChecks.compact.visibility, 1);
+        assert.ok(edgeChecks.partial.visibility > 0 && edgeChecks.partial.visibility < 1);
+        assert.ok(edgeChecks.reversed.visibility > edgeChecks.partial.visibility, 'partial hiding reverses with the finger');
+        assert.equal(edgeChecks.hidden.visibility, 0);
+        assert.equal(edgeChecks.jitter.visibility, 0, 'tiny reverse scroll stays hidden');
+        assert.ok(edgeChecks.revealed.visibility > 0, 'intentional reverse scroll restores navigation');
+        assert.ok(Math.abs(edgeChecks.hidden.topExtent - 96) < 1, 'hidden header retains 96px baseline blur: ' + JSON.stringify(edgeChecks.hidden));
+        assert.equal(edgeChecks.top.compact, false);
+        assert.ok(Math.abs(edgeChecks.expanded.anchor - edgeChecks.hidden.anchor) < 1, 'reading content does not shift when navigation hides');
+        if (edgeChecks.navigationExtents) { assert.ok(Math.abs(edgeChecks.navigationExtents.hidden - 176) < 1); assert.ok(edgeChecks.navigationExtents.shown >= Math.min(240,viewport.height/2) - 1); }
+        for (const key of ['noMask','stable','systemAlias','horizontalBoth','noOverflow','headerAboveBlur']) assert.equal(edgeChecks[key], true, key);
+        if (viewport.width <= 768) {
+          const gesture = await (await getFrame()).evaluate(async () => {
+            const nav = document.getElementById('spa-mobile-nav');
+            const item = document.getElementById('mob-nav-template');
+            const r = item.getBoundingClientRect();
+            const before = spaRouter.currentPage;
+            item.dispatchEvent(new PointerEvent('pointerdown', {bubbles:true,isPrimary:true,pointerId:71,pointerType:'touch',button:0,clientX:r.left+r.width/2,clientY:r.top+r.height/2}));
+            window.dispatchEvent(new PointerEvent('pointercancel', {pointerId:71,pointerType:'touch'}));
+            item.click();
+            await new Promise(resolve => setTimeout(resolve, 350));
+            return { cancelled:spaRouter.currentPage === before, resting:!nav.classList.contains('is-interacting'), pressed:nav.querySelector('.mobile-nav__indicator').classList.contains('is-pressed') };
+          });
+          assert.equal(gesture.cancelled, true); assert.equal(gesture.resting, true); assert.equal(gesture.pressed, false);
+        }
+        if (viewport.width <= 768) {
+          const sync = await (await getFrame()).evaluate(async () => {
+            const nav = document.getElementById('spa-mobile-nav');
+            const indicator = nav.querySelector('.mobile-nav__indicator');
+            const focus = nav.querySelector('.mobile-nav__track--focus');
+            let error = 0;
+            AppShell.updateMobileBottomNavActive('dashboard');
+            await new Promise(resolve => setTimeout(resolve, 260));
+            AppShell.updateMobileBottomNavActive('template');
+            for (let index = 0; index < 18; index++) {
+              await new Promise(requestAnimationFrame);
+              const clip = getComputedStyle(focus).clipPath.match(/inset\(([-.\d]+)px ([-.\d]+)px ([-.\d]+)px ([-.\d]+)px/);
+              if (clip) {
+                const transform = new DOMMatrixReadOnly(getComputedStyle(indicator).transform);
+                const center = transform.m41 + parseFloat(getComputedStyle(indicator).width) / 2;
+                const clipCenter = (+clip[4] + nav.clientWidth - +clip[2]) / 2;
+                error = Math.max(error, Math.abs(center - clipCenter));
+              }
+            }
+            AppShell.updateMobileBottomNavActive('projects');
+            return error;
+          });
+          assert.ok(sync < 1, 'selector and focus clipping share every animation frame: ' + sync);
+        }
+        if (writeArtifacts) {
+          await (await getFrame()).evaluate(async () => {
+            const filler = document.createElement('div'); filler.id = 'edge-visual-fixture'; filler.style.height = '2400px';
+            document.querySelector('.content-body').appendChild(filler);
+            document.querySelector('.content-body').scrollTop = 70;
+            await new Promise(resolve => setTimeout(resolve, 400));
+          });
+          await page.screenshot({path:path.join(output, 'header-above-blur-' + viewport.width + '.png')});
+          await (await getFrame()).evaluate(() => { document.getElementById('edge-visual-fixture').remove(); document.querySelector('.content-body').scrollTop = 0; });
+        }
+        console.log('PASS progressive edges and directional header: ' + viewport.width);
+        await (await getFrame()).evaluate(() => spaNavigate('dashboard')); await settle();
+      }
       if (process.env.STORYBOARD_QA_INTERACTIONS === '1') {
         await app.locator(viewport.width<=768 ? '#mob-nav-generate' : '#global-create-trigger').click();
         await (await getFrame()).waitForFunction(()=>document.body.classList.contains('ai-quick-compose-active'));
@@ -180,6 +303,7 @@ const projects = [
         assert.equal(await frame.evaluate(() => spaRouter.currentPage), 'projects');
         assert.equal(await app.locator('link[data-spa-sheet][href="/css/discovery.css"]').count(),0, 'failed validation removes destination-only styles');
         assert.equal(await app.locator('#page-content').getAttribute('inert'), null);
+        await app.locator('#global-toast').evaluate(el => Promise.allSettled(el.getAnimations().map(animation => animation.finished)));
         if(viewport.width<=768) assert.ok(await frame.evaluate(()=>document.getElementById('global-toast').getBoundingClientRect().bottom < document.getElementById('spa-mobile-nav').getBoundingClientRect().top),'toast stays above mobile navigation');
         authStatus = 200; authDelay = 0;
         await frame.evaluate(() => spaNavigate('dashboard'));
