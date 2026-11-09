@@ -203,7 +203,7 @@ test('project thumbnails deduplicate in-flight loads and retain portrait backgro
   assert.equal(f.children.length, 2);
   assert.equal(f.classes.has('has-contain-preview'), true);
   assert.ok(f.children[1].className.includes('fit-contain'));
-  assert.ok(f.thumb.style['--cover-height']);
+  assert.equal(f.thumb.style['--cover-height'], undefined, 'image loading must not rewrite frame geometry');
   f.frames.shift()();
   assert.equal(f.classes.has('loading'), false);
   f.window.lazyLoadProjectThumbs(f.root);
@@ -226,4 +226,15 @@ test('failed thumbnail loads retain fallback content and clear loading state', (
   const f = thumbnailFixture(); f.window.lazyLoadProjectThumbs(f.root); f.images[0].onerror();
   assert.equal(f.children.length, 0);
   assert.equal(f.classes.has('loading'), false);
+});
+
+test('cover loading preserves the geometry established before image arrival', () => {
+  const f = thumbnailFixture();
+  f.thumb.style.setProperty('--cover-width', '153.5px');
+  f.thumb.style.setProperty('--cover-height', '86.34375px');
+  f.thumb.style.setProperty('--insert-depth', '28.135px');
+  const before = { ...f.thumb.style };
+  f.window.lazyLoadProjectThumbs(f.root);
+  f.images[0].onload();
+  assert.deepEqual({ ...f.thumb.style }, before);
 });

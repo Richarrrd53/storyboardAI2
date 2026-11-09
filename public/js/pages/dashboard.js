@@ -12,16 +12,22 @@
   const SKELETON_RECENT_CARDS_HTML = Array.from({ length: 4 }).map(() => `
     <div class="project-card project-folder-card skeleton variant-compact">
       <div class="project-folder-preview-stack">
-        <div class="project-preview-primary skeleton-pulse" style="background: #1e293b; width: 100%; height: 110px; border-radius: 12px;"></div>
+        <div class="project-preview-primary skeleton-pulse"></div>
       </div>
       <div class="project-folder-shell">
         <div class="project-folder-header-row">
           <div class="project-folder-tab"><span class="project-folder-tab-dot"></span></div>
-          <div class="project-folder-shelf"></div>
+          <div class="project-folder-notch-wrap">
+            <div class="project-option-slot"><div class="project-option-btn skeleton-pulse"></div></div>
+          </div>
         </div>
         <div class="project-folder-content">
-          <div class="skeleton-pulse" style="background: #e2e8f0; height: 0.7rem; border-radius: 4px; width: 35%; margin-bottom: 4px;"></div>
-          <div class="skeleton-pulse" style="background: #e2e8f0; height: 0.95rem; border-radius: 4px; width: 70%; margin-bottom: 6px;"></div>
+          <div class="project-updated skeleton-pulse">&nbsp;</div>
+          <div class="project-title-wrapper"><div class="project-title skeleton-pulse">&nbsp;</div></div>
+          <div class="project-meta">
+            <span class="project-meta-pill skeleton-pulse">&nbsp; &nbsp; &nbsp;</span>
+            <span class="project-meta-pill skeleton-pulse">&nbsp; &nbsp; &nbsp;</span>
+          </div>
         </div>
       </div>
     </div>

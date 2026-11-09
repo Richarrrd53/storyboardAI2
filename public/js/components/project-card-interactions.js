@@ -148,6 +148,8 @@
 
       const onTitleEnter = (event) => {
         if (event?.pointerType === 'touch') return;
+        if (global.getComputedStyle?.(titleEl).whiteSpace === 'normal') return;
+        if (card.closest?.('.projects-body, .home-recent-grid') && global.matchMedia?.('(max-width: 768px)').matches) return;
         const overflow = (titleEl.scrollWidth || 0) - (titleWrapper.clientWidth || 0);
         if (overflow <= 2) return;
 
@@ -170,12 +172,19 @@
         titleEl.style.transform = 'translateX(0)';
       };
 
+      // A desktop marquee must not survive a resize into a masked mobile title.
+      const titleResizeObserver = typeof global.ResizeObserver === 'function'
+        ? new global.ResizeObserver(onTitleLeave)
+        : null;
+      titleResizeObserver?.observe(titleWrapper);
+
       card.addEventListener('pointerenter', onTitleEnter);
       card.addEventListener('pointerleave', onTitleLeave);
 
       cleanupFns.push(() => {
         if (scrollTimer) clearTimeout(scrollTimer);
         if (returnTimer) clearTimeout(returnTimer);
+        titleResizeObserver?.disconnect();
         card.removeEventListener('pointerenter', onTitleEnter);
         card.removeEventListener('pointerleave', onTitleLeave);
       });

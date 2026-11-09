@@ -276,6 +276,16 @@ body.dashboard-layout.sidebar-open #page-main,
   backdrop-filter: blur(var(--edge-blur));
   -webkit-backdrop-filter: blur(var(--edge-blur));
 }
+/* A single unmasked tint preserves the requested alpha stops independently
+   of the three progressive blur masks. Match the workspace canvas token. */
+.progressive-edge-blur--tint {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: linear-gradient(to bottom,
+    color-mix(in srgb, var(--canvas, var(--color-bg-page, #f8fafc)) 50%, transparent) 0%,
+    color-mix(in srgb, var(--canvas, var(--color-bg-page, #f8fafc)) 30%, transparent) 40%,
+    color-mix(in srgb, var(--canvas, var(--color-bg-page, #f8fafc)) 0%, transparent) 100%);
+}
 .has-header-backdrop > .has-edge-navigation {
   position: absolute !important;
   z-index: 20 !important;

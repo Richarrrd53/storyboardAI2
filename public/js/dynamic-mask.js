@@ -352,12 +352,20 @@
       let topExtent = 0;
       if (vertical && page && this.header && this.options.edgeMode !== 'bottom') {
         const bottom = this.headerToolbar?.getBoundingClientRect().bottom || this.header.getBoundingClientRect().bottom;
-        topExtent = Math.max(edgePattern.topBase, bottom - this.rect.top + edgePattern.topTransition);
+        // Projects has a second navigation row. Size its fade from the full
+        // header stack so the pinned filters retain a light backdrop as it hides.
+        const transition = this.headerToolbar
+          ? Math.max(edgePattern.topTransition, (this.header.offsetHeight + this.headerToolbar.offsetHeight) * 0.4)
+          : edgePattern.topTransition;
+        topExtent = Math.max(edgePattern.topBase, bottom - this.rect.top + transition);
       }
       const nav = document.getElementById('spa-mobile-nav');
       const bottomEnabled = vertical && page && mobile && bottomNavigation.enabled && nav?.isConnected;
       const bottomExtent = bottomEnabled ? edgePattern.bottomBase + Math.max(edgePattern.bottomExtension, bottomNavigation.extent - edgePattern.bottomBase) * bottomNavigation.progress : 0;
-      this.renderEdge('top', max <= 1 ? 0 : Math.min(topExtent, position), this.rect);
+      // A two-row header needs its whole backdrop even on the first scroll:
+      // growing it one pixel per scrolled pixel leaves Projects filters exposed.
+      const visibleTopExtent = this.headerToolbar && position > 0 ? topExtent : Math.min(topExtent, position);
+      this.renderEdge('top', max <= 1 ? 0 : visibleTopExtent, this.rect);
       this.renderEdge('bottom', max <= 1 ? 0 : Math.min(bottomExtent, max - position), this.rect);
       if (geometryMoving) this.scheduleUpdate();
     }
@@ -376,16 +384,19 @@
           host.count++;
           this.blurHostRegistered = true;
         }
-        layers = [1.5, 4, 8].map((blur, index) => {
+        const blurSteps = edge === 'top' ? [1.5, 4, 8, 0] : [1.5, 4, 8];
+        layers = blurSteps.map((blur, index) => {
           const layer = document.createElement('div');
-          layer.className = `progressive-edge-blur progressive-edge-blur--${edge}`;
+          layer.className = `progressive-edge-blur progressive-edge-blur--${edge}${blur === 0 ? ' progressive-edge-blur--tint' : ''}`;
           layer.setAttribute('aria-hidden', 'true');
           layer.style.setProperty('--edge-blur', `${blur}px`);
           const axis = { top: 'bottom', bottom: 'top', left: 'right', right: 'left' }[edge];
           const masks = ['#000 0%, #000 65%, transparent 100%', '#000 0%, #000 25%, transparent 75%', '#000 0%, transparent 48%'];
-          const mask = `linear-gradient(to ${axis}, ${masks[index]})`;
-          layer.style.maskImage = mask;
-          layer.style.webkitMaskImage = mask;
+          if (blur !== 0) {
+            const mask = `linear-gradient(to ${axis}, ${masks[index]})`;
+            layer.style.maskImage = mask;
+            layer.style.webkitMaskImage = mask;
+          }
           // Stay beside the scroll owner, beneath its Header/Toolbar. A body
           // portal could paint over navigation trapped in an ancestor stacking
           // context (entry animations, transforms, isolation, or opacity).

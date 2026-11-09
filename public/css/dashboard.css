@@ -4724,8 +4724,8 @@ body.is-navigating #global-create-capsule .ai-pill-btn-glow-rotator,
     }
 
     .projects-grid {
-        grid-template-columns: minmax(0, 1fr) !important;
-        gap: 16px !important;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 16px;
     }
 
     /* Semi-transparent scrim backdrop behind mobile bottom sheet */
@@ -5203,5 +5203,5 @@ body.is-navigating #global-create-capsule .ai-pill-btn-glow-rotator,
   .projects-toolbar--browse > .projects-tool-trigger { max-width:120px; flex-shrink:0; padding-inline:10px; font-size:12px; }
   .projects-browse-actions { flex:0 1 292px; }
   .projects-search { flex:1; width:240px; padding-inline:10px; font-size:12px; }
-  .projects-body > .projects-grid { grid-template-columns:repeat(2,minmax(0,1fr)) !important; column-gap:12px !important; row-gap:32px !important; }
+  .projects-body > .projects-grid { grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:12px; row-gap:28px; }
 }

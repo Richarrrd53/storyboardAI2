@@ -81,8 +81,8 @@
 .project-preview-primary,
 .project-cover-frame {
   position: relative;
-  width: var(--cover-width, var(--collapsed-width, 282px)) !important;
-  height: var(--cover-height, var(--collapsed-height, 158.6px)) !important;
+  width: var(--folder-preview-width, var(--cover-width, var(--collapsed-width, 282px))) !important;
+  height: var(--folder-preview-height, var(--cover-height, var(--collapsed-height, 158.6px))) !important;
   aspect-ratio: 16 / 9 !important;
   max-width: 295px;
   max-height: 180px;
@@ -94,7 +94,7 @@
   z-index: 20;
   flex: none;
   transform-origin: bottom center;
-  transform: translateY(calc(var(--insert-depth, var(--collapsed-insert-depth, 46px)) - 46px)) translateX(0) rotate(0deg) scale(1);
+  transform: translateY(calc(var(--folder-insert-depth, var(--insert-depth, var(--collapsed-insert-depth, 46px))) - var(--folder-insert-depth, 46px))) translateX(0) rotate(0deg) scale(1);
   transition: transform 320ms var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1)),
               border-radius 320ms var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1)),
               box-shadow 320ms var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1)),
@@ -568,12 +568,12 @@
 }
 
 .project-folder-card.variant-compact .project-preview-primary {
-  width: var(--cover-width, var(--collapsed-width, 254px)) !important;
-  height: var(--cover-height, var(--collapsed-height, 142.9px)) !important;
+  width: var(--folder-preview-width, var(--cover-width, var(--collapsed-width, 254px))) !important;
+  height: var(--folder-preview-height, var(--cover-height, var(--collapsed-height, 142.9px))) !important;
   aspect-ratio: 16 / 9 !important;
   max-width: 268px;
   max-height: 160px;
-  transform: translateY(calc(var(--insert-depth, var(--collapsed-insert-depth, 42px)) - 44px)) translateX(0) rotate(0deg) scale(1);
+  transform: translateY(calc(var(--folder-insert-depth, var(--insert-depth, var(--collapsed-insert-depth, 42px))) - var(--folder-insert-depth, 44px))) translateX(0) rotate(0deg) scale(1);
 }
 
 .project-folder-card.variant-compact .project-preview-secondary {
@@ -593,11 +593,11 @@
 /* Primary Cover lifts and tilts without changing 16:9 aspect ratio */
 .project-folder-card:hover .project-preview-primary,
 .project-folder-card.is-expanded .project-preview-primary {
-  width: var(--cover-width, var(--collapsed-width, 282px)) !important;
-  height: var(--cover-height, var(--collapsed-height, 158.6px)) !important;
-  transform: translateY(calc(var(--insert-depth, var(--collapsed-insert-depth, 46px)) - 46px - var(--hover-lift, 16px)))
+  width: var(--folder-preview-width, var(--cover-width, var(--collapsed-width, 282px))) !important;
+  height: var(--folder-preview-height, var(--cover-height, var(--collapsed-height, 158.6px))) !important;
+  transform: translateY(calc(var(--folder-insert-depth, var(--insert-depth, var(--collapsed-insert-depth, 46px))) - var(--folder-insert-depth, 46px) - var(--folder-hover-lift, var(--hover-lift, 16px))))
              translateX(0)
-             rotate(var(--hover-rotate, -4.5deg))
+             rotate(var(--folder-hover-rotate, var(--hover-rotate, -4.5deg)))
              scale(1.02);
   border-radius: var(--radius-continuous-14);
   box-shadow: 0 16px 36px rgba(15, 23, 42, 0.18);
@@ -605,11 +605,11 @@
 
 .project-folder-card.variant-compact:hover .project-preview-primary,
 .project-folder-card.variant-compact.is-expanded .project-preview-primary {
-  width: var(--cover-width, var(--collapsed-width, 254px)) !important;
-  height: var(--cover-height, var(--collapsed-height, 142.9px)) !important;
-  transform: translateY(calc(var(--insert-depth, var(--collapsed-insert-depth, 42px)) - 44px - var(--hover-lift, 14px)))
+  width: var(--folder-preview-width, var(--cover-width, var(--collapsed-width, 254px))) !important;
+  height: var(--folder-preview-height, var(--cover-height, var(--collapsed-height, 142.9px))) !important;
+  transform: translateY(calc(var(--folder-insert-depth, var(--insert-depth, var(--collapsed-insert-depth, 42px))) - var(--folder-insert-depth, 44px) - var(--folder-hover-lift, var(--hover-lift, 14px))))
              translateX(0)
-             rotate(var(--hover-rotate, -4.5deg))
+             rotate(var(--folder-hover-rotate, var(--hover-rotate, -4.5deg)))
              scale(1.02);
   border-radius: var(--radius-continuous-14);
   box-shadow: 0 14px 30px rgba(15, 23, 42, 0.16);
@@ -831,8 +831,8 @@
     margin-bottom: -36px;
   }
   .project-folder-card .project-preview-primary {
-    width: min(var(--cover-width, 248px), calc(100% - var(--space-8))) !important;
-    height: auto !important;
+    width: var(--folder-preview-width, min(var(--cover-width, 248px), calc(100% - var(--space-8)))) !important;
+    height: var(--folder-preview-height, auto) !important;
     aspect-ratio: 16 / 9 !important;
   }
   .project-folder-card .project-preview-secondary {
@@ -867,27 +867,125 @@
   }
 }
 
-/* Dense two-column folders are exclusive to the Projects browser. */
-@media(max-width:768px) {
-  .projects-body .project-card.project-folder-card { --folder-tab-height:28px; --folder-fillet:14px; --radius-lg:14px; --radius-continuous-lg:22px; padding-top:16px; }
-  .projects-body .project-folder-card .project-folder-preview-stack { height:clamp(78px,20vw,130px); margin-bottom:-28px; }
-  .projects-body .project-folder-card .project-preview-primary {
-    width:calc(100% - 12px) !important; height:auto !important; aspect-ratio:16/9 !important;
-    --insert-depth:24px !important; --hover-lift:8px !important; --hover-rotate:-2deg !important;
-    border-radius:10px; max-height:none;
+/* Projects and Dashboard recent folders share mobile geometry. Each card is the sizing container;
+   CSS resolves every child from the same width before and after image loading. */
+@media (max-width: 768px) {
+  :is(.projects-body, .home-recent-grid) .project-card.project-folder-card {
+    container-type: inline-size;
+    --folder-card-width: 100cqw;
+    --folder-preview-width: calc(var(--folder-card-width) - 12px);
+    --folder-preview-height: calc(var(--folder-preview-width) * 9 / 16);
+    --folder-insert-depth: clamp(24px, 17cqw, 46px);
+    --folder-shell-height: clamp(99px, 54cqw, 108px);
+    --folder-tab-height: clamp(22px, 14cqw, 32px);
+    /* Preserve the desktop 36 : 24 : 40 tab / notch / squircle ratio.
+       Independent clamps distort the S-shaped join at narrow card widths. */
+    --folder-fillet: calc(var(--folder-tab-height) * 2 / 3);
+    --folder-option-width: 36px;
+    --folder-option-height: 28px;
+    --folder-option-offset: 6px;
+    --folder-content-padding: clamp(8px, 6cqw, 14px);
+    --folder-hover-lift: clamp(6px, 5cqw, 12px);
+    --folder-hover-rotate: -2deg;
+    --radius-lg: var(--folder-fillet);
+    --radius-continuous-lg: calc(var(--folder-tab-height) * 10 / 9);
+    padding-top: 12px;
   }
-  .projects-body .project-folder-card .project-preview-secondary { width:calc(100% - 22px); transform:translate(4px,16px) rotate(3deg) scale(.96); }
-  .projects-body .project-folder-card .project-folder-shell { min-height:148px; }
-  .projects-body .project-folder-card .project-folder-content { padding:10px 10px 14px; gap:5px; justify-content:flex-start; }
-  .projects-body .project-folder-card .project-updated { font-size:10px; line-height:1.4; }
-  .projects-body .project-folder-card .project-title-wrapper { white-space:normal; padding:0; mask-image:none; -webkit-mask-image:none; }
-  .projects-body .project-folder-card .project-title { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; white-space:normal; font-size:13px; line-height:1.4; height:36.4px; transform:none !important; }
-  .projects-body .project-folder-card .project-tags-row { flex-wrap:nowrap; overflow:hidden; margin:0; gap:3px; }
-  .projects-body .project-folder-card .project-tag-pill { flex-shrink:0; font-size:9px; padding-inline:5px; height:20px; max-width:100%; overflow:hidden; text-overflow:ellipsis; }
-  .projects-body .project-folder-card .project-meta { gap:4px; margin-top:auto; }
-  .projects-body .project-folder-card .project-meta-pill { height:21px; font-size:10px; padding-inline:5px; }
-  .projects-body .project-folder-card .project-folder-tab { width:calc(100% - 60px); padding-left:10px; }
-  .projects-body .project-folder-card .project-option-btn { width:44px; height:44px; }
-  .projects-body .project-folder-card .project-folder-notch-wrap { margin-left:8px; margin-bottom:4px; }
-  .projects-body .project-folder-card .fallback-status { font-size:10px; }
+  .projects-body .project-card.project-folder-card { max-width: none; }
+  :is(.projects-body, .home-recent-grid) .project-folder-card:active { transform: none; }
+  :is(.projects-body, .home-recent-grid) .project-folder-card .project-folder-preview-stack {
+    height: var(--folder-preview-height);
+    margin-bottom: calc(-1 * var(--folder-insert-depth));
+  }
+  :is(.projects-body, .home-recent-grid) .project-folder-card .project-preview-primary {
+    max-width: none;
+    max-height: none;
+    border-radius: var(--folder-fillet);
+  }
+  :is(.projects-body, .home-recent-grid) .project-folder-card .project-preview-secondary {
+    width: calc(var(--folder-preview-width) - 10px);
+    height: auto;
+    max-width: none;
+    transform: translate(4px, 6px) rotate(3deg) scale(.96);
+    border-radius: var(--folder-fillet);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    :is(.projects-body, .home-recent-grid) .project-folder-card:hover .project-preview-secondary,
+    :is(.projects-body, .home-recent-grid) .project-folder-card.is-expanded .project-preview-secondary {
+      transform: translate(clamp(4px, 3cqw, 10px), -4px) rotate(4deg) scale(.98);
+    }
+  }
+  :is(.projects-body, .home-recent-grid) .project-folder-card .project-folder-shell {
+    min-height: var(--folder-shell-height);
+    flex: 1;
+  }
+  :is(.projects-body, .home-recent-grid) .project-folder-card .project-folder-content {
+    padding: 6px var(--folder-content-padding) 8px;
+    gap: 3px;
+    justify-content: flex-start;
+  }
+  :is(.projects-body, .home-recent-grid) .project-folder-card .project-updated { font-size: 11px; line-height: 15px; }
+  :is(.projects-body, .home-recent-grid) .project-folder-card .project-title-wrapper {
+    white-space: nowrap;
+    padding: 0;
+    mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
+  }
+  :is(.projects-body, .home-recent-grid) .project-folder-card .project-title {
+    display: block;
+    -webkit-line-clamp: unset;
+    overflow: hidden;
+    text-overflow: clip;
+    white-space: nowrap;
+    max-width: 100%;
+    font-size: 14px;
+    margin: 0;
+    line-height: 18px;
+    min-height: 18px;
+  }
+  :is(.projects-body, .home-recent-grid) .project-folder-card .project-tags-row { flex-wrap: nowrap; overflow: hidden; margin: 0; gap: 3px; }
+  :is(.projects-body, .home-recent-grid) .project-folder-card .project-tag-pill {
+    flex-shrink: 0;
+    font-size: 11px;
+    padding-inline: 5px;
+    height: 20px;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  :is(.projects-body, .home-recent-grid) .project-folder-card .project-meta { gap: 3px; margin-top: 0; }
+  :is(.projects-body, .home-recent-grid) .project-folder-card .project-meta-pill {
+    height: 21px;
+    font-size: 10px;
+    padding-inline: 4px;
+    white-space: nowrap;
+  }
+  :is(.projects-body, .home-recent-grid) .project-folder-card .project-folder-tab {
+    width: calc(100% - var(--folder-option-width) - var(--folder-option-offset) - 8px);
+    padding-left: var(--folder-content-padding);
+  }
+  :is(.projects-body, .home-recent-grid) .project-folder-card .project-option-btn {
+    position: relative;
+    width: var(--folder-option-width);
+    height: var(--folder-option-height);
+    border-radius: 9999px;
+  }
+  /* The button's own rect remains the visible pill used by Option Morph.
+     The transparent hit area extends inward, never into the next grid cell. */
+  :is(.projects-body, .home-recent-grid) .project-folder-card .project-option-btn::before {
+    content: '';
+    position: absolute;
+    width: 44px;
+    height: 44px;
+    right: -2px;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  :is(.projects-body, .home-recent-grid) .project-folder-card .project-folder-notch-wrap {
+    margin-left: var(--folder-option-offset);
+    margin-bottom: var(--folder-option-offset);
+  }
+  :is(.projects-body, .home-recent-grid) .project-folder-card .fallback-status { font-size: 10px; }
+  :is(.projects-body, .home-recent-grid) .project-folder-card .fallback-sub { display: none; }
 }

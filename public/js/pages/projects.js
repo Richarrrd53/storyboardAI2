@@ -43,26 +43,21 @@
   const SKELETON_CARDS_HTML = Array.from({ length: 4 }).map(() => `
     <div class="project-card project-folder-card skeleton">
       <div class="project-folder-preview-stack">
-        <div class="project-preview-primary skeleton-pulse" style="background: #1e293b; width: 88%; max-width: 256px; height: 142px; border-radius: 14px;"></div>
+        <div class="project-preview-primary skeleton-pulse"></div>
       </div>
       <div class="project-folder-shell">
         <div class="project-folder-header-row">
-          <div class="project-folder-tab">
-            <span class="project-folder-tab-dot"></span>
-          </div>
-          <div class="project-folder-shelf"></div>
+          <div class="project-folder-tab"><span class="project-folder-tab-dot"></span></div>
           <div class="project-folder-notch-wrap">
-            <div class="project-option-slot">
-              <div class="skeleton-pulse" style="width: 36px; height: 32px; border-radius: 9999px; background: #e2e8f0;"></div>
-            </div>
+            <div class="project-option-slot"><div class="project-option-btn skeleton-pulse"></div></div>
           </div>
         </div>
         <div class="project-folder-content">
-          <div class="skeleton-pulse" style="background: #e2e8f0; height: 0.75rem; border-radius: 4px; width: 30%; margin-bottom: 6px;"></div>
-          <div class="skeleton-pulse" style="background: #e2e8f0; height: 1.1rem; border-radius: 4px; width: 75%; margin-bottom: 10px;"></div>
-          <div style="display: flex; gap: 8px;">
-            <div class="skeleton-pulse" style="background: #f1f5f9; height: 26px; width: 64px; border-radius: 9999px;"></div>
-            <div class="skeleton-pulse" style="background: #f1f5f9; height: 26px; width: 78px; border-radius: 9999px;"></div>
+          <div class="project-updated skeleton-pulse">&nbsp;</div>
+          <div class="project-title-wrapper"><div class="project-title skeleton-pulse">&nbsp;</div></div>
+          <div class="project-meta">
+            <span class="project-meta-pill skeleton-pulse">&nbsp; &nbsp; &nbsp;</span>
+            <span class="project-meta-pill skeleton-pulse">&nbsp; &nbsp; &nbsp;</span>
           </div>
         </div>
       </div>

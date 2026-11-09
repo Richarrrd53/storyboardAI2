@@ -86,7 +86,9 @@
 
     // Spec Section 1: Fixed 16:9 Cover Frame
     // Folder inner width ~92% ~ 95%
-    // Default: 282px, Compact: 254px, Mobile: 248px
+    // Legacy defaults for shared surfaces. Projects and Dashboard mobile lists override
+    // these through --folder-preview-* container geometry before image loading.
+    // Transitions measure the live frame rather than these default dimensions.
     let frameW = 282;
     let frameH = 158.6;
     let insertDepth = 46;
@@ -314,13 +316,6 @@
         <div class="project-preview-primary project-cover-frame project-thumb loading"
              data-ratio="${cleanRatio}"
              data-true-ratio="${numericRatio}"
-             data-collapsed-w="${geom.collapsed.width}"
-             data-collapsed-h="${geom.collapsed.height}"
-             data-expanded-w="${geom.expanded.width}"
-             data-expanded-h="${geom.expanded.height}"
-             data-expanded-x="0"
-             data-expanded-depth="${geom.collapsed.insertDepth}"
-             data-hover-lift="${geom.hoverLift}"
              style="--cover-width: ${geom.frame.width}px; --cover-height: ${geom.frame.height}px; --insert-depth: ${geom.frame.insertDepth}px; --collapsed-width: ${geom.collapsed.width}px; --collapsed-height: ${geom.collapsed.height}px; --collapsed-insert-depth: ${geom.collapsed.insertDepth}px; --expanded-width: ${geom.expanded.width}px; --expanded-height: ${geom.expanded.height}px; --expanded-insert-depth: ${geom.collapsed.insertDepth}px; --expanded-x: 0px; --hover-lift: ${geom.hoverLift}px; --hover-rotate: ${geom.hoverRotate}deg;"
              data-src="/api/projects/${encodeURIComponent(p.id)}/cover">
           <div class="thumb-fallback">

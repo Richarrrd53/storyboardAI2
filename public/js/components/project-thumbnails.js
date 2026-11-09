@@ -22,36 +22,9 @@
         const projectRatioAttr = thumb.dataset.trueRatio || thumb.dataset.ratio || thumb.closest('.project-folder-preview-stack')?.dataset.ratio;
         const targetRatio = projectRatioAttr ? window.ProjectCard.parseAspectRatio(projectRatioAttr) : (img.naturalWidth && img.naturalHeight ? (img.naturalWidth / img.naturalHeight) : (16 / 9));
 
+        // Rendering/CSS owns the frame, including Projects container geometry.
+        // Image arrival changes fitting only, never layout or animation dimensions.
         thumb.dataset.trueRatio = targetRatio;
-
-        const isCompact = !!thumb.closest('.variant-compact');
-        const isMob = window.AppShell.isMobileView();
-        const geom = window.ProjectCard.calculateProjectCoverGeometry({
-          aspectRatio: targetRatio,
-          variant: isCompact ? 'compact' : 'default',
-          isMobile: isMob
-        });
-
-        thumb.style.setProperty('--cover-width', `${geom.frame.width}px`);
-        thumb.style.setProperty('--cover-height', `${geom.frame.height}px`);
-        thumb.style.setProperty('--insert-depth', `${geom.frame.insertDepth}px`);
-        thumb.style.setProperty('--collapsed-width', `${geom.collapsed.width}px`);
-        thumb.style.setProperty('--collapsed-height', `${geom.collapsed.height}px`);
-        thumb.style.setProperty('--collapsed-insert-depth', `${geom.collapsed.insertDepth}px`);
-        thumb.style.setProperty('--expanded-width', `${geom.expanded.width}px`);
-        thumb.style.setProperty('--expanded-height', `${geom.expanded.height}px`);
-        thumb.style.setProperty('--expanded-insert-depth', `${geom.collapsed.insertDepth}px`);
-        thumb.style.setProperty('--expanded-x', '0px');
-        thumb.style.setProperty('--hover-lift', `${geom.hoverLift}px`);
-        thumb.style.setProperty('--hover-rotate', `${geom.hoverRotate}deg`);
-
-        thumb.dataset.collapsedW = geom.collapsed.width;
-        thumb.dataset.collapsedH = geom.collapsed.height;
-        thumb.dataset.expandedW = geom.expanded.width;
-        thumb.dataset.expandedH = geom.expanded.height;
-        thumb.dataset.expandedX = 0;
-        thumb.dataset.expandedDepth = geom.collapsed.insertDepth;
-        thumb.dataset.hoverLift = geom.hoverLift;
 
         const isFolderPrimary = thumb.classList.contains('project-preview-primary');
         const badges = thumb.querySelector('.thumb-overlay-badges');

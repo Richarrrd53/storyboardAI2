@@ -189,6 +189,8 @@ const projects = [
           const instance = DynamicMaskSystem.get(body), header = instance.header;
           const startRect = body.getBoundingClientRect().toJSON();
           const state = () => ({ anchor: body.firstElementChild.getBoundingClientRect().top + body.scrollTop, visibility: instance.headerVisibility, hidden: instance.hiddenDistance,
+            topTransition: instance.headerToolbar ? Math.max(24, (header.offsetHeight + instance.headerToolbar.offsetHeight) * 0.4) : 24,
+            tint: (() => { const layer = instance.edges.get('top')?.find(layer => layer.classList.contains('progressive-edge-blur--tint')); return layer ? {background:getComputedStyle(layer).backgroundImage,mask:getComputedStyle(layer).maskImage} : null; })(),
             topExtent: instance.edges.get('top')?.[0].getBoundingClientRect().height || 0, blurStyle:instance.edges.get('top')?.[0].style.height, hostGeometry:instance.hostGeometry, host:instance.overlayHost.getBoundingClientRect().toJSON(),
             bottomExtent: instance.edges.get('bottom')?.[0].getBoundingClientRect().height || 0,
             compact: header.classList.contains('is-content-scrolled'), navigation: [header, instance.headerToolbar].filter(Boolean).map(el => ({bottom:el.getBoundingClientRect().bottom,height:el.getBoundingClientRect().height,translate:getComputedStyle(el).translate,offset:el.style.getPropertyValue('--navigation-offset')})), rect: body.getBoundingClientRect().toJSON() });
@@ -259,12 +261,16 @@ const projects = [
         assert.equal(edgeChecks.expanded.visibility, 1);
         assert.equal(edgeChecks.compact.compact, true);
         assert.equal(edgeChecks.compact.visibility, 1);
+        assert.ok(edgeChecks.compact.topExtent >= edgeChecks.compact.navigation.at(-1).bottom - edgeChecks.compact.rect.top, 'filters are covered from the first scroll');
         assert.ok(edgeChecks.partial.visibility > 0 && edgeChecks.partial.visibility < 1);
         assert.ok(edgeChecks.reversed.visibility > edgeChecks.partial.visibility, 'partial hiding reverses with the finger');
         assert.equal(edgeChecks.hidden.visibility, 0);
         assert.equal(edgeChecks.jitter.visibility, 0, 'tiny reverse scroll stays hidden');
         assert.ok(edgeChecks.revealed.visibility > 0, 'intentional reverse scroll restores navigation');
-        assert.ok(Math.abs(edgeChecks.hidden.topExtent - Math.max(48,edgeChecks.hidden.navigation.at(-1).bottom - edgeChecks.hidden.rect.top + 24)) < 1, 'hidden header blur follows the pinned toolbar: ' + JSON.stringify(edgeChecks.hidden));
+        assert.ok(Math.abs(edgeChecks.hidden.topExtent - Math.max(48,edgeChecks.hidden.navigation.at(-1).bottom - edgeChecks.hidden.rect.top + edgeChecks.hidden.topTransition)) < 1, 'hidden header blur follows the pinned toolbar: ' + JSON.stringify(edgeChecks.hidden));
+        assert.equal(edgeChecks.hidden.tint.mask, 'none', 'tint alpha stops must not be multiplied by a blur mask');
+        assert.match(edgeChecks.hidden.tint.background, /0\.5.*0%.*0\.3.*40%.*0\).*100%/, 'single canvas tint uses the requested 50%, 30%, 0% alpha');
+        assert.ok(edgeChecks.hidden.topTransition > 24, 'Projects extends the fade below its header and filters');
         assert.equal(edgeChecks.top.compact, false);
         assert.ok(Math.abs(edgeChecks.expanded.anchor - edgeChecks.hidden.anchor) < 1, 'reading content does not shift when navigation hides');
         if (edgeChecks.navigationExtents) { assert.equal(edgeChecks.navigationExtents.hidden, 0, 'routes without Bottom Nav have no bottom progressive blur'); assert.ok(Math.abs(edgeChecks.navigationExtents.resting - 88) < 1); assert.ok(edgeChecks.navigationExtents.shown >= Math.min(152,viewport.height/2) - 1); }
