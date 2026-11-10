@@ -1,0 +1,65 @@
+[
+  {
+    "id": "landing-opening",
+    "samples": [
+      {
+        "fraction": 0,
+        "progress": 0
+      },
+      {
+        "fraction": 0.5,
+        "progress": 0.5
+      },
+      {
+        "fraction": 1,
+        "progress": 1
+      },
+      {
+        "fraction": 0,
+        "progress": 0
+      }
+    ]
+  },
+  {
+    "id": "landing-product",
+    "samples": [
+      {
+        "fraction": 0,
+        "progress": 0.078467
+      },
+      {
+        "fraction": 0.5,
+        "progress": 0.5
+      },
+      {
+        "fraction": 1,
+        "progress": 1
+      },
+      {
+        "fraction": 0,
+        "progress": 0.078467
+      }
+    ]
+  },
+  {
+    "id": "landing-sheet",
+    "samples": [
+      {
+        "fraction": 0,
+        "progress": 0
+      },
+      {
+        "fraction": 0.5,
+        "progress": 0.501075
+      },
+      {
+        "fraction": 1,
+        "progress": 1
+      },
+      {
+        "fraction": 0,
+        "progress": 0
+      }
+    ]
+  }
+]

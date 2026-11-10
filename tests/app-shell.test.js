@@ -995,6 +995,7 @@ test('Mobile Bottom Nav: Pointer down initiates interaction, micro-enlargement, 
 
 test('Mobile Bottom Nav: Pointer move applies rubberband damping, directional stretch, magnetic tracking, and dual-track clip-path', async () => {
   const { windowListeners } = setupMockEnvironment();
+  global.getComputedStyle = () => ({ getPropertyValue: name => name === '--nav-selector-width' ? '60' : '5' });
   const AppShell = loadAppShell();
   await AppShell.init({});
 
@@ -1049,6 +1050,30 @@ test('Mobile Bottom Nav: Pointer move applies rubberband damping, directional st
   // Focus track clip-path should update to inset rounded capsule
   assert.ok(focusTrack.style.clipPath.includes('inset(') && focusTrack.style.clipPath.includes('round 999px)'),
     'focusTrack should have liquid-clipped inset round 999px clipPath');
+
+  moveListeners.forEach(fn => fn({
+    type: 'pointermove', pointerId: 2, clientX: 150, clientY: 30,
+    pointerType: 'touch', cancelable: true, preventDefault: () => {}
+  }));
+  const baseTrack = mobNav.querySelector('.mobile-nav__track--base');
+  assert.ok(!baseTrack.style.maskImage && !baseTrack.style.webkitMaskImage, 'Base track must not mask the create button');
+  assert.ok(!items[2].style.maskImage && !items[2].style.webkitMaskImage, 'Create item must remain unmasked');
+  for (const index of [0, 1, 3, 4]) {
+    assert.ok(items[index].style.maskImage.includes('data:image/svg+xml'), `Each regular item receives the inverse mask: ${items[index].style.maskImage}`);
+    assert.strictEqual(items[index].style.webkitMaskImage, items[index].style.maskImage);
+    assert.strictEqual(items[index].style.maskImage, items[0].style.maskImage, 'Items share one mask image');
+    assert.strictEqual(items[index].style.maskPosition, `0 0, ${(-index * 60).toFixed(2)}px 0.00px`);
+  }
+
+  // A translated and scaled nav must use its current screen position.
+  mobNav.getBoundingClientRect = () => ({ left: 20, width: 330, top: 0, height: 66, right: 350, bottom: 66 });
+  moveListeners.forEach(fn => fn({
+    type: 'pointermove', pointerId: 2, clientX: 340, clientY: 30,
+    pointerType: 'touch', cancelable: true, preventDefault: () => {}
+  }));
+  assert.ok(items[4].classList.contains('snap-target'), 'Rightmost item follows the transformed nav');
+  assert.match(mobNav.querySelector('.mobile-nav__indicator').style.transform, /translate3d\(236\.65px/,
+    'Scaled indicator stays inside the right inset');
 
   // Release
   const upListeners = windowListeners['pointerup'] || [];

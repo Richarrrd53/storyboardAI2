@@ -1,0 +1,55 @@
+{
+  "sizes": [
+    {
+      "width": 1440,
+      "overflow": false,
+      "triggers": 3,
+      "heroActionBottom": 644.03125,
+      "imagesLoaded": true
+    },
+    {
+      "width": 1024,
+      "overflow": false,
+      "triggers": 3,
+      "heroActionBottom": 563.15625,
+      "imagesLoaded": true
+    },
+    {
+      "width": 768,
+      "overflow": false,
+      "triggers": 3,
+      "heroActionBottom": 482.890625,
+      "imagesLoaded": true
+    },
+    {
+      "width": 390,
+      "overflow": false,
+      "triggers": 3,
+      "heroActionBottom": 397.984375,
+      "imagesLoaded": true
+    },
+    {
+      "width": 375,
+      "overflow": false,
+      "triggers": 3,
+      "heroActionBottom": 393.046875,
+      "imagesLoaded": true
+    }
+  ],
+  "regressions": [
+    "five widths, all scenes and reversible scene timelines; rapid scroll",
+    "hero login CTA and landing teardown",
+    "browser back returns to landing",
+    "three login / landing round trips",
+    "register CTA",
+    "five repeated initializations; foreign ScrollTrigger preserved",
+    "live reduced-motion changes revert and rebuild",
+    "desktop to phone resize, touch scroll, pageshow refresh event",
+    "reload",
+    "GSAP unavailable: content and links stay visible",
+    "direct landing HTML with scripts disabled"
+  ],
+  "errors": [],
+  "consoleErrors": [],
+  "touchScrollY": 375
+}

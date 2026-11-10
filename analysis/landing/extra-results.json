@@ -1,0 +1,26 @@
+{
+  "errors": [],
+  "resizeWithoutReload": true,
+  "listenerCounts": {
+    "before": [
+      13,
+      17
+    ],
+    "after": [
+      13,
+      17
+    ]
+  },
+  "anchorFocus": "videos",
+  "video": {
+    "controls": true,
+    "playing": true,
+    "readyState": 4,
+    "currentTime": 0.759409
+  },
+  "videoDisclosure": {
+    "before": 1924,
+    "open": 2345,
+    "closed": 1924
+  }
+}

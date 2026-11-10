@@ -4,211 +4,89 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>Storyboard AI — 智能分鏡創作工具</title>
+    <title>StoryboardAI｜從故事到分鏡</title>
+    <meta name="description" content="StoryboardAI 是你的 AI 短影音分鏡助理。從故事靈感、AI 創作討論到可編輯的影片分鏡，讓想法逐步成為畫面。" />
     <link rel="stylesheet" href="../css/style.css" />
     <link rel="stylesheet" href="../css/landing.css" />
 </head>
 
 <body>
 
-    <div class="gradient-bg" id="BG">
-        <div class="gradient-blob-yellow"></div>
-    </div>
-
-    <nav class="nav" id="nav">
-        <a href="#heroSection" class="brand-logo">
-            <img src="../icon/logo/logo.png" alt="Logo" class="brand-logo-img" />
+    <div class="gradient-bg" id="BG" aria-hidden="true"></div>
+    <nav class="nav lp-nav" id="nav" aria-label="主要導覽">
+        <a href="#heroSection" class="brand-logo" aria-label="StoryboardAI 首頁">
+            <img src="../icon/logo/logo.png" alt="" class="brand-logo-img" width="32" height="32" />
             <span>Storyboard <span>AI</span></span>
         </a>
-        <div class="nav-links" id="nav-progress">
-            <a href="#videos" class="nav-link">概念影片</a>
-            <a href="#features" class="nav-link">功能特色</a>
-            <a href="#how" class="nav-link">使用流程</a>
-            <a href="#pricing" class="nav-link">方案定價</a>
+        <div class="lp-nav-sections" id="nav-progress">
+            <a href="#videos">產品預覽</a><a href="#how">創作流程</a><a href="#features">分鏡編輯</a>
         </div>
-        <div class="nav-links">
-            <a href="#" data-navigate="login" class="btn btn-ghost btn-sm">立刻登入</a>
-            <a href="#" data-navigate="register" class="btn btn-primary btn-sm">免費開始</a>
+        <div class="lp-nav-actions">
+            <a href="/login" data-navigate="login" class="lp-login">登入</a>
+            <a href="/register" data-navigate="register" class="lp-button">開始創作</a>
         </div>
     </nav>
-
     <main id="page-main" class="page-shell page-landing">
+      <div class="landing-story">
+        <section class="lp-hero lp-wrap" id="heroSection" tabindex="-1" aria-labelledby="lp-title">
+          <div class="lp-hero-surface">
+            <div class="lp-hero-copy">
+              <h1 id="lp-title">靈感，<br>一鍵轉換</h1>
+              <p>你的 AI 短影音助理，從故事靈感走到可編輯的影片分鏡。</p>
+              <div class="lp-actions"><a href="/login" data-navigate="login" class="lp-button">開始我的分鏡</a><a href="#videos" class="lp-text-link">看看如何創作</a></div>
+            </div>
+            <div class="lp-film-stage">
+              <div class="lp-film" aria-label="專案既有的寫實、電影與漫畫風格範例">
+                <figure class="lp-film-frame"><img src="../icon/card/realistic.png" alt="寫實風格的犬隻畫面範例" width="1024" height="682" fetchpriority="high"><figcaption><span>寫實</span><span>01</span></figcaption></figure>
+                <figure class="lp-film-frame"><img src="../icon/card/film.png" alt="電影光影風格的犬隻畫面範例" width="1024" height="682"><figcaption><span>電影</span><span>02</span></figcaption></figure>
+                <figure class="lp-film-frame"><img src="../icon/card/comic.png" alt="漫畫風格的犬隻畫面範例" width="1024" height="682"><figcaption><span>漫畫</span><span>03</span></figcaption></figure>
+              </div>
+            </div>
+            <div class="lp-hero-note"><span>先有故事，再有鏡頭。</span><a href="#how" aria-label="閱讀創作流程"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M12 4v16m-6-6 6 6 6-6"/></svg></a></div>
+          </div>
+        </section>
 
-    <!-- 1080 -->
-    <section class="hero" id="heroSection">
-        <div class="hero-inner">
-            <div class="hero-bg" id="heroBG">
-                
-                <div class="hero-content">
-                    <div class="hero-eyebrow anim-fadeInUp">
-                        <span class="tag-pill">✦ StoryboardAI</span>
-                    </div>
-                    <h1 class="hero-title anim-fadeInUp anim-delay-1">
-                        靈感，<br><span class="hero-ai">一鍵轉換</span>
-                    </h1>
-                    <div class="hero-ctas anim-fadeInUp anim-delay-3">
-                        <a href="#" data-navigate="login" class="btn btn-primary btn-lg">Get started</a>
-                    </div>
-                </div>
-                <div class="hero-readmore">
-                    <a href="#videos" class="btn ">
-                        <svg viewBox="0 0 14 15"fill="none"xmlns="http://www.w3.org/2000/svg"class="button-icon-svg"width="10"><path d="M13.376 11.552l-.264-10.44-10.44-.24.024 2.28 6.96-.048L.2 12.56l1.488 1.488 9.432-9.432-.048 6.912 2.304.024z"fill="currentColor"></path></svg></svg>
-                        <span>了解更多</span>
-                    </a>
-                </div>
-            </div>
-            <div class="hero-footer"></div>
-        </div>
-    </section>
-    <div style="width: 100vw; height: 900px;"></div>
-    <div class="perspective-container">
-        <div class="perspective-filmstrip"></div>
-        <div class="clapper">
-            <img id="clapper-top" src="../icon/clapperboard-2.svg" alt="">
-            <img id="clapper-bottom" src="../icon/clapperboard.svg" alt="">
-        </div>
-    </div>
-    <section class="videos" id="videos">
-        <video class="video-container" id="intro_video" muted playsinline loop>
-            <source src="../video/StoryboardAI_Intro.mp4" type="video/mp4">
-        </video>
-    </section>
+        <section class="lp-product lp-wrap lp-section" id="videos" tabindex="-1" aria-labelledby="lp-product-title">
+          <div class="lp-section-head"><h2 id="lp-product-title">故事的下一步，<br>在這裡看見。</h2><p>讓散落的靈感有地方開始。<br>建立創作、整理專案，再回到每個鏡頭。</p></div>
+          <figure class="lp-product-image">
+            <picture><source media="(max-width: 600px)" srcset="../screenshot/dashboard_mobile.png"><img src="../screenshot/dahboard_pc.png" alt="StoryboardAI 工作區：繼續編輯專案、最近分鏡與新增分鏡入口" width="1680" height="949" loading="lazy"></picture>
+            <figcaption>StoryboardAI 產品工作區預覽</figcaption>
+          </figure>
+          <details class="lp-film-details"><summary>播放 StoryboardAI 概念影片<span aria-hidden="true">＋</span></summary><video id="intro_video" controls muted playsinline preload="none" poster="../screenshot/dahboard_pc.png" aria-label="StoryboardAI 概念介紹影片"><source src="../video/StoryboardAI_Intro.mp4" type="video/mp4">你的瀏覽器不支援影片播放。</video></details>
+        </section>
 
-    <section class="slogan">
-        <div class="slogan-film-strip strip1"></div>
-        <div class="slogan-film-strip strip2"></div>
-        <h1 class="slogan-title">你的短影音助理</h1>
-        <p class="slogan-content">從故事到分鏡，一秒生成視覺框架，讓你的靈感，一鍵轉換。</p>
+        <section class="lp-workflow lp-section" id="how" tabindex="-1" aria-labelledby="lp-workflow-title">
+          <div class="lp-wrap lp-workflow-layout">
+            <div class="lp-workflow-heading"><h2 id="lp-workflow-title">不必一開始，<br>就想好每一鏡。</h2><p>把想法說出來，<br>讓故事一步步長成畫面。</p><a href="/login" data-navigate="login" class="lp-text-link">從我的故事開始</a></div>
+            <ol class="lp-workflow-steps">
+              <li><span class="lp-step-num" aria-hidden="true">01</span><div><h3>先說一個故事</h3><p>輸入短影音主題、故事或場景，留下你最想拍的那個念頭。</p><blockquote>「我想拍一支關於相遇的短片。」<cite>故事輸入示例</cite></blockquote></div></li>
+              <li><span class="lp-step-num" aria-hidden="true">02</span><div><h3>和 AI 一起釐清</h3><p>討論敘事方向、觀眾與調性，確認創作摘要，再決定風格、秒數與畫面比例。</p><div class="lp-brief-fields" aria-label="創作摘要包含的項目"><span>敘事方向</span><span>視覺風格</span><span>畫面比例</span></div></div></li>
+              <li><span class="lp-step-num" aria-hidden="true">03</span><div><h3>把故事拆成鏡頭</h3><p>生成分鏡後，接著調整畫面、鏡頭語言與時間，讓草稿更接近你的想像。</p><div class="lp-shot-index" aria-label="分鏡順序示意"><span>鏡頭 01</span><i aria-hidden="true"></i><span>鏡頭 02</span><i aria-hidden="true"></i><span>鏡頭 03</span></div></div></li>
+            </ol>
+          </div>
+        </section>
 
-    </section>  
-    
-    <section class="features" id="features">
-        <div class="section-header">
-            <h2 class="section-title">你最好的選擇</h2>
-            <h2 class="section-content">結合專業編導思維，為你打造巴拉巴拉1231234567abcdefg...abcdefghijklmnopqrstuvwxyz1234567890987654321掰不下去了巴拉巴拉巴拉巴拉巴拉巴拉巴拉巴拉</h2>
-        </div>
+        <section class="lp-capabilities lp-wrap lp-section" id="features" tabindex="-1" aria-labelledby="lp-cap-title">
+          <div class="lp-section-head"><h2 id="lp-cap-title">生成是起點。<br>創作，還在你手裡。</h2><p>一張分鏡，不只是一張圖。<br>把畫面、動作和節奏放在一起思考。</p></div>
+          <div class="lp-edit-layout">
+            <figure class="lp-shot-sheet">
+              <div class="lp-sheet-heading"><span>分鏡內容示例</span><span>鏡頭 02</span></div>
+              <img src="../icon/card/film.png" alt="電影風格犬隻特寫，作為分鏡內容示例" width="1024" height="682" loading="lazy">
+              <dl><div><dt>故事內容</dt><dd>牠停下腳步，望向畫面外。</dd></div><div><dt>鏡頭語言</dt><dd>特寫，平視，緩慢推近</dd></div><div><dt>鏡頭秒數</dt><dd>3s</dd></div></dl>
+              <figcaption>示意內容，非實際生成結果</figcaption>
+            </figure>
+            <div class="lp-edit-notes">
+              <article><h3>每個鏡頭，都能再推敲。</h3><p>編輯故事內容、景別與運鏡描述，調整秒數。讓每一鏡都有明確的敘事目的。</p></article>
+              <article><h3>用適合你的方式看分鏡。</h3><p>在分鏡表與膠卷視圖之間切換，從逐鏡細節到連續畫面，換個角度檢視故事。</p></article>
+              <article><h3>靈感可以暫停，再繼續。</h3><p>透過專案工作區整理分鏡，回到上次的創作，接著把故事完成。</p></article>
+            </div>
+          </div>
+        </section>
 
-        <div class="features-grid">
-            <!-- 特色卡片 1 -->
-            <div class="feature-card">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M16.5 9.5L12.3 13.7L10.7 11.3L7.5 14.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> <path d="M14.5 9.5H16.5V11.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> <path d="M9 22H15C20 22 22 20 22 15V9C22 4 20 2 15 2H9C4 2 2 4 2 9V15C2 20 4 22 9 22Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
-                    
-                </div>
-                <h3 class="feature-card-title">熱門爆點模板庫</h3>
-                <p class="feature-card-desc">包含超過百種當前最熱門的短影音爆款模板，快速套用不卡關，讓創意瞬間抓住觀眾眼球。</p>
-            </div>
-            <!-- 特色卡片 2 -->
-            <div class="feature-card highlighted-card">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M12 3C12 7.97056 16.0294 12 21 12C16.0294 12 12 16.0294 12 21C12 16.0294 7.97056 12 3 12C7.97056 12 12 7.97056 12 3Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
-                </div>
-                <h3 class="feature-card-title">AI 短影音分鏡生成</h3>
-                <p class="feature-card-desc">只要輸入文字腳本，AI即可自動為您生成專業的短影音分鏡圖，大幅縮短前置作業時間。</p>
-            </div>
-            <!-- 特色卡片 3 -->
-            <div class="feature-card">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M13.26 3.59997L5.04997 12.29C4.73997 12.62 4.43997 13.27 4.37997 13.72L4.00997 16.96C3.87997 18.13 4.71997 18.93 5.87997 18.73L9.09997 18.18C9.54997 18.1 10.18 17.77 10.49 17.43L18.7 8.73997C20.12 7.23997 20.76 5.52997 18.55 3.43997C16.35 1.36997 14.68 2.09997 13.26 3.59997Z" stroke="currentColor" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"></path> <path d="M11.89 5.05005C12.32 7.81005 14.56 9.92005 17.34 10.2" stroke="currentColor" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"></path> <path d="M3 22H21" stroke="currentColor" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
-                </div>
-                <h3 class="feature-card-title">靈活自訂義修改</h3>
-                <p class="feature-card-desc">生成的分鏡支援細部調整，從運鏡方向到角色表情，讓每個畫面都符合您的完美想像。</p>
-            </div>
-        </div>
-    </section>
-
-    <!-- How It Works -->
-    <section class="how-section" id="how">
-        <div class="section-header">
-            <p class="section-eyebrow" id="how-title1">三步驟完成</p>
-            <p class="section-eyebrow" id="how-title2">專業分鏡草稿</p>
-            <!-- <h2 class="section-title">三步驟完成，專業分鏡草稿</h2> -->
-        </div>
-        <div class="steps-row">
-            <div class="step-item">
-                <div class="step-num">01</div>
-                <div class="step-content">
-                    <h3>描述故事/場景</h3>
-                    <p>輸入你的廣告故事、短影音主題或影片場景。</p>
-                </div>
-            </div>
-            <div class="step-item">
-                <div class="step-num">02</div>
-                <div class="step-content">
-                    <h3>選擇模板、風格與比例</h3>
-                    <p>讓AI自動從熱門爆點模板庫中選擇合適的風格，或從多種視覺風格中選擇，並設定畫面比例（1:1 / 16:9 / 3:2）。</p>
-                </div>
-            </div>
-            <div class="step-item">
-                <div class="step-num">03</div>
-                <div class="step-content">
-                    <h3>生成並匯出分鏡</h3>
-                    <p>AI 自動生成完整分鏡草稿，可下載 PDF 或直接分享給客戶。</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Pricing -->
-    <section class="pricing-section" id="pricing">
-        <div class="section-header">
-            <p class="section-eyebrow">彈性方案<br />適合每種創作者</p>
-        </div>
-        <div class="pricing-grid">
-            <div class="pricing-card card">
-                <div class="plan-badge">初階方案</div>
-                <div class="plan-price"><span class="price-num">免費</span></div>
-                <p class="plan-desc">學生與新手創作者</p>
-                <ul class="plan-features">
-                    <li>✓ 每月 5 組分鏡生成</li>
-                    <li>✓ 基礎風格選擇</li>
-                    <li>✓ 雲端存儲（限制空間）</li>
-                    <li>✗ 商業匯出</li>
-                </ul>
-                <a data-navigate="login" class="btn btn-ghost btn-block">免費開始</a>
-            </div>
-            <div class="pricing-card card pricing-card-featured">
-                <div class="plan-badge featured-badge">專業方案</div>
-                <div class="plan-price">
-                    <span class="price-num">$600</span>
-                    <span class="price-unit">/ 月</span>
-                </div>
-                <p class="plan-desc">自媒體人、接案導演</p>
-                <ul class="plan-features">
-                    <li>✓ 無限分鏡生成</li>
-                    <li>✓ 全風格解鎖</li>
-                    <li>✓ 爆點 HOOK 分析</li>
-                    <li>✓ 商業 PDF 匯出</li>
-                </ul>
-                <a data-navigate="login" class="btn btn-primary btn-block">立即訂閱</a>
-            </div>
-            <div class="pricing-card card">
-                <div class="plan-badge">企業方案</div>
-                <div class="plan-price">
-                    <span class="price-num">洽詢</span>
-                </div>
-                <p class="plan-desc">影視公司、廣告代理商</p>
-                <ul class="plan-features">
-                    <li>✓ NPU 本地端離線生成</li>
-                    <li>✓ 劇本資安保護</li>
-                    <li>✓ 帳號數據分析</li>
-                    <li>✓ 專屬客服支援</li>
-                </ul>
-                <a class="btn btn-ghost btn-block">聯絡我們</a>
-            </div>
-        </div>
-    </section>
-
-    <!-- CTA -->
-    <section class="cta-section" id="cta">
-        <div class="cta-inner">
-            <h2>準備好開始了嗎？</h2>
-            <p>加入數百位創作者，用 AI 讓分鏡創作更快、更精準</p>
-            <a href="#cta" data-navigate="login" class="btn btn-primary btn-lg">馬上體驗 →</a>
-        </div>
-    </section>
+        <section class="lp-cta lp-wrap" id="cta" tabindex="-1" aria-labelledby="lp-cta-title"><div class="lp-cta-surface"><svg viewBox="0 0 80 68" width="80" height="68" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 28h64v32H8zM8 28 4 13 66 2l4 15-62 11M20 10l11 13M40 7l11 12M60 3l10 12M20 40h40M20 49h24"/></svg><h2 id="lp-cta-title">你的故事，<br>值得第一個鏡頭。</h2><a href="/register" data-navigate="register" class="lp-button">開始創作</a><p>已經有帳號？<a href="/login" data-navigate="login">登入工作區</a></p></div></section>
+        <footer class="lp-footer lp-wrap"><a href="#heroSection" class="lp-footer-brand">StoryboardAI</a><p>從故事，到畫面。</p><a href="#videos">回看產品預覽</a></footer>
+      </div>
     </main>
-
 
     <div class="black-mask" id="black-mask-top"></div>
 
@@ -237,6 +115,8 @@
     <div id="transition-layer" class="app-transition-layer"></div>
 
 
+    <script src="../js/vendor/gsap.min.js"></script>
+    <script src="../js/vendor/ScrollTrigger.min.js"></script>
     <script src="../js/dynamic-mask.js"></script>
     <script src="../js/components/project-card.js"></script>
     <script src="../js/components/project-card-interactions.js"></script>
@@ -270,5 +150,3 @@
 </body>
 
 </html>
-
-

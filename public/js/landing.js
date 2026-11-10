@@ -1,79 +1,34 @@
 (function () {
     'use strict';
-    let observer;
-    let handleResize;
-    let handleScroll;
-
+    let cleanup;
+    window.destroyLandingLogic = () => { cleanup?.(); cleanup = null; };
     window.initLandingLogic = () => {
-        if (observer) {
-            observer.disconnect();
-        }
-        observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    if (entry.target.id == "intro_video") {
-                        entry.target.currentTime = 0;
-                        entry.target.play().catch(e => console.log("Video auto play prevented", e));
-                    }
-                }
-            });
-        }, { threshold: 0.1 });
-
-        document.querySelectorAll('.feature-card, .step-item, .pricing-card, .section-eyebrow, .section-title, .video-container').forEach(el => {
-            observer.observe(el);
-        });
-
-        if (handleScroll) {
-            window.removeEventListener('scroll', handleScroll);
-        }
-        handleScroll = () => {
-            const navbar = document.getElementById('nav');
-            if (navbar) {
-                if (window.scrollY > 20) {
-                    navbar.classList.add('scrolled');
-                } else {
-                    navbar.classList.remove('scrolled');
-                }
-            }
-        };
-        window.addEventListener('scroll', handleScroll);
-
-        const BG = document.getElementById("BG");
-        if (handleResize) {
-            window.removeEventListener('resize', handleResize);
-            window.removeEventListener('reset', handleResize);
-        }
-        handleResize = () => {
-            if (BG) {
-                BG.style.width = window.innerWidth + "px";
-                BG.style.height = window.innerHeight + "px";
-            }
-        };
-        window.addEventListener('resize', handleResize);
-        window.addEventListener('reset', handleResize);
-
-        handleResize();
-        if (BG) {
-            BG.style.background = 'var(--off-white)';
-        }
+        window.destroyLandingLogic();
+        const root = document.querySelector('#page-main .landing-story');
+        if (!root) return;
+        const abort = new AbortController();
+        const { signal } = abort;
+        const nav = document.getElementById('nav');
+        const updateNav = () => nav?.classList.toggle('scrolled', window.scrollY > 20);
+        window.addEventListener('scroll', updateNav, { signal, passive: true });
+        updateNav();
+        document.addEventListener('click', event => {
+            const link = event.target.closest('a[href^="#"]:not([data-navigate])');
+            if (!link || !(root.contains(link) || nav?.contains(link))) return;
+            const id = link.getAttribute('href').slice(1);
+            if (!id) return;
+            const target = root.querySelector(`[id="${CSS.escape(id)}"]`);
+            if (!target) return;
+            event.preventDefault();
+            target.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
+            target.focus({ preventScroll: true });
+        }, { signal });
+        const video = root.querySelector('video');
+        const observer = video && new IntersectionObserver(entries => {
+            if (!entries[0].isIntersecting) video.pause();
+        }, { threshold: 0 });
+        if (video) observer.observe(video);
+        document.addEventListener('visibilitychange', () => { if (document.hidden) video?.pause(); }, { signal });
+        cleanup = () => { abort.abort(); observer?.disconnect(); video?.pause(); nav?.classList.remove('scrolled'); };
     };
-
-    // Auto-run on first script execution
-    window.initLandingLogic();
-
-    const oldKill = window._landingKill;
-    window._landingKill = () => {
-        if (typeof oldKill === 'function') oldKill();
-        if (handleResize) {
-            window.removeEventListener('resize', handleResize);
-            window.removeEventListener('reset', handleResize);
-        }
-        if (handleScroll) {
-            window.removeEventListener('scroll', handleScroll);
-        }
-        if (observer) {
-            observer.disconnect();
-        }
-    };
-    
 })();

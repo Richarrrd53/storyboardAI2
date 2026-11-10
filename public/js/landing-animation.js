@@ -1,203 +1,85 @@
-import gsap from "https://cdn.skypack.dev/gsap";
-import ScrollTrigger from "https://cdn.skypack.dev/gsap/ScrollTrigger";
-import ScrollToPlugin from "https://cdn.skypack.dev/gsap/ScrollToPlugin";
-
-gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
-
-window.gsap = gsap;
-window.ScrollTrigger = ScrollTrigger;
-
-let landingCtx;
+/* The router caches this module. Every visit owns a fresh, scoped session. */
+const { gsap, ScrollTrigger } = window;
+if (gsap && ScrollTrigger) gsap.registerPlugin(ScrollTrigger);
+let activeLanding = null;
 
 window.initLandingPage = () => {
-    if (landingCtx) {
-        landingCtx.revert();
-    }
-
-    window.scrollTo(0, 0);
-    if (typeof ScrollTrigger !== 'undefined') {
-        ScrollTrigger.clearScrollMemory?.();
-        ScrollTrigger.refresh();
-    }
-
-    const links = gsap.utils.toArray("a[href^='#']");
-    links.forEach(link => {
-        link.addEventListener("click", function(e) {
-            e.preventDefault();
-            const targetId = this.getAttribute("href");
-            gsap.to(window, {
-                duration: 1.2,
-                scrollTo: {
-                    y: targetId,
-                    offsetY: 0
-                },
-                ease: "power2.inOut"
-            });
-        });
-    });
-
-    landingCtx = gsap.context(() => {
-        gsap.fromTo('.hero-bg', {
-            width: '90vw',
-            height: '75vh',
-        }, {
-            width: '100vw',
-            height: '100vh',
-            scrollTrigger: {
-                trigger: '.hero',
-                start: 'top top',
-                end: '+=200',
-                scrub: 1
-            }
-        });
-
-        gsap.fromTo('.hero-footer', {
-            height: '10vh',
-        }, {
-            height: '0vh',
-            scrollTrigger: {
-                trigger: '.hero',
-                start: 'top top',
-                end: '+=200',
-                scrub: 1
-            }
-        });
-
-        gsap.fromTo('.perspective-container', {
-            clipPath: 'inset(12.5vh 0vw 17.5vh 5vw round var(--radius-xl))',
-        }, {
-            clipPath: 'inset(0vh 0vw 0vh 0vw round var(--radius-xl))',
-            scrollTrigger: {
-                trigger: '.hero',
-                start: 'top top',
-                end: '+=200',
-                scrub: 1
-            }
-        });
-
-        gsap.fromTo('.perspective-filmstrip', {
-            transform: 'perspective(1000px) rotateY(-40deg) rotateX(15deg) rotateZ(-12deg) translateX(0) scale(1)',
-            top: '90%',
-        }, {
-            transform: 'perspective(1000px) rotateY(0deg) rotateX(0deg) rotateZ(0deg) translate(-80%) scale(2)',
-            top: '42.5%',
-            scrollTrigger: {
-                trigger: '.hero',
-                start: 'top top',
-                end: '+=800',
-                scrub: 1
-            }
-        });
-
-        gsap.fromTo('.hero-bg', {
-            opacity: 1,
-            filter: 'blur(0px)',
-        }, {
-            opacity: 0,
-            filter: 'blur(10px)',
-            scrollTrigger: {
-                trigger: '.hero',
-                start: 'top+=200 top',
-                end: '+=200',
-                scrub: 1
-            }
-        });
-
-        gsap.fromTo('.perspective-container', {
-            scale: 1,
-        }, {
-            scale: 4,
-            scrollTrigger: {
-                trigger: '.hero',
-                start: 'top+=400 top',
-                end: '+=500',
-                scrub: 1
-            }
-        });
-
-        gsap.fromTo('.perspective-filmstrip', {
-            opacity: 1,
-        }, {
-            opacity: 0,
-            scrollTrigger: {
-                trigger: '.hero',
-                start: 'top+=800 top',
-                end: '+=100',
-                scrub: 1
-            }
-        });
-
-        gsap.to('#BG', {
-            background: 'var(--primary)',
-            scrollTrigger: {
-                trigger: '.hero',
-                start: 'top+=700 top',
-                end: '+=200',
-                scrub: 1
-            }
-        });
-
-        gsap.fromTo('.video-container', {
-            scale: 0.2,
-        }, {
-            scale: 1,
-            scrollTrigger: {
-                trigger: '.videos',
-                start: 'top+200 bottom',
-                end: 'top+=500 bottom',
-                scrub: 1
-            }
-        });
-
-        const t2 = gsap.timeline({
-            scrollTrigger: {
-                trigger: '.slogan',
-                start: 'top bottom',
-                end: 'top+=200',
-                scrub: 1
-            }
-        });
-
-        t2.fromTo('.slogan-film-strip.strip1', {
-            xPercent: -100,
-        }, {
-            xPercent: 0,
-        })
-        .fromTo('.slogan-film-strip.strip2', {
-            xPercent: 100,
-        }, {
-            xPercent: 0,
-        })
-        .fromTo('.slogan-title', {
-            opacity: 0,
-            filter: 'blur(20px)',
-        }, {
-            opacity: 1,
-            filter: 'blur(0px)',
-        })
-        .fromTo('.slogan-content', {
-            opacity: 0,
-            filter: 'blur(20px)',
-        }, {
-            opacity: 1,
-            filter: 'blur(0px)',
-        }, "<")
-        .to('#BG', {
-            background: 'var(--off-white)',
-        }, "<");
-    });
-
-    window._landingKill = () => {
-        if (landingCtx) {
-            landingCtx.revert();
-            landingCtx = null;
-        }
-        if (typeof ScrollTrigger !== 'undefined') {
-            ScrollTrigger.getAll().forEach(t => t.kill());
-        }
-        const bg = document.getElementById('BG');
-        if (bg) {
-            bg.style.removeProperty('background');
-        }
+    activeLanding?.destroy();
+    const root = document.querySelector('#page-main .landing-story');
+    if (!root) return;
+    const abort = new AbortController();
+    const { signal } = abort;
+    let alive = true;
+    let refreshTimer;
+    let media;
+    const refresh = () => {
+        clearTimeout(refreshTimer);
+        refreshTimer = setTimeout(() => {
+            if (alive && root.isConnected) ScrollTrigger?.refresh();
+        }, 100);
     };
+    const destroy = () => {
+        if (!alive) return;
+        alive = false;
+        abort.abort();
+        clearTimeout(refreshTimer);
+        media?.revert();
+        window.destroyLandingLogic?.();
+        activeLanding = null;
+    };
+    activeLanding = { destroy };
+    window._landingKill = destroy;
+    window.initLandingLogic?.();
+
+    // Base CSS is the complete composition, including when GSAP fails to load.
+    if (gsap && ScrollTrigger) {
+        media = gsap.matchMedia();
+        media.add({ desktop: '(min-width: 900px)', mobile: '(max-width: 899px)', reduce: '(prefers-reduced-motion: reduce)' }, context => {
+            if (context.conditions.reduce) return;
+            const desktop = context.conditions.desktop;
+            const select = gsap.utils.selector(root);
+            const opening = gsap.timeline({
+                defaults: { ease: 'none' },
+                scrollTrigger: {
+                    id: 'landing-opening', trigger: select('.lp-hero')[0],
+                    start: 'top top', end: 'bottom top', scrub: 0.35, invalidateOnRefresh: true
+                }
+            });
+            opening.addLabel('filmPass').to(select('.lp-film'), {
+                x: () => desktop ? -85 : -18, y: desktop ? -34 : -10, rotation: desktop ? -3 : 0
+            }, 'filmPass');
+
+            const reveal = gsap.timeline({
+                defaults: { ease: 'none' },
+                scrollTrigger: {
+                    id: 'landing-product', trigger: select('.lp-product')[0],
+                    start: 'top 90%', end: 'top 25%', scrub: 0.35, invalidateOnRefresh: true
+                }
+            });
+            reveal.addLabel('editDesk').fromTo(select('.lp-product-image'),
+                { y: desktop ? 54 : 18, scale: desktop ? 0.94 : 0.98 }, { y: 0, scale: 1 }, 'editDesk');
+
+            const sheet = gsap.timeline({
+                defaults: { ease: 'none' },
+                scrollTrigger: {
+                    id: 'landing-sheet', trigger: select('.lp-capabilities')[0],
+                    start: 'top 90%', end: 'top 35%', scrub: 0.3, invalidateOnRefresh: true
+                }
+            });
+            sheet.addLabel('onSet').fromTo(select('.lp-shot-sheet'),
+                { rotation: desktop ? 3 : 0, y: desktop ? 40 : 12 }, { rotation: 0, y: 0 }, 'onSet');
+        }, root);
+    }
+    root.querySelectorAll('img, video').forEach(asset => {
+        asset.addEventListener(asset.tagName === 'VIDEO' ? 'loadedmetadata' : 'load', refresh, { signal });
+        asset.addEventListener('error', refresh, { signal });
+    });
+    root.querySelectorAll('details').forEach(details => {
+        details.addEventListener('toggle', refresh, { signal });
+    });
+    window.addEventListener('pageshow', refresh, { signal });
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); }, { signal });
+    document.fonts?.ready.then(() => { if (alive) refresh(); });
+    // ScrollTrigger owns debounced resize; matchMedia reverts at breakpoints.
+    refresh();
 };

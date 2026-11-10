@@ -7,7 +7,7 @@
 :root {
   --nav-selector-inset-x: 5px;
   --nav-selector-inset-y: 5px;
-  --nav-selector-width: 64px;
+  --nav-selector-width: 128px;
 }
 
 @media (max-width: 768px) {
@@ -19,11 +19,11 @@
     bottom: calc(var(--mobile-nav-offset) + env(safe-area-inset-bottom, 0px)) !important;
     max-width: 440px !important;
     margin: 0 auto !important;
-    height: var(--mobile-nav-height, 64px) !important;
+    height: var(--mobile-nav-height,) !important;
     background: var(--mobile-nav-bg, linear-gradient(180deg, rgba(255, 255, 253, 0.88) 0%, rgba(248, 248, 244, 0.85) 100%)) !important;
-    backdrop-filter: blur(20px) saturate(105%) !important;
-    -webkit-backdrop-filter: blur(20px) saturate(105%) !important;
-    border: var(--mobile-nav-border, 1px solid rgba(255, 255, 255, 0.7)) !important;
+    backdrop-filter: blur(5px) saturate(250%) !important;
+    -webkit-backdrop-filter: blur(5px) saturate(250%) !important;
+    border: var(--mobile-nav-border) !important;
     border-radius: var(--mobile-nav-radius, var(--radius-pill, 999px)) !important;
     box-shadow: 0 4px 20px rgba(30, 41, 59, 0.06) !important;
     align-items: center !important;
@@ -70,16 +70,16 @@
     left: 0 !important;
     top: var(--nav-selector-inset-y, 5px) !important;
     height: calc(100% - (var(--nav-selector-inset-y, 5px) * 2)) !important;
-    width: var(--nav-selector-width, 64px);
-    background: rgba(0, 0, 0, 0.03) !important;
+    width: var(--nav-selector-width);
+    background: #fff !important;
     border: none !important;
     border-radius: var(--radius-pill, 999px) !important;
-    box-shadow: none !important;
+    box-shadow: var(--elevation-1) !important;
     pointer-events: none !important;
     z-index: 1 !important;
     opacity: 0;
     will-change: transform, opacity;
-    transition: background 0.18s ease;
+    transition: background 0.18s ease, scale 0.25s cubic-bezier(.4,0,.2,1);
     transform-origin: center center;
   }
 
@@ -89,11 +89,6 @@
 
   .mobile-nav__indicator.is-settling {
     transition: none !important;
-  }
-
-  .mobile-nav__indicator.is-pressed {
-    transform: scale(1.04);
-    background: rgba(0, 0, 0, 0.08) !important;
   }
 
   /* Mobile Nav Dual Tracks (Base & Liquid-Clipped Focus Track) */
@@ -110,6 +105,28 @@
   .mobile-nav__track--base {
     position: relative !important;
     z-index: 2 !important;
+  }
+
+  .mobile-nav__track--base > .mobile-nav__item:not(.mobile-nav__item--create) {
+    -webkit-mask-image: linear-gradient(#000 0 0);
+    mask-image: linear-gradient(#000 0 0);
+
+    -webkit-mask-repeat: no-repeat, no-repeat;
+    mask-repeat: no-repeat, no-repeat;
+
+    /* WebKit */
+    -webkit-mask-composite: xor;
+
+    /* Standard */
+    mask-composite: exclude;
+  }
+
+  .mobile-nav__mask-defs {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    pointer-events: none;
   }
 
   .mobile-nav__track--focus {
@@ -169,7 +186,8 @@
     align-items: center;
     justify-content: center;
     gap: 3px;
-    width: 56px;
+    flex: 1 1 0;
+    min-width: 0;
     height: 100%;
     background: transparent;
     border: none;
@@ -216,6 +234,7 @@
   }
 
   .mobile-nav__label {
+    display: none;
     font-size: var(--font-size-xs);
     font-weight: var(--font-weight-semibold);
     line-height: var(--line-height-snug);
@@ -250,6 +269,7 @@
     opacity: 0 !important;
   }
 
+
   /* Focus icons in active track: PURE FILL, STRICTLY NO STROKE OUTLINE */
   .mobile-nav__track--focus .mobile-nav__svg,
   .mobile-nav__track--focus .mobile-nav__svg--focus,
@@ -274,7 +294,8 @@
     width: 58px;
     min-width: 58px;
     height: 100%;
-    margin-top: var(--mobile-nav-create-offset-y);
+    flex: 1 1 0;
+    margin-top: 0;
     padding: 0;
     z-index: 50;
     display: flex;

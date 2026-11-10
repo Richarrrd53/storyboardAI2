@@ -297,10 +297,8 @@
             </div>
             <div class="mobile-nav__item mobile-nav__item--focus">
                 <div class="mobile-nav__icon-wrap">
-                    <svg class="mobile-nav__svg mobile-nav__svg--focus" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="9" r="3"></circle>
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <path d="M17.9691 20C17.81 17.1085 16.9247 15 11.9999 15C7.07521 15 6.18991 17.1085 6.03076 20"></path>
+                    <svg class="mobile-nav__svg mobile-nav__svg--focus" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                        <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2ZM12 6C10.3431 6 9 7.34315 9 9C9 10.6569 10.3431 12 12 12C13.6569 12 15 10.6569 15 9C15 7.34315 13.6569 6 12 6ZM17.9691 20C17.81 17.1085 16.9247 15 11.9999 15C7.07521 15 6.18991 17.1085 6.03076 20A10 10 0 0 0 17.9691 20Z"></path>
                     </svg>
                 </div>
                 <span class="mobile-nav__label" style="visibility: hidden;">我的</span>
@@ -1019,6 +1017,7 @@
       ? Array.from(mobNav.querySelectorAll('.mobile-nav__track--base .mobile-nav__item'))
       : Array.from(mobNav.querySelectorAll('.mobile-nav__item:not(.mobile-nav__item--focus)'));
     const indicator = mobNav.querySelector('.mobile-nav__indicator');
+    const maskedItems = items.filter(item => !item.classList.contains('mobile-nav__item--create') && item.id !== 'mob-nav-generate');
 
     addTrackedListener(mobNav, 'dragstart', (e) => e.preventDefault());
     items.forEach(it => it.setAttribute('draggable', 'false'));
@@ -1057,6 +1056,8 @@
       indicator.style.width = `${width}px`;
       indicator.style.transform = `translate3d(${x.toFixed(2)}px, 0, 0) scale(${scale.toFixed(4)})`;
 
+      if (!focusTrack) return;
+
       if (focusTrack) {
         if (opacity <= 0.01) {
           const hiddenClip = 'inset(0 100% 0 0 round 999px)';
@@ -1065,6 +1066,7 @@
             focusTrack.style.webkitClipPath = hiddenClip;
           }
           mobNav.style.setProperty('--nav-clip-path', hiddenClip);
+          updateBaseInverseMask(0, 0, 0, 0, 0, 0);
           return;
         }
 
@@ -1089,8 +1091,70 @@
           focusTrack.style.webkitClipPath = clipValue;
         }
         mobNav.style.setProperty('--nav-clip-path', clipValue);
+        updateBaseInverseMask(navW, navH, left, top, scaledW, scaledH);
       }
     }
+    function updateBaseInverseMask(navW, navH, left, top, scaledW, scaledH) {
+      const fullMask = "linear-gradient(#000 0 0)";
+
+      // 尺寸無效時，回復完整顯示
+      if (
+        ![navW, navH, left, top, scaledW, scaledH]
+          .every(Number.isFinite) ||
+        navW <= 0 ||
+        navH <= 0 ||
+        scaledW <= 0 ||
+        scaledH <= 0
+      ) {
+        maskedItems.forEach(item => {
+          item.style.webkitMaskImage = fullMask;
+          item.style.maskImage = fullMask;
+        });
+        return;
+      }
+
+      // 與 Focus 使用相同的幾何資訊
+      const svg = `
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="${navW}"
+          height="${navH}"
+          viewBox="0 0 ${navW} ${navH}"
+        >
+          <rect
+            x="${left}"
+            y="${top}"
+            width="${scaledW}"
+            height="${scaledH}"
+            rx="999"
+            ry="999"
+            fill="black"
+          />
+        </svg>
+      `;
+
+      const encodedSVG = encodeURIComponent(svg);
+
+      const holeMask =
+        `url("data:image/svg+xml,${encodedSVG}")`;
+
+      const finalMask = `
+        linear-gradient(#000 0 0),
+        ${holeMask}
+      `;
+
+      // The shared nav-sized hole is positioned in each item's local coordinates.
+      maskedItems.forEach(item => {
+        const metric = cachedMetrics.find(entry => entry.item === item);
+        if (!metric) return;
+        const position = `0 0, ${(-metric.left).toFixed(2)}px ${(-metric.top).toFixed(2)}px`;
+        const size = `100% 100%, ${navW}px ${navH}px`;
+        item.style.webkitMaskSize = item.style.maskSize = size;
+        item.style.webkitMaskPosition = item.style.maskPosition = position;
+        item.style.webkitMaskImage = item.style.maskImage = finalMask;
+      });
+    }
+
     updateMobNavVisual = updateIndicatorVisual;
 
     function cacheMetrics() {
@@ -1105,6 +1169,8 @@
           item: it,
           id: it.id,
           centerX: cachedNavRect.left + (r.left - cachedNavRect.left + r.width / 2) / navMetricScale,
+          left: (r.left - cachedNavRect.left) / navMetricScale,
+          top: ((r.top || 0) - cachedNavRect.top) / navMetricScale,
           width: r.width / navMetricScale,
           isCreate: it.classList?.contains('mobile-nav__item--create') || it.id === 'mob-nav-generate'
         };
@@ -1122,7 +1188,7 @@
       if (cachedMetrics.length >= 1 && cachedNavRect && cachedNavRect.width > 0) {
         const target = currentTargetItem || items.find(item => item.classList.contains('active')) || items[0];
         const metric = cachedMetrics.find(entry => entry.item === target);
-        indicatorWidth = Math.max(1, (metric?.width || 64) - insetX * 2);
+        indicatorWidth = Math.max(1, metric?.width || 64);
         mobNav.style.setProperty('--nav-selector-width', `${indicatorWidth}px`);
 
         const mobBtn = mobNav.querySelector('#mob-nav-circle-wrap') || mobNav.querySelector('.mob-circle-btn');
@@ -1173,7 +1239,9 @@
     }
 
     function findClosestMetric(clientX) {
-      clientX = cachedNavRect.left + (clientX - cachedNavRect.left) / navMetricScale;
+      const rect = mobNav.getBoundingClientRect();
+      const scale = rect.width / cachedNavRect.width || navMetricScale;
+      clientX = cachedNavRect.left + (clientX - rect.left) / scale;
       let closest = cachedMetrics[0] || null;
       let minXDist = Infinity;
       for (const m of cachedMetrics) {
@@ -1242,7 +1310,7 @@
         const targetCenterX = tMetric ? tMetric.centerX : (currentTargetItem.getBoundingClientRect ? (currentTargetItem.getBoundingClientRect().left + currentTargetItem.getBoundingClientRect().width / 2) : 0);
         const finalOffset = targetCenterX - cachedNavRect.left - indicatorWidth / 2;
         curIndicatorX = Math.max(insetX, Math.min(cachedNavRect.width - indicatorWidth - insetX, finalOffset));
-        updateIndicatorVisual(curIndicatorX, 1.05, true, 1.0);
+        updateIndicatorVisual(curIndicatorX, 0.945, true, 1.0);
       }
 
       curScaleX = 1.026;
@@ -1273,6 +1341,22 @@
       const rawDx = e.clientX - startX;
       const rawDy = e.clientY - startY;
 
+      curDx = Math.sign(rawDx) * maxDx * (1 - 1 / (1 + (Math.abs(rawDx) * 0.16) / maxDx));
+      curDy = Math.sign(rawDy) * maxDy * (1 - 1 / (1 + (Math.abs(rawDy) * 0.16) / maxDy));
+
+      let edgeStretchY = 0;
+      let originY = 'center';
+      if (Math.abs(rawDy) > 8) {
+        edgeStretchY = Math.min(0.045, (Math.abs(rawDy) - 8) * 0.0035);
+        originY = rawDy > 0 ? 'top' : 'bottom';
+      }
+      mobNav.style.transformOrigin = `center ${originY}`;
+      const elapsed = performance.now() - pressStartTime;
+      const baseScale = 1.0 + 0.026 * Math.min(1, elapsed / 140);
+      curScaleX = baseScale;
+      curScaleY = baseScale + edgeStretchY;
+      mobNav.style.transform = `translate3d(${curDx.toFixed(2)}px, ${curDy.toFixed(2)}px, 0) scale(${curScaleX.toFixed(4)}, ${curScaleY.toFixed(4)})`;
+
       if (cachedNavRect && (isCancelled || e.clientY < cachedNavRect.top - 65 || e.clientY > cachedNavRect.bottom + 65 || e.clientX < cachedNavRect.left - 50 || e.clientX > cachedNavRect.left + cachedNavRect.width * navMetricScale + 50)) {
         if (!isCancelled) {
           isCancelled = true;
@@ -1300,38 +1384,19 @@
           if (Math.hypot(rawDx, rawDy) > 4) {
             indicator.classList.remove('is-settling');
           }
-          indicatorWidth = Math.max(1, closestMetric.width - insetX * 2);
-          const fingerRelX = (e.clientX - cachedNavRect.left) / navMetricScale - indicatorWidth / 2;
-          const closestCenterRelX = closestMetric.centerX - cachedNavRect.left - indicatorWidth / 2;
-          const distX = fingerRelX - closestCenterRelX;
-          let targetIndX = fingerRelX - distX * 0.35;
-          targetIndX = Math.max(insetX, Math.min(cachedNavRect.width - indicatorWidth - insetX, targetIndX));
-
-          curIndicatorX += (targetIndX - curIndicatorX) * 0.36;
+          indicatorWidth = Math.max(1, closestMetric.width);
+          const rect = mobNav.getBoundingClientRect();
+          const scale = rect.width / cachedNavRect.width || navMetricScale;
+          const fingerRelX = (e.clientX - rect.left) / scale - indicatorWidth / 2;
+          const pressedScale = 0.945;
+          const scaledOverhang = indicatorWidth * (pressedScale - 1) / 2;
+          curIndicatorX = Math.max(insetX + scaledOverhang, Math.min(cachedNavRect.width - indicatorWidth - insetX - scaledOverhang, fingerRelX));
 
           indicator.classList.add('is-active');
-          updateIndicatorVisual(curIndicatorX, 1.05, false, 1.0);
+          updateIndicatorVisual(curIndicatorX, pressedScale, false, 1.0);
         }
       }
 
-      curDx = Math.sign(rawDx) * maxDx * (1 - 1 / (1 + (Math.abs(rawDx) * 0.16) / maxDx));
-      curDy = Math.sign(rawDy) * maxDy * (1 - 1 / (1 + (Math.abs(rawDy) * 0.16) / maxDy));
-
-      let edgeStretchY = 0;
-      let originY = 'center';
-      if (Math.abs(rawDy) > 8) {
-        edgeStretchY = Math.min(0.045, (Math.abs(rawDy) - 8) * 0.0035);
-        originY = rawDy > 0 ? 'top' : 'bottom';
-      }
-
-      mobNav.style.transformOrigin = `center ${originY}`;
-
-      const elapsed = performance.now() - pressStartTime;
-      const baseScale = 1.0 + 0.026 * Math.min(1, elapsed / 140);
-      curScaleX = baseScale;
-      curScaleY = baseScale + edgeStretchY;
-
-      mobNav.style.transform = `translate3d(${curDx.toFixed(2)}px, ${curDy.toFixed(2)}px, 0) scale(${curScaleX.toFixed(4)}, ${curScaleY.toFixed(4)})`;
     }
 
     function onPointerRelease(e, forceCancel = false) {

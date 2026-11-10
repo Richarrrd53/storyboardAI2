@@ -1,0 +1,22 @@
+[
+  {
+    "mode": "redesign",
+    "depth": "full",
+    "theme": "brand StoryboardAI",
+    "shape": "film to edit desk",
+    "entry": "public/html/index.html",
+    "sections": [
+      "opening",
+      "product",
+      "workflow",
+      "editing",
+      "start",
+      "footer"
+    ],
+    "signature": "diagonal storyboard film into real workspace",
+    "heroReview": "ship after recapture",
+    "finishReview": "subagent, ship",
+    "landingCSS": "0 FAIL, 0 REFLEX, 0 WARN",
+    "sharedFindings": "existing, outside landing scope"
+  }
+]
