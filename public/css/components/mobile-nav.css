@@ -38,6 +38,10 @@
     transition: translate 380ms var(--motion-ease-standard, ease), transform 380ms cubic-bezier(0.16, 1, 0.3, 1), scale 320ms var(--motion-ease-standard, ease), opacity 320ms ease !important;
   }
 
+  .mobile-bottom-nav[hidden] {
+    display: none !important;
+  }
+
   body.mobile-nav-compact .mobile-bottom-nav { scale: .9; }
   /* Dialogs must cover the floating navigation, including short landscapes. */
   body:has(> .project-tags-modal-overlay) .mobile-bottom-nav,

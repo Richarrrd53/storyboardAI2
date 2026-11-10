@@ -1798,8 +1798,9 @@
         try { cacheMobNavMetrics(); } catch (_) {}
       }
       if (mobileBottomNav) {
-        mobileBottomNav.inert = secondaryRoute && isMobileView();
-        mobileBottomNav.setAttribute('aria-hidden', String(secondaryRoute && isMobileView()));
+        const navUnavailable = mobileBottomNav.hidden || (secondaryRoute && isMobileView());
+        mobileBottomNav.inert = navUnavailable;
+        mobileBottomNav.setAttribute('aria-hidden', String(navUnavailable));
       }
       updateMobileBottomNavActive();
     };
@@ -1860,7 +1861,8 @@
     const mobNav = document.getElementById('spa-mobile-nav') || mobileBottomNav;
     if (mobNav) {
       mobNav.style.display = isDashboard ? '' : 'none';
-      mobNav.inert = secondaryRoute && isMobileView();
+      mobNav.hidden = !isDashboard;
+      mobNav.inert = !isDashboard || (secondaryRoute && isMobileView());
       mobNav.setAttribute('aria-hidden', String(!isDashboard || (secondaryRoute && isMobileView())));
     }
     document.body.classList.remove('mobile-nav-compact');

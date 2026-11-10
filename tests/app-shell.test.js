@@ -389,6 +389,8 @@ test('AppShell: updateRoute() controls shell visibility (dashboard vs landing/au
   assert.strictEqual(domSidebar.style.display, '');
   assert.strictEqual(domTopbar.style.display, '');
   assert.strictEqual(domMobileNav.style.display, '');
+  assert.strictEqual(domMobileNav.hidden, false);
+  assert.strictEqual(domMobileNav.inert, false);
   assert.strictEqual(domUserPanel.style.display, '');
 
   // Test landing route
@@ -396,16 +398,22 @@ test('AppShell: updateRoute() controls shell visibility (dashboard vs landing/au
   assert.strictEqual(domSidebar.style.display, 'none');
   assert.strictEqual(domTopbar.style.display, 'none');
   assert.strictEqual(domMobileNav.style.display, 'none');
+  assert.strictEqual(domMobileNav.hidden, true);
+  assert.strictEqual(domMobileNav.inert, true);
   assert.strictEqual(domUserPanel.style.display, 'none');
 
   // Test login route
   AppShell.updateRoute('login');
   assert.strictEqual(domSidebar.style.display, 'none');
+  assert.strictEqual(domMobileNav.hidden, true);
+  assert.strictEqual(domMobileNav.inert, true);
 
   // Test return to projects route
   AppShell.updateRoute('projects');
   assert.strictEqual(domSidebar.style.display, '');
   assert.strictEqual(domTopbar.style.display, '');
+  assert.strictEqual(domMobileNav.hidden, false);
+  assert.strictEqual(domMobileNav.inert, false);
 
   AppShell.destroy();
 });
