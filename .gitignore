@@ -23,6 +23,7 @@ application_default_credentials.json
 .agents/
 .codex/
 .codex-backup/
+.hallmark/
 .vscode/
 .idea/
 .DS_Store
