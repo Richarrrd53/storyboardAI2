@@ -1,7 +1,50 @@
-node_modules
+# Dependencies and generated builds
+node_modules/
+dist/
+build/
+coverage/
+.vercel/
+
+# Environment files, credentials and local secrets
 .env
 .env.*
+!.env.example
 application_default_credentials.json
 .private/
-docs/
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+*.jks
+
+# Local agent, editor and machine settings
 .agent/
+.agents/
+.codex/
+.codex-backup/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs, caches and temporary output
+*.log
+*.tap
+*.tmp
+*.swp
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.cache/
+temp/
+tmp/
+
+# Generated video frames and local quota state
+analysis/frames/
+analysis/quota_manager.json
+
+# Local documentation
+docs/
