@@ -130,6 +130,11 @@ html:has(body.auth-layout) {
   -webkit-overflow-scrolling: touch;
 }
 
+body.auth-layout #spa-mobile-nav,
+body.auth-layout .mobile-bottom-nav {
+  display: none !important;
+}
+
 body.auth-layout .page-shell,
 body.auth-layout #page-main,
 #page-main.page-auth,

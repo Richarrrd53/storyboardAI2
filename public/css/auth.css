@@ -43,6 +43,7 @@ body.auth-layout #page-content {
   justify-content: center;
   gap: 16px;
   transform-style: preserve-3d;
+  flex-shrink: 0;
 }
 
 /* --- Brand --- */
@@ -335,6 +336,14 @@ body.auth-layout #page-content {
   box-shadow: none;
 }
 
+.auth-content .input-field:-webkit-autofill,
+.auth-content .input-field:-webkit-autofill:hover,
+.auth-content .input-field:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text-dark);
+  -webkit-box-shadow: 0 0 0 1000px var(--white) inset;
+  box-shadow: 0 0 0 1000px var(--white) inset;
+}
+
 .input-field::placeholder {
   color: var(--text-light);
 }
@@ -368,6 +377,18 @@ body.auth-layout #page-content {
 .form-row .input-field {
   flex: 1;
   min-width: 0;
+}
+
+@media (max-width: 768px) {
+  .auth-content {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .auth-content .input-field {
+    font-size: 16px;
+  }
+
 }
 
 @media (max-width: 480px) {
