@@ -1,0 +1,34 @@
+<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phase 1 隔離驗證台</title><link rel="stylesheet" href="/css/style.css">
+<style>body{background:#f8fafc;color:#0f172a;font:16px sans-serif;padding:24px}main{max-width:900px;margin:auto}h1{font-size:24px;margin-bottom:12px}button,a{margin:6px;padding:10px 16px;min-height:44px}pre{white-space:pre-wrap;overflow-wrap:anywhere;padding:16px;background:#e2e8f0;border-radius:16px}section{margin:24px 0}</style>
+<main><h1>Phase 1 隔離驗證台</h1><p>只連接本機記憶體 fixture，無資料庫。此頁不是產品 UI。</p>
+<section><button id="alert">Alert</button><button id="confirm">Confirm</button><button id="prompt">專案重新命名</button><button id="restore">復原一次確認</button><button id="queue">連續 Dialog</button><button id="abort">開啟後 Abort</button><button id="ime">IME Enter 檢查</button></section>
+<section><button id="reset">重設一般專案</button><button id="deleted">準備回收桶資料</button><button id="rename-fail">名稱第一次儲存失敗</button><button id="restore-fail">復原第一次失敗</button><button id="delay">名稱儲存延遲兩秒</button><a href="/login">進入正式 SPA Mock</a><a href="/phase1-harness?lazy=1">Standalone 延遲載入</a><a href="/phase1-harness?reduced=1">Reduced Motion 分支</a></section>
+<pre id="report" aria-live="polite">Ready</pre></main>
+<script>
+window.spaAuth={getToken:()=> 'isolated-audit-fixture'};
+if(new URLSearchParams(location.search).has('reduced')) {
+ const original=window.matchMedia.bind(window);
+ window.matchMedia=query=>query.includes('prefers-reduced-motion')?{matches:true,addEventListener(){}}:original(query);
+}
+</script>
+<script src="/js/features/projects.js"></script><script src="/js/sys.js"></script>
+<script>
+let project={id:'audit-folder',title:'隔離測試：咖啡店分鏡',is_deleted:true};
+const report=document.getElementById('report');
+function show(value){report.textContent=JSON.stringify(value,null,2);}
+async function record(result){const log=await fetch('/audit-log').then(r=>r.json());show({result,project,requests:log.filter(x=>x.method!=='GET'),dialogs:document.querySelectorAll('[role="dialog"]').length,backgroundInert:document.querySelector('main').hasAttribute('inert'),focus:document.activeElement.id});}
+async function setup(config={}){await fetch('/phase1-control',{method:'POST',body:JSON.stringify(config)});project={id:'audit-folder',title:'隔離測試：咖啡店分鏡',is_deleted:!!config.deleted};ProjectStore.reset();show({fixture:config});}
+document.getElementById('reset').onclick=()=>setup();
+document.getElementById('deleted').onclick=()=>setup({deleted:true});
+document.getElementById('rename-fail').onclick=()=>setup({failRename:true});
+document.getElementById('restore-fail').onclick=()=>setup({deleted:true,failRestore:true});
+document.getElementById('delay').onclick=()=>setup({delayRename:2000});
+document.getElementById('alert').onclick=async()=>{await alert('這是一則隔離測試訊息。\n<名稱> 必須以文字顯示。');record('acknowledged');};
+document.getElementById('confirm').onclick=async()=>record(await confirm('是否繼續這個操作？',undefined,'default','繼續'));
+document.getElementById('prompt').onclick=async()=>{await ensureDialogService();record(await ProjectActions.renameProject(project));};
+document.getElementById('restore').onclick=async()=>record(await ProjectActions.restoreProject(project));
+document.getElementById('queue').onclick=async()=>{await ensureDialogService();const a=confirm('第一個確認');const b=alert('第二個訊息');record([await a,await b]);};
+document.getElementById('abort').onclick=async()=>{const service=await ensureDialogService();const c=new AbortController();const result=service.prompt({title:'離頁中斷測試',value:'草稿',signal:c.signal});setTimeout(()=>c.abort(),1000);record(await result);};
+document.getElementById('ime').onclick=async()=>{const service=await ensureDialogService();let calls=0;const result=service.prompt({title:'IME 輸入測試',value:'輸入中',onSubmit:()=>{calls++;}});const input=document.querySelector('.sb-dialog-input');input.dispatchEvent(new CompositionEvent('compositionstart',{bubbles:true}));const event=new KeyboardEvent('keydown',{key:'Enter',isComposing:true,bubbles:true,cancelable:true});input.dispatchEvent(event);input.form.requestSubmit();const during=calls;input.dispatchEvent(new CompositionEvent('compositionend',{bubbles:true}));show({prevented:event.defaultPrevented,duringCompositionSubmits:during});result.then(r=>record({r,calls,prevented:event.defaultPrevented,duringCompositionSubmits:during}));};
+</script></html>

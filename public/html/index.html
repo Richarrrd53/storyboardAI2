@@ -28,8 +28,11 @@
     </nav>
     <main id="page-main" class="page-shell page-landing">
       <div class="landing-story">
+       <div class="lp-cinema"><div class="lp-cinema-stage">
+        <div class="lp-stage-depth" aria-hidden="true"></div>
         <section class="lp-hero lp-wrap" id="heroSection" tabindex="-1" aria-labelledby="lp-title">
           <div class="lp-hero-surface">
+            <div class="lp-hero-light" aria-hidden="true"></div>
             <div class="lp-hero-copy">
               <h1 id="lp-title">靈感，<br>一鍵轉換</h1>
               <p>你的 AI 短影音助理，從故事靈感走到可編輯的影片分鏡。</p>
@@ -49,19 +52,22 @@
         <section class="lp-product lp-wrap lp-section" id="videos" tabindex="-1" aria-labelledby="lp-product-title">
           <div class="lp-section-head"><h2 id="lp-product-title">故事的下一步，<br>在這裡看見。</h2><p>讓散落的靈感有地方開始。<br>建立創作、整理專案，再回到每個鏡頭。</p></div>
           <figure class="lp-product-image">
-            <picture><source media="(max-width: 600px)" srcset="../screenshot/dashboard_mobile.png"><img src="../screenshot/dahboard_pc.png" alt="StoryboardAI 工作區：繼續編輯專案、最近分鏡與新增分鏡入口" width="1680" height="949" loading="lazy"></picture>
-            <figcaption>StoryboardAI 產品工作區預覽</figcaption>
+            <picture><source media="(max-width: 600px)" srcset="../screenshot/current/dashboard-390.png"><img src="../screenshot/current/dashboard-1440.png" alt="目前本地版本的 StoryboardAI 工作區，顯示新建分鏡入口與空白專案狀態" width="1440" height="900" loading="eager"></picture>
+            <div class="lp-reveal-tool matte-acrylic" aria-hidden="true"><span>故事的下一站</span><strong>你的創作工作區</strong></div>
+            <figcaption>目前版本實機擷取，本地測試資料；非正式帳號畫面。</figcaption>
           </figure>
-          <details class="lp-film-details"><summary>播放 StoryboardAI 概念影片<span aria-hidden="true">＋</span></summary><video id="intro_video" controls muted playsinline preload="none" poster="../screenshot/dahboard_pc.png" aria-label="StoryboardAI 概念介紹影片"><source src="../video/StoryboardAI_Intro.mp4" type="video/mp4">你的瀏覽器不支援影片播放。</video></details>
         </section>
+       </div></div>
+       <div class="lp-wrap"><details class="lp-film-details"><summary>播放 StoryboardAI 概念影片<span aria-hidden="true">＋</span></summary><video id="intro_video" controls muted playsinline preload="none" poster="../icon/card/film.png" aria-label="StoryboardAI 概念介紹影片"><source src="../video/StoryboardAI_Intro.mp4" type="video/mp4">你的瀏覽器不支援影片播放。</video></details></div>
 
         <section class="lp-workflow lp-section" id="how" tabindex="-1" aria-labelledby="lp-workflow-title">
           <div class="lp-wrap lp-workflow-layout">
-            <div class="lp-workflow-heading"><h2 id="lp-workflow-title">不必一開始，<br>就想好每一鏡。</h2><p>把想法說出來，<br>讓故事一步步長成畫面。</p><a href="/login" data-navigate="login" class="lp-text-link">從我的故事開始</a></div>
+            <div class="lp-workflow-heading"><h2 id="lp-workflow-title">不必一開始，<br>就想好每一鏡。</h2><p>把想法說出來，<br>讓故事一步步長成畫面。</p><a href="/login" data-navigate="login" class="lp-text-link">從我的故事開始</a><div class="lp-workflow-progress" aria-hidden="true"><span></span></div><p class="lp-demo-caption">創作流程示意，非即時 AI 生成</p></div>
             <ol class="lp-workflow-steps">
-              <li><span class="lp-step-num" aria-hidden="true">01</span><div><h3>先說一個故事</h3><p>輸入短影音主題、故事或場景，留下你最想拍的那個念頭。</p><blockquote>「我想拍一支關於相遇的短片。」<cite>故事輸入示例</cite></blockquote></div></li>
-              <li><span class="lp-step-num" aria-hidden="true">02</span><div><h3>和 AI 一起釐清</h3><p>討論敘事方向、觀眾與調性，確認創作摘要，再決定風格、秒數與畫面比例。</p><div class="lp-brief-fields" aria-label="創作摘要包含的項目"><span>敘事方向</span><span>視覺風格</span><span>畫面比例</span></div></div></li>
-              <li><span class="lp-step-num" aria-hidden="true">03</span><div><h3>把故事拆成鏡頭</h3><p>生成分鏡後，接著調整畫面、鏡頭語言與時間，讓草稿更接近你的想像。</p><div class="lp-shot-index" aria-label="分鏡順序示意"><span>鏡頭 01</span><i aria-hidden="true"></i><span>鏡頭 02</span><i aria-hidden="true"></i><span>鏡頭 03</span></div></div></li>
+              <li><span class="lp-step-num" aria-hidden="true">01</span><div><h3>先說一個故事</h3><p>輸入短影音主題、故事或場景，留下你最想拍的那個念頭。</p><blockquote>「雨停了，牠在街角遇見一個等牠的人。」<cite>故事輸入示例</cite></blockquote><picture><source media="(max-width: 600px)" srcset="../screenshot/current/generate-390.png"><img class="lp-composer-capture" src="../screenshot/current/generate-1440.png" alt="目前版本的新建分鏡輸入介面，本地測試環境" width="1440" height="900" loading="lazy"></picture></div></li>
+              <li><span class="lp-step-num" aria-hidden="true">02</span><div><h3>和 AI 一起釐清</h3><p>討論敘事方向、觀眾與調性，確認創作摘要，再決定風格、秒數與畫面比例。</p><div class="lp-dialogue"><p>想讓相遇帶著什麼情緒？</p><p>安靜、溫暖，像電影的最後一幕。</p></div><div class="lp-brief-fields" aria-label="創作摘要示例"><span>溫暖的相遇</span><span>電影風格</span><span>16:9</span></div></div></li>
+              <li><span class="lp-step-num" aria-hidden="true">03</span><div><h3>把故事拆成鏡頭</h3><p>從敘事到畫面，先看清每一鏡的順序與節奏。</p><div class="lp-workflow-shots"><figure><img src="../icon/card/realistic.png" alt="既有風格素材：犬隻"><figcaption>01／街角，遠景</figcaption></figure><figure><img src="../icon/card/film.png" alt="既有電影風格素材：犬隻"><figcaption>02／停步，特寫</figcaption></figure><figure><img src="../icon/card/comic.png" alt="既有漫畫風格素材：犬隻"><figcaption>03／相遇，草稿</figcaption></figure></div><p class="lp-demo-caption">以既有風格素材示意鏡頭編排，非同一故事的生成結果。</p></div></li>
+              <li><span class="lp-step-num" aria-hidden="true">04</span><div><h3>讓節奏，更接近想像</h3><p>回到每個鏡頭，調整畫面、鏡頭語言與時間。</p><div class="lp-workflow-edit"><img src="../icon/card/film.png" alt="分鏡編輯內容示意"><div class="lp-edit-toolbar matte-acrylic"><span>鏡頭 02</span><span>特寫，緩慢推近</span><strong>3s</strong></div></div></div></li>
             </ol>
           </div>
         </section>
@@ -146,6 +152,8 @@
     <script src="../js/pages/page-host.js"></script>
     <script src="../js/components/navigation-transition.js"></script>
     <script src="../js/spa-router.js"></script>
+    <script src="../js/components/overlay-manager.js"></script>
+    <script src="../js/components/dialog-service.js"></script>
     <script src="../js/sys.js"></script>
 </body>
 

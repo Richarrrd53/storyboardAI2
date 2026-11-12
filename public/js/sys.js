@@ -84,60 +84,51 @@ const ModalAnimation = {
 if (typeof window !== 'undefined') window.ModalAnimation = ModalAnimation;
 if (typeof global !== 'undefined') global.ModalAnimation = ModalAnimation;
 
-function alert(message, options = { btnText: "確定", duration: 15000 }) {
-    return new Promise((resolve) => {
-        const bg = document.createElement("div");
-        bg.classList.add("sys-bg");
-        
-        const windowEl = document.createElement("div");
-        windowEl.classList.add("sys-window");
-
-        const title = document.createElement("h1");
-        title.innerHTML = "出現錯誤了！";
-
-        const messageEl = document.createElement("p");
-        messageEl.innerHTML = message;
-
-        const contentContainer = document.createElement("div");
-        contentContainer.classList.add("sys-content");
-
-        const btnContainer = document.createElement("div");
-        btnContainer.classList.add("sys-btns");
-
-        const confirmBtn = document.createElement("button");
-        confirmBtn.classList.add("sys-btn");
-        confirmBtn.textContent = options.btnText;
-
-        btnContainer.appendChild(confirmBtn);
-        contentContainer.appendChild(title);
-        contentContainer.appendChild(messageEl);
-        windowEl.appendChild(contentContainer);
-        windowEl.appendChild(btnContainer);
-        bg.appendChild(windowEl);
-        document.body.appendChild(bg);
-
-        const closeAlert = () => {
-            ModalAnimation.close(bg, windowEl, {
-                duration: 400,
-                onComplete: () => {
-                    bg.remove();
-                    resolve();
-                }
+// Shared facade retains Promise<void>/Promise<boolean> for existing callers.
+// Standalone HTML pages also load sys.js, so dependencies are loaded once on demand.
+const sysScriptUrl = typeof document !== 'undefined' ? document.currentScript?.src : null;
+let dialogDependencies = null;
+function ensureDialogService() {
+    const host = typeof window !== 'undefined' ? window : globalThis;
+    if (host.DialogService && host.OverlayManager) return Promise.resolve(host.DialogService);
+    if (!dialogDependencies) {
+        dialogDependencies = (async () => {
+            if (!sysScriptUrl) throw new Error('Dialog Service is unavailable');
+            const base = new URL('.', sysScriptUrl);
+            const load = name => new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = new URL('components/' + name + '.js', base).href;
+                script.onload = resolve;
+                script.onerror = () => { script.remove(); reject(new Error('Dialog Service could not load')); };
+                document.head.appendChild(script);
             });
-        };
-
-        ModalAnimation.open(bg, windowEl, {
-            duration: 400,
-            blur: '50px',
-            backdropBg: 'var(--primary-soft)'
-        });
-
-        confirmBtn.onclick = closeAlert;
-    });
+            if (!host.OverlayManager) await load('overlay-manager');
+            if (!host.DialogService) await load('dialog-service');
+            return host.DialogService;
+        })().catch(error => { dialogDependencies = null; throw error; });
+    }
+    return dialogDependencies;
+}
+async function alert(message, options = {}) {
+    const service = await ensureDialogService();
+    await service.alert({ title: options?.title || '提示', description: message, confirmText: options?.btnText || '確定' });
+}
+async function confirm(message, description = '', type = 'default', btnText, projectEl) {
+    const service = await ensureDialogService();
+    if (type === 'delete') {
+        return service.runLegacy({ run: signal => legacyDeleteConfirm(message, description, type, btnText, projectEl, signal) }).then(value => value === true);
+    }
+    const result = await service.confirm({ title: message, description, confirmText: btnText || '確定', danger: type === 'danger' });
+    return result.confirmed === true;
 }
 
-function confirm(message, description, type = 'default', btnText, projectEl) {
-    return new Promise((resolve) => {
+function legacyDeleteConfirm(message, description, type = 'default', btnText, projectEl, signal) {
+    let cancel;
+    const task = new Promise((resolve) => {
+        let completed = false, accepted = false, aborted = false, lease;
+        let frame = null;
+        const timers = [];
+        const settle = value => { if (!completed) { completed = true; resolve(value); } };
         const bg = document.createElement("div");
         bg.classList.add("sys-bg");
         
@@ -145,10 +136,10 @@ function confirm(message, description, type = 'default', btnText, projectEl) {
         windowEl.classList.add("sys-window");
 
         const title = document.createElement("h1");
-        title.innerHTML = message;
+        title.textContent = message;
 
         const messageEl = document.createElement("p");
-        messageEl.innerHTML = description;
+        messageEl.textContent = description || '';
 
         const contentContainer = document.createElement("div");
         contentContainer.classList.add("sys-content");
@@ -190,11 +181,19 @@ function confirm(message, description, type = 'default', btnText, projectEl) {
         bg.appendChild(windowEl);
         document.body.appendChild(bg);
 
+        title.id = 'sys-delete-title';
+        windowEl.setAttribute('role', 'dialog');
+        windowEl.setAttribute('aria-modal', 'true');
+        windowEl.setAttribute('aria-labelledby', title.id);
+        windowEl.tabIndex = -1;
+        const returnFocus = document.activeElement;
         const closeWindow = () => {
             ModalAnimation.close(bg, windowEl, {
                 duration: 400,
                 onComplete: () => {
                     bg.remove();
+                    lease?.release({ restoreFocus: !aborted });
+                    signal?.removeEventListener('abort', cancel);
                 }
             });
         };
@@ -209,8 +208,9 @@ function confirm(message, description, type = 'default', btnText, projectEl) {
         
 
         btn1.onclick = () => {
+            if (accepted || completed) return;
             closeWindow();
-            resolve(false);
+            settle(false);
         };
 
         const typeStyles = {
@@ -228,6 +228,9 @@ function confirm(message, description, type = 'default', btnText, projectEl) {
 
         if(type == 'delete'){
             btn2.onclick = () => {
+                if (accepted || completed) return;
+                accepted = true;
+                btn1.disabled = true; btn2.disabled = true;
                 const trashbin = windowEl.querySelector('.sys-delete-trashbin');
                 const trashbinTop = windowEl.querySelector(".sys-delete-trashbin-top");
                 const cloneProject = windowEl.querySelector('.project-card');
@@ -253,7 +256,7 @@ function confirm(message, description, type = 'default', btnText, projectEl) {
                     cloneProject.style.zIndex = (s > 0.5) ? 0 : 2;
     
                     if (position.y < 0) { 
-                        requestAnimationFrame(animate);
+                        frame = requestAnimationFrame(animate);
                     }
                     else{
     
@@ -261,19 +264,19 @@ function confirm(message, description, type = 'default', btnText, projectEl) {
                     }
                 };
     
-                requestAnimationFrame(animate);
-                setTimeout(() => {
+                frame = requestAnimationFrame(animate);
+                timers.push(setTimeout(() => {
                     closeWindow();
-                }, 1000);
-                setTimeout(() => {
-                    resolve(true);
-                }, 1500);
+                }, 1000));
+                timers.push(setTimeout(() => {
+                    settle(true);
+                }, 1500));
             }
         }
         else{
             btn2.onclick = () => {
                 closeWindow();
-                resolve(true);
+                settle(true);
             };
         }
 
@@ -282,7 +285,21 @@ function confirm(message, description, type = 'default', btnText, projectEl) {
             blur: '50px',
             backdropBg: 'var(--primary-soft)'
         });
+        lease = window.OverlayManager.acquire({ overlay: bg, panel: windowEl,
+            initialFocus: btn1, returnFocus,
+            onEscape: () => { if (!accepted) btn1.onclick(); }
+        });
+        cancel = () => {
+            aborted = true;
+            timers.forEach(clearTimeout);
+            if (frame !== null) cancelAnimationFrame(frame);
+            bg.remove(); lease.release({ restoreFocus: false }); settle(false);
+            signal?.removeEventListener('abort', cancel);
+        };
+        signal?.addEventListener('abort', cancel, { once: true });
     });
+    task.cancel = () => cancel?.();
+    return task;
 }
 
 if (typeof module !== 'undefined' && module.exports) {

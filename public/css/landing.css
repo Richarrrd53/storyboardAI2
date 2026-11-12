@@ -1,7 +1,7 @@
 /* Hallmark v2.0.0 | theme: brand StoryboardAI | redesign: full | genre: editorial | nav: compact studio rail | footer: production signoff | signature: storyboard film passing into the workspace | sections: opening, product, workflow, editing, start | hero: film stage */
-/* Critique: replaced competing viewport effects and empty scroll runway with readable scenes; retained blue, film, type and SPA entry points. */
+/* Critique: one continuous camera move crosses the film into the real workspace; a reversible workflow explains the product. Brand tokens and SPA contracts stay. */
 /* Waive 7b: inherited white surface/inverse tokens preserve the established brand and contrast. Waive 8, 79: five content scenes plus footer serve the supplied product narrative. Waive 47c: the shot sheet is explicitly labelled example content, using the project's own style asset. */
-/* Review: hero and finish reviewed independently; recapture resolved; verdict ship. Landing CSS: 0 FAIL, 0 REFLEX, 0 WARN; shared legacy findings documented in VALIDATION.md. */
+/* Motion override: the requested three narrative scenes take precedence over Hallmark's default single reveal. Product captures use isolated local test data; examples are labelled. */
 :root {
     --lp-ink: var(--color-text-primary);
     --lp-secondary: var(--color-text-secondary);
@@ -191,4 +191,109 @@ body:not(.dashboard-layout):not(.auth-layout) #page-main.page-landing #page-cont
 @media (prefers-reduced-motion: reduce) {
     .landing-story *, .lp-nav, .lp-nav * { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
     .lp-film { transform: none; }
+}
+/* Round two: cold editorial, film depth, floating matte acrylic. */
+:root {
+    --lp-shell: var(--color-surface-shell);
+    --lp-depth: var(--slate-700);
+}
+.lp-nav { background: var(--glass-nav-bg); backdrop-filter: var(--glass-nav-blur); -webkit-backdrop-filter: var(--glass-nav-blur); border-bottom: var(--glass-nav-border); }
+.lp-nav::before { content: ''; position: absolute; inset: 0 0 -24px; z-index: -1; pointer-events: none; background: var(--glass-nav-bg); mask-image: linear-gradient(to bottom, var(--lp-ink) 65%, transparent); }
+.lp-cinema-stage { position: relative; isolation: isolate; }
+/* Browser anchoring must not fight the scrubbed camera or a smooth scene link. */
+.landing-story { overflow-anchor: none; }
+.lp-stage-depth { position: absolute; inset: 0; z-index: -1; background: radial-gradient(ellipse at 65% 40%, var(--lp-depth), var(--lp-shell) 70%); opacity: 0; pointer-events: none; }
+.lp-hero-surface { background: none; overflow: visible; }
+.lp-hero-light { position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(115deg, var(--lp-tint), var(--lp-ice)); z-index: -1; }
+.lp-film-stage { perspective: none; }
+.lp-film { transform-style: preserve-3d; box-shadow: var(--elevation-4); }
+.lp-film-frame img { border-radius: 2px; }
+.lp-film-frame figcaption { font-variant-numeric: tabular-nums; }
+.lp-hero-note { z-index: 2; }
+.lp-product-image { position: relative; perspective: 1200px; }
+.lp-reveal-tool { position: absolute; right: 3%; bottom: 10%; padding: var(--space-4) var(--space-6); border-radius: var(--radius-continuous-lg); display: grid; gap: var(--space-1); color: var(--lp-ink); }
+.lp-reveal-tool span { font-size: 12px; color: var(--lp-secondary); }
+.lp-reveal-tool strong { font-size: 16px; font-weight: 500; }
+.lp-product-image img { box-shadow: var(--elevation-4); }
+.lp-product-image figcaption { font-size: 12px; }
+/* Enhancements exist only while the scoped matchMedia session owns them. */
+.is-cinematic { height: 100svh; overflow: clip; }
+.is-cinematic .lp-hero { height: 100%; padding-top: 100px; }
+.is-cinematic .lp-hero-surface { min-height: 0; height: calc(100% - 24px); }
+.is-cinematic .lp-product { position: absolute; inset: 0; padding-block: 104px 28px; display: flex; flex-direction: column; justify-content: center; }
+.is-cinematic .lp-product .lp-section-head { margin-bottom: var(--space-5); align-items: center; }
+.is-cinematic .lp-product h2 { color: var(--lp-inverse); font-size: clamp(30px, 3.3vw, 48px); }
+.is-cinematic .lp-product .lp-section-head p, .is-cinematic .lp-product figcaption { color: var(--slate-300); }
+.is-cinematic .lp-product-image { width: min(100%, 980px); margin-inline: auto; transform-origin: center center; }
+.is-cinematic .lp-product-image img { max-height: calc(100svh - 300px); width: 100%; object-fit: contain; background: var(--lp-shell); border-color: var(--lp-depth); }
+.lp-workflow { background: var(--lp-paper); }
+.lp-workflow-heading .lp-demo-caption, .lp-demo-caption { font-size: 12px; color: var(--lp-secondary); }
+.lp-workflow-progress { height: 2px; background: var(--lp-line); margin-block: var(--space-8) var(--space-4); max-width: 320px; }
+.lp-workflow-progress span { display: block; height: 100%; background: var(--lp-blue); transform-origin: left; }
+.lp-composer-capture { display: block; width: 100%; height: auto; margin-top: var(--space-6); border-radius: var(--radius-lg); border: 1px solid var(--lp-line); }
+.lp-dialogue { display: grid; gap: var(--space-5); margin-top: var(--space-8); }
+.lp-dialogue p { padding: var(--space-5); border-radius: var(--radius-continuous-lg); background: var(--lp-white); border: 1px solid var(--lp-line); max-width: 90%; }
+.lp-dialogue p:last-child { background: var(--lp-tint); justify-self: end; }
+.lp-workflow-shots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3); margin-block: var(--space-8) var(--space-4); }
+.lp-workflow-shots figure { margin: 0; min-width: 0; }
+.lp-workflow-shots img { width: 100%; height: 220px; object-fit: cover; border-radius: var(--radius-sm); }
+.lp-workflow-shots figcaption { font-size: 12px; padding-top: var(--space-3); }
+.lp-workflow-edit { position: relative; margin-top: var(--space-6); }
+.lp-workflow-edit > img { width: 100%; max-height: 340px; object-fit: cover; display: block; border-radius: var(--radius-continuous-lg); }
+.lp-edit-toolbar { position: absolute; bottom: var(--space-4); inset-inline: var(--space-4); border-radius: var(--radius-pill); padding: var(--space-3) var(--space-5); display: flex; justify-content: space-between; gap: var(--space-3); font-size: 12px; }
+.is-workflow-motion { min-height: min(680px, calc(100svh - 140px)); align-items: center; }
+.is-workflow-motion .lp-workflow-heading { position: static; align-self: center; }
+.is-workflow-motion .lp-workflow-steps { position: relative; height: 560px; }
+.is-workflow-motion .lp-workflow-steps > li { position: absolute; inset: 0; border: 0; padding: var(--space-8) 0; align-content: center; }
+.lp-workflow:not(:has(.is-workflow-motion)) .lp-workflow-steps > li { padding-block: var(--space-8); }
+@media (min-width: 1600px) {
+    .lp-film-stage { left: 52%; }
+}
+@media (max-width: 899px) {
+    .is-cinematic .lp-hero { padding-top: 88px; }
+    .is-cinematic .lp-hero-surface { padding: var(--space-8) var(--space-6) 0; display: flex; justify-content: space-between; }
+    .is-cinematic .lp-hero-copy { padding-bottom: var(--space-4); }
+    .is-cinematic .lp-film-stage { flex: 1; overflow: visible; min-height: 140px; }
+    .is-cinematic .lp-film { margin-left: -72px; }
+    .is-cinematic .lp-hero-note { margin-top: 0; flex: none; }
+    .is-cinematic .lp-product { padding-top: 88px; }
+    .is-cinematic .lp-product .lp-section-head { gap: var(--space-3); }
+    .is-cinematic .lp-product h2 { font-size: 30px; }
+    .is-cinematic .lp-product .lp-section-head p { font-size: 14px; }
+    .is-cinematic .lp-product-image img { max-height: calc(100svh - 330px); }
+    .lp-reveal-tool { right: -8px; bottom: 14%; padding: var(--space-3) var(--space-4); }
+    .lp-reveal-tool strong { font-size: 13px; }
+    .is-workflow-motion { display: block; min-height: 0; }
+    .is-workflow-motion .lp-workflow-heading h2 { font-size: 32px; }
+    .is-workflow-motion .lp-workflow-heading > p:not(.lp-demo-caption), .is-workflow-motion .lp-workflow-heading > a { display: none; }
+    .is-workflow-motion .lp-workflow-progress { margin-block: var(--space-4) var(--space-2); max-width: none; }
+    .is-workflow-motion .lp-workflow-steps { height: min(480px, calc(100svh - 260px)); min-height: 330px; }
+    .is-workflow-motion .lp-workflow-steps > li { padding-block: var(--space-4); }
+    .lp-workflow-shots img { height: 160px; }
+    .lp-composer-capture { max-height: 190px; object-fit: cover; object-position: center; }
+    .lp-workflow-edit > img { max-height: 240px; }
+}
+@media (max-width: 600px) {
+    .is-cinematic .lp-product-image picture { display: flex; justify-content: center; }
+    .is-cinematic .lp-product-image img { width: auto; max-width: 100%; height: calc(100svh - 330px); }
+    .is-cinematic .lp-hero h1 { font-size: clamp(48px, 13vw, 64px); }
+    .is-cinematic .lp-hero-copy p { line-height: 1.7; }
+    .is-cinematic .lp-film-frame img { height: clamp(100px, 19svh, 150px); }
+    .is-cinematic .lp-hero-note { padding-block: var(--space-2); }
+    .lp-workflow-shots { gap: var(--space-2); }
+    .lp-workflow-shots figcaption { font-size: 11px; }
+    .lp-edit-toolbar { inset-inline: var(--space-2); font-size: 11px; padding-inline: var(--space-3); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .lp-stage-depth { display: none; }
+    .lp-film { transform: none; }
+}
+@media (max-width: 600px) and (max-height: 740px) {
+    .is-cinematic .lp-hero-surface { padding-top: var(--space-6); }
+    .is-cinematic .lp-hero h1 { line-height: 1.1; margin-bottom: var(--space-4); }
+    .is-cinematic .lp-hero-copy { padding-bottom: 0; }
+    .is-cinematic .lp-actions { margin-top: var(--space-4); }
+    .is-cinematic .lp-film-frame img { height: 80px; }
+    .is-cinematic .lp-film-stage { min-height: 100px; }
+    .is-cinematic .lp-film { margin-top: var(--space-16); }
 }

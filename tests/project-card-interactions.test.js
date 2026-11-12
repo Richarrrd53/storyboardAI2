@@ -234,7 +234,7 @@ test('ProjectCardInteractions: Prefers-reduced-motion navigates without transiti
   PCI.unbind(card);
 });
 
-test('ProjectCardInteractions: History deleted card click prompts restore and does NOT launch transition', () => {
+test('ProjectCardInteractions: History card dispatches restore without owning confirmation', () => {
   global.window = global;
   const PCI = loadInteractionsModule();
 
@@ -272,6 +272,23 @@ test('ProjectCardInteractions: History deleted card click prompts restore and do
   assert.strictEqual(sidebarUpdated, true, 'updateSidebarProjects should be triggered on restore');
 
   PCI.unbind(card);
+});
+
+test('ProjectCardInteractions: pending async restore does not invoke an extra confirmation', async () => {
+  global.window = global;
+  const PCI = loadInteractionsModule();
+  const { card } = createTestProjectCard();
+  let extraConfirms = 0, restores = 0, resolve;
+  const previous = global.confirm;
+  global.confirm = () => { extraConfirms++; return Promise.resolve(false); };
+  PCI.bind(card, { id: 'async-deleted', is_deleted: true }, {
+    restoreProject: () => { restores++; return new Promise(r => { resolve = r; }); }
+  });
+  card.dispatchEvent({ type: 'click', target: card });
+  card.dispatchEvent({ type: 'click', target: card });
+  assert.equal(extraConfirms, 0); assert.equal(restores, 1);
+  resolve(false); await Promise.resolve();
+  PCI.unbind(card); global.confirm = previous;
 });
 
 test('ProjectCardInteractions: Option button click invokes openGlobalOptionMorph and stops propagation', () => {

@@ -85,6 +85,7 @@
   }
   async function mount({ page, signal, navigate, route = {}, scripts = [], onTiming = () => {} }) {
     if (signal.aborted) return null;
+    window.DialogService?.setPageSignal(signal);
     if (page === 'landing') {
       const root = initMain();
       root.className = landing.className || 'landing-content';

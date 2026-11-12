@@ -1,0 +1,12 @@
+{
+  "primaryReports": 8,
+  "originalScreenshots": 63,
+  "comparisonImage": true,
+  "brokenLinks": [],
+  "sourceHashChanges": [],
+  "relatedUnitTests": {
+    "passed": 47,
+    "failed": 0
+  },
+  "scope": "Audit only; incomplete runtime coverage is explicitly listed in 01 and 08"
+}

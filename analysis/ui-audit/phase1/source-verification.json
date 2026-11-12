@@ -1,0 +1,23 @@
+{
+  "date": "2026-11-12",
+  "changed_from_phase0_inventory": [
+    "public/css/components/dialog.css",
+    "public/js/sys.js",
+    "public/js/components/project-card-interactions.js",
+    "public/js/features/projects.js",
+    "public/js/pages/page-host.js",
+    "public/html/index.html"
+  ],
+  "delete_queue_unchanged": true,
+  "delete_action_unchanged": true,
+  "files": {
+    "public/css/components/dialog.css": "ed7a66b2b79ef2c1b3a5a5ad644f320ac5423d9ec400bdbfe23757c4511b5fd6",
+    "public/js/sys.js": "9f342ff42baa4214a7c5e6ed6cc3eda204eecfa5a65e5f01623609940b346449",
+    "public/js/components/project-card-interactions.js": "fcf61d036f3241040e9636e319665037aeed2505f3e6041d104fc8f826c3efe0",
+    "public/js/features/projects.js": "bb6a949a0b2a1c0fa37c6856bc31c768bf879c4a085c62087c2363ac0951d403",
+    "public/js/pages/page-host.js": "3ef186afa6a22482fbf445a57e3b9a1a949f568359e8cc788ffd6d4b75b6fb5a",
+    "public/html/index.html": "88c27e00095985b03496146d14d775412e62a02b76e6e060a593f63dd753ab94",
+    "public/js/components/dialog-service.js": "4a0a1f931af5afd82907d64f2e9777f951e84d9ea59756d85e12ef8be78aa597",
+    "public/js/components/overlay-manager.js": "3490295d7aaa762f49313026cb971874d715a602d748fb073b1129cbe99af6a1"
+  }
+}

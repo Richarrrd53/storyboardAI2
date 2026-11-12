@@ -237,23 +237,17 @@
 
       // (A) 回收桶專案點擊：彈出還原提示
       if (isDeleted) {
-        const confirmFn = global.confirmDialog || global.confirm;
-        const isConfirmed = confirmFn ? confirmFn('此分鏡在回收桶中，是否還原此分鏡專案？') : true;
-        if (isConfirmed) {
-          const onRestored = () => {
-            if (typeof opts.refreshCallback === 'function') opts.refreshCallback();
-            if (typeof global.updateSidebarProjects === 'function') {
-              global.updateSidebarProjects();
-            }
-          };
-
-          if (typeof opts.restoreProject === 'function') {
-            opts.restoreProject(project, card, onRestored);
-          } else if (typeof global.restoreProject === 'function') {
-            global.restoreProject(project, card, onRestored);
-          } else if (global.ProjectActions && typeof global.ProjectActions.restoreProject === 'function') {
-            global.ProjectActions.restoreProject(project, card, onRestored);
-          }
+        // The feature action owns confirmation. Never treat a Promise as a boolean here.
+        const onRestored = () => {
+          if (typeof opts.refreshCallback === 'function') opts.refreshCallback();
+          if (typeof global.updateSidebarProjects === 'function') global.updateSidebarProjects();
+        };
+        const restore = [opts.restoreProject, global.restoreProject, global.ProjectActions?.restoreProject]
+          .find(action => typeof action === 'function');
+        if (typeof restore === 'function') {
+          Promise.resolve(restore(project, card, onRestored)).catch(error => {
+            console.error('Project restore failed', error);
+          });
         }
         return;
       }

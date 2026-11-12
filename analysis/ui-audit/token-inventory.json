@@ -1,0 +1,2979 @@
+{
+  "--primary": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 36,
+      "value": "var(--color-brand-primary)"
+    }
+  ],
+  "--primary-light": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 37,
+      "value": "var(--color-brand-primary-light)"
+    }
+  ],
+  "--primary-soft": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 38,
+      "value": "var(--color-brand-primary-soft)"
+    }
+  ],
+  "--peach": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 41,
+      "value": "var(--color-brand-accent)"
+    }
+  ],
+  "--peach-light": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 42,
+      "value": "var(--color-brand-accent-light)"
+    }
+  ],
+  "--yellow-warm": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 43,
+      "value": "var(--color-brand-accent-soft)"
+    }
+  ],
+  "--lavender": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 44,
+      "value": "var(--color-surface-film)"
+    }
+  ],
+  "--lavender-light": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 45,
+      "value": "var(--color-surface-film-subtle)"
+    }
+  ],
+  "--text-dark": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 48,
+      "value": "var(--color-text-primary)"
+    }
+  ],
+  "--text-mid": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 49,
+      "value": "var(--color-text-secondary)"
+    }
+  ],
+  "--text-light": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 50,
+      "value": "var(--color-text-muted)"
+    }
+  ],
+  "--text-muted": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 51,
+      "value": "var(--color-text-tertiary)"
+    }
+  ],
+  "--card-bg": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 54,
+      "value": "var(--color-surface-primary)"
+    },
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 30,
+      "value": "var(--color-surface-primary)"
+    }
+  ],
+  "--card-border": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 55,
+      "value": "var(--color-border-default)"
+    },
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 31,
+      "value": "var(--color-border-default)"
+    }
+  ],
+  "--bg-dark": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 56,
+      "value": "var(--color-surface-film)"
+    }
+  ],
+  "--off-white": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 57,
+      "value": "var(--color-bg-page)"
+    }
+  ],
+  "--shadow-soft": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 58,
+      "value": "var(--elevation-1)"
+    }
+  ],
+  "--shadow-card": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 59,
+      "value": "var(--elevation-1)"
+    }
+  ],
+  "--font-display": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 62,
+      "value": "var(--font-family-display)"
+    }
+  ],
+  "--font-body": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 63,
+      "value": "var(--font-family-body)"
+    }
+  ],
+  "--app-shell": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 68,
+      "value": "var(--color-surface-shell, #0c1324)"
+    }
+  ],
+  "--canvas": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 69,
+      "value": "var(--color-bg-canvas, #f8fafc)"
+    }
+  ],
+  "--surface-page": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 70,
+      "value": "var(--canvas)"
+    }
+  ],
+  "--surface-panel": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 71,
+      "value": "var(--canvas)"
+    }
+  ],
+  "--surface-elevated": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 72,
+      "value": "var(--color-surface-elevated)"
+    }
+  ],
+  "--surface-interactive": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 73,
+      "value": "var(--color-surface-primary)"
+    }
+  ],
+  "--text-primary": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 75,
+      "value": "var(--color-text-primary)"
+    }
+  ],
+  "--text-secondary": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 76,
+      "value": "var(--color-text-secondary)"
+    }
+  ],
+  "--border-subtle": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 78,
+      "value": "var(--color-border-subtle)"
+    }
+  ],
+  "--border-active": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 79,
+      "value": "var(--color-border-selected)"
+    }
+  ],
+  "--interactive-primary": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 81,
+      "value": "var(--color-action-primary-default)"
+    }
+  ],
+  "--interactive-primary-hover": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 82,
+      "value": "var(--color-action-primary-hover)"
+    }
+  ],
+  "--interactive-primary-soft": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 83,
+      "value": "var(--color-surface-selected)"
+    }
+  ],
+  "--shadow-floating": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 85,
+      "value": "var(--surface-floating-shadow)"
+    }
+  ],
+  "--ai-dock-width": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 88,
+      "value": "clamp(300px, 21vw, 360px)"
+    },
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 68,
+      "value": "380px"
+    }
+  ],
+  "--ai-dock-max-width": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 89,
+      "value": "360px"
+    }
+  ],
+  "--ai-dock-min-width": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 90,
+      "value": "290px"
+    }
+  ],
+  "--ai-dock-gap": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 91,
+      "value": "clamp(8px, 1vh, 12px)"
+    }
+  ],
+  "--ai-dock-padding-x": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 92,
+      "value": "22px"
+    }
+  ],
+  "--ai-dock-header-pt": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 93,
+      "value": "26px"
+    }
+  ],
+  "--motion-fast": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 96,
+      "value": "160ms"
+    }
+  ],
+  "--motion-normal": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 97,
+      "value": "280ms"
+    }
+  ],
+  "--motion-surface": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 98,
+      "value": "460ms"
+    }
+  ],
+  "--ease-standard": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 99,
+      "value": "var(--motion-ease-smooth, cubic-bezier(.22, 1, .36, 1))"
+    }
+  ],
+  "--ease-natural": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 100,
+      "value": "var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1))"
+    }
+  ],
+  "--ease-decelerate": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 101,
+      "value": "var(--motion-ease-decelerate, cubic-bezier(0.16, 1, 0.3, 1))"
+    }
+  ],
+  "--ease-spring": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 102,
+      "value": "var(--motion-ease-spring, cubic-bezier(.33, 1.53, .69, .99))"
+    }
+  ],
+  "--ease-jelly": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 103,
+      "value": "var(--motion-ease-jelly, cubic-bezier(0.34, 1.56, 0.64, 1))"
+    }
+  ],
+  "--ease-snappy": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 104,
+      "value": "var(--motion-ease-snappy, cubic-bezier(0.25, 1, 0.5, 1))"
+    }
+  ],
+  "--ease-bounce": [
+    {
+      "file": "public/css/tokens.css",
+      "line": 105,
+      "value": "var(--motion-ease-bounce, cubic-bezier(0.33, 1.17, 0.69, 0.99))"
+    }
+  ],
+  "--blur-none": [
+    {
+      "file": "public/css/tokens/blur.css",
+      "line": 8,
+      "value": "0px"
+    }
+  ],
+  "--blur-subtle": [
+    {
+      "file": "public/css/tokens/blur.css",
+      "line": 9,
+      "value": "6px"
+    }
+  ],
+  "--blur-base": [
+    {
+      "file": "public/css/tokens/blur.css",
+      "line": 10,
+      "value": "12px"
+    }
+  ],
+  "--blur-nav": [
+    {
+      "file": "public/css/tokens/blur.css",
+      "line": 11,
+      "value": "20px"
+    }
+  ],
+  "--blur-glass": [
+    {
+      "file": "public/css/tokens/blur.css",
+      "line": 12,
+      "value": "24px"
+    }
+  ],
+  "--blur-modal": [
+    {
+      "file": "public/css/tokens/blur.css",
+      "line": 13,
+      "value": "28px"
+    }
+  ],
+  "--blur-cinematic": [
+    {
+      "file": "public/css/tokens/blur.css",
+      "line": 14,
+      "value": "50px"
+    }
+  ],
+  "--glass-nav-bg": [
+    {
+      "file": "public/css/tokens/blur.css",
+      "line": 17,
+      "value": "rgba(255, 255, 255, 0.75)"
+    }
+  ],
+  "--glass-nav-blur": [
+    {
+      "file": "public/css/tokens/blur.css",
+      "line": 18,
+      "value": "blur(var(--blur-nav))"
+    }
+  ],
+  "--glass-nav-border": [
+    {
+      "file": "public/css/tokens/blur.css",
+      "line": 19,
+      "value": "1px solid rgba(255, 255, 255, 0.55)"
+    }
+  ],
+  "--surface-floating-blur": [
+    {
+      "file": "public/css/tokens/blur.css",
+      "line": 22,
+      "value": "blur(10px) saturate(120%) brightness(1.06)"
+    },
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 47,
+      "value": "blur(9px) saturate(120%) brightness(1.06)"
+    }
+  ],
+  "--glass-floating-bg": [
+    {
+      "file": "public/css/tokens/blur.css",
+      "line": 23,
+      "value": "var(--surface-floating-bg, linear-gradient(180deg, rgba(255, 255, 255, 0.88) 0%, rgba(242, 242, 236, 0.78) 100%))"
+    }
+  ],
+  "--glass-floating-blur": [
+    {
+      "file": "public/css/tokens/blur.css",
+      "line": 24,
+      "value": "var(--surface-floating-blur)"
+    }
+  ],
+  "--glass-floating-border": [
+    {
+      "file": "public/css/tokens/blur.css",
+      "line": 25,
+      "value": "var(--surface-floating-border, 1px solid rgba(255, 255, 255, 0.7))"
+    }
+  ],
+  "--glass-card-bg": [
+    {
+      "file": "public/css/tokens/blur.css",
+      "line": 28,
+      "value": "rgba(255, 255, 255, 0.92)"
+    }
+  ],
+  "--glass-card-blur": [
+    {
+      "file": "public/css/tokens/blur.css",
+      "line": 29,
+      "value": "blur(var(--blur-glass))"
+    }
+  ],
+  "--glass-card-border": [
+    {
+      "file": "public/css/tokens/blur.css",
+      "line": 30,
+      "value": "1.5px solid rgba(255, 255, 255, 0.95)"
+    }
+  ],
+  "--glass-modal-bg": [
+    {
+      "file": "public/css/tokens/blur.css",
+      "line": 33,
+      "value": "rgba(255, 255, 255, 0.95)"
+    }
+  ],
+  "--glass-modal-blur": [
+    {
+      "file": "public/css/tokens/blur.css",
+      "line": 34,
+      "value": "blur(var(--blur-modal))"
+    }
+  ],
+  "--glass-modal-border": [
+    {
+      "file": "public/css/tokens/blur.css",
+      "line": 35,
+      "value": "1.5px solid rgba(255, 255, 255, 0.95)"
+    }
+  ],
+  "--border-width-hairline": [
+    {
+      "file": "public/css/tokens/border.css",
+      "line": 7,
+      "value": "0.5px"
+    }
+  ],
+  "--border-width-thin": [
+    {
+      "file": "public/css/tokens/border.css",
+      "line": 8,
+      "value": "1px"
+    }
+  ],
+  "--border-width-base": [
+    {
+      "file": "public/css/tokens/border.css",
+      "line": 9,
+      "value": "1.5px"
+    }
+  ],
+  "--border-width-thick": [
+    {
+      "file": "public/css/tokens/border.css",
+      "line": 10,
+      "value": "2px"
+    }
+  ],
+  "--border-width-heavy": [
+    {
+      "file": "public/css/tokens/border.css",
+      "line": 11,
+      "value": "3px"
+    }
+  ],
+  "--focus-ring-color": [
+    {
+      "file": "public/css/tokens/border.css",
+      "line": 14,
+      "value": "var(--blue-400)"
+    }
+  ],
+  "--focus-ring-width": [
+    {
+      "file": "public/css/tokens/border.css",
+      "line": 15,
+      "value": "2px"
+    }
+  ],
+  "--focus-ring-offset": [
+    {
+      "file": "public/css/tokens/border.css",
+      "line": 16,
+      "value": "2px"
+    }
+  ],
+  "--focus-ring-shadow": [
+    {
+      "file": "public/css/tokens/border.css",
+      "line": 17,
+      "value": "0 0 0 var(--focus-ring-width) var(--white), "
+    }
+  ],
+  "--breakpoint-sm": [
+    {
+      "file": "public/css/tokens/breakpoint.css",
+      "line": 8,
+      "value": "480px"
+    }
+  ],
+  "--breakpoint-md": [
+    {
+      "file": "public/css/tokens/breakpoint.css",
+      "line": 9,
+      "value": "768px"
+    }
+  ],
+  "--breakpoint-lg": [
+    {
+      "file": "public/css/tokens/breakpoint.css",
+      "line": 10,
+      "value": "1024px"
+    }
+  ],
+  "--breakpoint-xl": [
+    {
+      "file": "public/css/tokens/breakpoint.css",
+      "line": 11,
+      "value": "1439px"
+    }
+  ],
+  "--breakpoint-2xl": [
+    {
+      "file": "public/css/tokens/breakpoint.css",
+      "line": 12,
+      "value": "1440px"
+    }
+  ],
+  "--color-text-primary": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 9,
+      "value": "var(--slate-900)"
+    }
+  ],
+  "--color-text-secondary": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 10,
+      "value": "var(--slate-600)"
+    }
+  ],
+  "--color-text-tertiary": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 11,
+      "value": "var(--slate-500)"
+    }
+  ],
+  "--color-text-muted": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 12,
+      "value": "var(--slate-400)"
+    }
+  ],
+  "--color-text-disabled": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 13,
+      "value": "var(--slate-300)"
+    }
+  ],
+  "--color-text-inverse": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 14,
+      "value": "var(--white)"
+    }
+  ],
+  "--color-text-brand": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 15,
+      "value": "var(--blue-600)"
+    }
+  ],
+  "--color-text-accent": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 16,
+      "value": "var(--sky-500)"
+    }
+  ],
+  "--color-text-gold": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 17,
+      "value": "var(--gold-500)"
+    }
+  ],
+  "--color-text-danger": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 18,
+      "value": "var(--red-500)"
+    }
+  ],
+  "--color-text-success": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 19,
+      "value": "var(--emerald-600)"
+    }
+  ],
+  "--color-surface-shell": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 23,
+      "value": "#0c1324"
+    }
+  ],
+  "--color-bg-canvas": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 24,
+      "value": "var(--slate-50)"
+    }
+  ],
+  "--color-bg-page": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 25,
+      "value": "var(--slate-50)"
+    }
+  ],
+  "--color-bg-subtle": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 26,
+      "value": "var(--slate-100)"
+    }
+  ],
+  "--color-surface-primary": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 27,
+      "value": "var(--white)"
+    }
+  ],
+  "--color-surface-secondary": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 28,
+      "value": "var(--slate-50)"
+    }
+  ],
+  "--color-surface-elevated": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 29,
+      "value": "var(--white)"
+    }
+  ],
+  "--color-surface-overlay": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 30,
+      "value": "rgba(15, 23, 42, 0.45)"
+    }
+  ],
+  "--color-surface-selected": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 31,
+      "value": "rgba(37, 99, 235, 0.08)"
+    }
+  ],
+  "--color-surface-disabled": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 32,
+      "value": "var(--slate-100)"
+    }
+  ],
+  "--color-surface-film": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 33,
+      "value": "var(--slate-900)"
+    }
+  ],
+  "--color-surface-film-subtle": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 34,
+      "value": "var(--slate-800)"
+    }
+  ],
+  "--color-surface-skeleton": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 35,
+      "value": "#e9e9f2"
+    }
+  ],
+  "--color-border-default": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 38,
+      "value": "var(--slate-200)"
+    }
+  ],
+  "--color-border-subtle": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 39,
+      "value": "rgba(226, 232, 240, 0.7)"
+    }
+  ],
+  "--color-border-strong": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 40,
+      "value": "var(--slate-300)"
+    }
+  ],
+  "--color-border-focus": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 41,
+      "value": "var(--blue-400)"
+    }
+  ],
+  "--color-border-selected": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 42,
+      "value": "var(--blue-600)"
+    }
+  ],
+  "--color-border-danger": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 43,
+      "value": "var(--red-400)"
+    }
+  ],
+  "--color-border-success": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 44,
+      "value": "var(--emerald-500)"
+    }
+  ],
+  "--color-action-primary-default": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 47,
+      "value": "var(--blue-600)"
+    }
+  ],
+  "--color-action-primary-hover": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 48,
+      "value": "var(--blue-700)"
+    }
+  ],
+  "--color-action-primary-active": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 49,
+      "value": "var(--blue-800)"
+    }
+  ],
+  "--color-action-primary-disabled": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 50,
+      "value": "var(--slate-300)"
+    }
+  ],
+  "--color-action-secondary-default": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 52,
+      "value": "var(--slate-100)"
+    }
+  ],
+  "--color-action-secondary-hover": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 53,
+      "value": "var(--slate-200)"
+    }
+  ],
+  "--color-action-secondary-active": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 54,
+      "value": "var(--slate-300)"
+    }
+  ],
+  "--color-action-danger-default": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 56,
+      "value": "var(--red-500)"
+    }
+  ],
+  "--color-action-danger-hover": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 57,
+      "value": "var(--red-600)"
+    }
+  ],
+  "--color-action-danger-active": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 58,
+      "value": "var(--red-700)"
+    }
+  ],
+  "--color-status-success": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 61,
+      "value": "var(--emerald-500)"
+    }
+  ],
+  "--color-status-success-bg": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 62,
+      "value": "var(--emerald-50)"
+    }
+  ],
+  "--color-status-warning": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 63,
+      "value": "var(--amber-500)"
+    }
+  ],
+  "--color-status-warning-bg": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 64,
+      "value": "var(--amber-50)"
+    }
+  ],
+  "--color-status-error": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 65,
+      "value": "var(--red-500)"
+    }
+  ],
+  "--color-status-error-bg": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 66,
+      "value": "var(--red-50)"
+    }
+  ],
+  "--color-status-info": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 67,
+      "value": "var(--sky-500)"
+    }
+  ],
+  "--color-status-info-bg": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 68,
+      "value": "var(--sky-50)"
+    }
+  ],
+  "--color-brand-primary": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 71,
+      "value": "var(--blue-600)"
+    }
+  ],
+  "--color-brand-primary-light": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 72,
+      "value": "var(--blue-400)"
+    }
+  ],
+  "--color-brand-primary-soft": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 73,
+      "value": "rgba(37, 99, 235, 0.08)"
+    }
+  ],
+  "--color-brand-accent": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 74,
+      "value": "var(--sky-500)"
+    }
+  ],
+  "--color-brand-accent-light": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 75,
+      "value": "var(--sky-400)"
+    }
+  ],
+  "--color-brand-accent-soft": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 76,
+      "value": "var(--sky-200)"
+    }
+  ],
+  "--color-brand-film": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 77,
+      "value": "var(--slate-900)"
+    }
+  ],
+  "--color-brand-gold": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 78,
+      "value": "var(--gold-500)"
+    }
+  ],
+  "--color-nav-active": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 81,
+      "value": "var(--blue-950)"
+    }
+  ],
+  "--color-nav-active-fill": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 82,
+      "value": "var(--blue-950)"
+    }
+  ],
+  "--color-text-nav-active": [
+    {
+      "file": "public/css/tokens/colors.css",
+      "line": 83,
+      "value": "var(--blue-950)"
+    }
+  ],
+  "--button-primary-bg": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 9,
+      "value": "linear-gradient(135deg, var(--color-action-primary-default), var(--color-action-primary-hover))"
+    }
+  ],
+  "--button-primary-text": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 10,
+      "value": "var(--white)"
+    }
+  ],
+  "--button-primary-hover-shadow": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 11,
+      "value": "var(--shadow-brand-glow)"
+    }
+  ],
+  "--button-secondary-bg": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 12,
+      "value": "var(--slate-100)"
+    }
+  ],
+  "--button-secondary-text": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 13,
+      "value": "var(--color-text-primary)"
+    }
+  ],
+  "--button-ghost-bg": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 14,
+      "value": "rgba(183, 191, 217, 0.1)"
+    }
+  ],
+  "--button-ghost-text": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 15,
+      "value": "var(--color-text-secondary)"
+    }
+  ],
+  "--button-ghost-border": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 16,
+      "value": "var(--color-border-default)"
+    }
+  ],
+  "--button-danger-bg": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 17,
+      "value": "var(--color-action-danger-default)"
+    }
+  ],
+  "--button-danger-text": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 18,
+      "value": "var(--white)"
+    }
+  ],
+  "--film-bg": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 21,
+      "value": "var(--color-surface-film)"
+    }
+  ],
+  "--film-hole-bg": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 22,
+      "value": "var(--color-bg-page)"
+    }
+  ],
+  "--film-hole-border": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 23,
+      "value": "rgba(226, 232, 240, 0.3)"
+    }
+  ],
+  "--film-hole-radius": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 24,
+      "value": "var(--radius-xs)"
+    }
+  ],
+  "--film-strip-height-sm": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 25,
+      "value": "20px"
+    }
+  ],
+  "--film-strip-height-md": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 26,
+      "value": "26px"
+    }
+  ],
+  "--film-strip-height-lg": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 27,
+      "value": "36px"
+    }
+  ],
+  "--card-shadow": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 32,
+      "value": "var(--elevation-1)"
+    }
+  ],
+  "--card-hover-shadow": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 33,
+      "value": "var(--elevation-2)"
+    }
+  ],
+  "--card-radius": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 34,
+      "value": "var(--radius-continuous-md)"
+    }
+  ],
+  "--card-thumbnail-ratio": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 35,
+      "value": "16 / 9"
+    }
+  ],
+  "--input-bg": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 38,
+      "value": "var(--color-surface-primary)"
+    }
+  ],
+  "--input-border": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 39,
+      "value": "var(--color-border-default)"
+    }
+  ],
+  "--input-border-focus": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 40,
+      "value": "var(--color-border-focus)"
+    }
+  ],
+  "--input-radius-pill": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 41,
+      "value": "var(--radius-pill)"
+    }
+  ],
+  "--input-radius-rect": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 42,
+      "value": "var(--radius-sm)"
+    }
+  ],
+  "--surface-floating-bg": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 45,
+      "value": "linear-gradient(180deg, rgba(255, 255, 255, 0.88) 0%, rgba(242, 242, 236, 0.78) 100%)"
+    }
+  ],
+  "--surface-floating-border": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 46,
+      "value": "1px solid rgba(255, 255, 255, 0.7)"
+    }
+  ],
+  "--surface-floating-shadow": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 48,
+      "value": "0 14px 32px rgba(0, 0, 0, 0.13), 0 2px 8px rgba(0, 0, 0, 0.04), inset 1px 1px #fff8"
+    },
+    {
+      "file": "public/css/tokens/shadow.css",
+      "line": 18,
+      "value": "0 14px 32px rgba(0, 0, 0, 0.13), 0 2px 8px rgba(0, 0, 0, 0.04)"
+    }
+  ],
+  "--surface-floating-highlight": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 49,
+      "value": "inset 0 1.5px 2px rgba(255, 255, 255, 0.92), inset 0 -2px 4px rgba(120, 120, 110, 0.06)"
+    },
+    {
+      "file": "public/css/tokens/shadow.css",
+      "line": 19,
+      "value": "inset 0 1.5px 2px rgba(255, 255, 255, 0.92), inset 0 -2px 4px rgba(120, 120, 110, 0.06)"
+    }
+  ],
+  "--surface-floating-circle-bg": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 50,
+      "value": "radial-gradient(circle at 38% 26%, rgba(255, 255, 255, 0.98) 0%, rgba(246, 246, 240, 0.88) 55%, rgba(232, 232, 224, 0.78) 100%)"
+    }
+  ],
+  "--surface-floating-circle-shadow": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 51,
+      "value": "0 10px 24px rgba(0, 0, 0, 0.13), 0 2px 6px rgba(0, 0, 0, 0.04), inset 0 2px 3.5px rgba(255, 255, 255, 0.95), inset 0 -2px 4.5px rgba(120, 120, 110, 0.08)"
+    }
+  ],
+  "--mobile-nav-height": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 54,
+      "value": "64px"
+    }
+  ],
+  "--mobile-nav-offset": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 55,
+      "value": "var(--space-6)"
+    }
+  ],
+  "--mobile-nav-radius": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 56,
+      "value": "var(--radius-pill)"
+    }
+  ],
+  "--mobile-nav-gap": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 57,
+      "value": "var(--space-1)"
+    }
+  ],
+  "--mobile-nav-padding": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 58,
+      "value": "0 10px"
+    }
+  ],
+  "--mobile-nav-bg": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 59,
+      "value": "linear-gradient(to bottom, color-mix(in srgb, var(--color-bg-page) 95%, transparent), color-mix(in srgb, var(--color-bg-page) 75%, transparent))"
+    }
+  ],
+  "--mobile-nav-border": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 60,
+      "value": "var(--surface-floating-border)"
+    }
+  ],
+  "--mobile-nav-shadow": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 61,
+      "value": "var(--surface-floating-shadow)"
+    }
+  ],
+  "--mobile-nav-item-size": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 62,
+      "value": "48px"
+    }
+  ],
+  "--mobile-nav-indicator-size": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 63,
+      "value": "44px"
+    }
+  ],
+  "--mobile-nav-create-size": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 64,
+      "value": "54px"
+    }
+  ],
+  "--mobile-nav-create-offset-y": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 65,
+      "value": "-16px"
+    }
+  ],
+  "--ai-dock-bg": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 69,
+      "value": "rgba(255, 255, 255, 0.94)"
+    }
+  ],
+  "--ai-dock-border": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 70,
+      "value": "1.5px solid rgba(255, 255, 255, 0.9)"
+    }
+  ],
+  "--ai-dock-shadow": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 71,
+      "value": "var(--elevation-3)"
+    }
+  ],
+  "--ai-dock-radius": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 72,
+      "value": "var(--radius-xl)"
+    }
+  ],
+  "--ai-pill-height": [
+    {
+      "file": "public/css/tokens/components.css",
+      "line": 73,
+      "value": "48px"
+    }
+  ],
+  "--layer-base": [
+    {
+      "file": "public/css/tokens/layers.css",
+      "line": 8,
+      "value": "0"
+    }
+  ],
+  "--layer-content": [
+    {
+      "file": "public/css/tokens/layers.css",
+      "line": 9,
+      "value": "10"
+    }
+  ],
+  "--layer-sticky": [
+    {
+      "file": "public/css/tokens/layers.css",
+      "line": 10,
+      "value": "100"
+    }
+  ],
+  "--layer-nav": [
+    {
+      "file": "public/css/tokens/layers.css",
+      "line": 11,
+      "value": "200"
+    }
+  ],
+  "--layer-dropdown": [
+    {
+      "file": "public/css/tokens/layers.css",
+      "line": 12,
+      "value": "300"
+    }
+  ],
+  "--layer-popover": [
+    {
+      "file": "public/css/tokens/layers.css",
+      "line": 13,
+      "value": "400"
+    }
+  ],
+  "--layer-dock": [
+    {
+      "file": "public/css/tokens/layers.css",
+      "line": 14,
+      "value": "500"
+    }
+  ],
+  "--layer-overlay": [
+    {
+      "file": "public/css/tokens/layers.css",
+      "line": 15,
+      "value": "600"
+    }
+  ],
+  "--layer-modal": [
+    {
+      "file": "public/css/tokens/layers.css",
+      "line": 16,
+      "value": "700"
+    }
+  ],
+  "--layer-toast": [
+    {
+      "file": "public/css/tokens/layers.css",
+      "line": 17,
+      "value": "800"
+    }
+  ],
+  "--layer-system": [
+    {
+      "file": "public/css/tokens/layers.css",
+      "line": 18,
+      "value": "20000"
+    }
+  ],
+  "--container-xl": [
+    {
+      "file": "public/css/tokens/layout.css",
+      "line": 8,
+      "value": "1440px"
+    }
+  ],
+  "--container-lg": [
+    {
+      "file": "public/css/tokens/layout.css",
+      "line": 9,
+      "value": "1200px"
+    }
+  ],
+  "--container-md": [
+    {
+      "file": "public/css/tokens/layout.css",
+      "line": 10,
+      "value": "960px"
+    }
+  ],
+  "--container-sm": [
+    {
+      "file": "public/css/tokens/layout.css",
+      "line": 11,
+      "value": "640px"
+    }
+  ],
+  "--container-xs": [
+    {
+      "file": "public/css/tokens/layout.css",
+      "line": 12,
+      "value": "480px"
+    }
+  ],
+  "--layout-gutter-desktop": [
+    {
+      "file": "public/css/tokens/layout.css",
+      "line": 15,
+      "value": "var(--space-8)"
+    }
+  ],
+  "--layout-gutter-tablet": [
+    {
+      "file": "public/css/tokens/layout.css",
+      "line": 16,
+      "value": "var(--space-6)"
+    }
+  ],
+  "--layout-gutter-mobile": [
+    {
+      "file": "public/css/tokens/layout.css",
+      "line": 17,
+      "value": "var(--space-4)"
+    }
+  ],
+  "--grid-gap-desktop": [
+    {
+      "file": "public/css/tokens/layout.css",
+      "line": 20,
+      "value": "var(--space-6)"
+    }
+  ],
+  "--grid-gap-tablet": [
+    {
+      "file": "public/css/tokens/layout.css",
+      "line": 21,
+      "value": "var(--space-4)"
+    }
+  ],
+  "--grid-gap-mobile": [
+    {
+      "file": "public/css/tokens/layout.css",
+      "line": 22,
+      "value": "var(--space-3)"
+    }
+  ],
+  "--sidebar-width-collapsed": [
+    {
+      "file": "public/css/tokens/layout.css",
+      "line": 25,
+      "value": "60px"
+    }
+  ],
+  "--sidebar-width-expanded": [
+    {
+      "file": "public/css/tokens/layout.css",
+      "line": 26,
+      "value": "260px"
+    }
+  ],
+  "--safe-area-bottom": [
+    {
+      "file": "public/css/tokens/layout.css",
+      "line": 29,
+      "value": "env(safe-area-inset-bottom, 0px)"
+    }
+  ],
+  "--safe-area-top": [
+    {
+      "file": "public/css/tokens/layout.css",
+      "line": 30,
+      "value": "env(safe-area-inset-top, 0px)"
+    }
+  ],
+  "--motion-duration-instant": [
+    {
+      "file": "public/css/tokens/motion.css",
+      "line": 8,
+      "value": "120ms"
+    }
+  ],
+  "--motion-duration-fast": [
+    {
+      "file": "public/css/tokens/motion.css",
+      "line": 9,
+      "value": "200ms"
+    }
+  ],
+  "--motion-duration-base": [
+    {
+      "file": "public/css/tokens/motion.css",
+      "line": 10,
+      "value": "300ms"
+    }
+  ],
+  "--motion-duration-medium": [
+    {
+      "file": "public/css/tokens/motion.css",
+      "line": 11,
+      "value": "500ms"
+    }
+  ],
+  "--motion-duration-slow": [
+    {
+      "file": "public/css/tokens/motion.css",
+      "line": 12,
+      "value": "800ms"
+    }
+  ],
+  "--motion-duration-ambient": [
+    {
+      "file": "public/css/tokens/motion.css",
+      "line": 13,
+      "value": "12s"
+    }
+  ],
+  "--motion-ease-standard": [
+    {
+      "file": "public/css/tokens/motion.css",
+      "line": 16,
+      "value": "cubic-bezier(.4, 0, .2, 1)"
+    }
+  ],
+  "--motion-ease-decelerate": [
+    {
+      "file": "public/css/tokens/motion.css",
+      "line": 17,
+      "value": "cubic-bezier(0.16, 1, 0.3, 1)"
+    }
+  ],
+  "--motion-ease-accelerate": [
+    {
+      "file": "public/css/tokens/motion.css",
+      "line": 18,
+      "value": "cubic-bezier(0.4, 0, 1, 1)"
+    }
+  ],
+  "--motion-ease-spring": [
+    {
+      "file": "public/css/tokens/motion.css",
+      "line": 19,
+      "value": "cubic-bezier(.33, 1.53, .69, .99)"
+    }
+  ],
+  "--motion-ease-anticipate": [
+    {
+      "file": "public/css/tokens/motion.css",
+      "line": 20,
+      "value": "cubic-bezier(.31, .01, .66, -0.59)"
+    }
+  ],
+  "--motion-ease-jelly": [
+    {
+      "file": "public/css/tokens/motion.css",
+      "line": 21,
+      "value": "cubic-bezier(0.34, 1.56, 0.64, 1)"
+    }
+  ],
+  "--motion-ease-smooth": [
+    {
+      "file": "public/css/tokens/motion.css",
+      "line": 22,
+      "value": "cubic-bezier(.22, 1, .36, 1)"
+    }
+  ],
+  "--motion-ease-snappy": [
+    {
+      "file": "public/css/tokens/motion.css",
+      "line": 23,
+      "value": "cubic-bezier(0.25, 1, 0.5, 1)"
+    }
+  ],
+  "--motion-ease-bounce": [
+    {
+      "file": "public/css/tokens/motion.css",
+      "line": 24,
+      "value": "cubic-bezier(0.33, 1.17, 0.69, 0.99)"
+    }
+  ],
+  "--motion-jelly-press-duration": [
+    {
+      "file": "public/css/tokens/motion.css",
+      "line": 27,
+      "value": "120ms"
+    }
+  ],
+  "--motion-jelly-release-duration": [
+    {
+      "file": "public/css/tokens/motion.css",
+      "line": 28,
+      "value": "420ms"
+    }
+  ],
+  "--motion-jelly-scale-press-x": [
+    {
+      "file": "public/css/tokens/motion.css",
+      "line": 29,
+      "value": "1.06"
+    }
+  ],
+  "--motion-jelly-scale-press-y": [
+    {
+      "file": "public/css/tokens/motion.css",
+      "line": 30,
+      "value": "0.94"
+    }
+  ],
+  "--motion-jelly-stretch-max": [
+    {
+      "file": "public/css/tokens/motion.css",
+      "line": 31,
+      "value": "1.16"
+    }
+  ],
+  "--motion-jelly-drag-x": [
+    {
+      "file": "public/css/tokens/motion.css",
+      "line": 32,
+      "value": "8px"
+    }
+  ],
+  "--motion-jelly-drag-y": [
+    {
+      "file": "public/css/tokens/motion.css",
+      "line": 33,
+      "value": "4px"
+    }
+  ],
+  "--motion-jelly-resistance": [
+    {
+      "file": "public/css/tokens/motion.css",
+      "line": 34,
+      "value": "0.2"
+    }
+  ],
+  "--motion-distance-lift": [
+    {
+      "file": "public/css/tokens/motion.css",
+      "line": 37,
+      "value": "-4px"
+    }
+  ],
+  "--motion-distance-slide-sm": [
+    {
+      "file": "public/css/tokens/motion.css",
+      "line": 38,
+      "value": "12px"
+    }
+  ],
+  "--motion-distance-slide-md": [
+    {
+      "file": "public/css/tokens/motion.css",
+      "line": 39,
+      "value": "24px"
+    }
+  ],
+  "--motion-distance-slide-lg": [
+    {
+      "file": "public/css/tokens/motion.css",
+      "line": 40,
+      "value": "48px"
+    }
+  ],
+  "--opacity-0": [
+    {
+      "file": "public/css/tokens/opacity.css",
+      "line": 7,
+      "value": "0"
+    }
+  ],
+  "--opacity-faint": [
+    {
+      "file": "public/css/tokens/opacity.css",
+      "line": 8,
+      "value": "0.06"
+    }
+  ],
+  "--opacity-subtle": [
+    {
+      "file": "public/css/tokens/opacity.css",
+      "line": 9,
+      "value": "0.15"
+    }
+  ],
+  "--opacity-medium": [
+    {
+      "file": "public/css/tokens/opacity.css",
+      "line": 10,
+      "value": "0.4"
+    }
+  ],
+  "--opacity-disabled": [
+    {
+      "file": "public/css/tokens/opacity.css",
+      "line": 11,
+      "value": "0.55"
+    }
+  ],
+  "--opacity-muted": [
+    {
+      "file": "public/css/tokens/opacity.css",
+      "line": 12,
+      "value": "0.7"
+    }
+  ],
+  "--opacity-hover": [
+    {
+      "file": "public/css/tokens/opacity.css",
+      "line": 13,
+      "value": "0.85"
+    }
+  ],
+  "--opacity-active": [
+    {
+      "file": "public/css/tokens/opacity.css",
+      "line": 14,
+      "value": "0.95"
+    }
+  ],
+  "--opacity-full": [
+    {
+      "file": "public/css/tokens/opacity.css",
+      "line": 15,
+      "value": "1"
+    }
+  ],
+  "--blue-50": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 9,
+      "value": "#eff6ff"
+    }
+  ],
+  "--blue-100": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 10,
+      "value": "#dbeafe"
+    }
+  ],
+  "--blue-200": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 11,
+      "value": "#bfdbfe"
+    }
+  ],
+  "--blue-300": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 12,
+      "value": "#93c5fd"
+    }
+  ],
+  "--blue-400": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 13,
+      "value": "#60a5fa"
+    }
+  ],
+  "--blue-500": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 14,
+      "value": "#3b82f6"
+    }
+  ],
+  "--blue-600": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 15,
+      "value": "#2563eb"
+    }
+  ],
+  "--blue-700": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 16,
+      "value": "#1d4ed8"
+    }
+  ],
+  "--blue-800": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 17,
+      "value": "#1e40af"
+    }
+  ],
+  "--blue-900": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 18,
+      "value": "#1e3a8a"
+    }
+  ],
+  "--blue-950": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 19,
+      "value": "#172554"
+    }
+  ],
+  "--navy-950": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 20,
+      "value": "#0b1329"
+    }
+  ],
+  "--sky-50": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 23,
+      "value": "#f0f9ff"
+    }
+  ],
+  "--sky-100": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 24,
+      "value": "#e0f2fe"
+    }
+  ],
+  "--sky-200": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 25,
+      "value": "#bae6fd"
+    }
+  ],
+  "--sky-300": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 26,
+      "value": "#7dd3fc"
+    }
+  ],
+  "--sky-400": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 27,
+      "value": "#38bdf8"
+    }
+  ],
+  "--sky-500": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 28,
+      "value": "#0ea5e9"
+    }
+  ],
+  "--sky-600": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 29,
+      "value": "#0284c7"
+    }
+  ],
+  "--sky-700": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 30,
+      "value": "#0369a1"
+    }
+  ],
+  "--slate-50": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 33,
+      "value": "#f8fafc"
+    }
+  ],
+  "--slate-100": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 34,
+      "value": "#f1f5f9"
+    }
+  ],
+  "--slate-200": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 35,
+      "value": "#e2e8f0"
+    }
+  ],
+  "--slate-300": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 36,
+      "value": "#cbd5e1"
+    }
+  ],
+  "--slate-400": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 37,
+      "value": "#94a3b8"
+    }
+  ],
+  "--slate-500": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 38,
+      "value": "#64748b"
+    }
+  ],
+  "--slate-600": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 39,
+      "value": "#475569"
+    }
+  ],
+  "--slate-700": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 40,
+      "value": "#334155"
+    }
+  ],
+  "--slate-800": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 41,
+      "value": "#1e293b"
+    }
+  ],
+  "--slate-900": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 42,
+      "value": "#0f172a"
+    }
+  ],
+  "--slate-950": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 43,
+      "value": "#020617"
+    }
+  ],
+  "--emerald-50": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 46,
+      "value": "#ecfdf5"
+    }
+  ],
+  "--emerald-200": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 47,
+      "value": "#bbf7d0"
+    }
+  ],
+  "--emerald-500": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 48,
+      "value": "#10b981"
+    }
+  ],
+  "--emerald-600": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 49,
+      "value": "#059669"
+    }
+  ],
+  "--emerald-700": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 50,
+      "value": "#15803d"
+    }
+  ],
+  "--amber-50": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 52,
+      "value": "#fffbeb"
+    }
+  ],
+  "--amber-200": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 53,
+      "value": "#fed7aa"
+    }
+  ],
+  "--amber-400": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 54,
+      "value": "#fbbf24"
+    }
+  ],
+  "--amber-500": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 55,
+      "value": "#f59e0b"
+    }
+  ],
+  "--amber-600": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 56,
+      "value": "#d97706"
+    }
+  ],
+  "--amber-700": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 57,
+      "value": "#c2410c"
+    }
+  ],
+  "--red-50": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 59,
+      "value": "#fef2f2"
+    }
+  ],
+  "--red-400": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 60,
+      "value": "#f87171"
+    }
+  ],
+  "--red-500": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 61,
+      "value": "#ef4444"
+    }
+  ],
+  "--red-600": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 62,
+      "value": "#dc2626"
+    }
+  ],
+  "--gold-400": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 65,
+      "value": "#d4c58e"
+    }
+  ],
+  "--gold-500": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 66,
+      "value": "#c8b878"
+    }
+  ],
+  "--gold-600": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 67,
+      "value": "#b5a25e"
+    }
+  ],
+  "--purple-400": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 69,
+      "value": "#a78bfa"
+    }
+  ],
+  "--purple-500": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 70,
+      "value": "#8b5cf6"
+    }
+  ],
+  "--purple-600": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 71,
+      "value": "#7c3aed"
+    }
+  ],
+  "--white": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 74,
+      "value": "#ffffff"
+    }
+  ],
+  "--black": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 75,
+      "value": "#000000"
+    }
+  ],
+  "--transparent": [
+    {
+      "file": "public/css/tokens/primitives.css",
+      "line": 76,
+      "value": "transparent"
+    }
+  ],
+  "--radius-xs": [
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 7,
+      "value": "4px"
+    }
+  ],
+  "--radius-sm": [
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 8,
+      "value": "8px"
+    }
+  ],
+  "--radius-md": [
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 9,
+      "value": "16px"
+    }
+  ],
+  "--radius-lg": [
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 10,
+      "value": "24px"
+    }
+  ],
+  "--radius-xl": [
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 11,
+      "value": "32px"
+    }
+  ],
+  "--radius-2xl": [
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 12,
+      "value": "40px"
+    }
+  ],
+  "--radius-pill": [
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 13,
+      "value": "999px"
+    }
+  ],
+  "--radius-circle": [
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 14,
+      "value": "50%"
+    }
+  ],
+  "--radius-squircle-xs": [
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 19,
+      "value": "7px"
+    }
+  ],
+  "--radius-continuous-xs": [
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 20,
+      "value": "var(--radius-xs)"
+    },
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 51,
+      "value": "var(--radius-squircle-xs)"
+    }
+  ],
+  "--radius-squircle-sm": [
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 21,
+      "value": "14px"
+    }
+  ],
+  "--radius-continuous-sm": [
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 22,
+      "value": "var(--radius-sm)"
+    },
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 52,
+      "value": "var(--radius-squircle-sm)"
+    }
+  ],
+  "--radius-squircle-md": [
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 23,
+      "value": "27px"
+    }
+  ],
+  "--radius-continuous-md": [
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 24,
+      "value": "var(--radius-md)"
+    },
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 53,
+      "value": "var(--radius-squircle-md)"
+    }
+  ],
+  "--radius-squircle-lg": [
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 25,
+      "value": "40px"
+    }
+  ],
+  "--radius-continuous-lg": [
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 26,
+      "value": "var(--radius-lg)"
+    },
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 54,
+      "value": "var(--radius-squircle-lg)"
+    }
+  ],
+  "--radius-squircle-xl": [
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 27,
+      "value": "54px"
+    }
+  ],
+  "--radius-continuous-xl": [
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 28,
+      "value": "var(--radius-xl)"
+    },
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 55,
+      "value": "var(--radius-squircle-xl)"
+    }
+  ],
+  "--radius-squircle-2xl": [
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 29,
+      "value": "68px"
+    }
+  ],
+  "--radius-continuous-2xl": [
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 30,
+      "value": "var(--radius-2xl)"
+    },
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 56,
+      "value": "var(--radius-squircle-2xl)"
+    }
+  ],
+  "--radius-squircle-6": [
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 31,
+      "value": "10px"
+    }
+  ],
+  "--radius-continuous-6": [
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 32,
+      "value": "6px"
+    },
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 57,
+      "value": "var(--radius-squircle-6)"
+    }
+  ],
+  "--radius-squircle-9": [
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 33,
+      "value": "15px"
+    }
+  ],
+  "--radius-continuous-9": [
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 34,
+      "value": "9px"
+    },
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 58,
+      "value": "var(--radius-squircle-9)"
+    }
+  ],
+  "--radius-squircle-10": [
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 35,
+      "value": "17px"
+    }
+  ],
+  "--radius-continuous-10": [
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 36,
+      "value": "10px"
+    },
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 59,
+      "value": "var(--radius-squircle-10)"
+    }
+  ],
+  "--radius-squircle-12": [
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 37,
+      "value": "20px"
+    }
+  ],
+  "--radius-continuous-12": [
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 38,
+      "value": "12px"
+    },
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 60,
+      "value": "var(--radius-squircle-12)"
+    }
+  ],
+  "--radius-squircle-14": [
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 39,
+      "value": "24px"
+    }
+  ],
+  "--radius-continuous-14": [
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 40,
+      "value": "14px"
+    },
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 61,
+      "value": "var(--radius-squircle-14)"
+    }
+  ],
+  "--radius-squircle-18": [
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 41,
+      "value": "30px"
+    }
+  ],
+  "--radius-continuous-18": [
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 42,
+      "value": "18px"
+    },
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 62,
+      "value": "var(--radius-squircle-18)"
+    }
+  ],
+  "--radius-squircle-20": [
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 43,
+      "value": "34px"
+    }
+  ],
+  "--radius-continuous-20": [
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 44,
+      "value": "20px"
+    },
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 63,
+      "value": "var(--radius-squircle-20)"
+    }
+  ],
+  "--radius-squircle-28": [
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 45,
+      "value": "47px"
+    }
+  ],
+  "--radius-continuous-28": [
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 46,
+      "value": "28px"
+    },
+    {
+      "file": "public/css/tokens/radius.css",
+      "line": 64,
+      "value": "var(--radius-squircle-28)"
+    }
+  ],
+  "--elevation-0": [
+    {
+      "file": "public/css/tokens/shadow.css",
+      "line": 7,
+      "value": "none"
+    }
+  ],
+  "--elevation-1": [
+    {
+      "file": "public/css/tokens/shadow.css",
+      "line": 8,
+      "value": "0 4px 14px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.03)"
+    }
+  ],
+  "--elevation-2": [
+    {
+      "file": "public/css/tokens/shadow.css",
+      "line": 9,
+      "value": "0 12px 28px rgba(15, 23, 42, 0.08), 0 4px 10px rgba(15, 23, 42, 0.04)"
+    }
+  ],
+  "--elevation-3": [
+    {
+      "file": "public/css/tokens/shadow.css",
+      "line": 10,
+      "value": "0 16px 40px rgba(15, 23, 42, 0.12), 0 6px 14px rgba(15, 23, 42, 0.06)"
+    }
+  ],
+  "--elevation-4": [
+    {
+      "file": "public/css/tokens/shadow.css",
+      "line": 11,
+      "value": "0 24px 64px rgba(15, 23, 42, 0.16), 0 10px 24px rgba(15, 23, 42, 0.08)"
+    }
+  ],
+  "--elevation-overlay": [
+    {
+      "file": "public/css/tokens/shadow.css",
+      "line": 12,
+      "value": "0 32px 100px rgba(15, 23, 42, 0.25)"
+    }
+  ],
+  "--shadow-brand-glow": [
+    {
+      "file": "public/css/tokens/shadow.css",
+      "line": 15,
+      "value": "0 4px 20px rgba(37, 99, 235, 0.28)"
+    }
+  ],
+  "--shadow-toast": [
+    {
+      "file": "public/css/tokens/shadow.css",
+      "line": 16,
+      "value": "0 10px 30px rgba(37, 99, 235, 0.12)"
+    }
+  ],
+  "--shadow-inner-soft": [
+    {
+      "file": "public/css/tokens/shadow.css",
+      "line": 17,
+      "value": "inset 0 2px 4px rgba(0, 0, 0, 0.04)"
+    }
+  ],
+  "--control-height-sm": [
+    {
+      "file": "public/css/tokens/sizing.css",
+      "line": 8,
+      "value": "36px"
+    }
+  ],
+  "--control-height-md": [
+    {
+      "file": "public/css/tokens/sizing.css",
+      "line": 9,
+      "value": "44px"
+    }
+  ],
+  "--control-height-lg": [
+    {
+      "file": "public/css/tokens/sizing.css",
+      "line": 10,
+      "value": "52px"
+    }
+  ],
+  "--touch-target-desktop": [
+    {
+      "file": "public/css/tokens/sizing.css",
+      "line": 13,
+      "value": "40px"
+    }
+  ],
+  "--touch-target-mobile": [
+    {
+      "file": "public/css/tokens/sizing.css",
+      "line": 14,
+      "value": "44px"
+    }
+  ],
+  "--icon-size-xs": [
+    {
+      "file": "public/css/tokens/sizing.css",
+      "line": 17,
+      "value": "16px"
+    }
+  ],
+  "--icon-size-sm": [
+    {
+      "file": "public/css/tokens/sizing.css",
+      "line": 18,
+      "value": "20px"
+    }
+  ],
+  "--icon-size-md": [
+    {
+      "file": "public/css/tokens/sizing.css",
+      "line": 19,
+      "value": "24px"
+    }
+  ],
+  "--icon-size-lg": [
+    {
+      "file": "public/css/tokens/sizing.css",
+      "line": 20,
+      "value": "32px"
+    }
+  ],
+  "--icon-stroke-thin": [
+    {
+      "file": "public/css/tokens/sizing.css",
+      "line": 21,
+      "value": "1.5px"
+    }
+  ],
+  "--icon-stroke-base": [
+    {
+      "file": "public/css/tokens/sizing.css",
+      "line": 22,
+      "value": "2px"
+    }
+  ],
+  "--icon-stroke-bold": [
+    {
+      "file": "public/css/tokens/sizing.css",
+      "line": 23,
+      "value": "2.5px"
+    }
+  ],
+  "--avatar-size-sm": [
+    {
+      "file": "public/css/tokens/sizing.css",
+      "line": 26,
+      "value": "32px"
+    }
+  ],
+  "--avatar-size-md": [
+    {
+      "file": "public/css/tokens/sizing.css",
+      "line": 27,
+      "value": "40px"
+    }
+  ],
+  "--avatar-size-lg": [
+    {
+      "file": "public/css/tokens/sizing.css",
+      "line": 28,
+      "value": "52px"
+    }
+  ],
+  "--space-0": [
+    {
+      "file": "public/css/tokens/spacing.css",
+      "line": 7,
+      "value": "0px"
+    }
+  ],
+  "--space-1": [
+    {
+      "file": "public/css/tokens/spacing.css",
+      "line": 8,
+      "value": "4px"
+    }
+  ],
+  "--space-2": [
+    {
+      "file": "public/css/tokens/spacing.css",
+      "line": 9,
+      "value": "8px"
+    }
+  ],
+  "--space-3": [
+    {
+      "file": "public/css/tokens/spacing.css",
+      "line": 10,
+      "value": "12px"
+    }
+  ],
+  "--space-4": [
+    {
+      "file": "public/css/tokens/spacing.css",
+      "line": 11,
+      "value": "16px"
+    }
+  ],
+  "--space-5": [
+    {
+      "file": "public/css/tokens/spacing.css",
+      "line": 12,
+      "value": "20px"
+    }
+  ],
+  "--space-6": [
+    {
+      "file": "public/css/tokens/spacing.css",
+      "line": 13,
+      "value": "24px"
+    }
+  ],
+  "--space-8": [
+    {
+      "file": "public/css/tokens/spacing.css",
+      "line": 14,
+      "value": "32px"
+    }
+  ],
+  "--space-10": [
+    {
+      "file": "public/css/tokens/spacing.css",
+      "line": 15,
+      "value": "40px"
+    }
+  ],
+  "--space-12": [
+    {
+      "file": "public/css/tokens/spacing.css",
+      "line": 16,
+      "value": "48px"
+    }
+  ],
+  "--space-16": [
+    {
+      "file": "public/css/tokens/spacing.css",
+      "line": 17,
+      "value": "64px"
+    }
+  ],
+  "--space-20": [
+    {
+      "file": "public/css/tokens/spacing.css",
+      "line": 18,
+      "value": "80px"
+    }
+  ],
+  "--space-24": [
+    {
+      "file": "public/css/tokens/spacing.css",
+      "line": 19,
+      "value": "96px"
+    }
+  ],
+  "--space-32": [
+    {
+      "file": "public/css/tokens/spacing.css",
+      "line": 20,
+      "value": "128px"
+    }
+  ],
+  "--font-family-display": [
+    {
+      "file": "public/css/tokens/typography.css",
+      "line": 8,
+      "value": "\"Noto Sans TC\", \"Noto Sans\""
+    }
+  ],
+  "--font-family-body": [
+    {
+      "file": "public/css/tokens/typography.css",
+      "line": 9,
+      "value": "\"Noto Sans TC\", \"DM Sans\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif"
+    }
+  ],
+  "--font-family-mono": [
+    {
+      "file": "public/css/tokens/typography.css",
+      "line": 10,
+      "value": "\"DM Mono\", \"SF Mono\", Menlo, Consolas, monospace"
+    }
+  ],
+  "--font-family-brand": [
+    {
+      "file": "public/css/tokens/typography.css",
+      "line": 11,
+      "value": "\"Syne\", sans-serif"
+    }
+  ],
+  "--font-size-xs": [
+    {
+      "file": "public/css/tokens/typography.css",
+      "line": 14,
+      "value": "0.75rem"
+    }
+  ],
+  "--font-size-sm": [
+    {
+      "file": "public/css/tokens/typography.css",
+      "line": 15,
+      "value": "0.875rem"
+    }
+  ],
+  "--font-size-base": [
+    {
+      "file": "public/css/tokens/typography.css",
+      "line": 16,
+      "value": "1rem"
+    }
+  ],
+  "--font-size-md": [
+    {
+      "file": "public/css/tokens/typography.css",
+      "line": 17,
+      "value": "1.125rem"
+    }
+  ],
+  "--font-size-lg": [
+    {
+      "file": "public/css/tokens/typography.css",
+      "line": 18,
+      "value": "1.25rem"
+    }
+  ],
+  "--font-size-xl": [
+    {
+      "file": "public/css/tokens/typography.css",
+      "line": 19,
+      "value": "1.5rem"
+    }
+  ],
+  "--font-size-2xl": [
+    {
+      "file": "public/css/tokens/typography.css",
+      "line": 20,
+      "value": "1.875rem"
+    }
+  ],
+  "--font-size-3xl": [
+    {
+      "file": "public/css/tokens/typography.css",
+      "line": 21,
+      "value": "2.25rem"
+    }
+  ],
+  "--font-size-4xl": [
+    {
+      "file": "public/css/tokens/typography.css",
+      "line": 22,
+      "value": "3rem"
+    }
+  ],
+  "--font-size-hero": [
+    {
+      "file": "public/css/tokens/typography.css",
+      "line": 23,
+      "value": "clamp(2.5rem, 8vw, 6.5rem)"
+    }
+  ],
+  "--line-height-tight": [
+    {
+      "file": "public/css/tokens/typography.css",
+      "line": 26,
+      "value": "1.15"
+    }
+  ],
+  "--line-height-snug": [
+    {
+      "file": "public/css/tokens/typography.css",
+      "line": 27,
+      "value": "1.3"
+    }
+  ],
+  "--line-height-normal": [
+    {
+      "file": "public/css/tokens/typography.css",
+      "line": 28,
+      "value": "1.5"
+    }
+  ],
+  "--line-height-loose": [
+    {
+      "file": "public/css/tokens/typography.css",
+      "line": 29,
+      "value": "1.65"
+    }
+  ],
+  "--font-weight-regular": [
+    {
+      "file": "public/css/tokens/typography.css",
+      "line": 32,
+      "value": "400"
+    }
+  ],
+  "--font-weight-medium": [
+    {
+      "file": "public/css/tokens/typography.css",
+      "line": 33,
+      "value": "500"
+    }
+  ],
+  "--font-weight-semibold": [
+    {
+      "file": "public/css/tokens/typography.css",
+      "line": 34,
+      "value": "600"
+    }
+  ],
+  "--font-weight-bold": [
+    {
+      "file": "public/css/tokens/typography.css",
+      "line": 35,
+      "value": "700"
+    }
+  ],
+  "--font-weight-black": [
+    {
+      "file": "public/css/tokens/typography.css",
+      "line": 36,
+      "value": "900"
+    }
+  ],
+  "--letter-spacing-tight": [
+    {
+      "file": "public/css/tokens/typography.css",
+      "line": 39,
+      "value": "-0.03em"
+    }
+  ],
+  "--letter-spacing-normal": [
+    {
+      "file": "public/css/tokens/typography.css",
+      "line": 40,
+      "value": "0em"
+    }
+  ],
+  "--letter-spacing-wide": [
+    {
+      "file": "public/css/tokens/typography.css",
+      "line": 41,
+      "value": "0.04em"
+    }
+  ],
+  "--letter-spacing-mono": [
+    {
+      "file": "public/css/tokens/typography.css",
+      "line": 42,
+      "value": "0.1em"
+    }
+  ]
+}

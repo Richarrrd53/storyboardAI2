@@ -606,6 +606,8 @@
   // ══════════════════════════════════════════════════════════════
   // 4. ProjectActions — 使用者操作協調與回滾
   // ══════════════════════════════════════════════════════════════
+  const restoreOperations = new Map();
+  const renameOperations = new Map();
   const ProjectActions = {
     async deleteProject(p, card, refreshCallback) {
       if (!p) return false;
@@ -659,100 +661,102 @@
       return true;
     },
 
-    async restoreProject(p, card, refreshCallback) {
-      if (!p) return false;
-      const requestEpoch = ProjectStore.resetEpoch;
-      const confirmFn = typeof global !== 'undefined' && typeof global.confirm === 'function' ? global.confirm : async () => true;
-      const isConfirmed = await confirmFn('是否還原此分鏡？', '', 'default', '還原', null);
-      if (!isConfirmed || requestEpoch !== ProjectStore.resetEpoch) return false;
+    restoreProject(p, card, refreshCallback) {
+      if (!p) return Promise.resolve(false);
+      const key = `${ProjectStore.resetEpoch}:${p.id}`;
+      if (restoreOperations.has(key)) return restoreOperations.get(key);
+      const task = (async () => {
+        const requestEpoch = ProjectStore.resetEpoch;
+        const confirmFn = typeof global !== 'undefined' && typeof global.confirm === 'function' ? global.confirm : async () => false;
+        const isConfirmed = await confirmFn('是否還原此分鏡？', '', 'default', '還原', null);
+        if (!isConfirmed || requestEpoch !== ProjectStore.resetEpoch) return false;
 
-      // 樂觀更新
-      p.is_deleted = false;
-      ProjectDeleteQueue.recentlyRestored.add(p.id);
-      ProjectDeleteQueue.recentlyDeleted.delete(p.id);
-      if (typeof refreshCallback === 'function') refreshCallback();
-      ProjectStore.notify({ type: 'restore_optimistic', project: p });
-
-      const toastFn = typeof global !== 'undefined' && typeof global.showSpaToast === 'function'
-        ? global.showSpaToast
-        : () => {};
-      toastFn(`分鏡「${p.title}」已還原。`);
-
-      try {
-        const res = await ProjectsApi.restoreProject(p.id);
-        if (requestEpoch !== ProjectStore.resetEpoch) return false;
-        if (res.ok) {
-          await ProjectStore.fetchProjects({ force: true });
-          if (requestEpoch !== ProjectStore.resetEpoch) return false;
-          if (typeof refreshCallback === 'function') refreshCallback();
-          ProjectStore.notify({ type: 'restore_commit', project: p });
-          return true;
-        } else {
-          throw new Error(res.error || '還原失敗');
-        }
-      } catch (err) {
-        if (requestEpoch !== ProjectStore.resetEpoch) return false;
-        console.error('Failed to restore project on server', err);
-        // 失敗回滾
-        p.is_deleted = true;
-        ProjectDeleteQueue.recentlyRestored.delete(p.id);
-        ProjectDeleteQueue.recentlyDeleted.add(p.id);
+        // 樂觀更新
+        p.is_deleted = false;
+        ProjectDeleteQueue.recentlyRestored.add(p.id);
+        ProjectDeleteQueue.recentlyDeleted.delete(p.id);
         if (typeof refreshCallback === 'function') refreshCallback();
-        ProjectStore.notify({ type: 'restore_rollback', project: p });
-        if (typeof global !== 'undefined' && typeof global.alert === 'function') {
-          global.alert('還原失敗，伺服器出錯');
-        }
-        return false;
-      }
-    },
+        ProjectStore.notify({ type: 'restore_optimistic', project: p });
 
-    async renameProject(p, card, refreshCallback) {
-      if (!p) return false;
-      const requestEpoch = ProjectStore.resetEpoch;
-      const promptFn = typeof global !== 'undefined' && typeof global.prompt === 'function'
-        ? global.prompt
-        : (msg, def) => def;
-      const newTitle = promptFn('請輸入新的分鏡名稱：', p.title || '');
-      if (newTitle === null) return false;
-      const trimmed = newTitle.trim();
-      if (!trimmed) {
-        if (typeof global !== 'undefined' && typeof global.alert === 'function') {
-          global.alert('分鏡名稱不能為空');
-        }
-        return false;
-      }
-      if (trimmed === p.title) return false;
+        const toastFn = typeof global !== 'undefined' && typeof global.showSpaToast === 'function'
+          ? global.showSpaToast
+          : () => {};
+        toastFn(`分鏡「${p.title}」已還原。`);
 
-      const oldTitle = p.title;
-      try {
-        const res = await ProjectsApi.renameProject(p.id, trimmed);
-        if (requestEpoch !== ProjectStore.resetEpoch) return false;
-        if (res.ok) {
-          p.title = trimmed;
-          const toastFn = typeof global !== 'undefined' && typeof global.showSpaToast === 'function'
-            ? global.showSpaToast
-            : () => {};
-          toastFn(`分鏡已更名為「${trimmed}」。`);
-          await ProjectStore.fetchProjects({ force: true });
+        try {
+          const res = await ProjectsApi.restoreProject(p.id);
           if (requestEpoch !== ProjectStore.resetEpoch) return false;
+          if (res.ok) {
+            await ProjectStore.fetchProjects({ force: true });
+            if (requestEpoch !== ProjectStore.resetEpoch) return false;
+            if (typeof refreshCallback === 'function') refreshCallback();
+            ProjectStore.notify({ type: 'restore_commit', project: p });
+            return true;
+          } else {
+            throw new Error(res.error || '還原失敗');
+          }
+        } catch (err) {
+          if (requestEpoch !== ProjectStore.resetEpoch) return false;
+          console.error('Failed to restore project on server', err);
+          // 失敗回滾
+          p.is_deleted = true;
+          ProjectDeleteQueue.recentlyRestored.delete(p.id);
+          ProjectDeleteQueue.recentlyDeleted.add(p.id);
           if (typeof refreshCallback === 'function') refreshCallback();
-          ProjectStore.notify({ type: 'renamed', project: p, oldTitle, newTitle: trimmed });
-          return true;
-        } else {
-          const msg = res.data?.error || '重新命名失敗';
+          ProjectStore.notify({ type: 'restore_rollback', project: p });
           if (typeof global !== 'undefined' && typeof global.alert === 'function') {
-            global.alert(msg);
+            global.alert('還原失敗，伺服器出錯');
           }
           return false;
         }
-      } catch (err) {
-        if (requestEpoch !== ProjectStore.resetEpoch) return false;
-        console.error('Failed to rename project', err);
-        if (typeof global !== 'undefined' && typeof global.alert === 'function') {
-          global.alert('重新命名失敗，請稍後再試');
-        }
-        return false;
-      }
+      })();
+      restoreOperations.set(key, task);
+      const cleanup = () => { if (restoreOperations.get(key) === task) restoreOperations.delete(key); };
+      task.then(cleanup, cleanup);
+      return task;
+    },
+
+    renameProject(p, card, refreshCallback) {
+      if (!p) return Promise.resolve(false);
+      const key = `${ProjectStore.resetEpoch}:${p.id}`;
+      if (renameOperations.has(key)) return renameOperations.get(key);
+      const task = (async () => {
+        const requestEpoch = ProjectStore.resetEpoch;
+        const service = global.DialogService || await global.ensureDialogService?.();
+        if (!service) throw new Error('Dialog Service is unavailable');
+        const oldTitle = p.title;
+        let changed = false;
+        const result = await service.prompt({
+          title: '重新命名分鏡',
+          description: '為這份分鏡取一個清楚、好辨識的名稱。',
+          label: '分鏡名稱',
+          value: p.title || '',
+          confirmText: '儲存名稱',
+          returnFocus: card?.querySelector?.('.project-option-btn'),
+          validate: value => value.trim() ? '' : '分鏡名稱不能為空',
+          onSubmit: async value => {
+            if (requestEpoch !== ProjectStore.resetEpoch) throw new Error('工作階段已變更，請重新開啟專案');
+            const trimmed = value.trim();
+            if (trimmed === p.title) return;
+            const res = await ProjectsApi.renameProject(p.id, trimmed);
+            if (requestEpoch !== ProjectStore.resetEpoch) throw new Error('工作階段已變更，請重新開啟專案');
+            if (!res.ok) throw new Error(res.data?.error || res.error || '重新命名失敗，請稍後再試');
+            p.title = trimmed;
+            await ProjectStore.fetchProjects({ force: true });
+            if (requestEpoch !== ProjectStore.resetEpoch) return;
+            changed = true;
+            if (typeof refreshCallback === 'function') refreshCallback();
+            ProjectStore.notify({ type: 'renamed', project: p, oldTitle, newTitle: trimmed });
+          }
+        });
+        if (!result.confirmed || !changed || requestEpoch !== ProjectStore.resetEpoch) return false;
+        global.showSpaToast?.(`分鏡已更名為「${p.title}」。`);
+        return true;
+      })().catch(err => { console.error('Failed to rename project', err); return false; });
+      renameOperations.set(key, task);
+      const cleanup = () => { if (renameOperations.get(key) === task) renameOperations.delete(key); };
+      task.then(cleanup, cleanup);
+      return task;
     },
 
     async duplicateProject(p, card, refreshCallback) {

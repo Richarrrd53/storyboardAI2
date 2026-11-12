@@ -91,16 +91,19 @@ test('ProjectStore: seedProjectDetail and invalidate detail', () => {
 test('ProjectActions: rename validation rejects empty titles without modifying project', async () => {
   const project = { id: 'p-ren', title: '原標題' };
   
-  // Custom prompt returning empty
-  const mockPrompt = () => '   ';
-  const oldPrompt = global.prompt;
-  global.prompt = mockPrompt;
+  const oldService = global.DialogService;
+  let validationMessage;
+  global.DialogService = { prompt: async options => {
+    validationMessage = options.validate('   ');
+    return { confirmed: false, reason: 'cancel' };
+  } };
   
   const result = await ProjectActions.renameProject(project, null, null);
   assert.equal(result, false);
   assert.equal(project.title, '原標題');
+  assert.equal(validationMessage, '分鏡名稱不能為空');
   
-  global.prompt = oldPrompt;
+  global.DialogService = oldService;
 });
 
 test('ProjectStore: reset clears all caches and timers for clean logout', () => {
