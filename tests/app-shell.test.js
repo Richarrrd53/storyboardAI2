@@ -103,6 +103,8 @@ function createMockElement(tagName = 'div', id = '', className = '') {
         const child = createMockElement(tagName, idMatch ? idMatch[1] : '', classMatch ? classMatch[1] : '');
         if (hrefMatch) child.href = hrefMatch[1];
         if (srcMatch) child.src = srcMatch[1];
+        child.disabled = /\bdisabled\b/.test(attrsStr);
+        child.hidden = /\bhidden\b/.test(attrsStr);
         if (dataIdMatch) child.dataset.id = dataIdMatch[1];
 
         const parent = stack[stack.length - 1];
@@ -114,10 +116,16 @@ function createMockElement(tagName = 'div', id = '', className = '') {
       }
     },
     appendChild(child) {
+      child.remove?.();
       children.push(child);
       child.parentElement = this;
       return child;
     },
+    removeChild(child) { child.remove(); return child; },
+    replaceChild(next, previous) { const index=children.indexOf(previous); previous.remove(); next.remove?.(); children.splice(index,0,next); next.parentElement=this; return previous; },
+    focus() { global.document.activeElement=this; },
+    getClientRects() { return [this.getBoundingClientRect()]; },
+    matches(sel) { return sel.split(',').some(part=>part.trim().toLowerCase()===this.tagName.toLowerCase()); },
     prepend(child) {
       children.unshift(child);
       child.parentElement = this;
@@ -163,6 +171,7 @@ function createMockElement(tagName = 'div', id = '', className = '') {
       return this.querySelectorAll(sel)[0] || null;
     },
     querySelectorAll(sel) {
+      if(sel.includes(',')) return [...new Set(sel.split(',').flatMap(part=>this.querySelectorAll(part.trim())))];
       if (sel.includes(' ')) {
         const parts = sel.trim().split(/\s+/);
         let currentNodes = [this];
@@ -262,6 +271,7 @@ function setupMockEnvironment() {
   const windowListeners = {};
   const windowMock = {
     document: documentMock,
+    performance: global.performance,
     localStorage: localStorageMock,
     matchMedia: () => ({ matches: false }),
     addEventListener: (evt, fn) => {
@@ -295,6 +305,10 @@ function setupMockEnvironment() {
 
 // Load AppShell code
 function loadAppShell() {
+  global.MutationObserver = class { observe() {} disconnect() {} };
+  new Function(fs.readFileSync(path.resolve('public/js/components/overlay-manager.js'), 'utf8'))();
+  new Function(fs.readFileSync(path.resolve('public/js/components/surface-morph.js'), 'utf8'))();
+  new Function(fs.readFileSync(path.resolve('public/js/components/user-panel.js'), 'utf8'))();
   const code = fs.readFileSync(path.resolve('public/js/shell/app-shell.js'), 'utf8');
   // Evaluate in global context
   const fn = new Function(code);
@@ -501,10 +515,10 @@ test('AppShell: toggleUserPanel() toggles active class', async () => {
   AppShell.toggleUserPanel(true);
   assert.strictEqual(userPanel.classList.contains('active'), true);
 
-  // Advance time beyond debounce/dismiss guard (380ms)
-  await new Promise(r => setTimeout(r, 420));
+  await new Promise(r => setTimeout(r, 500));
 
   AppShell.toggleUserPanel(false);
+  await new Promise(r => setTimeout(r, 470));
   assert.strictEqual(userPanel.classList.contains('active'), false);
 
   AppShell.destroy();
@@ -804,13 +818,13 @@ test('AppShell: init() idempotency and destroy() re-initialization lifecycle', a
   await AppShell.init({});
   assert.strictEqual(subscribeCallCount, 1, 'ProjectStore should be subscribed once on 1st init');
   const resizeCount1 = windowListeners['resize']?.length || 0;
-  assert.strictEqual(resizeCount1, 1, 'Resize listener should be registered once');
+  assert.strictEqual(resizeCount1, 2, 'Resize listener should be registered once');
 
   // Second init without destroy (idempotent call)
   await AppShell.init({});
   assert.strictEqual(subscribeCallCount, 1, 'ProjectStore should NOT be re-subscribed on duplicate init');
   const resizeCount2 = windowListeners['resize']?.length || 0;
-  assert.strictEqual(resizeCount2, 1, 'Resize listener should NOT be duplicated on 2nd init');
+  assert.strictEqual(resizeCount2, 2, 'Resize listener should NOT be duplicated on 2nd init');
 
   // Verify ProjectStore notification only updates once
   const sidebarList = document.getElementById('sidebar-projects-list');
@@ -832,7 +846,7 @@ test('AppShell: init() idempotency and destroy() re-initialization lifecycle', a
   await AppShell.init({});
   assert.strictEqual(subscribeCallCount, 2, 'ProjectStore should be subscribed again on re-init');
   assert.strictEqual(storeSubscribers.size, 1, 'Store subscriber active after re-init');
-  assert.strictEqual(windowListeners['resize']?.length || 0, 1, 'Window resize listener restored after re-init');
+  assert.strictEqual(windowListeners['resize']?.length || 0, 2, 'Shell and account resize listeners restored after re-init');
 
   // Verify re-initialized shell still responds to store events
   storeProjects = [{ id: 'p3', title: 'Re-init Project', is_deleted: false }];
@@ -1226,6 +1240,29 @@ test('Mobile Bottom Nav: Route updates synchronize active item and indicator', a
   AppShell.destroy();
 });
 
+test('History account link uses SPA once and hides mobile nav until returning to a main route', async () => {
+  setupMockEnvironment(); window.innerWidth = 390;
+  const shell = loadAppShell(); const routes = [];
+  await shell.init({ navigate: page => { routes.push(page); shell.updateRoute(page); } });
+  const link = document.getElementById('spa-user-panel').querySelector('#up-recycle-bin');
+  let prevented = false;
+  link.dispatchEvent({ type: 'click', target: link, button: 0, preventDefault() { prevented = true; }, stopPropagation() {} });
+  assert.equal(prevented, true); assert.deepEqual(routes, ['history']);
+  const nav = document.getElementById('spa-mobile-nav');
+  assert.equal(nav.hidden, true); assert.equal(nav.inert, true); assert.equal(nav.getAttribute('aria-hidden'), 'true');
+  assert.equal(nav.querySelector('.mobile-nav__indicator').classList.contains('is-active'), false);
+  shell.updateRoute('projects'); assert.equal(nav.hidden, false); assert.equal(nav.inert, false);
+  shell.destroy();
+});
+
+test('History account link retains native modifier-click behavior', async () => {
+  setupMockEnvironment(); const shell = loadAppShell(); let navigated = false, prevented = false;
+  await shell.init({ navigate: () => { navigated = true; } });
+  const link = document.getElementById('spa-user-panel').querySelector('#up-recycle-bin');
+  link.dispatchEvent({ type: 'click', target: link, button: 0, ctrlKey: true, preventDefault() { prevented = true; }, stopPropagation() {} });
+  assert.equal(navigated, false); assert.equal(prevented, false); shell.destroy();
+});
+
 
 
 
@@ -1262,4 +1299,34 @@ test('Mobile Bottom Nav: route changes cancel an in-flight pointer before synchr
   assert.equal(nav.querySelector('#mob-nav-template').classList.contains('active'), true);
   assert.equal(nav.classList.contains('is-interacting'), false);
   shell.destroy();
+});
+
+test('Phase 3 account: native row preserves its anatomy when real profile data arrives',async()=>{
+  setupMockEnvironment();const shell=loadAppShell();
+  await shell.init({spaAuth:{fetchUser:async()=>({user:{name:'Test creator',email:'long@example.test',image:'https://example.test/avatar.png'}})}});
+  await Promise.resolve();const row=document.getElementById('top-avatar'),panel=document.getElementById('spa-user-panel');
+  assert.equal(row.tagName,'BUTTON');assert.equal(row.querySelector('.account-row__name').textContent,'Test creator');
+  assert.equal(row.querySelector('.account-row__avatar').children[0].tagName,'IMG');
+  assert.equal(panel.querySelector('.up-name').textContent,'Test creator');assert.equal(panel.querySelector('.up-plan').hidden,true);
+  assert.equal(panel.querySelector('.up-body').querySelector('button').disabled,true);shell.destroy();
+});
+test('Phase 3 account: mobile sheet owns modal lock, Escape and page-abort cleanup',async()=>{
+  const {windowMock}=setupMockEnvironment();windowMock.innerWidth=390;
+  windowMock.matchMedia=query=>({matches:query.includes('prefers-reduced-motion') || (query.includes('max-width') && windowMock.innerWidth<=768)});
+  const shell=loadAppShell(),abort=new AbortController();await shell.init({signal:abort.signal});
+  const panel=document.getElementById('spa-user-panel');shell.toggleUserPanel(true);
+  assert.equal(document.body.querySelectorAll('.account-sheet-overlay').length,1);assert.equal(document.body.style.overflow,'hidden');
+  windowMock.dispatchEvent({type:'resize'});assert.equal(document.getElementById('spa-mobile-nav').inert,true);
+  document.dispatchEvent({type:'keydown',key:'Escape',preventDefault(){},stopPropagation(){},stopImmediatePropagation(){}});
+  assert.equal(panel.classList.contains('active'),false);assert.equal(document.body.querySelectorAll('.account-sheet-overlay').length,0);
+  shell.toggleUserPanel(true);abort.abort();assert.equal(document.body.querySelectorAll('.account-sheet-overlay').length,0);assert.notEqual(document.body.style.overflow,'hidden');shell.destroy();
+});
+test('Phase 3 account: breakpoint closes the old presentation; reopening reuses account DOM',async()=>{
+  const {windowMock}=setupMockEnvironment();windowMock.matchMedia=query=>({matches:query.includes('prefers-reduced-motion') || (query.includes('max-width') && windowMock.innerWidth<=768)});
+  const shell=loadAppShell();await shell.init({});const panel=document.getElementById('spa-user-panel');shell.toggleUserPanel(true);
+  assert.equal(document.body.querySelectorAll('.surface-morph-surface').length,1);
+  windowMock.innerWidth=390;windowMock.dispatchEvent({type:'resize'});
+  assert.equal(document.body.querySelectorAll('.surface-morph-surface').length,0);assert.equal(document.body.querySelectorAll('.account-sheet-overlay').length,0);shell.toggleUserPanel(true);assert.equal(document.body.querySelectorAll('.account-sheet-overlay').length,1);assert.equal(document.getElementById('spa-user-panel'),panel);
+  windowMock.innerWidth=1440;windowMock.dispatchEvent({type:'resize'});
+  assert.equal(document.body.querySelectorAll('.account-sheet-overlay').length,0);shell.toggleUserPanel(true);assert.equal(document.body.querySelectorAll('.surface-morph-surface').length,1);shell.destroy();
 });

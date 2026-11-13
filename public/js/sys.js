@@ -1,32 +1,49 @@
 const ModalAnimation = {
+    sessions: new WeakMap(),
     EASING_BACKDROP: 'cubic-bezier(.4,0,.2,1)',
-    EASING_CARD_ENTER: 'cubic-bezier(.33,1.53,.69,.99)',
+    EASING_CARD_ENTER: 'cubic-bezier(.33,1.53,.69,.99)', // Legacy delete signature.
+    EASING_DIALOG_ENTER: 'cubic-bezier(.34,1.59,.69,.99)',
+    EASING_BACKDROP_LEAVE: 'cubic-bezier(.8,0,.6,1)',
     EASING_CARD_LEAVE: 'cubic-bezier(.31, .01, .66, -0.59)',
     DURATION: 400,
 
+    cancel(overlay) {
+        const timers = this.sessions.get(overlay) || [];
+        timers.forEach(clearTimeout);
+        this.sessions.delete(overlay);
+    },
+    schedule(overlay, callback, delay) {
+        const timers = this.sessions.get(overlay) || [];
+        timers.push(setTimeout(callback, delay));
+        this.sessions.set(overlay, timers);
+    },
+
     open(overlay, panel, options = {}) {
         if (!overlay) return;
-        const duration = options.duration || this.DURATION;
+        this.cancel(overlay);
+        const reduced = !options.legacyMotion && typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+        const duration = reduced ? 0 : options.duration || this.DURATION;
         const blur = options.blur || '16px';
         const backdropBg = options.backdropBg || 'rgba(15, 23, 42, 0.45)';
 
         overlay.style.display = 'flex';
         overlay.style.pointerEvents = 'none';
-        overlay.style.transition = `all ${duration}ms ${this.EASING_BACKDROP}`;
+        overlay.style.transition = `backdrop-filter ${duration}ms ${this.EASING_BACKDROP}, -webkit-backdrop-filter ${duration}ms ${this.EASING_BACKDROP}, background-color ${duration}ms ${this.EASING_BACKDROP}, opacity ${duration}ms ${this.EASING_BACKDROP}`;
         overlay.style.backdropFilter = 'blur(0px)';
         if (overlay.style.webkitBackdropFilter !== undefined) {
             overlay.style.webkitBackdropFilter = 'blur(0px)';
         }
-        overlay.style.background = 'rgba(15, 23, 42, 0)';
-        overlay.style.opacity = '0';
+        overlay.style.background = options.legacyMotion ? 'rgba(15, 23, 42, 0)' : backdropBg;
+        overlay.style.opacity = options.legacyMotion ? '0' : '1';
 
         if (panel) {
-            panel.style.transition = `all ${duration}ms ${this.EASING_CARD_ENTER}`;
+            const enterEase = options.legacyMotion ? this.EASING_CARD_ENTER : this.EASING_DIALOG_ENTER;
+            panel.style.transition = `scale ${duration}ms ${enterEase}${options.legacyMotion ? `, opacity ${duration}ms ${enterEase}` : ''}`;
             panel.style.scale = '0';
-            panel.style.opacity = '0';
+            panel.style.opacity = options.legacyMotion ? '0' : '1';
         }
 
-        setTimeout(() => {
+        const reveal = () => {
             if (overlay.classList && typeof overlay.classList.add === 'function') {
                 overlay.classList.add('active');
             }
@@ -42,38 +59,44 @@ const ModalAnimation = {
                 panel.style.opacity = '1';
             }
             if (typeof options.onOpened === 'function') options.onOpened();
-        }, 10);
+        };
+        if (reduced) reveal();
+        else this.schedule(overlay, reveal, 10);
     },
 
     close(overlay, panel, options = {}) {
         if (!overlay) return;
-        const duration = options.duration || this.DURATION;
+        this.cancel(overlay);
+        const reduced = !options.legacyMotion && typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+        const duration = reduced ? 0 : options.duration || this.DURATION;
         const onComplete = typeof options === 'function' ? options : (options.onComplete || null);
 
         overlay.style.pointerEvents = 'none';
 
         if (panel) {
-            panel.style.transition = `all ${duration}ms ${this.EASING_CARD_LEAVE}`;
+            panel.style.transition = `scale ${duration}ms ${this.EASING_CARD_LEAVE}${options.legacyMotion ? `, opacity ${duration}ms ${this.EASING_CARD_LEAVE}` : ''}`;
         }
-        overlay.style.transition = `all ${duration}ms ${this.EASING_BACKDROP}`;
+        const backdropEase = options.legacyMotion ? this.EASING_BACKDROP : this.EASING_BACKDROP_LEAVE;
+        overlay.style.transition = `backdrop-filter ${duration}ms ${backdropEase}, -webkit-backdrop-filter ${duration}ms ${backdropEase}${options.legacyMotion ? `, background-color ${duration}ms ${backdropEase}` : ''}`;
 
-        setTimeout(() => {
+        this.schedule(overlay, () => {
             if (panel) {
                 panel.style.scale = '0';
-                panel.style.opacity = '0';
+                panel.style.opacity = options.legacyMotion ? '0' : '1';
             }
             overlay.style.backdropFilter = 'blur(0px)';
             if (overlay.style.webkitBackdropFilter !== undefined) {
                 overlay.style.webkitBackdropFilter = 'blur(0px)';
             }
-            overlay.style.background = 'rgba(15, 23, 42, 0)';
+            if (options.legacyMotion && options.fadeBackdrop === true) overlay.style.background = 'rgba(15, 23, 42, 0)';
             if (overlay.classList && typeof overlay.classList.remove === 'function') {
                 overlay.classList.remove('active');
             }
         }, 10);
 
-        setTimeout(() => {
+        this.schedule(overlay, () => {
             overlay.style.display = 'none';
+            this.sessions.delete(overlay);
             if (typeof onComplete === 'function') {
                 onComplete();
             }
@@ -126,7 +149,7 @@ function legacyDeleteConfirm(message, description, type = 'default', btnText, pr
     let cancel;
     const task = new Promise((resolve) => {
         let completed = false, accepted = false, aborted = false, lease;
-        let frame = null;
+        let trashMotion = null;
         const timers = [];
         const settle = value => { if (!completed) { completed = true; resolve(value); } };
         const bg = document.createElement("div");
@@ -151,13 +174,12 @@ function legacyDeleteConfirm(message, description, type = 'default', btnText, pr
             const previewContainer = document.createElement("div");
             previewContainer.classList.add("sys-preview");
 
-            const cloneProject = projectEl.cloneNode(true);
-            previewContainer.appendChild(cloneProject);
+            const sourceWidth = projectEl?.getBoundingClientRect?.().width || projectEl?.clientWidth || 240;
+            const width = Math.min(240, sourceWidth, Math.max(120, window.innerWidth - 80));
+            const preview = window.ProjectCard?.createPreview(projectEl, {width});
+            if (preview) previewContainer.appendChild(preview);
+            else {const label=document.createElement('p');label.textContent=projectEl?.querySelector?.('.project-title')?.textContent || message;previewContainer.appendChild(label);}
             windowEl.appendChild(previewContainer);
-
-            const delBtn = cloneProject.querySelector('.project-delete-btn') || cloneProject.querySelector('.project-option-btn');
-            if (delBtn) delBtn.remove();
-            cloneProject.classList.add('lock');
 
             const trashBinContainer = document.createElement("div");
             trashBinContainer.classList.add('sys-delete-trashbin');
@@ -188,9 +210,13 @@ function legacyDeleteConfirm(message, description, type = 'default', btnText, pr
         windowEl.tabIndex = -1;
         const returnFocus = document.activeElement;
         const closeWindow = () => {
+            if (accepted) trashMotion?.complete();
             ModalAnimation.close(bg, windowEl, {
                 duration: 400,
+                fadeBackdrop: true,
+                legacyMotion: true,
                 onComplete: () => {
+                    trashMotion?.cancel();
                     bg.remove();
                     lease?.release({ restoreFocus: !aborted });
                     signal?.removeEventListener('abort', cancel);
@@ -232,39 +258,8 @@ function legacyDeleteConfirm(message, description, type = 'default', btnText, pr
                 accepted = true;
                 btn1.disabled = true; btn2.disabled = true;
                 const trashbin = windowEl.querySelector('.sys-delete-trashbin');
-                const trashbinTop = windowEl.querySelector(".sys-delete-trashbin-top");
-                const cloneProject = windowEl.querySelector('.project-card');
-    
-                trashbin.style.animation = "trashbin 1s cubic-bezier(.33,1.53,.69,.99) 2 alternate";
-                trashbinTop.style.animation = "trashbin-top 0.5s cubic-bezier(.4,0,.2,1) 2 alternate";
-    
-                let position = { x: 0, y: 0, z: 0 };
-                let velocity = { x: 0, y: -16, z: -8 };
-                const gravity = 1.1;
-    
-                const animate = () => {
-                    position.x += velocity.x;
-                    position.z += velocity.z;
-                    velocity.y += gravity;
-                    position.y += velocity.y;
-    
-                    let s = position.z/-232;
-                    let currentScale = Math.max(0, 0.8 - s * 0.5);
-                    cloneProject.style.transform = `translate3d(${position.x}px, ${position.y}px, ${position.z}px) rotateX(${s*135}deg) scale(${currentScale})`;
-                    
-                    cloneProject.style.filter = `blur(${Math.max(s-0.5)*10}px)`;
-                    cloneProject.style.zIndex = (s > 0.5) ? 0 : 2;
-    
-                    if (position.y < 0) { 
-                        frame = requestAnimationFrame(animate);
-                    }
-                    else{
-    
-                        cloneProject.style.opacity = 0;
-                    }
-                };
-    
-                frame = requestAnimationFrame(animate);
+                const preview = windowEl.querySelector('.project-folder-card');
+                if (preview && window.ProjectTrashMotion) trashMotion = window.ProjectTrashMotion.animate({preview,bin:trashbin,signal});
                 timers.push(setTimeout(() => {
                     closeWindow();
                 }, 1000));
@@ -282,6 +277,7 @@ function legacyDeleteConfirm(message, description, type = 'default', btnText, pr
 
         ModalAnimation.open(bg, windowEl, {
             duration: 400,
+            legacyMotion: true,
             blur: '50px',
             backdropBg: 'var(--primary-soft)'
         });
@@ -292,7 +288,8 @@ function legacyDeleteConfirm(message, description, type = 'default', btnText, pr
         cancel = () => {
             aborted = true;
             timers.forEach(clearTimeout);
-            if (frame !== null) cancelAnimationFrame(frame);
+            trashMotion?.cancel();
+            ModalAnimation.cancel(bg);
             bg.remove(); lease.release({ restoreFocus: false }); settle(false);
             signal?.removeEventListener('abort', cancel);
         };

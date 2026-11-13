@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>StoryboardAI｜從故事到分鏡</title>
+    <meta name="description" content="StoryboardAI 是你的 AI 短影音分鏡助理。從故事靈感、AI 創作討論到可編輯的影片分鏡，讓想法逐步成為畫面。" />
+    <link rel="stylesheet" href="../css/style.css" />
+    <link rel="stylesheet" href="../css/landing.css" />
+</head>
+
+<body>
+
+    <div class="gradient-bg" id="BG" aria-hidden="true"></div>
+    <nav class="nav lp-nav" id="nav" aria-label="主要導覽">
+        <a href="#heroSection" class="brand-logo" aria-label="StoryboardAI 首頁">
+            <img src="../icon/logo/logo.png" alt="" class="brand-logo-img" width="32" height="32" />
+            <span>Storyboard <span>AI</span></span>
+        </a>
+        <div class="lp-nav-sections" id="nav-progress">
+            <a href="#videos">產品預覽</a><a href="#how">創作流程</a><a href="#features">分鏡編輯</a>
+        </div>
+        <div class="lp-nav-actions">
+            <a href="/login" data-navigate="login" class="lp-login">登入</a>
+            <a href="/register" data-navigate="register" class="lp-button">開始創作</a>
+        </div>
+    </nav>
+    <main id="page-main" class="page-shell page-landing">
+      <div class="landing-story">
+       <div class="lp-cinema"><div class="lp-cinema-stage">
+        <div class="lp-stage-depth" aria-hidden="true"></div>
+        <section class="lp-hero lp-wrap" id="heroSection" tabindex="-1" aria-labelledby="lp-title">
+          <div class="lp-hero-surface">
+            <div class="lp-hero-light" aria-hidden="true"></div>
+            <div class="lp-hero-copy">
+              <h1 id="lp-title">靈感，<br>一鍵轉換</h1>
+              <p>你的 AI 短影音助理，從故事靈感走到可編輯的影片分鏡。</p>
+              <div class="lp-actions"><a href="/login" data-navigate="login" class="lp-button">開始我的分鏡</a><a href="#videos" class="lp-text-link">看看如何創作</a></div>
+            </div>
+            <div class="lp-film-stage">
+              <div class="lp-film" aria-label="專案既有的寫實、電影與漫畫風格範例">
+                <figure class="lp-film-frame"><img src="../icon/card/realistic.png" alt="寫實風格的犬隻畫面範例" width="1024" height="682" fetchpriority="high"><figcaption><span>寫實</span><span>01</span></figcaption></figure>
+                <figure class="lp-film-frame"><img src="../icon/card/film.png" alt="電影光影風格的犬隻畫面範例" width="1024" height="682"><figcaption><span>電影</span><span>02</span></figcaption></figure>
+                <figure class="lp-film-frame"><img src="../icon/card/comic.png" alt="漫畫風格的犬隻畫面範例" width="1024" height="682"><figcaption><span>漫畫</span><span>03</span></figcaption></figure>
+              </div>
+            </div>
+            <div class="lp-hero-note"><span>先有故事，再有鏡頭。</span><a href="#how" aria-label="閱讀創作流程"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M12 4v16m-6-6 6 6 6-6"/></svg></a></div>
+          </div>
+        </section>
+
+        <section class="lp-product lp-wrap lp-section" id="videos" tabindex="-1" aria-labelledby="lp-product-title">
+          <div class="lp-section-head"><h2 id="lp-product-title">故事的下一步，<br>在這裡看見。</h2><p>讓散落的靈感有地方開始。<br>建立創作、整理專案，再回到每個鏡頭。</p></div>
+          <figure class="lp-product-image">
+            <picture><source media="(max-width: 600px)" srcset="../screenshot/current/dashboard-390.png"><img src="../screenshot/current/dashboard-1440.png" alt="目前本地版本的 StoryboardAI 工作區，顯示新建分鏡入口與空白專案狀態" width="1440" height="900" loading="eager"></picture>
+            <div class="lp-reveal-tool matte-acrylic" aria-hidden="true"><span>故事的下一站</span><strong>你的創作工作區</strong></div>
+            <figcaption>目前版本實機擷取，本地測試資料；非正式帳號畫面。</figcaption>
+          </figure>
+        </section>
+       </div></div>
+       <div class="lp-wrap"><details class="lp-film-details"><summary>播放 StoryboardAI 概念影片<span aria-hidden="true">＋</span></summary><video id="intro_video" controls muted playsinline preload="none" poster="../icon/card/film.png" aria-label="StoryboardAI 概念介紹影片"><source src="../video/StoryboardAI_Intro.mp4" type="video/mp4">你的瀏覽器不支援影片播放。</video></details></div>
+
+        <section class="lp-workflow lp-section" id="how" tabindex="-1" aria-labelledby="lp-workflow-title">
+          <div class="lp-wrap lp-workflow-layout">
+            <div class="lp-workflow-heading"><h2 id="lp-workflow-title">不必一開始，<br>就想好每一鏡。</h2><p>把想法說出來，<br>讓故事一步步長成畫面。</p><a href="/login" data-navigate="login" class="lp-text-link">從我的故事開始</a><div class="lp-workflow-progress" aria-hidden="true"><span></span></div><p class="lp-demo-caption">創作流程示意，非即時 AI 生成</p></div>
+            <ol class="lp-workflow-steps">
+              <li><span class="lp-step-num" aria-hidden="true">01</span><div><h3>先說一個故事</h3><p>輸入短影音主題、故事或場景，留下你最想拍的那個念頭。</p><blockquote>「雨停了，牠在街角遇見一個等牠的人。」<cite>故事輸入示例</cite></blockquote><picture><source media="(max-width: 600px)" srcset="../screenshot/current/generate-390.png"><img class="lp-composer-capture" src="../screenshot/current/generate-1440.png" alt="目前版本的新建分鏡輸入介面，本地測試環境" width="1440" height="900" loading="lazy"></picture></div></li>
+              <li><span class="lp-step-num" aria-hidden="true">02</span><div><h3>和 AI 一起釐清</h3><p>討論敘事方向、觀眾與調性，確認創作摘要，再決定風格、秒數與畫面比例。</p><div class="lp-dialogue"><p>想讓相遇帶著什麼情緒？</p><p>安靜、溫暖，像電影的最後一幕。</p></div><div class="lp-brief-fields" aria-label="創作摘要示例"><span>溫暖的相遇</span><span>電影風格</span><span>16:9</span></div></div></li>
+              <li><span class="lp-step-num" aria-hidden="true">03</span><div><h3>把故事拆成鏡頭</h3><p>從敘事到畫面，先看清每一鏡的順序與節奏。</p><div class="lp-workflow-shots"><figure><img src="../icon/card/realistic.png" alt="既有風格素材：犬隻"><figcaption>01／街角，遠景</figcaption></figure><figure><img src="../icon/card/film.png" alt="既有電影風格素材：犬隻"><figcaption>02／停步，特寫</figcaption></figure><figure><img src="../icon/card/comic.png" alt="既有漫畫風格素材：犬隻"><figcaption>03／相遇，草稿</figcaption></figure></div><p class="lp-demo-caption">以既有風格素材示意鏡頭編排，非同一故事的生成結果。</p></div></li>
+              <li><span class="lp-step-num" aria-hidden="true">04</span><div><h3>讓節奏，更接近想像</h3><p>回到每個鏡頭，調整畫面、鏡頭語言與時間。</p><div class="lp-workflow-edit"><img src="../icon/card/film.png" alt="分鏡編輯內容示意"><div class="lp-edit-toolbar matte-acrylic"><span>鏡頭 02</span><span>特寫，緩慢推近</span><strong>3s</strong></div></div></div></li>
+            </ol>
+          </div>
+        </section>
+
+        <section class="lp-capabilities lp-wrap lp-section" id="features" tabindex="-1" aria-labelledby="lp-cap-title">
+          <div class="lp-section-head"><h2 id="lp-cap-title">生成是起點。<br>創作，還在你手裡。</h2><p>一張分鏡，不只是一張圖。<br>把畫面、動作和節奏放在一起思考。</p></div>
+          <div class="lp-edit-layout">
+            <figure class="lp-shot-sheet">
+              <div class="lp-sheet-heading"><span>分鏡內容示例</span><span>鏡頭 02</span></div>
+              <img src="../icon/card/film.png" alt="電影風格犬隻特寫，作為分鏡內容示例" width="1024" height="682" loading="lazy">
+              <dl><div><dt>故事內容</dt><dd>牠停下腳步，望向畫面外。</dd></div><div><dt>鏡頭語言</dt><dd>特寫，平視，緩慢推近</dd></div><div><dt>鏡頭秒數</dt><dd>3s</dd></div></dl>
+              <figcaption>示意內容，非實際生成結果</figcaption>
+            </figure>
+            <div class="lp-edit-notes">
+              <article><h3>每個鏡頭，都能再推敲。</h3><p>編輯故事內容、景別與運鏡描述，調整秒數。讓每一鏡都有明確的敘事目的。</p></article>
+              <article><h3>用適合你的方式看分鏡。</h3><p>在分鏡表與膠卷視圖之間切換，從逐鏡細節到連續畫面，換個角度檢視故事。</p></article>
+              <article><h3>靈感可以暫停，再繼續。</h3><p>透過專案工作區整理分鏡，回到上次的創作，接著把故事完成。</p></article>
+            </div>
+          </div>
+        </section>
+
+        <section class="lp-cta lp-wrap" id="cta" tabindex="-1" aria-labelledby="lp-cta-title"><div class="lp-cta-surface"><svg viewBox="0 0 80 68" width="80" height="68" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 28h64v32H8zM8 28 4 13 66 2l4 15-62 11M20 10l11 13M40 7l11 12M60 3l10 12M20 40h40M20 49h24"/></svg><h2 id="lp-cta-title">你的故事，<br>值得第一個鏡頭。</h2><a href="/register" data-navigate="register" class="lp-button">開始創作</a><p>已經有帳號？<a href="/login" data-navigate="login">登入工作區</a></p></div></section>
+        <footer class="lp-footer lp-wrap"><a href="#heroSection" class="lp-footer-brand">StoryboardAI</a><p>從故事，到畫面。</p><a href="#videos">回看產品預覽</a></footer>
+      </div>
+    </main>
+
+    <div class="black-mask" id="black-mask-top"></div>
+
+
+    <div class="black-mask" id="black-mask-bottom"></div>
+
+    <!-- Transition Loader Overlay -->
+    <div id="transition-loader-overlay" class="transition-loader-overlay">
+        <div class="transition-loader-content">
+            <svg class="transition-loader-svg" viewBox="0 0 100 100" fill="none" aria-hidden="true">
+                <g id="transition-loader-group">
+                    <path id="transition-loader-path" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" opacity="0.15"></path>
+                </g>
+            </svg>
+            <div id="transition-loader-text" class="transition-loader-text-el">劇目準備中...</div>
+        </div>
+    </div>
+
+    <!-- Global Toast Notification -->
+    <div id="global-toast" class="global-toast">
+        <span id="global-toast-text"></span>
+        <button id="global-toast-undo" class="btn btn-primary global-toast-undo-btn">復原</button>
+    </div>
+
+    <!-- Permanent App-Level Transition Layer (outside page-main) -->
+    <div id="transition-layer" class="app-transition-layer"></div>
+
+
+    <script src="../js/vendor/gsap.min.js"></script>
+    <script src="../js/vendor/ScrollTrigger.min.js"></script>
+    <script src="../js/dynamic-mask.js"></script>
+    <script src="../js/components/project-card.js"></script>
+    <script src="../js/components/project-card-interactions.js"></script>
+    <script src="../js/components/project-option-morph.js"></script>
+    <script src="../js/components/project-cover-transition.js"></script>
+    <script src="../js/features/projects.js"></script>
+    <script src="../js/pages/projects.js"></script>
+    <script src="../js/pages/history.js"></script>
+    <script src="../js/pages/dashboard.js"></script>
+    <script src="../js/pages/project-detail.js"></script>
+    <script src="../js/pages/templates.js"></script>
+    <script src="../js/features/page-asset-loader.js"></script>
+    <script src="../js/components/transition-loader.js"></script>
+    <script src="../js/components/global-toast.js"></script>
+    <script src="../js/features/creative-brief.js"></script>
+    <script src="../js/features/creation.js"></script>
+    <script src="../js/features/creative-copilot.js"></script>
+    <script src="../js/features/freeform-storyboard.js"></script>
+    <script src="../js/features/inspiration-field.js"></script>
+    <script src="../js/features/generation-task.js"></script>
+    <script src="../js/components/quick-compose.js"></script>
+    <script src="../js/shell/app-shell.js"></script>
+    <script src="../js/features/auth-service.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/pages/auth-page.js"></script>
+    <script src="../js/components/project-thumbnails.js"></script>
+    <script src="../js/pages/page-host.js"></script>
+    <script src="../js/components/navigation-transition.js"></script>
+    <script src="../js/spa-router.js"></script>
+    <script src="../js/components/overlay-manager.js"></script>
+    <script src="../js/components/dialog-service.js"></script>
+    <script src="../js/sys.js"></script>
+</body>
+
+</html>

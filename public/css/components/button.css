@@ -11,7 +11,7 @@
   justify-content: center;
   gap: var(--space-2, 8px);
   font-family: var(--font-family-body, "Noto Sans TC", sans-serif);
-  font-weight: var(--font-weight-medium, 500);
+  font-weight: var(--font-weight-bold);
   font-size: var(--font-size-sm, 0.875rem);
   line-height: 1;
   border-radius: var(--radius-pill, 999px);
@@ -20,8 +20,8 @@
   text-decoration: none;
   white-space: nowrap;
   user-select: none;
-  min-height: 38px;
-  padding: 8px 18px;
+  min-height: var(--control-height-md);
+  padding: var(--space-2) var(--space-6);
   transition: transform var(--motion-duration-instant, 120ms) var(--motion-ease-standard, cubic-bezier(0.2, 0, 0, 1)),
               background-color var(--motion-duration-fast, 160ms) var(--motion-ease-standard, cubic-bezier(0.2, 0, 0, 1)),
               box-shadow var(--motion-duration-fast, 160ms) var(--motion-ease-standard, cubic-bezier(0.2, 0, 0, 1)),
@@ -34,20 +34,21 @@
 }
 
 .btn:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px var(--color-brand-primary-soft, rgba(37, 99, 235, 0.2));
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: var(--focus-ring-shadow);
 }
 
 /* ── Primary Button ── */
 .btn-primary {
-  background: var(--color-brand-primary, #2563eb);
+  background: var(--button-primary-bg);
   color: var(--white, #ffffff);
   box-shadow: 0 1px 3px rgba(37, 99, 235, 0.2);
   border-color: transparent;
 }
 
 .btn-primary:hover {
-  background: var(--blue-700, #1d4ed8);
+  background: var(--color-action-primary-hover);
   box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
   transform: translateY(-1px);
 }
@@ -83,8 +84,8 @@
 
 /* ── Ghost Button ── */
 .btn-ghost {
-  background: transparent;
-  color: var(--color-text-secondary, #475569);
+  background: var(--button-ghost-bg);
+  color: var(--color-text-secondary);
   border-color: transparent;
 }
 
@@ -107,10 +108,10 @@
 
 /* ── Icon Button ── */
 .btn-icon {
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
-  min-height: 36px;
+  width: var(--touch-target-desktop);
+  height: var(--touch-target-desktop);
+  min-width: var(--touch-target-desktop);
+  min-height: var(--touch-target-desktop);
   padding: 0;
   border-radius: var(--radius-circle, 50%);
   display: inline-flex;
@@ -126,22 +127,22 @@
 }
 
 .btn-sm {
-  min-height: 32px;
-  padding: 6px 14px;
+  min-height: var(--control-height-sm);
+  padding: var(--space-1) var(--space-4);
   font-size: var(--font-size-xs, 0.75rem);
 }
 
 .btn-md {
-  min-height: 38px;
-  padding: 8px 18px;
+  min-height: var(--control-height-md);
+  padding: var(--space-2) var(--space-6);
   font-size: var(--font-size-sm, 0.875rem);
 }
 
 .btn-lg {
-  min-height: 46px;
-  padding: 12px 24px;
+  min-height: var(--control-height-lg);
+  padding: var(--space-3) var(--space-8);
   font-size: var(--font-size-base, 1rem);
-  font-weight: var(--font-weight-semibold, 600);
+  font-weight: var(--font-weight-bold);
 }
 
 /* ── Opt-in Sweep Shine ── */
@@ -170,4 +171,13 @@
 @keyframes shineSweepGlobal {
   0% { left: -150%; }
   100% { left: 150%; }
+}
+
+/* v4 explicit states; API/interaction locking remains owned by controllers. */
+.btn:disabled, .btn[aria-disabled="true"] { opacity: var(--opacity-disabled); cursor: not-allowed; transform: none; }
+.btn[aria-busy="true"] { cursor: progress; }
+.btn[aria-pressed="true"] { border-color: var(--color-border-selected); box-shadow: inset 0 0 0 1px var(--color-border-selected); }
+@media (pointer: coarse) {
+  .btn { min-height: var(--touch-target-mobile); }
+  .btn-icon { min-width: var(--touch-target-mobile); width: var(--touch-target-mobile); height: var(--touch-target-mobile); }
 }

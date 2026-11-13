@@ -1,0 +1,157 @@
+{
+  "date": "2026-11-13",
+  "protectedFiles": [
+    {
+      "file": "public/js/features/projects.js",
+      "unchanged": true
+    },
+    {
+      "file": "public/js/components/project-card.js",
+      "unchanged": true
+    },
+    {
+      "file": "public/js/components/project-card-interactions.js",
+      "unchanged": true
+    },
+    {
+      "file": "public/css/components/project-card.css",
+      "unchanged": true
+    },
+    {
+      "file": "public/js/pages/dashboard.js",
+      "unchanged": true
+    },
+    {
+      "file": "public/html/dashboard.html",
+      "unchanged": true
+    },
+    {
+      "file": "public/js/spa-router.js",
+      "unchanged": true
+    },
+    {
+      "file": "public/js/landing.js",
+      "unchanged": true
+    },
+    {
+      "file": "public/js/landing-animation.js",
+      "unchanged": true
+    },
+    {
+      "file": "public/css/landing.css",
+      "unchanged": true
+    }
+  ],
+  "css": [
+    {
+      "file": "public/css/components/acrylic.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/components/button.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/components/dialog.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/components/input.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/components/mobile-nav.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/components/option-morph.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/creation-workspace.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/dashboard.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/generate.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/project-detail.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/shell.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/style.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/template-detail.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/tokens/blur.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/tokens/border.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/tokens/colors.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/tokens/components.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/tokens/layers.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/tokens/primitives.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/tokens/shadow.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/components/account-panel.css",
+      "passed": true
+    }
+  ],
+  "js": [
+    {
+      "file": "public/js/components/surface-morph.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/components/user-panel.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/components/overlay-manager.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/components/project-option-morph.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/shell/app-shell.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/pages/projects.js",
+      "passed": true
+    }
+  ]
+}

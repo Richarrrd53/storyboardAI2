@@ -1689,7 +1689,7 @@
 
 .source-modal-actions {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   padding-top: var(--space-2);
 }
 

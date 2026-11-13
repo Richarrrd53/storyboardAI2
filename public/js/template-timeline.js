@@ -29,6 +29,7 @@ let isPlaying = false;
 let currentNormalizedSegments = [];
 let currentActiveSegmentId = null;
 let narrativeCardAnimTimer = null;
+let sourceInfoModalCleanup = null;
 
 // Player references
 let currentSourcePlayer = null;
@@ -846,6 +847,7 @@ function initAdvancedWorkspaceToggle() {
 }
 
 function initSourceInfoModal(template) {
+  sourceInfoModalCleanup?.();
   const modal = document.getElementById('source-detail-modal');
   const openBtn = document.getElementById('btn-open-source-modal');
   const closeBtn = document.getElementById('btn-close-source-modal');
@@ -873,13 +875,33 @@ function initSourceInfoModal(template) {
     linkEl.style.display = srcUrl === '#' ? 'none' : 'inline-flex';
   }
 
+  const panel = modal.querySelector('.source-modal-panel');
+  const originParent = modal.parentNode, originNext = modal.nextSibling;
+  const restorePortal = () => {
+    if (originParent?.isConnected) originParent.insertBefore(modal, originNext?.parentNode === originParent ? originNext : null);
+    else modal.remove();
+  };
+  let lease = null, closing = false, disposed = false;
   const openModal = () => {
+    if (disposed) return;
+    closing = false;
+    if (modal.parentNode !== document.body) document.body.appendChild(modal);
     modal.hidden = false;
-    closeBtn?.focus();
+    window.ModalAnimation?.open(modal, panel, { blur: 'var(--dialog-backdrop-blur, 50px)', backdropBg: 'var(--dialog-backdrop-bg)' });
+    lease ||= window.OverlayManager?.acquire({ overlay: modal, panel, initialFocus: closeBtn, returnFocus: openBtn, onEscape: () => closeModal() });
+    if (!lease) closeBtn?.focus();
   };
   const closeModal = () => {
-    modal.hidden = true;
-    openBtn?.focus();
+    if (closing || modal.hidden) return;
+    closing = true;
+    const finish = () => {
+      modal.hidden = true; closing = false;
+      if (lease) { lease.release(); lease = null; }
+      else if (!disposed) openBtn?.focus();
+      restorePortal();
+    };
+    if (window.ModalAnimation) window.ModalAnimation.close(modal, panel, { onComplete: finish });
+    else finish();
   };
 
   if (openBtn) openBtn.onclick = openModal;
@@ -887,9 +909,18 @@ function initSourceInfoModal(template) {
   modal.onclick = event => {
     if (event.target === modal) closeModal();
   };
-  window.addEventListener('keydown', event => {
-    if (event.key === 'Escape' && !modal.hidden) closeModal();
-  });
+  const onKey = event => { if (!lease && event.key === 'Escape' && !modal.hidden) closeModal(); };
+  window.addEventListener('keydown', onKey);
+  sourceInfoModalCleanup = () => {
+    disposed = true; window.removeEventListener('keydown', onKey);
+    window.ModalAnimation?.cancel(modal);
+    modal.hidden = true; modal.style.display = 'none';
+    lease?.release({ restoreFocus: false }); lease = null;
+    restorePortal();
+    if (openBtn) openBtn.onclick = null;
+    if (closeBtn) closeBtn.onclick = null;
+    modal.onclick = null;
+  };
 }
 
 function initStickyHeaderTransition() {
@@ -1875,6 +1906,7 @@ window.backToStoreBrowse = function() {
 };
 
 window.destroyTemplateTimeline = function() {
+  sourceInfoModalCleanup?.(); sourceInfoModalCleanup = null;
   playerRevision++;
   stopPlayerSync();
   if (currentSourcePlayerType === 'youtube' && currentSourcePlayer?.destroy) {

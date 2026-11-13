@@ -1,0 +1,254 @@
+TAP version 13
+# Subtest: confirm returns explicit false, defaults description safely and resolves once
+ok 1 - confirm returns explicit false, defaults description safely and resolves once
+  ---
+  duration_ms: 29.8408
+  ...
+# Subtest: central dialogs match delete scale/blur signature and keep scrim alpha on exit
+ok 2 - central dialogs match delete scale/blur signature and keep scrim alpha on exit
+  ---
+  duration_ms: 8.7154
+  ...
+# Subtest: global facade preserves boolean confirm, void alert and native prompt
+ok 3 - global facade preserves boolean confirm, void alert and native prompt
+  ---
+  duration_ms: 13.1252
+  ...
+# Subtest: queued dialogs stay single and abort cancels active and queued work
+ok 4 - queued dialogs stay single and abort cancels active and queued work
+  ---
+  duration_ms: 14.401
+  ...
+# Subtest: prompt keeps failed input, prevents concurrent submit, retries once and releases busy state
+ok 5 - prompt keeps failed input, prevents concurrent submit, retries once and releases busy state
+  ---
+  duration_ms: 10.3903
+  ...
+# Subtest: IME Enter is prevented and abort while submitting ignores late completion
+ok 6 - IME Enter is prevented and abort while submitting ignores late completion
+  ---
+  duration_ms: 10.9575
+  ...
+# Subtest: modal leases trap Tab, preserve pre-existing inert/overflow and return focus
+ok 7 - modal leases trap Tab, preserve pre-existing inert/overflow and return focus
+  ---
+  duration_ms: 9.4167
+  ...
+# Subtest: page signal cancels closing dialogs without later focus or duplicate resolve
+ok 8 - page signal cancels closing dialogs without later focus or duplicate resolve
+  ---
+  duration_ms: 10.687
+  ...
+# Subtest: legacy delete retains 1000ms close / 1500ms true result and abort is boolean false
+ok 9 - legacy delete retains 1000ms close / 1500ms true result and abort is boolean false
+  ---
+  duration_ms: 13.9876
+  ...
+# Subtest: navigation during cancelled legacy exit releases its modal lease immediately
+ok 10 - navigation during cancelled legacy exit releases its modal lease immediately
+  ---
+  duration_ms: 8.1298
+  ...
+# Subtest: ModalAnimation: open sets initial zero blur & scale 0, then transitions to blur and scale 1 in 10ms
+ok 11 - ModalAnimation: open sets initial zero blur & scale 0, then transitions to blur and scale 1 in 10ms
+  ---
+  duration_ms: 36.8039
+  ...
+# Subtest: ModalAnimation: close sets closing easing curve, then scale 0 and blur 0 in 10ms, then display none
+ok 12 - ModalAnimation: close sets closing easing curve, then scale 0 and blur 0 in 10ms, then display none
+  ---
+  duration_ms: 214.1542
+  ...
+# Subtest: legacy delete can explicitly preserve its existing backdrop fade
+ok 13 - legacy delete can explicitly preserve its existing backdrop fade
+  ---
+  duration_ms: 62.8289
+  ...
+# Subtest: ProjectsPage: getFilteredAndSortedProjects filters deleted/pending and sorts desc by updateAt
+ok 14 - ProjectsPage: getFilteredAndSortedProjects filters deleted/pending and sorts desc by updateAt
+  ---
+  duration_ms: 10.5395
+  ...
+# Subtest: ProjectsPage: Page Lifecycle Contract - mount() returns { unmount() }
+ok 15 - ProjectsPage: Page Lifecycle Contract - mount() returns { unmount() }
+  ---
+  duration_ms: 14.5493
+  ...
+# Subtest: ProjectsPage: renders empty state when no active projects exist
+ok 16 - ProjectsPage: renders empty state when no active projects exist
+  ---
+  duration_ms: 3.9186
+  ...
+# Subtest: ProjectsPage: renders project cards and hooks lazyLoadProjectThumbs & card events
+ok 17 - ProjectsPage: renders project cards and hooks lazyLoadProjectThumbs & card events
+  ---
+  duration_ms: 5.7826
+  ...
+# Subtest: ProjectsPage: reactive updates via ProjectStore subscription and unmount cleanup
+ok 18 - ProjectsPage: reactive updates via ProjectStore subscription and unmount cleanup
+  ---
+  duration_ms: 6.0821
+  ...
+# Subtest: ProjectsPage: signal abort triggers immediate and safe unmount
+ok 19 - ProjectsPage: signal abort triggers immediate and safe unmount
+  ---
+  duration_ms: 5.3354
+  ...
+# Subtest: Router Navigation Simulation: Direct Entry, Leave, Return, Back/Forward Lifecycle
+ok 20 - Router Navigation Simulation: Direct Entry, Leave, Return, Back/Forward Lifecycle
+  ---
+  duration_ms: 7.3732
+  ...
+# Subtest: ProjectsPage: getFilteredAndSortedProjects supports OR logic with multiple tags and preserves sort
+ok 21 - ProjectsPage: getFilteredAndSortedProjects supports OR logic with multiple tags and preserves sort
+  ---
+  duration_ms: 7.1552
+  ...
+# Subtest: ProjectsPage: extractTagsWithCounts gathers unique tags and correct project counts
+ok 22 - ProjectsPage: extractTagsWithCounts gathers unique tags and correct project counts
+  ---
+  duration_ms: 1.7288
+  ...
+# Subtest: ProjectsPage: tags count each project once and normalize legacy metadata without prototype collisions
+ok 23 - ProjectsPage: tags count each project once and normalize legacy metadata without prototype collisions
+  ---
+  duration_ms: 1.9967
+  ...
+# Subtest: ProjectsPage: renderFilterEmptyState renders filter-specific empty state and binds clear callback
+ok 24 - ProjectsPage: renderFilterEmptyState renders filter-specific empty state and binds clear callback
+  ---
+  duration_ms: 1.5137
+  ...
+# Subtest: ProjectsPage: mount toolbar renders tag filter pills, updates count badge, and toggles filters
+ok 25 - ProjectsPage: mount toolbar renders tag filter pills, updates count badge, and toggles filters
+  ---
+  duration_ms: 12.2388
+  ...
+# Subtest: ProjectsPage: openProjectTagModal opens dialog, allows adding/removing tags, and saves via onSave
+not ok 26 - ProjectsPage: openProjectTagModal opens dialog, allows adding/removing tags, and saves via onSave
+  ---
+  duration_ms: 50.4189
+  location: 'D:\\My Files\\web\\StoryboardAI2\\tests\\projects-page.test.js:552:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + 'blur(var(--dialog-backdrop-blur, 50px))'
+    - 'blur(16px)'
+            ^
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'blur(16px)'
+  actual: 'blur(var(--dialog-backdrop-blur, 50px))'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (D:\My Files\web\StoryboardAI2\tests\projects-page.test.js:573:10)
+    async Test.run (node:internal/test_runner/test:935:9)
+    async Test.processPendingSubtests (node:internal/test_runner/test:633:7)
+  ...
+# Subtest: ProjectsPage: tag modal keeps draft on failed save, blocks duplicate saves, and retries
+ok 27 - ProjectsPage: tag modal keeps draft on failed save, blocks duplicate saves, and retries
+  ---
+  duration_ms: 531.4691
+  ...
+# Subtest: ProjectsPage: singleton modal and route cleanup remove overlay and keyboard listener immediately
+ok 28 - ProjectsPage: singleton modal and route cleanup remove overlay and keyboard listener immediately
+  ---
+  duration_ms: 3.2505
+  ...
+# Subtest: ProjectsPage: search intersects OR tags and ordering supports aliases, numeric names and stable ties
+ok 29 - ProjectsPage: search intersects OR tags and ordering supports aliases, numeric names and stable ties
+  ---
+  duration_ms: 2.6099
+  ...
+# Subtest: ProjectsPage: reattaching a retained folder after undo clears delete presentation without rebuilding its cover
+ok 30 - ProjectsPage: reattaching a retained folder after undo clears delete presentation without rebuilding its cover
+  ---
+  duration_ms: 1.8382
+  ...
+# Subtest: TemplatesPage: Category counts calculation (getCatCounts)
+ok 31 - TemplatesPage: Category counts calculation (getCatCounts)
+  ---
+  duration_ms: 8.8716
+  ...
+# Subtest: TemplatesPage: Page Lifecycle Contract - mount() returns { unmount() }
+ok 32 - TemplatesPage: Page Lifecycle Contract - mount() returns { unmount() }
+  ---
+  duration_ms: 75.1283
+  ...
+# Subtest: TemplatesPage: Data loading from API and caches in window.cacheTemplatesList
+ok 33 - TemplatesPage: Data loading from API and caches in window.cacheTemplatesList
+  ---
+  duration_ms: 7.5561
+  ...
+# Subtest: TemplatesPage: Empty state when no templates exist
+ok 34 - TemplatesPage: Empty state when no templates exist
+  ---
+  duration_ms: 1.5728
+  ...
+# Subtest: TemplatesPage: Category filtering and search interaction
+ok 35 - TemplatesPage: Category filtering and search interaction
+  ---
+  duration_ms: 5.902
+  ...
+# Subtest: TemplatesPage: Template card interactions (preview, apply) & back button
+ok 36 - TemplatesPage: Template card interactions (preview, apply) & back button
+  ---
+  duration_ms: 8.5885
+  ...
+# Subtest: TemplatesPage: backToStoreBrowse() cleans the timeline while preserving the mounted catalog and listeners
+ok 37 - TemplatesPage: backToStoreBrowse() cleans the timeline while preserving the mounted catalog and listeners
+  ---
+  duration_ms: 4.8586
+  ...
+# Subtest: TemplatesPage: Teardown on unmount() invokes destroyTemplateTimeline and clears state
+ok 38 - TemplatesPage: Teardown on unmount() invokes destroyTemplateTimeline and clears state
+  ---
+  duration_ms: 5.3423
+  ...
+# Subtest: Router Navigation Simulation: Direct Entry to Template, Leave to Dashboard, Return, Back/Forward Lifecycle
+ok 39 - Router Navigation Simulation: Direct Entry to Template, Leave to Dashboard, Return, Back/Forward Lifecycle
+  ---
+  duration_ms: 11.5352
+  ...
+# Subtest: marketplace search, category and tag filters combine and unknown durations sort last
+ok 40 - marketplace search, category and tag filters combine and unknown durations sort last
+  ---
+  duration_ms: 10.4004
+  ...
+# Subtest: deep-linked IDs reuse the mounted catalog and unknown IDs have a recovery state
+ok 41 - deep-linked IDs reuse the mounted catalog and unknown IDs have a recovery state
+  ---
+  duration_ms: 2.95
+  ...
+# Subtest: catalog HTTP errors are distinct from an empty catalog
+ok 42 - catalog HTTP errors are distinct from an empty catalog
+  ---
+  duration_ms: 1.8885
+  ...
+# Subtest: template card text is escaped and missing specifications are not fabricated
+ok 43 - template card text is escaped and missing specifications are not fabricated
+  ---
+  duration_ms: 1.0295
+  ...
+# Subtest: template grid layout specifies 5 columns by default with compact card styles
+ok 44 - template grid layout specifies 5 columns by default with compact card styles
+  ---
+  duration_ms: 5.0717
+  ...
+# Subtest: TemplatesPage: DynamicMaskSystem lifecycle on template-detail-body during detail preview and cleanup
+ok 45 - TemplatesPage: DynamicMaskSystem lifecycle on template-detail-body during detail preview and cleanup
+  ---
+  duration_ms: 16.2322
+  ...
+1..45
+# tests 45
+# suites 0
+# pass 44
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1211.6887

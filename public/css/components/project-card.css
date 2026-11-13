@@ -1,8 +1,8 @@
 /* ============================================================
-   STORYBOARD AI DESIGN SYSTEM v3.5
+   STORYBOARD AI DESIGN SYSTEM v4.0
    Component: Project Folder Card (Storyboard Production Folder)
    File: public/css/components/project-card.css
-   Spec: Project Folder Card 修正實作計畫 v0.2
+   Spec: Phase 0 C09 / Phase 4 canonical width geometry
    ============================================================ */
 
 :root {
@@ -19,8 +19,24 @@
 /* ── 0. Base Container (.project-folder-card) ── */
 .project-card.project-folder-card,
 .project-folder-card {
-  --folder-tab-height: calc(var(--radius-lg) * 1.5);
-  --folder-fillet: var(--radius-lg);
+  container-type: inline-size;
+  --folder-card-width: 100cqw;
+  --folder-preview-width: calc(var(--folder-card-width) * 304 / 316);
+  --folder-preview-height: calc(var(--folder-preview-width) * 9 / 16);
+  --folder-base-tab-height: clamp(18px, calc(100cqw * 36 / 316), 36px);
+  --folder-insert-depth: max(0px, calc(clamp(20px, calc(100cqw * 46 / 316), 46px) - (var(--folder-tab-height) - var(--folder-base-tab-height))));
+  --folder-shell-height: clamp(80px, calc(100cqw * 160 / 316), 160px);
+  --folder-tab-height: max(var(--folder-base-tab-height), calc(var(--folder-option-height) + var(--folder-option-offset)));
+  --folder-fillet: calc(var(--folder-tab-height) * 2 / 3);
+  --folder-option-width: clamp(28px, calc(100cqw * 54 / 316), 54px);
+  --folder-option-height: clamp(22px, calc(100cqw * 42 / 316), 42px);
+  --folder-option-icon-size: clamp(12px, calc(100cqw * 22.5 / 316), 22.5px);
+  --folder-option-offset: clamp(3px, calc(100cqw * 6 / 316), 6px);
+  --folder-content-padding: clamp(8px, 6cqw, 16px);
+  --folder-hover-lift: clamp(6px, 5cqw, 16px);
+  --folder-hover-rotate: -4.5deg;
+  --radius-lg: var(--folder-fillet);
+  --radius-continuous-lg: max(0px, min(calc(var(--folder-tab-height) * 10 / 9), calc((100cqw - var(--folder-option-width) - var(--folder-option-offset) - 8px) / 2)));
   position: relative;
   width: 100%;
   min-width: 0;
@@ -31,7 +47,7 @@
   -webkit-user-select: none;
   display: flex;
   flex-direction: column;
-  padding-top: var(--folder-headroom, 56px); /* Dedicated preview headroom (48px~72px) */
+  padding-top: 0; /* Preview stage owns width-relative headroom. */
   box-sizing: border-box;
   background: transparent !important;
   border: none !important;
@@ -59,8 +75,9 @@
 .project-preview-zone {
   position: relative;
   width: 100%;
-  height: 140px;
-  margin-bottom: -46px;
+  height: var(--folder-preview-height);
+  margin-top: clamp(6px, calc(100cqw * 12 / 316), 12px);
+  margin-bottom: calc(-1 * var(--folder-insert-depth));
   z-index: 10;
   display: flex;
   justify-content: center;
@@ -84,8 +101,8 @@
   width: var(--folder-preview-width, var(--cover-width, var(--collapsed-width, 282px))) !important;
   height: var(--folder-preview-height, var(--cover-height, var(--collapsed-height, 158.6px))) !important;
   aspect-ratio: 16 / 9 !important;
-  max-width: 295px;
-  max-height: 180px;
+  max-width: none;
+  max-height: none;
   border-radius: var(--radius-continuous-14);
   background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
   border: 1px solid rgba(255, 255, 255, 0.45);
@@ -119,11 +136,15 @@
   overflow: hidden;
   z-index: 10;
   transform-origin: 85% 90%;
-  transform: translateY(24px) translateX(14px) rotate(5deg) scale(0.96);
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  visibility: hidden;
   transition: transform var(--motion-duration-base, 300ms) var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1)),
               box-shadow var(--motion-duration-base, 300ms) var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1)),
-              opacity var(--motion-duration-base, 300ms) var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1));
-  opacity: 0.88;
+              opacity var(--motion-duration-base, 300ms) var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1)),
+              visibility 0s linear var(--motion-duration-base, 300ms);
+  opacity: 0;
   pointer-events: none;
 }
 
@@ -256,7 +277,8 @@
   z-index: 30; /* Front layer covering the inserted sheets */
   display: flex;
   flex-direction: column;
-  min-height: 136px;
+  min-height: var(--folder-shell-height);
+  flex: 1;
   background: var(--surface-folder);
   border: 1px solid var(--surface-folder-border);
   border-radius: 0 var(--radius-lg) var(--radius-lg) var(--radius-lg);
@@ -283,7 +305,7 @@
 .project-folder-tab {
   position: relative;
   height: var(--folder-tab-height);
-  width: calc(100% - 48px - 16px);
+  width: calc(100% - var(--folder-option-width) - var(--folder-option-offset) - 8px);
   background: var(--surface-folder);
   border: 1px solid var(--surface-folder-border);
   border-bottom: 0;
@@ -547,41 +569,7 @@
   margin-bottom: 0;
 }
 
-/* ── 5. Variants: Compact (Dashboard) vs Default / Full (Projects) ── */
-.project-folder-card.variant-compact {
-  max-width: 290px;
-  padding-top: var(--folder-headroom-compact, 50px);
-}
-
-.project-folder-card.variant-compact .project-folder-shell {
-  min-height: 124px;
-}
-
-.project-folder-card.variant-compact .project-folder-content {
-  padding: 10px 16px 22px 16px;
-  gap: 6px;
-}
-
-.project-folder-card.variant-compact .project-folder-preview-stack {
-  height: 128px;
-  margin-bottom: -44px;
-}
-
-.project-folder-card.variant-compact .project-preview-primary {
-  width: var(--folder-preview-width, var(--cover-width, var(--collapsed-width, 254px))) !important;
-  height: var(--folder-preview-height, var(--cover-height, var(--collapsed-height, 142.9px))) !important;
-  aspect-ratio: 16 / 9 !important;
-  max-width: 268px;
-  max-height: 160px;
-  transform: translateY(calc(var(--folder-insert-depth, var(--insert-depth, var(--collapsed-insert-depth, 42px))) - var(--folder-insert-depth, 44px))) translateX(0) rotate(0deg) scale(1);
-}
-
-.project-folder-card.variant-compact .project-preview-secondary {
-  height: 124px;
-  width: auto;
-  aspect-ratio: 16 / 9;
-}
-
+/* Density changes information only; every host uses the same folder geometry. */
 /* ── 6. Hover Motion (Physical Storyboard Pull - Keep 16:9 Frame) ── */
 @media (hover: hover) and (pointer: fine) {
 .project-folder-card:hover .project-folder-shell,
@@ -603,21 +591,11 @@
   box-shadow: 0 16px 36px rgba(15, 23, 42, 0.18);
 }
 
-.project-folder-card.variant-compact:hover .project-preview-primary,
-.project-folder-card.variant-compact.is-expanded .project-preview-primary {
-  width: var(--folder-preview-width, var(--cover-width, var(--collapsed-width, 254px))) !important;
-  height: var(--folder-preview-height, var(--cover-height, var(--collapsed-height, 142.9px))) !important;
-  transform: translateY(calc(var(--folder-insert-depth, var(--insert-depth, var(--collapsed-insert-depth, 42px))) - var(--folder-insert-depth, 44px) - var(--folder-hover-lift, var(--hover-lift, 14px))))
-             translateX(0)
-             rotate(var(--folder-hover-rotate, var(--hover-rotate, -4.5deg)))
-             scale(1.02);
-  border-radius: var(--radius-continuous-14);
-  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.16);
-}
-
 .project-folder-card:hover .project-preview-secondary,
 .project-folder-card.is-expanded .project-preview-secondary {
-  transform: translateY(-8px) translateX(18px) rotate(6deg) scale(0.98);
+  transform: translate(calc(-50% + 18px), -8px) rotate(6deg) scale(0.98);
+  visibility: visible;
+  transition-delay: 0s;
   box-shadow: 0 8px 22px rgba(15, 23, 42, 0.12);
   opacity: 0.96;
 }
@@ -819,36 +797,6 @@
   user-select: none;
 }
 
-/* ── 8. Responsive Rules ── */
-@media (max-width: 768px) {
-  .project-card.project-folder-card {
-    --folder-headroom: var(--space-4);
-    --folder-headroom-compact: var(--space-4);
-    max-width: 316px;
-  }
-  .project-folder-card .project-folder-preview-stack {
-    height: 112px;
-    margin-bottom: -36px;
-  }
-  .project-folder-card .project-preview-primary {
-    width: var(--folder-preview-width, min(var(--cover-width, 248px), calc(100% - var(--space-8)))) !important;
-    height: var(--folder-preview-height, auto) !important;
-    aspect-ratio: 16 / 9 !important;
-  }
-  .project-folder-card .project-preview-secondary {
-    width: calc(100% - var(--space-16));
-    max-width: 224px;
-    height: auto;
-    transform: translateY(20px) translateX(8px) rotate(4deg) scale(.96);
-  }
-  .project-folder-card .project-folder-shell { min-height: calc(var(--space-32) + var(--space-6)); }
-  .project-folder-card .project-folder-content { padding: var(--space-3) var(--space-4) var(--space-4); gap: var(--space-1); }
-  .project-folder-card .project-folder-tab { padding-left: var(--space-3); }
-  .project-folder-card .project-title { max-width: 100%; text-overflow: ellipsis; overflow: hidden; }
-  .project-title-wrapper { mask-image: none; -webkit-mask-image: none; }
-}
-
-/* ── 9. Reduced Motion ── */
 @media (prefers-reduced-motion: reduce) {
   .project-folder-card,
   .project-folder-shell,
@@ -867,125 +815,73 @@
   }
 }
 
-/* Projects and Dashboard recent folders share mobile geometry. Each card is the sizing container;
-   CSS resolves every child from the same width before and after image loading. */
+
+/* Geometry is component-owned, including readonly previews outside a page host. */
+.project-folder-card .project-folder-content { padding: 8px var(--folder-content-padding) 12px; gap: 4px; justify-content: flex-start; }
+.project-folder-card .project-folder-tab { padding-left: var(--folder-content-padding); }
+.project-folder-card .project-folder-notch-wrap { margin-left: var(--folder-option-offset); margin-bottom: var(--folder-option-offset); }
+.project-folder-card .project-option-btn { position: relative; width: var(--folder-option-width); height: var(--folder-option-height); border-radius: var(--radius-pill); }
+.project-folder-card .project-option-btn::before { content: ''; position: absolute; width: max(44px, var(--folder-option-width)); height: max(44px, var(--folder-option-height)); right: 0; top: 50%; transform: translateY(-50%); }
+.project-folder-card .project-title-wrapper { white-space: normal; padding: 0; mask-image: none; -webkit-mask-image: none; }
+.project-folder-card .project-title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; min-height: 40px; line-height: 20px; font-size: 15px; white-space: normal; overflow: hidden; overflow-wrap: anywhere; margin: 0; color: inherit; text-decoration: none; text-align: start; border: 0; padding: 0; background: transparent; font-family: inherit; }
+.project-folder-card .project-tags-row { flex-wrap: nowrap; overflow: hidden; gap: 4px; margin: 0; min-height: 22px; }
+.project-folder-card .project-tag-pill { max-width: 48%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.project-folder-card .project-title:focus-visible, .project-folder-card .project-option-btn:focus-visible, .project-folder-card .project-tag-pill:focus-visible { outline: 2px solid var(--color-border-focus); outline-offset: 2px; }
+.project-folder-card .project-preview-secondary { width: calc(var(--folder-preview-width) - 10px); height: auto; max-width: none; aspect-ratio: 16 / 9; border-radius: var(--folder-fillet); }
+.project-folder-card .project-preview-primary { border-radius: var(--folder-fillet); }
+@container (max-width: 268px) {
+  .project-preview-primary { --folder-hover-rotate: -2deg; }
+  .project-folder-content .project-updated { font-size: 11px; line-height: 15px; }
+  .project-folder-content .project-title { font-size: 14px; line-height: 18px; min-height: 36px; }
+  .project-folder-content .project-tag-pill { font-size: 10px; padding: 2px 5px; min-height: 20px; }
+  .project-folder-content .project-meta { gap: 3px; margin: 0; }
+  .project-folder-content .project-meta .project-restore-badge { display: none; }
+  .project-folder-content .project-meta-pill { min-height: 21px; font-size: 10px; padding-inline: 4px; white-space: nowrap; }
+  .project-preview-primary .fallback-status { font-size: 10px; }
+  .project-preview-primary .fallback-sub { display: none; }
+}
+.project-folder-card[data-readonly] { cursor: default; pointer-events: none; }
+.project-folder-card[data-readonly] .project-folder-shell, .project-folder-card[data-readonly] .project-preview-primary, .project-folder-card[data-readonly] .project-preview-secondary { transition: none; }
+
+@media (pointer: coarse) {
+  .project-folder-card a.project-title, .project-folder-card button.project-title, .project-folder-card button.project-tag-pill, .project-folder-card[data-readonly] .project-title, .project-folder-card[data-readonly] .project-tag-pill { min-height: 44px; }
+}
+
+.project-folder-card[data-readonly] .project-option-btn { visibility: hidden; }
+
+.project-folder-card .option-icon, .project-folder-card .option-icon svg { width: var(--folder-option-icon-size); height: var(--folder-option-icon-size); flex-shrink: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .project-folder-card .project-preview-secondary { visibility: hidden !important; opacity: 0 !important; }
+}
+
+/* Narrow folders follow the desktop object proportions, with readable compact content. */
+@container (max-width: 268px) {
+  .project-folder-card .project-folder-content { padding: 6px 8px; gap: 2px; }
+  .project-folder-card .project-folder-content .project-updated { font-size: 11px; line-height: 14px; }
+  .project-folder-card .project-folder-content .project-title-wrapper {
+    min-width: 0; width: 100%; white-space: nowrap; padding: 0;
+    mask-image: linear-gradient(to right, var(--folder-text-primary) calc(100% - 16px), transparent);
+    -webkit-mask-image: linear-gradient(to right, var(--folder-text-primary) calc(100% - 16px), transparent);
+  }
+  .project-folder-card .project-folder-content .project-title {
+    display: block; -webkit-line-clamp: unset; min-height: 18px; height: 18px; max-height: 18px;
+    line-height: 18px; white-space: nowrap; overflow: hidden; text-overflow: clip;
+  }
+  .project-folder-card .project-folder-content .project-tags-row { min-height: 24px; gap: 3px; }
+  .project-folder-card .project-folder-content .project-tag-pill {
+    box-sizing: border-box; min-height: 24px; height: 24px; padding: 2px 4px; font-size: 10px; line-height: 18px;
+  }
+  .project-folder-card .project-folder-content .project-meta { gap: 3px; margin: 0; }
+  .project-folder-card .project-folder-content .project-meta-pill { min-height: 18px; padding: 1px 4px; line-height: 14px; font-size: 10px; }
+}
 @media (max-width: 768px) {
-  :is(.projects-body, .home-recent-grid) .project-card.project-folder-card {
-    container-type: inline-size;
-    --folder-card-width: 100cqw;
-    --folder-preview-width: calc(var(--folder-card-width) - 12px);
-    --folder-preview-height: calc(var(--folder-preview-width) * 9 / 16);
-    --folder-insert-depth: clamp(24px, 17cqw, 46px);
-    --folder-shell-height: clamp(99px, 54cqw, 108px);
-    --folder-tab-height: clamp(22px, 14cqw, 32px);
-    /* Preserve the desktop 36 : 24 : 40 tab / notch / squircle ratio.
-       Independent clamps distort the S-shaped join at narrow card widths. */
-    --folder-fillet: calc(var(--folder-tab-height) * 2 / 3);
-    --folder-option-width: 36px;
-    --folder-option-height: 28px;
-    --folder-option-offset: 6px;
-    --folder-content-padding: clamp(8px, 6cqw, 14px);
-    --folder-hover-lift: clamp(6px, 5cqw, 12px);
-    --folder-hover-rotate: -2deg;
-    --radius-lg: var(--folder-fillet);
-    --radius-continuous-lg: calc(var(--folder-tab-height) * 10 / 9);
-    padding-top: 12px;
+  .project-folder-card .project-folder-content .project-title-wrapper {
+    min-width: 0; width: 100%; white-space: nowrap; padding: 0;
+    mask-image: linear-gradient(to right, var(--folder-text-primary) calc(100% - 16px), transparent);
+    -webkit-mask-image: linear-gradient(to right, var(--folder-text-primary) calc(100% - 16px), transparent);
   }
-  .projects-body .project-card.project-folder-card { max-width: none; }
-  :is(.projects-body, .home-recent-grid) .project-folder-card:active { transform: none; }
-  :is(.projects-body, .home-recent-grid) .project-folder-card .project-folder-preview-stack {
-    height: var(--folder-preview-height);
-    margin-bottom: calc(-1 * var(--folder-insert-depth));
+  .project-folder-card .project-folder-content .project-title {
+    display: block; -webkit-line-clamp: unset; min-height: 18px; height: 18px; max-height: 18px;
+    line-height: 18px; white-space: nowrap; overflow: hidden; text-overflow: clip;
   }
-  :is(.projects-body, .home-recent-grid) .project-folder-card .project-preview-primary {
-    max-width: none;
-    max-height: none;
-    border-radius: var(--folder-fillet);
-  }
-  :is(.projects-body, .home-recent-grid) .project-folder-card .project-preview-secondary {
-    width: calc(var(--folder-preview-width) - 10px);
-    height: auto;
-    max-width: none;
-    transform: translate(4px, 6px) rotate(3deg) scale(.96);
-    border-radius: var(--folder-fillet);
-  }
-  @media (hover: hover) and (pointer: fine) {
-    :is(.projects-body, .home-recent-grid) .project-folder-card:hover .project-preview-secondary,
-    :is(.projects-body, .home-recent-grid) .project-folder-card.is-expanded .project-preview-secondary {
-      transform: translate(clamp(4px, 3cqw, 10px), -4px) rotate(4deg) scale(.98);
-    }
-  }
-  :is(.projects-body, .home-recent-grid) .project-folder-card .project-folder-shell {
-    min-height: var(--folder-shell-height);
-    flex: 1;
-  }
-  :is(.projects-body, .home-recent-grid) .project-folder-card .project-folder-content {
-    padding: 6px var(--folder-content-padding) 8px;
-    gap: 3px;
-    justify-content: flex-start;
-  }
-  :is(.projects-body, .home-recent-grid) .project-folder-card .project-updated { font-size: 11px; line-height: 15px; }
-  :is(.projects-body, .home-recent-grid) .project-folder-card .project-title-wrapper {
-    white-space: nowrap;
-    padding: 0;
-    mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
-    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
-  }
-  :is(.projects-body, .home-recent-grid) .project-folder-card .project-title {
-    display: block;
-    -webkit-line-clamp: unset;
-    overflow: hidden;
-    text-overflow: clip;
-    white-space: nowrap;
-    max-width: 100%;
-    font-size: 14px;
-    margin: 0;
-    line-height: 18px;
-    min-height: 18px;
-  }
-  :is(.projects-body, .home-recent-grid) .project-folder-card .project-tags-row { flex-wrap: nowrap; overflow: hidden; margin: 0; gap: 3px; }
-  :is(.projects-body, .home-recent-grid) .project-folder-card .project-tag-pill {
-    flex-shrink: 0;
-    font-size: 11px;
-    padding-inline: 5px;
-    height: 20px;
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  :is(.projects-body, .home-recent-grid) .project-folder-card .project-meta { gap: 3px; margin-top: 0; }
-  :is(.projects-body, .home-recent-grid) .project-folder-card .project-meta-pill {
-    height: 21px;
-    font-size: 10px;
-    padding-inline: 4px;
-    white-space: nowrap;
-  }
-  :is(.projects-body, .home-recent-grid) .project-folder-card .project-folder-tab {
-    width: calc(100% - var(--folder-option-width) - var(--folder-option-offset) - 8px);
-    padding-left: var(--folder-content-padding);
-  }
-  :is(.projects-body, .home-recent-grid) .project-folder-card .project-option-btn {
-    position: relative;
-    width: var(--folder-option-width);
-    height: var(--folder-option-height);
-    border-radius: 9999px;
-  }
-  /* The button's own rect remains the visible pill used by Option Morph.
-     The transparent hit area extends inward, never into the next grid cell. */
-  :is(.projects-body, .home-recent-grid) .project-folder-card .project-option-btn::before {
-    content: '';
-    position: absolute;
-    width: 44px;
-    height: 44px;
-    right: -2px;
-    top: 50%;
-    transform: translateY(-50%);
-  }
-  :is(.projects-body, .home-recent-grid) .project-folder-card .project-folder-notch-wrap {
-    margin-left: var(--folder-option-offset);
-    margin-bottom: var(--folder-option-offset);
-  }
-  :is(.projects-body, .home-recent-grid) .project-folder-card .fallback-status { font-size: 10px; }
-  :is(.projects-body, .home-recent-grid) .project-folder-card .fallback-sub { display: none; }
 }

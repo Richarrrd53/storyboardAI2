@@ -1,0 +1,104 @@
+{
+  "case": "Phase 4 live trash trace",
+  "before": {
+    "width": 172,
+    "previewWidth": 160,
+    "previewHeight": 90,
+    "insertDepth": 29.240000000000002,
+    "tabHeight": 24.080000000000002,
+    "notchRadius": 16.053333333333335,
+    "shellMinHeight": 128,
+    "headroom": 12,
+    "density": "dense",
+    "shape": "folder",
+    "origin": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "sourceRect": {
+      "x": 195,
+      "y": 422,
+      "left": 195,
+      "top": 422,
+      "width": 0,
+      "height": 0
+    },
+    "shell": {
+      "x": 195,
+      "y": 422,
+      "left": 195,
+      "top": 422,
+      "width": 0,
+      "height": 0
+    },
+    "tab": {
+      "x": 195,
+      "y": 422,
+      "left": 195,
+      "top": 422,
+      "width": 0,
+      "height": 0
+    },
+    "preview": {
+      "x": 195,
+      "y": 422,
+      "left": 195,
+      "top": 422,
+      "width": 0,
+      "height": 0
+    },
+    "media": {
+      "x": 195,
+      "y": 422,
+      "width": 0,
+      "height": 0,
+      "top": 422,
+      "right": 195,
+      "bottom": 422,
+      "left": 195
+    }
+  },
+  "records": [
+    {
+      "ms": 782,
+      "transform": "translate3d(0px, 0px, 0px) rotateX(0deg) scale(1)",
+      "opacity": "1",
+      "bin": "translateX(-50%) scale(0)"
+    },
+    {
+      "ms": 798,
+      "transform": "translate3d(0px, -3.00033px, 0px) rotateX(2.2275deg) scale(1)",
+      "opacity": "1",
+      "bin": "translateX(-50%) scale(0.0916667)"
+    },
+    {
+      "ms": 832,
+      "transform": "translate3d(0px, -8.73528px, 0px) rotateX(6.7365deg) scale(1)",
+      "opacity": "1",
+      "bin": "translateX(-50%) scale(0.277222)"
+    },
+    {
+      "ms": 848,
+      "transform": "translate3d(0px, -11.417px, 0px) rotateX(8.9775deg) scale(1)",
+      "opacity": "1",
+      "bin": "translateX(-50%) scale(0.369444)"
+    },
+    {
+      "ms": 882,
+      "transform": "translate3d(0px, -16.4593px, 0px) rotateX(13.473deg) scale(1)",
+      "opacity": "1",
+      "bin": "translateX(-50%) scale(0.554444)"
+    },
+    {
+      "ms": 1015,
+      "transform": "translate3d(0px, -32.1154px, 0px) rotateX(31.4415deg) scale(0.936606)",
+      "opacity": "1",
+      "bin": "translateX(-50%) scale(1)"
+    },
+    {
+      "ms": 2097,
+      "transform": "translate3d(0px, -37.2549px, 0px) rotateX(40.446deg) scale(0.8856)",
+      "opacity": "1"
+    }
+  ]
+}

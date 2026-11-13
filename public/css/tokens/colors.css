@@ -15,7 +15,7 @@
   --color-text-brand:      var(--blue-600);  /* Brand links & active highlighted text */
   --color-text-accent:     var(--sky-500);   /* Sky cyan highlights */
   --color-text-gold:       var(--gold-500);  /* Cinematic gold metadata */
-  --color-text-danger:     var(--red-500);   /* Destructive actions & error notices */
+  --color-text-danger:     var(--red-600);   /* Readable error text on solid light surfaces */
   --color-text-success:    var(--emerald-600);
 
   /* ── 2. Background & Surface Roles ── */

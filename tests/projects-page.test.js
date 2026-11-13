@@ -570,7 +570,7 @@ test('ProjectsPage: openProjectTagModal opens dialog, allows adding/removing tag
   const panel = overlay.querySelector('.project-tags-modal-panel');
   assert.ok(panel);
   assert.equal(panel.style.scale, '1');
-  assert.equal(overlay.style.backdropFilter, 'blur(16px)');
+  assert.equal(overlay.style.backdropFilter, 'blur(var(--dialog-backdrop-blur, 50px))');
   assert.ok(overlay.style.transition.includes('cubic-bezier(.4, 0, .2, 1)') || overlay.style.transition.includes('cubic-bezier(.4,0,.2,1)'));
 
   // Verify title
@@ -597,16 +597,21 @@ test('ProjectsPage: openProjectTagModal opens dialog, allows adding/removing tag
   assert.ok(!chipsWrap.innerHTML.includes('#商業廣告'));
   assert.ok(chipsWrap.innerHTML.includes('#短影音'));
 
+  const backgroundBeforeClose = overlay.style.background;
   // Click save button
   const saveBtn = overlay.querySelector('#modal-save-btn');
   saveBtn.click();
 
-  // Wait 20ms: verify close transition step (panel scale 0, blur 0, close easing)
-  await new Promise(r => setTimeout(r, 20));
+  // Saving is asynchronous: observe the close state instead of assuming microtasks
+  // plus the nested transition timer have completed within a fixed 20ms.
+  const closeDeadline = Date.now() + 2000;
+  while (panel.style.scale !== '0' && Date.now() < closeDeadline) await new Promise(r => setTimeout(r, 10));
   assert.deepEqual(savedTags, ['短影音']);
   assert.ok(panel.style.transition.includes('cubic-bezier(.31, .01, .66, -0.59)') || panel.style.transition.includes('cubic-bezier(.31,.01,.66,-0.59)'));
   assert.equal(panel.style.scale, '0');
   assert.equal(overlay.style.backdropFilter, 'blur(0px)');
+  assert.equal(overlay.style.opacity, '1');
+  assert.equal(overlay.style.background, backgroundBeforeClose);
 
   // Wait for complete close animation (duration + 50ms)
   await new Promise(r => setTimeout(r, 550));
@@ -683,4 +688,16 @@ test('ProjectsPage: reattaching a retained folder after undo clears delete prese
   assert.equal(grid.children[0],card);
   assert.equal(card.style.opacity,'');
   assert.equal(card.style.transform,'');
+});
+
+test('tag dialog resolves the shared animation loaded after the page module',()=>{
+ const previous=global.ModalAnimation,calls=[];
+ global.ModalAnimation={
+  open(overlay,panel){calls.push('open');overlay.style.opacity='1';panel.style.scale='1';},
+  close(overlay,panel,options){calls.push('close');assert.equal(options.duration,400);options.onComplete();}
+ };
+ try {
+  const modal=ProjectsPage.openProjectTagModal({id:'late-motion',title:'Late shared motion',tags:[]},async()=>{});
+  modal.close();assert.deepEqual(calls,['open','close']);assert.equal(mockDocument.body.querySelector('.project-tags-modal-overlay'),null);
+ } finally {global.ModalAnimation=previous;ProjectsPage.closeTagModal({immediate:true,restoreFocus:false});}
 });

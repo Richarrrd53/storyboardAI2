@@ -76,6 +76,7 @@
 
     // 1. 冪等性防護：若該卡片已綁定過，先清理舊監聽與定時器
     unbind(card);
+    global.ProjectCard?.register?.(card, project);
 
     const isDeleted = Boolean(project.is_deleted || opts.isHistoryPage || opts.isHistory);
     const variant = opts.variant || card.dataset?.variant || 'default';
@@ -149,7 +150,9 @@
       const onTitleEnter = (event) => {
         if (event?.pointerType === 'touch') return;
         if (global.getComputedStyle?.(titleEl).whiteSpace === 'normal') return;
-        if (card.closest?.('.projects-body, .home-recent-grid') && global.matchMedia?.('(max-width: 768px)').matches) return;
+        const titleMask = global.getComputedStyle?.(titleWrapper);
+        if ((titleMask?.maskImage && titleMask.maskImage !== 'none') || (titleMask?.webkitMaskImage && titleMask.webkitMaskImage !== 'none')) return;
+        if (global.matchMedia?.('(max-width: 768px)').matches) return;
         const overflow = (titleEl.scrollWidth || 0) - (titleWrapper.clientWidth || 0);
         if (overflow <= 2) return;
 
@@ -221,6 +224,11 @@
     let lastClickTime = 0;
 
     const onCardClick = (e) => {
+      const titleLink = e?.target?.closest?.('a.project-title');
+      if (titleLink) {
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button > 0) return;
+        e.preventDefault?.();
+      }
       // 確保不是點擊在 Option Button 上
       if (e && e.target && e.target.closest && e.target.closest('.project-option-btn')) {
         return;

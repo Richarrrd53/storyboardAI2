@@ -5,7 +5,8 @@
   "scripts": {
     "test": "node --test tests/*.test.js",
     "start": "node server.js",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "audit:ui": "node analysis/ui-audit/phase1/mock-server.cjs"
   },
   "repository": {
     "type": "git",

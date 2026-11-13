@@ -135,6 +135,7 @@ function createMockElement(tagName = 'div', id = '', className = '') {
       return this.querySelectorAll(sel)[0] || null;
     },
     querySelectorAll(sel) {
+      if(sel.includes(',')) return [...new Set(sel.split(',').flatMap(part=>this.querySelectorAll(part.trim())))];
       const results = [];
       function traverse(node) {
         for (const child of node.children) {
@@ -232,6 +233,8 @@ function setupMockEnvironment() {
 }
 
 function loadProjectOptionMorph() {
+  new Function(fs.readFileSync(path.resolve('public/js/components/overlay-manager.js'), 'utf8'))();
+  new Function(fs.readFileSync(path.resolve('public/js/components/surface-morph.js'), 'utf8'))();
   const code = fs.readFileSync(path.resolve('public/js/components/project-option-morph.js'), 'utf8');
   const fn = new Function(code);
   fn();
@@ -558,7 +561,7 @@ test('ProjectOptionMorph: generic dropdown shares singleton and restores actual 
   let closed=0;
   morph.openSurface(trigger,{content,width:240,label:'標籤',onClose:()=>closed++});
   assert.equal(trigger.getAttribute('aria-expanded'),'true');
-  assert.equal(body.querySelector('.global-project-option-menu').style.width,'120px');
+  assert.equal(parseFloat(body.querySelector('.global-project-option-menu').style.width),120);
   assert.equal(body.querySelector('.global-project-option-menu').getAttribute('role'),'menu');
   morph.open(createMockElement('button'),{id:'project'},createMockElement('div'));
   assert.equal(closed,1);
@@ -567,4 +570,67 @@ test('ProjectOptionMorph: generic dropdown shares singleton and restores actual 
   morph.close('unmount');
   assert.equal(windowListeners.keydown.length,0);
   assert.equal(body.querySelector('.project-option-overlay'),null);
+});
+
+// The shared engine is exercised through the real compatibility adapter and a manual RAF clock.
+function morphClock() {
+  const env=setupMockEnvironment(); let time=0, sequence=0; const queue=new Map();
+  window.performance.now=()=>time;
+  window.requestAnimationFrame=fn=>{queue.set(++sequence,fn);return sequence;};
+  window.cancelAnimationFrame=id=>queue.delete(id);
+  env.step=ms=>{time+=ms;const work=[...queue.values()];queue.clear();work.forEach(fn=>fn(time));};
+  loadProjectOptionMorph();return env;
+}
+test('SurfaceMorph: reversing an in-flight close reuses the same surface without resetting geometry',()=>{
+  const {body,step}=morphClock();const trigger=createMockElement('button'),content=createMockElement('div');
+  const handle=window.SurfaceMorph.open(trigger,{content});step(180);
+  const surface=body.querySelector('.surface-morph-surface');const width=surface.style.width;
+  handle.close('toggle');assert.equal(surface.style.width,width);step(100);
+  const closingWidth=surface.style.width;
+  const reopened=window.SurfaceMorph.open(trigger,{content});
+  assert.equal(reopened,handle);assert.equal(surface.style.width,closingWidth);assert.equal(body.querySelectorAll('.surface-morph-surface').length,1);
+  step(480);assert.equal(handle.phase,'open');window.SurfaceMorph.destroy();assert.equal(body.querySelector('.surface-morph-overlay'),null);
+});
+test('SurfaceMorph: route teardown cancels pending actions and restores the trigger',()=>{
+  const {step,windowListeners}=morphClock();const trigger=createMockElement('button'),content=createMockElement('div');let actions=0;
+  window.SurfaceMorph.open(trigger,{content});step(480);window.SurfaceMorph.close('action',()=>actions++);
+  window.SurfaceMorph.close('navigation');step(1000);
+  assert.equal(actions,0);assert.equal(trigger.classList.contains('is-hidden-for-morph'),false);assert.equal(windowListeners.keydown.length,0);
+});
+test('SurfaceMorph: internal scroll is retained, ancestor scroll dismisses, reduced motion has no RAF',()=>{
+  const {step,windowMock,body}=morphClock();const trigger=createMockElement('button'),content=createMockElement('div');
+  const handle=window.SurfaceMorph.open(trigger,{content});step(480);
+  windowMock.dispatchEvent({type:'scroll',target:content});assert.equal(handle.phase,'open');
+  windowMock.dispatchEvent({type:'scroll',target:body});assert.equal(window.SurfaceMorph.getState(),null);
+  windowMock.matchMedia=()=>({matches:true});
+  const reduced=window.SurfaceMorph.open(trigger,{content});assert.equal(reduced.phase,'open');
+  reduced.close('close');assert.equal(window.SurfaceMorph.getState(),null);
+});
+test('SurfaceMorph: explicit keepTrigger opt-in remains available to other adapters',()=>{
+  const {step}=morphClock();const trigger=createMockElement('button'),content=createMockElement('div');
+  window.SurfaceMorph.open(trigger,{content,keepTrigger:true,role:'dialog',keyboard:'content'});step(480);
+  assert.equal(trigger.classList.contains('surface-morph-trigger-hidden'),false);
+  window.SurfaceMorph.close('close');assert.equal(trigger.classList.contains('surface-morph-trigger-hidden'),true);
+  step(440);assert.equal(trigger.classList.contains('surface-morph-trigger-hidden'),false);
+});
+
+test('SurfaceMorph: selected filter text may resize without dismissing a multi-select menu',()=>{
+  const {step}=morphClock();const observers=[];
+  window.ResizeObserver=class { constructor(fn){this.notify=fn;observers.push(this);} observe(){} disconnect(){this.disconnected=true;} };
+  const trigger=createMockElement('button'),content=createMockElement('div');
+  window.SurfaceMorph.open(trigger,{content});step(480);assert.equal(observers.length,0);
+  window.SurfaceMorph.close('immediate');window.SurfaceMorph.open(trigger,{content,role:'dialog'});step(480);
+  const observer=observers[0];observer.notify([{contentRect:{width:52,height:52}}]);
+  assert.equal(window.SurfaceMorph.isOpen(),true);observer.notify([{contentRect:{width:260,height:52}}]);
+  assert.equal(window.SurfaceMorph.getState(),null);assert.equal(observer.disconnected,true);
+});
+
+test('Account Morph hides the trigger when expanded and dissolves the plate into transparency',()=>{
+ const {step}=morphClock();const trigger=createMockElement('button'),content=createMockElement('div');
+ const handle=window.SurfaceMorph.open(trigger,{content,role:'dialog',transparentTrigger:true});
+ step(480);assert.equal(trigger.classList.contains('surface-morph-trigger-hidden'),true);
+ assert.equal(handle.menu.style['--morph-surface-presence'],'1');
+ window.SurfaceMorph.close('close');step(335);
+ const halfway=Number(handle.menu.style['--morph-surface-presence']);assert.ok(halfway>0&&halfway<1);
+ step(105);assert.equal(Number(handle.menu.style['--morph-surface-presence']),0);assert.equal(trigger.classList.contains('surface-morph-trigger-hidden'),false);
 });

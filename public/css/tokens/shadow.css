@@ -15,6 +15,5 @@
   --shadow-brand-glow:          0 4px 20px rgba(37, 99, 235, 0.28);
   --shadow-toast:               0 10px 30px rgba(37, 99, 235, 0.12);
   --shadow-inner-soft:          inset 0 2px 4px rgba(0, 0, 0, 0.04);
-  --surface-floating-shadow:    0 14px 32px rgba(0, 0, 0, 0.13), 0 2px 8px rgba(0, 0, 0, 0.04);
-  --surface-floating-highlight: inset 0 1.5px 2px rgba(255, 255, 255, 0.92), inset 0 -2px 4px rgba(120, 120, 110, 0.06);
+  /* Floating shadow/highlight recipes live in components.css. */
 }

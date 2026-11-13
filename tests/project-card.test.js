@@ -29,27 +29,13 @@ test('ProjectCard.parseAspectRatio parses ratios from strings, numbers, and dime
   assert.ok(Math.abs(ProjectCard.parseAspectRatio('超寬') - (21 / 9)) < 0.0001);
 });
 
-test('ProjectCard.calculateProjectCoverGeometry computes correct dimensions for variants', () => {
-  const def = ProjectCard.calculateProjectCoverGeometry({ variant: 'default', isMobile: false });
-  assert.equal(def.frame.width, 282);
-  assert.equal(def.frame.height, 158.6);
-  assert.equal(def.frame.insertDepth, 46);
-  assert.equal(def.hoverLift, 16);
-  assert.equal(def.hoverRotate, -4.5);
-  assert.equal(def.collapsed.width, 282);
-  assert.equal(def.expanded.width, 282);
-
-  const compact = ProjectCard.calculateProjectCoverGeometry({ variant: 'compact', isMobile: false });
-  assert.equal(compact.frame.width, 254);
-  assert.equal(compact.frame.height, 142.9);
-  assert.equal(compact.frame.insertDepth, 42);
-  assert.equal(compact.hoverLift, 14);
-
-  const mob = ProjectCard.calculateProjectCoverGeometry({ variant: 'default', isMobile: true });
-  assert.equal(mob.frame.width, 248);
-  assert.equal(mob.frame.height, 139.5);
-  assert.equal(mob.frame.insertDepth, 40);
-  assert.equal(mob.hoverRotate, -3.5);
+test('legacy geometry return shape delegates to the same width model for all variants',()=>{
+ const def=ProjectCard.calculateProjectCoverGeometry({variant:'default',width:316});
+ const compact=ProjectCard.calculateProjectCoverGeometry({variant:'compact',width:316});
+ assert.deepEqual(def,compact);assert.equal(def.frame.width,304);assert.equal(def.frame.height,171);
+ assert.equal(def.collapsed.width,def.expanded.width);assert.equal(def.frame.insertDepth,34);
+ const mobile=ProjectCard.calculateProjectCoverGeometry({isMobile:true,viewportWidth:390});
+ assert.ok(Math.abs(mobile.frame.width-173*304/316)<1e-9);assert.equal(mobile.frame.height,mobile.frame.width*9/16);assert.equal(mobile.hoverRotate,-2);
 });
 
 test('ProjectCard.calculateTransitionTargetSize computes centered target rect within limits', () => {
@@ -237,4 +223,21 @@ test('cover loading preserves the geometry established before image arrival', ()
   f.window.lazyLoadProjectThumbs(f.root);
   f.images[0].onload();
   assert.deepEqual({ ...f.thumb.style }, before);
+});
+
+test('Folder canonical geometry is width-driven and retains tab/notch and 16:9 frame ratios',()=>{
+ for(const width of [165.5,173,240,316]) {
+  const g=ProjectCard.resolveFolderGeometry(width);
+  assert.equal(g.width,width);assert.ok(Math.abs(g.previewWidth-width*304/316)<1e-9);assert.ok(Math.abs(g.previewHeight/g.previewWidth-9/16)<1e-9);
+  assert.ok(Math.abs(g.notchRadius/g.tabHeight-2/3)<1e-9);assert.ok(g.insertDepth<g.previewHeight);assert.ok(g.shellMinHeight>=80);
+ }
+ assert.equal(ProjectCard.resolveFolderGeometry(173).density,'dense');
+ assert.equal(ProjectCard.resolveFolderGeometry(173,{pointerCoarse:true}).shellMinHeight,173*160/316);
+});
+test('Readonly folder uses the same anatomy without controls, ids, or title navigation',()=>{
+ const p={id:'preview',title:'Long <title>',ratio:'9:16',tags:['one','two'],shots:[{},{}]};
+ const html=ProjectCard.renderProjectCard(p,{readonly:true});
+ for(const anatomy of ['project-folder-shell','project-folder-tab','project-folder-notch-wrap','project-preview-primary','project-preview-secondary'])assert.ok(html.includes(anatomy));
+ assert.ok(!/<button|<a[ >]|\bid=/.test(html));assert.ok(html.includes('Long &lt;title&gt;'));
+ const browse=ProjectCard.renderProjectCard(p);assert.ok(browse.includes('href="/project/preview"'));
 });

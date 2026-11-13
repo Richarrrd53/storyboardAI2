@@ -202,9 +202,9 @@
     }
   }
 
-  const ModalAnimation = (typeof window !== 'undefined' && window.ModalAnimation) || (typeof global !== 'undefined' && global.ModalAnimation) || {
+  const fallbackModalAnimation = {
     EASING_BACKDROP: 'cubic-bezier(.4,0,.2,1)',
-    EASING_CARD_ENTER: 'cubic-bezier(.33,1.53,.69,.99)',
+    EASING_CARD_ENTER: 'cubic-bezier(.34,1.59,.69,.99)',
     EASING_CARD_LEAVE: 'cubic-bezier(.31, .01, .66, -0.59)',
     DURATION: 400,
 
@@ -216,18 +216,18 @@
 
       overlay.style.display = 'flex';
       overlay.style.pointerEvents = 'none';
-      overlay.style.transition = `all ${duration}ms ${this.EASING_BACKDROP}`;
+      overlay.style.transition = `backdrop-filter ${duration}ms ${this.EASING_BACKDROP}`;
       overlay.style.backdropFilter = 'blur(0px)';
       if (overlay.style.webkitBackdropFilter !== undefined) {
         overlay.style.webkitBackdropFilter = 'blur(0px)';
       }
-      overlay.style.background = 'rgba(15, 23, 42, 0)';
-      overlay.style.opacity = '0';
+      overlay.style.background = backdropBg;
+      overlay.style.opacity = '1';
 
       if (panel) {
-        panel.style.transition = `all ${duration}ms ${this.EASING_CARD_ENTER}`;
+        panel.style.transition = `scale ${duration}ms ${this.EASING_CARD_ENTER}`;
         panel.style.scale = '0';
-        panel.style.opacity = '0';
+        panel.style.opacity = '1';
       }
 
       setTimeout(() => {
@@ -259,21 +259,20 @@
       overlay.style.pointerEvents = 'none';
 
       if (panel) {
-        panel.style.transition = `all ${duration}ms ${this.EASING_CARD_LEAVE}`;
+        panel.style.transition = `scale ${duration}ms ${this.EASING_CARD_LEAVE}`;
       }
-      overlay.style.transition = `all ${duration}ms ${this.EASING_BACKDROP}`;
+      overlay.style.transition = `backdrop-filter ${duration}ms cubic-bezier(.8,0,.6,1)`;
 
       setTimeout(() => {
         if (panel) {
           panel.style.scale = '0';
-          panel.style.opacity = '0';
+          panel.style.opacity = '1';
         }
         overlay.style.backdropFilter = 'blur(0px)';
         if (overlay.style.webkitBackdropFilter !== undefined) {
           overlay.style.webkitBackdropFilter = 'blur(0px)';
         }
-        overlay.style.background = 'rgba(15, 23, 42, 0)';
-        overlay.style.opacity = '0';
+        // Keep the backdrop alpha; only reverse blur and panel scale.
         if (overlay.classList && typeof overlay.classList.remove === 'function') {
           overlay.classList.remove('active');
         } else if (typeof overlay.className === 'string') {
@@ -288,6 +287,12 @@
         }
       }, duration + 50);
     }
+  };
+
+  // Resolve at action time: this page module is loaded before sys.js in the SPA.
+  const ModalAnimation = {
+    open(...args) { return (global.ModalAnimation || fallbackModalAnimation).open(...args); },
+    close(...args) { return (global.ModalAnimation || fallbackModalAnimation).close(...args); }
   };
 
   function openProjectTagModal(project, onSave) {
@@ -353,7 +358,7 @@
     document.body.appendChild(overlay);
 
     const panel = overlay.querySelector('.project-tags-modal-panel');
-    ModalAnimation.open(overlay, panel, { blur: '16px', backdropBg: 'rgba(15, 23, 42, 0.45)' });
+    ModalAnimation.open(overlay, panel, { blur: 'var(--dialog-backdrop-blur, 50px)', backdropBg: 'rgba(15, 23, 42, 0.45)' });
 
     const chipsWrap = overlay.querySelector('#modal-chips-wrap');
     const suggestionsWrap = overlay.querySelector('#modal-suggestions-wrap');
@@ -590,7 +595,7 @@
     }
     function openMenu(trigger, content, label, onClose) {
       global.ProjectOptionMorph?.openSurface(trigger, {content,width:240,label,align:trigger === tagsTrigger ? 'start' : 'end',
-        onClose: () => { onClose(); if (isMounted && trigger.isConnected && !global.ProjectOptionMorph.isOpen()) trigger.focus({preventScroll:true}); }});
+        onClose: reason => { onClose(); if (!['navigation','unmount','destroy','modal','focus_out','tab','replaced'].includes(reason) && isMounted && trigger.isConnected && !global.ProjectOptionMorph.isOpen()) trigger.focus({preventScroll:true}); }});
     }
     listen(tagsTrigger, 'click', () => {
       tagMenu = document.createElement('div'); tagMenu.className = 'projects-dropdown-options';

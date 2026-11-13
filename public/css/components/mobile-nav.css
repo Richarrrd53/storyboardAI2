@@ -19,17 +19,17 @@
     bottom: calc(var(--mobile-nav-offset) + env(safe-area-inset-bottom, 0px)) !important;
     max-width: 440px !important;
     margin: 0 auto !important;
-    height: var(--mobile-nav-height,) !important;
+    height: var(--mobile-nav-height, 64px) !important;
     background: var(--mobile-nav-bg, linear-gradient(180deg, rgba(255, 255, 253, 0.88) 0%, rgba(248, 248, 244, 0.85) 100%)) !important;
-    backdrop-filter: blur(5px) saturate(250%) !important;
-    -webkit-backdrop-filter: blur(5px) saturate(250%) !important;
+    backdrop-filter: var(--surface-floating-blur) !important;
+    -webkit-backdrop-filter: var(--surface-floating-blur) !important;
     border: var(--mobile-nav-border) !important;
     border-radius: var(--mobile-nav-radius, var(--radius-pill, 999px)) !important;
-    box-shadow: 0 4px 20px rgba(30, 41, 59, 0.06) !important;
+    box-shadow: var(--surface-floating-shadow) !important;
     align-items: center !important;
     justify-content: space-around !important;
     padding: 0 !important;
-    z-index: 10000 !important;
+    z-index: var(--layer-nav) !important;
     user-select: none !important;
     -webkit-user-select: none !important;
     touch-action: none !important;
@@ -43,11 +43,6 @@
   }
 
   body.mobile-nav-compact .mobile-bottom-nav { scale: .9; }
-  /* Dialogs must cover the floating navigation, including short landscapes. */
-  body:has(> .project-tags-modal-overlay) .mobile-bottom-nav,
-  body:has(> .project-tags-modal-overlay) #global-create-capsule {
-    z-index: var(--layer-nav, 200) !important;
-  }
   body.workspace-secondary .mobile-bottom-nav {
     translate: 0 calc(100% + var(--mobile-nav-offset) + env(safe-area-inset-bottom, 0px) + var(--space-16));
     pointer-events: none !important;
@@ -62,7 +57,7 @@
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 55%);
+    background: var(--surface-floating-toplight);
     pointer-events: none;
     z-index: 0;
   }

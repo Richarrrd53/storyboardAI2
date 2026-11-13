@@ -16,4 +16,11 @@
   --layer-modal:    700; /* Modal windows, preview drawers */
   --layer-toast:    800;   /* Floating toasts & undo alerts */
   --layer-system:   20000; /* Critical system alert & crash handlers */
+  /* Component aliases preserve local ordering without independent magic numbers. */
+  --layer-dock-backdrop: calc(var(--layer-dock) - 2);
+  --layer-dock-navigation: calc(var(--layer-dock) + 1);
+  --layer-dock-content: calc(var(--layer-dock) + 2);
+  --layer-transition: 650;
+  --layer-sheet: calc(var(--layer-modal) - 10);
+  --layer-sheet-backdrop: calc(var(--layer-sheet) - 1);
 }

@@ -17,7 +17,7 @@
   justify-content: center;
   opacity: 0;
   pointer-events: none;
-  transition: all 0.4s cubic-bezier(.4, 0, .2, 1);
+  transition: opacity var(--dialog-duration) var(--motion-ease-standard), backdrop-filter var(--dialog-duration) var(--motion-ease-standard);
 }
 
 .dialog-overlay.active,
@@ -44,7 +44,7 @@
   box-sizing: border-box;
   scale: 0;
   opacity: 0;
-  transition: all 0.4s cubic-bezier(.33, 1.53, .69, .99);
+  transition: scale var(--dialog-duration) var(--dialog-enter-ease), opacity var(--dialog-duration) var(--dialog-enter-ease);
 }
 
 .dialog-overlay.active .dialog-panel,
@@ -82,54 +82,67 @@
 
 /* Scoped system-dialog family. Folder previews keep their legacy geometry. */
 .sb-dialog-overlay {
-  position: fixed; inset: 0; z-index: var(--layer-system, 20000);
+  position: fixed; inset: 0; z-index: var(--layer-modal, 700);
   display: flex; align-items: center; justify-content: center;
   padding: 16px; box-sizing: border-box; overflow-y: auto;
-  background: rgba(12, 19, 36, .42);
-  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  background: var(--dialog-backdrop-bg); opacity: 1;
+  backdrop-filter: blur(var(--dialog-backdrop-blur, 50px)); -webkit-backdrop-filter: blur(var(--dialog-backdrop-blur, 50px));
 }
 .sb-dialog {
   box-sizing: border-box; width: min(100%, 440px); max-height: calc(100dvh - 32px);
-  overflow-y: auto; padding: 28px; border: 1px solid var(--color-border-subtle, #e2e8f0);
+  overflow-y: auto; padding: 28px; border: var(--border-width-thin) solid var(--color-border-subtle);
   border-radius: var(--radius-continuous-xl, 32px);
-  background: var(--color-surface-elevated, #fff); color: var(--color-text-primary, #0f172a);
-  box-shadow: var(--elevation-overlay, 0 32px 100px #0f172a40);
-  font-family: var(--font-family-body, sans-serif); text-align: left;
+  background: var(--color-surface-elevated); color: var(--color-text-primary);
+  box-shadow: var(--elevation-overlay);
+  font-family: var(--font-family-body); text-align: left; transform-origin: center center;
 }
 @supports (corner-shape: squircle) { .sb-dialog { corner-shape: squircle; } }
 .sb-dialog-mark {
   display: grid; place-items: center; width: 44px; height: 44px; margin-bottom: 16px;
-  border-radius: var(--radius-continuous-md, 16px); font-size: 24px; font-weight: 600;
-  background: var(--color-surface-selected, #eff6ff); color: var(--color-text-brand, #2563eb);
+  border-radius: var(--radius-continuous-md, 16px); font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold);
+  background: var(--color-surface-selected); color: var(--color-text-brand);
 }
-.sb-dialog .sb-dialog-title { margin: 0; font-size: 22px; line-height: 1.4; font-weight: 700; overflow-wrap: anywhere; }
-.sb-dialog .sb-dialog-description { margin: 10px 0 0; font-size: 14px; line-height: 1.65; color: var(--color-text-secondary, #475569); white-space: pre-wrap; overflow-wrap: anywhere; }
+.sb-dialog .sb-dialog-title { margin: 0; font-size: var(--font-size-xl); line-height: 1.4; font-weight: var(--font-weight-bold); overflow-wrap: anywhere; }
+.sb-dialog .sb-dialog-description { margin: 10px 0 0; font-size: var(--font-size-sm); line-height: 1.65; color: var(--color-text-secondary); white-space: pre-wrap; overflow-wrap: anywhere; }
 .sb-dialog-form { margin: 24px 0 0; }
-.sb-dialog-label { display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; }
-.sb-dialog-field { border: 1px solid var(--input-border, #cbd5e1); border-radius: var(--radius-continuous-md, 16px); background: var(--input-bg, #fff); }
-.sb-dialog-field:focus-within { border-color: #2563eb; box-shadow: 0 0 0 3px #2563eb40; }
+.sb-dialog-label { display: block; margin-bottom: 8px; font-size: var(--font-size-sm); font-weight: var(--font-weight-semibold); }
+.sb-dialog-field { border: 1px solid var(--input-border); border-radius: var(--radius-continuous-md, 16px); background: var(--input-bg); }
+.sb-dialog-field:focus-within { border-color: var(--focus-ring-color); box-shadow: var(--focus-ring-shadow); }
 .sb-dialog .sb-dialog-input {
   box-sizing: border-box; display: block; width: 100%; min-height: var(--control-height-md, 44px);
   border: 0; background: transparent; color: inherit; padding: 10px 14px;
-  font: inherit; font-size: 16px; box-shadow: none;
+  font: inherit; font-size: var(--font-size-base); box-shadow: none;
 }
-.sb-dialog .sb-dialog-input[aria-invalid="true"] { color: var(--color-text-danger, #b91c1c); }
-.sb-dialog .sb-dialog-error { min-height: 20px; margin: 8px 0 16px; font-size: 12px; line-height: 1.6; color: #b91c1c; overflow-wrap: anywhere; }
-.sb-dialog-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.sb-dialog .sb-dialog-input[aria-invalid="true"] { color: var(--color-text-danger); }
+.sb-dialog .sb-dialog-error { min-height: 20px; margin: 8px 0 16px; font-size: var(--font-size-xs); line-height: 1.6; color: var(--color-text-danger); overflow-wrap: anywhere; }
+.sb-dialog-actions { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3, 12px); width: 100%; }
 .sb-dialog .sb-dialog-button {
   display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;
-  min-height: var(--control-height-md, 44px); padding: 10px 20px; border-radius: var(--radius-pill, 999px);
-  border: 1px solid transparent; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
-  transition: background-color 120ms, box-shadow 120ms;
+  flex: 1 1 0; min-width: 0; width: 100%; min-height: var(--control-height-md, 44px); padding: var(--space-2, 8px) var(--space-4, 16px); border-radius: var(--radius-pill, 999px);
+  border: 1px solid transparent; font: inherit; font-size: var(--font-size-sm); font-weight: var(--font-weight-bold, 700); cursor: pointer;
+  transition: transform var(--motion-duration-fast) var(--motion-ease-spring), background-color var(--motion-duration-instant), box-shadow var(--motion-duration-instant);
 }
-.sb-dialog .sb-dialog-cancel { color: var(--color-text-secondary, #475569); background: var(--color-bg-subtle, #f1f5f9); }
-.sb-dialog .sb-dialog-submit { color: #fff; background: var(--button-primary-bg, #2563eb); box-shadow: 0 2px 6px #2563eb22; }
-.sb-dialog .sb-dialog-submit[data-danger="true"] { background: var(--color-action-danger-default, #b91c1c); }
-.sb-dialog .sb-dialog-button:hover { box-shadow: inset 0 0 0 100px #0f172a0d; }
-.sb-dialog .sb-dialog-button:focus-visible { outline: 2px solid #2563eb; outline-offset: 3px; }
-.sb-dialog .sb-dialog-button:disabled { opacity: .65; cursor: wait; }
+.sb-dialog .sb-dialog-cancel { color: var(--color-text-primary); background: var(--color-bg-subtle); border-color: var(--color-border-default); }
+.sb-dialog .sb-dialog-submit { color: var(--button-primary-text); background: var(--button-primary-bg); }
+.sb-dialog .sb-dialog-submit[data-danger="true"] { background: var(--color-action-danger-default); }
+.sb-dialog .sb-dialog-button:hover { box-shadow: var(--shadow-inner-soft); }
+.sb-dialog .sb-dialog-button:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring-color); outline-offset: var(--focus-ring-offset); }
+.sb-dialog .sb-dialog-button:disabled { opacity: var(--opacity-disabled); cursor: wait; }
 @media (max-width: 480px) {
   .sb-dialog { padding: 24px; }
-  .sb-dialog-actions { display: grid; grid-auto-columns: 1fr; grid-auto-flow: column; }
 }
 @media (prefers-reduced-motion: reduce) { .sb-dialog .sb-dialog-button { transition: none; } }
+
+/* The field wrapper supplies the continuous focus ring. */
+.sb-dialog .sb-dialog-input:focus-visible { outline: none; }
+
+/* Central-dialog footers share the same equal-width pill anatomy as Delete. */
+.dialog-actions, .template-modal-actions, .project-tags-modal-footer, .source-modal-actions {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); width: 100%;
+}
+.dialog-actions > .btn, .template-modal-actions > .btn, .project-tags-modal-footer > .btn, .source-modal-actions > .btn {
+  flex: 1 1 0; min-width: 0; min-height: var(--control-height-md); border-radius: var(--radius-pill);
+}
+.template-modal-actions > .btn-ghost, .project-tags-modal-footer > .btn-ghost {
+  background: var(--color-bg-subtle); border-color: var(--color-border-default); color: var(--color-text-primary);
+}

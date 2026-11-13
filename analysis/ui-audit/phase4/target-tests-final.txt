@@ -1,0 +1,370 @@
+TAP version 13
+# Subtest: confirm returns explicit false, defaults description safely and resolves once
+ok 1 - confirm returns explicit false, defaults description safely and resolves once
+  ---
+  duration_ms: 44.5746
+  ...
+# Subtest: central dialogs match delete scale/blur signature and keep scrim alpha on exit
+ok 2 - central dialogs match delete scale/blur signature and keep scrim alpha on exit
+  ---
+  duration_ms: 17.221
+  ...
+# Subtest: global facade preserves boolean confirm, void alert and native prompt
+ok 3 - global facade preserves boolean confirm, void alert and native prompt
+  ---
+  duration_ms: 18.728
+  ...
+# Subtest: queued dialogs stay single and abort cancels active and queued work
+ok 4 - queued dialogs stay single and abort cancels active and queued work
+  ---
+  duration_ms: 63.0191
+  ...
+# Subtest: prompt keeps failed input, prevents concurrent submit, retries once and releases busy state
+ok 5 - prompt keeps failed input, prevents concurrent submit, retries once and releases busy state
+  ---
+  duration_ms: 15.9784
+  ...
+# Subtest: IME Enter is prevented and abort while submitting ignores late completion
+ok 6 - IME Enter is prevented and abort while submitting ignores late completion
+  ---
+  duration_ms: 12.0241
+  ...
+# Subtest: modal leases trap Tab, preserve pre-existing inert/overflow and return focus
+ok 7 - modal leases trap Tab, preserve pre-existing inert/overflow and return focus
+  ---
+  duration_ms: 10.87
+  ...
+# Subtest: overlapping modal leases retain inert and scroll lock until the last owner releases
+ok 8 - overlapping modal leases retain inert and scroll lock until the last owner releases
+  ---
+  duration_ms: 10.81
+  ...
+# Subtest: page signal cancels closing dialogs without later focus or duplicate resolve
+ok 9 - page signal cancels closing dialogs without later focus or duplicate resolve
+  ---
+  duration_ms: 9.352
+  ...
+# Subtest: legacy delete retains 1000ms close / 1500ms true result and abort is boolean false
+ok 10 - legacy delete retains 1000ms close / 1500ms true result and abort is boolean false
+  ---
+  duration_ms: 19.2167
+  ...
+# Subtest: navigation during cancelled legacy exit releases its modal lease immediately
+ok 11 - navigation during cancelled legacy exit releases its modal lease immediately
+  ---
+  duration_ms: 9.1893
+  ...
+# Subtest: all central dialog kinds exit from scale 1 to 0 with the approved anticipation curve
+ok 12 - all central dialog kinds exit from scale 1 to 0 with the approved anticipation curve
+  ---
+  duration_ms: 23.0694
+  ...
+# Subtest: ProjectCard.normalizeRatio normalizes aspect ratio strings
+ok 13 - ProjectCard.normalizeRatio normalizes aspect ratio strings
+  ---
+  duration_ms: 24.2539
+  ...
+# Subtest: ProjectCard.parseAspectRatio parses ratios from strings, numbers, and dimensions
+ok 14 - ProjectCard.parseAspectRatio parses ratios from strings, numbers, and dimensions
+  ---
+  duration_ms: 4.1149
+  ...
+# Subtest: legacy geometry return shape delegates to the same width model for all variants
+ok 15 - legacy geometry return shape delegates to the same width model for all variants
+  ---
+  duration_ms: 14.9398
+  ...
+# Subtest: ProjectCard.calculateTransitionTargetSize computes centered target rect within limits
+ok 16 - ProjectCard.calculateTransitionTargetSize computes centered target rect within limits
+  ---
+  duration_ms: 1.6683
+  ...
+# Subtest: ProjectCard.getContainedImageRect computes contained image bounds
+ok 17 - ProjectCard.getContainedImageRect computes contained image bounds
+  ---
+  duration_ms: 1.4475
+  ...
+# Subtest: ProjectCard.formatRatioText returns user-facing localized ratio labels
+ok 18 - ProjectCard.formatRatioText returns user-facing localized ratio labels
+  ---
+  duration_ms: 1.4403
+  ...
+# Subtest: ProjectCard.formatRelativeTime handles missing or relative timestamps
+ok 19 - ProjectCard.formatRelativeTime handles missing or relative timestamps
+  ---
+  duration_ms: 7.4299
+  ...
+# Subtest: ProjectCard.renderProjectCard renders expected folder markup, classes, and escapes HTML
+ok 20 - ProjectCard.renderProjectCard renders expected folder markup, classes, and escapes HTML
+  ---
+  duration_ms: 2.8724
+  ...
+# Subtest: ProjectCard.renderProjectCard handles single shot without secondary card and handles deleted flag
+ok 21 - ProjectCard.renderProjectCard handles single shot without secondary card and handles deleted flag
+  ---
+  duration_ms: 26.2984
+  ...
+# Subtest: ProjectCard.renderProjectCard renders tags cleanly and escapes HTML in tags
+ok 22 - ProjectCard.renderProjectCard renders tags cleanly and escapes HTML in tags
+  ---
+  duration_ms: 4.2064
+  ...
+# Subtest: Dashboard compact card normalizes metadata tags before its two-tag display limit
+ok 23 - Dashboard compact card normalizes metadata tags before its two-tag display limit
+  ---
+  duration_ms: 1.891
+  ...
+# Subtest: project thumbnails deduplicate in-flight loads and retain portrait background and geometry
+ok 24 - project thumbnails deduplicate in-flight loads and retain portrait background and geometry
+  ---
+  duration_ms: 13.7803
+  ...
+# Subtest: project thumbnail callbacks never insert into detached pages or reveal detached images
+ok 25 - project thumbnail callbacks never insert into detached pages or reveal detached images
+  ---
+  duration_ms: 4.6458
+  ...
+# Subtest: failed thumbnail loads retain fallback content and clear loading state
+ok 26 - failed thumbnail loads retain fallback content and clear loading state
+  ---
+  duration_ms: 26.8903
+  ...
+# Subtest: cover loading preserves the geometry established before image arrival
+ok 27 - cover loading preserves the geometry established before image arrival
+  ---
+  duration_ms: 5.3275
+  ...
+# Subtest: Folder canonical geometry is width-driven and retains tab/notch and 16:9 frame ratios
+ok 28 - Folder canonical geometry is width-driven and retains tab/notch and 16:9 frame ratios
+  ---
+  duration_ms: 1.118
+  ...
+# Subtest: Readonly folder uses the same anatomy without controls, ids, or title navigation
+ok 29 - Readonly folder uses the same anatomy without controls, ids, or title navigation
+  ---
+  duration_ms: 5.262
+  ...
+# Subtest: ProjectOptionMorph: Module interface and compatibility bridge
+ok 30 - ProjectOptionMorph: Module interface and compatibility bridge
+  ---
+  duration_ms: 21.023
+  ...
+# Subtest: ProjectOptionMorph: open and close creates and removes portal cleanly
+ok 31 - ProjectOptionMorph: open and close creates and removes portal cleanly
+  ---
+  duration_ms: 32.1968
+  ...
+# Subtest: ProjectOptionMorph: double open on same trigger acts as toggle close
+ok 32 - ProjectOptionMorph: double open on same trigger acts as toggle close
+  ---
+  duration_ms: 8.1914
+  ...
+# Subtest: ProjectOptionMorph: open A -> open B replaces active session cleanly
+ok 33 - ProjectOptionMorph: open A -> open B replaces active session cleanly
+  ---
+  duration_ms: 11.1504
+  ...
+# Subtest: ProjectOptionMorph: repeated close idempotency
+ok 34 - ProjectOptionMorph: repeated close idempotency
+  ---
+  duration_ms: 42.4926
+  ...
+# Subtest: ProjectOptionMorph: outside click closes menu
+ok 35 - ProjectOptionMorph: outside click closes menu
+  ---
+  duration_ms: 9.0997
+  ...
+# Subtest: ProjectOptionMorph: Escape key closes menu
+ok 36 - ProjectOptionMorph: Escape key closes menu
+  ---
+  duration_ms: 10.2481
+  ...
+# Subtest: ProjectOptionMorph: Window scroll and resize closes menu
+ok 37 - ProjectOptionMorph: Window scroll and resize closes menu
+  ---
+  duration_ms: 32.9232
+  ...
+# Subtest: ProjectOptionMorph: History mode renders restore action only
+ok 38 - ProjectOptionMorph: History mode renders restore action only
+  ---
+  duration_ms: 14.5944
+  ...
+# Subtest: ProjectOptionMorph: Action click executes action via ProjectActions and closes
+ok 39 - ProjectOptionMorph: Action click executes action via ProjectActions and closes
+  ---
+  duration_ms: 507.5745
+  ...
+# Subtest: ProjectOptionMorph: Card rerender / detached card does not throw on close
+ok 40 - ProjectOptionMorph: Card rerender / detached card does not throw on close
+  ---
+  duration_ms: 8.6678
+  ...
+# Subtest: ProjectOptionMorph: Route leave immediate cleanup (navigation)
+ok 41 - ProjectOptionMorph: Route leave immediate cleanup (navigation)
+  ---
+  duration_ms: 9.4463
+  ...
+# Subtest: ProjectOptionMorph: Global listeners lifecycle (no duplicate or lingering listeners)
+ok 42 - ProjectOptionMorph: Global listeners lifecycle (no duplicate or lingering listeners)
+  ---
+  duration_ms: 5.7812
+  ...
+# Subtest: ProjectOptionMorph: generic dropdown shares singleton and restores actual trigger dimensions
+ok 43 - ProjectOptionMorph: generic dropdown shares singleton and restores actual trigger dimensions
+  ---
+  duration_ms: 10.3563
+  ...
+# Subtest: SurfaceMorph: reversing an in-flight close reuses the same surface without resetting geometry
+ok 44 - SurfaceMorph: reversing an in-flight close reuses the same surface without resetting geometry
+  ---
+  duration_ms: 11.7927
+  ...
+# Subtest: SurfaceMorph: route teardown cancels pending actions and restores the trigger
+ok 45 - SurfaceMorph: route teardown cancels pending actions and restores the trigger
+  ---
+  duration_ms: 3.7948
+  ...
+# Subtest: SurfaceMorph: internal scroll is retained, ancestor scroll dismisses, reduced motion has no RAF
+ok 46 - SurfaceMorph: internal scroll is retained, ancestor scroll dismisses, reduced motion has no RAF
+  ---
+  duration_ms: 8.4563
+  ...
+# Subtest: SurfaceMorph: explicit keepTrigger opt-in remains available to other adapters
+ok 47 - SurfaceMorph: explicit keepTrigger opt-in remains available to other adapters
+  ---
+  duration_ms: 4.9174
+  ...
+# Subtest: SurfaceMorph: selected filter text may resize without dismissing a multi-select menu
+ok 48 - SurfaceMorph: selected filter text may resize without dismissing a multi-select menu
+  ---
+  duration_ms: 5.1014
+  ...
+# Subtest: Account Morph hides the trigger when expanded and dissolves the plate into transparency
+ok 49 - Account Morph hides the trigger when expanded and dissolves the plate into transparency
+  ---
+  duration_ms: 5.8167
+  ...
+# Subtest: trash flight starts at the real preview and ends inside the measured mouth
+ok 50 - trash flight starts at the real preview and ends inside the measured mouth
+  ---
+  duration_ms: 13.2912
+  ...
+# Subtest: trash flight has identical endpoints at 60Hz and 120Hz, with no per-frame layout reads
+ok 51 - trash flight has identical endpoints at 60Hz and 120Hz, with no per-frame layout reads
+  ---
+  duration_ms: 52.3333
+  ...
+# Subtest: abort / detached preview cancel RAF and cannot write a stale frame
+ok 52 - abort / detached preview cancel RAF and cannot write a stale frame
+  ---
+  duration_ms: 6.368
+  ...
+# Subtest: reduced motion skips flight; preference change also releases the active timeline
+ok 53 - reduced motion skips flight; preference change also releases the active timeline
+  ---
+  duration_ms: 26.5789
+  ...
+# Subtest: delayed first RAF uses intent time, and close can complete the narrative without another frame
+ok 54 - delayed first RAF uses intent time, and close can complete the narrative without another frame
+  ---
+  duration_ms: 7.3346
+  ...
+# Subtest: ProjectsPage: getFilteredAndSortedProjects filters deleted/pending and sorts desc by updateAt
+ok 55 - ProjectsPage: getFilteredAndSortedProjects filters deleted/pending and sorts desc by updateAt
+  ---
+  duration_ms: 31.3602
+  ...
+# Subtest: ProjectsPage: Page Lifecycle Contract - mount() returns { unmount() }
+ok 56 - ProjectsPage: Page Lifecycle Contract - mount() returns { unmount() }
+  ---
+  duration_ms: 17.6167
+  ...
+# Subtest: ProjectsPage: renders empty state when no active projects exist
+ok 57 - ProjectsPage: renders empty state when no active projects exist
+  ---
+  duration_ms: 4.1686
+  ...
+# Subtest: ProjectsPage: renders project cards and hooks lazyLoadProjectThumbs & card events
+ok 58 - ProjectsPage: renders project cards and hooks lazyLoadProjectThumbs & card events
+  ---
+  duration_ms: 25.6378
+  ...
+# Subtest: ProjectsPage: reactive updates via ProjectStore subscription and unmount cleanup
+ok 59 - ProjectsPage: reactive updates via ProjectStore subscription and unmount cleanup
+  ---
+  duration_ms: 7.2447
+  ...
+# Subtest: ProjectsPage: signal abort triggers immediate and safe unmount
+ok 60 - ProjectsPage: signal abort triggers immediate and safe unmount
+  ---
+  duration_ms: 9.9751
+  ...
+# Subtest: Router Navigation Simulation: Direct Entry, Leave, Return, Back/Forward Lifecycle
+ok 61 - Router Navigation Simulation: Direct Entry, Leave, Return, Back/Forward Lifecycle
+  ---
+  duration_ms: 14.6948
+  ...
+# Subtest: ProjectsPage: getFilteredAndSortedProjects supports OR logic with multiple tags and preserves sort
+ok 62 - ProjectsPage: getFilteredAndSortedProjects supports OR logic with multiple tags and preserves sort
+  ---
+  duration_ms: 4.2007
+  ...
+# Subtest: ProjectsPage: extractTagsWithCounts gathers unique tags and correct project counts
+ok 63 - ProjectsPage: extractTagsWithCounts gathers unique tags and correct project counts
+  ---
+  duration_ms: 13.7366
+  ...
+# Subtest: ProjectsPage: tags count each project once and normalize legacy metadata without prototype collisions
+ok 64 - ProjectsPage: tags count each project once and normalize legacy metadata without prototype collisions
+  ---
+  duration_ms: 3.255
+  ...
+# Subtest: ProjectsPage: renderFilterEmptyState renders filter-specific empty state and binds clear callback
+ok 65 - ProjectsPage: renderFilterEmptyState renders filter-specific empty state and binds clear callback
+  ---
+  duration_ms: 2.589
+  ...
+# Subtest: ProjectsPage: mount toolbar renders tag filter pills, updates count badge, and toggles filters
+ok 66 - ProjectsPage: mount toolbar renders tag filter pills, updates count badge, and toggles filters
+  ---
+  duration_ms: 15.9949
+  ...
+# Subtest: ProjectsPage: openProjectTagModal opens dialog, allows adding/removing tags, and saves via onSave
+ok 67 - ProjectsPage: openProjectTagModal opens dialog, allows adding/removing tags, and saves via onSave
+  ---
+  duration_ms: 664.2581
+  ...
+# Subtest: ProjectsPage: tag modal keeps draft on failed save, blocks duplicate saves, and retries
+ok 68 - ProjectsPage: tag modal keeps draft on failed save, blocks duplicate saves, and retries
+  ---
+  duration_ms: 550.0281
+  ...
+# Subtest: ProjectsPage: singleton modal and route cleanup remove overlay and keyboard listener immediately
+ok 69 - ProjectsPage: singleton modal and route cleanup remove overlay and keyboard listener immediately
+  ---
+  duration_ms: 7.5963
+  ...
+# Subtest: ProjectsPage: search intersects OR tags and ordering supports aliases, numeric names and stable ties
+ok 70 - ProjectsPage: search intersects OR tags and ordering supports aliases, numeric names and stable ties
+  ---
+  duration_ms: 4.2755
+  ...
+# Subtest: ProjectsPage: reattaching a retained folder after undo clears delete presentation without rebuilding its cover
+ok 71 - ProjectsPage: reattaching a retained folder after undo clears delete presentation without rebuilding its cover
+  ---
+  duration_ms: 2.5117
+  ...
+# Subtest: tag dialog resolves the shared animation loaded after the page module
+ok 72 - tag dialog resolves the shared animation loaded after the page module
+  ---
+  duration_ms: 4.283
+  ...
+1..72
+# tests 72
+# suites 0
+# pass 72
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2684.8689

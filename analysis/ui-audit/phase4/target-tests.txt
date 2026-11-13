@@ -1,0 +1,315 @@
+TAP version 13
+# Subtest: confirm returns explicit false, defaults description safely and resolves once
+ok 1 - confirm returns explicit false, defaults description safely and resolves once
+  ---
+  duration_ms: 172.9586
+  ...
+# Subtest: central dialogs match delete scale/blur signature and keep scrim alpha on exit
+ok 2 - central dialogs match delete scale/blur signature and keep scrim alpha on exit
+  ---
+  duration_ms: 110.612
+  ...
+# Subtest: global facade preserves boolean confirm, void alert and native prompt
+ok 3 - global facade preserves boolean confirm, void alert and native prompt
+  ---
+  duration_ms: 106.9168
+  ...
+# Subtest: queued dialogs stay single and abort cancels active and queued work
+ok 4 - queued dialogs stay single and abort cancels active and queued work
+  ---
+  duration_ms: 137.4945
+  ...
+# Subtest: prompt keeps failed input, prevents concurrent submit, retries once and releases busy state
+ok 5 - prompt keeps failed input, prevents concurrent submit, retries once and releases busy state
+  ---
+  duration_ms: 179.4525
+  ...
+# Subtest: IME Enter is prevented and abort while submitting ignores late completion
+ok 6 - IME Enter is prevented and abort while submitting ignores late completion
+  ---
+  duration_ms: 91.3305
+  ...
+# Subtest: modal leases trap Tab, preserve pre-existing inert/overflow and return focus
+ok 7 - modal leases trap Tab, preserve pre-existing inert/overflow and return focus
+  ---
+  duration_ms: 131.1756
+  ...
+# Subtest: overlapping modal leases retain inert and scroll lock until the last owner releases
+ok 8 - overlapping modal leases retain inert and scroll lock until the last owner releases
+  ---
+  duration_ms: 121.5957
+  ...
+# Subtest: page signal cancels closing dialogs without later focus or duplicate resolve
+ok 9 - page signal cancels closing dialogs without later focus or duplicate resolve
+  ---
+  duration_ms: 286.1506
+  ...
+# Subtest: legacy delete retains 1000ms close / 1500ms true result and abort is boolean false
+ok 10 - legacy delete retains 1000ms close / 1500ms true result and abort is boolean false
+  ---
+  duration_ms: 206.7406
+  ...
+# Subtest: navigation during cancelled legacy exit releases its modal lease immediately
+ok 11 - navigation during cancelled legacy exit releases its modal lease immediately
+  ---
+  duration_ms: 99.3512
+  ...
+# Subtest: ModalAnimation: open sets initial zero blur & scale 0, then transitions to blur and scale 1 in 10ms
+ok 12 - ModalAnimation: open sets initial zero blur & scale 0, then transitions to blur and scale 1 in 10ms
+  ---
+  duration_ms: 35.8581
+  ...
+# Subtest: ModalAnimation: close sets closing easing curve, then scale 0 and blur 0 in 10ms, then display none
+ok 13 - ModalAnimation: close sets closing easing curve, then scale 0 and blur 0 in 10ms, then display none
+  ---
+  duration_ms: 223.7646
+  ...
+# Subtest: legacy delete can explicitly preserve its existing backdrop fade
+ok 14 - legacy delete can explicitly preserve its existing backdrop fade
+  ---
+  duration_ms: 123.3634
+  ...
+# Subtest: reopening a central modal cancels the previous exit completion
+ok 15 - reopening a central modal cancels the previous exit completion
+  ---
+  duration_ms: 234.7974
+  ...
+# Subtest: reduced motion settles ordinary central modals immediately while keeping the delete exception
+ok 16 - reduced motion settles ordinary central modals immediately while keeping the delete exception
+  ---
+  duration_ms: 10.9996
+  ...
+# Subtest: ProjectCardInteractions: Module interface & compatibility bridge
+ok 17 - ProjectCardInteractions: Module interface & compatibility bridge
+  ---
+  duration_ms: 73.6836
+  ...
+# Subtest: ProjectCardInteractions: Dashboard compact card click launches reveal transition
+ok 18 - ProjectCardInteractions: Dashboard compact card click launches reveal transition
+  ---
+  duration_ms: 264.4482
+  ...
+# Subtest: ProjectCardInteractions: Prefers-reduced-motion navigates without transition
+ok 19 - ProjectCardInteractions: Prefers-reduced-motion navigates without transition
+  ---
+  duration_ms: 75.2111
+  ...
+# Subtest: ProjectCardInteractions: History card dispatches restore without owning confirmation
+ok 20 - ProjectCardInteractions: History card dispatches restore without owning confirmation
+  ---
+  duration_ms: 67.3627
+  ...
+# Subtest: ProjectCardInteractions: pending async restore does not invoke an extra confirmation
+ok 21 - ProjectCardInteractions: pending async restore does not invoke an extra confirmation
+  ---
+  duration_ms: 75.6237
+  ...
+# Subtest: ProjectCardInteractions: Option button click invokes openGlobalOptionMorph and stops propagation
+ok 22 - ProjectCardInteractions: Option button click invokes openGlobalOptionMorph and stops propagation
+  ---
+  duration_ms: 38.4592
+  ...
+# Subtest: ProjectCardInteractions: Title overflow marquee starts on hover and cleans up on leave
+ok 23 - ProjectCardInteractions: Title overflow marquee starts on hover and cleans up on leave
+  ---
+  duration_ms: 541.6494
+  ...
+# Subtest: ProjectCardInteractions: Card hover expands and triggers prefetch
+ok 24 - ProjectCardInteractions: Card hover expands and triggers prefetch
+  ---
+  duration_ms: 142.037
+  ...
+# Subtest: ProjectCardInteractions: Duplicate bind does NOT duplicate listeners (Idempotency)
+ok 25 - ProjectCardInteractions: Duplicate bind does NOT duplicate listeners (Idempotency)
+  ---
+  duration_ms: 125.0883
+  ...
+# Subtest: ProjectCardInteractions: Card click debounce guard allows only one transition trigger
+ok 26 - ProjectCardInteractions: Card click debounce guard allows only one transition trigger
+  ---
+  duration_ms: 12.4656
+  ...
+# Subtest: ProjectCardInteractions: bindAll and destroyWithin lifecycle over container
+ok 27 - ProjectCardInteractions: bindAll and destroyWithin lifecycle over container
+  ---
+  duration_ms: 103.8517
+  ...
+# Subtest: ProjectCard.normalizeRatio normalizes aspect ratio strings
+ok 28 - ProjectCard.normalizeRatio normalizes aspect ratio strings
+  ---
+  duration_ms: 11.6171
+  ...
+# Subtest: ProjectCard.parseAspectRatio parses ratios from strings, numbers, and dimensions
+ok 29 - ProjectCard.parseAspectRatio parses ratios from strings, numbers, and dimensions
+  ---
+  duration_ms: 2.5831
+  ...
+# Subtest: ProjectCard.calculateProjectCoverGeometry computes correct dimensions for variants
+ok 30 - ProjectCard.calculateProjectCoverGeometry computes correct dimensions for variants
+  ---
+  duration_ms: 6.7982
+  ...
+# Subtest: ProjectCard.calculateTransitionTargetSize computes centered target rect within limits
+ok 31 - ProjectCard.calculateTransitionTargetSize computes centered target rect within limits
+  ---
+  duration_ms: 7.154
+  ...
+# Subtest: ProjectCard.getContainedImageRect computes contained image bounds
+ok 32 - ProjectCard.getContainedImageRect computes contained image bounds
+  ---
+  duration_ms: 1.8932
+  ...
+# Subtest: ProjectCard.formatRatioText returns user-facing localized ratio labels
+ok 33 - ProjectCard.formatRatioText returns user-facing localized ratio labels
+  ---
+  duration_ms: 1.3452
+  ...
+# Subtest: ProjectCard.formatRelativeTime handles missing or relative timestamps
+ok 34 - ProjectCard.formatRelativeTime handles missing or relative timestamps
+  ---
+  duration_ms: 12.1535
+  ...
+# Subtest: ProjectCard.renderProjectCard renders expected folder markup, classes, and escapes HTML
+ok 35 - ProjectCard.renderProjectCard renders expected folder markup, classes, and escapes HTML
+  ---
+  duration_ms: 3.6314
+  ...
+# Subtest: ProjectCard.renderProjectCard handles single shot without secondary card and handles deleted flag
+ok 36 - ProjectCard.renderProjectCard handles single shot without secondary card and handles deleted flag
+  ---
+  duration_ms: 3.3698
+  ...
+# Subtest: ProjectCard.renderProjectCard renders tags cleanly and escapes HTML in tags
+ok 37 - ProjectCard.renderProjectCard renders tags cleanly and escapes HTML in tags
+  ---
+  duration_ms: 6.5619
+  ...
+# Subtest: Dashboard compact card normalizes metadata tags before its two-tag display limit
+ok 38 - Dashboard compact card normalizes metadata tags before its two-tag display limit
+  ---
+  duration_ms: 2.3067
+  ...
+# Subtest: project thumbnails deduplicate in-flight loads and retain portrait background and geometry
+ok 39 - project thumbnails deduplicate in-flight loads and retain portrait background and geometry
+  ---
+  duration_ms: 11.5554
+  ...
+# Subtest: project thumbnail callbacks never insert into detached pages or reveal detached images
+ok 40 - project thumbnail callbacks never insert into detached pages or reveal detached images
+  ---
+  duration_ms: 5.6052
+  ...
+# Subtest: failed thumbnail loads retain fallback content and clear loading state
+ok 41 - failed thumbnail loads retain fallback content and clear loading state
+  ---
+  duration_ms: 6.4231
+  ...
+# Subtest: cover loading preserves the geometry established before image arrival
+ok 42 - cover loading preserves the geometry established before image arrival
+  ---
+  duration_ms: 10.3432
+  ...
+# Subtest: ProjectOptionMorph: Module interface and compatibility bridge
+ok 43 - ProjectOptionMorph: Module interface and compatibility bridge
+  ---
+  duration_ms: 255.9592
+  ...
+# Subtest: ProjectOptionMorph: open and close creates and removes portal cleanly
+ok 44 - ProjectOptionMorph: open and close creates and removes portal cleanly
+  ---
+  duration_ms: 481.4231
+  ...
+# Subtest: ProjectOptionMorph: double open on same trigger acts as toggle close
+ok 45 - ProjectOptionMorph: double open on same trigger acts as toggle close
+  ---
+  duration_ms: 218.2335
+  ...
+# Subtest: ProjectOptionMorph: open A -> open B replaces active session cleanly
+ok 46 - ProjectOptionMorph: open A -> open B replaces active session cleanly
+  ---
+  duration_ms: 339.8818
+  ...
+# Subtest: ProjectOptionMorph: repeated close idempotency
+ok 47 - ProjectOptionMorph: repeated close idempotency
+  ---
+  duration_ms: 299.3291
+  ...
+# Subtest: ProjectOptionMorph: outside click closes menu
+ok 48 - ProjectOptionMorph: outside click closes menu
+  ---
+  duration_ms: 217.4563
+  ...
+# Subtest: ProjectOptionMorph: Escape key closes menu
+ok 49 - ProjectOptionMorph: Escape key closes menu
+  ---
+  duration_ms: 165.2283
+  ...
+# Subtest: ProjectOptionMorph: Window scroll and resize closes menu
+ok 50 - ProjectOptionMorph: Window scroll and resize closes menu
+  ---
+  duration_ms: 374.4014
+  ...
+# Subtest: ProjectOptionMorph: History mode renders restore action only
+ok 51 - ProjectOptionMorph: History mode renders restore action only
+  ---
+  duration_ms: 288.3379
+  ...
+# Subtest: ProjectOptionMorph: Action click executes action via ProjectActions and closes
+ok 52 - ProjectOptionMorph: Action click executes action via ProjectActions and closes
+  ---
+  duration_ms: 709.3836
+  ...
+# Subtest: ProjectOptionMorph: Card rerender / detached card does not throw on close
+ok 53 - ProjectOptionMorph: Card rerender / detached card does not throw on close
+  ---
+  duration_ms: 131.1337
+  ...
+# Subtest: ProjectOptionMorph: Route leave immediate cleanup (navigation)
+ok 54 - ProjectOptionMorph: Route leave immediate cleanup (navigation)
+  ---
+  duration_ms: 152.8373
+  ...
+# Subtest: ProjectOptionMorph: Global listeners lifecycle (no duplicate or lingering listeners)
+ok 55 - ProjectOptionMorph: Global listeners lifecycle (no duplicate or lingering listeners)
+  ---
+  duration_ms: 53.6204
+  ...
+# Subtest: ProjectOptionMorph: generic dropdown shares singleton and restores actual trigger dimensions
+ok 56 - ProjectOptionMorph: generic dropdown shares singleton and restores actual trigger dimensions
+  ---
+  duration_ms: 103.1227
+  ...
+# Subtest: SurfaceMorph: reversing an in-flight close reuses the same surface without resetting geometry
+ok 57 - SurfaceMorph: reversing an in-flight close reuses the same surface without resetting geometry
+  ---
+  duration_ms: 76.8113
+  ...
+# Subtest: SurfaceMorph: route teardown cancels pending actions and restores the trigger
+ok 58 - SurfaceMorph: route teardown cancels pending actions and restores the trigger
+  ---
+  duration_ms: 89.049
+  ...
+# Subtest: SurfaceMorph: internal scroll is retained, ancestor scroll dismisses, reduced motion has no RAF
+ok 59 - SurfaceMorph: internal scroll is retained, ancestor scroll dismisses, reduced motion has no RAF
+  ---
+  duration_ms: 89.7005
+  ...
+# Subtest: SurfaceMorph: account trigger is visible while settled and hidden only during return flight
+ok 60 - SurfaceMorph: account trigger is visible while settled and hidden only during return flight
+  ---
+  duration_ms: 102.495
+  ...
+# Subtest: SurfaceMorph: selected filter text may resize without dismissing a multi-select menu
+ok 61 - SurfaceMorph: selected filter text may resize without dismissing a multi-select menu
+  ---
+  duration_ms: 98.892
+  ...
+1..61
+# tests 61
+# suites 0
+# pass 61
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6353.1695

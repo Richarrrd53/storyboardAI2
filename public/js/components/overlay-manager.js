@@ -1,10 +1,11 @@
 (function (root) {
   'use strict';
-  // Dialog-only leases. Other floating surfaces retain their existing owners.
+  // Modal leases own inert/focus; non-modal leases own dismissal without scroll locking.
   const stack = [];
   let observer = null;
   let originalOverflow = '';
   const inertBefore = new Map();
+  const popovers = new Set();
   function syncInert() {
     const top = stack[stack.length - 1];
     if (!top) return;
@@ -14,6 +15,7 @@
     }
   }
   function acquire({ overlay, panel, initialFocus, returnFocus, onEscape }) {
+    if (!stack.length) for (const entry of [...popovers]) entry.dismiss('modal');
     const lease = { overlay, panel, initialFocus, returnFocus, onEscape };
     if (!stack.length) {
       originalOverflow = document.body.style.overflow;
@@ -76,6 +78,53 @@
     const top = stack[stack.length - 1];
     if (top && !top.panel.contains(event.target)) (focusables(top.panel)[0] || top.panel).focus();
   }
-  root.OverlayManager = { acquire };
+  // Non-modal surfaces share dismissal/observer ownership without locking the page.
+  function acquirePopover({ panel, trigger, onDismiss, signal, watchTriggerResize = false }) {
+    const listeners = [];
+    const listen = (target, type, handler, options) => {
+      if (!target?.addEventListener) return;
+      target.addEventListener(type, handler, options);
+      listeners.push(() => target.removeEventListener(type, handler, options));
+    };
+    const inside = (container, target) => !!target && !!container?.contains?.(target);
+    const entry = { dismiss: reason => onDismiss(reason) };
+    popovers.add(entry);
+    listen(root, 'scroll', event => { if (!inside(panel, event?.target)) entry.dismiss('scroll'); }, { capture: true, passive: true });
+    listen(root, 'resize', () => entry.dismiss('resize'), { passive: true });
+    listen(root, 'orientationchange', () => entry.dismiss('resize'), { passive: true });
+    listen(root, 'keydown', event => {
+      if (!stack.length && event.key === 'Escape' && !event.isComposing) {
+        event.preventDefault?.(); entry.dismiss('escape');
+      }
+    });
+    listen(root.document || document, 'pointerdown', event => {
+      if (!stack.length && !inside(panel, event.target) && !inside(trigger, event.target)) entry.dismiss('outside_click');
+    }, true);
+    listen(root.document || document, 'focusin', event => {
+      if (!stack.length && !inside(panel, event.target) && !inside(trigger, event.target)) entry.dismiss('focus_out');
+    });
+    listen(root.visualViewport, 'resize', () => entry.dismiss('resize'), { passive: true });
+    listen(root.visualViewport, 'scroll', () => entry.dismiss('scroll'), { passive: true });
+    listen(signal, 'abort', () => entry.dismiss('navigation'), { once: true });
+    const Observer = root.MutationObserver || (typeof MutationObserver !== 'undefined' ? MutationObserver : null);
+    const mutation = Observer ? new Observer(() => { if (trigger?.isConnected === false) entry.dismiss('trigger_removed'); }) : null;
+    mutation?.observe((root.document || document).body, { childList: true, subtree: true });
+    const Resize = root.ResizeObserver;
+    let observedSize = null;
+    const resize = Resize && watchTriggerResize ? new Resize(entries => {
+      const box = entries[0]?.contentRect;
+      if (!box) return;
+      const size = `${box.width}:${box.height}`;
+      if (observedSize !== null && size !== observedSize) entry.dismiss('resize');
+      observedSize = size;
+    }) : null;
+    resize?.observe(trigger);
+    let released = false;
+    return { release() {
+      if (released) return;
+      released = true; popovers.delete(entry); listeners.forEach(remove => remove()); mutation?.disconnect(); resize?.disconnect();
+    } };
+  }
+  root.OverlayManager = { acquire, acquirePopover, isModalActive: () => stack.length > 0 };
   if (typeof module !== 'undefined' && module.exports) module.exports = root.OverlayManager;
 })(typeof window !== 'undefined' ? window : globalThis);

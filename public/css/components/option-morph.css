@@ -7,7 +7,7 @@
 .project-option-overlay {
   position: fixed;
   inset: 0;
-  z-index: 10000;
+  z-index: var(--layer-dropdown);
   pointer-events: none;
   background: transparent;
 }
@@ -23,20 +23,20 @@
 .global-project-option-menu {
   position: fixed;
   box-sizing: border-box;
-  z-index: 10001;
+  z-index: var(--layer-dropdown);
   overflow: hidden;
   pointer-events: auto;
-  background: rgba(255, 255, 255, 0.96);
-  border: 1px solid rgba(148, 163, 184, 0.15);
-  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.10);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  background: var(--surface-floating-reading-bg);
+  border: var(--surface-floating-border);
+  box-shadow: var(--surface-floating-shadow), var(--surface-floating-highlight);
+  backdrop-filter: var(--surface-floating-blur);
+  -webkit-backdrop-filter: var(--surface-floating-blur);
   transform-origin: center center;
   will-change: width, height, top, left, border-radius, transform;
 }
 
 .global-project-option-menu.is-settled {
-  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.10);
+  box-shadow: var(--surface-floating-shadow), var(--surface-floating-highlight);
 }
 
 /* The Morphing Icon (⋮) */
@@ -165,9 +165,22 @@
 }
 
 /* Generic toolbar surfaces reuse the card morph's material and trajectory. */
-.project-option-overlay:has(.morph-dropdown-surface) { z-index:10060; }
+.project-option-overlay:has(.morph-dropdown-surface) { z-index:var(--layer-dropdown); }
 .morph-dropdown-surface .morph-menu-content { overscroll-behavior:contain; }
 .morph-dropdown-surface .morph-item:focus-visible { outline:2px solid #93b4ff; outline-offset:-2px; }
 
 .morph-icon--trigger > span:first-child { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .morph-icon--trigger > svg { flex-shrink:0; }
+
+/* Shared engine anatomy; project data remains in the adapter. */
+.surface-morph-trigger-hidden { opacity: 0; }
+.project-actions-content { display: flex; flex-direction: column; gap: 4px; }
+.global-project-option-menu .morph-item { min-height: 44px; border-radius: 999px; font-size: 14px; }
+.global-project-option-menu .morph-item svg { width: 20px; height: 20px; flex-shrink: 0; }
+
+/* Account trigger is transparent; the material plate dissolves on the return leg. */
+.surface-morph-transparent-trigger.global-project-option-menu { background: transparent; border-color: transparent; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; isolation: isolate; overflow: visible; }
+.surface-morph-transparent-trigger::before { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: var(--surface-floating-reading-bg); border: var(--surface-floating-border); box-shadow: var(--surface-floating-shadow), var(--surface-floating-highlight); backdrop-filter: var(--surface-floating-blur); -webkit-backdrop-filter: var(--surface-floating-blur); opacity: var(--morph-surface-presence, 0); pointer-events: none; }
+
+.surface-morph-transparent-trigger .morph-icon { border-radius: inherit; overflow: hidden; }
+.surface-morph-transparent-trigger .morph-menu-content { border-radius: inherit; }

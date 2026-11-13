@@ -7,6 +7,7 @@ const vm = require('node:vm');
 function environment(reduced = false) {
   let clock = 0, next = 0;
   const timers = new Map();
+  const animations = [];
   const context = { console, URL, AbortController, Promise };
   function events(target) {
     const listeners = {};
@@ -51,7 +52,7 @@ function environment(reduced = false) {
     focus() { document.activeElement = this; }
     select() {}
     getClientRects() { return [{}]; }
-    animate() { return { cancel() {}, finish() {} }; }
+    animate(frames, options) { const animation = { frames, options, cancel() {}, finish() {} }; animations.push(animation); return animation; }
     click() { if (!this.disabled) { this.onclick?.(); this.dispatchEvent({ type: 'click' }); } }
     cloneNode() { const node = new Element(this.tagName); node.className = this.className; return node; }
   }
@@ -80,7 +81,7 @@ function environment(reduced = false) {
     clock = end;
   };
   const tick = async () => { for (let n = 0; n < 12; n++) await Promise.resolve(); };
-  return { context, document, advance, tick, service: context.DialogService,
+  return { context, document, advance, tick, animations, service: context.DialogService,
     panel: () => document.querySelector('.sb-dialog'),
     click: selector => document.querySelector(selector).click(),
     submit: () => document.querySelector('form').dispatchEvent({ type: 'submit' }) };
@@ -93,9 +94,24 @@ test('confirm returns explicit false, defaults description safely and resolves o
   assert.equal(e.document.querySelector('.sb-dialog-description'), null);
   let resolved = 0; result.then(() => resolved++);
   e.click('.sb-dialog-cancel'); e.click('.sb-dialog-cancel');
-  assert.equal(resolved, 0); e.advance(160);
+  assert.equal(resolved, 0); e.advance(400);
   assert.equal((await result).confirmed, false); await e.tick(); assert.equal(resolved, 1);
   assert.equal(e.panel(), null);
+});
+
+test('central dialogs match delete scale/blur signature and keep scrim alpha on exit', async () => {
+  const e = environment(); const result = e.service.confirm({ title: 'motion' });
+  assert.equal(e.animations[0].frames[0].backdropFilter, 'blur(0px)');
+  assert.equal(e.animations[1].frames[0].transform, 'scale(0)');
+  assert.equal(e.animations[1].options.easing, 'cubic-bezier(.34,1.59,.69,.99)');
+  assert.equal(e.animations[1].options.duration, 400);
+  e.click('.sb-dialog-cancel');
+  const exit = e.animations.slice(-2);
+  assert.equal(exit[1].frames[1].transform, 'scale(0)');
+  assert.equal(exit[1].options.easing, 'cubic-bezier(.31,.01,.66,-.59)');
+  assert.equal(exit[0].frames[1].backdropFilter, 'blur(0px)');
+  assert.ok(exit[0].frames.every(frame => !('opacity' in frame) && !('background' in frame)));
+  e.advance(400); assert.equal((await result).confirmed, false);
 });
 
 test('global facade preserves boolean confirm, void alert and native prompt', async () => {
@@ -156,6 +172,21 @@ test('modal leases trap Tab, preserve pre-existing inert/overflow and return foc
   assert.equal(e.document.activeElement, trigger);
 });
 
+test('overlapping modal leases retain inert and scroll lock until the last owner releases', () => {
+  const e = environment(); const background = e.document.createElement('main');
+  e.document.body.append(background); e.document.body.style.overflow = 'clip';
+  const makeLease = () => {
+    const overlay = e.document.createElement('div'), panel = e.document.createElement('section'); panel.tabIndex = -1;
+    overlay.append(panel); e.document.body.append(overlay);
+    return e.context.OverlayManager.acquire({ overlay, panel, initialFocus: panel });
+  };
+  const first = makeLease(), second = makeLease();
+  first.release({ restoreFocus: false });
+  assert.equal(background.inert, true); assert.equal(e.document.body.style.overflow, 'hidden');
+  second.release({ restoreFocus: false });
+  assert.equal(background.inert, false); assert.equal(e.document.body.style.overflow, 'clip');
+});
+
 test('page signal cancels closing dialogs without later focus or duplicate resolve', async () => {
   const e = environment(); const c = new AbortController(); e.service.setPageSignal(c.signal);
   const result = e.service.confirm({}); e.click('.sb-dialog-cancel'); c.abort();
@@ -181,4 +212,16 @@ test('navigation during cancelled legacy exit releases its modal lease immediate
   e.document.querySelector('.secondary').click(); assert.strictEqual(await result, false);
   assert.equal(trigger.inert, true); c.abort(); assert.equal(trigger.inert, false);
   e.advance(500); assert.equal(e.document.activeElement === trigger, false);
+});
+
+test('all central dialog kinds exit from scale 1 to 0 with the approved anticipation curve',async()=>{
+ for(const kind of ['alert','confirm','prompt']) {
+  const e=environment();const done=e.service[kind]({title:kind,defaultValue:'name'});
+  if(kind==='alert'){e.submit();await e.tick();}else e.click('.sb-dialog-cancel');
+  const [backdrop,panel]=e.animations.slice(-2);
+  assert.equal(panel.frames[0].transform,'scale(1)');assert.equal(panel.frames[1].transform,'scale(0)');
+  assert.equal(panel.options.easing,'cubic-bezier(.31,.01,.66,-.59)');
+  assert.ok(backdrop.frames.every(frame=>!('opacity' in frame)&&!('backgroundColor' in frame)));
+  e.advance(400);await done;
+ }
 });

@@ -27,8 +27,8 @@
 
   let storeUnsubscribe = null;
   let lastRenderedProjectsJSON = null;
-  let lastToggleTime = 0;
-  let lastOpenTime = 0;
+  let accountController = null;
+  let depthTimer = null;
   let updateMobNavVisual = null;
   let isNavInteracting = false;
   let navSpringRaf = null;
@@ -62,6 +62,11 @@
   }
 
   function setBackgroundDepthProgress(progress) {
+    clearTimeout(depthTimer);
+    if (!progress) {
+      getBackgroundDepthTargets().forEach(el => {el.classList.remove('bg-depth-scaled', 'bg-depth-animating'); ['transform','border-radius','overflow','transition'].forEach(name=>el.style.removeProperty(name));});
+      return;
+    }
     if (!isMobileView()) return;
     const bgTargets = getBackgroundDepthTargets();
     const scale = (1.0 - progress * 0.05).toFixed(4);
@@ -75,6 +80,7 @@
   }
 
   function animateBackgroundDepth(isOpen, duration = 0.32) {
+    clearTimeout(depthTimer);
     if (!isMobileView()) return;
     const bgTargets = getBackgroundDepthTargets();
     bgTargets.forEach(el => {
@@ -90,7 +96,7 @@
         el.style.setProperty('border-radius', '0px', 'important');
       }
     });
-    setTimeout(() => {
+    depthTimer = setTimeout(() => {
       bgTargets.forEach(el => {
         el.style.removeProperty('transition');
         if (!isOpen) {
@@ -167,54 +173,34 @@
   }
 
   function ensureUserPanelDOM() {
+    let avatar = document.getElementById('top-avatar');
+    if (avatar && !avatar.classList.contains('account-row')) {
+      const row = document.createElement('button');
+      row.id = 'top-avatar'; row.type = 'button'; row.className = 'account-row';
+      row.setAttribute('aria-label', '帳戶選單'); row.setAttribute('aria-haspopup', 'dialog');
+      row.setAttribute('aria-expanded', 'false');
+      row.innerHTML = `<span class="account-row__avatar" aria-hidden="true">帳</span><span class="account-row__identity"><span class="account-row__name">帳戶</span><span class="account-row__secondary" hidden></span></span><svg class="account-row__chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m9 6 6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+      const parent = avatar.parentNode || avatar.parentElement;
+      if (parent?.replaceChild) parent.replaceChild(row, avatar);
+      else if (parent) { parent.removeChild(avatar); parent.appendChild(row); }
+    }
     let panel = document.getElementById('spa-user-panel') || document.getElementById('user-panel') || dashboardUserPanel;
-    let backdrop = document.getElementById('spa-user-panel-backdrop') || document.querySelector('.user-panel-backdrop');
-
-    if (!backdrop) {
-      backdrop = document.createElement('div');
-      backdrop.className = 'user-panel-backdrop';
-      backdrop.id = 'spa-user-panel-backdrop';
-      document.body.appendChild(backdrop);
+    let backdrop = document.getElementById('spa-user-panel-backdrop');
+    if (!backdrop) { backdrop = document.createElement('div'); backdrop.id = 'spa-user-panel-backdrop'; document.body.appendChild(backdrop); }
+    backdrop.hidden = true; userPanelBackdrop = backdrop;
+    if (!panel) { panel = document.createElement('div'); document.body.appendChild(panel); }
+    if (!panel.classList.contains('account-panel')) {
+      panel.id = 'spa-user-panel'; panel.className = 'account-panel';
+      panel.innerHTML = `<div class="user-panel-handle" aria-hidden="true"></div>
+        <button type="button" class="account-panel-close" aria-label="關閉帳戶面板">×</button>
+        <div class="up-header"><div class="up-avatar" aria-hidden="true">帳</div><div class="account-panel-identity"><p class="up-name">帳戶</p><p class="up-email" hidden></p><span class="up-plan" hidden></span></div></div>
+        <div class="up-body"><button type="button" class="up-btn" disabled><img src="../icon/profile.svg" alt=""><span>個人檔案</span></button><button type="button" class="up-btn" disabled><img src="../icon/upgrade.svg" alt=""><span>升級方案</span></button><a href="../history" class="up-btn" id="up-recycle-bin"><img src="../icon/trash-blur.svg" alt=""><span>資源回收桶</span></a><button type="button" class="up-btn" disabled><img src="../icon/setting.svg" alt=""><span>設定</span></button></div>
+        <div class="account-panel-footer"><button type="button" class="up-btn up-logout"><img src="../icon/logout.svg" alt=""><span>登出</span></button></div>`;
     }
-    userPanelBackdrop = backdrop;
-
-    if (!panel) {
-      panel = document.createElement('div');
-      panel.className = 'user-panel';
-      panel.id = 'spa-user-panel';
-      panel.innerHTML = `
-        <div class="user-panel-handle" aria-hidden="true"></div>
-        <div class="up-header">
-            <div class="up-avatar">黃</div>
-            <div>
-                <p class="up-name">創作者</p>
-                <p class="up-email">creator@storyboard.ai</p>
-            </div>
-            <div class="up-plan">Free</div>
-        </div>
-        <div class="up-divide"></div>
-        <div class="up-body">
-            <a class="up-btn"><img src="../icon/profile.svg" alt=""><span>個人檔案</span></a>
-            <a class="up-btn"><img src="../icon/upgrade.svg" alt=""><span>升級方案</span></a>
-            <a href="../history" class="up-btn" id="up-recycle-bin"><img src="../icon/trash-blur.svg" alt=""><span>資源回收桶</span></a>
-            <a class="up-btn"><img src="../icon/setting.svg" alt=""><span>設定</span></a>
-        </div>
-        <div class="up-divide"></div>
-        <a href="../html/login.html" class="up-btn up-logout"><img src="../icon/logout.svg" alt=""><span>登出</span></a>
-      `;
-      document.body.appendChild(panel);
-    }
-
     dashboardUserPanel = panel;
-    if (!panel.querySelector('.user-panel-handle')) {
-      const handle = document.createElement('div');
-      handle.className = 'user-panel-handle';
-      handle.setAttribute('aria-hidden', 'true');
-      panel.prepend(handle);
-    }
-
-    initUserPanelGestures();
-    return { panel, backdrop };
+    if (!accountController) accountController = window.UserPanelController.create({panel, backdrop, isMobile:isMobileView,
+      onStateChange:()=>updateMobileBottomNavActive(), onDepth:setBackgroundDepthProgress, animateDepth:animateBackgroundDepth});
+    return {panel, backdrop};
   }
 
   function ensureMobileBottomNavDOM() {
@@ -631,264 +617,13 @@
 
   function toggleUserPanel(open) {
     ensureUserPanelDOM();
-    const panel = document.getElementById('spa-user-panel') || document.getElementById('user-panel') || dashboardUserPanel;
-    const backdrop = document.getElementById('spa-user-panel-backdrop') || userPanelBackdrop;
-    if (!panel) return;
-
-    const isCurrentlyActive = panel.classList.contains('active');
-    const shouldOpen = typeof open === 'boolean' ? open : !isCurrentlyActive;
-
-    const now = Date.now();
-    if (!shouldOpen && (now - lastOpenTime < 380 || (window.__justHandledPointerNav && now - window.__justHandledPointerNav < 380))) {
-      return;
-    }
-
-    if (typeof open !== 'boolean' && now - lastToggleTime < 280) {
-      return;
-    }
-    lastToggleTime = now;
-    if (shouldOpen) {
-      lastOpenTime = now;
-    }
-
-    const mobile = isMobileView();
-    if (!mobile) {
-      panel.style.removeProperty('display');
-      panel.style.removeProperty('transform');
-      panel.style.removeProperty('transition');
-      if (backdrop) {
-        backdrop.classList.remove('active');
-        backdrop.style.removeProperty('opacity');
-        backdrop.style.removeProperty('backdrop-filter');
-        backdrop.style.removeProperty('-webkit-backdrop-filter');
-      }
-      if (shouldOpen) {
-        panel.classList.add('active');
-      } else {
-        panel.classList.remove('active');
-      }
-      return;
-    }
-
-    if (!panel.dataset.dragBound) {
-      initUserPanelGestures();
-    }
-
-    if (shouldOpen) {
-      panel.style.removeProperty('display');
-      panel.classList.add('active');
-      panel.style.removeProperty('transform');
-      panel.style.setProperty('transform', 'translate3d(0, 0, 0)', 'important');
-      panel.style.transition = '';
-      if (backdrop) {
-        backdrop.style.removeProperty('display');
-        backdrop.classList.add('active');
-        backdrop.style.opacity = '';
-        backdrop.style.backdropFilter = '';
-        backdrop.style.webkitBackdropFilter = '';
-        backdrop.style.transition = '';
-      }
-      animateBackgroundDepth(true, 0.35);
-      updateMobileBottomNavActive('profile');
-    } else {
-      panel.classList.remove('active');
-      panel.style.removeProperty('transform');
-      panel.style.transform = '';
-      panel.style.transition = '';
-      if (backdrop) {
-        backdrop.classList.remove('active');
-        backdrop.style.opacity = '';
-        backdrop.style.backdropFilter = '';
-        backdrop.style.webkitBackdropFilter = '';
-        backdrop.style.transition = '';
-      }
-      animateBackgroundDepth(false, 0.32);
-      updateMobileBottomNavActive();
-    }
-  }
-
-  function initUserPanelGestures() {
-    const panel = document.getElementById('spa-user-panel') || document.getElementById('user-panel') || dashboardUserPanel;
-    const backdrop = document.getElementById('spa-user-panel-backdrop') || userPanelBackdrop;
-    if (!panel || panel.dataset.dragBound) return;
-    panel.dataset.dragBound = 'true';
-
-    if (backdrop && !backdrop.dataset.bound) {
-      backdrop.dataset.bound = 'true';
-      const onBackdropClick = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        toggleUserPanel(false);
-      };
-      addTrackedListener(backdrop, 'click', onBackdropClick);
-    }
-
-    let startY = 0;
-    let lastY = 0;
-    let lastTime = 0;
-    let curDy = 0;
-    let vy = 0;
-    let isDraggingPanel = false;
-    let activePointerId = null;
-    let panelHeight = 360;
-
-    const onPanelPointerDown = (e) => {
-      if (!isMobileView()) return;
-      if (!panel.classList.contains('active')) return;
-      const isHandle = !!e.target.closest('.user-panel-handle');
-      const rect = panel.getBoundingClientRect();
-      const isTopZone = (e.clientY - rect.top) < 85;
-      const isInteractive = !!e.target.closest('a, button, input');
-
-      if (!isHandle && (!isTopZone || isInteractive)) return;
-
-      isDraggingPanel = true;
-      activePointerId = e.pointerId;
-      startY = e.clientY;
-      lastY = e.clientY;
-      lastTime = performance.now();
-      curDy = 0;
-      vy = 0;
-      panelHeight = panel.getBoundingClientRect().height || 360;
-
-      panel.style.setProperty('transition', 'none', 'important');
-      if (backdrop) backdrop.style.setProperty('transition', 'none', 'important');
-
-      window.addEventListener('pointermove', onPanelPointerMove, { passive: false });
-      window.addEventListener('pointerup', onPanelPointerUp);
-      window.addEventListener('pointercancel', onPanelPointerUp);
-
-      try { panel.setPointerCapture(e.pointerId); } catch (_) {}
-    };
-    addTrackedListener(panel, 'pointerdown', onPanelPointerDown);
-
-    function onPanelPointerMove(e) {
-      if (!isDraggingPanel || (activePointerId !== null && e.pointerId !== activePointerId)) return;
-      if (e.cancelable) e.preventDefault();
-
-      const rawDy = e.clientY - startY;
-      curDy = Math.max(0, rawDy);
-
-      const now = performance.now();
-      const dt = Math.max(1, now - lastTime);
-      vy = (e.clientY - lastY) / dt;
-      lastY = e.clientY;
-      lastTime = now;
-
-      panel.style.setProperty('transform', `translate3d(0, ${curDy.toFixed(1)}px, 0)`, 'important');
-
-      const ratio = Math.max(0, Math.min(1, curDy / panelHeight));
-      const progress = Math.max(0, 1 - ratio);
-
-      if (backdrop) {
-        backdrop.style.setProperty('opacity', progress.toFixed(3), 'important');
-        const blurVal = (progress * 4).toFixed(2);
-        backdrop.style.setProperty('backdrop-filter', `blur(${blurVal}px)`, 'important');
-        backdrop.style.setProperty('-webkit-backdrop-filter', `blur(${blurVal}px)`, 'important');
-      }
-
-      setBackgroundDepthProgress(progress);
-    }
-
-    function onPanelPointerUp(e) {
-      if (!isDraggingPanel) return;
-      if (activePointerId !== null && e && e.pointerId !== activePointerId) return;
-
-      window.removeEventListener('pointermove', onPanelPointerMove);
-      window.removeEventListener('pointerup', onPanelPointerUp);
-      window.removeEventListener('pointercancel', onPanelPointerUp);
-      try {
-        if (activePointerId !== null && panel.hasPointerCapture(activePointerId)) {
-          panel.releasePointerCapture(activePointerId);
-        }
-      } catch (_) {}
-
-      isDraggingPanel = false;
-      activePointerId = null;
-
-      const ratio = curDy / panelHeight;
-      const shouldDismiss = ratio >= 0.30 || vy > 0.38;
-
-      if (shouldDismiss) {
-        const remainingRatio = Math.max(0.1, 1 - ratio);
-        const velocityBonus = Math.min(0.18, Math.max(0, vy * 0.075));
-        const duration = Math.max(0.10, Math.min(0.28, (0.24 * remainingRatio) - velocityBonus));
-
-        panel.style.setProperty('transition', `transform ${duration.toFixed(2)}s cubic-bezier(0.12, 0.9, 0.25, 1), opacity ${duration.toFixed(2)}s ease`, 'important');
-        panel.style.setProperty('transform', 'translate3d(0, 100%, 0)', 'important');
-
-        if (backdrop) {
-          backdrop.style.setProperty('transition', `opacity ${duration.toFixed(2)}s ease, backdrop-filter ${duration.toFixed(2)}s ease, -webkit-backdrop-filter ${duration.toFixed(2)}s ease`, 'important');
-          backdrop.style.setProperty('opacity', '0', 'important');
-          backdrop.style.setProperty('backdrop-filter', 'blur(0px)', 'important');
-          backdrop.style.setProperty('-webkit-backdrop-filter', 'blur(0px)', 'important');
-        }
-
-        animateBackgroundDepth(false, duration);
-        setTimeout(() => {
-          toggleUserPanel(false);
-        }, duration * 1000);
-      } else {
-        panel.style.setProperty('transition', 'transform 0.26s cubic-bezier(0.16, 1, 0.3, 1)', 'important');
-        panel.style.setProperty('transform', 'translate3d(0, 0, 0)', 'important');
-
-        if (backdrop) {
-          backdrop.style.setProperty('transition', 'opacity 0.26s ease, backdrop-filter 0.26s ease, -webkit-backdrop-filter 0.26s ease', 'important');
-          backdrop.style.setProperty('opacity', '1', 'important');
-          backdrop.style.setProperty('backdrop-filter', 'blur(4px)', 'important');
-          backdrop.style.setProperty('-webkit-backdrop-filter', 'blur(4px)', 'important');
-        }
-
-        animateBackgroundDepth(true, 0.26);
-        setTimeout(() => {
-          panel.style.removeProperty('transition');
-          if (backdrop) {
-            backdrop.style.removeProperty('transition');
-            backdrop.style.removeProperty('backdrop-filter');
-            backdrop.style.removeProperty('-webkit-backdrop-filter');
-          }
-        }, 260);
-      }
-    }
+    accountController.toggle(open);
   }
 
   async function syncUserProfile(signal) {
     const avatar = document.getElementById('top-avatar') || dashboardTopbar?.querySelector('#top-avatar');
     const panel = document.getElementById('spa-user-panel');
     const auth = shellOptions.spaAuth || window.spaAuth;
-
-    if (!auth || typeof auth.fetchUser !== 'function') return;
-
-    try {
-      const result = await auth.fetchUser(signal);
-      if (signal?.aborted || result?.aborted) return;
-
-      if (result && result.user && panel) {
-        const name = result.user.name || 'User';
-        const initial = name.charAt(0).toUpperCase();
-        const userImage = result.user.image
-          ? `<img src="${result.user.image}" style="width: 100%; height: 100%; border-radius: 50%;" alt="">`
-          : initial;
-
-        if (avatar) avatar.innerHTML = userImage;
-
-        const upAvatar = panel.querySelector('.up-avatar');
-        if (upAvatar) upAvatar.innerHTML = userImage;
-
-        const upName = panel.querySelector('.up-name');
-        if (upName) upName.textContent = name;
-
-        const upPlan = panel.querySelector('.up-plan');
-        const plans = { free: 'Free', pro: 'Pro', promax: 'Pro Max' };
-        if (upPlan) {
-          upPlan.classList.add(result.user.plan);
-          upPlan.textContent = plans[result.user.plan] || 'Free';
-        }
-
-        const upEmail = panel.querySelector('.up-email');
-        if (upEmail) upEmail.textContent = result.user.email;
-      }
-    } catch (_) {}
 
     if (avatar && !avatar.dataset.bound) {
       avatar.dataset.bound = 'true';
@@ -899,20 +634,60 @@
       addTrackedListener(avatar, 'click', onAvatarClick);
     }
 
+    const recycle = panel?.querySelector('#up-recycle-bin');
+    if (recycle && !recycle.dataset.spaBound) {
+      recycle.dataset.spaBound = 'true';
+      addTrackedListener(recycle, 'click', e => {
+        if (e.button && e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        e.preventDefault();
+        e.stopPropagation();
+        toggleUserPanel(false);
+        shellOptions.navigate('history');
+      });
+    }
+
     const logout = panel?.querySelector('.up-logout');
     if (logout && !logout.dataset.spaBound) {
       logout.dataset.spaBound = 'true';
       const onLogoutClick = async (e) => {
         e.preventDefault();
         toggleUserPanel(false);
-        const confirmFn = window.confirmDialog || window.confirm;
-        const isConfirmed = await confirmFn('是否確定登出？');
+        const isConfirmed = window.DialogService
+          ? (await window.DialogService.confirm({title:'是否確定登出？', returnFocus:accountController?.trigger})).confirmed
+          : await (window.confirmDialog || window.confirm)('是否確定登出？');
         if (isConfirmed) {
           auth?.logout?.();
         }
       };
       addTrackedListener(logout, 'click', onLogoutClick);
     }
+
+    if (!auth || typeof auth.fetchUser !== 'function') return;
+
+    try {
+      const result = await auth.fetchUser(signal);
+      if (signal?.aborted || result?.aborted) return;
+
+      if (result && result.user && panel) {
+        const user = result.user;
+        const name = user.name || '帳戶';
+        const drawAvatar = target => {
+          if (!target) return;
+          target.textContent = name.charAt(0).toUpperCase();
+          if (user.image) { const image = document.createElement('img'); image.src = user.image; image.alt = ''; target.textContent = ''; target.appendChild(image); }
+        };
+        drawAvatar(avatar?.querySelector('.account-row__avatar'));
+        drawAvatar(panel.querySelector('.up-avatar'));
+        for (const target of [avatar?.querySelector('.account-row__name'), panel.querySelector('.up-name')]) if (target) target.textContent = name;
+        avatar?.setAttribute('aria-label', `${name}，帳戶選單`);
+        for (const target of [avatar?.querySelector('.account-row__secondary'), panel.querySelector('.up-email')]) if (target) {target.textContent = user.email || ''; target.hidden = !user.email;}
+        const plan = panel.querySelector('.up-plan');
+        if (plan) {plan.textContent = ({free:'Free',pro:'Pro',promax:'Pro Max'})[user.plan] || user.plan || ''; plan.hidden = !user.plan;}
+
+      }
+    } catch (_) {}
+
+
   }
 
   /* ==========================================================================
@@ -1789,15 +1564,12 @@
           el.style.removeProperty('border-radius');
           el.style.removeProperty('overflow');
         });
-        const panel = document.getElementById('spa-user-panel') || document.getElementById('user-panel');
-        if (panel) {
-          panel.style.removeProperty('transform');
-        }
+
       }
       if (typeof cacheMobNavMetrics === 'function') {
         try { cacheMobNavMetrics(); } catch (_) {}
       }
-      if (mobileBottomNav) {
+      if (mobileBottomNav && !window.OverlayManager?.isModalActive?.()) {
         const navUnavailable = mobileBottomNav.hidden || (secondaryRoute && isMobileView());
         mobileBottomNav.inert = navUnavailable;
         mobileBottomNav.setAttribute('aria-hidden', String(navUnavailable));
@@ -1806,15 +1578,7 @@
     };
     addTrackedListener(window, 'resize', onResize);
 
-    const onDocClick = (e) => {
-      if (window.__justHandledPointerNav && (Date.now() - window.__justHandledPointerNav) < 450) return;
-      if (e && e.target && e.target.closest('#user-panel, #spa-user-panel, #top-avatar, #spa-mobile-nav, .mobile-bottom-nav')) return;
-      const panel = document.getElementById('user-panel') || document.getElementById('spa-user-panel');
-      if (panel && panel.classList.contains('active')) {
-        toggleUserPanel(false);
-      }
-    };
-    addTrackedListener(document, 'click', onDocClick);
+
   }
 
   /* ==========================================================================
@@ -1828,6 +1592,7 @@
     };
 
     await ensureShellDOM(options.signal, options.fetchDoc);
+    accountController?.bindPage(options.signal);
     bindSidebarLinks();
     bindGlobalListeners();
     subscribeProjectStore();
@@ -1840,6 +1605,7 @@
   }
 
   function setPendingRoute(page) {
+    if (selectedRoute !== page) accountController?.close('navigation', true);
     selectedRoute = page;
     updateSidebarActive(page);
     updateMobileBottomNavActive(page);
@@ -1847,6 +1613,7 @@
 
   function updateRoute(page, opts = {}) {
     cancelMobNavInteraction?.();
+    if (selectedRoute !== page) accountController?.close('navigation', true);
     selectedRoute = page;
     const isDashboard = isDashboardPage(page);
     secondaryRoute = page === 'project' || page === 'generate' || (page === 'template' && !!opts.templateId);
@@ -1860,10 +1627,11 @@
     }
     const mobNav = document.getElementById('spa-mobile-nav') || mobileBottomNav;
     if (mobNav) {
-      mobNav.style.display = isDashboard ? '' : 'none';
-      mobNav.hidden = !isDashboard;
-      mobNav.inert = !isDashboard || (secondaryRoute && isMobileView());
-      mobNav.setAttribute('aria-hidden', String(!isDashboard || (secondaryRoute && isMobileView())));
+      const navHidden = !isDashboard || page === 'history';
+      mobNav.style.display = navHidden ? 'none' : '';
+      mobNav.hidden = navHidden;
+      mobNav.inert = navHidden || (secondaryRoute && isMobileView());
+      mobNav.setAttribute('aria-hidden', String(navHidden || (secondaryRoute && isMobileView())));
     }
     document.body.classList.remove('mobile-nav-compact');
 
@@ -1904,6 +1672,7 @@
   }
 
   function destroy() {
+    accountController?.destroy(); accountController = null;
     if (selectorRaf) cancelAnimationFrame(selectorRaf);
     selectorRaf = null;
     document.body.classList.remove('mobile-nav-compact');
@@ -1957,6 +1726,8 @@
       delete panel.dataset.dragBound;
       const logout = panel.querySelector('.up-logout');
       if (logout) delete logout.dataset.spaBound;
+      const recycle = panel.querySelector('#up-recycle-bin');
+      if (recycle) delete recycle.dataset.spaBound;
     }
 
     const backdrop = document.getElementById('spa-user-panel-backdrop') || userPanelBackdrop;

@@ -13,14 +13,14 @@
     position: fixed;
     bottom: 28px;
     right: 28px;
-    z-index: 50;
+    z-index: var(--layer-dock-navigation);
     width: 170px;
     height: 48px;
     border-radius: 24px;
     /* 3D Matte Acrylic Base (revealed on morph / expand) */
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.58) 0%, rgba(243, 246, 252, 0.42) 100%) !important;
-    backdrop-filter: blur(8px) saturate(120%) brightness(1.03) !important;
-    -webkit-backdrop-filter: blur(8px) saturate(120%) brightness(1.03) !important;
+    background: var(--surface-floating-bg) !important;
+    backdrop-filter: var(--surface-floating-blur) !important;
+    -webkit-backdrop-filter: var(--surface-floating-blur) !important;
     color: #ffffff;
     font-weight: 700;
     font-size: 0.9rem;
@@ -72,8 +72,8 @@
     height: 56px;
     border-radius: 28px !important;
     background: var(--creation-composer-bg) !important;
-    backdrop-filter: blur(12px) saturate(125%) brightness(1.03) !important;
-    -webkit-backdrop-filter: blur(12px) saturate(125%) brightness(1.03) !important;
+    backdrop-filter: var(--surface-composer-blur) !important;
+    -webkit-backdrop-filter: var(--surface-composer-blur) !important;
     border: 1px solid rgba(255, 255, 255, 0.70) !important;
     box-shadow: var(--creation-composer-shadow) !important;
     cursor: default;
@@ -334,7 +334,7 @@ body.ai-quick-compose-closing .ai-pill-btn-glow-container,
     position: fixed;
     inset: 0;
     pointer-events: none;
-    z-index: 40;
+    z-index: var(--layer-dock-backdrop);
     visibility: hidden;
     transition: visibility 0s linear 320ms;
 }
@@ -430,7 +430,7 @@ body.ai-quick-compose-closing .ai-pill-btn-glow-container,
     position: fixed;
     bottom: 88px;
     right: 28px;
-    z-index: 50;
+    z-index: var(--layer-dock-content);
     width: clamp(380px, 42vw, 540px);
     pointer-events: none;
     background: transparent !important;
@@ -793,16 +793,16 @@ body.ai-quick-compose-closing .ai-pill-btn-glow-container,
 
 /* ── 6. Mobile Presentation Adaptations ── */
 @media (max-width: 768px) {
-    /* Mobile Creation Layer: above mobile bottom nav (10000), below user-panel sheet (10050) */
+    /* Creation layer belongs between navigation and the account sheet. */
     .ai-creation-layer {
-        z-index: 10010 !important;
+        z-index: var(--layer-dock-backdrop) !important;
     }
 
     /* Mobile Backdrop: Desktop-grade directional frosted gradient blur */
     .ai-focus-field {
         position: fixed !important;
         inset: 0 !important;
-        z-index: 10010 !important;
+        z-index: var(--layer-dock-backdrop) !important;
         background: radial-gradient(circle 700px at 50% calc(100% - 60px), rgba(37, 99, 235, 0.08) 0%, rgba(59, 130, 246, 0.045) 42%, rgba(147, 197, 253, 0.015) 75%, transparent 100%), linear-gradient(180deg, rgba(248, 250, 253, 0.15) 0%, rgba(244, 247, 252, 0.60) 25%, rgba(240, 244, 250, 0.82) 55%, rgba(232, 240, 250, 0.94) 100%) !important;
         backdrop-filter: blur(22px) !important;
         -webkit-backdrop-filter: blur(22px) !important;
@@ -844,9 +844,9 @@ body.ai-quick-compose-closing .ai-pill-btn-glow-container,
         opacity: 1 !important;
         pointer-events: none !important; /* Click/drag penetration to bottom nav for slide-to-select */
         z-index: 10 !important;
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.58) 0%, rgba(243, 246, 252, 0.42) 100%) !important;
-        backdrop-filter: blur(8px) saturate(120%) brightness(1.03) !important;
-        -webkit-backdrop-filter: blur(8px) saturate(120%) brightness(1.03) !important;
+        background: var(--surface-floating-bg) !important;
+        backdrop-filter: var(--surface-floating-blur) !important;
+        -webkit-backdrop-filter: var(--surface-floating-blur) !important;
         border: 0 !important;
         box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(15, 23, 42, 0.03), inset 0 1px 1.2px rgba(255, 255, 255, 0.9), inset 0 -1px 2px rgba(148, 163, 184, 0.06) !important;
         overflow: visible !important;
@@ -1005,8 +1005,8 @@ body.ai-quick-compose-closing .ai-pill-btn-glow-container,
         max-height: 128px !important;
         border-radius: 27px !important;
         background: var(--creation-composer-bg) !important;
-        backdrop-filter: blur(12px) saturate(125%) brightness(1.03) !important;
-        -webkit-backdrop-filter: blur(12px) saturate(125%) brightness(1.03) !important;
+        backdrop-filter: var(--surface-composer-blur) !important;
+        -webkit-backdrop-filter: var(--surface-composer-blur) !important;
         border: 1px solid rgba(255, 255, 255, 0.70) !important;
         box-shadow: var(--creation-composer-shadow) !important;
         z-index: 50 !important;
@@ -1068,7 +1068,7 @@ body.ai-quick-compose-closing .ai-pill-btn-glow-container,
     }
 
     .quick-creation-container {
-        z-index: 10030 !important;
+        z-index: var(--layer-dock-content) !important;
         bottom: calc(108px + env(safe-area-inset-bottom, 14px)) !important;
         left: 50% !important;
         right: auto !important;
@@ -1107,7 +1107,7 @@ body.ai-quick-compose-closing .ai-pill-btn-glow-container,
 
 
 /* QC owns only temporary visuals. The real story remains in CreationSessionStore. */
-.qc-workspace-morph, .qc-story-flight { position: fixed; pointer-events: none; box-sizing: border-box; z-index: 100000; }
+.qc-workspace-morph, .qc-story-flight { position: fixed; pointer-events: none; box-sizing: border-box; z-index: var(--layer-transition); }
 .qc-workspace-morph { border-radius: 28px; background: var(--bg-card, #faf9f6); border: 1px solid rgba(128,128,128,.14); box-shadow: 0 12px 48px #0001; }
 .qc-story-flight { white-space: pre-wrap; overflow: hidden; overflow-wrap: anywhere; }
 .qc-text-handoff .copilot-user-message p { visibility: hidden; }

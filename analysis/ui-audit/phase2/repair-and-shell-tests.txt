@@ -1,0 +1,216 @@
+TAP version 13
+# Subtest: AppShell: Module interface and compatibility bridges
+ok 1 - AppShell: Module interface and compatibility bridges
+  ---
+  duration_ms: 31.9392
+  ...
+# Subtest: AppShell: init() creates and binds shell layout elements
+ok 2 - AppShell: init() creates and binds shell layout elements
+  ---
+  duration_ms: 63.9089
+  ...
+# Subtest: AppShell: updateRoute() controls shell visibility (dashboard vs landing/auth)
+ok 3 - AppShell: updateRoute() controls shell visibility (dashboard vs landing/auth)
+  ---
+  duration_ms: 44.884
+  ...
+# Subtest: AppShell: expandSidebar() controls sidebar width and body class
+ok 4 - AppShell: expandSidebar() controls sidebar width and body class
+  ---
+  duration_ms: 20.9462
+  ...
+# Subtest: AppShell: ProjectStore subscription reactively updates sidebar projects
+ok 5 - AppShell: ProjectStore subscription reactively updates sidebar projects
+  ---
+  duration_ms: 15.7306
+  ...
+# Subtest: AppShell: toggleUserPanel() toggles active class
+ok 6 - AppShell: toggleUserPanel() toggles active class
+  ---
+  duration_ms: 450.1198
+  ...
+# Subtest: AppShell: collapseProjectsGroup() collapses project sub-list and saves localStorage
+ok 7 - AppShell: collapseProjectsGroup() collapses project sub-list and saves localStorage
+  ---
+  duration_ms: 11.9363
+  ...
+# Subtest: AppShell: updateRoute() updates active sidebar link and swaps blur/focus icons
+ok 8 - AppShell: updateRoute() updates active sidebar link and swaps blur/focus icons
+  ---
+  duration_ms: 28.8702
+  ...
+# Subtest: AppShell: Router Navigation Simulation: Direct Entry, Leave, Return, Back/Forward Lifecycle
+ok 9 - AppShell: Router Navigation Simulation: Direct Entry, Leave, Return, Back/Forward Lifecycle
+  ---
+  duration_ms: 24.0207
+  ...
+# Subtest: AppShell: ProjectStore subscription event compatibility across all mutations (optimistic, commit, undo, rename, duplicated, reset)
+ok 10 - AppShell: ProjectStore subscription event compatibility across all mutations (optimistic, commit, undo, rename, duplicated, reset)
+  ---
+  duration_ms: 30.1959
+  ...
+# Subtest: AppShell: Compatibility bridges this-context safety and destructuring
+ok 11 - AppShell: Compatibility bridges this-context safety and destructuring
+  ---
+  duration_ms: 17.0048
+  ...
+# Subtest: AppShell: init() idempotency and destroy() re-initialization lifecycle
+ok 12 - AppShell: init() idempotency and destroy() re-initialization lifecycle
+  ---
+  duration_ms: 17.9127
+  ...
+# Subtest: Regression A: ProjectStore.notify() -> AppShell.updateSidebarProjects() never passes non-Node to Node.contains
+ok 13 - Regression A: ProjectStore.notify() -> AppShell.updateSidebarProjects() never passes non-Node to Node.contains
+  ---
+  duration_ms: 29.3175
+  ...
+# Subtest: Regression B: spa-router.js does not contain dead reference to justHandledPointerNav
+ok 14 - Regression B: spa-router.js does not contain dead reference to justHandledPointerNav
+  ---
+  duration_ms: 2.7442
+  ...
+# Subtest: Regression C: Repeated navigation and clicks do not duplicate document-level listeners
+ok 15 - Regression C: Repeated navigation and clicks do not duplicate document-level listeners
+  ---
+  duration_ms: 1.7104
+  ...
+# Subtest: Mobile Bottom Nav: Pointer down initiates interaction, micro-enlargement, snap target, and indicator tracking
+ok 16 - Mobile Bottom Nav: Pointer down initiates interaction, micro-enlargement, snap target, and indicator tracking
+  ---
+  duration_ms: 15.0531
+  ...
+# Subtest: Mobile Bottom Nav: Pointer move applies rubberband damping, directional stretch, magnetic tracking, and dual-track clip-path
+ok 17 - Mobile Bottom Nav: Pointer move applies rubberband damping, directional stretch, magnetic tracking, and dual-track clip-path
+  ---
+  duration_ms: 21.9028
+  ...
+# Subtest: Mobile Bottom Nav: Pointer release executes spring rebound and navigation to target route
+ok 18 - Mobile Bottom Nav: Pointer release executes spring rebound and navigation to target route
+  ---
+  duration_ms: 20.2503
+  ...
+# Subtest: Mobile Bottom Nav: Vertical drag out of bounds cancels selection without navigation
+ok 19 - Mobile Bottom Nav: Vertical drag out of bounds cancels selection without navigation
+  ---
+  duration_ms: 10.4387
+  ...
+# Subtest: Mobile Bottom Nav: Route updates synchronize active item and indicator
+ok 20 - Mobile Bottom Nav: Route updates synchronize active item and indicator
+  ---
+  duration_ms: 10.9474
+  ...
+# Subtest: History account link uses SPA once and hides mobile nav until returning to a main route
+not ok 21 - History account link uses SPA once and hides mobile nav until returning to a main route
+  ---
+  duration_ms: 11.5684
+  location: 'D:\\My Files\\web\\StoryboardAI2\\tests\\app-shell.test.js:1229:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (D:\My Files\web\StoryboardAI2\tests\app-shell.test.js:1236:10)
+    async Test.run (node:internal/test_runner/test:935:9)
+    async Test.processPendingSubtests (node:internal/test_runner/test:633:7)
+  ...
+# Subtest: History account link retains native modifier-click behavior
+ok 22 - History account link retains native modifier-click behavior
+  ---
+  duration_ms: 9.802
+  ...
+# Subtest: Mobile Bottom Nav: pointercancel without displacement never commits or replays a click
+ok 23 - Mobile Bottom Nav: pointercancel without displacement never commits or replays a click
+  ---
+  duration_ms: 10.6809
+  ...
+# Subtest: Mobile Bottom Nav: route changes cancel an in-flight pointer before synchronizing active state
+ok 24 - Mobile Bottom Nav: route changes cancel an in-flight pointer before synchronizing active state
+  ---
+  duration_ms: 13.5529
+  ...
+# Subtest: confirm returns explicit false, defaults description safely and resolves once
+ok 25 - confirm returns explicit false, defaults description safely and resolves once
+  ---
+  duration_ms: 35.2495
+  ...
+# Subtest: central dialogs match delete scale/blur signature and keep scrim alpha on exit
+ok 26 - central dialogs match delete scale/blur signature and keep scrim alpha on exit
+  ---
+  duration_ms: 10.7672
+  ...
+# Subtest: global facade preserves boolean confirm, void alert and native prompt
+ok 27 - global facade preserves boolean confirm, void alert and native prompt
+  ---
+  duration_ms: 17.9076
+  ...
+# Subtest: queued dialogs stay single and abort cancels active and queued work
+ok 28 - queued dialogs stay single and abort cancels active and queued work
+  ---
+  duration_ms: 16.7369
+  ...
+# Subtest: prompt keeps failed input, prevents concurrent submit, retries once and releases busy state
+ok 29 - prompt keeps failed input, prevents concurrent submit, retries once and releases busy state
+  ---
+  duration_ms: 16.0633
+  ...
+# Subtest: IME Enter is prevented and abort while submitting ignores late completion
+ok 30 - IME Enter is prevented and abort while submitting ignores late completion
+  ---
+  duration_ms: 14.4851
+  ...
+# Subtest: modal leases trap Tab, preserve pre-existing inert/overflow and return focus
+ok 31 - modal leases trap Tab, preserve pre-existing inert/overflow and return focus
+  ---
+  duration_ms: 12.1089
+  ...
+# Subtest: page signal cancels closing dialogs without later focus or duplicate resolve
+ok 32 - page signal cancels closing dialogs without later focus or duplicate resolve
+  ---
+  duration_ms: 10.0951
+  ...
+# Subtest: legacy delete retains 1000ms close / 1500ms true result and abort is boolean false
+ok 33 - legacy delete retains 1000ms close / 1500ms true result and abort is boolean false
+  ---
+  duration_ms: 15.5708
+  ...
+# Subtest: navigation during cancelled legacy exit releases its modal lease immediately
+ok 34 - navigation during cancelled legacy exit releases its modal lease immediately
+  ---
+  duration_ms: 9.9529
+  ...
+# Subtest: ModalAnimation: open sets initial zero blur & scale 0, then transitions to blur and scale 1 in 10ms
+ok 35 - ModalAnimation: open sets initial zero blur & scale 0, then transitions to blur and scale 1 in 10ms
+  ---
+  duration_ms: 49.363
+  ...
+# Subtest: ModalAnimation: close sets closing easing curve, then scale 0 and blur 0 in 10ms, then display none
+ok 36 - ModalAnimation: close sets closing easing curve, then scale 0 and blur 0 in 10ms, then display none
+  ---
+  duration_ms: 246.1857
+  ...
+# Subtest: legacy delete can explicitly preserve its existing backdrop fade
+ok 37 - legacy delete can explicitly preserve its existing backdrop fade
+  ---
+  duration_ms: 109.9025
+  ...
+# Subtest: isolated UI harness has a discoverable entry, dependency loading, safe errors and repeatable API fixtures
+ok 38 - isolated UI harness has a discoverable entry, dependency loading, safe errors and repeatable API fixtures
+  ---
+  duration_ms: 811.522
+  ...
+1..38
+# tests 38
+# suites 0
+# pass 37
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1855.7732

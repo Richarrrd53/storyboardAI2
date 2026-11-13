@@ -14,6 +14,8 @@
 (function (global) {
   'use strict';
 
+  const projectData = new WeakMap();
+
   function escapeHtml(str) {
     return String(str || '').replace(/[&<>"']/g, function (m) {
       return {
@@ -75,73 +77,14 @@
   }
 
   function calculateProjectCoverGeometry(options = {}) {
-    const {
-      aspectRatio = 16 / 9,
-      variant = 'default',
-      isMobile = false
-    } = options;
-
-    let r = Number(aspectRatio) || (16 / 9);
-    if (r <= 0 || !isFinite(r)) r = 16 / 9;
-
-    // Spec Section 1: Fixed 16:9 Cover Frame
-    // Folder inner width ~92% ~ 95%
-    // Legacy defaults for shared surfaces. Projects and Dashboard mobile lists override
-    // these through --folder-preview-* container geometry before image loading.
-    // Transitions measure the live frame rather than these default dimensions.
-    let frameW = 282;
-    let frameH = 158.6;
-    let insertDepth = 46;
-    let hoverLift = 16;
-    let hoverRotate = -4.5;
-
-    if (variant === 'compact') {
-      frameW = 254;
-      frameH = 142.9;
-      insertDepth = 42;
-      hoverLift = 14;
-      hoverRotate = -4.5;
-    }
-
-    if (isMobile) {
-      frameW = 248;
-      frameH = 139.5;
-      insertDepth = 40;
-      hoverLift = 14;
-      hoverRotate = -3.5;
-    }
-
-    return {
-      frame: {
-        width: frameW,
-        height: frameH,
-        insertDepth,
-        aspectRatio: 16 / 9
-      },
-      // Collapsed and Expanded keep identical 16:9 frame dimensions
-      // Spec Section 6: Hover does NOT change ratio, only translateY/rotate/shadow
-      collapsed: {
-        width: frameW,
-        height: frameH,
-        insertDepth,
-        aspectRatio: 16 / 9
-      },
-      expanded: {
-        width: frameW,
-        height: frameH,
-        insertDepth,
-        x: 0,
-        hoverLift,
-        hoverRotate,
-        aspectRatio: 16 / 9
-      },
-      width: frameW,
-      height: frameH,
-      insertDepth,
-      trueRatio: r,
-      hoverLift,
-      hoverRotate
-    };
+    // Compatibility return shape, now delegated to the canonical width model.
+    const width=options.width || (options.isMobile ? Math.max(1,((options.viewportWidth || global.innerWidth || 390)-44)/2) : 316);
+    const model=resolveFolderGeometry(width);
+    const r=Number.isFinite(Number(options.aspectRatio)) && Number(options.aspectRatio)>0 ? Number(options.aspectRatio) : 16/9;
+    const frame={width:model.previewWidth,height:model.previewHeight,insertDepth:model.insertDepth,aspectRatio:16/9};
+    const hoverLift=Math.max(6,Math.min(16,width*.05)),hoverRotate=width<=268 ? -2 : -4.5;
+    return {frame,collapsed:{...frame},expanded:{...frame,x:0,hoverLift,hoverRotate},
+      width:frame.width,height:frame.height,insertDepth:frame.insertDepth,trueRatio:r,hoverLift,hoverRotate};
   }
 
   function calculateTransitionTargetSize(options = {}) {
@@ -282,6 +225,9 @@
     if (!p) return '';
     const variant = options.variant || (options.isCompact ? 'compact' : 'default');
     const isHistory = options.isHistory || false;
+    const readonly = options.readonly === true;
+    const titleTag = readonly ? 'span' : isHistory || p.is_deleted ? 'button' : 'a';
+    const titleAttrs = readonly ? '' : titleTag === 'a' ? `href="/project/${encodeURIComponent(p.id)}"` : 'type="button"';
     const shotsCount = p.shotCount || (Array.isArray(p.shots) ? p.shots.length : 0);
     const cleanRatio = normalizeRatio(p.ratio);
     const ratioText = escapeHtml(formatRatioText(p.ratio));
@@ -336,27 +282,27 @@
           </div>
           <div class="project-folder-notch-wrap">
             <div class="project-option-slot">
-              <button class="project-option-btn" type="button" title="更多選項" aria-label="更多選項">
+              ${readonly ? '<span class="project-option-btn" aria-hidden="true">' : '<button class="project-option-btn" type="button" title="更多選項" aria-label="更多選項">'}
                 <span class="option-icon">
                   <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
                     <circle cx="8" cy="5" r="1.5" />
                     <circle cx="8" cy="11" r="1.5" />
                   </svg>
                 </span>
-              </button>
+              ${readonly ? '</span>' : '</button>'}
             </div>
           </div>
         </div>
         <div class="project-folder-content">
-          <div class="project-updated">${relativeTime}</div>
+          <div class="project-updated">${isHistory || p.is_deleted ? '已刪除' : relativeTime}</div>
           <div class="project-title-wrapper">
-            <div class="project-title" title="${titleEsc}">${titleEsc}</div>
+            <${titleTag} class="project-title" ${titleAttrs} title="${titleEsc}">${titleEsc}</${titleTag}>
           </div>
           ${hasTags ? `
             <div class="project-tags-row${variant === 'compact' ? ' project-tags-row-compact' : ''}" aria-label="專案標籤">
               ${(variant === 'compact' ? tags.slice(0, 2) : tags).map(t => {
                 const tagEsc = escapeHtml(t);
-                return `<button type="button" class="project-tag-pill" data-tag="${tagEsc}" title="標籤：${tagEsc}">#${tagEsc}</button>`;
+                return readonly ? `<span class="project-tag-pill">#${tagEsc}</span>` : `<button type="button" class="project-tag-pill" data-tag="${tagEsc}" title="標籤：${tagEsc}">#${tagEsc}</button>`;
               }).join('')}
               ${variant === 'compact' && tags.length > 2 ? `<span class="project-tag-pill project-tag-pill-more">+${tags.length - 2}</span>` : ''}
             </div>
@@ -379,7 +325,61 @@
     return renderProjectCard(p, { variant: 'compact' });
   }
 
+  // Same coefficients as the component CSS; viewport/page ancestors are not inputs.
+  function resolveFolderGeometry(width = 316, options = {}) {
+    const input=Number(width);
+    const w = Number.isFinite(input) && input>0 ? input : 316;
+    const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
+    const previewWidth = w * 304 / 316, previewHeight = previewWidth * 9 / 16;
+    const optionWidth=clamp(w*54/316,28,54), optionHeight=clamp(w*42/316,22,42), optionOffset=clamp(w*6/316,3,6);
+    const baseTabHeight=clamp(w*36/316,18,36), tabHeight=Math.max(baseTabHeight,optionHeight+optionOffset);
+    const insertDepth=Math.max(0,clamp(w*46/316,20,46)-(tabHeight-baseTabHeight));
+    return {width:w, previewWidth, previewHeight, insertDepth, tabHeight, baseTabHeight, optionWidth, optionHeight, optionOffset, notchRadius:tabHeight * 2 / 3,
+      shellMinHeight:clamp(w*160/316,80,160), headroom:clamp(w*12/316,6,12), density:w <= 268 ? 'dense' : 'default', shape:'folder', origin:{x:.5,y:.5}};
+  }
+  function captureGeometry(card) {
+    if (!card?.getBoundingClientRect) return null;
+    const rect = node => {
+      if (!node?.getBoundingClientRect) return null;
+      const r = node.getBoundingClientRect(); return {x:r.left,y:r.top,left:r.left,top:r.top,width:r.width,height:r.height};
+    };
+    const sourceRect = rect(card);
+    return {...resolveFolderGeometry(parseFloat(global.getComputedStyle?.(card)?.width) || sourceRect.width || card.clientWidth), sourceRect,
+      shell:rect(card.querySelector('.project-folder-shell')), tab:rect(card.querySelector('.project-folder-tab')),
+      preview:rect(card.querySelector('.project-preview-primary')), media:getContainedImageRect(card.querySelector('.cover-main, .project-preview-primary-image'))};
+  }
+  function createPreview(source, options = {}) {
+    const doc = global.document || document;
+    const p = source?.nodeType || source?.querySelector
+      ? projectData.get(source) || global.ProjectStore?.getProjects?.().find(item => String(item.id) === String(source.dataset?.id))
+        || {id:source.dataset?.id || '',title:source.querySelector?.('.project-title')?.textContent || '未命名分鏡'}
+      : source;
+    if (!p) return null;
+    const card = doc.createElement('div');
+    card.className = 'project-card project-folder-card variant-preview'; card.setAttribute('data-readonly','');
+    card.style.width = `${Math.max(1, Number(options.width) || 240)}px`;
+    card.setAttribute('role','img'); card.setAttribute('aria-label', `${p.title || '未命名分鏡'}，專案文件夾預覽`);
+    card.innerHTML = renderProjectCard(p,{readonly:true,isHistory:!!p.is_deleted});
+    const liveImage = source?.querySelector?.('.cover-main, .project-preview-primary-image');
+    const url = liveImage?.currentSrc || liveImage?.src || p.previewImages?.[0];
+    const frame = card.querySelector('.project-preview-primary');
+    if (url && frame) {
+      frame.classList.remove('loading');frame.classList.add('has-contain-preview');
+      const image = doc.createElement('img');image.className='project-preview-primary-image cover-main';image.alt='';
+      const fallback=frame.querySelector('.thumb-fallback');
+      let background=null;
+      if(parseAspectRatio(p.ratio)<16/9) { background=doc.createElement('img');background.className='project-preview-primary-bg cover-background';background.alt='';background.src=url;frame.appendChild(background); }
+      image.onload=()=>{if(fallback)fallback.style.display='none';};
+      image.onerror=()=>{image.remove();background?.remove();frame.classList.remove('has-contain-preview');if(fallback)fallback.style.display='';};
+      image.src=url;frame.appendChild(image);
+      if(image.complete && image.naturalWidth && fallback)fallback.style.display='none';
+    }
+    projectData.set(card,p);return card;
+  }
+
   const ProjectCard = {
+    register:(card, project)=>projectData.set(card,project),
+    resolveFolderGeometry, captureGeometry, createPreview,
     escapeHtml,
     formatRatioBadge,
     normalizeRatio,

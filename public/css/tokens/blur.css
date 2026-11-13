@@ -19,7 +19,7 @@
   --glass-nav-border: 1px solid rgba(255, 255, 255, 0.55);
 
   /* ── Frosted Acrylic / Translucent Resin Recipe (Mobile Floating Nav) ── */
-  --surface-floating-blur:       blur(10px) saturate(120%) brightness(1.06);
+  /* Floating recipe is owned by components.css; these names remain legacy aliases. */
   --glass-floating-bg:           var(--surface-floating-bg, linear-gradient(180deg, rgba(255, 255, 255, 0.88) 0%, rgba(242, 242, 236, 0.78) 100%));
   --glass-floating-blur:         var(--surface-floating-blur);
   --glass-floating-border:       var(--surface-floating-border, 1px solid rgba(255, 255, 255, 0.7));

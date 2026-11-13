@@ -1,0 +1,16 @@
+{
+  "date": "2026-11-13",
+  "node": {
+    "tests": 427,
+    "pass": 427,
+    "fail": 0
+  },
+  "targeted": {
+    "tests": 72,
+    "pass": 72,
+    "fail": 0
+  },
+  "visual": "Partial only; final browser recapture pending",
+  "commitOrPush": false,
+  "nextPhaseStarted": false
+}

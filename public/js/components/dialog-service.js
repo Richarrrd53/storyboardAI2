@@ -50,13 +50,20 @@
       return;
     }
     root.ProjectOptionMorph?.close('immediate');
+    const tokens = root.getComputedStyle?.(document.documentElement);
+    const durationToken = tokens?.getPropertyValue('--dialog-duration').trim() || '400ms';
+    const duration = parseFloat(durationToken) * (durationToken.endsWith('ms') ? 1 : 1000);
+    const enterEase = tokens?.getPropertyValue('--dialog-enter-ease').trim() || 'cubic-bezier(.34,1.59,.69,.99)';
+    const exitEase = tokens?.getPropertyValue('--dialog-exit-ease').trim() || 'cubic-bezier(.31,.01,.66,-.59)';
     const returnFocus = opts.returnFocus || document.activeElement;
     const id = `sb-dialog-${++sequence}`;
     const overlay = node('div', 'sb-dialog-overlay');
     const panel = node('section', 'sb-dialog');
     panel.dataset.kind = kind; panel.tabIndex = -1;
     panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-modal', 'true');
-    const mark = node('span', 'sb-dialog-mark', kind === 'prompt' ? '✎' : kind === 'alert' ? '!' : '?');
+    const mark = node('span', 'sb-dialog-mark');
+    const paths = kind === 'prompt' ? '<path d="m16 3 5 5-12 12H4v-5L16 3Z"/><path d="m13 6 5 5"/>' : kind === 'alert' ? '<circle cx="12" cy="12" r="9"/><path d="M12 7v6m0 3v1"/>' : '<circle cx="12" cy="12" r="9"/><path d="M9 9a3 3 0 0 1 6 0c0 2-3 2-3 4m0 3v1"/>';
+    mark.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + paths + '</svg>';
     mark.setAttribute('aria-hidden', 'true');
     const title = node('h2', 'sb-dialog-title', opts.title || (kind === 'prompt' ? '重新命名分鏡' : kind === 'alert' ? '提示' : '確認操作'));
     title.id = `${id}-title`; panel.setAttribute('aria-labelledby', title.id);
@@ -79,8 +86,8 @@
     }
     form.append(error);
     const actions = node('div', 'sb-dialog-actions');
-    const cancel = node('button', 'sb-dialog-button sb-dialog-cancel', opts.cancelText || '取消'); cancel.type = 'button';
-    const submit = node('button', 'sb-dialog-button sb-dialog-submit', opts.confirmText || (kind === 'prompt' ? '儲存名稱' : '確定')); submit.type = 'submit';
+    const cancel = node('button', 'sb-dialog-button sb-dialog-cancel sys-btn secondary', opts.cancelText || '取消'); cancel.type = 'button';
+    const submit = node('button', 'sb-dialog-button sb-dialog-submit sys-btn primary', opts.confirmText || (kind === 'prompt' ? '儲存名稱' : '確定')); submit.type = 'submit';
     if (opts.danger) submit.dataset.danger = 'true';
     if (kind !== 'alert') actions.append(cancel);
     actions.append(submit); form.append(actions); panel.append(form); overlay.append(panel); document.body.append(overlay);
@@ -105,13 +112,17 @@
       }
       settled = true; submit.disabled = true; cancel.disabled = true;
       if (immediate || motion?.matches) { dispose(result); return; }
+      const renderedTransform = root.getComputedStyle?.(panel)?.transform;
+      const currentTransform = !renderedTransform || renderedTransform === 'none' ? 'scale(1)' : renderedTransform;
+      const currentBlur = root.getComputedStyle?.(overlay)?.backdropFilter || 'blur(var(--dialog-backdrop-blur, 50px))';
       animations.forEach(a => a.cancel());
-      animate(overlay, [{ opacity: 1 }, { opacity: 0 }], 160);
-      animate(panel, [{ transform: 'translateY(0) scale(1)' }, { transform: 'translateY(8px) scale(.98)' }], 160);
-      timer = setTimeout(() => dispose(result), 160);
+      // Keep scrim alpha constant throughout exit; only reverse blur and panel scale.
+      animate(overlay, [{ backdropFilter: currentBlur, webkitBackdropFilter: currentBlur }, { backdropFilter: 'blur(0px)', webkitBackdropFilter: 'blur(0px)' }], duration, 'cubic-bezier(.8,0,.6,1)');
+      animate(panel, [{ transform: currentTransform }, { transform: 'scale(0)' }], duration, exitEase);
+      timer = setTimeout(() => dispose(result), duration);
     }
-    function animate(el, frames, duration) {
-      if (el.animate) animations.push(el.animate(frames, { duration, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'both' }));
+    function animate(el, frames, duration, easing) {
+      if (el.animate) animations.push(el.animate(frames, { duration, easing, fill: 'both' }));
     }
     active = { entry, finish };
     cancel.addEventListener('click', () => { if (!busy) finish(cancelled(kind, 'cancel')); });
@@ -149,8 +160,8 @@
     });
     input?.addEventListener('input', () => { error.textContent = ''; input.removeAttribute('aria-invalid'); });
     if (!motion?.matches) {
-      animate(overlay, [{ opacity: 0 }, { opacity: 1 }], 200);
-      animate(panel, [{ transform: 'translateY(12px) scale(.96)' }, { transform: 'translateY(0) scale(1)' }], 300);
+      animate(overlay, [{ backdropFilter: 'blur(0px)', webkitBackdropFilter: 'blur(0px)' }, { backdropFilter: 'blur(var(--dialog-backdrop-blur, 50px))', webkitBackdropFilter: 'blur(var(--dialog-backdrop-blur, 50px))' }], duration, 'cubic-bezier(.4,0,.2,1)');
+      animate(panel, [{ transform: 'scale(0)' }, { transform: 'scale(1)' }], duration, enterEase);
     }
   }
   root.DialogService = {

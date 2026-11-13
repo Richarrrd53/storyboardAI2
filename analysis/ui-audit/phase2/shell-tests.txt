@@ -1,0 +1,130 @@
+TAP version 13
+# Subtest: AppShell: Module interface and compatibility bridges
+ok 1 - AppShell: Module interface and compatibility bridges
+  ---
+  duration_ms: 18.4132
+  ...
+# Subtest: AppShell: init() creates and binds shell layout elements
+ok 2 - AppShell: init() creates and binds shell layout elements
+  ---
+  duration_ms: 36.2723
+  ...
+# Subtest: AppShell: updateRoute() controls shell visibility (dashboard vs landing/auth)
+ok 3 - AppShell: updateRoute() controls shell visibility (dashboard vs landing/auth)
+  ---
+  duration_ms: 31.4412
+  ...
+# Subtest: AppShell: expandSidebar() controls sidebar width and body class
+ok 4 - AppShell: expandSidebar() controls sidebar width and body class
+  ---
+  duration_ms: 13.3928
+  ...
+# Subtest: AppShell: ProjectStore subscription reactively updates sidebar projects
+ok 5 - AppShell: ProjectStore subscription reactively updates sidebar projects
+  ---
+  duration_ms: 10.8211
+  ...
+# Subtest: AppShell: toggleUserPanel() toggles active class
+ok 6 - AppShell: toggleUserPanel() toggles active class
+  ---
+  duration_ms: 446.0227
+  ...
+# Subtest: AppShell: collapseProjectsGroup() collapses project sub-list and saves localStorage
+ok 7 - AppShell: collapseProjectsGroup() collapses project sub-list and saves localStorage
+  ---
+  duration_ms: 10.4972
+  ...
+# Subtest: AppShell: updateRoute() updates active sidebar link and swaps blur/focus icons
+ok 8 - AppShell: updateRoute() updates active sidebar link and swaps blur/focus icons
+  ---
+  duration_ms: 21.3375
+  ...
+# Subtest: AppShell: Router Navigation Simulation: Direct Entry, Leave, Return, Back/Forward Lifecycle
+ok 9 - AppShell: Router Navigation Simulation: Direct Entry, Leave, Return, Back/Forward Lifecycle
+  ---
+  duration_ms: 19.9571
+  ...
+# Subtest: AppShell: ProjectStore subscription event compatibility across all mutations (optimistic, commit, undo, rename, duplicated, reset)
+ok 10 - AppShell: ProjectStore subscription event compatibility across all mutations (optimistic, commit, undo, rename, duplicated, reset)
+  ---
+  duration_ms: 20.2992
+  ...
+# Subtest: AppShell: Compatibility bridges this-context safety and destructuring
+ok 11 - AppShell: Compatibility bridges this-context safety and destructuring
+  ---
+  duration_ms: 10.9546
+  ...
+# Subtest: AppShell: init() idempotency and destroy() re-initialization lifecycle
+ok 12 - AppShell: init() idempotency and destroy() re-initialization lifecycle
+  ---
+  duration_ms: 10.9794
+  ...
+# Subtest: Regression A: ProjectStore.notify() -> AppShell.updateSidebarProjects() never passes non-Node to Node.contains
+ok 13 - Regression A: ProjectStore.notify() -> AppShell.updateSidebarProjects() never passes non-Node to Node.contains
+  ---
+  duration_ms: 17.9442
+  ...
+# Subtest: Regression B: spa-router.js does not contain dead reference to justHandledPointerNav
+ok 14 - Regression B: spa-router.js does not contain dead reference to justHandledPointerNav
+  ---
+  duration_ms: 1.8126
+  ...
+# Subtest: Regression C: Repeated navigation and clicks do not duplicate document-level listeners
+ok 15 - Regression C: Repeated navigation and clicks do not duplicate document-level listeners
+  ---
+  duration_ms: 1.1585
+  ...
+# Subtest: Mobile Bottom Nav: Pointer down initiates interaction, micro-enlargement, snap target, and indicator tracking
+ok 16 - Mobile Bottom Nav: Pointer down initiates interaction, micro-enlargement, snap target, and indicator tracking
+  ---
+  duration_ms: 11.1705
+  ...
+# Subtest: Mobile Bottom Nav: Pointer move applies rubberband damping, directional stretch, magnetic tracking, and dual-track clip-path
+ok 17 - Mobile Bottom Nav: Pointer move applies rubberband damping, directional stretch, magnetic tracking, and dual-track clip-path
+  ---
+  duration_ms: 20.4411
+  ...
+# Subtest: Mobile Bottom Nav: Pointer release executes spring rebound and navigation to target route
+ok 18 - Mobile Bottom Nav: Pointer release executes spring rebound and navigation to target route
+  ---
+  duration_ms: 16.175
+  ...
+# Subtest: Mobile Bottom Nav: Vertical drag out of bounds cancels selection without navigation
+ok 19 - Mobile Bottom Nav: Vertical drag out of bounds cancels selection without navigation
+  ---
+  duration_ms: 10.4216
+  ...
+# Subtest: Mobile Bottom Nav: Route updates synchronize active item and indicator
+ok 20 - Mobile Bottom Nav: Route updates synchronize active item and indicator
+  ---
+  duration_ms: 13.1418
+  ...
+# Subtest: History account link uses SPA once and hides mobile nav until returning to a main route
+ok 21 - History account link uses SPA once and hides mobile nav until returning to a main route
+  ---
+  duration_ms: 16.0957
+  ...
+# Subtest: History account link retains native modifier-click behavior
+ok 22 - History account link retains native modifier-click behavior
+  ---
+  duration_ms: 9.7862
+  ...
+# Subtest: Mobile Bottom Nav: pointercancel without displacement never commits or replays a click
+ok 23 - Mobile Bottom Nav: pointercancel without displacement never commits or replays a click
+  ---
+  duration_ms: 12.5978
+  ...
+# Subtest: Mobile Bottom Nav: route changes cancel an in-flight pointer before synchronizing active state
+ok 24 - Mobile Bottom Nav: route changes cancel an in-flight pointer before synchronizing active state
+  ---
+  duration_ms: 15.8506
+  ...
+1..24
+# tests 24
+# suites 0
+# pass 24
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1588.6043

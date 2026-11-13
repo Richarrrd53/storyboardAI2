@@ -1,0 +1,178 @@
+{
+  "case": "Phase 4 same viewport",
+  "width": 375,
+  "rows": [
+    {
+      "page": "dashboard",
+      "hovered": false,
+      "expanded": false,
+      "geometry": {
+        "width": 164.5,
+        "previewWidth": 152.5,
+        "previewHeight": 85.78125,
+        "insertDepth": 27.965000000000003,
+        "tabHeight": 23.03,
+        "notchRadius": 15.353333333333333,
+        "shellMinHeight": 128,
+        "headroom": 12,
+        "density": "dense",
+        "shape": "folder",
+        "origin": {
+          "x": 0.5,
+          "y": 0.5
+        },
+        "sourceRect": {
+          "x": 16,
+          "y": 520.0625,
+          "left": 16,
+          "top": 520.0625,
+          "width": 164.5,
+          "height": 202.828125
+        },
+        "shell": {
+          "x": 16,
+          "y": 589.890625,
+          "left": 16,
+          "top": 589.890625,
+          "width": 164.5,
+          "height": 133
+        },
+        "tab": {
+          "x": 16,
+          "y": 567.875,
+          "left": 16,
+          "top": 567.875,
+          "width": 114.5,
+          "height": 23.015625
+        },
+        "preview": {
+          "x": 22,
+          "y": 532.0625,
+          "left": 22,
+          "top": 532.0625,
+          "width": 152.5,
+          "height": 85.78125
+        },
+        "media": {
+          "left": 74.7,
+          "top": 533.1,
+          "width": 47.1,
+          "height": 83.8
+        }
+      }
+    },
+    {
+      "page": "projects",
+      "hovered": false,
+      "expanded": false,
+      "geometry": {
+        "width": 165.5,
+        "previewWidth": 153.5,
+        "previewHeight": 86.34375,
+        "insertDepth": 28.135,
+        "tabHeight": 23.17,
+        "notchRadius": 15.446666666666667,
+        "shellMinHeight": 128,
+        "headroom": 12,
+        "density": "dense",
+        "shape": "folder",
+        "origin": {
+          "x": 0.5,
+          "y": 0.5
+        },
+        "sourceRect": {
+          "x": 16,
+          "y": 115,
+          "left": 16,
+          "top": 115,
+          "width": 165.5,
+          "height": 203.21875
+        },
+        "shell": {
+          "x": 16,
+          "y": 185.21875,
+          "left": 16,
+          "top": 185.21875,
+          "width": 165.5,
+          "height": 133
+        },
+        "tab": {
+          "x": 16,
+          "y": 163.0625,
+          "left": 16,
+          "top": 163.0625,
+          "width": 115.5,
+          "height": 23.15625
+        },
+        "preview": {
+          "x": 22,
+          "y": 127,
+          "left": 22,
+          "top": 127,
+          "width": 153.5,
+          "height": 86.34375
+        },
+        "media": null
+      }
+    },
+    {
+      "page": "history",
+      "hovered": false,
+      "expanded": false,
+      "geometry": {
+        "width": 165.5,
+        "previewWidth": 153.5,
+        "previewHeight": 86.34375,
+        "insertDepth": 28.135,
+        "tabHeight": 23.17,
+        "notchRadius": 15.446666666666667,
+        "shellMinHeight": 128,
+        "headroom": 12,
+        "density": "dense",
+        "shape": "folder",
+        "origin": {
+          "x": 0.5,
+          "y": 0.5
+        },
+        "sourceRect": {
+          "x": 16,
+          "y": 55,
+          "left": 16,
+          "top": 55,
+          "width": 165.5,
+          "height": 203.21875
+        },
+        "shell": {
+          "x": 16,
+          "y": 125.21875,
+          "left": 16,
+          "top": 125.21875,
+          "width": 165.5,
+          "height": 133
+        },
+        "tab": {
+          "x": 16,
+          "y": 103.0625,
+          "left": 16,
+          "top": 103.0625,
+          "width": 115.5,
+          "height": 23.15625
+        },
+        "preview": {
+          "x": 22,
+          "y": 67,
+          "left": 22,
+          "top": 67,
+          "width": 153.5,
+          "height": 86.34375
+        },
+        "media": {
+          "left": 75,
+          "top": 68,
+          "width": 47.4,
+          "height": 84.3
+        }
+      }
+    }
+  ]
+}

@@ -1,5 +1,7 @@
 # Phase 1｜Dialog、重新命名、單次復原確認
 
+> 此為初版 Phase 1 歷史紀錄。2026-11-13 的彈窗修正、驗證台啟動方式與 Phase 2 結果，請見 [Phase 2 交付](../phase2/README.md)。
+
 日期：2026-11-12。已完成本階段實作與本地隔離驗證；未 Commit／Push，未進入 Phase2。依據 [Phase1 Handoff](../phase0/PHASE-1-HANDOFF.md)。既有未提交工作保留。
 
 ## 本次變更

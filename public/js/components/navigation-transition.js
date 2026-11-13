@@ -20,7 +20,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 999 !important;
+      z-index: var(--layer-transition) !important;
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.3s ease;

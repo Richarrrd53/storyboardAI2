@@ -60,6 +60,7 @@
   --red-400: #f87171;
   --red-500: #ef4444;
   --red-600: #dc2626;
+  --red-700: #b91c1c; /* Existing danger-active semantic role requires this primitive. */
 
   /* ── Cinematic Gold & Purple Primitives ── */
   --gold-400: #d4c58e;

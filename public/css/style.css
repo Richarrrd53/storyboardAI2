@@ -16,6 +16,7 @@
 @import url('./components/bottom-sheet.css');
 @import url('./components/mobile-nav.css');
 @import url('./components/option-morph.css');
+@import url('./components/account-panel.css');
 @import url('./components/quick-create.css');
 @import url('./components/continuous-corners.css');
 
@@ -33,22 +34,6 @@ html {
 
 *::selection{
     background: var(--primary-soft);
-}
-
-/* ── Global Input Focus Reset (Eliminates sharp/blue browser outline) ── */
-input,
-input:focus,
-input:focus-visible,
-input:active,
-textarea,
-textarea:focus,
-textarea:focus-visible,
-textarea:active,
-select,
-select:focus,
-select:focus-visible {
-    outline: none !important;
-    -webkit-tap-highlight-color: transparent !important;
 }
 
 body {
@@ -122,90 +107,12 @@ main{
     transition: all 0.5s cubic-bezier(.4,0,.2,1);
 }
 
-.btn {
-    position: relative;
-    overflow: hidden;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-2);
-    font-family: var(--font-family-body);
-    font-weight: var(--font-weight-bold);
-    font-size: var(--font-size-sm);
-    border-radius: var(--radius-pill);
-    border: var(--border-width-thin) solid transparent;
-    cursor: pointer;
-    transition: transform var(--motion-duration-instant) var(--motion-ease-standard),
-                background-color var(--motion-duration-fast) var(--motion-ease-standard),
-                box-shadow var(--motion-duration-fast) var(--motion-ease-standard),
-                border-color var(--motion-duration-fast) var(--motion-ease-standard);
-    text-decoration: none;
-    white-space: nowrap;
-    min-height: var(--control-height-md);
-    padding: var(--space-2) var(--space-6);
-}
-
-.btn:active {
-    transform: scale(0.97);
-}
-
 :focus-visible {
     outline: none;
     box-shadow: var(--focus-ring-shadow);
 }
 
-.btn:focus-visible {
-    outline: none;
-    box-shadow: var(--focus-ring-shadow);
-}
-
 /* Primary appearance and interaction states come from components/button.css. */
-
-.btn-ghost {
-    background: var(--button-ghost-bg);
-    backdrop-filter: blur(var(--blur-subtle));
-    -webkit-backdrop-filter: blur(var(--blur-subtle));
-    color: var(--color-text-secondary);
-    border: var(--border-width-thin) solid var(--color-border-default);
-}
-
-.btn-ghost:hover {
-    background: rgba(183, 191, 217, 0.2);
-    color: var(--color-text-primary);
-}
-
-.btn-outline {
-    background: transparent;
-    color: var(--color-text-primary);
-    padding: var(--space-2) var(--space-6);
-    border: var(--border-width-thin) solid var(--color-border-default);
-}
-
-.btn-outline:hover {
-    background: var(--color-bg-subtle);
-    border-color: var(--color-border-strong);
-}
-
-.btn-danger {
-    background: var(--button-danger-bg);
-    color: var(--button-danger-text);
-}
-
-.btn-danger:hover {
-    background: var(--color-action-danger-hover);
-}
-
-.btn-icon {
-    width: var(--touch-target-desktop);
-    height: var(--touch-target-desktop);
-    min-width: var(--touch-target-desktop);
-    min-height: var(--touch-target-desktop);
-    padding: 0;
-    border-radius: var(--radius-circle);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-}
 
 /* ✨ 僅在明確指定 .btn-shine 啟用滑過光線掃描特效 (Sweep Shine) */
 .btn-shine::after {
@@ -237,18 +144,6 @@ main{
     100% {
         left: 150%;
     }
-}
-
-.btn-sm {
-    min-height: var(--control-height-sm);
-    padding: var(--space-1) var(--space-4);
-    font-size: var(--font-size-xs);
-}
-
-.btn-lg {
-    min-height: var(--control-height-lg);
-    padding: var(--space-3) var(--space-8);
-    font-size: var(--font-size-base);
 }
 
 .card {
@@ -311,7 +206,7 @@ main{
 }
 
 .sys-bg {
-    position: fixed; top: 0; left: 0; z-index: var(--layer-system, 20000) !important;
+    position: fixed; top: 0; left: 0; z-index: var(--layer-modal, 700) !important;
     width: 100vw;
     height: 100vh;
     background: rgba(15, 23, 42, 0);
@@ -342,17 +237,9 @@ main{
     display: flex; flex-direction: column; align-items: center; justify-content: center;
 }
 
-.sys-preview{
-    position: relative;
-    transform: perspective(1000px);
-}
-
-.sys-preview .project-card.lock{
-    transform: translate3d(0, 0, 0) rotateX(0deg) scale(0.8);
-    transition: none;
-    max-width: 25vw;
-    z-index: 2;
-}
+.sys-preview { position: relative; width: min(240px, 100%); padding-bottom: 32px; display: grid; place-items: center; perspective: 1000px; }
+.sys-preview > .project-folder-card { margin: 0 auto; z-index: 2; }
+.sys-window { max-width: calc(100% - 24px); max-height: calc(100dvh - 24px); overflow-y: auto; }
 
 .sys-window h1 {
     font-family: var(--font-family-display);
@@ -416,40 +303,10 @@ main{
 }
 
 
-.sys-delete-trashbin{
-    position: absolute;
-    top: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    scale: 0;
-    transition: all 0.5s cubic-bezier(.33,1.53,.69,.99);
-    z-index: 1;
-    /* animation: trashbin 1s cubic-bezier(.33,1.53,.69,.99) 0s infinite forwards; */
-}
-
-.sys-delete-trashbin img {
-    object-fit: scale-down;
-    z-index: 1;
-}
-
-.sys-delete-trashbin-top{
-    width: 80%;
-    height: 12%;
-    margin-top: 8%;
-    transform-origin: center right;
-    /* animation: trashbin-top 0.5s cubic-bezier(.4,0,.2,1) 0.5s infinite forwards alternate; */
-    transform: translateY(10%) rotate(0deg);
-}
-
-.sys-delete-trashbin-bottom{
-    width: 90%;
-    height: 50%;
-}
+.sys-delete-trashbin { position: absolute; left: 50%; bottom: 0; width: 112px; height: 128px; transform: translateX(-50%) scale(0); transform-origin: center bottom; pointer-events: none; z-index: 3; }
+.sys-delete-trashbin img { position: absolute; object-fit: contain; }
+.sys-delete-trashbin-top { left: 0; top: 0; width: 100%; height: 22px; transform-origin: right bottom; }
+.sys-delete-trashbin-bottom { left: 0; top: 18px; width: 100%; height: 110px; }
 
 @keyframes trashbin-top {
     from{
@@ -572,7 +429,7 @@ main{
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    z-index: 1000; /* Higher than black masks (50) and borders (99) */
+    z-index: var(--layer-transition);
     pointer-events: none;
     opacity: 0;
     filter: blur(10px);
@@ -613,7 +470,7 @@ main{
     opacity: 1;
     filter: blur(0px);
     text-align: center;
-    z-index: 1000;
+    z-index: var(--layer-transition);
 }
 
 .transition-loader-text-el.blur-out {

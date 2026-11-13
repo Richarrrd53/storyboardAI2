@@ -120,7 +120,8 @@
     if (card.classList) card.classList.add('is-expanded');
 
     // Spec Section 7 & 8: Transition Origin is the current 16:9 preview frame!
-    const curRect = primaryCover.getBoundingClientRect ? primaryCover.getBoundingClientRect() : { width: 282, height: 158.6, left: 100, top: 100 };
+    const folderGeometry = root.ProjectCard?.captureGeometry?.(card);
+    const curRect = folderGeometry?.preview || (primaryCover.getBoundingClientRect ? primaryCover.getBoundingClientRect() : { width: 282, height: 158.6, left: 100, top: 100 });
     const startW = curRect.width || 282;
     const startH = curRect.height || 158.6;
     const startLeft = curRect.left || 0;
@@ -171,7 +172,7 @@
     flyingCover.style.top = `${startTop}px`;
     flyingCover.style.width = `${startW}px`;
     flyingCover.style.height = `${startH}px`;
-    flyingCover.style.zIndex = '999999';
+    flyingCover.style.zIndex = 'var(--layer-transition, 650)';
     flyingCover.style.borderRadius = coverRadius(14);
     flyingCover.style.border = '1px solid rgba(255, 255, 255, 0.45)';
     flyingCover.style.overflow = 'hidden';
@@ -310,6 +311,7 @@
       card,
       primaryCover,
       folderShell,
+      folderGeometry,
       secondary,
       flyingCover,
       scrim,

@@ -11,7 +11,7 @@
   --border-width-heavy:    3px;
 
   /* ── Universal Accessible Focus Ring (WCAG 2.4.7 / 2.4.11) ── */
-  --focus-ring-color:      var(--blue-400);
+  --focus-ring-color:      var(--blue-600);
   --focus-ring-width:      2px;
   --focus-ring-offset:     2px;
   --focus-ring-shadow:     0 0 0 var(--focus-ring-width) var(--white), 
