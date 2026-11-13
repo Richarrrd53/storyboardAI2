@@ -32,8 +32,10 @@ test('settings page, validated save, reload and search use browser credentials w
     try {
         const page = await fetch(base + '/discovery/settings');
         assert.equal(page.status, 200);
-        assert.match(await page.text(), /id="api-settings-form"/);
-        assert.match(await (await fetch(base + '/discovery')).text(), /href="\/discovery\/settings"/);
+        assert.match(await page.text(), /js\/main\.js/);
+        assert.match(await (await fetch(base + '/html/discovery-settings.html')).text(), /id="api-settings-form"/);
+        assert.match(await (await fetch(base + '/discovery')).text(), /js\/main\.js/);
+        assert.match(await (await fetch(base + '/html/discovery.html')).text(), /href="\/discovery\/settings"/);
         assert.equal((await (await fetch(base + '/api/discovery/settings')).json()).configured, false);
         const invalid = await post('/api/discovery/settings', { youtubeApiKey: 'bad' });
         assert.equal(invalid.status, 400);

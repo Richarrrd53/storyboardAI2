@@ -212,6 +212,7 @@
     else if (page === 'history') htmlUrl = '/html/history.html';
     else if (page === 'template') htmlUrl = '/html/template.html';
     else if (page === 'discovery') htmlUrl = '/html/discovery.html';
+    else if (page === 'discovery-settings') htmlUrl = '/html/discovery-settings.html';
 
     if (htmlUrl) {
       fetchPageDoc(htmlUrl).catch(() => {});

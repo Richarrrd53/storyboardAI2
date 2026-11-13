@@ -8,6 +8,7 @@
         if (!form || !results || !skillSelect) return;
         if (form.dataset.discoveryInitialized === 'true') return;
         form.dataset.discoveryInitialized = 'true';
+        document.title = '熱門短影音搜尋與分析 — Storyboard AI';
         let disposed = false;
         const controller = new AbortController();
         const listeners = [];

@@ -99,6 +99,14 @@
       return { unmount() {} };
     }
 
+    const backButton = root?.querySelector('.history-back-btn');
+    const goBack = event => {
+      if (event.button > 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      const navigate = context.navigate || global.spaNavigate;
+      if (typeof navigate === 'function') { event.preventDefault(); navigate('projects'); }
+    };
+    backButton?.addEventListener('click', goBack);
+
     function updateView() {
       if (!isMounted) return;
       const list = global.ProjectStore && typeof global.ProjectStore.getProjects === 'function'
@@ -163,6 +171,7 @@
     function unmount() {
       if (!isMounted) return;
       isMounted = false;
+      backButton?.removeEventListener('click', goBack);
       if (signal) {
         signal.removeEventListener('abort', unmount);
       }

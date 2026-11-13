@@ -5,19 +5,13 @@
   let browseMemory = null;
   const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
   const categoryOf = t => ['product', 'story', 'twist'].includes(t.category || t.type) ? (t.category || t.type) : 'custom';
-  const tagsOf = t => Array.isArray(t.tags) ? t.tags.filter(tag => typeof tag === 'string' && tag.trim()) : [];
+  const tagsOf = t => window.TemplatePresentation.tagsOf(t);
   function getCatCounts(templates) {
     const counts = { '全部': templates.length, product: 0, story: 0, twist: 0, custom: 0 };
     templates.forEach(t => counts[categoryOf(t)]++);
     return counts;
   }
-  function durationOf(t) {
-    const explicit = parseFloat(t.duration);
-    if (Number.isFinite(explicit) && explicit > 0) return explicit;
-    if (!Array.isArray(t.structure) || !t.structure.length) return null;
-    const values = t.structure.map(shot => parseFloat(shot.duration));
-    return values.every(value => Number.isFinite(value) && value > 0) ? Math.round(values.reduce((a, b) => a + b, 0) * 100) / 100 : null;
-  }
+  const durationOf = t => window.TemplatePresentation.durationOf(t);
   function safeMediaUrl(value) {
     if (typeof value !== 'string') return '';
     try {
@@ -26,9 +20,10 @@
     } catch (_) { return ''; }
   }
   function renderCard(t, featured = false) {
-    const name = t.name || t.title || '未命名模板';
+    const presentation = window.TemplatePresentation.present(t);
+    const name = presentation.title;
     const duration = durationOf(t);
-    const shotCount = Number.isFinite(Number(t.shotsCount)) && t.shotsCount != null ? Number(t.shotsCount) : (Array.isArray(t.structure) ? t.structure.length : null);
+    const shotCount = window.TemplatePresentation.shotCountOf(t);
     const source = t.videoUrl || t.source?.url;
     const sourceUrl = typeof source === 'string' ? source : '';
     const videoId = t.source?.videoId || t.videoId || sourceUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|shorts\/|embed\/))([\w-]{11})/)?.[1];
@@ -40,7 +35,7 @@
       '<span class="cover-play" aria-hidden="true">▶</span></a><div class="template-card-body">' +
       '<span class="template-card-cat">' + escape(t.categoryLabel || CAT_MAP[categoryOf(t)]) + '</span>' +
       '<h3 class="text-card-title"><a href="/template/' + encodeURIComponent(t.id) + '" data-action="preview">' + escape(name) + '</a></h3>' +
-      '<p>' + escape(t.description || '查看模板結構，確認是否適合你的創作方向。') + '</p>' +
+      '<p class="template-display-summary"><span class="template-summary-label">' + escape(presentation.summaryLabel) + '</span>' + escape(presentation.summary) + '</p>' +
       '<div class="template-card-tags">' + tagsOf(t).slice(0, 2).map(tag => '<span>' + escape(tag) + '</span>').join('') + '</div>' +
       '<div class="template-specs" aria-label="模板規格">' + specs.map(spec => '<span>' + escape(spec) + '</span>').join('') + '</div>' +
       '<div class="template-card-footer"><a class="card-preview-btn" href="/template/' + encodeURIComponent(t.id) + '" data-action="preview">預覽模板</a><button type="button" class="card-apply-btn" data-action="apply" aria-label="套用 ' + escape(name) + '">套用模板</button></div></div></article>';
@@ -64,6 +59,7 @@
     const clearButton = getEl('store-clear-filters');
     if (!categoriesEl || !gridEl || !detailEl) return { unmount() {} };
     const pageMain = document.getElementById('page-main');
+    let backPending = false;
     let state = { category: '全部', query: '', tag: '', sort: 'catalog', scrollTop: 0, ...browseMemory, ...route.browseState };
     let currentRoute = route;
     let activeId = null;
@@ -118,7 +114,7 @@
       syncControls();
       let filtered = templates.filter(t => (state.category === '全部' || categoryOf(t) === state.category) && (!state.tag || tagsOf(t).includes(state.tag)));
       const query = state.query.trim().toLocaleLowerCase();
-      if (query) filtered = filtered.filter(t => [t.name, t.title, t.description, t.categoryLabel, CAT_MAP[categoryOf(t)], ...tagsOf(t), ...(Array.isArray(t.platform) ? t.platform : [])].some(value => String(value || '').toLocaleLowerCase().includes(query)));
+      if (query) filtered = filtered.filter(t => [t.displayTitle, t.displaySummary, t.summary, t.narrative?.summary, t.name, t.title, t.description, t.source?.title, t.source?.description, t.categoryLabel, CAT_MAP[categoryOf(t)], ...tagsOf(t), ...(Array.isArray(t.platform) ? t.platform : [])].some(value => String(value || '').toLocaleLowerCase().includes(query)));
       if (state.sort === 'name') filtered = [...filtered].sort((a, b) => (a.name || a.title || '').localeCompare(b.name || b.title || '', 'zh-Hant'));
       if (state.sort === 'duration') filtered = [...filtered].sort((a, b) => (durationOf(a) ?? Infinity) - (durationOf(b) ?? Infinity));
       const title = getEl('current-category-title');
@@ -160,6 +156,7 @@
     }
     function updateRoute(opts = {}) {
       if (disposed) return;
+      backPending = false;
       if (!activeId) snapshot();
       currentRoute = opts;
       if (opts.browseState) { state = { ...state, ...opts.browseState }; filterAndDisplay(); }
@@ -171,7 +168,7 @@
       if (template && window.renderTemplateDetailTimeline) {
         if (recoveryEl) recoveryEl.hidden = true;
         window.renderTemplateDetailTimeline(template, detailEl);
-        document.title = (template.name || template.title || '模板詳情') + ' — Storyboard AI';
+        document.title = window.TemplatePresentation.present(template).title + ' — Storyboard AI';
         getEl('detail-template-title')?.focus?.({ preventScroll: true });
       } else {
         if (storeView) storeView.style.display = 'none';
@@ -189,8 +186,10 @@
       }
     }
     function back() {
+      if (disposed || backPending || !activeId) return;
+      backPending = true;
       const historyHost = window.parent && window.parent !== window ? window.parent : window;
-      if (historyHost.history?.state?.templateFromBrowse) historyHost.history.back();
+      if (historyHost.history?.state?.templateFromBrowse && typeof historyHost.history.back === 'function') historyHost.history.back();
       else navigate('template');
     }
     const navigation = { preview: id => navigate('template', { templateId: id }), back };

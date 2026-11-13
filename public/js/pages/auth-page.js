@@ -4,7 +4,7 @@
     let destination;
     try { destination = JSON.parse(window.sessionStorage?.getItem('spa_return_route') || 'null'); } catch (_) {}
     window.sessionStorage?.removeItem('spa_return_route');
-    const allowed = ['dashboard','projects','history','template','project','generate','discovery'];
+    const allowed = ['dashboard','projects','history','template','project','generate','discovery','discovery-settings'];
     navigate(allowed.includes(destination?.page) ? destination.page : 'dashboard', {
       id: destination?.opts?.id, templateId: destination?.opts?.templateId
     });
@@ -52,6 +52,12 @@
       const tr = document.getElementById('tab-register');
       if (!lp || !rp) return;
       activeTab = tab;
+      const loginActive = tab === 'login';
+      lp.inert = !loginActive;rp.inert = loginActive;
+      lp.setAttribute('aria-hidden',String(!loginActive));rp.setAttribute('aria-hidden',String(loginActive));
+      tl.setAttribute('aria-pressed',String(loginActive));tr.setAttribute('aria-pressed',String(!loginActive));
+      const inactive = loginActive ? rp : lp;
+      if (inactive.contains(document.activeElement)) (loginActive ? tl : tr).focus({preventScroll:true});
       syncPanelHeight();
       if (tab === 'login') {
         tl.classList.add('active'); tr.classList.remove('active');
@@ -65,8 +71,7 @@
         rp.style.pointerEvents = "auto";
       }
     };
-    if (showRegister) later(() => window.switchTab('register'), 50);
-    else syncPanelHeight();
+    window.switchTab(showRegister ? 'register' : 'login');
 
     window.togglePwd = function (id, btnId) {
       const inp = document.getElementById(id);
@@ -79,6 +84,7 @@
           inp.style.filter = "blur(0px)";
 
           inp.type = 'text';
+          const button = document.getElementById('showBtn'+btnId);button?.setAttribute('aria-label','隱藏密碼');button?.setAttribute('aria-pressed','true');
         }, 300);
         slash.style.transform = "translateY(-36px)";
         mask.style.transform = "translate(54px, -36px) rotate(45deg)";
@@ -89,6 +95,7 @@
           inp.style.filter = "blur(0px)";
 
           inp.type = 'password';
+          const button = document.getElementById('showBtn'+btnId);button?.setAttribute('aria-label','顯示密碼');button?.setAttribute('aria-pressed','false');
         }, 300);
         slash.style.transform = "translateY(0px)";
         mask.style.transform = "translate(18px, 0px) rotate(45deg)";

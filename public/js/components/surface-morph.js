@@ -9,7 +9,7 @@
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   const lerp = (a,b,t) => a + (b-a)*t;
   const reduced = () => !!root.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-  const immediateReasons = new Set(['navigation','unmount','destroy','immediate','resize','scroll','modal','trigger_removed','focus_out','tab']);
+  const immediateReasons = new Set(['navigation','unmount','destroy','immediate','resize','modal','trigger_removed','tab']);
   function createCubicBezier(x1, y1, x2, y2) {
     const cx = 3 * x1;
     const bx = 3 * (x2 - x1) - cx;
@@ -117,12 +117,12 @@
     result.scale=t>=350&&t<480?1+.010*Math.sin((t-350)/130*Math.PI)*(1-.25*(t-350)/130):1;
     return result;
   }
-  function closing(s,t,target) {
-    const end=openedFrame(s), p0={x:target.x,y:target.y};
+  function closing(s,t,target,start) {
+    const end=start, p0={x:target.x,y:target.y};
     const control={x:(p0.x+s.p2.x)/2,y:Math.min(p0.y,s.p2.y)-14};
     const flight=t<=30?s.p2:t<=230?getQuadraticBezierPoint(s.p2,control,p0,easeStandard((t-30)/200)):p0;
-    if(t<40) return {...end};
-    if(t<180) {const p=easeStandard((t-40)/140);return {w:lerp(end.w,20,p),h:lerp(end.h,20,p),x:flight.x+(end.x-s.p2.x)*(1-p),y:flight.y+(end.y-s.p2.y)*(1-p),r:lerp(s.radius,10,p),icon:0};}
+    if(t<40) {const p=easeStandard(t/40);return {...end,scale:lerp(end.scale??1,1,p),icon:(end.icon??0)*(1-p)};}
+    if(t<180) {const p=easeStandard((t-40)/140);return {w:lerp(end.w,20,p),h:lerp(end.h,20,p),x:flight.x+(end.x-s.p2.x)*(1-p),y:flight.y+(end.y-s.p2.y)*(1-p),r:lerp(end.r,10,p),surface:lerp(end.surface??1,1,p),icon:0};}
     if(t<230) return {w:20,h:20,x:flight.x,y:flight.y,r:10,icon:0};
     if(t<440) {const p=easeStandard((t-230)/210);return {w:lerp(20,target.w,p),h:lerp(20,target.h,p),x:p0.x,y:p0.y,r:lerp(10,target.r,p),scale:1+.004*Math.sin(p*Math.PI)*(1-.5*p),surface:1-p,icon:p<=.35?0:easeStandard((p-.35)/.65)};}
     return target;
@@ -167,14 +167,16 @@
     if(typeof reason==='function') {complete=reason;reason=null;}
     const s=current; if(!s) {complete?.();return;}
     if(complete) s.callbacks.push(complete);
+    // Focus and viewport events emitted by inert/focus changes must not cut off a return flight.
+    if(s.phase==='closing'&&['scroll','resize','focus_out','tab'].includes(reason)) return;
     if(immediateReasons.has(reason)||reduced()) {finish(s,reason||'close',!['navigation','unmount','destroy','modal','focus_out','trigger_removed'].includes(reason));return;}
     if(s.phase==='closing') return;
     s.trigger.classList.add('is-hidden-for-morph','surface-morph-trigger-hidden');
-    const wasOpen=s.phase==='open', start={...s.frame};s.phase='closing';s.closeReason=reason||'close';
+    const start={...s.frame};s.phase='closing';s.closeReason=reason||'close';
     s.trigger.setAttribute?.('aria-expanded','false');s.menu.inert=true;s.menu.classList.remove('is-settled','is-content-visible');s.menu.classList.add('is-items-collapsing');
     const target=triggerFrame(readRect(s.trigger));s.menu.style.willChange='width,height,left,top,border-radius,transform';
     // A reversal starts from the last rendered frame, never a reset to expanded bounds.
-    run(s,440,t=>wasOpen?closing(s,t,target):blend(start,target,easeStandard(t/440)),()=>finish(s,s.closeReason));
+    run(s,440,t=>closing(s,t,target,start),()=>finish(s,s.closeReason,s.closeReason!=='focus_out'));
   }
   function open(trigger,opts={}) {
     if(!trigger||!opts.content||opts.signal?.aborted) return null;

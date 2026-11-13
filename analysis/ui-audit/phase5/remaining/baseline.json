@@ -1,0 +1,18 @@
+{
+  "public/js/generate.js": "cbf24ce233ade366065d95757f033e8fae10063f11a1f85563a4c4d6c3f32457",
+  "public/html/generate.html": "dbf158a6cc24c190124944e223d5095cb2daf7436e4a53359f285e956ddb677d",
+  "public/css/creation-workspace.css": "a14da1ab025f924c15ae5c709a7143f0f59f62f67b1cd53de77b59e65d93e1cc",
+  "public/js/pages/templates.js": "b484ef2b6ba833e60f52add95e3b78ad65a621ebd7410ecbcc7c95c9835eb44d",
+  "public/js/template-timeline.js": "97dc8531a487d219209337c2ca84350e2729bce7625b4319b92fdf726ac50a99",
+  "public/html/template.html": "3e6ff5dba7a76c608361abcb22cef300ac1a432455bf1a65a38b42d009511258",
+  "public/css/template.css": "a4ef6fb62655bd00010ee0231421e667ba9561716462f987b2f2f16966391009",
+  "public/css/template-detail.css": "2d74a5e83bea321e8f76eaab9464983f8dcd09b062a4b82859260ef09fe2cae9",
+  "public/js/spa-router.js": "b7ba7c58a3f82a6624d3f8c977d528ced84b3477bc9e693babdc51c98c193729",
+  "public/js/features/creation.js": "69bc88ccf8f39d5841e37e5821dc4d2f2e6b3f0d5058298a0b016a5d768bebff",
+  "public/js/features/generation-task.js": "e43f780b77f3e129edd8e5b3bb07668af72c8a04829c060d07323d90f4bb50e4",
+  "public/js/features/template-workflow.js": "c7b1d2de833b55dd78ff8d096bbee231cbf5e31ca191ce322dac50d3ec1844d0",
+  "public/js/features/projects.js": "bb6a949a0b2a1c0fa37c6856bc31c768bf879c4a085c62087c2363ac0951d403",
+  "public/js/components/global-toast.js": "3e0b98a08343598b3ae5c7097e7877bd2eb21e4c62084a4674ded64476deeaba",
+  "server.js": "9156f4d2e0aa06fbc885037462c45c6b913eabb4da6141c892750a74fc684cab",
+  "lib/template-catalog.js": "1124dc85af9f329486e3dc20ac7475a9dbe963ba3519e1a909a74f4a2f0807df"
+}

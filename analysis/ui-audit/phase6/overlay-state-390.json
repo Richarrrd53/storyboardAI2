@@ -1,0 +1,14 @@
+{
+  "accountSheets": 1,
+  "expandedQC": 0,
+  "glows": [
+    {
+      "inertAncestor": true,
+      "playState": "running"
+    },
+    {
+      "inertAncestor": true,
+      "playState": "running"
+    }
+  ]
+}

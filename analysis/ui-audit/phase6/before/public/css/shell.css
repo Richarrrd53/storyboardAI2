@@ -1,0 +1,419 @@
+/* ============================================================
+   STORYBOARD AI DESIGN SYSTEM v3.0
+   Global App Shell & Page Architecture (shell.css)
+   ============================================================ */
+
+/* ── 1. Layout Variables & Grid Anchors ── */
+:root {
+  --container-max-width: var(--container-xl);
+  
+  /* Layout Gutters */
+  --page-gutter-desktop: var(--layout-gutter-desktop);
+  --page-gutter-tablet: var(--layout-gutter-tablet);
+  --page-gutter-mobile: var(--layout-gutter-mobile);
+  --page-gutter: var(--page-gutter-desktop);
+
+  /* Standard Vertical Rhythm */
+  --space-header-to-content: var(--space-6, 24px);
+  --space-section-gap: var(--space-8, 32px);
+  --space-section-header-to-cards: var(--space-4, 16px);
+  --space-card-grid-gap: var(--space-6, 24px);
+
+  /* Sidebar constraints */
+  --sidebar-collapsed-width: var(--sidebar-width-collapsed);
+  --sidebar-expanded-width: var(--sidebar-width-expanded);
+  --sidebar-current-width: var(--sidebar-collapsed-width);
+  /* Resting creation capsule: 28px offset + 48px height + breathing room. */
+  --workspace-bottom-inset: var(--space-24);
+}
+
+@media (max-width: 1024px) {
+  :root {
+    --page-gutter: var(--page-gutter-tablet);
+    --space-card-grid-gap: var(--space-4, 16px);
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --page-gutter: var(--page-gutter-mobile);
+    --space-header-to-content: var(--space-4, 16px);
+    --space-section-gap: var(--space-6, 24px);
+    --space-section-header-to-cards: var(--space-3, 12px);
+    --space-card-grid-gap: var(--space-3, 12px);
+    /* Include the raised create control, navigation offset and device safe area. */
+    --workspace-bottom-inset: calc(var(--mobile-nav-height) + var(--mobile-nav-offset) + var(--space-4) + var(--space-4) + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (max-width: 768px) {
+  body.workspace-secondary { --workspace-bottom-inset: calc(var(--space-6) + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* ── 2. App Shell Structure ── */
+.app-shell {
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+}
+
+/* ── 3. Page Shell (Mounting Point & Route Surface) ── */
+.page-shell,
+#page-main {
+  box-sizing: border-box;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  position: relative !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent;
+  overflow: hidden !important;
+}
+
+/* Landing Page & non-dashboard public shell reset (allows natural document flow and GSAP ScrollTrigger) */
+body:not(.dashboard-layout):not(.auth-layout) .page-landing,
+body:not(.dashboard-layout):not(.auth-layout) #page-main.page-landing,
+body:not(.dashboard-layout):not(.auth-layout) .page-shell,
+body:not(.dashboard-layout):not(.auth-layout) #page-main {
+  display: block !important;
+  flex: none !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 100vh !important;
+  overflow: visible !important;
+  position: relative !important;
+}
+
+body:not(.dashboard-layout):not(.auth-layout) .page-landing #page-content,
+body:not(.dashboard-layout):not(.auth-layout) #page-main.page-landing #page-content,
+body:not(.dashboard-layout):not(.auth-layout) #page-content {
+  display: block !important;
+  flex: none !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 100% !important;
+  overflow: visible !important;
+  margin: 0 !important;
+}
+
+/* ── Auth Layout (Login & Register full-viewport centered shell) ── */
+body.auth-layout,
+html:has(body.auth-layout) {
+  height: auto !important;
+  min-height: 100vh !important;
+  min-height: 100dvh !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+body.auth-layout #spa-mobile-nav,
+body.auth-layout .mobile-bottom-nav {
+  display: none !important;
+}
+
+body.auth-layout .page-shell,
+body.auth-layout #page-main,
+#page-main.page-auth,
+#page-main.auth-main,
+.page-shell.page-auth,
+.page-shell.auth-main {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: none !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 100vh !important;
+  min-height: 100dvh !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  position: relative !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+body.auth-layout #page-content,
+#page-main.page-auth #page-content,
+#page-main.auth-main #page-content,
+#page-content.auth-main,
+#page-content.spa-login-wrap {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 1 0 auto !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 100vh !important;
+  min-height: 100dvh !important;
+  overflow: visible !important;
+  margin: 0 !important;
+  padding: var(--space-6) var(--space-4) !important;
+  box-sizing: border-box !important;
+}
+
+/* When in dashboard layout (with sidebar on desktop) */
+body.dashboard-layout {
+  background: var(--app-shell, #0c1324) !important;
+}
+
+body.dashboard-layout .page-shell,
+body.dashboard-layout #page-main {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0 !important;
+  width: auto !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  background: var(--canvas, var(--color-bg-page, #f8fafc)) !important;
+  border-radius: var(--radius-xl) !important;
+  margin: clamp(8px, 1.2vh, 12px) clamp(8px, 1.2vh, 12px) clamp(8px, 1.2vh, 12px) calc(clamp(12px, 1.8vh, 16px) + var(--sidebar-collapsed-width, 60px)) !important;
+  height: calc(100vh - 2 * clamp(8px, 1.2vh, 12px)) !important;
+  height: calc(100dvh - 2 * clamp(8px, 1.2vh, 12px)) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: scale 320ms var(--motion-ease-standard), width 460ms var(--motion-ease-decelerate, cubic-bezier(.16, 1, .3, 1)),
+              max-width 460ms var(--motion-ease-decelerate, cubic-bezier(.16, 1, .3, 1)),
+              margin-left 460ms var(--motion-ease-decelerate, cubic-bezier(.16, 1, .3, 1)),
+              margin-right 460ms var(--motion-ease-decelerate, cubic-bezier(.16, 1, .3, 1)),
+              border-radius 460ms var(--motion-ease-decelerate, cubic-bezier(.16, 1, .3, 1));
+}
+
+body.dashboard-layout #page-content {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
+  overflow-y: var(--page-content-overflow-y, hidden) !important;
+  overflow-x: clip !important;
+  position: relative !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* Sidebar open state adjustment */
+body.dashboard-layout.sidebar-open .page-shell,
+body.dashboard-layout.sidebar-open #page-main,
+#dash-sidebar.open ~ .page-shell,
+#dash-sidebar.open ~ #page-main {
+  margin-left: calc(clamp(12px, 1.8vh, 16px) + var(--sidebar-expanded-width, 260px)) !important;
+}
+
+/* ── 4. Unified Page Header Family ── */
+.page-header,
+.content-header {
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
+  width: 100% !important;
+  position: relative !important;
+  z-index: 20 !important;
+  background: var(--content-header-bg, var(--color-bg-page, #f8fafc));
+  box-sizing: border-box !important;
+  padding: var(--space-6) var(--page-gutter) var(--space-4) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+/* Optical Baseline Alignment for Header titles */
+.has-scroll-backdrop {
+  --content-header-bg: transparent;
+  --content-header-border: transparent;
+  position: relative;
+  overflow: visible;
+}
+
+/* Extend the existing scroll owner behind its header. Equal padding compensates
+   the overlap, preserving the first content position and maximum scroll offset.
+   These two scoped priorities override the existing page padding/margin resets. */
+.content-body.has-header-underlay {
+  margin-top: 0 !important;
+  padding-top: var(--header-body-padding-top) !important;
+  scroll-padding-top: var(--header-underlap);
+}
+
+.projects-toolbar.has-scroll-backdrop {
+  z-index: 20;
+  background: transparent;
+}
+
+/* Navigation and blur share a host: ancestor stacking contexts can never
+   lift the page blur above its Header/Toolbar. Layers have no filter wrapper. */
+.has-header-backdrop, .progressive-edge-host { position: relative; }
+.progressive-edge-blur {
+  position: absolute;
+  pointer-events: none;
+  z-index: 19;
+  transition-property: none;
+  backdrop-filter: blur(var(--edge-blur));
+  -webkit-backdrop-filter: blur(var(--edge-blur));
+}
+/* A single unmasked tint preserves the requested alpha stops independently
+   of the three progressive blur masks. Match the workspace canvas token. */
+.progressive-edge-blur--tint {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: linear-gradient(to bottom,
+    color-mix(in srgb, var(--canvas, var(--color-bg-page, #f8fafc)) 50%, transparent) 0%,
+    color-mix(in srgb, var(--canvas, var(--color-bg-page, #f8fafc)) 30%, transparent) 40%,
+    color-mix(in srgb, var(--canvas, var(--color-bg-page, #f8fafc)) 0%, transparent) 100%);
+}
+.has-header-backdrop > .has-edge-navigation {
+  position: absolute !important;
+  z-index: 20 !important;
+  inset-inline: 0;
+  top: var(--edge-navigation-top, 0px);
+  translate: 0 var(--navigation-offset, 0px);
+  will-change: translate;
+  transition-property: gap, scale, border-radius;
+}
+.has-edge-navigation[inert] { pointer-events: none; visibility: hidden; }
+
+:is(.content-header, .editor-menubar).has-scroll-backdrop {
+  isolation: isolate;
+  transform-origin: top center;
+  border-radius: var(--radius-xl, 24px);
+  transition: gap 320ms var(--motion-ease-standard, ease), scale 320ms var(--motion-ease-standard, ease), border-radius 320ms ease;
+}
+:is(.content-header, .editor-menubar).has-scroll-backdrop.is-content-scrolled {
+  scale: .96;
+  border-radius: var(--radius-pill, 999px);
+}
+:is(.content-header, .editor-menubar).has-scroll-backdrop :is(.project-workspace-header-sub, .project-workspace-meta, .content-header-subtitle) {
+  max-height: var(--header-sub-height, 80px);
+  overflow: hidden;
+  opacity: 1;
+  transition: max-height 320ms var(--motion-ease-standard, ease), opacity 320ms var(--motion-ease-standard, ease);
+}
+.project-workspace-header.has-scroll-backdrop.is-content-scrolled { gap: 0; }
+:is(.content-header, .editor-menubar).has-scroll-backdrop.is-content-scrolled :is(.project-workspace-header-sub, .project-workspace-meta, .content-header-subtitle) {
+  max-height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Preserve the entrance and its delay, then release the opacity Backdrop Root
+   created by a forwards-filled animation so the layer can sample its sibling. */
+.has-scroll-backdrop.anim-fadeInUp,
+.has-header-backdrop.anim-fadeInUp { animation-fill-mode: backwards; }
+
+@media (prefers-reduced-motion: reduce) {
+  :is(.content-header, .editor-menubar).has-scroll-backdrop,
+  :is(.content-header, .editor-menubar).has-scroll-backdrop :is(.project-workspace-header-sub, .project-workspace-meta, .content-header-subtitle) { transition: none; }
+}
+
+.page-header .page-title,
+.content-header h1,
+.content-header .home-greeting-title,
+.content-header .projects-title {
+  font-family: var(--font-family-display, "Noto Sans TC", sans-serif);
+  font-size: clamp(1.625rem, 2.2vw, 2.125rem);
+  font-weight: var(--font-weight-black, 900);
+  line-height: var(--line-height-tight, 1.15);
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary, #0f172a);
+  margin: 0;
+  padding: 0;
+  display: block;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.content-header > :first-child { min-width: 0; }
+.content-header :is(.projects-header-left, .home-header-left) { min-width: 0; }
+.content-header :is(.projects-count-badge, button, .btn) { flex-shrink: 0; }
+
+/* Header Action Right Alignment Anchor */
+.page-header-actions,
+.content-header-actions,
+.projects-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3, 12px);
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* ── 5. Single Scroll Ownership ── */
+/* Exactly one vertical scroll owner per page */
+.page-scroll,
+.content-body,
+#page-content {
+  flex: 1 1 0 !important;
+  width: 100% !important;
+  min-height: 0 !important;
+  position: relative !important;
+  box-sizing: border-box !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+.page-scroll,
+.content-body {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 0 var(--page-gutter) var(--workspace-bottom-inset) !important;
+  scroll-padding-bottom: var(--workspace-bottom-inset);
+  /* Geometry measurements must read the base padding immediately, including
+     reduced-motion rules that give every element a tiny transition duration. */
+  transition-property: none;
+}
+
+/* ── 6. Outer Grid Alignment & Content Containers ── */
+.page-container,
+.page-content-inner {
+  width: 100%;
+  max-width: var(--container-max-width, 1440px);
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+}
+
+body.dashboard-layout .page-container,
+body.dashboard-layout .page-content-inner {
+  max-width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* ── 7. Mobile Safe Area & Bottom Nav Padding ── */
+@media (max-width: 768px) {
+  body.dashboard-layout .page-shell,
+  body.dashboard-layout #page-main {
+    margin: 0 !important;
+    border-radius: 0 !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    border: 0;
+    box-shadow: none;
+  }
+
+  .page-scroll,
+  .content-body {
+    padding: 0 var(--page-gutter-mobile) var(--workspace-bottom-inset) !important;
+  }
+
+  .page-header,
+  .content-header {
+    padding: var(--space-4) var(--page-gutter-mobile) var(--space-3) !important;
+  }
+}

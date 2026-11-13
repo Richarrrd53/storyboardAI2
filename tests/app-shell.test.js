@@ -1330,3 +1330,25 @@ test('Phase 3 account: breakpoint closes the old presentation; reopening reuses 
   windowMock.innerWidth=1440;windowMock.dispatchEvent({type:'resize'});
   assert.equal(document.body.querySelectorAll('.account-sheet-overlay').length,0);shell.toggleUserPanel(true);assert.equal(document.body.querySelectorAll('.surface-morph-surface').length,1);shell.destroy();
 });
+
+test('Phase 5 mobile nav separates route links from create and profile actions',async()=>{
+ setupMockEnvironment();const shell=loadAppShell();await shell.init({});shell.updateRoute('dashboard');
+ const nav=document.getElementById('spa-mobile-nav');assert.equal(nav.getAttribute('role'),null);
+ assert.equal(document.getElementById('mob-nav-generate').tagName,'DIV');
+ assert.equal(document.getElementById('mob-nav-home').getAttribute('aria-current'),'page');
+ shell.toggleUserPanel(true);assert.equal(document.getElementById('mob-nav-home').getAttribute('aria-current'),'page');
+ assert.equal(document.getElementById('mob-nav-profile').getAttribute('aria-pressed'),'true');shell.destroy();
+});
+
+test('Phase 5 Discovery settings retains workspace shell and hides the mobile navigation slot',async()=>{
+ setupMockEnvironment();const shell=loadAppShell();await shell.init({});shell.updateRoute('discovery-settings');
+ const nav=document.getElementById('spa-mobile-nav');assert.equal(nav.hidden,true);assert.equal(nav.inert,true);assert.equal(nav.getAttribute('aria-hidden'),'true');
+ shell.updateRoute('discovery');assert.equal(nav.hidden,false);shell.destroy();
+});
+
+test('Phase 6 shell pauses only ambient motion while hidden and releases the visibility owner',async()=>{
+ const {documentMock:doc,body}=setupMockEnvironment(),shell=loadAppShell();await shell.init({});
+ doc.hidden=true;doc.dispatchEvent({type:'visibilitychange'});assert.equal(body.classList.contains('motion-suspended'),true);
+ doc.hidden=false;doc.dispatchEvent({type:'visibilitychange'});assert.equal(body.classList.contains('motion-suspended'),false);
+ shell.destroy();doc.hidden=true;doc.dispatchEvent({type:'visibilitychange'});assert.equal(body.classList.contains('motion-suspended'),false);
+});

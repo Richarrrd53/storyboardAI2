@@ -1,0 +1,150 @@
+TAP version 13
+# Subtest: floating material aliases resolve without cycles and have one recipe owner
+ok 1 - floating material aliases resolve without cycles and have one recipe owner
+  ---
+  duration_ms: 13.54
+  ...
+# Subtest: navigation, menu, account, composer, sheet and modal obey the agreed layer order
+ok 2 - navigation, menu, account, composer, sheet and modal obey the agreed layer order
+  ---
+  duration_ms: 3.3826
+  ...
+# Subtest: control sizing follows the approved 36/44/52 scale and mobile hit target
+ok 3 - control sizing follows the approved 36/44/52 scale and mobile hit target
+  ---
+  duration_ms: 4.76
+  ...
+# Subtest: all mandatory foundation token references have definitions
+ok 4 - all mandatory foundation token references have definitions
+  ---
+  duration_ms: 15.4487
+  ...
+# Subtest: focus and text roles meet target contrast on their specified surfaces
+ok 5 - focus and text roles meet target contrast on their specified surfaces
+  ---
+  duration_ms: 3.0569
+  ...
+# Subtest: Phase7 placeholder text in Auth and shared controls meets the text contrast target on solid input surfaces
+ok 6 - Phase7 placeholder text in Auth and shared controls meets the text contrast target on solid input surfaces
+  ---
+  duration_ms: 32.7377
+  ...
+# Subtest: confirm returns explicit false, defaults description safely and resolves once
+ok 7 - confirm returns explicit false, defaults description safely and resolves once
+  ---
+  duration_ms: 35.5558
+  ...
+# Subtest: central dialogs match delete scale/blur signature and keep scrim alpha on exit
+ok 8 - central dialogs match delete scale/blur signature and keep scrim alpha on exit
+  ---
+  duration_ms: 10.7233
+  ...
+# Subtest: global facade preserves boolean confirm, void alert and native prompt
+ok 9 - global facade preserves boolean confirm, void alert and native prompt
+  ---
+  duration_ms: 21.4109
+  ...
+# Subtest: queued dialogs stay single and abort cancels active and queued work
+ok 10 - queued dialogs stay single and abort cancels active and queued work
+  ---
+  duration_ms: 11.164
+  ...
+# Subtest: prompt keeps failed input, prevents concurrent submit, retries once and releases busy state
+ok 11 - prompt keeps failed input, prevents concurrent submit, retries once and releases busy state
+  ---
+  duration_ms: 13.9109
+  ...
+# Subtest: IME Enter is prevented and abort while submitting ignores late completion
+ok 12 - IME Enter is prevented and abort while submitting ignores late completion
+  ---
+  duration_ms: 12.2934
+  ...
+# Subtest: modal leases trap Tab, preserve pre-existing inert/overflow and return focus
+ok 13 - modal leases trap Tab, preserve pre-existing inert/overflow and return focus
+  ---
+  duration_ms: 9.2839
+  ...
+# Subtest: overlapping modal leases retain inert and scroll lock until the last owner releases
+ok 14 - overlapping modal leases retain inert and scroll lock until the last owner releases
+  ---
+  duration_ms: 10.1207
+  ...
+# Subtest: page signal cancels closing dialogs without later focus or duplicate resolve
+ok 15 - page signal cancels closing dialogs without later focus or duplicate resolve
+  ---
+  duration_ms: 7.2625
+  ...
+# Subtest: legacy delete retains 1000ms close / 1500ms true result and abort is boolean false
+ok 16 - legacy delete retains 1000ms close / 1500ms true result and abort is boolean false
+  ---
+  duration_ms: 14.3518
+  ...
+# Subtest: navigation during cancelled legacy exit releases its modal lease immediately
+ok 17 - navigation during cancelled legacy exit releases its modal lease immediately
+  ---
+  duration_ms: 9.9013
+  ...
+# Subtest: all central dialog kinds exit from scale 1 to 0 with the approved anticipation curve
+ok 18 - all central dialog kinds exit from scale 1 to 0 with the approved anticipation curve
+  ---
+  duration_ms: 18.3967
+  ...
+# Subtest: rename, logout, restore and alert use the tag-editor scale lifecycle until exit completes
+ok 19 - rename, logout, restore and alert use the tag-editor scale lifecycle until exit completes
+  ---
+  duration_ms: 25.8183
+  ...
+# Subtest: Phase7 reduced alert, confirm and prompt complete once through both actual motion owners
+ok 20 - Phase7 reduced alert, confirm and prompt complete once through both actual motion owners
+  ---
+  duration_ms: 39.3413
+  ...
+# Subtest: compact shares the original curve and timing, disables only inward particles and cleans up
+ok 21 - compact shares the original curve and timing, disables only inward particles and cleans up
+  ---
+  duration_ms: 52.3215
+  ...
+# Subtest: reduced motion keeps both loader variants static without inward particles or RAF loops
+ok 22 - reduced motion keeps both loader variants static without inward particles or RAF loops
+  ---
+  duration_ms: 26.0588
+  ...
+# Subtest: loader reacts to live reduced motion and offscreen visibility and cleans both subscriptions
+ok 23 - loader reacts to live reduced motion and offscreen visibility and cleans both subscriptions
+  ---
+  duration_ms: 22.7742
+  ...
+# Subtest: Phase7 multiple loader SVGs stay active until all leave; abort cannot restart via queued visibility
+ok 24 - Phase7 multiple loader SVGs stay active until all leave; abort cannot restart via queued visibility
+  ---
+  duration_ms: 16.3152
+  ...
+# Subtest: Phase7 isolated Undo remains available at 4999ms and prevents every later DELETE
+ok 25 - Phase7 isolated Undo remains available at 4999ms and prevents every later DELETE
+  ---
+  duration_ms: 18.2322
+  ...
+# Subtest: Phase7 isolated default delete deadline submits once at 5000ms, not before
+ok 26 - Phase7 isolated default delete deadline submits once at 5000ms, not before
+  ---
+  duration_ms: 10.3603
+  ...
+# Subtest: Phase7 reduced modal close still completes exactly once and keeps backdrop alpha
+ok 27 - Phase7 reduced modal close still completes exactly once and keeps backdrop alpha
+  ---
+  duration_ms: 8.0215
+  ...
+# Subtest: Phase7 re-entry during close retires the old completion without hiding the successor
+ok 28 - Phase7 re-entry during close retires the old completion without hiding the successor
+  ---
+  duration_ms: 4.3202
+  ...
+1..28
+# tests 28
+# suites 0
+# pass 28
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 737.0356

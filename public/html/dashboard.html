@@ -164,41 +164,25 @@
             <!-- ═══ HERO & QUICK ACTIONS ═══ -->
             <section class="home-hero-section anim-fadeInUp anim-delay-1">
             <div class="home-hero-layout">
-                <!-- Hero Card -->
-                <div class="home-hero-card" id="home-hero-card">
-                    <div class="hero-card-media">
-                        <img class="hero-bg-img" src="../images/home_hero_banner.png" alt="讓靈感成為看得見的故事" />
-                        <div class="hero-media-scrim"></div>
-                    </div>
-                    <div class="hero-card-body">
-                        <div class="hero-eyebrow">
-                            <span class="hero-sparkle">✦</span>
-                            <span>讓靈感成為看得見的故事</span>
-                        </div>
-                        <h2 class="hero-main-title">
-                            <span class="desktop-only-inline">讓靈感成為看得見的故事</span>
-                            <span class="mobile-only-inline">一個更好的故事</span>
-                        </h2>
-                        <p class="hero-sub-title desktop-only-block">
-                            探索模板、案例與短影音創作靈感
-                        </p>
-                        <div class="hero-cta-wrap">
-                            <button class="hero-cta-btn" id="hero-explore-btn" type="button">
-                                <span class="desktop-only-inline">探索靈感</span>
-                                <span class="mobile-only-inline">從這裡開始</span>
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                                    <polyline points="12 5 19 12 12 19"></polyline>
-                                </svg>
-                            </button>
+                <!-- Hybrid workspace: real project context and storyboard frames. QC stays the create owner. -->
+                <section class="home-hero-card" id="home-hero-card" aria-labelledby="workspace-hero-title" data-state="loading">
+                    <div class="workspace-hero-copy">
+                        <h2 id="workspace-hero-title">故事，從下一個鏡頭繼續。</h2>
+                        <p id="workspace-hero-context">正在載入最近創作…</p>
+                        <div class="workspace-hero-actions">
+                            <a id="workspace-hero-resume" class="workspace-hero-resume" href="/projects" hidden>繼續編輯</a>
+                            <button id="hero-explore-btn" class="workspace-hero-explore" type="button">瀏覽敘事模板</button>
                         </div>
                     </div>
-                </div>
+                    <div class="workspace-hero-frames" id="workspace-hero-frames" aria-label="分鏡構圖">
+                        <div class="workspace-frame workspace-frame-empty" aria-hidden="true"><span>畫面</span><span>運鏡 / 秒數</span></div>
+                    </div>
+                </section>
 
                 <!-- Desktop Quick Actions (3 vertical entries) -->
                 <div class="home-quick-actions desktop-quick-actions">
                     <!-- 1. AI 劇本解析 -->
-                    <div class="quick-action-item" id="qa-script-analysis" role="button" tabindex="0">
+                    <button class="quick-action-item" id="qa-script-analysis" type="button">
                         <div class="qa-item-icon qa-icon-script">
                             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -217,10 +201,10 @@
                                 <polyline points="9 18 15 12 9 6"></polyline>
                             </svg>
                         </div>
-                    </div>
+                    </button>
 
                     <!-- 2. 爆點模板 -->
-                    <div class="quick-action-item" id="qa-template-hook" role="button" tabindex="0">
+                    <button class="quick-action-item" id="qa-template-hook" type="button">
                         <div class="qa-item-icon qa-icon-flame">
                             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path>
@@ -235,10 +219,10 @@
                                 <polyline points="9 18 15 12 9 6"></polyline>
                             </svg>
                         </div>
-                    </div>
+                    </button>
 
                     <!-- 3. 探索分析 -->
-                    <div class="quick-action-item" id="qa-discovery-search" role="button" tabindex="0">
+                    <button class="quick-action-item" id="qa-discovery-search" type="button">
                         <div class="qa-item-icon qa-icon-radar">
                             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                                 <circle cx="12" cy="12" r="10"></circle>
@@ -254,7 +238,7 @@
                                 <polyline points="9 18 15 12 9 6"></polyline>
                             </svg>
                         </div>
-                    </div>
+                    </button>
                 </div>
             </div>
 

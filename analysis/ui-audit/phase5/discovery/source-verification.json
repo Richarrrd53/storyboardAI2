@@ -1,0 +1,97 @@
+{
+  "date": "2026-11-13",
+  "protectedFiles": [
+    {
+      "file": "public/js/features/projects.js",
+      "unchanged": true
+    },
+    {
+      "file": "public/js/components/global-toast.js",
+      "unchanged": true
+    }
+  ],
+  "routing": {
+    "registrationOnly": true
+  },
+  "json": {
+    "vercel": true,
+    "apiRewriteUnchanged": true
+  },
+  "js": [
+    {
+      "file": "public/js/components/dialog-service.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/components/surface-morph.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/discovery-settings.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/discovery.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/features/page-asset-loader.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/pages/auth-page.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/pages/dashboard.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/pages/history.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/pages/page-host.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/project-detail.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/shell/app-shell.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/spa-router.js",
+      "passed": true
+    },
+    {
+      "file": "server.js",
+      "passed": true
+    }
+  ],
+  "css": [
+    {
+      "file": "public/css/auth.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/components/project-card.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/dashboard.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/discovery-settings.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/discovery.css",
+      "passed": true
+    }
+  ],
+  "whitespace": true
+}

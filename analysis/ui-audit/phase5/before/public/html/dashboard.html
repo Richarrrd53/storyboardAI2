@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>Dashboard — Storyboard AI</title>
+    <link rel="stylesheet" href="../css/style.css" />
+    <link rel="stylesheet" href="../css/dashboard.css" />
+    <link rel="stylesheet" href="../css/generate.css" />
+    <link rel="stylesheet" href="../css/math-curve-loader.css" />
+</head>
+
+<body>
+
+    <!-- Dynamic BG -->
+    <div id="BG">
+
+    </div>
+
+    <!-- ═══ TOPBAR ═══ -->
+    <header class="sidebar" id="dash-sidebar">
+        <div class="side-header">
+            <a class="side-logo brand-logo" id="side-logo">
+                <img src="../icon/logo/logo.png" alt="LOGO">
+                <div class="logo-text"><img src="../icon/logo/brand.png" alt=""></div>
+                <label class="side-burger" id="burger-container" for="burger">
+                    <input type="checkbox" id="burger">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </label>
+            </a>
+        </div>
+
+        <nav class="side-body">
+
+            
+            
+            <a href="../dashboard" class="side-link" id="nav-home" title="首頁">
+                <div class="side-icon-wrap">
+                    <svg class="side-icon side-icon-line" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 9.5L12 3L21 9.5V20C21 20.5523 20.5523 21 20 21H4C3.44772 21 3 20.5523 3 20V9.5Z"></path>
+                        <path d="M9 21V12H15V21"></path>
+                    </svg>
+                    <svg class="side-icon side-icon-fill" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M3 9.5L12 3L21 9.5V20C21 20.5523 20.5523 21 20 21H15V12H9V21H4C3.44772 21 3 20.5523 3 20V9.5Z"></path>
+                    </svg>
+                </div>
+                <span>首頁</span>
+                <div class="link-glow"></div>
+            </a>
+            <a href="../generate" class="side-link" id="nav-generate" title="新建分鏡">
+                <div class="side-icon-wrap">
+                    <svg class="side-icon side-icon-line" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="9.5"></circle>
+                        <line x1="12" y1="8" x2="12" y2="16"></line>
+                        <line x1="8" y1="12" x2="16" y2="12"></line>
+                    </svg>
+                    <svg class="side-icon side-icon-fill" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="16" stroke="#fff" stroke-width="2" stroke-linecap="round"></line>
+                        <line x1="8" y1="12" x2="16" y2="12" stroke="#fff" stroke-width="2" stroke-linecap="round"></line>
+                    </svg>
+                </div>
+                <span>新建分鏡</span>
+                <div class="link-glow"></div>
+            </a>
+            <div class="side-nav-group" id="nav-projects-group">
+                <div class="side-link-row">
+                    <a href="../projects" class="side-link" id="nav-projects" title="分鏡">
+                        <div class="side-icon-wrap">
+                            <svg class="side-icon side-icon-line" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                                <path fill-rule="evenodd" clip-rule="evenodd" d="M6.85929 1.25001C6.88904 1.25001 6.91919 1.25002 6.94976 1.25002L6.98675 1.25001C7.33818 1.24999 7.56433 1.24998 7.78542 1.27065C8.68728 1.35499 9.54516 1.69531 10.2586 2.25002H16.5C16.5196 2.25002 16.5389 2.25001 16.5579 2.25001C16.9666 2.24994 17.2449 2.2499 17.4895 2.2821C19.1722 2.50364 20.4964 3.82779 20.7179 5.51054C20.7263 5.57397 20.7325 5.63966 20.737 5.70931C21.0145 5.83579 21.2715 5.99934 21.5077 6.21185C21.6061 6.30032 21.6997 6.39394 21.7882 6.49231C22.3165 7.07965 22.5422 7.79459 22.648 8.63601C22.75 9.4479 22.75 10.4741 22.75 11.747V14.0564C22.75 15.8942 22.75 17.3498 22.5969 18.489C22.4393 19.6615 22.1071 20.6104 21.3588 21.3588C20.6104 22.1071 19.6615 22.4393 18.489 22.5969C17.3498 22.75 15.8942 22.75 14.0564 22.75H9.94361C8.10584 22.75 6.65021 22.75 5.51099 22.5969C4.33857 22.4393 3.38962 22.1071 2.64126 21.3588C1.8929 20.6104 1.56078 19.6615 1.40315 18.489C1.24999 17.3498 1.25 15.8942 1.25002 14.0564L1.25002 6.94976C1.25002 6.91919 1.25001 6.88904 1.25001 6.85929C1.2499 6.06338 1.24982 5.55685 1.33237 5.11935C1.6949 3.19788 3.19788 1.6949 5.11935 1.33237C5.55685 1.24982 6.06338 1.2499 6.85929 1.25001ZM19.1474 5.32768C18.8895 4.5029 18.1732 3.88506 17.2937 3.76927C17.1598 3.75163 16.9883 3.75002 16.5 3.75002H11.8113C12.4542 4.38908 12.7459 4.65598 13.0768 4.84005C13.2948 4.96134 13.526 5.05713 13.766 5.12552C14.1793 5.24333 14.6324 5.25002 15.8284 5.25002L16.253 5.25002C17.4153 5.25 18.3718 5.24999 19.1474 5.32768ZM6.94976 2.75002C6.03312 2.75002 5.67873 2.75329 5.39746 2.80636C4.08277 3.05441 3.05441 4.08277 2.80636 5.39746C2.75329 5.67873 2.75002 6.03312 2.75002 6.94976V14C2.75002 15.9068 2.75161 17.2615 2.88978 18.2892C3.02504 19.2953 3.27871 19.8749 3.70192 20.2981C4.12513 20.7213 4.70478 20.975 5.71087 21.1103C6.73853 21.2484 8.0932 21.25 10 21.25H14C15.9068 21.25 17.2615 21.2484 18.2892 21.1103C19.2953 20.975 19.8749 20.7213 20.2981 20.2981C20.7213 19.8749 20.975 19.2953 21.1103 18.2892C21.2484 17.2615 21.25 15.9068 21.25 14V11.7979C21.25 10.4621 21.2486 9.5305 21.1597 8.82312C21.0731 8.13448 20.9141 7.76356 20.6729 7.49539C20.6198 7.43637 20.5637 7.3802 20.5046 7.32712C20.2365 7.08592 19.8656 6.92692 19.1769 6.84034C18.4695 6.75141 17.538 6.75002 16.2021 6.75002H15.8284C15.7912 6.75002 15.7545 6.75002 15.7182 6.75003C14.6702 6.75025 13.9944 6.75038 13.3548 6.56806C13.0041 6.46811 12.6661 6.32811 12.3475 6.15083C11.7663 5.82747 11.2885 5.3495 10.5476 4.60833C10.522 4.58265 10.496 4.55666 10.4697 4.53035L9.91943 3.98009C9.63616 3.69682 9.52778 3.58951 9.41731 3.49793C8.91403 3.08073 8.29664 2.825 7.64576 2.76413C7.50289 2.75077 7.35038 2.75002 6.94976 2.75002ZM12.25 10C12.25 9.5858 12.5858 9.25002 13 9.25002H18C18.4142 9.25002 18.75 9.5858 18.75 10C18.75 10.4142 18.4142 10.75 18 10.75H13C12.5858 10.75 12.25 10.4142 12.25 10Z"></path>
+                            </svg>
+                            <svg class="side-icon side-icon-fill" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M2 6.94975C2 6.06722 2 5.62595 2.06935 5.25839C2.37464 3.64031 3.64031 2.37464 5.25839 2.06935C5.62595 2 6.06722 2 6.94975 2C7.33642 2 7.52976 2 7.71557 2.01738C8.51665 2.09229 9.27652 2.40704 9.89594 2.92051C10.0396 3.03961 10.1763 3.17633 10.4497 3.44975L11 4C11.8158 4.81578 12.2237 5.22367 12.7121 5.49543C12.9804 5.64471 13.2651 5.7626 13.5604 5.84678C14.0979 6 14.6747 6 15.8284 6H16.2021C18.8345 6 20.1506 6 21.0062 6.76946C21.0849 6.84024 21.1598 6.91514 21.2305 6.99383C22 7.84935 22 9.16554 22 11.7979V14C22 17.7712 22 19.6569 20.8284 20.8284C19.6569 22 17.7712 22 14 22H10C6.22876 22 4.34315 22 3.17157 20.8284C2 19.6569 2 17.7712 2 14V6.94975Z"/>
+                                <path d="M12.25 10C12.25 9.58579 12.5858 9.25 13 9.25H18C18.4142 9.25 18.75 9.58579 18.75 10C18.75 10.4142 18.4142 10.75 18 10.75H13C12.5858 10.75 12.25 10.4142 12.25 10Z" fill="#fff"/>
+                                <path d="M16.9856 3.02094C16.8321 3 16.6492 3 16.2835 3H12L12.3699 3.38312C13.0359 4.07299 13.2919 4.33051 13.5877 4.50096C13.7594 4.5999 13.9415 4.67804 14.1304 4.73383C14.4559 4.82993 14.8128 4.83538 15.7546 4.83538L16.089 4.83538C17.0914 4.83536 17.8995 4.83535 18.5389 4.91862C18.6984 4.93939 18.8521 4.96582 19 5C18.8144 3.96313 18.0043 3.15985 16.9856 3.02094Z"/>
+                            </svg>
+                        </div>
+                        <span>分鏡</span>
+                        <div class="link-glow"></div>
+                    </a>
+                    <button class="sub-list-toggle" id="projects-toggle-btn" title="展開/收疊分鏡" type="button">
+                        <svg class="toggle-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                            <line x1="12" y1="5" x2="12" y2="19" class="toggle-vertical-line"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="side-sub-list" id="sidebar-projects-list">
+                </div>
+            </div>
+            <a href="../history" class="side-link" id="nav-history" title="資源回收桶">
+                <div class="side-icon-wrap">
+                    <svg class="side-icon side-icon-line" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 6H21"></path>
+                        <path d="M19 6V20C19 21 18 22 17 22H7C6 22 5 21 5 20V6"></path>
+                        <path d="M8 6V4C8 3 9 2 10 2H14C15 2 16 3 16 4V6"></path>
+                    </svg>
+                    <svg class="side-icon side-icon-fill" width="22" height="22" viewBox="0 0 24 24" fill="none">
+                        <path d="M3 6H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                        <path d="M19 6V20C19 21 18 22 17 22H7C6 22 5 21 5 20V6H19Z" fill="currentColor"></path>
+                        <path d="M8 6V4C8 3 9 2 10 2H14C15 2 16 3 16 4V6H8Z" fill="currentColor"></path>
+                        <path d="M10 11V17" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+                        <path d="M14 11V17" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+                    </svg>
+                </div>
+                <span>資源回收桶</span>
+                <div class="link-glow"></div>
+            </a>
+            <a href="../template" class="side-link" id="nav-template" title="爆點模板庫">
+                <div class="side-icon-wrap">
+                    <svg class="side-icon side-icon-line" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path>
+                    </svg>
+                    <svg class="side-icon side-icon-fill" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path>
+                    </svg>
+                </div>
+                <span>爆點模板庫</span>
+                <div class="link-glow"></div>
+            </a>
+            <a href="/discovery" class="side-link" id="nav-discovery" title="熱門短影音搜尋">
+                <div class="side-icon-wrap">
+                    <svg class="side-icon side-icon-line" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+                    </svg>
+                    <svg class="side-icon side-icon-fill" width="22" height="22" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" fill="currentColor"></circle>
+                        <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" fill="#fff"></polygon>
+                    </svg>
+                </div>
+                <span>熱門短影音搜尋</span>
+                <div class="link-glow"></div>
+            </a>
+        </nav>
+
+        <div class="side-footer">
+            <div class="top-avatar" id="top-avatar">黃</div>
+        </div>
+    </header>
+
+    <!-- ═══ MAIN CONTENT ═══ -->
+    <main id="page-main" class="page-shell page-dashboard dash-main home-main">
+        <!-- ═══ HEADER / GREETING (FIXED AT TOP OF CONTAINER) ═══ -->
+        <header class="content-header home-header anim-fadeInUp">
+            <div class="home-header-left">
+                <div class="home-brand-mobile mobile-only-flex">
+                    <img src="../icon/logo/logo.png" alt="Logo" class="home-brand-logo-img" />
+                    <span class="home-brand-title">Storyboard <span>AI</span></span>
+                </div>
+
+                <h1 class="home-greeting-title" id="home-greeting-text">
+                    晚上好，今天想繼續哪個創作？
+                </h1>
+            </div>
+        </header>
+
+        <!-- ═══ SCROLLABLE CONTENT BODY (BELOW HEADER WITH DYNAMIC MASK) ═══ -->
+        <div class="content-body home-body" data-dynamic-mask data-mask-direction="vertical" data-mask-size="36">
+            <!-- ═══ HERO & QUICK ACTIONS ═══ -->
+            <section class="home-hero-section anim-fadeInUp anim-delay-1">
+            <div class="home-hero-layout">
+                <!-- Hero Card -->
+                <div class="home-hero-card" id="home-hero-card">
+                    <div class="hero-card-media">
+                        <img class="hero-bg-img" src="../images/home_hero_banner.png" alt="讓靈感成為看得見的故事" />
+                        <div class="hero-media-scrim"></div>
+                    </div>
+                    <div class="hero-card-body">
+                        <div class="hero-eyebrow">
+                            <span class="hero-sparkle">✦</span>
+                            <span>讓靈感成為看得見的故事</span>
+                        </div>
+                        <h2 class="hero-main-title">
+                            <span class="desktop-only-inline">讓靈感成為看得見的故事</span>
+                            <span class="mobile-only-inline">一個更好的故事</span>
+                        </h2>
+                        <p class="hero-sub-title desktop-only-block">
+                            探索模板、案例與短影音創作靈感
+                        </p>
+                        <div class="hero-cta-wrap">
+                            <button class="hero-cta-btn" id="hero-explore-btn" type="button">
+                                <span class="desktop-only-inline">探索靈感</span>
+                                <span class="mobile-only-inline">從這裡開始</span>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    <polyline points="12 5 19 12 12 19"></polyline>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Desktop Quick Actions (3 vertical entries) -->
+                <div class="home-quick-actions desktop-quick-actions">
+                    <!-- 1. AI 劇本解析 -->
+                    <div class="quick-action-item" id="qa-script-analysis" role="button" tabindex="0">
+                        <div class="qa-item-icon qa-icon-script">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                        </div>
+                        <div class="qa-item-content">
+                            <h3 class="qa-item-title">AI 劇本解析</h3>
+                            <p class="qa-item-desc">將故事內容整理、分析與拆解</p>
+                        </div>
+                        <div class="qa-item-arrow">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- 2. 爆點模板 -->
+                    <div class="quick-action-item" id="qa-template-hook" role="button" tabindex="0">
+                        <div class="qa-item-icon qa-icon-flame">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path>
+                            </svg>
+                        </div>
+                        <div class="qa-item-content">
+                            <h3 class="qa-item-title">爆點模板</h3>
+                            <p class="qa-item-desc">尋找適合故事的 Hook 與敘事模板</p>
+                        </div>
+                        <div class="qa-item-arrow">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- 3. 探索分析 -->
+                    <div class="quick-action-item" id="qa-discovery-search" role="button" tabindex="0">
+                        <div class="qa-item-icon qa-icon-radar">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+                            </svg>
+                        </div>
+                        <div class="qa-item-content">
+                            <h3 class="qa-item-title">探索分析</h3>
+                            <p class="qa-item-desc">探索熱門短影音內容與分析結果</p>
+                        </div>
+                        <div class="qa-item-arrow">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mobile Quick Actions (4 circular shortcut icons below Hero) -->
+            <div class="mobile-quick-actions mobile-only-grid">
+                <div class="mob-shortcut-btn" id="mob-shortcut-script" role="button" tabindex="0">
+                    <div class="mob-shortcut-circle">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                        </svg>
+                    </div>
+                    <span class="mob-shortcut-label">AI劇本</span>
+                </div>
+
+                <div class="mob-shortcut-btn" id="mob-shortcut-create" role="button" tabindex="0">
+                    <div class="mob-shortcut-circle mob-shortcut-circle-highlight">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                    </div>
+                    <span class="mob-shortcut-label">分鏡生成</span>
+                </div>
+
+                <div class="mob-shortcut-btn" id="mob-shortcut-template" role="button" tabindex="0">
+                    <div class="mob-shortcut-circle">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path>
+                        </svg>
+                    </div>
+                    <span class="mob-shortcut-label">爆點模板</span>
+                </div>
+
+                <div class="mob-shortcut-btn" id="mob-shortcut-discovery" role="button" tabindex="0">
+                    <div class="mob-shortcut-circle">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+                        </svg>
+                    </div>
+                    <span class="mob-shortcut-label">探索分析</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══ 繼續創作 (RECENT PROJECTS) ═══ -->
+        <section class="home-recent-section anim-fadeInUp anim-delay-2">
+            <div class="home-section-header">
+                <div class="home-section-header-left">
+                    <h2 class="home-section-title">繼續創作</h2>
+                    <p class="home-section-subtitle">最近編輯的分鏡</p>
+                </div>
+                <a class="home-section-more" id="home-view-all-projects" href="javascript:void(0)" onclick="spaNavigate('projects')">
+                    <span>查看全部</span>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </a>
+            </div>
+
+            <!-- Recent Projects Viewport with Dynamic Gradient Mask -->
+            <div class="home-recent-viewport dynamic-gradient-mask" id="home-recent-viewport" data-dynamic-mask data-mask-direction="horizontal" data-mask-size="28">
+                <div class="home-recent-grid" id="recent-projects-grid">
+                    <!-- Recent projects will be dynamically rendered here -->
+                    <div class="projects-empty">
+                        <h3>載入中...</h3>
+                    </div>
+                </div>
+            </div>
+        </section>
+        </div>
+    </main>
+
+
+
+    <!-- Mobile User Panel Scrim Backdrop -->
+    <div class="user-panel-backdrop" id="spa-user-panel-backdrop"></div>
+
+    <!-- User Tooltip Panel -->
+    <div class="user-panel" id="user-panel">
+        <div class="user-panel-handle" aria-hidden="true"></div>
+        <div class="up-header">
+            <div class="up-avatar">黃</div>
+            <div>
+                <p class="up-name">黃晟銘</p>
+                <p class="up-email">aaaa@bbbb.edu.tw</p>
+            </div>
+            <div class="up-plan">Free</div>
+        </div>
+        <div class="up-divide"></div>
+        <div class="up-body">
+            <a class="up-btn"><img src="../icon/profile.svg" alt=""><span>個人檔案</span></a>
+            <a class="up-btn"><img src="../icon/upgrade.svg" alt=""><span>升級方案</span></a>
+            <a href="../history" class="up-btn" id="up-recycle-bin"><img src="../icon/trash-blur.svg" alt=""><span>資源回收桶</span></a>
+            <a class="up-btn"><img src="../icon/setting.svg" alt=""><span>設定</span></a>
+        </div>
+        <div class="up-divide"></div>
+        <a href="../html/login.html" class="up-btn up-logout"><img src="../icon/logout.svg" alt=""><span>登出</span></a>
+    </div>
+
+    <!-- Mobile Portrait Floating Bottom Navigation -->
+    <nav class="mobile-bottom-nav" id="spa-mobile-nav" aria-label="行動版底部導航" role="tablist" draggable="false">
+        <div class="mobile-nav__indicator" id="mobile-nav-indicator" aria-hidden="true"></div>
+
+        <!-- Base Track (Normal / Unselected Blur Icons) -->
+        <div class="mobile-nav__track mobile-nav__track--base">
+            <a href="../dashboard" class="mobile-nav__item active" id="mob-nav-home" role="tab" aria-selected="true" aria-label="首頁" draggable="false">
+                <div class="mobile-nav__icon-wrap">
+                    <svg class="mobile-nav__svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 9.5L12 3L21 9.5V20C21 20.5523 20.5523 21 20 21H4C3.44772 21 3 20.5523 3 20V9.5Z"></path>
+                        <path d="M9 21V12H15V21"></path>
+                    </svg>
+                </div>
+                <span class="mobile-nav__label">首頁</span>
+            </a>
+            <a href="../projects" class="mobile-nav__item" id="mob-nav-projects" role="tab" aria-selected="false" aria-label="分鏡" draggable="false">
+                <div class="mobile-nav__icon-wrap">
+                    <svg class="mobile-nav__svg icon-fill-target" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                        <path fill-rule="evenodd" clip-rule="evenodd" d="M6.85929 1.25001C6.88904 1.25001 6.91919 1.25002 6.94976 1.25002L6.98675 1.25001C7.33818 1.24999 7.56433 1.24998 7.78542 1.27065C8.68728 1.35499 9.54516 1.69531 10.2586 2.25002H16.5C16.5196 2.25002 16.5389 2.25001 16.5579 2.25001C16.9666 2.24994 17.2449 2.2499 17.4895 2.2821C19.1722 2.50364 20.4964 3.82779 20.7179 5.51054C20.7263 5.57397 20.7325 5.63966 20.737 5.70931C21.0145 5.83579 21.2715 5.99934 21.5077 6.21185C21.6061 6.30032 21.6997 6.39394 21.7882 6.49231C22.3165 7.07965 22.5422 7.79459 22.648 8.63601C22.75 9.4479 22.75 10.4741 22.75 11.747V14.0564C22.75 15.8942 22.75 17.3498 22.5969 18.489C22.4393 19.6615 22.1071 20.6104 21.3588 21.3588C20.6104 22.1071 19.6615 22.4393 18.489 22.5969C17.3498 22.75 15.8942 22.75 14.0564 22.75H9.94361C8.10584 22.75 6.65021 22.75 5.51099 22.5969C4.33857 22.4393 3.38962 22.1071 2.64126 21.3588C1.8929 20.6104 1.56078 19.6615 1.40315 18.489C1.24999 17.3498 1.25 15.8942 1.25002 14.0564L1.25002 6.94976C1.25002 6.91919 1.25001 6.88904 1.25001 6.85929C1.2499 6.06338 1.24982 5.55685 1.33237 5.11935C1.6949 3.19788 3.19788 1.6949 5.11935 1.33237C5.55685 1.24982 6.06338 1.2499 6.85929 1.25001ZM19.1474 5.32768C18.8895 4.5029 18.1732 3.88506 17.2937 3.76927C17.1598 3.75163 16.9883 3.75002 16.5 3.75002H11.8113C12.4542 4.38908 12.7459 4.65598 13.0768 4.84005C13.2948 4.96134 13.526 5.05713 13.766 5.12552C14.1793 5.24333 14.6324 5.25002 15.8284 5.25002L16.253 5.25002C17.4153 5.25 18.3718 5.24999 19.1474 5.32768ZM6.94976 2.75002C6.03312 2.75002 5.67873 2.75329 5.39746 2.80636C4.08277 3.05441 3.05441 4.08277 2.80636 5.39746C2.75329 5.67873 2.75002 6.03312 2.75002 6.94976V14C2.75002 15.9068 2.75161 17.2615 2.88978 18.2892C3.02504 19.2953 3.27871 19.8749 3.70192 20.2981C4.12513 20.7213 4.70478 20.975 5.71087 21.1103C6.73853 21.2484 8.0932 21.25 10 21.25H14C15.9068 21.25 17.2615 21.2484 18.2892 21.1103C19.2953 20.975 19.8749 20.7213 20.2981 20.2981C20.7213 19.8749 20.975 19.2953 21.1103 18.2892C21.2484 17.2615 21.25 15.9068 21.25 14V11.7979C21.25 10.4621 21.2486 9.5305 21.1597 8.82312C21.0731 8.13448 20.9141 7.76356 20.6729 7.49539C20.6198 7.43637 20.5637 7.3802 20.5046 7.32712C20.2365 7.08592 19.8656 6.92692 19.1769 6.84034C18.4695 6.75141 17.538 6.75002 16.2021 6.75002H15.8284C15.7912 6.75002 15.7545 6.75002 15.7182 6.75003C14.6702 6.75025 13.9944 6.75038 13.3548 6.56806C13.0041 6.46811 12.6661 6.32811 12.3475 6.15083C11.7663 5.82747 11.2885 5.3495 10.5476 4.60833C10.522 4.58265 10.496 4.55666 10.4697 4.53035L9.91943 3.98009C9.63616 3.69682 9.52778 3.58951 9.41731 3.49793C8.91403 3.08073 8.29664 2.825 7.64576 2.76413C7.50289 2.75077 7.35038 2.75002 6.94976 2.75002ZM12.25 10C12.25 9.5858 12.5858 9.25002 13 9.25002H18C18.4142 9.25002 18.75 9.5858 18.75 10C18.75 10.4142 18.4142 10.75 18 10.75H13C12.5858 10.75 12.25 10.4142 12.25 10Z"></path>
+                    </svg>
+                </div>
+                <span class="mobile-nav__label">分鏡</span>
+            </a>
+            <button type="button" class="mobile-nav__item mobile-nav__item--create" id="mob-nav-generate" role="tab" aria-selected="false" aria-label="新建分鏡" draggable="false"></button>
+            <a href="../template" class="mobile-nav__item" id="mob-nav-template" role="tab" aria-selected="false" aria-label="模板" draggable="false">
+                <div class="mobile-nav__icon-wrap">
+                    <svg class="mobile-nav__svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path>
+                    </svg>
+                </div>
+                <span class="mobile-nav__label">模板</span>
+            </a>
+            <button type="button" class="mobile-nav__item" id="mob-nav-profile" role="tab" aria-selected="false" aria-label="我的設定" draggable="false">
+                <div class="mobile-nav__icon-wrap">
+                    <svg class="mobile-nav__svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="9" r="3"></circle>
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M17.9691 20C17.81 17.1085 16.9247 15 11.9999 15C7.07521 15 6.18991 17.1085 6.03076 20"></path>
+                    </svg>
+                </div>
+                <span class="mobile-nav__label">我的</span>
+            </button>
+        </div>
+
+        <!-- Focus Track (Focus Icons Masked Dynamically by Selector Clip-Path) -->
+        <div class="mobile-nav__track mobile-nav__track--focus" aria-hidden="true">
+            <div class="mobile-nav__item mobile-nav__item--focus">
+                <div class="mobile-nav__icon-wrap">
+                    <svg class="mobile-nav__svg mobile-nav__svg--focus" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M3 9.5L12 3L21 9.5V20C21 20.5523 20.5523 21 20 21H15V12H9V21H4C3.44772 21 3 20.5523 3 20V9.5Z"></path>
+                    </svg>
+                </div>
+                <span class="mobile-nav__label" style="visibility: hidden;">首頁</span>
+            </div>
+            <div class="mobile-nav__item mobile-nav__item--focus">
+                <div class="mobile-nav__icon-wrap">
+                    <svg class="mobile-nav__svg mobile-nav__svg--focus" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                        <path fill-rule="evenodd" clip-rule="evenodd" d="M2 6.94975C2 6.06722 2 5.62595 2.06935 5.25839C2.37464 3.64031 3.64031 2.37464 5.25839 2.06935C5.62595 2 6.06722 2 6.94975 2C7.33642 2 7.52976 2 7.71557 2.01738C8.51665 2.09229 9.27652 2.40704 9.89594 2.92051C10.0396 3.03961 10.1763 3.17633 10.4497 3.44975L11 4C11.8158 4.81578 12.2237 5.22367 12.7121 5.49543C12.9804 5.64471 13.2651 5.7626 13.5604 5.84678C14.0979 6 14.6747 6 15.8284 6H16.2021C18.8345 6 20.1506 6 21.0062 6.76946C21.0849 6.84024 21.1598 6.91514 21.2305 6.99383C22 7.84935 22 9.16554 22 11.7979V14C22 17.7712 22 19.6569 20.8284 20.8284C19.6569 22 17.7712 22 14 22H10C6.22876 22 4.34315 22 3.17157 20.8284C2 19.6569 2 17.7712 2 14V6.94975ZM13 9.25C12.5858 9.25 12.25 9.58579 12.25 10C12.25 10.4142 12.5858 10.75 13 10.75H18C18.4142 10.75 18.75 10.4142 18.75 10C18.75 9.58579 18.4142 9.25 18 9.25H13Z"></path>
+                        <path d="M16.9856 3.02094C16.8321 3 16.6492 3 16.2835 3H12L12.3699 3.38312C13.0359 4.07299 13.2919 4.33051 13.5877 4.50096C13.7594 4.5999 13.9415 4.67804 14.1304 4.73383C14.4559 4.82993 14.8128 4.83538 15.7546 4.83538L16.089 4.83538C17.0914 4.83536 17.8995 4.83535 18.5389 4.91862C18.6984 4.93939 18.8521 4.96582 19 5C18.8144 3.96313 18.0043 3.15985 16.9856 3.02094Z"></path>
+                    </svg>
+                </div>
+                <span class="mobile-nav__label" style="visibility: hidden;">分鏡</span>
+            </div>
+            <div class="mobile-nav__item mobile-nav__item--create" style="visibility:hidden; pointer-events:none;"></div>
+            <div class="mobile-nav__item mobile-nav__item--focus">
+                <div class="mobile-nav__icon-wrap">
+                    <svg class="mobile-nav__svg mobile-nav__svg--focus" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path>
+                    </svg>
+                </div>
+                <span class="mobile-nav__label" style="visibility: hidden;">模板</span>
+            </div>
+            <div class="mobile-nav__item mobile-nav__item--focus">
+                <div class="mobile-nav__icon-wrap">
+                    <svg class="mobile-nav__svg mobile-nav__svg--focus" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                        <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2ZM12 6C10.3431 6 9 7.34315 9 9C9 10.6569 10.3431 12 12 12C13.6569 12 15 10.6569 15 9C15 7.34315 13.6569 6 12 6ZM17.9691 20C17.81 17.1085 16.9247 15 11.9999 15C7.07521 15 6.18991 17.1085 6.03076 20A10 10 0 0 0 17.9691 20Z"></path>
+                    </svg>
+                </div>
+                <span class="mobile-nav__label" style="visibility: hidden;">我的</span>
+            </div>
+        </div>
+    </nav>
+
+    <script src="../js/dynamic-mask.js"></script>
+    <script src="../js/generate-prefill-path.js"></script>
+    <script src="../js/dashboard.js"></script>
+    <script src="../js/sys.js"></script>
+    <script>
+        // Dynamic greeting calculation
+        (function initHomeGreetings() {
+            const greetingEl = document.getElementById('home-greeting-text');
+            if (greetingEl) {
+                const hour = new Date().getHours();
+                let timeGreet = '晚上好';
+                if (hour >= 5 && hour < 11) timeGreet = '早安';
+                else if (hour >= 11 && hour < 14) timeGreet = '午安';
+                else if (hour >= 14 && hour < 18) timeGreet = '下午好';
+                greetingEl.textContent = `${timeGreet}，今天想繼續哪個創作？`;
+            }
+
+            const exploreBtn = document.getElementById('hero-explore-btn');
+            if (exploreBtn) {
+                exploreBtn.onclick = (e) => {
+                    e.preventDefault();
+                    if (window.spaNavigate) window.spaNavigate('template');
+                    else window.location.href = './template.html';
+                };
+            }
+
+            const qaScript = document.getElementById('qa-script-analysis');
+            if (qaScript) {
+                qaScript.onclick = () => {
+                    if (window.AICreationController) window.AICreationController.openQuickCompose();
+                    else if (window.spaNavigate) window.spaNavigate('generate', { targetPhase: 1 });
+                    else window.location.href = '/generate';
+                };
+            }
+            const qaTemplate = document.getElementById('qa-template-hook');
+            if (qaTemplate) {
+                qaTemplate.onclick = () => {
+                    if (window.spaNavigate) window.spaNavigate('template');
+                    else window.location.href = '/template';
+                };
+            }
+            const qaDiscovery = document.getElementById('qa-discovery-search');
+            if (qaDiscovery) {
+                qaDiscovery.onclick = () => {
+                    if (window.spaNavigate) window.spaNavigate('discovery');
+                    else window.location.href = '/discovery';
+                };
+            }
+
+            const mobScript = document.getElementById('mob-shortcut-script');
+            if (mobScript) {
+                mobScript.onclick = () => {
+                    if (window.AICreationController) window.AICreationController.openQuickCompose();
+                    else if (window.spaNavigate) window.spaNavigate('generate', { targetPhase: 1 });
+                    else window.location.href = '/generate';
+                };
+            }
+            const mobCreate = document.getElementById('mob-shortcut-create');
+            if (mobCreate) {
+                mobCreate.onclick = (e) => {
+                    e.preventDefault();
+                    if (window.AICreationController) {
+                        window.AICreationController.openQuickCompose();
+                    } else if (window.spaNavigate) {
+                        window.spaNavigate('generate');
+                    } else {
+                        window.location.href = './generate.html';
+                    }
+                };
+            }
+            const mobTemplate = document.getElementById('mob-shortcut-template');
+            if (mobTemplate) {
+                mobTemplate.onclick = () => {
+                    if (window.spaNavigate) window.spaNavigate('template');
+                    else window.location.href = '/template';
+                };
+            }
+            const mobDiscovery = document.getElementById('mob-shortcut-discovery');
+            if (mobDiscovery) {
+                mobDiscovery.onclick = () => {
+                    if (window.spaNavigate) window.spaNavigate('discovery');
+                    else window.location.href = '/discovery';
+                };
+            }
+
+            // Dynamic Mask System for dashboard
+            if (window.DynamicMaskSystem) {
+                const contentBody = document.querySelector('.content-body') || document.getElementById('page-content');
+                if (contentBody) {
+                    window.DynamicMaskSystem.attach(contentBody, { maskSize: 36, direction: 'vertical' });
+                }
+                const recentViewport = document.getElementById('home-recent-viewport');
+                if (recentViewport) {
+                    window.DynamicMaskSystem.attach(recentViewport, { maskSize: 28, direction: 'horizontal' });
+                }
+            }
+        })();
+
+        const isMobileScreen = () => window.matchMedia('(max-width: 768px), (max-width: 767px) and (orientation: portrait), (max-width: 480px)').matches;
+
+        const topAvatar = document.getElementById('top-avatar');
+        if (topAvatar) {
+            topAvatar.addEventListener('click', function (e) {
+                e.stopPropagation();
+                if (typeof window.toggleUserPanel === 'function') {
+                    window.toggleUserPanel();
+                } else {
+                    const panel = document.getElementById('user-panel') || document.getElementById('spa-user-panel');
+                    const backdrop = document.getElementById('spa-user-panel-backdrop');
+                    if (panel) panel.classList.toggle('active');
+                    if (isMobileScreen() && backdrop && panel) {
+                        backdrop.classList.toggle('active', panel.classList.contains('active'));
+                    }
+                }
+            });
+        }
+
+        const backdropEl = document.getElementById('spa-user-panel-backdrop');
+        if (backdropEl) {
+            backdropEl.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (typeof window.toggleUserPanel === 'function') {
+                    window.toggleUserPanel(false);
+                } else {
+                    const panel = document.getElementById('user-panel') || document.getElementById('spa-user-panel');
+                    if (panel) panel.classList.remove('active');
+                    backdropEl.classList.remove('active');
+                }
+            });
+        }
+
+        document.addEventListener('click', (e) => {
+            if (window.__justHandledPointerNav && (Date.now() - window.__justHandledPointerNav) < 450) return;
+            if (e && e.target && e.target.closest('#user-panel, #spa-user-panel, #top-avatar, #spa-mobile-nav, .mobile-bottom-nav')) return;
+            if (typeof window.toggleUserPanel === 'function') {
+                window.toggleUserPanel(false);
+            } else {
+                const panel = document.getElementById('user-panel') || document.getElementById('spa-user-panel');
+                if (panel) panel.classList.remove('active');
+                const backdrop = document.getElementById('spa-user-panel-backdrop');
+                if (backdrop) backdrop.classList.remove('active');
+            }
+        });
+    </script>
+</body>
+
+</html>

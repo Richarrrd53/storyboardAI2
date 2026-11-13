@@ -345,7 +345,8 @@ body.auth-layout #page-content {
 }
 
 .input-field::placeholder {
-  color: var(--text-light);
+  color: var(--color-text-secondary);
+  opacity: 1;
 }
 
 .form-forgot {
@@ -586,3 +587,9 @@ body.auth-layout #page-content {
   font-weight: 700;
   border-radius: 50px;
 }
+
+/* Persistent labels live outside the clipped pill, shared by both filmstrip faces. */
+.auth-field { width: 100%; min-width: 0; }
+.auth-field > label { display: block; margin-bottom: var(--space-1); color: var(--color-text-primary); font-size: var(--font-size-xs); font-weight: var(--font-weight-semibold); }
+.auth-switch-action { border: 0; background: none; color: var(--color-text-brand); font: inherit; padding: var(--space-2); min-height: 44px; text-decoration: underline; cursor: pointer; }
+.auth-switch-action:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring-color); outline-offset: var(--focus-ring-offset); }

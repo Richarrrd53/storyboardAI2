@@ -61,6 +61,13 @@
   --dialog-exit-ease:            cubic-bezier(.31,.01,.66,-.59);
   --dialog-duration:             400ms;
 
+  /* Navigation edge material. Geometry remains owned by DynamicMaskSystem. */
+  --edge-detail-display:         block;
+  --edge-bottom-tint-display:    none;
+  --edge-tint-fallback-bg:       linear-gradient(to bottom, var(--color-bg-page), transparent);
+  --edge-tint-start:             50%;
+  --edge-tint-middle:            30%;
+
   /* ── Mobile Portrait Floating Bottom Nav Tokens ── */
   --mobile-nav-height:           64px;
   --mobile-nav-offset:           var(--space-6);
@@ -87,6 +94,7 @@
 /* Opaque fallback preserves shape, controls and elevation without backdrop support. */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   :root {
+    --surface-floating-circle-bg: var(--surface-floating-opaque-bg);
     --surface-floating-bg: var(--surface-floating-opaque-bg);
     --surface-floating-reading-bg: var(--surface-floating-opaque-bg);
     --surface-composer-bg: var(--surface-floating-opaque-bg);
@@ -100,4 +108,27 @@
   --surface-composer-bg: var(--surface-floating-opaque-bg);
   --surface-floating-blur: none;
   --surface-composer-blur: none;
+}
+
+@supports not ((mask-image: linear-gradient(black, transparent)) or (-webkit-mask-image: linear-gradient(black, transparent))) {
+  :root { --edge-detail-display: none; --edge-bottom-tint-display: block; --edge-tint-start: 96%; --edge-tint-middle: 75%; }
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root { --edge-detail-display: none; --edge-bottom-tint-display: block; --edge-tint-start: 96%; --edge-tint-middle: 75%; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --surface-floating-bg: var(--surface-floating-opaque-bg);
+    --surface-floating-reading-bg: var(--surface-floating-opaque-bg);
+    --surface-floating-circle-bg: var(--surface-floating-opaque-bg);
+    --surface-composer-bg: var(--surface-floating-opaque-bg);
+    --surface-floating-blur: none; --surface-composer-blur: none;
+    --edge-detail-display: none; --edge-bottom-tint-display: block;
+    --edge-tint-start: 96%; --edge-tint-middle: 75%;
+  }
+}
+:root[data-opaque-surfaces] {
+  --surface-floating-circle-bg: var(--surface-floating-opaque-bg);
+  --edge-detail-display: none; --edge-bottom-tint-display: block;
+  --edge-tint-start: 96%; --edge-tint-middle: 75%;
 }

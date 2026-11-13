@@ -93,9 +93,9 @@
   --ai-dock-header-pt:            26px;
 
   /* Motion & Easing */
-  --motion-fast:                  160ms;
-  --motion-normal:                280ms;
-  --motion-surface:               460ms;
+  --motion-fast:                  var(--motion-duration-feedback);
+  --motion-normal:                var(--motion-duration-reveal);
+  --motion-surface:               var(--motion-duration-surface);
   --ease-standard:                var(--motion-ease-smooth, cubic-bezier(.22, 1, .36, 1));
   --ease-natural:                 var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1));
   --ease-decelerate:              var(--motion-ease-decelerate, cubic-bezier(0.16, 1, 0.3, 1));

@@ -1,0 +1,15 @@
+{
+  "server.js": "9bf0dbc0187ddc445cbc9639be17ee540c2bb71135ae9f4e06dcdbddaf228adc",
+  "public/js/spa-router.js": "3fe576d15d0bb63437e5fe7b4975d96e4fa8074211e7ce8aefdfa520edfe5c5d",
+  "public/js/pages/page-host.js": "3ef186afa6a22482fbf445a57e3b9a1a949f568359e8cc788ffd6d4b75b6fb5a",
+  "public/js/features/page-asset-loader.js": "58ee96e0124241e61c1dd909bba9e3440cf0a1e45ac23253f0e58a76f71d66f0",
+  "public/js/pages/auth-page.js": "4a2b866665930c349422b040d3442759a9ebc80658a465a88023e9d974010c29",
+  "public/js/shell/app-shell.js": "5f0f58a1452ef6415a020d843c3457066de82f6b91666619b1b958f2a5c704e6",
+  "public/js/discovery.js": "5cd4d5f01b2fd130de2ee952749ed9dcc2e03bef1acaebb5a566f54f47a56269",
+  "public/js/discovery-settings.js": "0259eab39e7632a06d9c44540f3f0b21de752c02a9ae2ac0819caa474888fac4",
+  "public/html/discovery.html": "cc55a3c3edaa7720479f6068336739dd9933a6a72d35ab8ece7cc7453e233852",
+  "public/html/discovery-settings.html": "1dae89b93aba13a4f71bbc11f35debe1eb808b606592d9f6483ce464c43b9032",
+  "public/css/discovery.css": "def036b09c6f76b96c8b62df8876d48cbdae8f3d97002a30529e88477ea4f957",
+  "public/css/discovery-settings.css": "0b51f8ba6d83a6deb0e5a5d8a1fd95edd5455d191a7cc0df5f54691edcc766f4",
+  "vercel.json": "06517c4b4608a8ec5d6aff1efdfa12bdac6688243a2aa97b00ac9a875e6342a5"
+}

@@ -48,8 +48,8 @@ function createMockElement(tagName = 'div') {
       eventListeners[evt] = eventListeners[evt].filter(f => f !== fn);
     },
     dispatchEvent(evt) {
-      const fns = eventListeners[evt] || [];
-      fns.forEach(f => f({ type: evt }));
+      const fns = eventListeners[typeof evt === 'string' ? evt : evt.type] || [];
+      fns.forEach(f => f(typeof evt === 'string' ? { type: evt, preventDefault() {} } : evt));
     }
   };
 }
@@ -328,4 +328,13 @@ test('Router Navigation Simulation: Direct Entry to History, Leave, Return, Back
   assert.ok(hInst3);
 
   hInst3.unmount();
+});
+
+test('HistoryPage: mobile return uses SPA, preserves modified clicks and unbinds on unmount',async()=>{
+ const root=createMockElement(),grid=createMockElement(),back=createMockElement('a');grid.id='projects-grid';root.appendChild(grid);
+ const original=root.querySelector;root.querySelector=sel=>sel==='.history-back-btn'?back:original(sel);
+ const destinations=[];const mounted=await HistoryPage.mount({root,navigate:page=>destinations.push(page)});
+ back.dispatchEvent('click');assert.deepEqual(destinations,['projects']);
+ back.dispatchEvent({type:'click',ctrlKey:true,preventDefault(){throw new Error('modified link intercepted');}});assert.deepEqual(destinations,['projects']);
+ mounted.unmount();back.dispatchEvent('click');assert.deepEqual(destinations,['projects']);
 });

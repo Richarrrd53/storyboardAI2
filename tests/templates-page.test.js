@@ -223,6 +223,7 @@ global.DynamicMaskSystem = global.window.DynamicMaskSystem = {
 
 // Require the modules
 require('../public/js/features/page-asset-loader.js');
+global.window.TemplatePresentation = require('../public/js/components/template-presentation.js');
 const TemplatesPage = require('../public/js/pages/templates.js');
 const timelineModule = require('../public/js/template-timeline.js');
 
@@ -735,4 +736,29 @@ test('TemplatesPage: DynamicMaskSystem lifecycle on template-detail-body during 
   assert.equal(dynamicMaskAttached, dom.detailBody, 'Mounting detail route must attach mask to template-detail-body');
   instance.unmount();
   assert.equal(dynamicMaskDetached, dom.detailBody, 'Unmounting must detach mask from template-detail-body');
+});
+
+test('rapid detail return dispatches history.back once until route acknowledgement', async () => {
+ const dom=setupDOMStructure();window.cacheTemplatesList=sampleTemplates;
+ const oldHistory=window.history;let calls=0;
+ window.history={state:{templateFromBrowse:true},back(){calls++;}};
+ const instance=await TemplatesPage.mount({root:dom.pageMain,route:{templateId:'tpl-1'}});
+ try{
+  window.backToStoreBrowse();window.backToStoreBrowse();assert.equal(calls,1);
+  instance.updateRoute({});instance.updateRoute({templateId:'tpl-2'});
+  window.backToStoreBrowse();assert.equal(calls,2);
+ }finally{instance.unmount();window.history=oldHistory;}
+});
+
+test('catalog searches both display copy and verbatim source without changing template input', async () => {
+ const dom=setupDOMStructure();const raw='原始來源 https://example.test/raw';
+ const template={id:'display-search',name:'來源',displayTitle:'展示名稱',displaySummary:'編輯摘要',source:{title:raw,description:'獨有原文'}};
+ window.cacheTemplatesList=[template];const snapshot=JSON.stringify(template);
+ const instance=await TemplatesPage.mount({root:dom.pageMain,route:{browseState:{category:'全部',query:'',tag:'',sort:'catalog'}}});
+ try{
+  for(const query of ['展示名稱','編輯摘要','獨有原文','example.test/raw']){
+   dom.searchInput.value=query;dom.searchInput.dispatchEvent('input');assert.equal(dom.templateGrid.children.length,1,query);
+  }
+  assert.equal(JSON.stringify(template),snapshot);
+ }finally{instance.unmount();}
 });

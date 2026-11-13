@@ -1,0 +1,50 @@
+TAP version 13
+# Subtest: choice group has one selected radio and a single tab stop, without legacy pressed semantics
+ok 1 - choice group has one selected radio and a single tab stop, without legacy pressed semantics
+  ---
+  duration_ms: 4.4938
+  ...
+# Subtest: choice group skips native, aria and fieldset disabled options and hidden options
+ok 2 - choice group skips native, aria and fieldset disabled options and hidden options
+  ---
+  duration_ms: 0.8474
+  ...
+# Subtest: choice remount and abort have one keyboard owner and release listeners
+ok 3 - choice remount and abort have one keyboard owner and release listeners
+  ---
+  duration_ms: 1.2685
+  ...
+# Subtest: choice retains native Enter/Space and modified arrows, supports RTL and no selection
+ok 4 - choice retains native Enter/Space and modified arrows, supports RTL and no selection
+  ---
+  duration_ms: 1.1252
+  ...
+# Subtest: display excerpts remove source promotion links and hashtags while preserving frozen source verbatim
+ok 5 - display excerpts remove source promotion links and hashtags while preserving frozen source verbatim
+  ---
+  duration_ms: 3.4568
+  ...
+# Subtest: explicit editorial copy is respected and long summaries keep full content separately
+ok 6 - explicit editorial copy is respected and long summaries keep full content separately
+  ---
+  duration_ms: 1.011
+  ...
+# Subtest: unknown source metadata is explicit, durations only derive from fully known shots
+ok 7 - unknown source metadata is explicit, durations only derive from fully known shots
+  ---
+  duration_ms: 1.5532
+  ...
+# Subtest: Generate ratio selection updates the existing brief once and disabled choices never write
+ok 8 - Generate ratio selection updates the existing brief once and disabled choices never write
+  ---
+  duration_ms: 10.612
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 291.6369

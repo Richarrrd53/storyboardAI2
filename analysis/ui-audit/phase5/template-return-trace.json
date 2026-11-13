@@ -1,0 +1,76 @@
+{
+  "trace": [
+    {
+      "label": "browse",
+      "url": "/template",
+      "viewport": 1440,
+      "history": {
+        "page": "template",
+        "id": null,
+        "templateId": null,
+        "templateBrowse": null,
+        "templateFromBrowse": false
+      },
+      "detail": false
+    },
+    {
+      "label": "detail",
+      "url": "/template/phase5-template",
+      "viewport": 1440,
+      "history": {
+        "page": "template",
+        "id": null,
+        "templateId": "phase5-template",
+        "templateBrowse": {
+          "category": "全部",
+          "query": "咖啡",
+          "tag": "",
+          "sort": "catalog",
+          "scrollTop": 0
+        },
+        "templateFromBrowse": true
+      },
+      "detail": true
+    },
+    {
+      "label": "resize390",
+      "url": "/template/phase5-template",
+      "viewport": 390,
+      "history": {
+        "page": "template",
+        "id": null,
+        "templateId": "phase5-template",
+        "templateBrowse": {
+          "category": "全部",
+          "query": "咖啡",
+          "tag": "",
+          "sort": "catalog",
+          "scrollTop": 0
+        },
+        "templateFromBrowse": true
+      },
+      "detail": true
+    },
+    {
+      "label": "back",
+      "url": "/template",
+      "viewport": 390,
+      "history": {
+        "page": "template",
+        "id": null,
+        "templateId": null,
+        "templateBrowse": {
+          "category": "全部",
+          "query": "咖啡",
+          "tag": "",
+          "sort": "catalog",
+          "scrollTop": 0
+        },
+        "templateFromBrowse": false
+      },
+      "detail": false
+    }
+  ],
+  "query": "咖啡",
+  "passed": true
+}

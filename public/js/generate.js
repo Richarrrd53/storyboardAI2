@@ -217,12 +217,13 @@
           buildStyleCards();
           syncRatioChips();
           syncDuration();
+          for (const group of document.querySelectorAll('[data-choice-kind]')) window.ChoiceGroup.mount(group, {signal:pageController.signal});
           const templateMode = !!CreationSessionStore.selectedTemplate;
           document.getElementById("section-duration").hidden = templateMode;
           syncDirectionAction();
           triggerDirectionAiText();
       } else if (targetPhase === 3) {
-          const mount = pageController;
+      const mount = pageController;
           ensureTemplatesLoaded().then(() => {
               if (pageController !== mount || mount.signal.aborted) return;
               renderTemplateBrowser();
@@ -422,9 +423,14 @@
       grid.innerHTML = '';
 
       const suggestedStyle = CreationSessionStore.creativeBrief?.confirmed.baseStyle;
-      const recs = !CreationSessionStore.selectedTemplate && suggestedStyle ? [window.CreativeBrief.styleIds.indexOf(suggestedStyle)] : detectRecommendedStyles(CreationSessionStore.story);
-      if (CreationSessionStore.styleIndex === undefined) {
-          CreationSessionStore.styleIndex = recs[0];
+      const suggestedIndex = suggestedStyle ? window.CreativeBrief.styleIds.indexOf(suggestedStyle) : -1;
+      const recs = !CreationSessionStore.selectedTemplate && suggestedIndex >= 0 ? [suggestedIndex] : detectRecommendedStyles(CreationSessionStore.story);
+      const savedStyleIndex = CreationSessionStore.styleIndex;
+      const numericStyleIndex = typeof savedStyleIndex === 'number' || /^\d+$/.test(String(savedStyleIndex)) ? Number(savedStyleIndex) : NaN;
+      if (Number.isInteger(numericStyleIndex) && STYLES[numericStyleIndex]) {
+          CreationSessionStore.styleIndex = numericStyleIndex;
+      } else {
+          CreationSessionStore.styleIndex = recs[0] ?? 0;
       }
 
       STYLES.forEach((s, idx) => {
@@ -434,24 +440,26 @@
       const card = document.createElement('button');
           card.type = 'button';
           card.className = `style-card ${isSelected ? 'active' : ''} ${isRec ? 'is-recommended' : ''}`;
-          card.dataset.index = idx;
-          card.setAttribute('aria-pressed', String(isSelected));
+          card.dataset.index = idx;card.dataset.choiceOption = '';
+          card.setAttribute('role','radio');card.setAttribute('aria-checked',String(isSelected));card.tabIndex=isSelected?0:-1;
           card.innerHTML = `<span class="style-card-info"><span class="style-card-name">${s.name}</span><span class="style-card-desc">${s.desc}</span></span><span class="style-card-check" aria-hidden="true">${isSelected ? '✓' : ''}</span>`;
-          bindPageEvent(card, 'click', () => selectStyleCard(idx));
+          bindPageEvent(card, 'click', () => { if (!card.disabled && card.getAttribute('aria-disabled') !== 'true') selectStyleCard(idx); });
           grid.appendChild(card);
       });
   }
 
   function selectStyleCard(index) {
+      if (!Number.isInteger(index) || !STYLES[index]) return;
       CreationSessionStore.styleIndex = index;
       if (!CreationSessionStore.selectedTemplate && CreationSessionStore.creativeBrief) window.CreativeBrief.edit(CreationSessionStore.creativeBrief, { baseStyle: window.CreativeBrief.styleIds[index], visualStyle: STYLES[index].name });
       document.querySelectorAll('.style-card').forEach(c => {
           const isTarget = Number(c.dataset.index) === index;
           c.classList.toggle('active', isTarget);
-          c.setAttribute('aria-pressed', String(isTarget));
+          c.setAttribute('aria-checked', String(isTarget));c.tabIndex=isTarget?0:-1;
           const check = c.querySelector('.style-card-check');
           if (check) check.textContent = isTarget ? '✓' : '';
       });
+      window.ChoiceGroup.sync(document.getElementById('style-cards-grid'),document.querySelector('.style-card.active'));
       syncDirectionAction();
   }
 
@@ -460,13 +468,14 @@
       document.querySelectorAll('.ratio-chip').forEach(c => {
           const selected = c.dataset.ratio === ratio;
           c.classList.toggle('active', selected);
-          c.setAttribute('aria-pressed', String(selected));
+          c.setAttribute('aria-checked', String(selected));c.tabIndex=selected?0:-1;
       });
+      window.ChoiceGroup.sync(document.getElementById('ratio-chips-grid'),document.querySelector('.ratio-chip.active'));
       syncDirectionAction();
   }
 
   function selectRatioOption(btn) {
-      if (!btn) return;
+      if (!btn || btn.disabled || btn.getAttribute('aria-disabled') === 'true') return;
       const ratio = btn.dataset.ratio;
       CreationSessionStore.ratio = ratio;
       if (!CreationSessionStore.selectedTemplate && CreationSessionStore.creativeBrief) window.CreativeBrief.edit(CreationSessionStore.creativeBrief, { ratio: ratio.replace(/橫向|直向/g, '') });
@@ -614,8 +623,9 @@
       }
 
       templates.forEach(t => {
+          const presentation = window.TemplatePresentation.present(t);
           const isSelected = CreationSessionStore.selectedTemplate?.id === t.id;
-          const shotCount = t.shotsCount || (t.structure ? t.structure.length : 0);
+          const shotCount = window.TemplatePresentation.shotCountOf(t);
           const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
           const tags = Array.isArray(t.tags) ? t.tags.slice(0, 3).map(tag => `<span>${escape(tag)}</span>`).join(' ') : '';
           const platforms = Array.isArray(t.platform) ? t.platform.map(p => `<span class="platform-badge">${escape(p)}</span>`).join('') : '';
@@ -626,6 +636,8 @@
               if (sumSec > 0) duration = `${sumSec}s`;
           }
 
+          const knownDuration = window.TemplatePresentation.durationOf(t);
+          duration = knownDuration === null ? '' : `${knownDuration}s`;
           const totalSeconds = parseInt(duration) || Math.max(shotCount * 3, 15);
           const sourceUrl = t.videoUrl || t.source?.url || '';
           const youtubeMatch = sourceUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|shorts\/|embed\/))([\w-]{11})/);
@@ -652,8 +664,8 @@
               <span class="cover-play" aria-hidden="true">▶</span>
             </div>
             <div class="template-card-body">
-              <h3>${escape(t.name || t.title || '無標題')}</h3>
-              <p>${escape(t.description || '依照這個模板的鏡頭結構改寫你的故事。')}</p>
+              <h3>${escape(presentation.title)}</h3>
+              <p class="template-display-summary"><span class="template-summary-label">${escape(presentation.summaryLabel)}</span>${escape(presentation.summary)}</p>
               <div class="template-card-tags">
                 ${tags}
               </div>
@@ -667,7 +679,7 @@
                 ${platforms}${t.ratio ? `<span class="aspect-badge">${escape(t.ratio)}</span>` : ''}
               </div>
               <div class="card-actions">
-                <button type="button" class="card-apply-btn ${isSelected ? 'is-selected' : ''}" data-action="apply" aria-label="選擇 ${escape(t.name || t.title || '模板')}" aria-pressed="${isSelected}">${isSelected ? '✓ 已選中' : '選擇模板'}</button>
+                <button type="button" class="card-apply-btn ${isSelected ? 'is-selected' : ''}" data-action="apply" aria-label="選擇 ${escape(presentation.title)}" aria-pressed="${isSelected}">${isSelected ? '✓ 已選中' : '選擇模板'}</button>
               </div>
             </div>
           `;
@@ -870,8 +882,12 @@
   }
   function syncDuration() {
       document.querySelectorAll('[data-duration]').forEach(button => {
-          button.setAttribute('aria-pressed', String(Number(button.dataset.duration) === (CreationSessionStore.duration || 30)));
+          const selected = Number(button.dataset.duration) === (CreationSessionStore.duration || 30);
+          button.setAttribute('aria-checked',String(selected));button.tabIndex=selected?0:-1;
       });
+      window.ChoiceGroup.sync(document.querySelector('.duration-options'),document.querySelector('[data-duration][aria-checked="true"]'));
+      const current = document.getElementById('duration-current');
+      if (current) { const custom = ![15,30,45,60].includes(CreationSessionStore.duration || 30);current.hidden = !custom;current.textContent = custom ? `目前設定：${CreationSessionStore.duration} 秒` : ''; }
       syncDirectionAction();
   }
   function renderPlan(task) {
@@ -1004,6 +1020,7 @@
       const unmount = () => { if (pageController === mount) unmountGeneratePage(); };
       renderedPlan = ''; requestedTemplateId = null; templateLoading = false;
       document.querySelectorAll('[data-duration]').forEach(button => bindPageEvent(button, 'click', () => {
+          if (button.disabled || button.getAttribute('aria-disabled') === 'true') return;
           CreationSessionStore.duration = Number(button.dataset.duration);
           if (!CreationSessionStore.selectedTemplate && CreationSessionStore.creativeBrief) window.CreativeBrief.edit(CreationSessionStore.creativeBrief, { duration: CreationSessionStore.duration });
           syncDuration();

@@ -138,7 +138,7 @@
                             <h3 class="section-label" id="visual-style-label">視覺風格</h3>
                             <span class="section-hint">選擇最能襯托故事氛圍的影像調性</span>
                         </div>
-                        <div class="style-cards-wrap" id="style-cards-grid" role="group" aria-labelledby="visual-style-label"></div>
+                        <div class="style-cards-wrap" id="style-cards-grid" role="radiogroup" data-choice-kind="card" aria-labelledby="visual-style-label"></div>
                     </div>
                     <div class="direction-section" id="section-personal-style">
                         <details class="direction-condition" id="direction-style-conditions"><summary><span><strong>個人化視覺條件</strong><span id="direction-style-notes-summary">沿用目前選擇的視覺風格</span></span><small>修改</small></summary><label for="direction-style-notes">調整視覺條件<textarea id="direction-style-notes" rows="2" maxlength="2000" placeholder="例如光線、色彩、拍攝感"></textarea></label></details>
@@ -151,28 +151,28 @@
                             <h3 class="section-label" id="aspect-ratio-label">畫面比例</h3>
                             <span class="section-hint">依發布平台選擇最佳影音畫幅</span>
                         </div>
-                        <div class="ratio-chips-wrap" id="ratio-chips-grid" role="group" aria-labelledby="aspect-ratio-label">
-                            <button type="button" class="ratio-chip active" data-ratio="直向9:16" onclick="selectRatioOption(this)">
+                        <div class="ratio-chips-wrap" id="ratio-chips-grid" role="radiogroup" data-choice-kind="card" aria-labelledby="aspect-ratio-label">
+                            <button type="button" class="ratio-chip active" data-choice-option role="radio" aria-checked="true" tabindex="0" data-ratio="直向9:16">
                                 <span class="ratio-icon ratio-icon-9-16"></span>
                                 <span class="ratio-text-num">9:16</span>
                                 <span class="ratio-text-sub">Shorts / Reels</span>
                             </button>
-                            <button type="button" class="ratio-chip" data-ratio="橫向16:9" onclick="selectRatioOption(this)">
+                            <button type="button" class="ratio-chip" data-choice-option role="radio" aria-checked="false" tabindex="-1" data-ratio="橫向16:9">
                                 <span class="ratio-icon ratio-icon-16-9"></span>
                                 <span class="ratio-text-num">16:9</span>
                                 <span class="ratio-text-sub">YouTube / 橫向</span>
                             </button>
-                            <button type="button" class="ratio-chip" data-ratio="1:1" onclick="selectRatioOption(this)">
+                            <button type="button" class="ratio-chip" data-choice-option role="radio" aria-checked="false" tabindex="-1" data-ratio="1:1">
                                 <span class="ratio-icon ratio-icon-1-1"></span>
                                 <span class="ratio-text-num">1:1</span>
                                 <span class="ratio-text-sub">IG 方形</span>
                             </button>
-                            <button type="button" class="ratio-chip" data-ratio="橫向3:2" onclick="selectRatioOption(this)">
+                            <button type="button" class="ratio-chip" data-choice-option role="radio" aria-checked="false" tabindex="-1" data-ratio="橫向3:2">
                                 <span class="ratio-icon ratio-icon-3-2"></span>
                                 <span class="ratio-text-num">3:2</span>
                                 <span class="ratio-text-sub">經典底片</span>
                             </button>
-                            <button type="button" class="ratio-chip" data-ratio="直向2:3" onclick="selectRatioOption(this)">
+                            <button type="button" class="ratio-chip" data-choice-option role="radio" aria-checked="false" tabindex="-1" data-ratio="直向2:3">
                                 <span class="ratio-icon ratio-icon-2-3"></span>
                                 <span class="ratio-text-num">2:3</span>
                                 <span class="ratio-text-sub">直式海報</span>
@@ -182,13 +182,14 @@
 
                     <div class="direction-section" id="section-duration">
                         <div class="section-label-row"><h3 class="section-label" id="duration-label">影片長度</h3><span class="section-hint">依故事節奏展開鏡頭，預設 30 秒</span></div>
-                        <div class="duration-options" role="group" aria-labelledby="duration-label">
-                            <button type="button" data-duration="15">15 秒 <small>5–7 鏡</small></button>
-                            <button type="button" data-duration="30" aria-pressed="true">30 秒 <small>8–12 鏡</small></button>
-                            <button type="button" data-duration="45">45 秒 <small>10–15 鏡</small></button>
-                            <button type="button" data-duration="60">60 秒 <small>12–18 鏡</small></button>
+                        <div class="duration-options" role="radiogroup" data-choice-kind="segment" aria-labelledby="duration-label" aria-describedby="duration-current">
+                            <button type="button" data-duration="15" data-choice-option role="radio" aria-checked="false" tabindex="-1">15 秒 <small>5–7 鏡</small></button>
+                            <button type="button" data-duration="30" data-choice-option role="radio" aria-checked="true" tabindex="0">30 秒 <small>8–12 鏡</small></button>
+                            <button type="button" data-duration="45" data-choice-option role="radio" aria-checked="false" tabindex="-1">45 秒 <small>10–15 鏡</small></button>
+                            <button type="button" data-duration="60" data-choice-option role="radio" aria-checked="false" tabindex="-1">60 秒 <small>12–18 鏡</small></button>
                         </div>
                     </div>
+                    <p id="duration-current" class="section-hint" hidden></p>
                     <label class="section-hint plan-confirm-option"><input type="checkbox" id="confirm-before-images"><span>進階：先確認文字分鏡</span></label>
                     <!-- 動作按鈕 -->
                     <div class="phase-actions-footer">
@@ -344,6 +345,8 @@
     <script src="../js/features/freeform-storyboard.js"></script>
     <script src="../js/features/generation-task.js"></script>
     <script src="../js/features/template-workflow.js?v=20261006-3"></script>
+    <script src="../js/components/choice-group.js"></script>
+    <script src="../js/components/template-presentation.js"></script>
     <script src="../js/generate.js?v=20261006-4"></script>
     <script>initGeneratePage();</script>
     <script src="../js/sys.js"></script>

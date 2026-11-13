@@ -222,3 +222,23 @@ test('saved completion can use the same general generate entry to start fresh', 
   const before = f.mounts.length; await f.window.spaNavigate('generate');
   assert.equal(f.mounts.length, before + 1);
 });
+
+test('Discovery settings deep link and SPA return use the existing shell registration',async()=>{
+ const f=routerFixture('/discovery/settings',true);await f.events.DOMContentLoaded();await settle();
+ assert.equal(f.window.spaRouter.currentPage,'discovery-settings');assert.equal(f.mounts.at(-1).page,'discovery-settings');
+ await f.window.spaNavigate('discovery');assert.equal(f.history.writes.at(-1).url,'/discovery');
+ await f.window.spaNavigate('discovery-settings');assert.equal(f.history.writes.at(-1).url,'/discovery/settings');
+ f.events.popstate({state:{page:'discovery'}});await settle();assert.equal(f.window.spaRouter.currentPage,'discovery');
+ assert.equal(f.errors.length,0);
+});
+test('Discovery nested hash enters settings and keeps the canonical nested hash on navigation',async()=>{
+ const f=routerFixture('/html/index.html');f.window.location.hash='#/discovery/settings';await f.events.DOMContentLoaded();await settle();
+ assert.equal(f.window.spaRouter.currentPage,'discovery-settings');await f.window.spaNavigate('discovery');await f.window.spaNavigate('discovery-settings');
+ assert.ok(f.history.writes.at(-1).url.endsWith('#/discovery/settings'));
+});
+
+test('Discovery deployment rewrites enter the same bootstrap as Express',()=>{
+ const config=JSON.parse(fs.readFileSync(require.resolve('../vercel.json'),'utf8'));
+ for(const route of ['/discovery','/discovery/settings']) assert.equal(config.rewrites.find(x=>x.source===route).destination,'/main.html');
+ assert.equal(config.rewrites.find(x=>x.source==='/api/(.*)').destination,'/api/index.js');
+});

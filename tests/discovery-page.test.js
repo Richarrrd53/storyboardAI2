@@ -11,7 +11,7 @@ test('discovery.html contains non-empty default option for SKILL dropdown', () =
 
 test('PageHost mounts Discovery once per visit and returns its lifecycle', async () => {
     const code = fs.readFileSync(path.join(__dirname, '..', 'public/js/pages/page-host.js'), 'utf8');
-    const content = { className: '', style: {}, innerHTML: '', querySelector: () => null };
+    const content = { className: '', style: {}, innerHTML: '', querySelector: () => null, addEventListener() {}, removeEventListener() {} };
     const main = { style: {} };
     const calls = [];
     global.document = { getElementById: id => id === 'page-main' ? main : content };
@@ -123,4 +123,19 @@ test('discovery.js populates SKILL dropdown and handles fallback gracefully', as
     assert.equal(skillSelect.children.length, 1);
     assert.equal(skillSelect.children[0].value, 'short-video-template-lab');
     assert.equal(skillSelect.children[0].textContent, 'Short Video Template Lab');
+});
+
+test('Discovery settings links use SPA once, preserve modified clicks and release their owner on abort',async()=>{
+ const code=fs.readFileSync(path.join(__dirname,'../public/js/pages/page-host.js'),'utf8'),events=new Map();let closed=0,context;
+ const content={className:'',style:{},innerHTML:'',querySelector:()=>null,addEventListener:(type,fn)=>events.set(type,fn),removeEventListener:type=>events.delete(type)};
+ global.document={getElementById:id=>id==='page-main'?{style:{}}:content};
+ global.window={PageAssetLoader:{fetchPageDoc:async()=>({querySelector:()=>null}),injectCSS(){},injectScripts:async()=>[true]},TransitionLoader:{ensureInnerLoader(){}},AppShell:{init:async()=>{}},QuickCompose:{mount(){}},initDiscoverySettingsPage(ctx){context=ctx;return{unmount(){closed++}}}};
+ eval(code);const controller=new AbortController(),destinations=[];
+ const instance=await window.PageHost.mount({page:'discovery-settings',signal:controller.signal,navigate:page=>destinations.push(page),scripts:['/js/discovery-settings.js']});
+ assert.equal(context.root,content);assert.equal(context.signal,controller.signal);
+ const link={getAttribute:()=>'/discovery',hasAttribute:()=>false};let prevented=0;
+ const event={target:{closest:()=>link},preventDefault(){prevented++}};
+ events.get('click')({...event,ctrlKey:true});assert.equal(prevented,0);
+ events.get('click')(event);assert.deepEqual(destinations,['discovery']);assert.equal(prevented,1);
+ controller.abort();instance.unmount();assert.equal(closed,1);assert.equal(events.size,0);
 });

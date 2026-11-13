@@ -6,6 +6,9 @@ const http=require('node:http'),fs=require('node:fs'),path=require('node:path');
 const root=path.resolve(__dirname,'../../../public');
 const projects=[{id:'audit-folder',title:'隔離測試：咖啡店分鏡',tags:['稽核','品牌'],is_deleted:false,ratio:'9:16',style:'cinematic',updateAt:'2026-11-10T04:00:00Z',createAt:'2026-11-01T04:00:00Z',shots:[{id:'audit-shot',order:1,title:'晨光灑進咖啡店',duration:'3s',camera:'中景',payload:{image:'/audit-cover.svg'}}],previewImages:['/audit-cover.svg']}];
 const port = Number(process.env.AUDIT_UI_PORT || 4318);
+let discoveryFixture={configured:false,failLoad:false,failSave:false,delay:0,savedAt:0};
+const discoveryStatus=()=>({configured:discoveryFixture.configured,savedAt:discoveryFixture.savedAt,youtube:{configured:discoveryFixture.configured,source:discoveryFixture.configured?'browser':null},gemini:{configured:discoveryFixture.configured,source:discoveryFixture.configured?'browser':null,mode:'developer'}});
+let templatesFixture=[];
 const logs=[]; let failRename = false, failRestore = false, delayRename = 0;
 const server=http.createServer((req,res)=>{
  const url=new URL(req.url,'http://localhost:4318');
@@ -13,6 +16,10 @@ const server=http.createServer((req,res)=>{
  if(url.pathname==='/audit-health') {res.writeHead(200,{'Content-Type':'application/json'});return res.end(JSON.stringify({ready:true,isolated:true,port,harness:'/phase1-harness'}));}
  if(url.pathname==='/') {res.writeHead(302,{Location:'/phase1-harness'});return res.end();}
  if(url.pathname==='/phase1-harness.js'){res.writeHead(200,{'Content-Type':'application/javascript; charset=utf-8'});return res.end(fs.readFileSync(path.join(__dirname,'harness.js')));}
+ if(url.pathname==='/discovery-harness'){res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});return res.end(fs.readFileSync(path.join(__dirname,'../phase5/discovery/harness.html')));}
+ if(url.pathname==='/phase7-harness'){res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});return res.end(fs.readFileSync(path.join(__dirname,'../phase7/harness.html')));}
+ if(url.pathname==='/phase6-harness'){res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});return res.end(fs.readFileSync(path.join(__dirname,'../phase6/harness.html')));}
+ if(url.pathname==='/phase5-harness'){res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});return res.end(fs.readFileSync(path.join(__dirname,'../phase5/harness.html')));}
  if(url.pathname==='/phase4-harness'){res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});return res.end(fs.readFileSync(path.join(__dirname,'../phase4/harness.html')));}
  if(url.pathname==='/phase4-results' && req.method==='POST'){let body='';req.on('data',chunk=>body+=chunk);req.on('end',()=>{try{const data=JSON.parse(body);fs.writeFileSync(path.join(__dirname,'../phase4/browser-results.json'),JSON.stringify(data,null,2));res.writeHead(200);res.end('ok');}catch{res.writeHead(400);res.end('invalid result');}});return;}
  if(url.pathname==='/phase4-control' && req.method==='POST'){
@@ -36,6 +43,19 @@ const server=http.createServer((req,res)=>{
    projects[0].title='隔離測試：咖啡店分鏡'; failRename=!!c.failRename;failRestore=!!c.failRestore;delayRename=c.delayRename||0;logs.length=0;json({ok:true});
   });return;
  }
+ if(url.pathname==='/discovery-control' && req.method==='POST'){let body='';req.on('data',chunk=>body+=chunk);req.on('end',()=>{try{discoveryFixture={...discoveryFixture,...JSON.parse(body||'{}')};json({isolated:true});}catch{json({error:'invalid fixture'},400);}});return;}
+ if(url.pathname==='/phase5-templates-control' && req.method==='POST'){let body='';req.on('data',chunk=>body+=chunk);req.on('end',()=>{try{const data=JSON.parse(body);if(!Array.isArray(data)||data.length>20)return json({error:'Expected fixture catalog'},400);templatesFixture=data;json({isolated:true,count:data.length});}catch{json({error:'Invalid fixture'},400);}});return;}
+ if(url.pathname==='/api/discovery/settings'){
+  logs.push({path:url.pathname,method:req.method,time:new Date().toISOString()});
+  const respond=()=>{
+   if(req.method==='GET')return discoveryFixture.failLoad?json({error:'隔離設定讀取失敗'},503):json(discoveryStatus());
+   if(discoveryFixture.failSave)return json({error:'隔離連線檢查失敗，請稍後再試'},503);
+   discoveryFixture.configured=true;discoveryFixture.savedAt=Date.now();json(discoveryStatus());
+  };
+  if(req.method==='POST'){req.resume();req.on('end',()=>setTimeout(respond,discoveryFixture.delay));}else setTimeout(respond,discoveryFixture.delay);return;
+ }
+ if(url.pathname==='/api/discovery/skills')return json({skills:[{id:'short-video-template-lab',name:'短影音敘事分析'}],configured:discoveryFixture.configured});
+ if(url.pathname==='/api/discovery/search')return json({results:[],meta:{source:'isolated-fixture'}});
  if(url.pathname.startsWith('/api/')){
   logs.push({path:url.pathname,method:req.method,time:new Date().toISOString()});
   if(url.pathname==='/api/auth/login')return json({token:'isolated-audit-fixture',user:{id:'audit',name:'隔離稽核帳號'}});
@@ -55,11 +75,11 @@ const server=http.createServer((req,res)=>{
    return json({project:projects[0]});
   }
   if(url.pathname.endsWith('/restore')){if(failRestore){failRestore=false;return json({error:'隔離測試復原失敗'},503);}projects[0].is_deleted=false;return json({project:projects[0]});}
-  if(url.pathname==='/api/get-templates')return json([]);
+  if(url.pathname==='/api/get-templates')return json(templatesFixture);
   return json({error:'Unimplemented fixture endpoint'},404);
  }
  if(url.pathname==='/audit-cover.svg'){res.writeHead(200,{'Content-Type':'image/svg+xml'});return res.end(cover);}
- const entry=url.pathname==='/'||/^\/(login|register|dashboard|projects|history|generate|template|project\/[^/]+)$/.test(url.pathname);
+ const entry=url.pathname==='/'||/^\/(login|register|dashboard|projects|history|generate|template(?:\/[^/]+)?|discovery(?:\/settings)?|project\/[^/]+)$/.test(url.pathname);
  const file=path.resolve(root,'.'+(entry?'/main.html':url.pathname));
  if(!file.startsWith(root+path.sep))return res.writeHead(403).end();
  fs.readFile(file,(err,data)=>{if(err)return res.writeHead(404).end();res.writeHead(200,{'Content-Type':({'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'application/javascript; charset=utf-8','.png':'image/png','.jpg':'image/jpeg','.svg':'image/svg+xml','.mp4':'video/mp4'})[path.extname(file)]||'application/octet-stream'});res.end(data);});

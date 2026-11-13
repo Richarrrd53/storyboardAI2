@@ -1,0 +1,158 @@
+TAP version 13
+# Subtest: discovery.html contains non-empty default option for SKILL dropdown
+ok 1 - discovery.html contains non-empty default option for SKILL dropdown
+  ---
+  duration_ms: 9.7123
+  ...
+# Subtest: PageHost mounts Discovery once per visit and returns its lifecycle
+not ok 2 - PageHost mounts Discovery once per visit and returns its lifecycle
+  ---
+  duration_ms: 18.1974
+  location: 'D:\\My Files\\web\\StoryboardAI2\\tests\\discovery-page.test.js:12:1'
+  failureType: 'testCodeFailure'
+  error: 'root.addEventListener is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    Object.mount (eval at <anonymous> (D:\My Files\web\StoryboardAI2\tests\discovery-page.test.js:24:5), <anonymous>:145:12)
+    async TestContext.<anonymous> (D:\My Files\web\StoryboardAI2\tests\discovery-page.test.js:26:22)
+    async Test.run (node:internal/test_runner/test:935:9)
+    async Test.processPendingSubtests (node:internal/test_runner/test:633:7)
+  ...
+# Subtest: discovery.js populates SKILL dropdown and handles fallback gracefully
+ok 3 - discovery.js populates SKILL dropdown and handles fallback gracefully
+  ---
+  duration_ms: 66.1243
+  ...
+# ◇ injected env (13) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+# Subtest: settings page, validated save, reload and search use browser credentials without leaking keys
+not ok 4 - settings page, validated save, reload and search use browser credentials without leaking keys
+  ---
+  duration_ms: 4919.8164
+  location: 'D:\\My Files\\web\\StoryboardAI2\\tests\\discovery-settings-routes.test.js:4:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /id="api-settings-form"/. Input:
+    
+    '<!DOCTYPE html>\r\n' +
+      '<html lang="zh-TW">\r\n' +
+      '<head>\r\n' +
+      '    <meta charset="UTF-8">\r\n' +
+      '    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">\r\n' +
+      '    <title>Storyboard AI</title>\r\n' +
+      '    <base href="/">\r\n' +
+      '    <link rel="stylesheet" href="./css/main.css">\r\n' +
+      '    <link rel="shortcut icon" href="./icon/logo/logo.png" type="image/x-icon">\r\n' +
+      '</head>\r\n' +
+      '<body>\r\n' +
+      '    <script src="./js/main.js"></script>\r\n' +
+      '\r\n' +
+      '</body>\r\n' +
+      '</html>\r\n'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: |-
+    <!DOCTYPE html>
+    <html lang="zh-TW">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+        <title>Storyboard AI</title>
+        <base href="/">
+        <link rel="stylesheet" href="./css/main.css">
+        <link rel="shortcut icon" href="./icon/logo/logo.png" type="image/x-icon">
+    </head>
+    <body>
+        <script src="./js/main.js"></script>
+    
+    </body>
+    </html>
+    
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (D:\My Files\web\StoryboardAI2\tests\discovery-settings-routes.test.js:35:16)
+    process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    async Test.run (node:internal/test_runner/test:935:9)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: interrupting project opening aborts its mount and restores the source route despite a late response
+ok 5 - interrupting project opening aborts its mount and restores the source route despite a late response
+  ---
+  duration_ms: 44.978
+  ...
+# Subtest: route transitions finish the old page exit before teardown and layout changes
+ok 6 - route transitions finish the old page exit before teardown and layout changes
+  ---
+  duration_ms: 17.91
+  ...
+# Subtest: template pathname and legacy hash deep links mount the canonical ID
+ok 7 - template pathname and legacy hash deep links mount the canonical ID
+  ---
+  duration_ms: 24.0232
+  ...
+# Subtest: public navigation writes canonical URLs and preserves template browse state
+ok 8 - public navigation writes canonical URLs and preserves template browse state
+  ---
+  duration_ms: 11.208
+  ...
+# Subtest: project deep links and generate template selection use public navigation
+ok 9 - project deep links and generate template selection use public navigation
+  ---
+  duration_ms: 31.7648
+  ...
+# Subtest: malformed template encodings recover during initialization
+ok 10 - malformed template encodings recover during initialization
+  ---
+  duration_ms: 7.484
+  ...
+# Subtest: embedded navigation writes parent paths and popstate restores detail without adding history
+ok 11 - embedded navigation writes parent paths and popstate restores detail without adding history
+  ---
+  duration_ms: 7.9731
+  ...
+# Subtest: guards, same routes and QuickCompose leave navigation state clear
+ok 12 - guards, same routes and QuickCompose leave navigation state clear
+  ---
+  duration_ms: 7.2919
+  ...
+# Subtest: protected routes validate the session before mounting and reject expired or unavailable sessions
+ok 13 - protected routes validate the session before mounting and reject expired or unavailable sessions
+  ---
+  duration_ms: 16.0779
+  ...
+# Subtest: a late session check cannot override a newer navigation
+ok 14 - a late session check cannot override a newer navigation
+  ---
+  duration_ms: 8.9709
+  ...
+# Subtest: late mounts unmount only their own instance and cannot clear a newer navigation
+ok 15 - late mounts unmount only their own instance and cannot clear a newer navigation
+  ---
+  duration_ms: 14.363
+  ...
+# Subtest: mount errors release navigation state and allow recovery
+ok 16 - mount errors release navigation state and allow recovery
+  ---
+  duration_ms: 11.5131
+  ...
+# Subtest: production and development entrypoints both serve template deep links
+ok 17 - production and development entrypoints both serve template deep links
+  ---
+  duration_ms: 18.5529
+  ...
+# Subtest: saved completion can use the same general generate entry to start fresh
+ok 18 - saved completion can use the same general generate entry to start fresh
+  ---
+  duration_ms: 10.3188
+  ...
+1..18
+# tests 18
+# suites 0
+# pass 16
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5449.8043

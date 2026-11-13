@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 
 // Small deterministic DOM for lifecycle tests; browser focus/layout verified separately.
-function environment(reduced = false) {
+function environment(reduced = false, shared = true) {
   let clock = 0, next = 0;
   const timers = new Map();
   const animations = [];
@@ -68,9 +68,10 @@ function environment(reduced = false) {
     requestAnimationFrame: () => ++next, cancelAnimationFrame() {}
   });
   context.window = context; events(context); vm.createContext(context);
-  for (const file of ['components/overlay-manager.js', 'components/dialog-service.js', 'sys.js']) {
+  for (const file of ['components/overlay-manager.js', 'components/dialog-service.js', ...(shared ? ['sys.js'] : [])]) {
     vm.runInContext(fs.readFileSync('public/js/' + file, 'utf8'), context);
   }
+  if (!shared) delete context.ModalAnimation;
   const advance = ms => {
     const end = clock + ms;
     while (true) {
@@ -94,24 +95,24 @@ test('confirm returns explicit false, defaults description safely and resolves o
   assert.equal(e.document.querySelector('.sb-dialog-description'), null);
   let resolved = 0; result.then(() => resolved++);
   e.click('.sb-dialog-cancel'); e.click('.sb-dialog-cancel');
-  assert.equal(resolved, 0); e.advance(400);
+  assert.equal(resolved, 0); e.advance(450);
   assert.equal((await result).confirmed, false); await e.tick(); assert.equal(resolved, 1);
   assert.equal(e.panel(), null);
 });
 
 test('central dialogs match delete scale/blur signature and keep scrim alpha on exit', async () => {
-  const e = environment(); const result = e.service.confirm({ title: 'motion' });
+  const e = environment(false, false); const result = e.service.confirm({ title: 'motion' });
   assert.equal(e.animations[0].frames[0].backdropFilter, 'blur(0px)');
-  assert.equal(e.animations[1].frames[0].transform, 'scale(0)');
+  assert.equal(e.animations[1].frames[0].scale, '0');
   assert.equal(e.animations[1].options.easing, 'cubic-bezier(.34,1.59,.69,.99)');
   assert.equal(e.animations[1].options.duration, 400);
   e.click('.sb-dialog-cancel');
   const exit = e.animations.slice(-2);
-  assert.equal(exit[1].frames[1].transform, 'scale(0)');
+  assert.equal(exit[1].frames[1].scale, '0');
   assert.equal(exit[1].options.easing, 'cubic-bezier(.31,.01,.66,-.59)');
   assert.equal(exit[0].frames[1].backdropFilter, 'blur(0px)');
   assert.ok(exit[0].frames.every(frame => !('opacity' in frame) && !('background' in frame)));
-  e.advance(400); assert.equal((await result).confirmed, false);
+  e.advance(450); assert.equal((await result).confirmed, false);
 });
 
 test('global facade preserves boolean confirm, void alert and native prompt', async () => {
@@ -216,12 +217,36 @@ test('navigation during cancelled legacy exit releases its modal lease immediate
 
 test('all central dialog kinds exit from scale 1 to 0 with the approved anticipation curve',async()=>{
  for(const kind of ['alert','confirm','prompt']) {
-  const e=environment();const done=e.service[kind]({title:kind,defaultValue:'name'});
+  const e=environment(false,false);const done=e.service[kind]({title:kind,defaultValue:'name'});
   if(kind==='alert'){e.submit();await e.tick();}else e.click('.sb-dialog-cancel');
   const [backdrop,panel]=e.animations.slice(-2);
-  assert.equal(panel.frames[0].transform,'scale(1)');assert.equal(panel.frames[1].transform,'scale(0)');
+  assert.equal(panel.frames[0].scale,'1');assert.equal(panel.frames[1].scale,'0');
   assert.equal(panel.options.easing,'cubic-bezier(.31,.01,.66,-.59)');
   assert.ok(backdrop.frames.every(frame=>!('opacity' in frame)&&!('backgroundColor' in frame)));
-  e.advance(400);await done;
+  e.advance(450);await done;
+ }
+});
+
+// Exercise the actual sys.js motion owner, not just animation descriptors in the fallback.
+test('rename, logout, restore and alert use the tag-editor scale lifecycle until exit completes',async()=>{
+ for(const [kind,title] of [['prompt','重新命名'],['confirm','登出'],['confirm','還原'],['alert','提示']]) {
+  const e=environment();const done=e.service[kind]({title});const panel=e.panel();
+  assert.equal(panel.style.scale,'0');e.advance(410);assert.equal(panel.style.scale,'1');
+  assert.equal(e.animations.length,0);
+  if(kind==='alert'){e.submit();await e.tick();}else e.click('.sb-dialog-cancel');
+  assert.match(panel.style.transition,/scale 400ms cubic-bezier\(\.31, \.01, \.66, -0\.59\)/);
+  e.advance(10);assert.equal(panel.style.scale,'0');
+  assert.equal(e.document.querySelector('.sb-dialog-overlay').style.opacity,'1');
+  e.advance(399);assert.equal(e.panel(),panel);e.advance(41);await done;assert.equal(e.panel(),null);
+ }
+});
+
+
+test('Phase7 reduced alert, confirm and prompt complete once through both actual motion owners',async()=>{
+ for(const shared of [true,false])for(const kind of ['alert','confirm','prompt']){
+  const e=environment(true,shared);const done=e.service[kind]({title:'Phase7 '+kind,value:'fixture'});let settled=0;done.then(()=>settled++);
+  if(kind==='alert'){e.submit();await e.tick();}else e.click('.sb-dialog-cancel');
+  e.advance(60);await e.tick();await done;assert.equal(e.panel(),null);assert.equal(settled,1);
+  e.advance(5000);await e.tick();assert.equal(settled,1);
  }
 });

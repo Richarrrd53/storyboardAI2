@@ -4,19 +4,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>熱門短影音搜尋與分析</title>
+    <link rel="stylesheet" href="/css/tokens.css" />
     <link rel="stylesheet" href="/css/discovery.css" />
 </head>
 <body>
-    <main id="page-main" class="page-shell page-discovery discovery-shell">
-        <nav class="discovery-nav">
-            <a class="discovery-brand" href="/dashboard"><span>S</span><strong>Storyboard AI</strong></a>
-            <div><a class="nav-link" href="/template">爆點模板庫</a><a class="nav-link" href="/discovery/settings">API 設定</a></div>
-        </nav>
+    <main id="page-main" class="page-shell page-discovery dash-main">
+        <div class="discovery-page-content">
         <header class="discovery-header">
             <a class="back-link" href="/dashboard">← 回到工作台</a>
             <div class="header-copy">
-                <p class="eyebrow">TREND DISCOVERY / AI ANALYSIS</p>
-                <h1>找到熱門結構，<br><span>轉成你的爆點模板。</span></h1>
+                <h1>熱門短影音搜尋與分析</h1>
                 <p class="intro">搜尋真實短影音、逐支分析畫面與語音，再將值得複製的敘事結構一鍵收進模板庫。</p>
             </div>
             <div class="workflow-preview" aria-label="分析工作流程">
@@ -29,21 +26,21 @@
 
         <section class="search-panel" aria-labelledby="search-title">
             <div class="panel-heading">
-                <div><span class="step">SEARCH</span><h2 id="search-title">設定搜尋條件</h2></div>
+                <div><span class="step">搜尋</span><h2 id="search-title">設定搜尋條件</h2></div>
                 <a id="skill-status" class="status-chip settings-link" href="/discovery/settings" aria-label="前往 API 設定">檢查連線設定…</a>
             </div>
             <form id="discovery-form">
                 <label class="field field-wide">影片網址、頻道或 #hashtag
                     <input id="query" name="query" type="search" placeholder="YouTube 網址、@帳號或 #料理" autocomplete="off" required maxlength="500" aria-describedby="search-help" />
                 </label>
-                <label class="field">Platform
+                <label class="field">平台
                     <select id="platform" name="platform">
                         <option value="youtube-shorts">YouTube Shorts</option>
                         <option value="tiktok" disabled>TikTok（尚未串接）</option>
                         <option value="instagram-reels" disabled>Instagram Reels（尚未串接）</option>
                     </select>
                 </label>
-                <label class="field">SKILL
+                <label class="field">分析方式
                     <select id="skill" name="skill">
                         <option value="short-video-template-lab">Short Video Template Lab</option>
                     </select>
@@ -75,6 +72,7 @@
             <div class="results-heading"><div><span class="step">RESULTS</span><h2 id="results-title">分析工作台</h2></div><span id="result-count" class="result-count">尚未搜尋</span></div>
             <div id="results" class="results-list" aria-live="polite"><div class="empty-state"><strong>等待你的搜尋條件</strong><span>搜尋後會顯示來源影片、觀看數與附有時間戳的 AI 結構分析。</span></div></div>
         </section>
+        </div>
     </main>
     <script src="/js/discovery.js"></script>
 </body>

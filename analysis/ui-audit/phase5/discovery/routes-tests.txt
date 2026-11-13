@@ -1,0 +1,256 @@
+TAP version 13
+# Subtest: AppShell: Module interface and compatibility bridges
+ok 1 - AppShell: Module interface and compatibility bridges
+  ---
+  duration_ms: 71.4943
+  ...
+# Subtest: AppShell: init() creates and binds shell layout elements
+ok 2 - AppShell: init() creates and binds shell layout elements
+  ---
+  duration_ms: 147.2031
+  ...
+# Subtest: AppShell: updateRoute() controls shell visibility (dashboard vs landing/auth)
+ok 3 - AppShell: updateRoute() controls shell visibility (dashboard vs landing/auth)
+  ---
+  duration_ms: 71.7125
+  ...
+# Subtest: AppShell: expandSidebar() controls sidebar width and body class
+ok 4 - AppShell: expandSidebar() controls sidebar width and body class
+  ---
+  duration_ms: 23.5563
+  ...
+# Subtest: AppShell: ProjectStore subscription reactively updates sidebar projects
+ok 5 - AppShell: ProjectStore subscription reactively updates sidebar projects
+  ---
+  duration_ms: 69.9951
+  ...
+# Subtest: AppShell: toggleUserPanel() toggles active class
+ok 6 - AppShell: toggleUserPanel() toggles active class
+  ---
+  duration_ms: 1068.9929
+  ...
+# Subtest: AppShell: collapseProjectsGroup() collapses project sub-list and saves localStorage
+ok 7 - AppShell: collapseProjectsGroup() collapses project sub-list and saves localStorage
+  ---
+  duration_ms: 50.8398
+  ...
+# Subtest: AppShell: updateRoute() updates active sidebar link and swaps blur/focus icons
+ok 8 - AppShell: updateRoute() updates active sidebar link and swaps blur/focus icons
+  ---
+  duration_ms: 61.7221
+  ...
+# Subtest: AppShell: Router Navigation Simulation: Direct Entry, Leave, Return, Back/Forward Lifecycle
+ok 9 - AppShell: Router Navigation Simulation: Direct Entry, Leave, Return, Back/Forward Lifecycle
+  ---
+  duration_ms: 102.0242
+  ...
+# Subtest: AppShell: ProjectStore subscription event compatibility across all mutations (optimistic, commit, undo, rename, duplicated, reset)
+ok 10 - AppShell: ProjectStore subscription event compatibility across all mutations (optimistic, commit, undo, rename, duplicated, reset)
+  ---
+  duration_ms: 86.3971
+  ...
+# Subtest: AppShell: Compatibility bridges this-context safety and destructuring
+ok 11 - AppShell: Compatibility bridges this-context safety and destructuring
+  ---
+  duration_ms: 46.7072
+  ...
+# Subtest: AppShell: init() idempotency and destroy() re-initialization lifecycle
+ok 12 - AppShell: init() idempotency and destroy() re-initialization lifecycle
+  ---
+  duration_ms: 52.6823
+  ...
+# Subtest: Regression A: ProjectStore.notify() -> AppShell.updateSidebarProjects() never passes non-Node to Node.contains
+ok 13 - Regression A: ProjectStore.notify() -> AppShell.updateSidebarProjects() never passes non-Node to Node.contains
+  ---
+  duration_ms: 69.1616
+  ...
+# Subtest: Regression B: spa-router.js does not contain dead reference to justHandledPointerNav
+ok 14 - Regression B: spa-router.js does not contain dead reference to justHandledPointerNav
+  ---
+  duration_ms: 4.8332
+  ...
+# Subtest: Regression C: Repeated navigation and clicks do not duplicate document-level listeners
+ok 15 - Regression C: Repeated navigation and clicks do not duplicate document-level listeners
+  ---
+  duration_ms: 1.9819
+  ...
+# Subtest: Mobile Bottom Nav: Pointer down initiates interaction, micro-enlargement, snap target, and indicator tracking
+ok 16 - Mobile Bottom Nav: Pointer down initiates interaction, micro-enlargement, snap target, and indicator tracking
+  ---
+  duration_ms: 32.7007
+  ...
+# Subtest: Mobile Bottom Nav: Pointer move applies rubberband damping, directional stretch, magnetic tracking, and dual-track clip-path
+ok 17 - Mobile Bottom Nav: Pointer move applies rubberband damping, directional stretch, magnetic tracking, and dual-track clip-path
+  ---
+  duration_ms: 53.1844
+  ...
+# Subtest: Mobile Bottom Nav: Pointer release executes spring rebound and navigation to target route
+ok 18 - Mobile Bottom Nav: Pointer release executes spring rebound and navigation to target route
+  ---
+  duration_ms: 30.4139
+  ...
+# Subtest: Mobile Bottom Nav: Vertical drag out of bounds cancels selection without navigation
+ok 19 - Mobile Bottom Nav: Vertical drag out of bounds cancels selection without navigation
+  ---
+  duration_ms: 36.0591
+  ...
+# Subtest: Mobile Bottom Nav: Route updates synchronize active item and indicator
+ok 20 - Mobile Bottom Nav: Route updates synchronize active item and indicator
+  ---
+  duration_ms: 76.9305
+  ...
+# Subtest: History account link uses SPA once and hides mobile nav until returning to a main route
+ok 21 - History account link uses SPA once and hides mobile nav until returning to a main route
+  ---
+  duration_ms: 59.1639
+  ...
+# Subtest: History account link retains native modifier-click behavior
+ok 22 - History account link retains native modifier-click behavior
+  ---
+  duration_ms: 25.4511
+  ...
+# Subtest: Mobile Bottom Nav: pointercancel without displacement never commits or replays a click
+ok 23 - Mobile Bottom Nav: pointercancel without displacement never commits or replays a click
+  ---
+  duration_ms: 40.4186
+  ...
+# Subtest: Mobile Bottom Nav: route changes cancel an in-flight pointer before synchronizing active state
+ok 24 - Mobile Bottom Nav: route changes cancel an in-flight pointer before synchronizing active state
+  ---
+  duration_ms: 35.9034
+  ...
+# Subtest: Phase 3 account: native row preserves its anatomy when real profile data arrives
+ok 25 - Phase 3 account: native row preserves its anatomy when real profile data arrives
+  ---
+  duration_ms: 40.7959
+  ...
+# Subtest: Phase 3 account: mobile sheet owns modal lock, Escape and page-abort cleanup
+ok 26 - Phase 3 account: mobile sheet owns modal lock, Escape and page-abort cleanup
+  ---
+  duration_ms: 91.3138
+  ...
+# Subtest: Phase 3 account: breakpoint closes the old presentation; reopening reuses account DOM
+ok 27 - Phase 3 account: breakpoint closes the old presentation; reopening reuses account DOM
+  ---
+  duration_ms: 73.1907
+  ...
+# Subtest: Phase 5 mobile nav separates route links from create and profile actions
+ok 28 - Phase 5 mobile nav separates route links from create and profile actions
+  ---
+  duration_ms: 48.6643
+  ...
+# Subtest: Phase 5 Discovery settings retains workspace shell and hides the mobile navigation slot
+ok 29 - Phase 5 Discovery settings retains workspace shell and hides the mobile navigation slot
+  ---
+  duration_ms: 29.1913
+  ...
+# Subtest: discovery.html contains non-empty default option for SKILL dropdown
+ok 30 - discovery.html contains non-empty default option for SKILL dropdown
+  ---
+  duration_ms: 45.5403
+  ...
+# Subtest: PageHost mounts Discovery once per visit and returns its lifecycle
+ok 31 - PageHost mounts Discovery once per visit and returns its lifecycle
+  ---
+  duration_ms: 56.4509
+  ...
+# Subtest: discovery.js populates SKILL dropdown and handles fallback gracefully
+ok 32 - discovery.js populates SKILL dropdown and handles fallback gracefully
+  ---
+  duration_ms: 131.6911
+  ...
+# ◇ injected env (13) from .env // tip: ⌁ auth for agents [www.vestauth.com]
+# Subtest: settings page, validated save, reload and search use browser credentials without leaking keys
+ok 33 - settings page, validated save, reload and search use browser credentials without leaking keys
+  ---
+  duration_ms: 6803.6668
+  ...
+# Subtest: interrupting project opening aborts its mount and restores the source route despite a late response
+ok 34 - interrupting project opening aborts its mount and restores the source route despite a late response
+  ---
+  duration_ms: 50.3178
+  ...
+# Subtest: route transitions finish the old page exit before teardown and layout changes
+ok 35 - route transitions finish the old page exit before teardown and layout changes
+  ---
+  duration_ms: 19.4805
+  ...
+# Subtest: template pathname and legacy hash deep links mount the canonical ID
+ok 36 - template pathname and legacy hash deep links mount the canonical ID
+  ---
+  duration_ms: 28.264
+  ...
+# Subtest: public navigation writes canonical URLs and preserves template browse state
+ok 37 - public navigation writes canonical URLs and preserves template browse state
+  ---
+  duration_ms: 13.2576
+  ...
+# Subtest: project deep links and generate template selection use public navigation
+ok 38 - project deep links and generate template selection use public navigation
+  ---
+  duration_ms: 47.2319
+  ...
+# Subtest: malformed template encodings recover during initialization
+ok 39 - malformed template encodings recover during initialization
+  ---
+  duration_ms: 14.16
+  ...
+# Subtest: embedded navigation writes parent paths and popstate restores detail without adding history
+ok 40 - embedded navigation writes parent paths and popstate restores detail without adding history
+  ---
+  duration_ms: 16.8013
+  ...
+# Subtest: guards, same routes and QuickCompose leave navigation state clear
+ok 41 - guards, same routes and QuickCompose leave navigation state clear
+  ---
+  duration_ms: 10.0404
+  ...
+# Subtest: protected routes validate the session before mounting and reject expired or unavailable sessions
+ok 42 - protected routes validate the session before mounting and reject expired or unavailable sessions
+  ---
+  duration_ms: 17.0409
+  ...
+# Subtest: a late session check cannot override a newer navigation
+ok 43 - a late session check cannot override a newer navigation
+  ---
+  duration_ms: 10.7053
+  ...
+# Subtest: late mounts unmount only their own instance and cannot clear a newer navigation
+ok 44 - late mounts unmount only their own instance and cannot clear a newer navigation
+  ---
+  duration_ms: 12.7691
+  ...
+# Subtest: mount errors release navigation state and allow recovery
+ok 45 - mount errors release navigation state and allow recovery
+  ---
+  duration_ms: 25.3441
+  ...
+# Subtest: production and development entrypoints both serve template deep links
+ok 46 - production and development entrypoints both serve template deep links
+  ---
+  duration_ms: 26.0852
+  ...
+# Subtest: saved completion can use the same general generate entry to start fresh
+ok 47 - saved completion can use the same general generate entry to start fresh
+  ---
+  duration_ms: 12.8821
+  ...
+# Subtest: Discovery settings deep link and SPA return use the existing shell registration
+ok 48 - Discovery settings deep link and SPA return use the existing shell registration
+  ---
+  duration_ms: 17.1304
+  ...
+# Subtest: Discovery nested hash enters settings and keeps the canonical nested hash on navigation
+ok 49 - Discovery nested hash enters settings and keeps the canonical nested hash on navigation
+  ---
+  duration_ms: 30.6519
+  ...
+1..49
+# tests 49
+# suites 0
+# pass 49
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 7791.0993

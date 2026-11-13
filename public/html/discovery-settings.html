@@ -4,21 +4,22 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>API 設定 · Storyboard AI</title>
+    <link rel="stylesheet" href="/css/tokens.css" />
     <link rel="stylesheet" href="/css/discovery.css" />
     <link rel="stylesheet" href="/css/discovery-settings.css" />
 </head>
 <body>
-    <main class="discovery-shell settings-shell">
+    <main id="page-main" class="page-shell page-discovery-settings dash-main">
+        <div class="discovery-page-content settings-shell">
         <header class="settings-header">
             <a class="back-link" href="/discovery">← 回到熱門短影音搜尋</a>
-            <p class="eyebrow">STORYBOARD AI / CONNECTIONS</p>
-            <div class="settings-title-row"><h1>連接你的創作工具</h1><span class="settings-emblem" aria-hidden="true">↗</span></div>
+            <div class="settings-title-row"><h1>API 連線設定</h1></div>
             <p class="intro">設定 API Key，讓搜尋到的靈感成為可分析的影片。</p>
         </header>
 
         <div class="settings-layout">
             <section class="settings-panel" aria-labelledby="settings-title">
-                <div class="panel-heading"><div><span class="step">01</span><h2 id="settings-title">API 金鑰設定</h2></div><span id="settings-status" class="status-chip">讀取設定中…</span></div>
+                <div class="panel-heading"><div><span class="step">01</span><h2 id="settings-title">API 金鑰設定</h2></div><span id="settings-status" class="status-chip" role="status" aria-live="polite">讀取設定中…</span></div>
                 <form id="api-settings-form" autocomplete="off">
                     <fieldset id="key-fields" disabled>
                         <section class="provider-block" aria-labelledby="youtube-title">
@@ -37,14 +38,16 @@
                         </section>
                     </fieldset>
                     <div class="save-bar"><p>金鑰會加密保存，<br />已儲存的內容不會完整顯示。</p><button id="save-settings" class="search-button" type="submit" disabled>檢查並儲存設定 <span aria-hidden="true">↗</span></button></div>
+                    <button id="retry-settings" class="retry-button" type="button" hidden>重新讀取設定</button>
                     <p id="settings-message" class="form-message" role="status" aria-live="polite"></p>
                     <a id="return-search" class="return-search" href="/discovery" hidden>設定完成，開始搜尋影片 →</a>
                 </form>
             </section>
             <aside class="settings-aside" aria-label="設定說明">
-                <div class="connection-note"><span class="step">READY TO DISCOVER</span><h2>兩個連線，<br />一段完整流程。</h2><ol class="connection-flow"><li><span>01</span><div><strong>找到影片</strong><p>YouTube 搜尋符合條件的公開影片。</p></div></li><li><span>02</span><div><strong>理解內容</strong><p>Gemini 分析開場、問題、解法與結尾。</p></div></li><li><span>03</span><div><strong>開始創作</strong><p>搭配時間戳，回看片段與敘事結構。</p></div></li></ol></div>
+                <div class="connection-note"><h2>從影片到敘事結構</h2><ol class="connection-flow"><li><span>01</span><div><strong>找到影片</strong><p>YouTube 搜尋符合條件的公開影片。</p></div></li><li><span>02</span><div><strong>理解內容</strong><p>Gemini 分析開場、問題、解法與結尾。</p></div></li><li><span>03</span><div><strong>開始創作</strong><p>搭配時間戳，回看片段與敘事結構。</p></div></li></ol></div>
                 <div class="storage-note"><strong>設定一次，隨時開始</strong><p>新設定僅套用此瀏覽器，保留 90 天。清除本站瀏覽資料後需重新填寫。</p><p>欄位留空會沿用現有設定；貼上新金鑰即可更新。搜尋與分析的用量依各服務的 API 配額計算。</p></div>
             </aside>
+        </div>
         </div>
     </main>
     <script src="/js/discovery-settings.js"></script>

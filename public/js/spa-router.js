@@ -47,7 +47,7 @@
 
     generate: {
       css: ['/css/dashboard.css', '/css/generate.css', '/css/math-curve-loader.css', '/css/template.css', '/css/template-workflow.css?v=20261006-4'],
-      js: ['/js/math-curve-loader.js', '/js/token-manager.js', '/js/prompt-translate.js'],
+      js: ['/js/components/choice-group.js', '/js/components/template-presentation.js', '/js/math-curve-loader.js', '/js/token-manager.js', '/js/prompt-translate.js'],
     },
 
     history: {
@@ -64,12 +64,17 @@
         '/css/template-editor.css?v=20261006-2',
         '/css/template-detail.css?v=20261014-2'
       ],
-      js: ['/js/generate-prefill-path.js', '/js/template-timeline.js', '/js/template-editor.js?v=20261006-2', '/js/template.js'],
+      js: ['/js/components/template-presentation.js', '/js/generate-prefill-path.js', '/js/template-timeline.js', '/js/template-editor.js?v=20261006-2', '/js/template.js'],
     },
 
     discovery: {
       css: ['/css/dashboard.css', '/css/generate.css', '/css/discovery.css', '/css/math-curve-loader.css'],
       js: ['/js/discovery.js'],
+    },
+
+    'discovery-settings': {
+      css: ['/css/dashboard.css', '/css/discovery.css', '/css/discovery-settings.css'],
+      js: ['/js/discovery-settings.js'],
     },
 
     project: {
@@ -80,11 +85,12 @@
 
 
   function isDashboardPage(page) {
-    return ['dashboard', 'projects', 'generate', 'history', 'template', 'discovery', 'project', 'analysis'].includes(page);
+    return ['dashboard', 'projects', 'generate', 'history', 'template', 'discovery', 'discovery-settings', 'project', 'analysis'].includes(page);
   }
 
   function getHashForPage(page, opts = {}) {
     if (page === 'landing') return '';
+    if (page === 'discovery-settings') return '#/discovery/settings';
     if (page === 'project' && opts?.id) return `#/project/${opts.id}`;
     if (page === 'generate' && opts?.templateId) return `#/generate?templateId=${opts.templateId}`;
     return `#/${page}`;
@@ -107,6 +113,7 @@
 
   function getPathForPage(page, opts = {}) {
     if (page === 'landing') return '/';
+    if (page === 'discovery-settings') return '/discovery/settings';
     if (page === 'project' && opts.id) return `/project/${encodeURIComponent(opts.id)}`;
     if (page === 'template' && opts.templateId) return `/template/${encodeURIComponent(opts.templateId)}`;
     if (page === 'generate' && opts.templateId) return `/generate?templateId=${encodeURIComponent(opts.templateId)}`;
@@ -151,6 +158,8 @@
         opts[key] = value;
       }
     }
+
+    if (route === 'discovery/settings' || route === 'discovery/settings/') return { page: 'discovery-settings', opts };
 
     const templateMatch = route.match(/^template\/([^/]+)\/?$/);
     if (templateMatch) {

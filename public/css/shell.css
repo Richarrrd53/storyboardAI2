@@ -258,6 +258,7 @@ body.dashboard-layout.sidebar-open #page-main,
    lift the page blur above its Header/Toolbar. Layers have no filter wrapper. */
 .has-header-backdrop, .progressive-edge-host { position: relative; }
 .progressive-edge-blur {
+  display: var(--edge-detail-display);
   position: absolute;
   pointer-events: none;
   z-index: 19;
@@ -268,12 +269,18 @@ body.dashboard-layout.sidebar-open #page-main,
 /* A single unmasked tint preserves the requested alpha stops independently
    of the three progressive blur masks. Match the workspace canvas token. */
 .progressive-edge-blur--tint {
+  display: block;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
+  background: var(--edge-tint-fallback-bg);
   background: linear-gradient(to bottom,
-    color-mix(in srgb, var(--canvas, var(--color-bg-page, #f8fafc)) 50%, transparent) 0%,
-    color-mix(in srgb, var(--canvas, var(--color-bg-page, #f8fafc)) 30%, transparent) 40%,
+    color-mix(in srgb, var(--canvas, var(--color-bg-page, #f8fafc)) var(--edge-tint-start), transparent) 0%,
+    color-mix(in srgb, var(--canvas, var(--color-bg-page, #f8fafc)) var(--edge-tint-middle), transparent) 40%,
     color-mix(in srgb, var(--canvas, var(--color-bg-page, #f8fafc)) 0%, transparent) 100%);
+}
+.progressive-edge-blur--bottom.progressive-edge-blur--tint {
+  display: var(--edge-bottom-tint-display);
+  rotate: 180deg;
 }
 .has-header-backdrop > .has-edge-navigation {
   position: absolute !important;
@@ -290,7 +297,7 @@ body.dashboard-layout.sidebar-open #page-main,
   isolation: isolate;
   transform-origin: top center;
   border-radius: var(--radius-xl, 24px);
-  transition: gap 320ms var(--motion-ease-standard, ease), scale 320ms var(--motion-ease-standard, ease), border-radius 320ms ease;
+  transition: gap var(--motion-header-duration) var(--motion-ease-standard, ease), scale var(--motion-header-duration) var(--motion-ease-standard, ease), border-radius var(--motion-header-duration) var(--motion-ease-standard, ease);
 }
 :is(.content-header, .editor-menubar).has-scroll-backdrop.is-content-scrolled {
   scale: .96;
@@ -300,7 +307,7 @@ body.dashboard-layout.sidebar-open #page-main,
   max-height: var(--header-sub-height, 80px);
   overflow: hidden;
   opacity: 1;
-  transition: max-height 320ms var(--motion-ease-standard, ease), opacity 320ms var(--motion-ease-standard, ease);
+  transition: max-height var(--motion-header-duration) var(--motion-ease-standard, ease), opacity var(--motion-header-duration) var(--motion-ease-standard, ease);
 }
 .project-workspace-header.has-scroll-backdrop.is-content-scrolled { gap: 0; }
 :is(.content-header, .editor-menubar).has-scroll-backdrop.is-content-scrolled :is(.project-workspace-header-sub, .project-workspace-meta, .content-header-subtitle) {

@@ -9,7 +9,7 @@ test('isolated UI harness has a discoverable entry, dependency loading, safe err
   const base = `http://127.0.0.1:${server.address().port}`;
   const home = await fetch(base, { redirect: 'manual' }); assert.equal(home.status, 302); assert.equal(home.headers.get('location'), '/phase1-harness');
   const health = await fetch(base + '/audit-health').then(r => r.json()); assert.equal(health.isolated, true);
-  for (const path of ['/phase1-harness', '/phase2-harness', '/phase1-harness.js', '/phase2-visual', '/js/sys.js', '/js/components/dialog-service.js', '/js/components/overlay-manager.js', '/css/style.css']) {
+  for (const path of ['/phase1-harness', '/phase2-harness', '/phase1-harness.js', '/phase2-visual', '/phase7-harness', '/phase6-harness', '/discovery-harness', '/js/sys.js', '/js/components/dialog-service.js', '/js/components/overlay-manager.js', '/css/style.css']) {
     const response = await fetch(base + path); assert.equal(response.status, 200, path); assert.match(response.headers.get('cache-control'), /no-store/);
   }
   const bad = await fetch(base + '/phase1-control', { method: 'POST', body: 'invalid' }); assert.equal(bad.status, 400);

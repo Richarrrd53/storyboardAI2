@@ -1,0 +1,427 @@
+[
+  {
+    "file": "public/css/components/account-panel.css",
+    "line": 40,
+    "rule": ".account-sheet { width: 100%; max-width: 540px; max-height: calc(100dvh - 24px); overflow-y: auto; overscroll-behavior: contain; border: var(--surface-floating-border); border-radius: 28px 28px 0 0; background: var(--surface-floating-reading-bg); box-shadow: var(--surface-floating-shadow); backdrop-filter: var(--surface-floating-blur); -webkit-backdrop-filter: var(--surface-floating-blur); }"
+  },
+  {
+    "file": "public/css/components/acrylic.css",
+    "line": 10,
+    "rule": "backdrop-filter: var(--surface-floating-blur, blur(16px) saturate(120%) brightness(1.06));"
+  },
+  {
+    "file": "public/css/components/bottom-sheet.css",
+    "line": 10,
+    "rule": "backdrop-filter: blur(6px);"
+  },
+  {
+    "file": "public/css/components/cards.css",
+    "line": 64,
+    "rule": "backdrop-filter: var(--surface-floating-blur, blur(16px));"
+  },
+  {
+    "file": "public/css/components/dialog.css",
+    "line": 12,
+    "rule": "backdrop-filter: blur(0px);"
+  },
+  {
+    "file": "public/css/components/dialog.css",
+    "line": 30,
+    "rule": "backdrop-filter: blur(16px);"
+  },
+  {
+    "file": "public/css/components/dialog.css",
+    "line": 89,
+    "rule": "backdrop-filter: blur(var(--dialog-backdrop-blur, 50px)); -webkit-backdrop-filter: blur(var(--dialog-backdrop-blur, 50px));"
+  },
+  {
+    "file": "public/css/components/mobile-nav.css",
+    "line": 24,
+    "rule": "backdrop-filter: var(--surface-floating-blur) !important;"
+  },
+  {
+    "file": "public/css/components/mobile-nav.css",
+    "line": 110,
+    "rule": "-webkit-mask-image: linear-gradient(#000 0 0);"
+  },
+  {
+    "file": "public/css/components/mobile-nav.css",
+    "line": 111,
+    "rule": "mask-image: linear-gradient(#000 0 0);"
+  },
+  {
+    "file": "public/css/components/option-morph.css",
+    "line": 32,
+    "rule": "backdrop-filter: var(--surface-floating-blur);"
+  },
+  {
+    "file": "public/css/components/option-morph.css",
+    "line": 182,
+    "rule": ".surface-morph-transparent-trigger.global-project-option-menu { background: transparent; border-color: transparent; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; isolation: isolate; overflow: visible; }"
+  },
+  {
+    "file": "public/css/components/option-morph.css",
+    "line": 183,
+    "rule": ".surface-morph-transparent-trigger::before { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: var(--surface-floating-reading-bg); border: var(--surface-floating-border); box-shadow: var(--surface-floating-shadow), var(--surface-floating-highlight); backdrop-filter: var(--surface-floating-blur); -webkit-backdrop-filter: var(--surface-floating-blur); opacity: var(--morph-surface-presence, 0); pointer-events: none; }"
+  },
+  {
+    "file": "public/css/components/project-card.css",
+    "line": 132,
+    "rule": "backdrop-filter: blur(20px);"
+  },
+  {
+    "file": "public/css/components/project-card.css",
+    "line": 172,
+    "rule": "backdrop-filter: blur(12px);"
+  },
+  {
+    "file": "public/css/components/project-card.css",
+    "line": 472,
+    "rule": "mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent 100%);"
+  },
+  {
+    "file": "public/css/components/project-card.css",
+    "line": 473,
+    "rule": "-webkit-mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent 100%);"
+  },
+  {
+    "file": "public/css/components/project-card.css",
+    "line": 623,
+    "rule": "backdrop-filter: blur(10px);"
+  },
+  {
+    "file": "public/css/components/project-card.css",
+    "line": 726,
+    "rule": "backdrop-filter: blur(12px);"
+  },
+  {
+    "file": "public/css/components/project-card.css",
+    "line": 825,
+    "rule": ".project-folder-card .project-title-wrapper { white-space: normal; padding: 0; mask-image: none; -webkit-mask-image: none; }"
+  },
+  {
+    "file": "public/css/components/project-card.css",
+    "line": 863,
+    "rule": "mask-image: linear-gradient(to right, var(--folder-text-primary) calc(100% - 16px), transparent);"
+  },
+  {
+    "file": "public/css/components/project-card.css",
+    "line": 864,
+    "rule": "-webkit-mask-image: linear-gradient(to right, var(--folder-text-primary) calc(100% - 16px), transparent);"
+  },
+  {
+    "file": "public/css/components/project-card.css",
+    "line": 880,
+    "rule": "mask-image: linear-gradient(to right, var(--folder-text-primary) calc(100% - 16px), transparent);"
+  },
+  {
+    "file": "public/css/components/project-card.css",
+    "line": 881,
+    "rule": "-webkit-mask-image: linear-gradient(to right, var(--folder-text-primary) calc(100% - 16px), transparent);"
+  },
+  {
+    "file": "public/css/creation-workspace.css",
+    "line": 110,
+    "rule": ".composer-container { display: flex; align-items: flex-end; width: 100%; gap: 0; min-height: 56px; padding: var(--space-2) var(--space-3) var(--space-2) var(--space-5); border: 1px solid var(--creation-composer-edge); border-radius: 28px; background: var(--creation-composer-bg); box-shadow: var(--creation-composer-shadow); backdrop-filter: var(--surface-composer-blur); -webkit-backdrop-filter: var(--surface-composer-blur); }"
+  },
+  {
+    "file": "public/css/creation-workspace.css",
+    "line": 253,
+    "rule": ":is(.copilot-workspace,.creation-discussion-stack) .copilot-stack-card > span, .copilot-flight-summary > span { display: block; flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; mask-image: linear-gradient(to right, #000 0, #000 85%, transparent 100%); }"
+  },
+  {
+    "file": "public/css/creation-workspace.css",
+    "line": 279,
+    "rule": ".ai-thinking-caption { position: relative; flex: 1; min-width: 0; height: 1.6em; line-height: 1.6; overflow: hidden; mask-image: linear-gradient(to right, #000 0, #000 85%, transparent 100%); }"
+  },
+  {
+    "file": "public/css/dashboard-modal.css",
+    "line": 28,
+    "rule": "backdrop-filter: blur(28px);"
+  },
+  {
+    "file": "public/css/dashboard-modal.css",
+    "line": 40,
+    "rule": "backdrop-filter: blur(24px);"
+  },
+  {
+    "file": "public/css/dashboard-modal.css",
+    "line": 428,
+    "rule": "backdrop-filter: blur(10px);"
+  },
+  {
+    "file": "public/css/dashboard-modal.css",
+    "line": 453,
+    "rule": "backdrop-filter: blur(2px);"
+  },
+  {
+    "file": "public/css/dashboard.css",
+    "line": 707,
+    "rule": "backdrop-filter: var(--surface-floating-blur);"
+  },
+  {
+    "file": "public/css/dashboard.css",
+    "line": 1633,
+    "rule": "backdrop-filter: blur(0px);"
+  },
+  {
+    "file": "public/css/dashboard.css",
+    "line": 1643,
+    "rule": "backdrop-filter: blur(var(--dialog-backdrop-blur));"
+  },
+  {
+    "file": "public/css/dashboard.css",
+    "line": 2057,
+    "rule": "backdrop-filter: blur(6px);"
+  },
+  {
+    "file": "public/css/dashboard.css",
+    "line": 2843,
+    "rule": "backdrop-filter: blur(12px);"
+  },
+  {
+    "file": "public/css/dashboard.css",
+    "line": 2929,
+    "rule": ".home-hero-layout .quick-action-item { font-family: inherit; text-align: left; width: 100%; padding: var(--space-2) var(--space-3); gap: var(--space-3); background: var(--color-surface-elevated); backdrop-filter: none; -webkit-backdrop-filter: none; border-color: var(--color-border-subtle); box-shadow: var(--elevation-1); transition: transform var(--motion-duration-fast) var(--motion-ease-standard), box-shadow var(--motion-duration-fast) var(--motion-ease-standard); }"
+  },
+  {
+    "file": "public/css/dashboard.css",
+    "line": 2949,
+    "rule": "backdrop-filter: blur(16px);"
+  },
+  {
+    "file": "public/css/dashboard.css",
+    "line": 3230,
+    "rule": "backdrop-filter: blur(6px);"
+  },
+  {
+    "file": "public/css/dashboard.css",
+    "line": 3279,
+    "rule": "backdrop-filter: blur(8px);"
+  },
+  {
+    "file": "public/css/dashboard.css",
+    "line": 3311,
+    "rule": "backdrop-filter: blur(12px);"
+  },
+  {
+    "file": "public/css/dashboard.css",
+    "line": 3994,
+    "rule": "-webkit-mask-image:"
+  },
+  {
+    "file": "public/css/dashboard.css",
+    "line": 3999,
+    "rule": "mask-image:"
+  },
+  {
+    "file": "public/css/dashboard.css",
+    "line": 4584,
+    "rule": "backdrop-filter: blur(4px) !important;"
+  },
+  {
+    "file": "public/css/dashboard.css",
+    "line": 4613,
+    "rule": "backdrop-filter: var(--surface-floating-blur) !important;"
+  },
+  {
+    "file": "public/css/dashboard.css",
+    "line": 4701,
+    "rule": "backdrop-filter: none !important;"
+  },
+  {
+    "file": "public/css/dashboard.css",
+    "line": 4746,
+    "rule": "backdrop-filter: blur(8px) saturate(120%) brightness(1.06) !important;"
+  },
+  {
+    "file": "public/css/dashboard.css",
+    "line": 4786,
+    "rule": "backdrop-filter: blur(8px) saturate(120%) brightness(1.03) !important;"
+  },
+  {
+    "file": "public/css/dev-test.css",
+    "line": 454,
+    "rule": "backdrop-filter: blur(14px);"
+  },
+  {
+    "file": "public/css/generate-template.css",
+    "line": 109,
+    "rule": "backdrop-filter: blur(20px);"
+  },
+  {
+    "file": "public/css/generate-template.css",
+    "line": 359,
+    "rule": "background: rgba(0,0,0,0.5); backdrop-filter: blur(8px);"
+  },
+  {
+    "file": "public/css/generate-template.css",
+    "line": 563,
+    "rule": "backdrop-filter: blur(10px); padding: 3px 10px; border-radius: 4px; z-index: 2;"
+  },
+  {
+    "file": "public/css/generate-template.css",
+    "line": 585,
+    "rule": "background: rgba(255,255,255,0.2); backdrop-filter: blur(2px);"
+  },
+  {
+    "file": "public/css/generate.css",
+    "line": 22,
+    "rule": "backdrop-filter: var(--surface-floating-blur) !important;"
+  },
+  {
+    "file": "public/css/generate.css",
+    "line": 75,
+    "rule": "backdrop-filter: var(--surface-composer-blur) !important;"
+  },
+  {
+    "file": "public/css/generate.css",
+    "line": 384,
+    "rule": "mask-image: radial-gradient(circle 130vmax at calc(100% - 110px) calc(100% - 50px),"
+  },
+  {
+    "file": "public/css/generate.css",
+    "line": 391,
+    "rule": "-webkit-mask-image: radial-gradient(circle 130vmax at calc(100% - 110px) calc(100% - 50px),"
+  },
+  {
+    "file": "public/css/generate.css",
+    "line": 398,
+    "rule": "backdrop-filter: blur(0.05px);"
+  },
+  {
+    "file": "public/css/generate.css",
+    "line": 411,
+    "rule": "backdrop-filter: blur(28px);"
+  },
+  {
+    "file": "public/css/generate.css",
+    "line": 419,
+    "rule": "backdrop-filter: blur(0.05px);"
+  },
+  {
+    "file": "public/css/generate.css",
+    "line": 466,
+    "rule": "backdrop-filter: none !important;"
+  },
+  {
+    "file": "public/css/generate.css",
+    "line": 591,
+    "rule": "backdrop-filter: blur(5px) saturate(108%);"
+  },
+  {
+    "file": "public/css/generate.css",
+    "line": 675,
+    "rule": "backdrop-filter: blur(8px) saturate(112%) !important;"
+  },
+  {
+    "file": "public/css/generate.css",
+    "line": 807,
+    "rule": "backdrop-filter: blur(22px) !important;"
+  },
+  {
+    "file": "public/css/generate.css",
+    "line": 809,
+    "rule": "mask-image: radial-gradient(ellipse 150% 150% at 50% 100%, black 45%, rgba(0, 0, 0, 0.85) 68%, rgba(0, 0, 0, 0.25) 90%, transparent 100%) !important;"
+  },
+  {
+    "file": "public/css/generate.css",
+    "line": 810,
+    "rule": "-webkit-mask-image: radial-gradient(ellipse 150% 150% at 50% 100%, black 45%, rgba(0, 0, 0, 0.85) 68%, rgba(0, 0, 0, 0.25) 90%, transparent 100%) !important;"
+  },
+  {
+    "file": "public/css/generate.css",
+    "line": 848,
+    "rule": "backdrop-filter: var(--surface-floating-blur) !important;"
+  },
+  {
+    "file": "public/css/generate.css",
+    "line": 1008,
+    "rule": "backdrop-filter: var(--surface-composer-blur) !important;"
+  },
+  {
+    "file": "public/css/landing.css",
+    "line": 200,
+    "rule": ".lp-nav { background: var(--glass-nav-bg); backdrop-filter: var(--glass-nav-blur); -webkit-backdrop-filter: var(--glass-nav-blur); border-bottom: var(--glass-nav-border); }"
+  },
+  {
+    "file": "public/css/landing.css",
+    "line": 201,
+    "rule": ".lp-nav::before { content: ''; position: absolute; inset: 0 0 -24px; z-index: -1; pointer-events: none; background: var(--glass-nav-bg); mask-image: linear-gradient(to bottom, var(--lp-ink) 65%, transparent); }"
+  },
+  {
+    "file": "public/css/landing_demo.css",
+    "line": 129,
+    "rule": "backdrop-filter: blur(25px);"
+  },
+  {
+    "file": "public/css/landing_demo.css",
+    "line": 1018,
+    "rule": "backdrop-filter: blur(0px);"
+  },
+  {
+    "file": "public/css/landing_demo.css",
+    "line": 1024,
+    "rule": "backdrop-filter: blur(0px);"
+  },
+  {
+    "file": "public/css/project-detail.css",
+    "line": 583,
+    "rule": "backdrop-filter: blur(0px);"
+  },
+  {
+    "file": "public/css/project-detail.css",
+    "line": 595,
+    "rule": "backdrop-filter: blur(8px);"
+  },
+  {
+    "file": "public/css/shell.css",
+    "line": 266,
+    "rule": "backdrop-filter: blur(var(--edge-blur));"
+  },
+  {
+    "file": "public/css/shell.css",
+    "line": 273,
+    "rule": "backdrop-filter: none;"
+  },
+  {
+    "file": "public/css/style.css",
+    "line": 213,
+    "rule": "backdrop-filter: blur(0px);"
+  },
+  {
+    "file": "public/css/style.css",
+    "line": 787,
+    "rule": "backdrop-filter: none;"
+  },
+  {
+    "file": "public/css/template-detail.css",
+    "line": 1580,
+    "rule": "backdrop-filter: blur(8px);"
+  },
+  {
+    "file": "public/css/template.css",
+    "line": 1270,
+    "rule": "backdrop-filter: blur(8px);"
+  },
+  {
+    "file": "public/css/template.css",
+    "line": 1804,
+    "rule": "backdrop-filter: blur(14px);"
+  },
+  {
+    "file": "public/css/tokens/components.css",
+    "line": 95,
+    "rule": "@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {"
+  },
+  {
+    "file": "public/css/tokens/components.css",
+    "line": 113,
+    "rule": "@supports not ((mask-image: linear-gradient(black, transparent)) or (-webkit-mask-image: linear-gradient(black, transparent))) {"
+  },
+  {
+    "file": "public/css/tokens/components.css",
+    "line": 116,
+    "rule": "@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {"
+  }
+]

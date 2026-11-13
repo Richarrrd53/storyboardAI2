@@ -96,6 +96,7 @@
                 </span>
               </div>
               <h1 class="detail-template-title text-page-title" id="detail-template-title" tabindex="-1">載入中…</h1>
+              <span id="detail-summary-origin" class="template-summary-label"></span>
               <p class="detail-template-desc" id="detail-template-desc">載入中...</p>
               <button type="button" class="btn-desc-expand" id="btn-desc-expand" hidden>閱讀全文</button>
 
@@ -132,7 +133,7 @@
             <div class="detail-hero-right">
               <div class="hero-player-card">
                 <div class="video-monitor-wrapper" id="detail-program-monitor">
-                  <div class="nle-monitor-fallback">SOURCE PREVIEW</div>
+                  <div class="nle-monitor-fallback">來源影片預覽</div>
                   <div class="nle-safe-frame"></div>
                 </div>
                 <!-- 播放控制列 -->
@@ -155,7 +156,7 @@
               <div class="dynamic-narrative-card" id="detail-dynamic-narrative-card">
                 <div class="narrative-card-header">
                   <div class="narrative-badge-group">
-                    <span class="narrative-phase-badge" id="dyn-phase-badge">HOOK · 開場鉤子</span>
+                    <span class="narrative-phase-badge" id="dyn-phase-badge">開場鉤子</span>
                     <span class="narrative-time-badge" id="dyn-time-badge">00:00–00:05</span>
                   </div>
                   <span class="narrative-shot-badge" id="dyn-shot-badge">S01</span>
@@ -187,7 +188,7 @@
             <!-- 核心洞察 -->
             <article class="overview-card insight-card">
               <div class="overview-card-header">
-                <span class="card-icon">💡</span>
+                <span class="card-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M9 18h6m-5 3h4M8 14a6 6 0 1 1 8 0l-1 2H9Z"/></svg></span>
                 <h3 class="card-title">核心洞察</h3>
               </div>
               <p id="analysis-key-insight" class="insight-text">正在整理影片的成功要素…</p>
@@ -206,7 +207,7 @@
             <!-- 可複製手法 -->
             <article class="overview-card replicable-card">
               <div class="overview-card-header">
-                <span class="card-icon">🎯</span>
+                <span class="card-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg></span>
                 <h3 class="card-title">可複製手法</h3>
               </div>
               <div class="replicable-list" id="analysis-insight-tags"></div>
@@ -514,7 +515,7 @@
     <div class="source-modal-panel">
       <button class="source-modal-close" type="button" id="btn-close-source-modal" aria-label="關閉原片資訊視窗">×</button>
       <div class="source-modal-head">
-        <span class="source-modal-eyebrow">SOURCE VIDEO</span>
+        <span class="source-modal-eyebrow">來源影片</span>
         <h3 id="source-modal-title">來源影片資訊</h3>
       </div>
       <div class="source-modal-body">
@@ -551,6 +552,7 @@
   <script src="../js/sys.js"></script>
   <script src="../js/dynamic-mask.js"></script>
   <script src="../js/features/page-asset-loader.js"></script>
+  <script src="../js/components/template-presentation.js"></script>
   <script src="../js/template-timeline.js"></script>
   <script src="../js/template-editor.js?v=20261006-2"></script>
   <script src="../js/template.js"></script>

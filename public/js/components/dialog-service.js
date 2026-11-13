@@ -93,13 +93,15 @@
     actions.append(submit); form.append(actions); panel.append(form); overlay.append(panel); document.body.append(overlay);
     let busy = false, settled = false, timer = null;
     const animations = [];
+    // Use the same scale lifecycle as the tag editor; standalone hosts retain a WAAPI fallback.
+    const modalMotion = root.ModalAnimation;
     const lease = root.OverlayManager.acquire({ overlay, panel, returnFocus,
       initialFocus: input || (opts.danger && kind !== 'alert' ? cancel : submit),
       onEscape: () => { if (kind !== 'alert' && !busy) finish(cancelled(kind, 'escape')); }
     });
     if (input) input.select();
     function dispose(result) {
-      clearTimeout(timer); animations.forEach(a => a.cancel());
+      clearTimeout(timer); modalMotion?.cancel(overlay); animations.forEach(a => a.cancel());
       entry.signal?.removeEventListener('abort', entry.abort);
       overlay.remove(); lease.release({ restoreFocus: result.reason !== 'abort' });
       active = null; entry.resolve(result); drain();
@@ -112,13 +114,17 @@
       }
       settled = true; submit.disabled = true; cancel.disabled = true;
       if (immediate || motion?.matches) { dispose(result); return; }
-      const renderedTransform = root.getComputedStyle?.(panel)?.transform;
-      const currentTransform = !renderedTransform || renderedTransform === 'none' ? 'scale(1)' : renderedTransform;
+      if (modalMotion) {
+        modalMotion.close(overlay, panel, { duration, onComplete: () => dispose(result) });
+        return;
+      }
+      const renderedScale = root.getComputedStyle?.(panel)?.scale;
+      const currentScale = !renderedScale || renderedScale === 'none' ? '1' : renderedScale;
       const currentBlur = root.getComputedStyle?.(overlay)?.backdropFilter || 'blur(var(--dialog-backdrop-blur, 50px))';
       animations.forEach(a => a.cancel());
       // Keep scrim alpha constant throughout exit; only reverse blur and panel scale.
       animate(overlay, [{ backdropFilter: currentBlur, webkitBackdropFilter: currentBlur }, { backdropFilter: 'blur(0px)', webkitBackdropFilter: 'blur(0px)' }], duration, 'cubic-bezier(.8,0,.6,1)');
-      animate(panel, [{ transform: currentTransform }, { transform: 'scale(0)' }], duration, exitEase);
+      animate(panel, [{ scale: currentScale }, { scale: '0' }], duration, exitEase);
       timer = setTimeout(() => dispose(result), duration);
     }
     function animate(el, frames, duration, easing) {
@@ -159,9 +165,11 @@
       }
     });
     input?.addEventListener('input', () => { error.textContent = ''; input.removeAttribute('aria-invalid'); });
-    if (!motion?.matches) {
+    if (!motion?.matches && modalMotion) {
+      modalMotion.open(overlay, panel, { duration, blur: 'var(--dialog-backdrop-blur, 50px)', backdropBg: 'var(--dialog-backdrop-bg)' });
+    } else if (!motion?.matches) {
       animate(overlay, [{ backdropFilter: 'blur(0px)', webkitBackdropFilter: 'blur(0px)' }, { backdropFilter: 'blur(var(--dialog-backdrop-blur, 50px))', webkitBackdropFilter: 'blur(var(--dialog-backdrop-blur, 50px))' }], duration, 'cubic-bezier(.4,0,.2,1)');
-      animate(panel, [{ transform: 'scale(0)' }, { transform: 'scale(1)' }], duration, enterEase);
+      animate(panel, [{ scale: '0' }, { scale: '1' }], duration, enterEase);
     }
   }
   root.DialogService = {

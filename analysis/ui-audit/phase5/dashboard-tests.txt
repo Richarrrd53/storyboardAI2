@@ -1,0 +1,60 @@
+TAP version 13
+# Subtest: DashboardPage: getRecentProjects filters deleted/pending, sorts desc, and takes at most 4
+ok 1 - DashboardPage: getRecentProjects filters deleted/pending, sorts desc, and takes at most 4
+  ---
+  duration_ms: 5.3561
+  ...
+# Subtest: DashboardPage: Page Lifecycle Contract - mount() returns { unmount() }
+ok 2 - DashboardPage: Page Lifecycle Contract - mount() returns { unmount() }
+  ---
+  duration_ms: 11.5876
+  ...
+# Subtest: DashboardPage: dynamic greeting and user info presentation
+ok 3 - DashboardPage: dynamic greeting and user info presentation
+  ---
+  duration_ms: 25.0111
+  ...
+# Subtest: DashboardPage: renders empty state when no recent projects exist
+ok 4 - DashboardPage: renders empty state when no recent projects exist
+  ---
+  duration_ms: 4.4113
+  ...
+# Subtest: DashboardPage: renders compact cards and binds setupProjectCardEvents with variant=compact
+ok 5 - DashboardPage: renders compact cards and binds setupProjectCardEvents with variant=compact
+  ---
+  duration_ms: 5.5635
+  ...
+# Subtest: DashboardPage: Quick Actions navigation events
+ok 6 - DashboardPage: Quick Actions navigation events
+  ---
+  duration_ms: 1.9262
+  ...
+# Subtest: DashboardPage: reactive updates via ProjectStore subscription and mask lifecycle
+ok 7 - DashboardPage: reactive updates via ProjectStore subscription and mask lifecycle
+  ---
+  duration_ms: 2.9959
+  ...
+# Subtest: Router Navigation Simulation: Direct Entry to Dashboard, Leave, Return, Back/Forward Lifecycle
+ok 8 - Router Navigation Simulation: Direct Entry to Dashboard, Leave, Return, Back/Forward Lifecycle
+  ---
+  duration_ms: 4.968
+  ...
+# Subtest: Dashboard Hero uses actual recent project and safe unique preview sources
+ok 9 - Dashboard Hero uses actual recent project and safe unique preview sources
+  ---
+  duration_ms: 4.3082
+  ...
+# Subtest: Dashboard Hero distinguishes loading, empty, error and missing media without invented projects
+ok 10 - Dashboard Hero distinguishes loading, empty, error and missing media without invented projects
+  ---
+  duration_ms: 1.7926
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 442.8245

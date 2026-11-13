@@ -12,6 +12,12 @@
   --motion-duration-slow:    800ms; /* 3D Card flip, system dialog */
   --motion-duration-ambient: 12s;   /* Background ambient breathing */
 
+  /* Existing workspace timings receive semantic names; values stay unchanged. */
+  --motion-header-duration:   320ms;
+  --motion-duration-feedback: 160ms;
+  --motion-duration-reveal:   280ms;
+  --motion-duration-surface:  460ms;
+
   /* ── Easing Curve Tokens ── */
   --motion-ease-standard:    cubic-bezier(.4, 0, .2, 1);            /* Natural Material */
   --motion-ease-decelerate:  cubic-bezier(0.16, 1, 0.3, 1);         /* Fluid Enter */

@@ -1,0 +1,16 @@
+{
+  "dialogs": 1,
+  "glows": [
+    {
+      "animation": "glow-loop",
+      "inert": true,
+      "playState": "running"
+    },
+    {
+      "animation": "glow-loop",
+      "inert": true,
+      "playState": "running"
+    }
+  ],
+  "morphs": 0
+}

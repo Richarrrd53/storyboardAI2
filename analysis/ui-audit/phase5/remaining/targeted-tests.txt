@@ -1,0 +1,140 @@
+TAP version 13
+# Subtest: choice group has one selected radio and a single tab stop, without legacy pressed semantics
+ok 1 - choice group has one selected radio and a single tab stop, without legacy pressed semantics
+  ---
+  duration_ms: 6.6917
+  ...
+# Subtest: choice group skips native, aria and fieldset disabled options and hidden options
+ok 2 - choice group skips native, aria and fieldset disabled options and hidden options
+  ---
+  duration_ms: 0.8176
+  ...
+# Subtest: choice remount and abort have one keyboard owner and release listeners
+ok 3 - choice remount and abort have one keyboard owner and release listeners
+  ---
+  duration_ms: 1.9284
+  ...
+# Subtest: choice retains native Enter/Space and modified arrows, supports RTL and no selection
+ok 4 - choice retains native Enter/Space and modified arrows, supports RTL and no selection
+  ---
+  duration_ms: 1.5357
+  ...
+# Subtest: display excerpts remove source promotion links and hashtags while preserving frozen source verbatim
+ok 5 - display excerpts remove source promotion links and hashtags while preserving frozen source verbatim
+  ---
+  duration_ms: 4.4895
+  ...
+# Subtest: explicit editorial copy is respected and long summaries keep full content separately
+ok 6 - explicit editorial copy is respected and long summaries keep full content separately
+  ---
+  duration_ms: 1.2339
+  ...
+# Subtest: unknown source metadata is explicit, durations only derive from fully known shots
+ok 7 - unknown source metadata is explicit, durations only derive from fully known shots
+  ---
+  duration_ms: 5.2636
+  ...
+# Subtest: Generate ratio selection updates the existing brief once and disabled choices never write
+ok 8 - Generate ratio selection updates the existing brief once and disabled choices never write
+  ---
+  duration_ms: 11.8359
+  ...
+# Subtest: source modal portals out of page content, waits for exit, and tears down its lease/listener
+ok 9 - source modal portals out of page content, waits for exit, and tears down its lease/listener
+  ---
+  duration_ms: 17.2326
+  ...
+# Subtest: TemplatesPage: Category counts calculation (getCatCounts)
+ok 10 - TemplatesPage: Category counts calculation (getCatCounts)
+  ---
+  duration_ms: 2.7482
+  ...
+# Subtest: TemplatesPage: Page Lifecycle Contract - mount() returns { unmount() }
+ok 11 - TemplatesPage: Page Lifecycle Contract - mount() returns { unmount() }
+  ---
+  duration_ms: 60.0126
+  ...
+# Subtest: TemplatesPage: Data loading from API and caches in window.cacheTemplatesList
+ok 12 - TemplatesPage: Data loading from API and caches in window.cacheTemplatesList
+  ---
+  duration_ms: 2.74
+  ...
+# Subtest: TemplatesPage: Empty state when no templates exist
+ok 13 - TemplatesPage: Empty state when no templates exist
+  ---
+  duration_ms: 0.7651
+  ...
+# Subtest: TemplatesPage: Category filtering and search interaction
+ok 14 - TemplatesPage: Category filtering and search interaction
+  ---
+  duration_ms: 5.0317
+  ...
+# Subtest: TemplatesPage: Template card interactions (preview, apply) & back button
+ok 15 - TemplatesPage: Template card interactions (preview, apply) & back button
+  ---
+  duration_ms: 4.6465
+  ...
+# Subtest: TemplatesPage: backToStoreBrowse() cleans the timeline while preserving the mounted catalog and listeners
+ok 16 - TemplatesPage: backToStoreBrowse() cleans the timeline while preserving the mounted catalog and listeners
+  ---
+  duration_ms: 3.3976
+  ...
+# Subtest: TemplatesPage: Teardown on unmount() invokes destroyTemplateTimeline and clears state
+ok 17 - TemplatesPage: Teardown on unmount() invokes destroyTemplateTimeline and clears state
+  ---
+  duration_ms: 2.9596
+  ...
+# Subtest: Router Navigation Simulation: Direct Entry to Template, Leave to Dashboard, Return, Back/Forward Lifecycle
+ok 18 - Router Navigation Simulation: Direct Entry to Template, Leave to Dashboard, Return, Back/Forward Lifecycle
+  ---
+  duration_ms: 6.7053
+  ...
+# Subtest: marketplace search, category and tag filters combine and unknown durations sort last
+ok 19 - marketplace search, category and tag filters combine and unknown durations sort last
+  ---
+  duration_ms: 5.5101
+  ...
+# Subtest: deep-linked IDs reuse the mounted catalog and unknown IDs have a recovery state
+ok 20 - deep-linked IDs reuse the mounted catalog and unknown IDs have a recovery state
+  ---
+  duration_ms: 2.4067
+  ...
+# Subtest: catalog HTTP errors are distinct from an empty catalog
+ok 21 - catalog HTTP errors are distinct from an empty catalog
+  ---
+  duration_ms: 1.233
+  ...
+# Subtest: template card text is escaped and missing specifications are not fabricated
+ok 22 - template card text is escaped and missing specifications are not fabricated
+  ---
+  duration_ms: 1.1905
+  ...
+# Subtest: template grid layout specifies 5 columns by default with compact card styles
+ok 23 - template grid layout specifies 5 columns by default with compact card styles
+  ---
+  duration_ms: 4.0088
+  ...
+# Subtest: TemplatesPage: DynamicMaskSystem lifecycle on template-detail-body during detail preview and cleanup
+ok 24 - TemplatesPage: DynamicMaskSystem lifecycle on template-detail-body during detail preview and cleanup
+  ---
+  duration_ms: 7.4655
+  ...
+# Subtest: rapid detail return dispatches history.back once until route acknowledgement
+ok 25 - rapid detail return dispatches history.back once until route acknowledgement
+  ---
+  duration_ms: 2.3153
+  ...
+# Subtest: catalog searches both display copy and verbatim source without changing template input
+ok 26 - catalog searches both display copy and verbatim source without changing template input
+  ---
+  duration_ms: 1.5635
+  ...
+1..26
+# tests 26
+# suites 0
+# pass 26
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 399.123

@@ -1,0 +1,37 @@
+[
+  {
+    "blur": "blur(1.5px)",
+    "role": "progressive-edge-blur progressive-edge-blur--bottom",
+    "visible": "visible"
+  },
+  {
+    "blur": "blur(4px)",
+    "role": "progressive-edge-blur progressive-edge-blur--bottom",
+    "visible": "visible"
+  },
+  {
+    "blur": "blur(8px)",
+    "role": "progressive-edge-blur progressive-edge-blur--bottom",
+    "visible": "visible"
+  },
+  {
+    "blur": "blur(1.5px)",
+    "role": "progressive-edge-blur progressive-edge-blur--top",
+    "visible": "visible"
+  },
+  {
+    "blur": "blur(4px)",
+    "role": "progressive-edge-blur progressive-edge-blur--top",
+    "visible": "visible"
+  },
+  {
+    "blur": "blur(8px)",
+    "role": "progressive-edge-blur progressive-edge-blur--top",
+    "visible": "visible"
+  },
+  {
+    "blur": "none",
+    "role": "progressive-edge-blur progressive-edge-blur--top progressive-edge-blur--tint",
+    "visible": "visible"
+  }
+]

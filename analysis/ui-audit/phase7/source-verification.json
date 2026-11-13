@@ -1,0 +1,1138 @@
+{
+  "date": "2026-11-14",
+  "source": [
+    {
+      "file": "public/css/auth.css",
+      "unchanged": false,
+      "allowedCorrection": true
+    },
+    {
+      "file": "public/css/components/account-panel.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/components/acrylic.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/components/badge.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/components/bottom-sheet.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/components/button.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/components/cards.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/components/continuous-corners.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/components/dialog.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/components/filmstrip.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/components/input.css",
+      "unchanged": false,
+      "allowedCorrection": true
+    },
+    {
+      "file": "public/css/components/mobile-nav.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/components/option-morph.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/components/project-card.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/components/quick-create.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/creation-workspace.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/dashboard-modal.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/dashboard.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/dev-test.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/discovery-settings.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/discovery.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/generate-template.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/generate.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/landing.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/landing_demo.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/main.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/math-curve-loader.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/project-detail.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/shell.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/style.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/template-detail.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/template-editor.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/template-workflow.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/template.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/tokens/blur.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/tokens/border.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/tokens/breakpoint.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/tokens/colors.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/tokens/components.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/tokens/layers.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/tokens/layout.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/tokens/motion.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/tokens/opacity.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/tokens/primitives.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/tokens/radius.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/tokens/shadow.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/tokens/sizing.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/tokens/spacing.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/tokens/typography.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/css/tokens.css",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/html/analyze.html",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/html/dashboard.html",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/html/dev-test.html",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/html/discovery-settings.html",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/html/discovery.html",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/html/generate-template.html",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/html/generate.html",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/html/history.html",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/html/index.html",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/html/index_backup.html",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/html/landing_demo.html",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/html/login.html",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/html/projects.html",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/html/template.html",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/html/test-folder-card.html",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/auth.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/components/choice-group.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/components/dialog-service.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/components/global-toast.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/components/navigation-transition.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/components/overlay-manager.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/components/project-card-interactions.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/components/project-card.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/components/project-cover-transition.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/components/project-option-morph.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/components/project-thumbnails.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/components/project-trash-motion.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/components/quick-compose.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/components/surface-morph.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/components/template-presentation.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/components/transition-loader.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/components/user-panel.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/dashboard.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/dev-test.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/discovery-settings.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/discovery.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/dynamic-mask.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/features/auth-service.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/features/creation.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/features/creative-brief.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/features/creative-copilot.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/features/freeform-storyboard.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/features/generation-task.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/features/inspiration-field.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/features/page-asset-loader.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/features/projects.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/features/template-workflow.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/generate-prefill-path.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/generate-template.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/generate.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/landing-animation.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/landing.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/main.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/math-curve-loader.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/pages/auth-page.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/pages/dashboard.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/pages/history.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/pages/page-host.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/pages/project-detail.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/pages/projects.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/pages/templates.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/project-detail.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/prompt-translate.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/shell/app-shell.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/spa-router.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/sys.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/template-editor.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/template-timeline.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/template.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/token-manager.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/upload.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/vendor/gsap.min.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/js/vendor/ScrollTrigger.min.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/main.html",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "public/test-generation-ui.html",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "server.js",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "vercel.json",
+      "unchanged": true,
+      "allowedCorrection": false
+    },
+    {
+      "file": "package.json",
+      "unchanged": true,
+      "allowedCorrection": false
+    }
+  ],
+  "js": [
+    {
+      "file": "public/js/auth.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/components/choice-group.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/components/dialog-service.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/components/global-toast.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/components/navigation-transition.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/components/overlay-manager.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/components/project-card-interactions.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/components/project-card.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/components/project-cover-transition.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/components/project-option-morph.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/components/project-thumbnails.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/components/project-trash-motion.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/components/quick-compose.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/components/surface-morph.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/components/template-presentation.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/components/transition-loader.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/components/user-panel.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/dashboard.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/dev-test.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/discovery-settings.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/discovery.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/dynamic-mask.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/features/auth-service.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/features/creation.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/features/creative-brief.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/features/creative-copilot.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/features/freeform-storyboard.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/features/generation-task.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/features/inspiration-field.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/features/page-asset-loader.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/features/projects.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/features/template-workflow.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/generate-prefill-path.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/generate-template.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/generate.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/landing-animation.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/landing.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/main.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/math-curve-loader.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/pages/auth-page.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/pages/dashboard.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/pages/history.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/pages/page-host.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/pages/project-detail.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/pages/projects.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/pages/templates.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/project-detail.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/prompt-translate.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/shell/app-shell.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/spa-router.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/sys.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/template-editor.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/template-timeline.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/template.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/token-manager.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/upload.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/vendor/gsap.min.js",
+      "passed": true
+    },
+    {
+      "file": "public/js/vendor/ScrollTrigger.min.js",
+      "passed": true
+    }
+  ],
+  "css": [
+    {
+      "file": "public/css/auth.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/components/account-panel.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/components/acrylic.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/components/badge.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/components/bottom-sheet.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/components/button.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/components/cards.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/components/continuous-corners.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/components/dialog.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/components/filmstrip.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/components/input.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/components/mobile-nav.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/components/option-morph.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/components/project-card.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/components/quick-create.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/creation-workspace.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/dashboard-modal.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/dashboard.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/dev-test.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/discovery-settings.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/discovery.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/generate-template.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/generate.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/landing.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/landing_demo.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/main.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/math-curve-loader.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/project-detail.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/shell.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/style.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/template-detail.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/template-editor.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/template-workflow.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/template.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/tokens/blur.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/tokens/border.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/tokens/breakpoint.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/tokens/colors.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/tokens/components.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/tokens/layers.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/tokens/layout.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/tokens/motion.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/tokens/opacity.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/tokens/primitives.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/tokens/radius.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/tokens/shadow.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/tokens/sizing.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/tokens/spacing.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/tokens/typography.css",
+      "passed": true
+    },
+    {
+      "file": "public/css/tokens.css",
+      "passed": true
+    }
+  ],
+  "html": [
+    {
+      "file": "public/html/index.html",
+      "ids": 25,
+      "duplicateStaticIds": []
+    },
+    {
+      "file": "public/html/login.html",
+      "ids": 33,
+      "duplicateStaticIds": []
+    },
+    {
+      "file": "public/html/dashboard.html",
+      "ids": 43,
+      "duplicateStaticIds": []
+    },
+    {
+      "file": "public/html/projects.html",
+      "ids": 8,
+      "duplicateStaticIds": []
+    },
+    {
+      "file": "public/html/generate.html",
+      "ids": 110,
+      "duplicateStaticIds": []
+    },
+    {
+      "file": "public/html/template.html",
+      "ids": 160,
+      "duplicateStaticIds": []
+    },
+    {
+      "file": "public/html/history.html",
+      "ids": 2,
+      "duplicateStaticIds": []
+    },
+    {
+      "file": "public/html/discovery.html",
+      "ids": 15,
+      "duplicateStaticIds": []
+    },
+    {
+      "file": "public/html/discovery-settings.html",
+      "ids": 17,
+      "duplicateStaticIds": []
+    }
+  ],
+  "whitespace": true,
+  "contrastEvidence": {
+    "kind": "Specified solid-surface contrast, not native browser composition",
+    "before": "#94a3b8",
+    "after": "#475569",
+    "background": "#ffffff",
+    "beforeRatio": 2.5640413904962034,
+    "afterRatio": 7.577663953533317
+  },
+  "unexpectedChanges": []
+}

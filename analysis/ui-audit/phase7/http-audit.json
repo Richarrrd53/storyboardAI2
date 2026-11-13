@@ -1,0 +1,1227 @@
+{
+  "date": "2026-11-14",
+  "kind": "Isolated HTTP / dependency audit; no browser rendering",
+  "base": "http://127.0.0.1:4327",
+  "formal": [
+    {
+      "route": "/login",
+      "status": 200,
+      "hasShell": true
+    },
+    {
+      "route": "/register",
+      "status": 200,
+      "hasShell": true
+    },
+    {
+      "route": "/dashboard",
+      "status": 200,
+      "hasShell": true
+    },
+    {
+      "route": "/projects",
+      "status": 200,
+      "hasShell": true
+    },
+    {
+      "route": "/project/audit-folder",
+      "status": 200,
+      "hasShell": true
+    },
+    {
+      "route": "/generate",
+      "status": 200,
+      "hasShell": true
+    },
+    {
+      "route": "/template",
+      "status": 200,
+      "hasShell": true
+    },
+    {
+      "route": "/template/phase7-long",
+      "status": 200,
+      "hasShell": true
+    },
+    {
+      "route": "/history",
+      "status": 200,
+      "hasShell": true
+    },
+    {
+      "route": "/discovery",
+      "status": 200,
+      "hasShell": true
+    },
+    {
+      "route": "/discovery/settings",
+      "status": 200,
+      "hasShell": true
+    }
+  ],
+  "harnessSyntax": true,
+  "assets": [
+    {
+      "path": "/html/index.html",
+      "from": "/",
+      "role": "formal-html",
+      "line": null,
+      "status": 200,
+      "bytes": 13616,
+      "ok": true
+    },
+    {
+      "path": "/html/login.html",
+      "from": "/",
+      "role": "formal-html",
+      "line": null,
+      "status": 200,
+      "bytes": 11658,
+      "ok": true
+    },
+    {
+      "path": "/html/dashboard.html",
+      "from": "/",
+      "role": "formal-html",
+      "line": null,
+      "status": 200,
+      "bytes": 42788,
+      "ok": true
+    },
+    {
+      "path": "/html/projects.html",
+      "from": "/",
+      "role": "formal-html",
+      "line": null,
+      "status": 200,
+      "bytes": 2834,
+      "ok": true
+    },
+    {
+      "path": "/html/generate.html",
+      "from": "/",
+      "role": "formal-html",
+      "line": null,
+      "status": 200,
+      "bytes": 29245,
+      "ok": true
+    },
+    {
+      "path": "/html/history.html",
+      "from": "/",
+      "role": "formal-html",
+      "line": null,
+      "status": 200,
+      "bytes": 1425,
+      "ok": true
+    },
+    {
+      "path": "/html/template.html",
+      "from": "/",
+      "role": "formal-html",
+      "line": null,
+      "status": 200,
+      "bytes": 37678,
+      "ok": true
+    },
+    {
+      "path": "/html/discovery.html",
+      "from": "/",
+      "role": "formal-html",
+      "line": null,
+      "status": 200,
+      "bytes": 4943,
+      "ok": true
+    },
+    {
+      "path": "/html/discovery-settings.html",
+      "from": "/",
+      "role": "formal-html",
+      "line": null,
+      "status": 200,
+      "bytes": 5521,
+      "ok": true
+    },
+    {
+      "path": "/main.html",
+      "from": "/",
+      "role": "app-host",
+      "line": null,
+      "status": 200,
+      "bytes": 435,
+      "ok": true
+    },
+    {
+      "path": "/js/landing-animation.js",
+      "from": "/js/spa-router.js",
+      "role": "route-dependency",
+      "line": null,
+      "status": 200,
+      "bytes": 7117,
+      "ok": true
+    },
+    {
+      "path": "/js/landing.js",
+      "from": "/js/spa-router.js",
+      "role": "route-dependency",
+      "line": null,
+      "status": 200,
+      "bytes": 3998,
+      "ok": true
+    },
+    {
+      "path": "/css/auth.css",
+      "from": "/js/spa-router.js",
+      "role": "route-dependency",
+      "line": null,
+      "status": 200,
+      "bytes": 11958,
+      "ok": true
+    },
+    {
+      "path": "/css/dashboard.css",
+      "from": "/js/spa-router.js",
+      "role": "route-dependency",
+      "line": null,
+      "status": 200,
+      "bytes": 144102,
+      "ok": true
+    },
+    {
+      "path": "/css/generate.css",
+      "from": "/js/spa-router.js",
+      "role": "route-dependency",
+      "line": null,
+      "status": 200,
+      "bytes": 39316,
+      "ok": true
+    },
+    {
+      "path": "/css/math-curve-loader.css",
+      "from": "/js/spa-router.js",
+      "role": "route-dependency",
+      "line": null,
+      "status": 200,
+      "bytes": 210,
+      "ok": true
+    },
+    {
+      "path": "/js/generate-prefill-path.js",
+      "from": "/js/spa-router.js",
+      "role": "route-dependency",
+      "line": null,
+      "status": 200,
+      "bytes": 2431,
+      "ok": true
+    },
+    {
+      "path": "/css/template.css",
+      "from": "/js/spa-router.js",
+      "role": "route-dependency",
+      "line": null,
+      "status": 200,
+      "bytes": 57167,
+      "ok": true
+    },
+    {
+      "path": "/css/template-workflow.css?v=20261006-4",
+      "from": "/js/spa-router.js",
+      "role": "route-dependency",
+      "line": null,
+      "status": 200,
+      "bytes": 6203,
+      "ok": true
+    },
+    {
+      "path": "/js/components/choice-group.js",
+      "from": "/js/spa-router.js",
+      "role": "route-dependency",
+      "line": null,
+      "status": 200,
+      "bytes": 2463,
+      "ok": true
+    },
+    {
+      "path": "/js/components/template-presentation.js",
+      "from": "/js/spa-router.js",
+      "role": "route-dependency",
+      "line": null,
+      "status": 200,
+      "bytes": 3295,
+      "ok": true
+    },
+    {
+      "path": "/js/math-curve-loader.js",
+      "from": "/js/spa-router.js",
+      "role": "route-dependency",
+      "line": null,
+      "status": 200,
+      "bytes": 9955,
+      "ok": true
+    },
+    {
+      "path": "/js/token-manager.js",
+      "from": "/js/spa-router.js",
+      "role": "route-dependency",
+      "line": null,
+      "status": 200,
+      "bytes": 1153,
+      "ok": true
+    },
+    {
+      "path": "/js/prompt-translate.js",
+      "from": "/js/spa-router.js",
+      "role": "route-dependency",
+      "line": null,
+      "status": 200,
+      "bytes": 3258,
+      "ok": true
+    },
+    {
+      "path": "/css/template-editor.css?v=20261006-2",
+      "from": "/js/spa-router.js",
+      "role": "route-dependency",
+      "line": null,
+      "status": 200,
+      "bytes": 17338,
+      "ok": true
+    },
+    {
+      "path": "/css/template-detail.css?v=20261014-2",
+      "from": "/js/spa-router.js",
+      "role": "route-dependency",
+      "line": null,
+      "status": 200,
+      "bytes": 42721,
+      "ok": true
+    },
+    {
+      "path": "/js/template-timeline.js",
+      "from": "/js/spa-router.js",
+      "role": "route-dependency",
+      "line": null,
+      "status": 200,
+      "bytes": 89885,
+      "ok": true
+    },
+    {
+      "path": "/js/template-editor.js?v=20261006-2",
+      "from": "/js/spa-router.js",
+      "role": "route-dependency",
+      "line": null,
+      "status": 200,
+      "bytes": 11606,
+      "ok": true
+    },
+    {
+      "path": "/js/template.js",
+      "from": "/js/spa-router.js",
+      "role": "route-dependency",
+      "line": null,
+      "status": 200,
+      "bytes": 9441,
+      "ok": true
+    },
+    {
+      "path": "/css/discovery.css",
+      "from": "/js/spa-router.js",
+      "role": "route-dependency",
+      "line": null,
+      "status": 200,
+      "bytes": 15890,
+      "ok": true
+    },
+    {
+      "path": "/js/discovery.js",
+      "from": "/js/spa-router.js",
+      "role": "route-dependency",
+      "line": null,
+      "status": 200,
+      "bytes": 16665,
+      "ok": true
+    },
+    {
+      "path": "/css/discovery-settings.css",
+      "from": "/js/spa-router.js",
+      "role": "route-dependency",
+      "line": null,
+      "status": 200,
+      "bytes": 7736,
+      "ok": true
+    },
+    {
+      "path": "/js/discovery-settings.js",
+      "from": "/js/spa-router.js",
+      "role": "route-dependency",
+      "line": null,
+      "status": 200,
+      "bytes": 8403,
+      "ok": true
+    },
+    {
+      "path": "/css/project-detail.css",
+      "from": "/js/spa-router.js",
+      "role": "route-dependency",
+      "line": null,
+      "status": 200,
+      "bytes": 35668,
+      "ok": true
+    },
+    {
+      "path": "/js/project-detail.js",
+      "from": "/js/spa-router.js",
+      "role": "route-dependency",
+      "line": null,
+      "status": 200,
+      "bytes": 45744,
+      "ok": true
+    },
+    {
+      "path": "/css/style.css",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 9,
+      "status": 200,
+      "bytes": 21238,
+      "ok": true
+    },
+    {
+      "path": "/css/landing.css",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 10,
+      "status": 200,
+      "bytes": 25509,
+      "ok": true
+    },
+    {
+      "path": "/icon/logo/logo.png",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 18,
+      "status": 200,
+      "bytes": 1172862,
+      "ok": true
+    },
+    {
+      "path": "/icon/card/realistic.png",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 43,
+      "status": 200,
+      "bytes": 1127198,
+      "ok": true
+    },
+    {
+      "path": "/icon/card/film.png",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 44,
+      "status": 200,
+      "bytes": 824873,
+      "ok": true
+    },
+    {
+      "path": "/icon/card/comic.png",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 45,
+      "status": 200,
+      "bytes": 933471,
+      "ok": true
+    },
+    {
+      "path": "/screenshot/current/dashboard-1440.png",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 55,
+      "status": 200,
+      "bytes": 455441,
+      "ok": true
+    },
+    {
+      "path": "/video/StoryboardAI_Intro.mp4",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 61,
+      "status": 200,
+      "bytes": 12625828,
+      "ok": true
+    },
+    {
+      "path": "/screenshot/current/generate-1440.png",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 67,
+      "status": 200,
+      "bytes": 76707,
+      "ok": true
+    },
+    {
+      "path": "/js/vendor/gsap.min.js",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 124,
+      "status": 200,
+      "bytes": 72779,
+      "ok": true
+    },
+    {
+      "path": "/js/vendor/ScrollTrigger.min.js",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 125,
+      "status": 200,
+      "bytes": 44235,
+      "ok": true
+    },
+    {
+      "path": "/js/dynamic-mask.js",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 126,
+      "status": 200,
+      "bytes": 34946,
+      "ok": true
+    },
+    {
+      "path": "/js/components/project-card.js",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 127,
+      "status": 200,
+      "bytes": 18963,
+      "ok": true
+    },
+    {
+      "path": "/js/components/project-trash-motion.js",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 128,
+      "status": 200,
+      "bytes": 3360,
+      "ok": true
+    },
+    {
+      "path": "/js/components/project-card-interactions.js",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 129,
+      "status": 200,
+      "bytes": 14346,
+      "ok": true
+    },
+    {
+      "path": "/js/components/overlay-manager.js",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 130,
+      "status": 200,
+      "bytes": 6635,
+      "ok": true
+    },
+    {
+      "path": "/js/components/surface-morph.js",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 131,
+      "status": 200,
+      "bytes": 16361,
+      "ok": true
+    },
+    {
+      "path": "/js/components/project-option-morph.js",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 132,
+      "status": 200,
+      "bytes": 6429,
+      "ok": true
+    },
+    {
+      "path": "/js/components/project-cover-transition.js",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 133,
+      "status": 200,
+      "bytes": 35196,
+      "ok": true
+    },
+    {
+      "path": "/js/features/projects.js",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 134,
+      "status": 200,
+      "bytes": 37393,
+      "ok": true
+    },
+    {
+      "path": "/js/pages/projects.js",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 135,
+      "status": 200,
+      "bytes": 38319,
+      "ok": true
+    },
+    {
+      "path": "/js/pages/history.js",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 136,
+      "status": 200,
+      "bytes": 7950,
+      "ok": true
+    },
+    {
+      "path": "/js/pages/dashboard.js",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 137,
+      "status": 200,
+      "bytes": 17340,
+      "ok": true
+    },
+    {
+      "path": "/js/pages/project-detail.js",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 138,
+      "status": 200,
+      "bytes": 24925,
+      "ok": true
+    },
+    {
+      "path": "/js/pages/templates.js",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 139,
+      "status": 200,
+      "bytes": 17358,
+      "ok": true
+    },
+    {
+      "path": "/js/features/page-asset-loader.js",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 140,
+      "status": 200,
+      "bytes": 10806,
+      "ok": true
+    },
+    {
+      "path": "/js/components/transition-loader.js",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 141,
+      "status": 200,
+      "bytes": 16001,
+      "ok": true
+    },
+    {
+      "path": "/js/components/global-toast.js",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 142,
+      "status": 200,
+      "bytes": 2967,
+      "ok": true
+    },
+    {
+      "path": "/js/features/creative-brief.js",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 143,
+      "status": 200,
+      "bytes": 8121,
+      "ok": true
+    },
+    {
+      "path": "/js/features/creation.js",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 144,
+      "status": 200,
+      "bytes": 17443,
+      "ok": true
+    },
+    {
+      "path": "/js/features/creative-copilot.js",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 145,
+      "status": 200,
+      "bytes": 34141,
+      "ok": true
+    },
+    {
+      "path": "/js/features/freeform-storyboard.js",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 146,
+      "status": 200,
+      "bytes": 9906,
+      "ok": true
+    },
+    {
+      "path": "/js/features/inspiration-field.js",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 147,
+      "status": 200,
+      "bytes": 10613,
+      "ok": true
+    },
+    {
+      "path": "/js/features/generation-task.js",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 148,
+      "status": 200,
+      "bytes": 34384,
+      "ok": true
+    },
+    {
+      "path": "/js/components/quick-compose.js",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 149,
+      "status": 200,
+      "bytes": 43262,
+      "ok": true
+    },
+    {
+      "path": "/js/components/user-panel.js",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 150,
+      "status": 200,
+      "bytes": 10129,
+      "ok": true
+    },
+    {
+      "path": "/js/shell/app-shell.js",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 151,
+      "status": 200,
+      "bytes": 83758,
+      "ok": true
+    },
+    {
+      "path": "/js/features/auth-service.js",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 152,
+      "status": 200,
+      "bytes": 7341,
+      "ok": true
+    },
+    {
+      "path": "/js/auth.js",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 153,
+      "status": 200,
+      "bytes": 1900,
+      "ok": true
+    },
+    {
+      "path": "/js/pages/auth-page.js",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 154,
+      "status": 200,
+      "bytes": 7525,
+      "ok": true
+    },
+    {
+      "path": "/js/components/project-thumbnails.js",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 155,
+      "status": 200,
+      "bytes": 4187,
+      "ok": true
+    },
+    {
+      "path": "/js/pages/page-host.js",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 156,
+      "status": 200,
+      "bytes": 7371,
+      "ok": true
+    },
+    {
+      "path": "/js/components/navigation-transition.js",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 157,
+      "status": 200,
+      "bytes": 9494,
+      "ok": true
+    },
+    {
+      "path": "/js/spa-router.js",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 158,
+      "status": 200,
+      "bytes": 21190,
+      "ok": true
+    },
+    {
+      "path": "/js/components/dialog-service.js",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 159,
+      "status": 200,
+      "bytes": 11132,
+      "ok": true
+    },
+    {
+      "path": "/js/sys.js",
+      "from": "/html/index.html",
+      "role": "static-asset",
+      "line": 160,
+      "status": 200,
+      "bytes": 13884,
+      "ok": true
+    },
+    {
+      "path": "/icon/at-sign.svg",
+      "from": "/html/login.html",
+      "role": "static-asset",
+      "line": 48,
+      "status": 200,
+      "bytes": 442,
+      "ok": true
+    },
+    {
+      "path": "/icon/key.svg",
+      "from": "/html/login.html",
+      "role": "static-asset",
+      "line": 54,
+      "status": 200,
+      "bytes": 717,
+      "ok": true
+    },
+    {
+      "path": "/icon/showControl.svg",
+      "from": "/html/login.html",
+      "role": "static-asset",
+      "line": 58,
+      "status": 200,
+      "bytes": 669,
+      "ok": true
+    },
+    {
+      "path": "/icon/showSlash.svg",
+      "from": "/html/login.html",
+      "role": "static-asset",
+      "line": 59,
+      "status": 200,
+      "bytes": 391,
+      "ok": true
+    },
+    {
+      "path": "/icon/user.svg",
+      "from": "/html/login.html",
+      "role": "static-asset",
+      "line": 105,
+      "status": 200,
+      "bytes": 524,
+      "ok": true
+    },
+    {
+      "path": "/icon/logo/brand.png",
+      "from": "/html/dashboard.html",
+      "role": "static-asset",
+      "line": 26,
+      "status": 200,
+      "bytes": 279343,
+      "ok": true
+    },
+    {
+      "path": "/icon/profile.svg",
+      "from": "/html/dashboard.html",
+      "role": "static-asset",
+      "line": 336,
+      "status": 200,
+      "bytes": 525,
+      "ok": true
+    },
+    {
+      "path": "/icon/upgrade.svg",
+      "from": "/html/dashboard.html",
+      "role": "static-asset",
+      "line": 337,
+      "status": 200,
+      "bytes": 667,
+      "ok": true
+    },
+    {
+      "path": "/icon/trash-blur.svg",
+      "from": "/html/dashboard.html",
+      "role": "static-asset",
+      "line": 338,
+      "status": 200,
+      "bytes": 527,
+      "ok": true
+    },
+    {
+      "path": "/icon/setting.svg",
+      "from": "/html/dashboard.html",
+      "role": "static-asset",
+      "line": 339,
+      "status": 200,
+      "bytes": 1439,
+      "ok": true
+    },
+    {
+      "path": "/icon/logout.svg",
+      "from": "/html/dashboard.html",
+      "role": "static-asset",
+      "line": 342,
+      "status": 200,
+      "bytes": 761,
+      "ok": true
+    },
+    {
+      "path": "/js/dashboard.js",
+      "from": "/html/dashboard.html",
+      "role": "static-asset",
+      "line": 430,
+      "status": 200,
+      "bytes": 40064,
+      "ok": true
+    },
+    {
+      "path": "/js/features/template-workflow.js?v=20261006-3",
+      "from": "/html/generate.html",
+      "role": "static-asset",
+      "line": 347,
+      "status": 200,
+      "bytes": 9550,
+      "ok": true
+    },
+    {
+      "path": "/js/generate.js?v=20261006-4",
+      "from": "/html/generate.html",
+      "role": "static-asset",
+      "line": 350,
+      "status": 200,
+      "bytes": 68726,
+      "ok": true
+    },
+    {
+      "path": "/css/tokens.css",
+      "from": "/html/discovery.html",
+      "role": "static-asset",
+      "line": 7,
+      "status": 200,
+      "bytes": 4798,
+      "ok": true
+    },
+    {
+      "path": "/css/main.css",
+      "from": "/main.html",
+      "role": "static-asset",
+      "line": 8,
+      "status": 200,
+      "bytes": 635,
+      "ok": true
+    },
+    {
+      "path": "/js/main.js",
+      "from": "/main.html",
+      "role": "static-asset",
+      "line": 12,
+      "status": 200,
+      "bytes": 3452,
+      "ok": true
+    },
+    {
+      "path": "/css/creation-workspace.css",
+      "from": "/css/generate.css",
+      "role": "static-asset",
+      "line": 4,
+      "status": 200,
+      "bytes": 38503,
+      "ok": true
+    },
+    {
+      "path": "/css/shell.css",
+      "from": "/css/style.css",
+      "role": "static-asset",
+      "line": 5,
+      "status": 200,
+      "bytes": 15151,
+      "ok": true
+    },
+    {
+      "path": "/css/components/button.css",
+      "from": "/css/style.css",
+      "role": "static-asset",
+      "line": 8,
+      "status": 200,
+      "bytes": 5509,
+      "ok": true
+    },
+    {
+      "path": "/css/components/cards.css",
+      "from": "/css/style.css",
+      "role": "static-asset",
+      "line": 9,
+      "status": 200,
+      "bytes": 2539,
+      "ok": true
+    },
+    {
+      "path": "/css/components/project-card.css",
+      "from": "/css/style.css",
+      "role": "static-asset",
+      "line": 10,
+      "status": 200,
+      "bytes": 31232,
+      "ok": true
+    },
+    {
+      "path": "/css/components/filmstrip.css",
+      "from": "/css/style.css",
+      "role": "static-asset",
+      "line": 11,
+      "status": 200,
+      "bytes": 1165,
+      "ok": true
+    },
+    {
+      "path": "/css/components/acrylic.css",
+      "from": "/css/style.css",
+      "role": "static-asset",
+      "line": 12,
+      "status": 200,
+      "bytes": 1090,
+      "ok": true
+    },
+    {
+      "path": "/css/components/badge.css",
+      "from": "/css/style.css",
+      "role": "static-asset",
+      "line": 13,
+      "status": 200,
+      "bytes": 1640,
+      "ok": true
+    },
+    {
+      "path": "/css/components/input.css",
+      "from": "/css/style.css",
+      "role": "static-asset",
+      "line": 14,
+      "status": 200,
+      "bytes": 2691,
+      "ok": true
+    },
+    {
+      "path": "/css/components/dialog.css",
+      "from": "/css/style.css",
+      "role": "static-asset",
+      "line": 15,
+      "status": 200,
+      "bytes": 7472,
+      "ok": true
+    },
+    {
+      "path": "/css/components/bottom-sheet.css",
+      "from": "/css/style.css",
+      "role": "static-asset",
+      "line": 16,
+      "status": 200,
+      "bytes": 1674,
+      "ok": true
+    },
+    {
+      "path": "/css/components/mobile-nav.css",
+      "from": "/css/style.css",
+      "role": "static-asset",
+      "line": 17,
+      "status": 200,
+      "bytes": 9705,
+      "ok": true
+    },
+    {
+      "path": "/css/components/option-morph.css",
+      "from": "/css/style.css",
+      "role": "static-asset",
+      "line": 18,
+      "status": 200,
+      "bytes": 7368,
+      "ok": true
+    },
+    {
+      "path": "/css/components/account-panel.css",
+      "from": "/css/style.css",
+      "role": "static-asset",
+      "line": 19,
+      "status": 200,
+      "bytes": 4729,
+      "ok": true
+    },
+    {
+      "path": "/css/components/quick-create.css",
+      "from": "/css/style.css",
+      "role": "static-asset",
+      "line": 20,
+      "status": 200,
+      "bytes": 3364,
+      "ok": true
+    },
+    {
+      "path": "/css/components/continuous-corners.css",
+      "from": "/css/style.css",
+      "role": "static-asset",
+      "line": 21,
+      "status": 200,
+      "bytes": 2856,
+      "ok": true
+    },
+    {
+      "path": "/css/tokens/primitives.css",
+      "from": "/css/tokens.css",
+      "role": "static-asset",
+      "line": 7,
+      "status": 200,
+      "bytes": 2268,
+      "ok": true
+    },
+    {
+      "path": "/css/tokens/colors.css",
+      "from": "/css/tokens.css",
+      "role": "static-asset",
+      "line": 10,
+      "status": 200,
+      "bytes": 4511,
+      "ok": true
+    },
+    {
+      "path": "/css/tokens/typography.css",
+      "from": "/css/tokens.css",
+      "role": "static-asset",
+      "line": 13,
+      "status": 200,
+      "bytes": 4214,
+      "ok": true
+    },
+    {
+      "path": "/css/tokens/spacing.css",
+      "from": "/css/tokens.css",
+      "role": "static-asset",
+      "line": 14,
+      "status": 200,
+      "bytes": 497,
+      "ok": true
+    },
+    {
+      "path": "/css/tokens/sizing.css",
+      "from": "/css/tokens.css",
+      "role": "static-asset",
+      "line": 15,
+      "status": 200,
+      "bytes": 830,
+      "ok": true
+    },
+    {
+      "path": "/css/tokens/radius.css",
+      "from": "/css/tokens.css",
+      "role": "static-asset",
+      "line": 16,
+      "status": 200,
+      "bytes": 2616,
+      "ok": true
+    },
+    {
+      "path": "/css/tokens/border.css",
+      "from": "/css/tokens.css",
+      "role": "static-asset",
+      "line": 17,
+      "status": 200,
+      "bytes": 744,
+      "ok": true
+    },
+    {
+      "path": "/css/tokens/shadow.css",
+      "from": "/css/tokens.css",
+      "role": "static-asset",
+      "line": 18,
+      "status": 200,
+      "bytes": 1096,
+      "ok": true
+    },
+    {
+      "path": "/css/tokens/blur.css",
+      "from": "/css/tokens.css",
+      "role": "static-asset",
+      "line": 19,
+      "status": 200,
+      "bytes": 1596,
+      "ok": true
+    },
+    {
+      "path": "/css/tokens/opacity.css",
+      "from": "/css/tokens.css",
+      "role": "static-asset",
+      "line": 20,
+      "status": 200,
+      "bytes": 439,
+      "ok": true
+    },
+    {
+      "path": "/css/tokens/layout.css",
+      "from": "/css/tokens.css",
+      "role": "static-asset",
+      "line": 21,
+      "status": 200,
+      "bytes": 1063,
+      "ok": true
+    },
+    {
+      "path": "/css/tokens/breakpoint.css",
+      "from": "/css/tokens.css",
+      "role": "static-asset",
+      "line": 22,
+      "status": 200,
+      "bytes": 588,
+      "ok": true
+    },
+    {
+      "path": "/css/tokens/layers.css",
+      "from": "/css/tokens.css",
+      "role": "static-asset",
+      "line": 23,
+      "status": 200,
+      "bytes": 1363,
+      "ok": true
+    },
+    {
+      "path": "/css/tokens/motion.css",
+      "from": "/css/tokens.css",
+      "role": "static-asset",
+      "line": 24,
+      "status": 200,
+      "bytes": 2746,
+      "ok": true
+    },
+    {
+      "path": "/css/tokens/components.css",
+      "from": "/css/tokens.css",
+      "role": "static-asset",
+      "line": 27,
+      "status": 200,
+      "bytes": 7240,
+      "ok": true
+    }
+  ],
+  "failures": []
+}

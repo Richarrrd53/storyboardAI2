@@ -1,3 +1,5 @@
+> 後續更新：補充修正與測試見 [FOLLOWUP-RESULTS.md](FOLLOWUP-RESULTS.md)；使用者其後已授權開始 [Phase 5](../phase5/README.md)。下文保留原交付時點的紀錄。
+
 # Phase 4｜Folder、Delete Preview／Trash 與補充動態修正
 
 2026-11-13。**程式實作已完成；最終版瀏覽器視覺驗收仍有待驗證項目，不視為 Phase 4 全部 gates 通過。** 未進入 Phase 5，未 Commit／Push。

@@ -26,8 +26,12 @@ test('source modal portals out of page content, waits for exit, and tears down i
     OverlayManager: { acquire: options => { assert.equal(options.overlay.parentNode, body, 'inert scope requires a body portal'); return { release: value => releases.push(value) }; } }
   };
   context.window = context; vm.createContext(context);
+  vm.runInContext(fs.readFileSync('public/js/components/template-presentation.js', 'utf8'), context);
   vm.runInContext(fs.readFileSync('public/js/template-timeline.js', 'utf8'), context);
-  context.initSourceInfoModal({ name: 'Fixture', source: {} });
+  const title=element('src-modal-title'),description=element('src-modal-desc');
+  const rawTitle='  原始標題 #來源\n',rawDescription='  原始說明\nhttps://example.test/promo #品牌  ';
+  context.initSourceInfoModal({ name: 'Fixture', source: {title:rawTitle,description:rawDescription} });
+  assert.equal(title.textContent,rawTitle);assert.equal(description.textContent,rawDescription);
   assert.equal(listeners.size, 1); open.onclick(); assert.equal(modal.parentNode, body); assert.equal(modal.hidden, false);
   close.onclick(); assert.equal(modal.hidden, false, 'exit must finish before hiding');
   const exit = calls.find(call => call[0] === 'close'); exit[3].onComplete();

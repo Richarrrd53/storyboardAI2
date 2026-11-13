@@ -36,7 +36,7 @@
   --folder-hover-lift: clamp(6px, 5cqw, 16px);
   --folder-hover-rotate: -4.5deg;
   --radius-lg: var(--folder-fillet);
-  --radius-continuous-lg: max(0px, min(calc(var(--folder-tab-height) * 10 / 9), calc((100cqw - var(--folder-option-width) - var(--folder-option-offset) - 8px) / 2)));
+  --radius-continuous-lg: max(0px, min(calc(var(--folder-tab-height) * 10 / 9), calc((100cqw - var(--folder-option-width) - var(--folder-option-offset)) / 2)));
   position: relative;
   width: 100%;
   min-width: 0;
@@ -301,11 +301,11 @@
   box-sizing: border-box;
 }
 
-/* 3/4 Header Tab (74% width) */
+/* Tab fills the space remaining beside the responsive option button. */
 .project-folder-tab {
   position: relative;
   height: var(--folder-tab-height);
-  width: calc(100% - var(--folder-option-width) - var(--folder-option-offset) - 8px);
+  width: calc(100% - var(--folder-option-width) - var(--folder-option-offset));
   background: var(--surface-folder);
   border: 1px solid var(--surface-folder-border);
   border-bottom: 0;

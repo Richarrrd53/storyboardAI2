@@ -63,7 +63,8 @@
     history: ['/html/history.html', 'spa-history-wrap', 'HistoryPage'],
     template: ['/html/template.html', 'spa-template-wrap', 'TemplatesPage'],
     generate: ['/html/generate.html', 'spa-gen-wrap'],
-    discovery: ['/html/discovery.html', 'spa-discovery-wrap discovery-shell'],
+    discovery: ['/html/discovery.html', 'spa-discovery-wrap'],
+    'discovery-settings': ['/html/discovery-settings.html', 'spa-discovery-settings-wrap'],
     project: [null, 'spa-project-wrap', 'ProjectDetailPage']
   };
   const shellClasses = {
@@ -71,7 +72,8 @@
     dashboard: 'page-shell page-dashboard dash-main home-main',
     projects: 'page-shell page-projects dash-main projects-main',
     template: 'page-shell page-template dash-main template-main',
-    discovery: 'page-shell page-discovery discovery-shell',
+    discovery: 'page-shell page-discovery dash-main',
+    'discovery-settings': 'page-shell page-discovery-settings dash-main',
     generate: 'page-shell page-generate gen-main',
     history: 'page-shell page-projects dash-main history-main',
     login: 'page-shell page-auth auth-main', register: 'page-shell page-auth auth-main',
@@ -98,7 +100,7 @@
     const root = initMain();
     if (doc) cloneMainContent(doc, root);
     root.className = className;
-    if (['generate', 'template', 'discovery'].includes(page)) document.getElementById('page-main').style.padding = '0';
+    if (['generate', 'template', 'discovery', 'discovery-settings'].includes(page)) document.getElementById('page-main').style.padding = '0';
     if (!['login', 'register'].includes(page)) {
       const shellStart = performance.now();
       await window.AppShell.init({ navigate, spaAuth: window.spaAuth, signal, fetchDoc: assets.fetchPageDoc });
@@ -130,12 +132,26 @@
       if (signal.aborted) return null;
       return window.initGeneratePage({ ...route, signal });
     }
-    if (page === 'discovery') {
-      const nav = root.querySelector('.discovery-nav');
-      const back = root.querySelector('.back-link');
-      if (nav) nav.style.display = 'none';
-      if (back) back.style.display = 'none';
-      return window.initDiscoveryPage(context);
+    if (page === 'discovery' || page === 'discovery-settings') {
+      const instance = page === 'discovery' ? window.initDiscoveryPage(context) : window.initDiscoverySettingsPage(context);
+      const routes = { '/discovery':'discovery', '/discovery/settings':'discovery-settings', '/template':'template', '/dashboard':'dashboard' };
+      const onLink = event => {
+        if (event.defaultPrevented || event.button > 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        const link = event.target.closest?.('a[href]');
+        if (!link || link.target === '_blank' || link.hasAttribute?.('download')) return;
+        const destination = routes[link.getAttribute('href')];
+        if (destination && typeof navigate === 'function') { event.preventDefault(); navigate(destination); }
+      };
+      root.addEventListener('click', onLink);
+      let disposed = false;
+      function unmount() {
+        if (disposed) return;disposed = true;
+        root.removeEventListener('click', onLink);signal.removeEventListener('abort',unmount);
+        instance?.unmount?.();
+      }
+      signal.addEventListener('abort',unmount,{once:true});
+      if (signal.aborted) unmount();
+      return {unmount};
     }
     return null;
   }

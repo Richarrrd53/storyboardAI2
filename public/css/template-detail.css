@@ -232,7 +232,7 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  transition: all var(--motion-normal) var(--motion-ease-standard);
+  /* Line clamp/display changes cannot interpolate; switch content immediately. */
 }
 
 .detail-template-desc.is-expanded {
@@ -1801,3 +1801,6 @@
     transition: none;
   }
 }
+
+.source-modal-value, .source-modal-desc-box { overflow-wrap: anywhere; word-break: normal; white-space: pre-wrap; }
+.source-modal-eyebrow, .source-modal-label, .narrative-phase-badge, .analysis-card-label { letter-spacing: normal; text-transform: none; font-family: var(--font-family-body); }

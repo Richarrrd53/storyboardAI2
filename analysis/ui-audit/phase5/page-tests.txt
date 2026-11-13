@@ -1,0 +1,295 @@
+TAP version 13
+# Subtest: AppShell: Module interface and compatibility bridges
+ok 1 - AppShell: Module interface and compatibility bridges
+  ---
+  duration_ms: 30.4653
+  ...
+# Subtest: AppShell: init() creates and binds shell layout elements
+ok 2 - AppShell: init() creates and binds shell layout elements
+  ---
+  duration_ms: 49.2908
+  ...
+# Subtest: AppShell: updateRoute() controls shell visibility (dashboard vs landing/auth)
+ok 3 - AppShell: updateRoute() controls shell visibility (dashboard vs landing/auth)
+  ---
+  duration_ms: 47.0595
+  ...
+# Subtest: AppShell: expandSidebar() controls sidebar width and body class
+ok 4 - AppShell: expandSidebar() controls sidebar width and body class
+  ---
+  duration_ms: 22.2686
+  ...
+# Subtest: AppShell: ProjectStore subscription reactively updates sidebar projects
+ok 5 - AppShell: ProjectStore subscription reactively updates sidebar projects
+  ---
+  duration_ms: 24.8407
+  ...
+# Subtest: AppShell: toggleUserPanel() toggles active class
+ok 6 - AppShell: toggleUserPanel() toggles active class
+  ---
+  duration_ms: 1019.8126
+  ...
+# Subtest: AppShell: collapseProjectsGroup() collapses project sub-list and saves localStorage
+ok 7 - AppShell: collapseProjectsGroup() collapses project sub-list and saves localStorage
+  ---
+  duration_ms: 18.3346
+  ...
+# Subtest: AppShell: updateRoute() updates active sidebar link and swaps blur/focus icons
+ok 8 - AppShell: updateRoute() updates active sidebar link and swaps blur/focus icons
+  ---
+  duration_ms: 33.8658
+  ...
+# Subtest: AppShell: Router Navigation Simulation: Direct Entry, Leave, Return, Back/Forward Lifecycle
+ok 9 - AppShell: Router Navigation Simulation: Direct Entry, Leave, Return, Back/Forward Lifecycle
+  ---
+  duration_ms: 27.5334
+  ...
+# Subtest: AppShell: ProjectStore subscription event compatibility across all mutations (optimistic, commit, undo, rename, duplicated, reset)
+ok 10 - AppShell: ProjectStore subscription event compatibility across all mutations (optimistic, commit, undo, rename, duplicated, reset)
+  ---
+  duration_ms: 22.2977
+  ...
+# Subtest: AppShell: Compatibility bridges this-context safety and destructuring
+ok 11 - AppShell: Compatibility bridges this-context safety and destructuring
+  ---
+  duration_ms: 16.1583
+  ...
+# Subtest: AppShell: init() idempotency and destroy() re-initialization lifecycle
+ok 12 - AppShell: init() idempotency and destroy() re-initialization lifecycle
+  ---
+  duration_ms: 19.3015
+  ...
+# Subtest: Regression A: ProjectStore.notify() -> AppShell.updateSidebarProjects() never passes non-Node to Node.contains
+ok 13 - Regression A: ProjectStore.notify() -> AppShell.updateSidebarProjects() never passes non-Node to Node.contains
+  ---
+  duration_ms: 17.847
+  ...
+# Subtest: Regression B: spa-router.js does not contain dead reference to justHandledPointerNav
+ok 14 - Regression B: spa-router.js does not contain dead reference to justHandledPointerNav
+  ---
+  duration_ms: 2.0128
+  ...
+# Subtest: Regression C: Repeated navigation and clicks do not duplicate document-level listeners
+ok 15 - Regression C: Repeated navigation and clicks do not duplicate document-level listeners
+  ---
+  duration_ms: 1.578
+  ...
+# Subtest: Mobile Bottom Nav: Pointer down initiates interaction, micro-enlargement, snap target, and indicator tracking
+ok 16 - Mobile Bottom Nav: Pointer down initiates interaction, micro-enlargement, snap target, and indicator tracking
+  ---
+  duration_ms: 15.3709
+  ...
+# Subtest: Mobile Bottom Nav: Pointer move applies rubberband damping, directional stretch, magnetic tracking, and dual-track clip-path
+ok 17 - Mobile Bottom Nav: Pointer move applies rubberband damping, directional stretch, magnetic tracking, and dual-track clip-path
+  ---
+  duration_ms: 25.0962
+  ...
+# Subtest: Mobile Bottom Nav: Pointer release executes spring rebound and navigation to target route
+ok 18 - Mobile Bottom Nav: Pointer release executes spring rebound and navigation to target route
+  ---
+  duration_ms: 14.584
+  ...
+# Subtest: Mobile Bottom Nav: Vertical drag out of bounds cancels selection without navigation
+ok 19 - Mobile Bottom Nav: Vertical drag out of bounds cancels selection without navigation
+  ---
+  duration_ms: 14.0478
+  ...
+# Subtest: Mobile Bottom Nav: Route updates synchronize active item and indicator
+ok 20 - Mobile Bottom Nav: Route updates synchronize active item and indicator
+  ---
+  duration_ms: 16.7574
+  ...
+# Subtest: History account link uses SPA once and hides mobile nav until returning to a main route
+ok 21 - History account link uses SPA once and hides mobile nav until returning to a main route
+  ---
+  duration_ms: 21.7967
+  ...
+# Subtest: History account link retains native modifier-click behavior
+ok 22 - History account link retains native modifier-click behavior
+  ---
+  duration_ms: 11.8698
+  ...
+# Subtest: Mobile Bottom Nav: pointercancel without displacement never commits or replays a click
+ok 23 - Mobile Bottom Nav: pointercancel without displacement never commits or replays a click
+  ---
+  duration_ms: 14.7456
+  ...
+# Subtest: Mobile Bottom Nav: route changes cancel an in-flight pointer before synchronizing active state
+ok 24 - Mobile Bottom Nav: route changes cancel an in-flight pointer before synchronizing active state
+  ---
+  duration_ms: 14.2454
+  ...
+# Subtest: Phase 3 account: native row preserves its anatomy when real profile data arrives
+ok 25 - Phase 3 account: native row preserves its anatomy when real profile data arrives
+  ---
+  duration_ms: 13.0587
+  ...
+# Subtest: Phase 3 account: mobile sheet owns modal lock, Escape and page-abort cleanup
+ok 26 - Phase 3 account: mobile sheet owns modal lock, Escape and page-abort cleanup
+  ---
+  duration_ms: 32.8625
+  ...
+# Subtest: Phase 3 account: breakpoint closes the old presentation; reopening reuses account DOM
+ok 27 - Phase 3 account: breakpoint closes the old presentation; reopening reuses account DOM
+  ---
+  duration_ms: 24.5705
+  ...
+# Subtest: user validation coalesces consumers; abort only detaches one consumer; success has a short TTL
+ok 28 - user validation coalesces consumers; abort only detaches one consumer; success has a short TTL
+  ---
+  duration_ms: 14.2745
+  ...
+# Subtest: token changes and out-of-order responses cannot seed the new session cache
+ok 29 - token changes and out-of-order responses cannot seed the new session cache
+  ---
+  duration_ms: 5.0309
+  ...
+# Subtest: unauthorized responses invalidate the token; transient errors never become successful cache entries
+ok 30 - unauthorized responses invalidate the token; transient errors never become successful cache entries
+  ---
+  duration_ms: 6.8401
+  ...
+# Subtest: forced validation bypasses the TTL but still shares an in-flight validation
+ok 31 - forced validation bypasses the TTL but still shares an in-flight validation
+  ---
+  duration_ms: 3.9514
+  ...
+# Subtest: explicit invalidation retires in-flight validations even when the token is unchanged
+ok 32 - explicit invalidation retires in-flight validations even when the token is unchanged
+  ---
+  duration_ms: 5.1354
+  ...
+# Subtest: the short validation cache never outlives the token expiry
+ok 33 - the short validation cache never outlives the token expiry
+  ---
+  duration_ms: 4.5677
+  ...
+# Subtest: DashboardPage: getRecentProjects filters deleted/pending, sorts desc, and takes at most 4
+ok 34 - DashboardPage: getRecentProjects filters deleted/pending, sorts desc, and takes at most 4
+  ---
+  duration_ms: 6.8134
+  ...
+# Subtest: DashboardPage: Page Lifecycle Contract - mount() returns { unmount() }
+ok 35 - DashboardPage: Page Lifecycle Contract - mount() returns { unmount() }
+  ---
+  duration_ms: 15.3301
+  ...
+# Subtest: DashboardPage: dynamic greeting and user info presentation
+ok 36 - DashboardPage: dynamic greeting and user info presentation
+  ---
+  duration_ms: 37.5254
+  ...
+# Subtest: DashboardPage: renders empty state when no recent projects exist
+ok 37 - DashboardPage: renders empty state when no recent projects exist
+  ---
+  duration_ms: 3.0666
+  ...
+# Subtest: DashboardPage: renders compact cards and binds setupProjectCardEvents with variant=compact
+ok 38 - DashboardPage: renders compact cards and binds setupProjectCardEvents with variant=compact
+  ---
+  duration_ms: 8.1225
+  ...
+# Subtest: DashboardPage: Quick Actions navigation events
+ok 39 - DashboardPage: Quick Actions navigation events
+  ---
+  duration_ms: 4.2028
+  ...
+# Subtest: DashboardPage: reactive updates via ProjectStore subscription and mask lifecycle
+ok 40 - DashboardPage: reactive updates via ProjectStore subscription and mask lifecycle
+  ---
+  duration_ms: 3.866
+  ...
+# Subtest: Router Navigation Simulation: Direct Entry to Dashboard, Leave, Return, Back/Forward Lifecycle
+ok 41 - Router Navigation Simulation: Direct Entry to Dashboard, Leave, Return, Back/Forward Lifecycle
+  ---
+  duration_ms: 9.1558
+  ...
+# Subtest: Dashboard Hero uses actual recent project and safe unique preview sources
+ok 42 - Dashboard Hero uses actual recent project and safe unique preview sources
+  ---
+  duration_ms: 7.1214
+  ...
+# Subtest: Dashboard Hero distinguishes loading, empty, error and missing media without invented projects
+ok 43 - Dashboard Hero distinguishes loading, empty, error and missing media without invented projects
+  ---
+  duration_ms: 2.3253
+  ...
+# Subtest: ProjectStore: Generation Granularity — Invalidate Detail(A) must NOT invalidate in-flight Detail(B)
+ok 44 - ProjectStore: Generation Granularity — Invalidate Detail(A) must NOT invalidate in-flight Detail(B)
+  ---
+  duration_ms: 11.075
+  ...
+# Subtest: ProjectStore: Generation Granularity — reset() invalidates all in-flight requests
+ok 45 - ProjectStore: Generation Granularity — reset() invalidates all in-flight requests
+  ---
+  duration_ms: 2.3163
+  ...
+# Subtest: ProjectStore: Promise Identity — \#1 finally does NOT clear \#2 inFlightDetailsPromises[id]
+ok 46 - ProjectStore: Promise Identity — \#1 finally does NOT clear \#2 inFlightDetailsPromises[id]
+  ---
+  duration_ms: 3.1599
+  ...
+# Subtest: ProjectDetailPage: Page Lifecycle Contract — mount() returns { unmount() }
+ok 47 - ProjectDetailPage: Page Lifecycle Contract — mount() returns { unmount() }
+  ---
+  duration_ms: 17.2424
+  ...
+# Subtest: ProjectDetailPage: SWR Lifecycle & Duplicate Listener Guard — cached render -> background detail_loaded triggers events only ONCE
+ok 48 - ProjectDetailPage: SWR Lifecycle & Duplicate Listener Guard — cached render -> background detail_loaded triggers events only ONCE
+  ---
+  duration_ms: 44.3259
+  ...
+# Subtest: ProjectDetailPage: Empty / Error State when project does not exist
+ok 49 - ProjectDetailPage: Empty / Error State when project does not exist
+  ---
+  duration_ms: 3.5191
+  ...
+# Subtest: ProjectDetailPage: Cover Transition Integration — (1) Slow Image Load
+ok 50 - ProjectDetailPage: Cover Transition Integration — (1) Slow Image Load
+  ---
+  duration_ms: 45.0273
+  ...
+# Subtest: ProjectDetailPage: Cover Transition Integration — (2) Already-Cached Image in Browser
+ok 51 - ProjectDetailPage: Cover Transition Integration — (2) Already-Cached Image in Browser
+  ---
+  duration_ms: 3.5443
+  ...
+# Subtest: ProjectDetailPage: Cover Transition Integration — (3) Image Error triggers fallbackDismiss
+ok 52 - ProjectDetailPage: Cover Transition Integration — (3) Image Error triggers fallbackDismiss
+  ---
+  duration_ms: 27.4421
+  ...
+# Subtest: ProjectDetailPage: Cover Transition Integration — (4) No Shots or shots without image triggers fallbackDismiss immediately
+ok 53 - ProjectDetailPage: Cover Transition Integration — (4) No Shots or shots without image triggers fallbackDismiss immediately
+  ---
+  duration_ms: 3.3464
+  ...
+# Subtest: Cover Transition: cancel() is strictly idempotent
+ok 54 - Cover Transition: cancel() is strictly idempotent
+  ---
+  duration_ms: 1.0683
+  ...
+# Subtest: Router Navigation Simulation: Direct Entry, Leave to Dashboard, Return, Back/Forward Lifecycle
+ok 55 - Router Navigation Simulation: Direct Entry, Leave to Dashboard, Return, Back/Forward Lifecycle
+  ---
+  duration_ms: 2.5319
+  ...
+# Subtest: ProjectDetailController: View Mode Switch (Table vs Film) preserves focus and updates toggles
+ok 56 - ProjectDetailController: View Mode Switch (Table vs Film) preserves focus and updates toggles
+  ---
+  duration_ms: 9.8086
+  ...
+# Subtest: project-detail.css imports tokens.css and contains no un-tokenized legacy canvas
+ok 57 - project-detail.css imports tokens.css and contains no un-tokenized legacy canvas
+  ---
+  duration_ms: 3.7681
+  ...
+1..57
+# tests 57
+# suites 0
+# pass 57
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2334.5708

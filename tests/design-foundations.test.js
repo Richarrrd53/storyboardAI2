@@ -57,3 +57,15 @@ test('focus and text roles meet target contrast on their specified surfaces', ()
   const reading = [250, 251, 253].map((c, i) => c * .96 + navy[i] * .04);
   assert.ok(contrast(rgb(resolve('--color-text-secondary')), reading) >= 4.5);
 });
+
+test('Phase7 placeholder text in Auth and shared controls meets the text contrast target on solid input surfaces',()=>{
+ for(const file of ['auth.css','components/input.css']){
+  const source=read(file),blocks=[...source.matchAll(/([^{}]+::placeholder[^{}]*)\{([^}]+)\}/g)];assert.ok(blocks.length,file);
+  for(const [,selector,body] of blocks){
+   const reference=body.match(/color:\s*var\((--[\w-]+)/);assert.ok(reference,selector);
+   const value=resolve(reference[1]);assert.match(value,/^#[\da-f]{6}$/i);
+   assert.ok(contrast(rgb(value),rgb(resolve('--color-surface-primary')))>=4.5,file+' '+selector);
+   assert.match(body,/opacity:\s*1\s*;/,'placeholder opacity must not reduce the specified contrast');
+  }
+ }
+});

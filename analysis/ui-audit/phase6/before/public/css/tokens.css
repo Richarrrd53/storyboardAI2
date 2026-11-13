@@ -1,0 +1,107 @@
+/* ============================================================
+   STORYBOARD AI DESIGN SYSTEM v3.0
+   Master Design Tokens Aggregator
+   ============================================================ */
+
+/* ── 1. Layer 1: Primitive Tokens ── */
+@import url('./tokens/primitives.css');
+
+/* ── 2. Layer 2: Semantic Tokens ── */
+@import url('./tokens/colors.css');
+
+/* ── 3. Foundations & Scales ── */
+@import url('./tokens/typography.css');
+@import url('./tokens/spacing.css');
+@import url('./tokens/sizing.css');
+@import url('./tokens/radius.css');
+@import url('./tokens/border.css');
+@import url('./tokens/shadow.css');
+@import url('./tokens/blur.css');
+@import url('./tokens/opacity.css');
+@import url('./tokens/layout.css');
+@import url('./tokens/breakpoint.css');
+@import url('./tokens/layers.css');
+@import url('./tokens/motion.css');
+
+/* ── 4. Layer 3: Component Tokens ── */
+@import url('./tokens/components.css');
+
+/* ============================================================
+   LEGACY FALLBACK LAYER (Backward Compatibility Layer)
+   Maps old variable names to new semantic tokens to prevent
+   visual regression during component-by-component migration.
+   ============================================================ */
+:root {
+  /* Brand Legacy Aliases */
+  --primary:         var(--color-brand-primary);
+  --primary-light:   var(--color-brand-primary-light);
+  --primary-soft:    var(--color-brand-primary-soft);
+
+  /* Deprecated Color-name Aliases */
+  --peach:           var(--color-brand-accent);
+  --peach-light:     var(--color-brand-accent-light);
+  --yellow-warm:     var(--color-brand-accent-soft);
+  --lavender:        var(--color-surface-film);
+  --lavender-light:  var(--color-surface-film-subtle);
+
+  /* Typography Legacy Aliases */
+  --text-dark:       var(--color-text-primary);
+  --text-mid:        var(--color-text-secondary);
+  --text-light:      var(--color-text-muted);
+  --text-muted:      var(--color-text-tertiary);
+
+  /* Surfaces & Borders Legacy Aliases */
+  --card-bg:         var(--color-surface-primary);
+  --card-border:     var(--color-border-default);
+  --bg-dark:         var(--color-surface-film);
+  --off-white:       var(--color-bg-page);
+  --shadow-soft:     var(--elevation-1);
+  --shadow-card:     var(--elevation-1);
+
+  /* Font Aliases */
+  --font-display:    var(--font-family-display);
+  --font-body:       var(--font-family-body);
+
+  /* ============================================================
+     AI CREATION SURFACE SEMANTIC TOKENS (Spec v3.2)
+     ============================================================ */
+  --app-shell:                    var(--color-surface-shell, #0c1324);
+  --canvas:                       var(--color-bg-canvas, #f8fafc);
+  --surface-page:                 var(--canvas);
+  --surface-panel:                var(--canvas);
+  --surface-elevated:             var(--color-surface-elevated);
+  --surface-interactive:          var(--color-surface-primary);
+
+  --text-primary:                 var(--color-text-primary);
+  --text-secondary:               var(--color-text-secondary);
+
+  --border-subtle:                var(--color-border-subtle);
+  --border-active:                var(--color-border-selected);
+
+  --interactive-primary:          var(--color-action-primary-default);
+  --interactive-primary-hover:    var(--color-action-primary-hover);
+  --interactive-primary-soft:     var(--color-surface-selected);
+
+  --shadow-floating:              var(--surface-floating-shadow);
+
+  /* Sizing & Dimensions */
+  --ai-dock-width:                clamp(300px, 21vw, 360px);
+  --ai-dock-max-width:            360px;
+  --ai-dock-min-width:            290px;
+  --ai-dock-gap:                  clamp(8px, 1vh, 12px);
+  --ai-dock-padding-x:            22px;
+  --ai-dock-header-pt:            26px;
+
+  /* Motion & Easing */
+  --motion-fast:                  160ms;
+  --motion-normal:                280ms;
+  --motion-surface:               460ms;
+  --ease-standard:                var(--motion-ease-smooth, cubic-bezier(.22, 1, .36, 1));
+  --ease-natural:                 var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1));
+  --ease-decelerate:              var(--motion-ease-decelerate, cubic-bezier(0.16, 1, 0.3, 1));
+  --ease-spring:                  var(--motion-ease-spring, cubic-bezier(.33, 1.53, .69, .99));
+  --ease-jelly:                   var(--motion-ease-jelly, cubic-bezier(0.34, 1.56, 0.64, 1));
+  --ease-snappy:                  var(--motion-ease-snappy, cubic-bezier(0.25, 1, 0.5, 1));
+  --ease-bounce:                  var(--motion-ease-bounce, cubic-bezier(0.33, 1.17, 0.69, 0.99));
+}
+

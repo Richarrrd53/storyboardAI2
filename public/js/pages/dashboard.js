@@ -108,6 +108,41 @@
     }
   }
 
+  function buildHeroModel(projects, failed = false) {
+    if (failed) return { state: 'error', title: '故事，從下一個鏡頭繼續。', context: '暫時無法載入最近創作，仍可先瀏覽敘事模板。', images: [] };
+    if (!Array.isArray(projects)) return { state: 'loading', title: '故事，從下一個鏡頭繼續。', context: '正在載入最近創作…', images: [] };
+    const project = getRecentProjects(projects)[0];
+    if (!project) return { state: 'empty', title: '把故事，排成下一個鏡頭。', context: '用 QC 記下第一個想法，或先從敘事模板尋找節奏。', images: [] };
+    const candidates = [...(Array.isArray(project.previewImages) ? project.previewImages : []), ...(Array.isArray(project.shots) ? project.shots : []).map(shot => shot.payload?.image)];
+    const images = [...new Set(candidates.filter(url => typeof url === 'string' && /^(https?:\/\/|\/(?!\/)|\.{1,2}\/)/i.test(url)))].slice(0, 3);
+    return { state: 'project', id: project.id, title: project.title || '未命名分鏡', context: '接續最近編輯的分鏡，讓畫面與節奏再往前一步。', images };
+  }
+
+  function renderHero(root, projects, navigate, failed = false) {
+    const find = id => root?.querySelector('#' + id) || document.getElementById(id);
+    const hero = find('home-hero-card'), title = find('workspace-hero-title'), context = find('workspace-hero-context');
+    if (!hero || !title || !context) return;
+    const model = buildHeroModel(projects, failed);hero.dataset.state = model.state;title.textContent = model.title;context.textContent = model.context;
+    const resume = find('workspace-hero-resume');
+    if (resume) {
+      resume.hidden = model.state !== 'project';resume.href = model.state === 'project' ? '/project/' + encodeURIComponent(model.id) : '/projects';
+      resume.onclick = event => { if (event.button > 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return; event.preventDefault(); navigate('project', {id: model.id}); };
+    }
+    const frames = find('workspace-hero-frames');if (!frames) return;
+    frames.textContent = '';frames.dataset.count = String(model.images.length);frames.setAttribute('aria-label', model.images.length ? '最近分鏡的畫面' : '分鏡構圖');
+    const addEmpty = () => {
+      const frame = document.createElement('div');frame.className = 'workspace-frame workspace-frame-empty';frame.setAttribute('aria-hidden','true');
+      for (const text of ['畫面', '運鏡 / 秒數']) {const label = document.createElement('span');label.textContent = text;frame.appendChild(label);}frames.appendChild(frame);
+    };
+    if (!model.images.length) addEmpty();
+    model.images.forEach((url,index) => {
+      const frame = document.createElement('figure');frame.className = 'workspace-frame';
+      const image = document.createElement('img');image.src = url;image.alt = '分鏡畫面 ' + (index + 1);image.decoding = 'async';
+      image.onerror = () => {image.remove();frame.classList.add('workspace-frame-empty');frame.textContent = '畫面尚未載入';};
+      frame.appendChild(image);frames.appendChild(frame);
+    });
+  }
+
   function updateGreeting(root) {
     const greetingEl = (root ? root.querySelector('#home-greeting-text') : null) || document.getElementById('home-greeting-text');
     if (!greetingEl) return;
@@ -247,6 +282,7 @@
         ? global.ProjectStore.getProjects()
         : null;
 
+      renderHero(root, list, navFn);
       if (!list) {
         recentProjectsGrid.innerHTML = SKELETON_RECENT_CARDS_HTML;
         return;
@@ -272,6 +308,7 @@
           global.ProjectStore.fetchProjects({ signal, force: false }).catch(() => {});
         }
       } else {
+        renderHero(root, null, navFn);
         recentProjectsGrid.innerHTML = SKELETON_RECENT_CARDS_HTML;
         if (global.ProjectStore && typeof global.ProjectStore.fetchProjects === 'function') {
           global.ProjectStore.fetchProjects({ signal, force: false })
@@ -280,10 +317,15 @@
             })
             .catch(() => {
               if (isMounted && !global.ProjectStore.getProjects()) {
+                renderHero(root, null, navFn, true);
                 renderEmptyRecentState(recentProjectsGrid, () => {
                   if (global.AICreationController) global.AICreationController.openQuickCompose();
                   else navFn('generate');
                 });
+                const title = recentProjectsGrid.querySelector('.home-empty-title');
+                const description = recentProjectsGrid.querySelector('.home-empty-desc');
+                if (title) title.textContent = '暫時無法載入最近分鏡';
+                if (description) description.textContent = '請稍後再試。你仍可用 QC 記下創作想法。';
               }
             });
         }
@@ -314,6 +356,8 @@
     function unmount() {
       if (!isMounted) return;
       isMounted = false;
+      const resume = root?.querySelector('#workspace-hero-resume');
+      if (resume) resume.onclick = null;
       if (signal) {
         signal.removeEventListener('abort', unmount);
       }
@@ -345,6 +389,7 @@
   const DashboardPage = {
     mount,
     getRecentProjects,
+    buildHeroModel,
     renderRecentProjectsList,
     renderEmptyRecentState,
     updateGreeting

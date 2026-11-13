@@ -1,0 +1,45 @@
+{
+  "width": 1440,
+  "route": "projects",
+  "scrollTop": 998,
+  "maxScroll": 1996,
+  "mask": "linear-gradient(black 0px, black calc(100% - 36px), transparent 100%)",
+  "body": {
+    "top": 11.796875,
+    "bottom": 888.1875,
+    "height": 876.390625
+  },
+  "layers": [
+    {
+      "role": "progressive-edge-blur progressive-edge-blur--top",
+      "visibility": "visible",
+      "blur": "blur(1.5px)",
+      "top": 11.796875,
+      "height": 114.34375
+    },
+    {
+      "role": "progressive-edge-blur progressive-edge-blur--top",
+      "visibility": "visible",
+      "blur": "blur(4px)",
+      "top": 11.796875,
+      "height": 114.34375
+    },
+    {
+      "role": "progressive-edge-blur progressive-edge-blur--top",
+      "visibility": "visible",
+      "blur": "blur(8px)",
+      "top": 11.796875,
+      "height": 114.34375
+    },
+    {
+      "role": "progressive-edge-blur progressive-edge-blur--top progressive-edge-blur--tint",
+      "visibility": "visible",
+      "blur": "none",
+      "top": 11.796875,
+      "height": 114.34375
+    }
+  ],
+  "headerOffset": "-148px",
+  "focus": null,
+  "documentLoads": 0
+}

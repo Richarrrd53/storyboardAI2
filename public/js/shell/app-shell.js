@@ -51,7 +51,7 @@
   }
 
   function isDashboardPage(page) {
-    return ['dashboard', 'projects', 'generate', 'history', 'template', 'discovery', 'project', 'analysis'].includes(page);
+    return ['dashboard', 'projects', 'generate', 'history', 'template', 'discovery', 'discovery-settings', 'project', 'analysis'].includes(page);
   }
 
   function getBackgroundDepthTargets() {
@@ -210,12 +210,12 @@
       mobNav.className = 'mobile-bottom-nav';
       mobNav.id = 'spa-mobile-nav';
       mobNav.setAttribute('aria-label', '行動版底部導航');
-      mobNav.setAttribute('role', 'tablist');
+      mobNav.removeAttribute('role');
       mobNav.setAttribute('draggable', 'false');
       mobNav.innerHTML = `
         <div class="mobile-nav__indicator" id="mobile-nav-indicator" aria-hidden="true"></div>
         <div class="mobile-nav__track mobile-nav__track--base">
-            <a href="../dashboard" class="mobile-nav__item active" id="mob-nav-home" role="tab" aria-selected="true" aria-label="首頁" draggable="false">
+            <a href="../dashboard" class="mobile-nav__item active" id="mob-nav-home" aria-current="page" aria-label="首頁" draggable="false">
                 <div class="mobile-nav__icon-wrap">
                     <svg class="mobile-nav__svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M3 9.5L12 3L21 9.5V20C21 20.5523 20.5523 21 20 21H4C3.44772 21 3 20.5523 3 20V9.5Z"></path>
@@ -224,7 +224,7 @@
                 </div>
                 <span class="mobile-nav__label">首頁</span>
             </a>
-            <a href="../projects" class="mobile-nav__item" id="mob-nav-projects" role="tab" aria-selected="false" aria-label="分鏡" draggable="false">
+            <a href="../projects" class="mobile-nav__item" id="mob-nav-projects" aria-label="分鏡" draggable="false">
                 <div class="mobile-nav__icon-wrap">
                     <svg class="mobile-nav__svg icon-fill-target" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
                         <path fill-rule="evenodd" clip-rule="evenodd" d="M6.85929 1.25001C6.88904 1.25001 6.91919 1.25002 6.94976 1.25002L6.98675 1.25001C7.33818 1.24999 7.56433 1.24998 7.78542 1.27065C8.68728 1.35499 9.54516 1.69531 10.2586 2.25002H16.5C16.5196 2.25002 16.5389 2.25001 16.5579 2.25001C16.9666 2.24994 17.2449 2.2499 17.4895 2.2821C19.1722 2.50364 20.4964 3.82779 20.7179 5.51054C20.7263 5.57397 20.7325 5.63966 20.737 5.70931C21.0145 5.83579 21.2715 5.99934 21.5077 6.21185C21.6061 6.30032 21.6997 6.39394 21.7882 6.49231C22.3165 7.07965 22.5422 7.79459 22.648 8.63601C22.75 9.4479 22.75 10.4741 22.75 11.747V14.0564C22.75 15.8942 22.75 17.3498 22.5969 18.489C22.4393 19.6615 22.1071 20.6104 21.3588 21.3588C20.6104 22.1071 19.6615 22.4393 18.489 22.5969C17.3498 22.75 15.8942 22.75 14.0564 22.75H9.94361C8.10584 22.75 6.65021 22.75 5.51099 22.5969C4.33857 22.4393 3.38962 22.1071 2.64126 21.3588C1.8929 20.6104 1.56078 19.6615 1.40315 18.489C1.24999 17.3498 1.25 15.8942 1.25002 14.0564L1.25002 6.94976C1.25002 6.91919 1.25001 6.88904 1.25001 6.85929C1.2499 6.06338 1.24982 5.55685 1.33237 5.11935C1.6949 3.19788 3.19788 1.6949 5.11935 1.33237C5.55685 1.24982 6.06338 1.2499 6.85929 1.25001ZM19.1474 5.32768C18.8895 4.5029 18.1732 3.88506 17.2937 3.76927C17.1598 3.75163 16.9883 3.75002 16.5 3.75002H11.8113C12.4542 4.38908 12.7459 4.65598 13.0768 4.84005C13.2948 4.96134 13.526 5.05713 13.766 5.12552C14.1793 5.24333 14.6324 5.25002 15.8284 5.25002L16.253 5.25002C17.4153 5.25 18.3718 5.24999 19.1474 5.32768ZM6.94976 2.75002C6.03312 2.75002 5.67873 2.75329 5.39746 2.80636C4.08277 3.05441 3.05441 4.08277 2.80636 5.39746C2.75329 5.67873 2.75002 6.03312 2.75002 6.94976V14C2.75002 15.9068 2.75161 17.2615 2.88978 18.2892C3.02504 19.2953 3.27871 19.8749 3.70192 20.2981C4.12513 20.7213 4.70478 20.975 5.71087 21.1103C6.73853 21.2484 8.0932 21.25 10 21.25H14C15.9068 21.25 17.2615 21.2484 18.2892 21.1103C19.2953 20.975 19.8749 20.7213 20.2981 20.2981C20.7213 19.8749 20.975 19.2953 21.1103 18.2892C21.2484 17.2615 21.25 15.9068 21.25 14V11.7979C21.25 10.4621 21.2486 9.5305 21.1597 8.82312C21.0731 8.13448 20.9141 7.76356 20.6729 7.49539C20.6198 7.43637 20.5637 7.3802 20.5046 7.32712C20.2365 7.08592 19.8656 6.92692 19.1769 6.84034C18.4695 6.75141 17.538 6.75002 16.2021 6.75002H15.8284C15.7912 6.75002 15.7545 6.75002 15.7182 6.75003C14.6702 6.75025 13.9944 6.75038 13.3548 6.56806C13.0041 6.46811 12.6661 6.32811 12.3475 6.15083C11.7663 5.82747 11.2885 5.3495 10.5476 4.60833C10.522 4.58265 10.496 4.55666 10.4697 4.53035L9.91943 3.98009C9.63616 3.69682 9.52778 3.58951 9.41731 3.49793C8.91403 3.08073 8.29664 2.825 7.64576 2.76413C7.50289 2.75077 7.35038 2.75002 6.94976 2.75002ZM12.25 10C12.25 9.5858 12.5858 9.25002 13 9.25002H18C18.4142 9.25002 18.75 9.5858 18.75 10C18.75 10.4142 18.4142 10.75 18 10.75H13C12.5858 10.75 12.25 10.4142 12.25 10Z"></path>
@@ -232,8 +232,8 @@
                 </div>
                 <span class="mobile-nav__label">分鏡</span>
             </a>
-            <button type="button" class="mobile-nav__item mobile-nav__item--create" id="mob-nav-generate" role="tab" aria-selected="false" aria-label="新建分鏡" draggable="false"></button>
-            <a href="../template" class="mobile-nav__item" id="mob-nav-template" role="tab" aria-selected="false" aria-label="模板" draggable="false">
+            <div class="mobile-nav__item mobile-nav__item--create" id="mob-nav-generate" aria-label="新建分鏡" draggable="false"></div>
+            <a href="../template" class="mobile-nav__item" id="mob-nav-template" aria-label="模板" draggable="false">
                 <div class="mobile-nav__icon-wrap">
                     <svg class="mobile-nav__svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path>
@@ -241,7 +241,7 @@
                 </div>
                 <span class="mobile-nav__label">模板</span>
             </a>
-            <button type="button" class="mobile-nav__item" id="mob-nav-profile" role="tab" aria-selected="false" aria-label="我的設定" draggable="false">
+            <button type="button" class="mobile-nav__item" id="mob-nav-profile" aria-label="我的設定" draggable="false">
                 <div class="mobile-nav__icon-wrap">
                     <svg class="mobile-nav__svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="9" r="3"></circle>
@@ -364,6 +364,7 @@
         else if (cleanPath.includes('dashboard')) page = 'dashboard';
         else if (cleanPath.includes('history')) page = 'history';
         else if (cleanPath.includes('template')) page = 'template';
+        else if (cleanPath.includes('discovery/settings')) page = 'discovery-settings';
         else if (cleanPath.includes('discovery')) page = 'discovery';
         else if (cleanPath.includes('analysis')) page = 'analysis';
 
@@ -435,6 +436,7 @@
     if (!sidebar) return;
 
     let activeMainPage = page;
+    if (page === 'discovery-settings') activeMainPage = 'discovery';
     if (page === 'project') {
       activeMainPage = 'projects';
     } else if (page === 'generate') {
@@ -1471,11 +1473,16 @@
 
       if (isActive) {
         item.classList.add('active');
-        item.setAttribute('aria-selected', 'true');
+        if (item.id === 'mob-nav-profile') item.setAttribute('aria-pressed','true');
         activeItem = item;
       } else {
         item.classList.remove('active');
-        item.setAttribute('aria-selected', 'false');
+        if (item.id === 'mob-nav-profile') item.setAttribute('aria-pressed','false');
+      }
+      // The route remains current while the visual indicator visits an action surface.
+      if (item.getAttribute('href')) {
+        const routeId = {dashboard:'mob-nav-home',projects:'mob-nav-projects',template:'mob-nav-template'}[activeMainPage];
+        if (item.id === routeId) item.setAttribute('aria-current','page');else item.removeAttribute('aria-current');
       }
     });
 
@@ -1554,6 +1561,10 @@
     if (globalListenersBound) return;
     globalListenersBound = true;
 
+    const syncMotionVisibility = () => document.body.classList.toggle('motion-suspended', !!document.hidden);
+    addTrackedListener(document, 'visibilitychange', syncMotionVisibility);
+    syncMotionVisibility();
+
     const onResize = () => {
       updateRailHoles();
       if (!isMobileView()) {
@@ -1616,7 +1627,7 @@
     if (selectedRoute !== page) accountController?.close('navigation', true);
     selectedRoute = page;
     const isDashboard = isDashboardPage(page);
-    secondaryRoute = page === 'project' || page === 'generate' || (page === 'template' && !!opts.templateId);
+    secondaryRoute = page === 'project' || page === 'discovery-settings' || page === 'generate' || (page === 'template' && !!opts.templateId);
     document.body.classList.toggle('workspace-secondary', secondaryRoute);
 
     if (dashboardSidebar) {
@@ -1627,7 +1638,7 @@
     }
     const mobNav = document.getElementById('spa-mobile-nav') || mobileBottomNav;
     if (mobNav) {
-      const navHidden = !isDashboard || page === 'history';
+      const navHidden = !isDashboard || page === 'history' || page === 'discovery-settings';
       mobNav.style.display = navHidden ? 'none' : '';
       mobNav.hidden = navHidden;
       mobNav.inert = navHidden || (secondaryRoute && isMobileView());
@@ -1672,6 +1683,7 @@
   }
 
   function destroy() {
+    document.body.classList.remove('motion-suspended');
     accountController?.destroy(); accountController = null;
     if (selectorRaf) cancelAnimationFrame(selectorRaf);
     selectorRaf = null;

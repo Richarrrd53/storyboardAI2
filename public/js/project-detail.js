@@ -56,6 +56,7 @@
     // ── 銷毀清理 ──
     destroy() {
       this.closeEditor(false);
+      this._filmstripCleanup?.();this._filmstripCleanup = null;
       if (this._keyHandler && typeof document !== 'undefined') {
         document.removeEventListener('keydown', this._keyHandler);
         this._keyHandler = null;
@@ -166,7 +167,7 @@
       if (!scrollContainer) return;
 
       // 滑鼠滾輪橫向滾動
-      scrollContainer.addEventListener('wheel', (e) => {
+      const wheel = (e) => {
         if (e.deltaX !== 0) return;
         e.preventDefault();
         scrollContainer._wheelTarget = (scrollContainer._wheelTarget ?? scrollContainer.scrollLeft) + e.deltaY * 2.2;
@@ -182,32 +183,41 @@
             }
           });
         }
-      }, { passive: false });
+      };
+      scrollContainer.addEventListener('wheel', wheel, { passive: false });
 
-      // 滑鼠拖曳滑動
-      let isDragging = false, startX = 0, startScroll = 0, didDrag = false;
-      scrollContainer.addEventListener('pointerdown', (e) => {
-        if (e.button !== 0) return;
-        isDragging = true;
+      // Keep ordinary clicks on the frame; capture only after the 5px mouse drag threshold.
+      this._filmstripCleanup?.();
+      let pointer = null, didDrag = false;
+      const down = e => {
+        if (e.button !== 0 || (e.isPrimary === false)) return;
         didDrag = false;
-        startX = e.clientX;
-        startScroll = scrollContainer.scrollLeft;
+        if (e.pointerType === 'touch' || e.target?.closest?.('a, button, input, select, textarea')) return;
+        pointer = { id:e.pointerId, x:e.clientX, scroll:scrollContainer.scrollLeft, captured:false };
         scrollContainer._wheelTarget = scrollContainer.scrollLeft;
-        scrollContainer.setPointerCapture(e.pointerId);
-      });
-
-      scrollContainer.addEventListener('pointermove', (e) => {
-        if (!isDragging) return;
-        const dx = e.clientX - startX;
-        if (Math.abs(dx) > 5) didDrag = true;
-        scrollContainer.scrollLeft = startScroll - dx;
+      };
+      const move = e => {
+        if (!pointer || e.pointerId !== pointer.id) return;
+        const dx = e.clientX - pointer.x;
+        if (!didDrag && Math.abs(dx) <= 5) return;
+        didDrag = true;
+        if (!pointer.captured) { scrollContainer.setPointerCapture(e.pointerId);pointer.captured = true; }
+        e.preventDefault?.();scrollContainer.scrollLeft = pointer.scroll - dx;
         scrollContainer._wheelTarget = scrollContainer.scrollLeft;
-      });
-
-      const stopDrag = () => { isDragging = false; };
-      scrollContainer.addEventListener('pointerup', stopDrag);
-      scrollContainer.addEventListener('pointercancel', stopDrag);
+      };
+      const stop = e => {
+        if (!pointer || (e?.pointerId != null && e.pointerId !== pointer.id)) return;
+        const previous = pointer;pointer = null;
+        if (previous.captured) {try {scrollContainer.releasePointerCapture(previous.id);} catch (_) {}}
+      };
+      const bindings = [['pointerdown',down],['pointermove',move],['pointerup',stop],['pointercancel',stop],['lostpointercapture',stop]];
+      bindings.forEach(([name,fn])=>scrollContainer.addEventListener(name,fn));
       scrollContainer._didDrag = () => didDrag;
+      this._filmstripCleanup = () => {
+        stop();scrollContainer.removeEventListener('wheel',wheel);bindings.forEach(([name,fn])=>scrollContainer.removeEventListener(name,fn));
+        if (scrollContainer._wheelRaf) cancelAnimationFrame(scrollContainer._wheelRaf);
+        scrollContainer._wheelRaf = null;
+      };
     },
 
     // ── 鏡頭選取事件 (表格列與膠捲影格) ──
@@ -236,7 +246,7 @@
       const scrollContainer = root.querySelector('.project-filmstrip-scroll');
       root.querySelectorAll('.project-film-frame').forEach(frame => {
         frame.addEventListener('keydown', event => {
-          if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); frame.click(); }
+          if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); if (frame.dataset.shotId) this.openEditor(frame.dataset.shotId); }
         });
         frame.addEventListener('click', () => {
           if (scrollContainer && scrollContainer._didDrag && scrollContainer._didDrag()) return;

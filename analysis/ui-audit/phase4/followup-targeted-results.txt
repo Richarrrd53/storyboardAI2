@@ -1,0 +1,250 @@
+TAP version 13
+# Subtest: confirm returns explicit false, defaults description safely and resolves once
+ok 1 - confirm returns explicit false, defaults description safely and resolves once
+  ---
+  duration_ms: 122.7301
+  ...
+# Subtest: central dialogs match delete scale/blur signature and keep scrim alpha on exit
+ok 2 - central dialogs match delete scale/blur signature and keep scrim alpha on exit
+  ---
+  duration_ms: 79.4168
+  ...
+# Subtest: global facade preserves boolean confirm, void alert and native prompt
+ok 3 - global facade preserves boolean confirm, void alert and native prompt
+  ---
+  duration_ms: 42.5095
+  ...
+# Subtest: queued dialogs stay single and abort cancels active and queued work
+ok 4 - queued dialogs stay single and abort cancels active and queued work
+  ---
+  duration_ms: 45.4441
+  ...
+# Subtest: prompt keeps failed input, prevents concurrent submit, retries once and releases busy state
+ok 5 - prompt keeps failed input, prevents concurrent submit, retries once and releases busy state
+  ---
+  duration_ms: 53.8946
+  ...
+# Subtest: IME Enter is prevented and abort while submitting ignores late completion
+ok 6 - IME Enter is prevented and abort while submitting ignores late completion
+  ---
+  duration_ms: 29.1026
+  ...
+# Subtest: modal leases trap Tab, preserve pre-existing inert/overflow and return focus
+ok 7 - modal leases trap Tab, preserve pre-existing inert/overflow and return focus
+  ---
+  duration_ms: 31.6086
+  ...
+# Subtest: overlapping modal leases retain inert and scroll lock until the last owner releases
+ok 8 - overlapping modal leases retain inert and scroll lock until the last owner releases
+  ---
+  duration_ms: 33.7758
+  ...
+# Subtest: page signal cancels closing dialogs without later focus or duplicate resolve
+ok 9 - page signal cancels closing dialogs without later focus or duplicate resolve
+  ---
+  duration_ms: 15.537
+  ...
+# Subtest: legacy delete retains 1000ms close / 1500ms true result and abort is boolean false
+ok 10 - legacy delete retains 1000ms close / 1500ms true result and abort is boolean false
+  ---
+  duration_ms: 58.5015
+  ...
+# Subtest: navigation during cancelled legacy exit releases its modal lease immediately
+ok 11 - navigation during cancelled legacy exit releases its modal lease immediately
+  ---
+  duration_ms: 36.9663
+  ...
+# Subtest: all central dialog kinds exit from scale 1 to 0 with the approved anticipation curve
+ok 12 - all central dialog kinds exit from scale 1 to 0 with the approved anticipation curve
+  ---
+  duration_ms: 75.6664
+  ...
+# Subtest: rename, logout, restore and alert use the tag-editor scale lifecycle until exit completes
+ok 13 - rename, logout, restore and alert use the tag-editor scale lifecycle until exit completes
+  ---
+  duration_ms: 177.0806
+  ...
+# Subtest: HistoryPage: getDeletedProjects filters is_deleted: true, excludes pending delete and sorts desc by updateAt
+ok 14 - HistoryPage: getDeletedProjects filters is_deleted: true, excludes pending delete and sorts desc by updateAt
+  ---
+  duration_ms: 19.2748
+  ...
+# Subtest: HistoryPage: Page Lifecycle Contract - mount() returns { unmount() }
+ok 15 - HistoryPage: Page Lifecycle Contract - mount() returns { unmount() }
+  ---
+  duration_ms: 6.9366
+  ...
+# Subtest: HistoryPage: renders empty state when no deleted projects exist
+ok 16 - HistoryPage: renders empty state when no deleted projects exist
+  ---
+  duration_ms: 2.347
+  ...
+# Subtest: HistoryPage: renders deleted project cards with isHistory = true and hooks setupProjectCardEvents
+ok 17 - HistoryPage: renders deleted project cards with isHistory = true and hooks setupProjectCardEvents
+  ---
+  duration_ms: 9.0495
+  ...
+# Subtest: HistoryPage: reactive updates via ProjectStore subscription and unmount cleanup
+ok 18 - HistoryPage: reactive updates via ProjectStore subscription and unmount cleanup
+  ---
+  duration_ms: 4.5955
+  ...
+# Subtest: HistoryPage: signal abort triggers immediate and safe unmount
+ok 19 - HistoryPage: signal abort triggers immediate and safe unmount
+  ---
+  duration_ms: 6.1372
+  ...
+# Subtest: HistoryPage: Restore synchronization between History, Projects, and Sidebar
+ok 20 - HistoryPage: Restore synchronization between History, Projects, and Sidebar
+  ---
+  duration_ms: 4.3636
+  ...
+# Subtest: Router Navigation Simulation: Direct Entry to History, Leave, Return, Back/Forward Lifecycle
+ok 21 - Router Navigation Simulation: Direct Entry to History, Leave, Return, Back/Forward Lifecycle
+  ---
+  duration_ms: 5.1967
+  ...
+# Subtest: HistoryPage: mobile return uses SPA, preserves modified clicks and unbinds on unmount
+ok 22 - HistoryPage: mobile return uses SPA, preserves modified clicks and unbinds on unmount
+  ---
+  duration_ms: 9.4676
+  ...
+# Subtest: ModalAnimation: open sets initial zero blur & scale 0, then transitions to blur and scale 1 in 10ms
+ok 23 - ModalAnimation: open sets initial zero blur & scale 0, then transitions to blur and scale 1 in 10ms
+  ---
+  duration_ms: 65.4997
+  ...
+# Subtest: ModalAnimation: close sets closing easing curve, then scale 0 and blur 0 in 10ms, then display none
+ok 24 - ModalAnimation: close sets closing easing curve, then scale 0 and blur 0 in 10ms, then display none
+  ---
+  duration_ms: 224.5344
+  ...
+# Subtest: legacy delete can explicitly preserve its existing backdrop fade
+ok 25 - legacy delete can explicitly preserve its existing backdrop fade
+  ---
+  duration_ms: 68.2596
+  ...
+# Subtest: reopening a central modal cancels the previous exit completion
+ok 26 - reopening a central modal cancels the previous exit completion
+  ---
+  duration_ms: 181.6745
+  ...
+# Subtest: reduced motion settles ordinary central modals immediately while keeping the delete exception
+ok 27 - reduced motion settles ordinary central modals immediately while keeping the delete exception
+  ---
+  duration_ms: 15.9484
+  ...
+# Subtest: ProjectOptionMorph: Module interface and compatibility bridge
+ok 28 - ProjectOptionMorph: Module interface and compatibility bridge
+  ---
+  duration_ms: 95.5207
+  ...
+# Subtest: ProjectOptionMorph: open and close creates and removes portal cleanly
+ok 29 - ProjectOptionMorph: open and close creates and removes portal cleanly
+  ---
+  duration_ms: 123.7033
+  ...
+# Subtest: ProjectOptionMorph: double open on same trigger acts as toggle close
+ok 30 - ProjectOptionMorph: double open on same trigger acts as toggle close
+  ---
+  duration_ms: 36.561
+  ...
+# Subtest: ProjectOptionMorph: open A -> open B replaces active session cleanly
+ok 31 - ProjectOptionMorph: open A -> open B replaces active session cleanly
+  ---
+  duration_ms: 46.0147
+  ...
+# Subtest: ProjectOptionMorph: repeated close idempotency
+ok 32 - ProjectOptionMorph: repeated close idempotency
+  ---
+  duration_ms: 29.2149
+  ...
+# Subtest: ProjectOptionMorph: outside click closes menu
+ok 33 - ProjectOptionMorph: outside click closes menu
+  ---
+  duration_ms: 34.4133
+  ...
+# Subtest: ProjectOptionMorph: Escape key closes menu
+ok 34 - ProjectOptionMorph: Escape key closes menu
+  ---
+  duration_ms: 52.5629
+  ...
+# Subtest: ProjectOptionMorph: Window scroll and resize closes menu
+ok 35 - ProjectOptionMorph: Window scroll and resize closes menu
+  ---
+  duration_ms: 59.9717
+  ...
+# Subtest: ProjectOptionMorph: History mode renders restore action only
+ok 36 - ProjectOptionMorph: History mode renders restore action only
+  ---
+  duration_ms: 42.9195
+  ...
+# Subtest: ProjectOptionMorph: Action click executes action via ProjectActions and closes
+ok 37 - ProjectOptionMorph: Action click executes action via ProjectActions and closes
+  ---
+  duration_ms: 559.5768
+  ...
+# Subtest: ProjectOptionMorph: Card rerender / detached card does not throw on close
+ok 38 - ProjectOptionMorph: Card rerender / detached card does not throw on close
+  ---
+  duration_ms: 27.0082
+  ...
+# Subtest: ProjectOptionMorph: Route leave immediate cleanup (navigation)
+ok 39 - ProjectOptionMorph: Route leave immediate cleanup (navigation)
+  ---
+  duration_ms: 50.7498
+  ...
+# Subtest: ProjectOptionMorph: Global listeners lifecycle (no duplicate or lingering listeners)
+ok 40 - ProjectOptionMorph: Global listeners lifecycle (no duplicate or lingering listeners)
+  ---
+  duration_ms: 35.1293
+  ...
+# Subtest: ProjectOptionMorph: generic dropdown shares singleton and restores actual trigger dimensions
+ok 41 - ProjectOptionMorph: generic dropdown shares singleton and restores actual trigger dimensions
+  ---
+  duration_ms: 132.7657
+  ...
+# Subtest: SurfaceMorph: reversing an in-flight close reuses the same surface without resetting geometry
+ok 42 - SurfaceMorph: reversing an in-flight close reuses the same surface without resetting geometry
+  ---
+  duration_ms: 49.3439
+  ...
+# Subtest: SurfaceMorph: route teardown cancels pending actions and restores the trigger
+ok 43 - SurfaceMorph: route teardown cancels pending actions and restores the trigger
+  ---
+  duration_ms: 16.8855
+  ...
+# Subtest: SurfaceMorph: internal scroll is retained, ancestor scroll dismisses, reduced motion has no RAF
+ok 44 - SurfaceMorph: internal scroll is retained, ancestor scroll dismisses, reduced motion has no RAF
+  ---
+  duration_ms: 66.9889
+  ...
+# Subtest: SurfaceMorph: explicit keepTrigger opt-in remains available to other adapters
+ok 45 - SurfaceMorph: explicit keepTrigger opt-in remains available to other adapters
+  ---
+  duration_ms: 20.5011
+  ...
+# Subtest: SurfaceMorph: selected filter text may resize without dismissing a multi-select menu
+ok 46 - SurfaceMorph: selected filter text may resize without dismissing a multi-select menu
+  ---
+  duration_ms: 36.6364
+  ...
+# Subtest: Account Morph hides the trigger when expanded and dissolves the plate into transparency
+ok 47 - Account Morph hides the trigger when expanded and dissolves the plate into transparency
+  ---
+  duration_ms: 45.9729
+  ...
+# Subtest: SurfaceMorph: interrupted expansion keeps the return signature and its 440ms lifetime
+ok 48 - SurfaceMorph: interrupted expansion keeps the return signature and its 440ms lifetime
+  ---
+  duration_ms: 166.912
+  ...
+1..48
+# tests 48
+# suites 0
+# pass 48
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3105.7339

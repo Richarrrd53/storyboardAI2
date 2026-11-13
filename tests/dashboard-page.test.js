@@ -398,3 +398,21 @@ test('Router Navigation Simulation: Direct Entry to Dashboard, Leave, Return, Ba
 
   dInst3.unmount();
 });
+
+test('Dashboard Hero uses actual recent project and safe unique preview sources',()=>{
+ ProjectDeleteQueue.reset?.();
+ const model=DashboardPage.buildHeroModel([
+  {id:'deleted',title:'Deleted',is_deleted:true,updateAt:'2026-11-14'},
+  {id:'recent',title:'<script>literal title</script>',updateAt:'2026-11-13',previewImages:['/one.png','javascript:alert(1)','/one.png'],shots:[{payload:{image:'https://example.test/two.png'}}]},
+  {id:'old',title:'Older',updateAt:'2026-11-12'}
+ ]);
+ assert.equal(model.id,'recent');assert.equal(model.title,'<script>literal title</script>');
+ assert.deepEqual(model.images,['/one.png','https://example.test/two.png']);
+});
+test('Dashboard Hero distinguishes loading, empty, error and missing media without invented projects',()=>{
+ assert.equal(DashboardPage.buildHeroModel(null).state,'loading');
+ assert.equal(DashboardPage.buildHeroModel([]).state,'empty');
+ assert.equal(DashboardPage.buildHeroModel(null,true).state,'error');
+ const project=DashboardPage.buildHeroModel([{id:'draft',title:'Draft',shots:{}}]);
+ assert.equal(project.state,'project');assert.deepEqual(project.images,[]);
+});

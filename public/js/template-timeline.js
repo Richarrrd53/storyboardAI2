@@ -246,45 +246,13 @@ function describeAngle(angle) {
 }
 
 function extractCleanTitleAndTags(rawName, existingTags) {
-  const name = String(rawName || '');
-  const extracted = [];
-  const cleanTitle = name.replace(/[#＃]([^\s#＃]+)/g, (_, tag) => {
-    const trimmed = tag.trim();
-    if (trimmed) extracted.push(trimmed);
-    return '';
-  }).trim().replace(/\s{2,}/g, ' ');
-
-  const seen = new Set();
-  const allTags = [];
-  (Array.isArray(existingTags) ? existingTags : []).concat(extracted).forEach(t => {
-    const clean = String(t || '').replace(/^[#＃]/, '').trim();
-    if (clean && !seen.has(clean.toLowerCase())) {
-      seen.add(clean.toLowerCase());
-      allTags.push(clean);
-    }
-  });
-
-  return {
-    cleanTitle: cleanTitle || name || '無標題',
-    tags: allTags
-  };
+  const model = window.TemplatePresentation.present({ name: rawName, tags: existingTags });
+  return { cleanTitle: model.title, tags: model.tags };
 }
 
 function getTemplateSummary(template) {
-  const trueSummary = template.summary || template.narrative?.summary;
-  if (trueSummary) {
-    return {
-      text: trueSummary,
-      fullText: trueSummary,
-      isLong: trueSummary.length > 110
-    };
-  }
-  const desc = template.description || '尚未提供模板描述。';
-  return {
-    text: desc.length > 110 ? desc.slice(0, 105) + '…' : desc,
-    fullText: desc,
-    isLong: desc.length > 110
-  };
+  const model = window.TemplatePresentation.present(template);
+  return { text: model.summary, fullText: model.summaryFull, isLong: model.summaryFull.length > 110, label: model.summaryLabel };
 }
 
 function buildNormalizedSegments(template, shots, totalSec) {
@@ -292,7 +260,7 @@ function buildNormalizedSegments(template, shots, totalSec) {
     return template.segments.map((seg, idx) => ({
       id: seg.id || `segment-${idx + 1}`,
       type: seg.type || 'build',
-      label: seg.label || (seg.type === 'hook' ? 'HOOK · 開場鉤子' : seg.type === 'payoff' ? 'PAYOFF · 轉折高潮' : seg.type === 'close' ? 'OUTRO · 收束行動' : 'NARRATIVE · 鋪陳推進'),
+      label: seg.label || (seg.type === 'hook' ? '開場鉤子' : seg.type === 'payoff' ? '轉折高潮' : seg.type === 'close' ? '收束行動' : '鋪陳推進'),
       start: Number(seg.start) || 0,
       end: Number(seg.end) || totalSec,
       title: seg.title || seg.label || '敘事階段',
@@ -305,7 +273,7 @@ function buildNormalizedSegments(template, shots, totalSec) {
     return [{
       id: 'segment-1',
       type: 'hook',
-      label: 'HOOK · 開場鉤子',
+      label: '開場鉤子',
       start: 0,
       end: totalSec || 15,
       title: template.name || '影片開場',
@@ -333,7 +301,7 @@ function buildNormalizedSegments(template, shots, totalSec) {
   function getPhaseMeta(type, t, shot) {
     if (type === 'hook') {
       return {
-        label: 'HOOK · 開場鉤子',
+        label: '開場鉤子',
         title: t.hook?.description || '吸引觀眾注意',
         summary: t.hook?.description
           ? (t.hook.description.length > 50 ? t.hook.description.slice(0, 48) + '…' : t.hook.description)
@@ -342,20 +310,20 @@ function buildNormalizedSegments(template, shots, totalSec) {
     }
     if (type === 'payoff') {
       return {
-        label: 'PAYOFF · 轉折高潮',
+        label: '轉折高潮',
         title: describePurpose(shot?.purpose) || '視覺震撼與亮點爆發',
         summary: '全片最具記憶點的核心高潮，運用強烈感官細節引發情緒共振。'
       };
     }
     if (type === 'close') {
       return {
-        label: 'OUTRO · 收束行動',
+        label: '收束行動',
         title: '總結與互動指引',
         summary: '總結核心重點，以明確的行動指引（CTA）促成留言轉發或品牌記憶。'
       };
     }
     return {
-      label: 'NARRATIVE · 鋪陳推進',
+      label: '鋪陳推進',
       title: describePurpose(shot?.purpose) || '主體內容展開',
       summary: '依照故事節奏逐步推進，保持資訊密度與觀眾好奇心。'
     };
@@ -421,7 +389,8 @@ window.renderTemplateDetailTimeline = function(template, detailContainer) {
   window.closeInspectorDrawer();
 
   // Extract clean title and tags
-  const { cleanTitle, tags } = extractCleanTitleAndTags(template.name || template.title || '無標題', template.tags);
+  const presentation = window.TemplatePresentation.present(template);
+  const cleanTitle = presentation.title, tags = presentation.tags;
 
   // Calculate total duration from shots
   const shots = Array.isArray(template.structure) ? template.structure : [];
@@ -433,7 +402,7 @@ window.renderTemplateDetailTimeline = function(template, detailContainer) {
   timelineDuration = totalSec || 15; // default 15s if no shots
 
   const durationTimecodeEl = document.getElementById('detail-monitor-duration');
-  if (durationTimecodeEl) durationTimecodeEl.textContent = formatEditorTimecode(timelineDuration);
+  if (durationTimecodeEl) { const known = window.TemplatePresentation.durationOf(template);durationTimecodeEl.textContent = known === null ? '—' : formatEditorTimecode(known); }
 
   // Build decoupled normalized segments
   currentNormalizedSegments = buildNormalizedSegments(template, shots, timelineDuration);
@@ -504,9 +473,9 @@ function renderHeroLeft(template, shots, totalSec, cleanTitle, tags) {
   const catBadge = document.getElementById('detail-category-badge');
   if (catBadge) catBadge.textContent = CAT_MAP[template.category] || template.category || '未分類';
   const shotsBadge = document.getElementById('detail-shots-count-badge');
-  if (shotsBadge) shotsBadge.textContent = `${template.shotsCount || shots.length} 鏡頭`;
+  if (shotsBadge) {const count=window.TemplatePresentation.shotCountOf(template);shotsBadge.textContent=count===null?'未提供鏡頭數':`${count} 鏡頭`;}
   const durBadge = document.getElementById('detail-duration-badge');
-  if (durBadge) durBadge.textContent = totalSec > 0 ? `${totalSec}s` : '未提供時長';
+  if (durBadge) {const known=window.TemplatePresentation.durationOf(template);durBadge.textContent=known===null?'未提供時長':`${known}s`;}
 
   // 2. Title
   const titleEl = document.getElementById('detail-template-title');
@@ -516,6 +485,8 @@ function renderHeroLeft(template, shots, totalSec, cleanTitle, tags) {
 
   // 3. Summary & Expand toggle (超過兩行自動截斷，點擊切換展開/收合)
   const summaryInfo = getTemplateSummary(template);
+  const summaryOrigin = document.getElementById('detail-summary-origin');
+  if (summaryOrigin) summaryOrigin.textContent = summaryInfo.label;
   const descEl = document.getElementById('detail-template-desc');
   const expandBtn = document.getElementById('btn-desc-expand');
   if (descEl) {
@@ -524,12 +495,12 @@ function renderHeroLeft(template, shots, totalSec, cleanTitle, tags) {
   }
   if (expandBtn) {
     const isLongText = (summaryInfo.fullText || '').length > 60;
-    expandBtn.hidden = !isLongText;
+    expandBtn.hidden = !isLongText;expandBtn.setAttribute('aria-expanded','false');expandBtn.setAttribute('aria-controls','detail-template-desc');
     let expanded = false;
     expandBtn.textContent = '閱讀全文';
     expandBtn.onclick = () => {
       expanded = !expanded;
-      descEl?.classList.toggle('is-expanded', expanded);
+      descEl?.classList.toggle('is-expanded', expanded);expandBtn.setAttribute('aria-expanded',String(expanded));
       expandBtn.textContent = expanded ? '收合內容' : '閱讀全文';
     };
   }
@@ -545,12 +516,12 @@ function renderHeroLeft(template, shots, totalSec, cleanTitle, tags) {
       hashContainer.innerHTML = tags.map(tag => `<span class="hashtag-pill">#${escapeTemplateText(tag)}</span>`).join('');
       const mayWrap = tags.length > 3 || tags.join('').length > 18;
       if (mayWrap && hashExpand) {
-        hashExpand.hidden = false;
+        hashExpand.hidden = false;hashExpand.setAttribute('aria-expanded','false');hashExpand.setAttribute('aria-controls','detail-hashtags-container');
         let tagsExpanded = false;
         hashExpand.textContent = '展開全部';
         hashExpand.onclick = () => {
           tagsExpanded = !tagsExpanded;
-          hashContainer.classList.toggle('is-expanded', tagsExpanded);
+          hashContainer.classList.toggle('is-expanded', tagsExpanded);hashExpand.setAttribute('aria-expanded',String(tagsExpanded));
           hashExpand.textContent = tagsExpanded ? '收合標籤' : '展開全部';
         };
       } else if (hashExpand) {
@@ -599,7 +570,7 @@ function renderHeroLeft(template, shots, totalSec, cleanTitle, tags) {
   const srcLink = document.getElementById('detail-source-link');
   if (srcLink) {
     const videoId = sourceVideoId(template);
-    const url = template.source?.url || template.videoUrl || (videoId ? `https://www.youtube.com/watch?v=${videoId}` : '');
+    const url = window.TemplatePresentation.externalUrl(template.source?.url || template.videoUrl || (videoId ? `https://www.youtube.com/watch?v=${videoId}` : ''));
     if (url) {
       srcLink.hidden = false;
       srcLink.href = url;
@@ -859,12 +830,14 @@ function initSourceInfoModal(template) {
   const descEl = document.getElementById('src-modal-desc');
   const linkEl = document.getElementById('src-modal-link');
 
-  const srcTitle = template.source?.title || template.name || '來源影片';
+  const presentation = window.TemplatePresentation.present(template);
+  const srcTitle = presentation.rawTitle || '未提供原始標題';
   const srcChannel = template.source?.channel || '未提供頻道';
-  const srcViews = template.source?.views != null ? Number(template.source.views).toLocaleString('zh-TW') + ' 次觀看' : '—';
-  const srcDesc = template.source?.description || template.description || '未提供原始說明';
+  const views = Number(template.source?.views);
+  const srcViews = template.source?.views != null && Number.isFinite(views) && views >= 0 ? views.toLocaleString('zh-TW') + ' 次觀看' : '未提供觀看次數';
+  const srcDesc = presentation.rawDescription || '未提供原始說明';
   const videoId = sourceVideoId(template);
-  const srcUrl = template.source?.url || template.videoUrl || (videoId ? `https://www.youtube.com/watch?v=${videoId}` : '#');
+  const srcUrl = window.TemplatePresentation.externalUrl(template.source?.url || template.videoUrl || (videoId ? `https://www.youtube.com/watch?v=${videoId}` : ''));
 
   if (titleEl) titleEl.textContent = srcTitle;
   if (channelEl) channelEl.textContent = srcChannel;
@@ -872,7 +845,7 @@ function initSourceInfoModal(template) {
   if (descEl) descEl.textContent = srcDesc;
   if (linkEl) {
     linkEl.href = srcUrl;
-    linkEl.style.display = srcUrl === '#' ? 'none' : 'inline-flex';
+    linkEl.style.display = srcUrl ? 'inline-flex' : 'none';
   }
 
   const panel = modal.querySelector('.source-modal-panel');

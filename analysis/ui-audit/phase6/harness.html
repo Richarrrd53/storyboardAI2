@@ -1,0 +1,180 @@
+<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><title>StoryboardAI Phase 5 Workspace QA</title>
+<style>body{margin:16px;background:#e2e8f0;font:14px sans-serif}header{display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap}button{padding:10px 14px}iframe{border:0;background:white;display:block}pre{white-space:pre-wrap}a{padding:8px}.capture{margin:0}.capture>header,.capture>#status,.capture>#report{display:none}</style>
+<header><strong id="size"></strong><button id="edge-fixture">Phase6 捲動基線</button><button id="edge-top">首屏</button><button id="edge-middle">捲動中段</button><button id="edge-bottom">捲動末尾</button><button id="edge-focus">聚焦末項</button><button id="edge-matrix">Phase6 狀態矩陣</button><button id="edge-trace">捲動反轉與清理記錄</button><button id="generate-choice">Generate 單選控制項</button><button id="template-content">Template 長內容／原文</button><button id="nav-check">手機導覽語意與 QC 檢查</button><button id="capture-mode">截圖模式</button><button id="auth-check">Auth labels／切換檢查</button><button id="template-check">Template 返回與 resize trace</button><button id="hero-check">Hero 各狀態／200%文字檢查</button><button id="hero-empty">切換空帳戶</button><button id="followup">本輪 Dialog／Morph／返回回歸</button><button id="matrix">準備長名／空封面隔離資料</button><button id="folder-check">比較三頁 Folder 幾何</button><button id="delete-preview">刪除預覽與動態記錄</button><button id="workspace">登入隔離帳戶並開啟工作區</button><button id="history-check">檢查 Panel → History SPA</button><button id="dialog">重新命名 Prompt</button><button id="logout">登出確認</button><button id="qc">Quick Create</button><button id="menu">專案選單</button><button id="fallback">Opaque fallback</button><a href="/phase1-harness">回驗證台</a></header><p id="status" role="status">Ready</p><iframe id="product" title="指定 CSS viewport 的正式 SPA"></iframe><pre id="report"></pre>
+<script>
+const params=new URLSearchParams(location.search);const requestedWidth=Number(params.get('width'));const width=[375,390,768,1024,1440,1920].includes(requestedWidth)?requestedWidth:390;const height=width===1920?1080:width>=1024?900:width===768?1024:width===375?812:844;
+const product=document.getElementById('product');product.style.width=width+'px';product.style.height=height+'px';document.getElementById('size').textContent=width+' × '+height+' CSS px';
+const status=document.getElementById('status'),report=document.getElementById('report');let loadCount=0,ready=false;
+const delay=ms=>new Promise(r=>setTimeout(r,ms));
+async function until(fn){const start=Date.now();while(!fn()){if(Date.now()-start>12000)throw new Error('等待 SPA 就緒逾時');await delay(50);}}
+const app=()=>product.contentDocument?.querySelector('#ifm')?.contentWindow;
+function wire(id,fn){document.getElementById(id).onclick=async()=>{try{status.textContent='執行中';await fn();status.textContent='完成';}catch(error){status.textContent=error.message;report.textContent=error.stack;}};}
+wire('workspace',async()=>{
+ const health=await fetch('/audit-health').then(r=>r.json());if(!health.isolated)throw new Error('需要隔離服務');
+ const auth=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:'fixture@example.test',password:'fixture-only'})}).then(r=>r.json());localStorage.setItem('spa_auth_token',auth.token);
+ await fetch('/phase1-control',{method:'POST',body:JSON.stringify({deleted:false})});
+ product.src='/dashboard';await until(()=>app()?.document.querySelector('#mob-nav-profile')&&app()?.document.querySelector('.project-option-btn'));
+ product.contentDocument.querySelector('#ifm').addEventListener('load',()=>{loadCount++;});ready=true;
+ report.textContent=JSON.stringify({ready,width,height,innerDocumentLoadsAfterMount:loadCount});
+});
+wire('history-check',async()=>{
+ if(!ready)throw new Error('請先開啟工作區');const w=app();const doc=w.document;
+ const trigger=width<=768?doc.querySelector('#mob-nav-profile'):doc.querySelector('#top-avatar');trigger.click();await delay(450);
+ doc.querySelector('#up-recycle-bin').click();await until(()=>w.spaRouter.currentPage==='history');await delay(650);
+ const nav=doc.querySelector('#spa-mobile-nav');const result={case:'Panel to History',route:w.spaRouter.currentPage,innerDocumentLoadsAfterMount:loadCount,bottomNavHidden:nav.hidden,navInert:nav.inert,navAriaHidden:nav.getAttribute('aria-hidden')};
+ result.passed=loadCount===0&&nav.hidden&&nav.inert;report.textContent=JSON.stringify(result,null,2);
+ await Promise.resolve();
+});
+wire('dialog',async()=>{if(!ready)throw new Error('請先開啟工作區');const w=app();w.ProjectActions.renameProject(w.ProjectStore.getProjects().find(p=>!p.is_deleted));});
+wire('logout',async()=>{if(!ready)throw new Error('請先開啟工作區');const w=app(),d=w.document;d.querySelector(width<=768?'#mob-nav-profile':'#top-avatar').click();await delay(450);d.querySelector('.up-logout').click();});
+wire('qc',async()=>{if(!ready)throw new Error('請先開啟工作區');app().document.querySelector('#global-create-trigger').click();});
+wire('menu',async()=>{if(!ready)throw new Error('請先開啟工作區');app().document.querySelector('.project-option-btn').click();});
+wire('fallback',async()=>{if(!ready)throw new Error('請先開啟工作區');app().document.documentElement.toggleAttribute('data-opaque-surfaces');});
+
+wire('matrix',async()=>{await fetch('/phase4-control',{method:'POST'});if(ready){const w=app();await w.ProjectStore.fetchProjects({force:true});w.ProjectStore.notify({type:'fixture'});}report.textContent='已準備三個隔離專案：9:16、1:1 長名、無封面。';});
+wire('folder-check',async()=>{
+ if(!ready)throw new Error('請先開啟工作區');const w=app(),rows=[];
+ for(const page of ['dashboard','projects','history']){
+  await w.spaNavigate(page);await delay(750);
+  const card=w.document.querySelector('.project-folder-card');
+  rows.push({page,hovered:card?.matches(':hover'),expanded:card?.classList.contains('is-expanded'),geometry:card?w.ProjectCard.captureGeometry(card):null});
+ }
+ const result={case:'Phase 4 same viewport',width,viewport:w.document.documentElement.clientWidth,rows};report.textContent=JSON.stringify(result,null,2);await Promise.resolve();
+});
+wire('delete-preview',async()=>{
+ if(!ready)throw new Error('請先開啟工作區');const w=app(),doc=w.document;
+ const source=doc.querySelector('.project-folder-card');if(!source)throw new Error('目前頁面沒有可測試卡片');
+ const project=w.ProjectStore.getProjects().find(p=>String(p.id)===String(source.dataset.id));
+ void w.ProjectActions.deleteProject(project,source);await until(()=>doc.querySelector('.sys-window'));
+ const preview=doc.querySelector('.sys-preview .project-folder-card');
+ const before=w.ProjectCard.captureGeometry(preview);const records=[];
+ doc.querySelector('.sys-btn.primary').addEventListener('click',()=>{
+  const start=w.performance.now();let next=0;
+  function record(time){const elapsed=time-start;
+   if(elapsed>=next){const bin=doc.querySelector('.sys-delete-trashbin');records.push({ms:Math.round(elapsed),transform:preview.style.transform,opacity:preview.style.opacity,bin:bin?.style.transform});next+=200;}
+   if(elapsed<1100)w.requestAnimationFrame(record);else{const result={case:'Phase 4 live trash trace',before,records};report.textContent=JSON.stringify(result,null,2);Promise.resolve();}
+  }w.requestAnimationFrame(record);
+ },{once:true});report.textContent='刪除預覽已開啟。請在真正的彈窗確認或取消；所有資料為記憶體 mock。';
+});
+
+wire('followup',async()=>{
+ if(!ready)throw new Error('請先開啟工作區');const w=app(),d=w.document,results={width,dialogs:[],morph:[],account:[],alignment:[],history:null};
+ const sample=async(element,span)=>{const frames=[],start=w.performance.now();await new Promise(resolve=>{const tick=()=>{const t=w.performance.now()-start,style=w.getComputedStyle(element);frames.push({ms:Math.round(t),scale:style.scale,transform:style.transform,connected:element.isConnected,opacity:style.opacity,width:style.width,height:style.height,left:style.left,top:style.top});if(t<span)w.requestAnimationFrame(tick);else resolve();};w.requestAnimationFrame(tick);});return frames;};
+ for(const [kind,title] of [['prompt','重新命名'],['confirm','登出'],['confirm','還原'],['alert','提示']]) {
+  const done=w.DialogService[kind]({title,value:'隔離動畫測試'});const panel=d.querySelector('.sb-dialog');await delay(500);
+  const overlay=panel.parentElement,background=w.getComputedStyle(overlay).backgroundColor,entryScale=w.getComputedStyle(panel).scale;
+  (panel.querySelector('.sb-dialog-cancel')||panel.querySelector('.sb-dialog-submit')).click();
+  const frames=await sample(panel,470);await done;
+  results.dialogs.push({kind,title,entryScale,frames,background,backgroundAfter:overlay.style.background,passed:frames.some(f=>Number.parseFloat(f.scale)>0&&Number.parseFloat(f.scale)<.9)&&!panel.isConnected&&overlay.style.opacity==='1'});
+ }
+ await w.spaNavigate('projects');await delay(650);
+ const card=d.querySelector('.project-folder-card'),trigger=card.querySelector('.project-option-btn');
+ const shell=card.querySelector('.project-folder-shell').getBoundingClientRect(),option=trigger.getBoundingClientRect();
+ results.alignment.push({shellRight:shell.right,optionRight:option.right,difference:option.right-shell.right,passed:Math.abs(option.right-shell.right)<=1});
+ for(const interrupt of [160,380,500]) {
+  trigger.click();await delay(interrupt);const menu=d.querySelector('.surface-morph-surface');
+  w.SurfaceMorph.close('toggle');const frames=await sample(menu,470);
+  results.morph.push({interrupt,frames,passed:frames.some(f=>f.connected&&f.ms>250)&&!menu.isConnected});
+ }
+ if(width>768) {
+  const account=d.querySelector('#top-avatar');
+  for(const interrupt of [160,380,500]) {
+   account.click();await delay(interrupt);const menu=d.querySelector('.surface-morph-account');
+   if(!menu)throw new Error('缺少 User Panel Morph');
+   w.SurfaceMorph.close('toggle');const frames=await sample(menu,470);
+   results.account.push({interrupt,frames,passed:frames.some(f=>f.connected&&f.ms>250)&&!menu.isConnected});
+  }
+ }
+ await w.spaNavigate('history');await delay(500);const back=d.querySelector('.history-back-btn');
+ const visible=w.getComputedStyle(back).display!=='none';
+ if(width<=768){back.click();await until(()=>w.spaRouter.currentPage==='projects');}
+ results.history={visible,route:w.spaRouter.currentPage,documentLoads:loadCount,passed:width>768?!visible:visible&&w.spaRouter.currentPage==='projects'&&loadCount===0};
+ results.passed=results.dialogs.every(x=>x.passed)&&results.morph.every(x=>x.passed)&&results.account.every(x=>x.passed)&&results.alignment.every(x=>x.passed)&&results.history.passed;
+ report.textContent=JSON.stringify(results,null,2);
+});
+
+wire('hero-empty',async()=>{if(!ready)throw new Error('請先開啟工作區');app().ProjectStore.setProjects([]);});
+wire('hero-check',async()=>{
+ if(!ready)throw new Error('請先開啟工作區');const w=app(),d=w.document,original=structuredClone(w.ProjectStore.getProjects()),rows=[];
+ const record=label=>{const hero=d.querySelector('#home-hero-card'),body=d.querySelector('.home-body'),card=d.querySelector('.project-folder-card'),h=hero.getBoundingClientRect(),b=body.getBoundingClientRect(),c=card?.getBoundingClientRect();
+  const copy=hero.querySelector('.workspace-hero-copy');const row={label,width,viewport:d.documentElement.clientWidth,state:hero.dataset.state,heroHeight:h.height,heroWidth:h.width,copyFits:copy.scrollWidth<=copy.clientWidth+1,heroFits:hero.scrollWidth<=hero.clientWidth+1,firstCardTop:c?.top??null,bodyBottom:b.bottom,firstRowVisible:c?c.top<b.bottom-100:true,images:hero.querySelectorAll('img').length,documentLoads:loadCount};rows.push(row);};
+ record('project');
+ w.ProjectStore.setProjects([]);await delay(100);record('empty');
+ w.ProjectStore.setProjects(null);await delay(100);record('loading');
+ const base=original[0];w.ProjectStore.setProjects([{...base,title:'一個非常長的真實專案名稱，用來檢查工作區標題是否會截斷或遮住操作',previewImages:['/audit-cover.svg','/audit-cover.svg?second','/audit-cover.svg?third']}]);await delay(100);record('long-title-three-frames');
+ d.documentElement.style.fontSize='200%';await delay(100);record('text-200');d.documentElement.style.fontSize='';
+ w.ProjectStore.setProjects(original);await w.spaNavigate('projects');
+ const fetchProjects=w.ProjectStore.fetchProjects;
+ try {
+  w.ProjectStore.fetchProjects=()=>Promise.reject(new Error('isolated Hero load failure'));
+  w.ProjectStore.setProjects(null);await w.spaNavigate('dashboard');await until(()=>d.querySelector('#home-hero-card')?.dataset.state==='error');record('error');
+ } finally {w.ProjectStore.fetchProjects=fetchProjects;w.ProjectStore.setProjects(original);}
+ await delay(100);
+ report.textContent=JSON.stringify({width,rows,passed:rows.every(r=>r.viewport===width&&r.copyFits&&r.heroFits&&r.documentLoads===0)&&rows.filter(r=>['project','empty'].includes(r.label)).every(r=>r.firstRowVisible)},null,2);
+});
+
+wire('capture-mode',async()=>{document.body.classList.add('capture');});
+wire('auth-check',async()=>{
+ product.src='/login';await until(()=>app()?.document.querySelector('#login-email')&&typeof app()?.switchTab==='function');const w=app(),d=w.document;
+ const state=()=>({loginInert:d.querySelector('#panel-login').inert,registerInert:d.querySelector('#panel-register').inert,loginHidden:d.querySelector('#panel-login').getAttribute('aria-hidden'),registerHidden:d.querySelector('#panel-register').getAttribute('aria-hidden')});
+ const login=state();d.querySelector('#tab-register').click();const register=state();const rp=d.querySelector('#panel-register');register.overflow=rp.scrollWidth>rp.clientWidth+1;register.labels=Array.from(rp.querySelectorAll('label')).map(l=>l.textContent);d.querySelector('#tab-login').click();d.querySelector('#showBtn1').click();await delay(350);
+ const password={type:d.querySelector('#login-password').type,label:d.querySelector('#showBtn1').getAttribute('aria-label'),pressed:d.querySelector('#showBtn1').getAttribute('aria-pressed')};d.querySelector('#showBtn1').click();await delay(350);
+ const labels=Array.from(d.querySelectorAll('.auth-field > label')).map(l=>({for:l.htmlFor,text:l.textContent}));
+ const result={width,login,register,password,labels,passed:!login.loginInert&&login.registerInert&&register.loginInert&&!register.registerInert&&password.type==='text'&&password.pressed==='true'&&labels.length===6};
+ report.textContent=JSON.stringify(result,null,2);
+});
+wire('template-check',async()=>{
+ if(!ready)throw new Error('請先開啟工作區');const w=app(),d=w.document,fetchTemplates=w.PageAssetLoader.fetchTemplates,trace=[];
+ const capture=label=>trace.push({label,url:w.parent.location.pathname,viewport:d.documentElement.clientWidth,history:w.parent.history.state,detail:!!d.querySelector('#page-main')?.classList.contains('is-template-detail-mode')});
+ try {
+  await w.spaNavigate('projects');w.PageAssetLoader.fetchTemplates=async()=>[{id:'phase5-template',name:'隔離模板：咖啡片頭',category:'story',thumbnail:'/audit-cover.svg',structure:[{id:'shot-one',title:'晨光下的咖啡',duration:3}],tags:['隔離測試']}];
+  await w.spaNavigate('template');await until(()=>d.querySelector('.template-card'));capture('browse');
+  const search=d.querySelector('#store-search-input');search.value='咖啡';search.dispatchEvent(new w.Event('input',{bubbles:true}));
+  d.querySelector('.card-preview-btn').click();await until(()=>d.querySelector('#page-main')?.classList.contains('is-template-detail-mode')&&w.parent.location.pathname.endsWith('/phase5-template'));capture('detail');
+  product.style.width='390px';await delay(300);capture('resize390');
+  d.querySelector('.btn-back-to-store').click();await until(()=>!d.querySelector('#page-main')?.classList.contains('is-template-detail-mode'));capture('back');
+  const result={trace,query:search.value,passed:search.value==='咖啡'&&w.parent.location.pathname==='/template'&&!trace.at(-1).detail};report.textContent=JSON.stringify(result,null,2);
+ } finally {w.PageAssetLoader.fetchTemplates=fetchTemplates;product.style.width=width+'px';}
+});
+
+const edgeBody=()=>app().document.querySelector('.content-body');
+function contentRect(n){if(!n)return null;const r=n.getBoundingClientRect();return {top:r.top,bottom:r.bottom,left:r.left,right:r.right};}
+function edgeMetrics(){const w=app(),d=w.document,b=edgeBody(),r=b?.getBoundingClientRect();return {width,route:w.spaRouter.currentPage,scrollTop:b?.scrollTop,maxScroll:b?b.scrollHeight-b.clientHeight:null,mask:b?.style.maskImage,body:r?{top:r.top,bottom:r.bottom,height:r.height}:null,layers:[...d.querySelectorAll('.progressive-edge-blur')].map(n=>{const c=w.getComputedStyle(n),r=n.getBoundingClientRect();return {role:n.className,visibility:c.visibility,blur:c.backdropFilter,top:r.top,height:r.height};}),headerOffset:d.querySelector('.content-header')?.style.getPropertyValue('--navigation-offset'),focus:d.activeElement?.getAttribute('aria-label'),focusText:d.activeElement?.textContent?.slice(0,40),focusRect:contentRect(d.activeElement),lastItemRect:contentRect(b?.querySelector('.project-folder-card:last-child')),horizontalOverflow:!!b&&b.scrollWidth>b.clientWidth+1,documentLoads:loadCount};}
+wire('edge-fixture',async()=>{if(!ready)throw new Error('先開啟隔離工作區');const w=app(),base=structuredClone(w.ProjectStore.getProjects()[0]);w.ProjectStore.setProjects(Array.from({length:24},(_,i)=>({...base,id:'phase6-'+i,title:'隔離分鏡 '+(i+1)})));await w.spaNavigate('projects');await delay(700);report.textContent=JSON.stringify(edgeMetrics(),null,2);});
+for(const [id,fraction] of [['edge-top',0],['edge-middle',.5],['edge-bottom',1]])wire(id,async()=>{const b=edgeBody();b.scrollTop=(b.scrollHeight-b.clientHeight)*fraction;await delay(650);report.textContent=JSON.stringify(edgeMetrics(),null,2);});
+wire('edge-focus',async()=>{const w=app(),buttons=[...edgeBody().querySelectorAll('button')];buttons.at(-1).focus();buttons.at(-1).scrollIntoView({block:'nearest'});await delay(300);report.textContent=JSON.stringify(edgeMetrics(),null,2);});
+wire('edge-trace',async()=>{const w=app(),b=edgeBody(),rows=[];let last=null;const intervals=[];await new Promise(resolve=>{const start=w.performance.now();function frame(now){if(last!==null)intervals.push(now-last);last=now;const t=(now-start)/900;b.scrollTop=(b.scrollHeight-b.clientHeight)*(t<.5?t*2:Math.max(0,2-t*2));if(t<1)w.requestAnimationFrame(frame);else resolve();}w.requestAnimationFrame(frame);});await delay(150);rows.push(edgeMetrics());const oldLayers=[...w.document.querySelectorAll('.progressive-edge-blur')];await w.spaNavigate('dashboard');await delay(500);const stale=oldLayers.filter(n=>n.isConnected).length;await w.spaNavigate('projects');await delay(600);rows.push(edgeMetrics());report.textContent=JSON.stringify({kind:'Browser RAF sampling; not GPU/paint trace',intervals,rows,afterLeaveLayerCount:stale},null,2);});
+wire('edge-matrix',async()=>{
+ if(!ready)throw new Error('先開啟隔離工作區');const w=app(),b=edgeBody(),rows=[];
+ for(const [label,fraction] of [['top',0],['middle',.5],['bottom',1],['reverse',.45],['top-again',0]]){b.scrollTop=(b.scrollHeight-b.clientHeight)*fraction;await delay(500);rows.push({label,...edgeMetrics()});}
+ const last=[...b.querySelectorAll('button')].at(-1);last.focus();last.scrollIntoView({block:'nearest'});await delay(400);rows.push({label:'focus-last',...edgeMetrics()});
+ const oldLayers=[...w.document.querySelectorAll('.progressive-edge-blur')];for(const page of ['dashboard','projects','dashboard','projects'])await w.spaNavigate(page);await delay(500);
+ report.textContent=JSON.stringify({width,rows,oldLayersStillConnected:oldLayers.filter(n=>n.isConnected).length,passed:rows.every(r=>!r.horizontalOverflow&&r.documentLoads===0)&&rows.at(-1).mask===''&&oldLayers.every(n=>!n.isConnected)},null,2);
+});
+wire('generate-choice',async()=>{
+ if(!ready)throw new Error('請先開啟工作區');const w=app();
+ if(!w.CreationSessionStore.reset({force:true}))throw new Error('無法重設隔離創作');
+ // No story submission, GenerationTask start, or AI request. Controls only.
+ w.CreationSessionStore.creativeBrief=w.CreativeBrief.create('');w.CreationSessionStore.duration=42;
+ await w.spaNavigate('generate',{targetPhase:2});await until(()=>w.document.querySelector('.style-card'));
+ const groups=[...w.document.querySelectorAll('[data-choice-kind]')];
+ report.textContent=JSON.stringify({case:'Generate choices',width,groups:groups.map(g=>({label:g.getAttribute('aria-label')||g.getAttribute('aria-labelledby'),role:g.getAttribute('role'),checked:g.querySelectorAll('[aria-checked="true"]').length,tabStops:[...g.querySelectorAll('[data-choice-option]')].filter(n=>n.tabIndex===0).length})),duration:w.CreationSessionStore.duration,note:'以 Tab、方向鍵、Home/End 操作；42秒保留，選擇預設後才更新。請勿按生成。'},null,2);
+});
+wire('template-content',async()=>{
+ if(!ready)throw new Error('請先開啟工作區');const w=app();await w.spaNavigate('projects');
+ const fixtures=[{id:'phase5-long-source',name:'咖啡片頭 #品牌 #隔離測試 https://example.test/promotion',category:'story',thumbnail:'/audit-cover.svg',tags:['隔離測試','品牌'],source:{title:'  原始影片名稱 #品牌\n',description:'  晨光、咖啡與工作桌。\n'+ '來源很長的說明，包含製作過程與品牌活動。'.repeat(50)+'\nhttps://example.test/promotion #咖啡  '},structure:[{id:'opening',title:'晨光下的咖啡',duration:'3s'}]}, {id:'phase5-editorial',name:'原始名稱',displayTitle:'工作桌的一日',displaySummary:'由桌面的光線變化連結三個創作時刻。',category:'product',structure:[]}];
+ const response=await fetch('/phase5-templates-control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(fixtures)});if(!response.ok)throw new Error('需要使用最新隔離服務（4324）');
+ w.cacheTemplatesList=null;await w.spaNavigate('template');await until(()=>w.document.querySelector('.template-card'));
+ report.textContent='已載入兩份隔離模板。先搜尋「咖啡」，預覽長內容，閱讀全文、展開來源，連點返回；也可 refresh／back／forward。正式來源原文與生成輸入不改寫。';
+});
+wire('nav-check',async()=>{
+ if(!ready)throw new Error('請先開啟工作區');if(width>768)throw new Error('此項使用手機寬度');const w=app(),d=w.document;
+ await w.spaNavigate('dashboard');await delay(400);const nav=d.querySelector('#spa-mobile-nav'),home=d.querySelector('#mob-nav-home'),profile=d.querySelector('#mob-nav-profile');
+ const before={role:nav.getAttribute('role'),home:home.getAttribute('aria-current'),nestedButtons:nav.querySelectorAll('button button').length};
+ profile.click();await delay(400);const panel={home:home.getAttribute('aria-current'),profile:profile.getAttribute('aria-expanded'),pressed:profile.getAttribute('aria-pressed')};
+ w.AppShell.toggleUserPanel(false);await delay(350);d.querySelector('#global-create-trigger').click();await delay(650);
+ const qc={surface:w.AICreationController?.surfaceState,expanded:d.querySelector('#global-create-capsule')?.classList.contains('is-expanded')};
+ const passed=!before.role&&before.home==='page'&&!before.nestedButtons&&panel.home==='page'&&panel.profile==='true'&&(qc.surface==='quick-compose'||qc.expanded);
+ report.textContent=JSON.stringify({width,before,panel,qc,passed},null,2);
+});
+</script></html>

@@ -1,0 +1,13 @@
+{
+  "public/html/dashboard.html": "907930515fb3d81aae8ce00366c785fe1be5988091b795b48c5d73fcc7b1fb8d",
+  "public/js/pages/dashboard.js": "337d66ca91ce1e3108a9582c65d69bb3ec06f337df0acacf966c406adca4ca84",
+  "public/css/dashboard.css": "61a8eac6b449e5e807c3b7cbbf9b73d300fc140eb4376cb46bef4e3471063978",
+  "public/js/features/projects.js": "bb6a949a0b2a1c0fa37c6856bc31c768bf879c4a085c62087c2363ac0951d403",
+  "public/js/spa-router.js": "3fe576d15d0bb63437e5fe7b4975d96e4fa8074211e7ce8aefdfa520edfe5c5d",
+  "public/js/components/global-toast.js": "3e0b98a08343598b3ae5c7097e7877bd2eb21e4c62084a4674ded64476deeaba",
+  "public/js/project-detail.js": "98dfdfddcecbc0208b7c09f714ef1a832ef6620cbcc2203358b66c3bf4b166f6",
+  "public/html/login.html": "ddec039bd7a8271d46fb495b0f9208ec442cf87c55f826237e344b1aa36e985f",
+  "public/js/pages/auth-page.js": "8d6cf82c9c7f4225e32071ec3f58fda0a2a46b0ea73303c710f4d1d16956a9ae",
+  "public/css/auth.css": "0cbf2774fcb2050168c2f43edc0c72720cf441942b53bbf151b626e3897c53c7",
+  "public/js/shell/app-shell.js": "40902fdfed1f4cd758665c3592ba0d8a489318ad3467b432eaa8a53b1b12527b"
+}

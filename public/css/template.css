@@ -2063,3 +2063,7 @@
   }
 }
 
+
+/* Display excerpts identify their provenance; complete source text remains in source details. */
+.template-summary-label { display: block; margin-bottom: var(--space-1); color: var(--color-text-secondary); font-size: var(--font-size-xs); font-family: var(--font-family-body); font-weight: var(--font-weight-medium); letter-spacing: normal; text-transform: none; }
+.template-display-summary { overflow-wrap: anywhere; }

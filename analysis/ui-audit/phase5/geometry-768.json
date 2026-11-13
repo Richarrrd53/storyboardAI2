@@ -1,0 +1,81 @@
+{
+  "width": 768,
+  "rows": [
+    {
+      "label": "project",
+      "width": 768,
+      "viewport": 768,
+      "state": "project",
+      "heroHeight": 160,
+      "heroWidth": 736,
+      "copyFits": true,
+      "heroFits": true,
+      "firstCardTop": 440.0791015625,
+      "bodyBottom": 1024,
+      "firstRowVisible": true,
+      "images": 1,
+      "documentLoads": 0
+    },
+    {
+      "label": "empty",
+      "width": 768,
+      "viewport": 768,
+      "state": "empty",
+      "heroHeight": 160,
+      "heroWidth": 736,
+      "copyFits": true,
+      "heroFits": true,
+      "firstCardTop": null,
+      "bodyBottom": 1024,
+      "firstRowVisible": true,
+      "images": 0,
+      "documentLoads": 0
+    },
+    {
+      "label": "loading",
+      "width": 768,
+      "viewport": 768,
+      "state": "loading",
+      "heroHeight": 160,
+      "heroWidth": 734,
+      "copyFits": true,
+      "heroFits": true,
+      "firstCardTop": 440.0625,
+      "bodyBottom": 1024,
+      "firstRowVisible": true,
+      "images": 0,
+      "documentLoads": 0
+    },
+    {
+      "label": "long-title-three-frames",
+      "width": 768,
+      "viewport": 768,
+      "state": "project",
+      "heroHeight": 170.390625,
+      "heroWidth": 736,
+      "copyFits": true,
+      "heroFits": true,
+      "firstCardTop": 450.453125,
+      "bodyBottom": 1024,
+      "firstRowVisible": true,
+      "images": 3,
+      "documentLoads": 0
+    },
+    {
+      "label": "text-200",
+      "width": 768,
+      "viewport": 768,
+      "state": "project",
+      "heroHeight": 354.59375,
+      "heroWidth": 734,
+      "copyFits": true,
+      "heroFits": true,
+      "firstCardTop": 698.71875,
+      "bodyBottom": 1024,
+      "firstRowVisible": true,
+      "images": 3,
+      "documentLoads": 0
+    }
+  ],
+  "passed": true
+}

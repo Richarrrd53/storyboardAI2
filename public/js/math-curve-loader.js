@@ -83,7 +83,9 @@
       let animId = null, stopped = false;
       const scope = options.root || document;
       const compact = options.compact === true;
-      const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      const motionQuery = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+      let reducedMotion = !!motionQuery?.matches;
+      let inView = true;
 
       const loaders = [];
       const svgEls = scope.querySelectorAll('.math-loader-svg');
@@ -128,6 +130,8 @@
           if (animId !== null) cancelAnimationFrame(animId);
           animId = null;
           document.removeEventListener('visibilitychange', onVisibility);
+          motionQuery?.removeEventListener?.('change', onMotion);
+          visibilityObserver?.disconnect();
           options.signal?.removeEventListener('abort', stop);
           loaders.forEach(loader => {
               loader.particles.forEach(node => node.remove());
@@ -139,8 +143,16 @@
       function onVisibility() {
           if (animId !== null) cancelAnimationFrame(animId);
           animId = null;
-          if (!stopped && !document.hidden && !reducedMotion) animId = requestAnimationFrame(render);
+          if (!stopped && !document.hidden && inView && !reducedMotion) animId = requestAnimationFrame(render);
       }
+      function onMotion() { reducedMotion = !!motionQuery.matches; onVisibility(); if (reducedMotion && !document.hidden) render(performance.now()); }
+      const visibleLoaders = new Set(loaders.map(loader => loader.svg));
+      const visibilityObserver = window.IntersectionObserver ? new window.IntersectionObserver(entries => {
+          for (const entry of entries) { if (entry.isIntersecting) visibleLoaders.add(entry.target); else visibleLoaders.delete(entry.target); }
+          inView = visibleLoaders.size > 0; onVisibility();
+      }) : null;
+      loaders.forEach(loader => visibilityObserver?.observe(loader.svg));
+      motionQuery?.addEventListener?.('change', onMotion);
       document.addEventListener('visibilitychange', onVisibility);
       options.signal?.addEventListener('abort', stop, { once: true });
 
@@ -221,7 +233,7 @@
               if (!reducedMotion && !compact) updateSuckedAssets(loader);
           });
           
-          if (!reducedMotion && !document.hidden) animId = requestAnimationFrame(render);
+          if (!reducedMotion && !document.hidden && inView) animId = requestAnimationFrame(render);
       }
 
       // Reduced motion keeps the existing curve as a static progress illustration.

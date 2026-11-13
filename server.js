@@ -1222,16 +1222,8 @@ app.use((err, req, res, next) => {
     next(err);
 });
 
-// Discovery pages
-app.get('/discovery', (req, res) => {
-    res.sendFile(path.join(process.cwd(), 'public', 'html', 'discovery.html'));
-});
-app.get('/discovery/settings', (req, res) => {
-    res.sendFile(path.join(process.cwd(), 'public', 'html', 'discovery-settings.html'));
-});
-
 // SPA catch-all — redirect routes to main.html
-const spaRoutes = ['/dashboard', '/projects', '/login', '/register', '/generate', '/analyze', '/analysis', '/history', '/template', '/template/:id', '/project/:id'];
+const spaRoutes = ['/discovery', '/discovery/settings', '/dashboard', '/projects', '/login', '/register', '/generate', '/analyze', '/analysis', '/history', '/template', '/template/:id', '/project/:id'];
 spaRoutes.forEach(route => {
     app.get(route, (req, res) => {
         res.sendFile(path.join(process.cwd(), 'public', 'main.html'));

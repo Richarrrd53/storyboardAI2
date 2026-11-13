@@ -83,3 +83,11 @@ body.ai-quick-compose-closing .ai-pill-btn-glow-container,
   0% { transform: translate(-50%, -50%) rotate(0deg); }
   100% { transform: translate(-50%, -50%) rotate(360deg); }
 }
+
+/* The create glow remains a signature, but does no work behind an inert or hidden surface. */
+.motion-suspended .ai-pill-btn-glow-rotator,
+[inert] .ai-pill-btn-glow-rotator,
+.ai-unified-capsule:is(.is-expanded, .is-closing, .hidden-by-workspace) .ai-pill-btn-glow-rotator {
+  /* Dashboard retains legacy animation shorthands; this state must win without changing their timing. */
+  animation-play-state: paused !important;
+}

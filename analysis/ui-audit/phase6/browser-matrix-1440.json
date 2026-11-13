@@ -1,0 +1,338 @@
+{
+  "width": 1440,
+  "rows": [
+    {
+      "label": "top",
+      "width": 1440,
+      "route": "projects",
+      "scrollTop": 0,
+      "maxScroll": 1996,
+      "mask": "linear-gradient(black 0px, black calc(100% - 36px), transparent 100%)",
+      "body": {
+        "top": 11.796875,
+        "bottom": 888.1875,
+        "height": 876.390625
+      },
+      "layers": [],
+      "headerOffset": "0px",
+      "focus": null,
+      "focusText": "\n\n    \n    \n        \n            \n      ",
+      "focusRect": {
+        "top": 0,
+        "bottom": 900,
+        "left": 0,
+        "right": 1440
+      },
+      "lastItemRect": {
+        "top": 2478.796875,
+        "bottom": 2787.796875,
+        "left": 994.59375,
+        "right": 1310.59375
+      },
+      "horizontalOverflow": false,
+      "documentLoads": 0
+    },
+    {
+      "label": "middle",
+      "width": 1440,
+      "route": "projects",
+      "scrollTop": 998,
+      "maxScroll": 1996,
+      "mask": "linear-gradient(black 0px, black calc(100% - 36px), transparent 100%)",
+      "body": {
+        "top": 11.796875,
+        "bottom": 888.1875,
+        "height": 876.390625
+      },
+      "layers": [
+        {
+          "role": "progressive-edge-blur progressive-edge-blur--top",
+          "visibility": "visible",
+          "blur": "blur(1.5px)",
+          "top": 11.796875,
+          "height": 114.34375
+        },
+        {
+          "role": "progressive-edge-blur progressive-edge-blur--top",
+          "visibility": "visible",
+          "blur": "blur(4px)",
+          "top": 11.796875,
+          "height": 114.34375
+        },
+        {
+          "role": "progressive-edge-blur progressive-edge-blur--top",
+          "visibility": "visible",
+          "blur": "blur(8px)",
+          "top": 11.796875,
+          "height": 114.34375
+        },
+        {
+          "role": "progressive-edge-blur progressive-edge-blur--top progressive-edge-blur--tint",
+          "visibility": "visible",
+          "blur": "none",
+          "top": 11.796875,
+          "height": 114.34375
+        }
+      ],
+      "headerOffset": "-148px",
+      "focus": null,
+      "focusText": "\n\n    \n    \n        \n            \n      ",
+      "focusRect": {
+        "top": 0,
+        "bottom": 900,
+        "left": 0,
+        "right": 1440
+      },
+      "lastItemRect": {
+        "top": 1480.796875,
+        "bottom": 1789.796875,
+        "left": 994.59375,
+        "right": 1310.59375
+      },
+      "horizontalOverflow": false,
+      "documentLoads": 0
+    },
+    {
+      "label": "bottom",
+      "width": 1440,
+      "route": "projects",
+      "scrollTop": 1996,
+      "maxScroll": 1996,
+      "mask": "",
+      "body": {
+        "top": 11.796875,
+        "bottom": 888.1875,
+        "height": 876.390625
+      },
+      "layers": [
+        {
+          "role": "progressive-edge-blur progressive-edge-blur--top",
+          "visibility": "visible",
+          "blur": "blur(1.5px)",
+          "top": 11.796875,
+          "height": 114.34375
+        },
+        {
+          "role": "progressive-edge-blur progressive-edge-blur--top",
+          "visibility": "visible",
+          "blur": "blur(4px)",
+          "top": 11.796875,
+          "height": 114.34375
+        },
+        {
+          "role": "progressive-edge-blur progressive-edge-blur--top",
+          "visibility": "visible",
+          "blur": "blur(8px)",
+          "top": 11.796875,
+          "height": 114.34375
+        },
+        {
+          "role": "progressive-edge-blur progressive-edge-blur--top progressive-edge-blur--tint",
+          "visibility": "visible",
+          "blur": "none",
+          "top": 11.796875,
+          "height": 114.34375
+        }
+      ],
+      "headerOffset": "-148px",
+      "focus": null,
+      "focusText": "\n\n    \n    \n        \n            \n      ",
+      "focusRect": {
+        "top": 0,
+        "bottom": 900,
+        "left": 0,
+        "right": 1440
+      },
+      "lastItemRect": {
+        "top": 482.796875,
+        "bottom": 791.796875,
+        "left": 994.59375,
+        "right": 1310.59375
+      },
+      "horizontalOverflow": false,
+      "documentLoads": 0
+    },
+    {
+      "label": "reverse",
+      "width": 1440,
+      "route": "projects",
+      "scrollTop": 898,
+      "maxScroll": 1996,
+      "mask": "linear-gradient(black 0px, black calc(100% - 36px), transparent 100%)",
+      "body": {
+        "top": 11.796875,
+        "bottom": 888.1875,
+        "height": 876.390625
+      },
+      "layers": [
+        {
+          "role": "progressive-edge-blur progressive-edge-blur--top",
+          "visibility": "visible",
+          "blur": "blur(1.5px)",
+          "top": 11.796875,
+          "height": 190.3125
+        },
+        {
+          "role": "progressive-edge-blur progressive-edge-blur--top",
+          "visibility": "visible",
+          "blur": "blur(4px)",
+          "top": 11.796875,
+          "height": 190.3125
+        },
+        {
+          "role": "progressive-edge-blur progressive-edge-blur--top",
+          "visibility": "visible",
+          "blur": "blur(8px)",
+          "top": 11.796875,
+          "height": 190.3125
+        },
+        {
+          "role": "progressive-edge-blur progressive-edge-blur--top progressive-edge-blur--tint",
+          "visibility": "visible",
+          "blur": "none",
+          "top": 11.796875,
+          "height": 190.3125
+        }
+      ],
+      "headerOffset": "0px",
+      "focus": null,
+      "focusText": "\n\n    \n    \n        \n            \n      ",
+      "focusRect": {
+        "top": 0,
+        "bottom": 900,
+        "left": 0,
+        "right": 1440
+      },
+      "lastItemRect": {
+        "top": 1580.796875,
+        "bottom": 1889.796875,
+        "left": 994.59375,
+        "right": 1310.59375
+      },
+      "horizontalOverflow": false,
+      "documentLoads": 0
+    },
+    {
+      "label": "top-again",
+      "width": 1440,
+      "route": "projects",
+      "scrollTop": 0,
+      "maxScroll": 1996,
+      "mask": "linear-gradient(black 0px, black calc(100% - 36px), transparent 100%)",
+      "body": {
+        "top": 11.796875,
+        "bottom": 888.1875,
+        "height": 876.390625
+      },
+      "layers": [
+        {
+          "role": "progressive-edge-blur progressive-edge-blur--top",
+          "visibility": "hidden",
+          "blur": "blur(1.5px)",
+          "top": 11.796875,
+          "height": 0
+        },
+        {
+          "role": "progressive-edge-blur progressive-edge-blur--top",
+          "visibility": "hidden",
+          "blur": "blur(4px)",
+          "top": 11.796875,
+          "height": 0
+        },
+        {
+          "role": "progressive-edge-blur progressive-edge-blur--top",
+          "visibility": "hidden",
+          "blur": "blur(8px)",
+          "top": 11.796875,
+          "height": 0
+        },
+        {
+          "role": "progressive-edge-blur progressive-edge-blur--top progressive-edge-blur--tint",
+          "visibility": "hidden",
+          "blur": "none",
+          "top": 11.796875,
+          "height": 0
+        }
+      ],
+      "headerOffset": "0px",
+      "focus": null,
+      "focusText": "\n\n    \n    \n        \n            \n      ",
+      "focusRect": {
+        "top": 0,
+        "bottom": 900,
+        "left": 0,
+        "right": 1440
+      },
+      "lastItemRect": {
+        "top": 2478.796875,
+        "bottom": 2787.796875,
+        "left": 994.59375,
+        "right": 1310.59375
+      },
+      "horizontalOverflow": false,
+      "documentLoads": 0
+    },
+    {
+      "label": "focus-last",
+      "width": 1440,
+      "route": "projects",
+      "scrollTop": 1996,
+      "maxScroll": 1996,
+      "mask": "",
+      "body": {
+        "top": 11.796875,
+        "bottom": 888.1875,
+        "height": 876.390625
+      },
+      "layers": [
+        {
+          "role": "progressive-edge-blur progressive-edge-blur--top",
+          "visibility": "visible",
+          "blur": "blur(1.5px)",
+          "top": 11.796875,
+          "height": 114.34375
+        },
+        {
+          "role": "progressive-edge-blur progressive-edge-blur--top",
+          "visibility": "visible",
+          "blur": "blur(4px)",
+          "top": 11.796875,
+          "height": 114.34375
+        },
+        {
+          "role": "progressive-edge-blur progressive-edge-blur--top",
+          "visibility": "visible",
+          "blur": "blur(8px)",
+          "top": 11.796875,
+          "height": 114.34375
+        },
+        {
+          "role": "progressive-edge-blur progressive-edge-blur--top progressive-edge-blur--tint",
+          "visibility": "visible",
+          "blur": "none",
+          "top": 11.796875,
+          "height": 114.34375
+        }
+      ],
+      "headerOffset": "-148px",
+      "focus": null,
+      "focusText": "#品牌",
+      "focusRect": {
+        "top": 703.765625,
+        "bottom": 725.765625,
+        "left": 1063.203125,
+        "right": 1110.8125
+      },
+      "lastItemRect": {
+        "top": 482.796875,
+        "bottom": 791.796875,
+        "left": 994.59375,
+        "right": 1310.59375
+      },
+      "horizontalOverflow": false,
+      "documentLoads": 0
+    }
+  ],
+  "oldLayersStillConnected": 0,
+  "passed": true
+}

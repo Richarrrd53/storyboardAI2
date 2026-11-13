@@ -7,11 +7,11 @@
     },
     {
       "source": "/discovery/settings",
-      "destination": "/html/discovery-settings.html"
+      "destination": "/main.html"
     },
     {
       "source": "/discovery",
-      "destination": "/html/discovery.html"
+      "destination": "/main.html"
     },
     {
       "source": "/(.*)",

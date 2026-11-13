@@ -327,6 +327,8 @@ test('ProjectCardInteractions: Option button click invokes openGlobalOptionMorph
 
 test('ProjectCardInteractions: Title overflow marquee starts on hover and cleans up on leave', async () => {
   global.window = global;
+  // This is the unmasked desktop variant; do not inherit a mobile/reduced-motion stub.
+  global.matchMedia = () => ({ matches: false });
   const PCI = loadInteractionsModule();
 
   const { card, titleEl } = createTestProjectCard();
@@ -465,4 +467,13 @@ test('ProjectCardInteractions: bindAll and destroyWithin lifecycle over containe
   PCI.destroyWithin(container);
   assert.strictEqual(card1.getListenerCount('click'), 0);
   assert.strictEqual(card2.getListenerCount('click'), 0);
+});
+
+test('ProjectCardInteractions: mobile title remains stationary under its gradient mask',async()=>{
+ global.window=global;global.matchMedia=query=>({matches:query==='(max-width: 768px)'});
+ const PCI=loadInteractionsModule();const {card,titleEl}=createTestProjectCard();
+ PCI.bind(card,{id:'mobile-title',title:'Long mobile title'});card.dispatchEvent({type:'pointerenter',target:card});
+ await new Promise(resolve=>setTimeout(resolve,450));
+ assert.ok(!titleEl.style.transform.includes('translateX(-'));PCI.unbind(card);
+ global.matchMedia=()=>({matches:false});
 });

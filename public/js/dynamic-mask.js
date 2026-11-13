@@ -39,6 +39,7 @@
 
       this.scrollElement = this.resolveScrollElement();
       this.rafId = null;
+      this.destroyed = false;
       this.headerLayoutDirty = true;
       this.geometryDirty = true;
       this.edges = new Map();
@@ -119,6 +120,20 @@
         }
       };
       document.addEventListener('scroll', this.onAncestorScroll, { capture: true, passive: true });
+      this.onContentFocus = this.scheduleUpdate;
+      this.scrollElement.addEventListener('focusin', this.onContentFocus);
+      this.scrollElement.addEventListener('focusout', this.onContentFocus);
+      this.motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+      this.motionQuery.addEventListener?.('change', this.scheduleUpdate);
+      this.onVisibility = () => {
+        if (document.hidden && this.rafId !== null) {
+          window.cancelAnimationFrame(this.rafId); this.rafId = null;
+        } else if (!document.hidden) {
+          this.geometryDirty = true; this.lastTop = this.scrollElement.scrollTop || 0;
+          this.lastTime = performance.now(); this.directionDistance = 0; this.scheduleUpdate();
+        }
+      };
+      document.addEventListener('visibilitychange', this.onVisibility);
       this.update();
     }
 
@@ -223,7 +238,7 @@
       const before = this.directionDistance;
       this.directionDistance += Math.abs(delta);
       const travel = this.headerTravel || 120;
-      if (top < 12 || maxScroll < travel + 96 || ((this.header?.contains(document.activeElement) || (this.headerToolbar?.dataset.headerToolbar !== 'pinned' && this.headerToolbar?.contains(document.activeElement))) && document.activeElement?.matches?.(':focus-visible'))) {
+      if (this.motionQuery?.matches || top < 12 || maxScroll < travel + 96 || ((this.header?.contains(document.activeElement) || (this.headerToolbar?.dataset.headerToolbar !== 'pinned' && this.headerToolbar?.contains(document.activeElement))) && document.activeElement?.matches?.(':focus-visible'))) {
         this.hiddenDistance = 0;
         this.directionDistance = 0;
       } else if (direction > 0) {
@@ -240,7 +255,7 @@
       this.lastTop = top;
       this.lastTime = now;
       this.headerVisibility = 1 - this.hiddenDistance / travel;
-      this.headerScrolled = maxScroll > 1 && top > 0;
+      this.headerScrolled = !this.motionQuery?.matches && maxScroll > 1 && top > 0;
       this.header?.classList.toggle('is-content-scrolled', this.headerScrolled);
       this.headerToolbar?.classList.toggle('is-content-scrolled', this.headerScrolled);
       this.headerHost?.classList.toggle('is-content-scrolled', this.headerScrolled);
@@ -285,7 +300,7 @@
     }
 
     scheduleUpdate() {
-      if (this.rafId) return;
+      if (this.destroyed || document.hidden || this.rafId !== null) return;
       this.rafId = window.requestAnimationFrame(() => {
         this.rafId = null;
         this.update();
@@ -293,7 +308,7 @@
     }
 
     update() {
-      if (!this.element || !this.scrollElement) return;
+      if (this.destroyed || !this.element || !this.scrollElement || document.hidden) return;
       if (this.element.isConnected === false) { this.destroy(); return; }
       const vertical = this.options.direction !== 'horizontal';
       const owner = this.scrollElement;
@@ -343,7 +358,9 @@
       const mobile = window.matchMedia('(max-width: 768px)').matches;
       const size = Math.max(1, this.options.maskSize);
       const bottomOnly = this.options.edgeMode === 'bottom' || (this.options.edgeMode === 'auto' && page);
-      if (max <= 1) this.clearMask();
+      // A focused control must never be attenuated by an overflow hint.
+      const contentFocused = this.scrollElement.contains(document.activeElement);
+      if (max <= 1 || contentFocused) this.clearMask();
       else if (vertical) this.applyVerticalMask(bottomOnly ? 0 : position, max - position, size);
       else this.applyHorizontalMask(position, max - position, size);
 
@@ -365,8 +382,11 @@
       // A two-row header needs its whole backdrop even on the first scroll:
       // growing it one pixel per scrolled pixel leaves Projects filters exposed.
       const visibleTopExtent = this.headerToolbar && position > 0 ? topExtent : Math.min(topExtent, position);
-      this.renderEdge('top', max <= 1 ? 0 : visibleTopExtent, this.rect);
-      this.renderEdge('bottom', max <= 1 ? 0 : Math.min(bottomExtent, max - position), this.rect);
+      const focusBounds = contentFocused ? document.activeElement.getBoundingClientRect() : null;
+      const focusTopLimit = focusBounds ? Math.max(0, focusBounds.top - this.rect.top - 8) : Infinity;
+      const focusBottomLimit = focusBounds ? Math.max(0, this.rect.bottom - focusBounds.bottom - 8) : Infinity;
+      this.renderEdge('top', max <= 1 ? 0 : Math.min(visibleTopExtent, focusTopLimit), this.rect);
+      this.renderEdge('bottom', max <= 1 ? 0 : Math.min(bottomExtent, max - position, focusBottomLimit), this.rect);
       if (geometryMoving) this.scheduleUpdate();
     }
 
@@ -384,7 +404,7 @@
           host.count++;
           this.blurHostRegistered = true;
         }
-        const blurSteps = edge === 'top' ? [1.5, 4, 8, 0] : [1.5, 4, 8];
+        const blurSteps = [1.5, 4, 8, 0];
         layers = blurSteps.map((blur, index) => {
           const layer = document.createElement('div');
           layer.className = `progressive-edge-blur progressive-edge-blur--${edge}${blur === 0 ? ' progressive-edge-blur--tint' : ''}`;
@@ -535,11 +555,15 @@
     }
 
     destroy() {
-      if (this.rafId) {
+      if (this.destroyed) return;
+      this.destroyed = true;
+      if (this.rafId !== null) {
         window.cancelAnimationFrame(this.rafId);
         this.rafId = null;
       }
       if (this.scrollElement) {
+        this.scrollElement.removeEventListener('focusin', this.onContentFocus);
+        this.scrollElement.removeEventListener('focusout', this.onContentFocus);
         this.scrollElement.removeEventListener('scroll', this.onScroll);
         this.scrollElement.removeEventListener('load', this.scheduleUpdate, true);
       }
@@ -552,6 +576,8 @@
         this.mutationObserver = null;
       }
       document.removeEventListener('scroll', this.onAncestorScroll, true);
+      document.removeEventListener('visibilitychange', this.onVisibility);
+      this.motionQuery?.removeEventListener?.('change', this.scheduleUpdate);
       this.edges.forEach(layers => layers.forEach(layer => layer.remove()));
       this.edges.clear();
       const host = blurHosts.get(this.overlayHost);
@@ -652,7 +678,9 @@
   DynamicMaskSystem.setNavigation = (edge, state) => {
     if (edge !== 'bottom') return;
     bottomNavigation = { enabled: state.enabled === true, progress: clamp(state.progress, 0, 1), extent: state.extent || 152 };
-    instances.forEach(instance => instance.scheduleUpdate());
+    instances.forEach(instance => {
+      if (instance.options.direction !== 'horizontal' && instance.element.matches('.content-body, .page-scroll')) instance.scheduleUpdate();
+    });
   };
   window.ProgressiveEdgeBlurSystem = window.DynamicMaskSystem = DynamicMaskSystem;
   document.addEventListener('keydown', event => {

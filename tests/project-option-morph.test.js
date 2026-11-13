@@ -601,7 +601,7 @@ test('SurfaceMorph: internal scroll is retained, ancestor scroll dismisses, redu
   const {step,windowMock,body}=morphClock();const trigger=createMockElement('button'),content=createMockElement('div');
   const handle=window.SurfaceMorph.open(trigger,{content});step(480);
   windowMock.dispatchEvent({type:'scroll',target:content});assert.equal(handle.phase,'open');
-  windowMock.dispatchEvent({type:'scroll',target:body});assert.equal(window.SurfaceMorph.getState(),null);
+  windowMock.dispatchEvent({type:'scroll',target:body});assert.equal(handle.phase,'closing');step(440);assert.equal(window.SurfaceMorph.getState(),null);
   windowMock.matchMedia=()=>({matches:true});
   const reduced=window.SurfaceMorph.open(trigger,{content});assert.equal(reduced.phase,'open');
   reduced.close('close');assert.equal(window.SurfaceMorph.getState(),null);
@@ -633,4 +633,25 @@ test('Account Morph hides the trigger when expanded and dissolves the plate into
  window.SurfaceMorph.close('close');step(335);
  const halfway=Number(handle.menu.style['--morph-surface-presence']);assert.ok(halfway>0&&halfway<1);
  step(105);assert.equal(Number(handle.menu.style['--morph-surface-presence']),0);assert.equal(trigger.classList.contains('surface-morph-trigger-hidden'),false);
+});
+
+test('SurfaceMorph: interrupted expansion keeps the return signature and its 440ms lifetime',()=>{
+ for(const elapsed of [50,160,350,420,480]) {
+  const {step,windowMock}=morphClock();const trigger=createMockElement('button'),content=createMockElement('div');
+  const handle=window.SurfaceMorph.open(trigger,{content});step(elapsed);
+  const initial={width:handle.menu.style.width,height:handle.menu.style.height,transform:handle.menu.style.transform};
+  handle.close('toggle');step(0);
+  assert.deepEqual({width:handle.menu.style.width,height:handle.menu.style.height,transform:handle.menu.style.transform},initial);
+  // Browser focus/scroll/resize notifications during inert changes cannot finish the return early.
+  windowMock.dispatchEvent({type:'scroll'});windowMock.dispatchEvent({type:'resize'});
+  window.SurfaceMorph.close('focus_out');assert.equal(handle.phase,'closing');
+  step(200);assert.equal(handle.menu.style.width,'20.00px');assert.equal(handle.phase,'closing');
+  step(239);assert.ok(window.SurfaceMorph.getState());step(1);assert.equal(window.SurfaceMorph.getState(),null);
+ }
+});
+
+test('SurfaceMorph: animated focus-out dismissal does not steal focus back from the next control',()=>{
+ const {step}=morphClock();const trigger=createMockElement('button'),content=createMockElement('div');let focused=0;trigger.focus=()=>focused++;
+ window.SurfaceMorph.open(trigger,{content});step(480);window.SurfaceMorph.close('focus_out');step(440);
+ assert.equal(window.SurfaceMorph.getState(),null);assert.equal(focused,0);
 });
