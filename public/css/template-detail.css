@@ -1804,3 +1804,7 @@
 
 .source-modal-value, .source-modal-desc-box { overflow-wrap: anywhere; word-break: normal; white-space: pre-wrap; }
 .source-modal-eyebrow, .source-modal-label, .narrative-phase-badge, .analysis-card-label { letter-spacing: normal; text-transform: none; font-family: var(--font-family-body); }
+
+.template-detail-immersive-container .editor-menubar .btn-back-to-store { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 44px; width: 44px; height: 44px; min-width: 44px; padding: 0; border: 0; border-radius: 50%; background: var(--color-surface-elevated); color: var(--color-text-primary); box-shadow: 0 4px 16px rgb(15 23 42 / 12%); transition: transform 180ms var(--motion-ease-spring); }
+.template-detail-immersive-container .editor-menubar .btn-back-to-store:hover { transform: scale(1.08); }
+.template-detail-immersive-container .editor-menubar .btn-back-to-store:active { transform: scale(.94); }

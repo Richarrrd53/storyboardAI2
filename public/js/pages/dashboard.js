@@ -237,7 +237,7 @@
       };
     }
 
-    const homeAvatar = el('home-top-avatar');
+    const homeAvatar = el('home-account-trigger');
     if (homeAvatar) {
       homeAvatar.onclick = (e) => {
         e.stopPropagation();

@@ -811,3 +811,28 @@ main{
   box-sizing: border-box !important;
   -webkit-overflow-scrolling: touch;
 }
+
+
+/* Shared central modal geometry and controls. */
+:root { --modal-radius: 48px; }
+:is(.sys-window, .sb-dialog, .dialog-panel, .modal-panel, .template-modal-panel, .project-tags-modal-panel, .source-modal-panel, .gmodal-panel) { border-radius: var(--modal-radius); }
+@supports (corner-shape: squircle) {
+  :is(.sys-window, .sb-dialog, .dialog-panel, .modal-panel, .template-modal-panel, .project-tags-modal-panel, .source-modal-panel, .gmodal-panel) { corner-shape: squircle; }
+}
+.sys-btns .sys-btn, .sb-dialog .sb-dialog-button, :is(.dialog-actions, .template-modal-actions, .project-tags-modal-footer, .source-modal-actions) > .btn { min-height: 56px; }
+.sb-dialog .sb-dialog-button:hover { transform: scale(1.02); }
+.sb-dialog .sb-dialog-button:active { transform: scale(.97); }
+.brand-logo .brand-wordmark { width: auto; height: 24px; }
+
+/* One action treatment for every central modal, independent of page-level button effects. */
+:is(.sys-btns, .sb-dialog-actions, .dialog-actions, .modal-actions, .template-modal-actions, .project-tags-modal-footer, .source-modal-actions) > :is(button, .btn) {
+  flex: 1 1 0; min-width: 0; min-height: 56px; padding: 10px 16px;
+  border-radius: 999px; font: inherit; font-size: var(--font-size-sm); font-weight: var(--font-weight-bold);
+  transition: transform 160ms var(--motion-ease-spring), background-color 160ms ease, box-shadow 160ms ease;
+}
+:is(.sys-btns, .sb-dialog-actions, .dialog-actions, .modal-actions, .template-modal-actions, .project-tags-modal-footer, .source-modal-actions) > :is(button, .btn)::after { content: none; animation: none; }
+:is(.sys-btns, .sb-dialog-actions, .dialog-actions, .modal-actions, .template-modal-actions, .project-tags-modal-footer, .source-modal-actions) > :is(button, .btn):not(:disabled):hover { transform: scale(1.02); }
+:is(.sys-btns, .sb-dialog-actions, .dialog-actions, .modal-actions, .template-modal-actions, .project-tags-modal-footer, .source-modal-actions) > :is(button, .btn):not(:disabled):active { transform: scale(.97); }
+:is(.sys-btns, .sb-dialog-actions, .dialog-actions, .modal-actions, .template-modal-actions, .project-tags-modal-footer, .source-modal-actions) > :is(.primary, .btn-primary, .sb-dialog-submit) { background: var(--button-primary-bg); color: var(--button-primary-text); border-color: transparent; box-shadow: none; }
+:is(.sys-btns, .sb-dialog-actions, .dialog-actions, .modal-actions, .template-modal-actions, .project-tags-modal-footer, .source-modal-actions) > :is(.secondary, .btn-ghost, .btn-secondary, .sb-dialog-cancel) { background: var(--color-bg-subtle); color: var(--color-text-primary); border: 1px solid var(--color-border-default); box-shadow: none; }
+:is(.sys-btns, .sb-dialog-actions, .dialog-actions, .modal-actions, .template-modal-actions, .project-tags-modal-footer, .source-modal-actions) > [data-danger="true"] { background: var(--color-action-danger-default); }

@@ -19,14 +19,14 @@ wire('workspace',async()=>{
 });
 wire('history-check',async()=>{
  if(!ready)throw new Error('請先開啟工作區');const w=app();const doc=w.document;
- const trigger=width<=768?doc.querySelector('#mob-nav-profile'):doc.querySelector('#top-avatar');trigger.click();await delay(450);
+ const trigger=width<=768?doc.querySelector('#mob-nav-profile'):doc.querySelector('#account-trigger');trigger.click();await delay(450);
  doc.querySelector('#up-recycle-bin').click();await until(()=>w.spaRouter.currentPage==='history');await delay(650);
  const nav=doc.querySelector('#spa-mobile-nav');const result={case:'Panel to History',route:w.spaRouter.currentPage,innerDocumentLoadsAfterMount:loadCount,bottomNavHidden:nav.hidden,navInert:nav.inert,navAriaHidden:nav.getAttribute('aria-hidden')};
  result.passed=loadCount===0&&nav.hidden&&nav.inert;report.textContent=JSON.stringify(result,null,2);
  await Promise.resolve();
 });
 wire('dialog',async()=>{if(!ready)throw new Error('請先開啟工作區');const w=app();w.ProjectActions.renameProject(w.ProjectStore.getProjects().find(p=>!p.is_deleted));});
-wire('logout',async()=>{if(!ready)throw new Error('請先開啟工作區');const w=app(),d=w.document;d.querySelector(width<=768?'#mob-nav-profile':'#top-avatar').click();await delay(450);d.querySelector('.up-logout').click();});
+wire('logout',async()=>{if(!ready)throw new Error('請先開啟工作區');const w=app(),d=w.document;d.querySelector(width<=768?'#mob-nav-profile':'#account-trigger').click();await delay(450);d.querySelector('.up-logout').click();});
 wire('qc',async()=>{if(!ready)throw new Error('請先開啟工作區');app().document.querySelector('#global-create-trigger').click();});
 wire('menu',async()=>{if(!ready)throw new Error('請先開啟工作區');app().document.querySelector('.project-option-btn').click();});
 wire('fallback',async()=>{if(!ready)throw new Error('請先開啟工作區');app().document.documentElement.toggleAttribute('data-opaque-surfaces');});
@@ -77,7 +77,7 @@ wire('followup',async()=>{
   results.morph.push({interrupt,frames,passed:frames.some(f=>f.connected&&f.ms>250)&&!menu.isConnected});
  }
  if(width>768) {
-  const account=d.querySelector('#top-avatar');
+  const account=d.querySelector('#account-trigger');
   for(const interrupt of [160,380,500]) {
    account.click();await delay(interrupt);const menu=d.querySelector('.surface-morph-account');
    if(!menu)throw new Error('缺少 User Panel Morph');

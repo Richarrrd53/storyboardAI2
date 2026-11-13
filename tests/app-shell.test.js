@@ -1304,7 +1304,7 @@ test('Mobile Bottom Nav: route changes cancel an in-flight pointer before synchr
 test('Phase 3 account: native row preserves its anatomy when real profile data arrives',async()=>{
   setupMockEnvironment();const shell=loadAppShell();
   await shell.init({spaAuth:{fetchUser:async()=>({user:{name:'Test creator',email:'long@example.test',image:'https://example.test/avatar.png'}})}});
-  await Promise.resolve();const row=document.getElementById('top-avatar'),panel=document.getElementById('spa-user-panel');
+  await Promise.resolve();const row=document.getElementById('account-trigger'),panel=document.getElementById('spa-user-panel');
   assert.equal(row.tagName,'BUTTON');assert.equal(row.querySelector('.account-row__name').textContent,'Test creator');
   assert.equal(row.querySelector('.account-row__avatar').children[0].tagName,'IMG');
   assert.equal(panel.querySelector('.up-name').textContent,'Test creator');assert.equal(panel.querySelector('.up-plan').hidden,true);

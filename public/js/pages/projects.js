@@ -610,7 +610,8 @@
       for (const [key,label] of choices) {
         const button = document.createElement('button'); button.type = 'button'; button.className = 'morph-item';
         button.setAttribute('data-sort', key); button.setAttribute('role','menuitemradio'); button.setAttribute('aria-checked',String(sort === key));
-        button.textContent = `${sort === key ? '✓ ' : ''}${label}`;
+        button.textContent = label;
+        if (sort === key) { const check = document.createElement('span'); check.className = 'projects-sort-check'; check.setAttribute('aria-hidden', 'true'); check.textContent = '✓'; button.appendChild(check); }
         button.addEventListener('click', () => { sort = key; renderSortOptions(); sortCards(); }); sortMenu.appendChild(button);
       }
       const directions = document.createElement('div'); directions.className = 'projects-sort-directions';

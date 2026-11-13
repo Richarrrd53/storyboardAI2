@@ -139,7 +139,7 @@
         </nav>
 
         <div class="side-footer">
-            <div class="top-avatar" id="top-avatar">黃</div>
+            <div class="account-trigger" id="account-trigger">黃</div>
         </div>
     </header>
 
@@ -150,7 +150,7 @@
             <div class="home-header-left">
                 <div class="home-brand-mobile mobile-only-flex">
                     <img src="../icon/logo/logo.png" alt="Logo" class="home-brand-logo-img" />
-                    <span class="home-brand-title">Storyboard <span>AI</span></span>
+                    <span class="home-brand-title"><img src="../icon/logo/brand.png" alt="Storyboard AI"></span>
                 </div>
 
                 <h1 class="home-greeting-title" id="home-greeting-text">
@@ -525,7 +525,7 @@
 
         const isMobileScreen = () => window.matchMedia('(max-width: 768px), (max-width: 767px) and (orientation: portrait), (max-width: 480px)').matches;
 
-        const topAvatar = document.getElementById('top-avatar');
+        const topAvatar = document.getElementById('account-trigger');
         if (topAvatar) {
             topAvatar.addEventListener('click', function (e) {
                 e.stopPropagation();
@@ -559,7 +559,7 @@
 
         document.addEventListener('click', (e) => {
             if (window.__justHandledPointerNav && (Date.now() - window.__justHandledPointerNav) < 450) return;
-            if (e && e.target && e.target.closest('#user-panel, #spa-user-panel, #top-avatar, #spa-mobile-nav, .mobile-bottom-nav')) return;
+            if (e && e.target && e.target.closest('#user-panel, #spa-user-panel, #account-trigger, #spa-mobile-nav, .mobile-bottom-nav')) return;
             if (typeof window.toggleUserPanel === 'function') {
                 window.toggleUserPanel(false);
             } else {

@@ -35,6 +35,7 @@ function openNewTemplateModal() {
     const modal = document.getElementById('template-modal');
     if (!modal) return;
     const panel = modal.querySelector('.template-modal-panel');
+    modal.onclick = event => { if (event.target === modal) closeNewTemplateModal(); };
     const modalAnim = (typeof window !== 'undefined' && window.ModalAnimation) || (typeof global !== 'undefined' && global.ModalAnimation);
     if (modalAnim && typeof modalAnim.open === 'function') {
         modalAnim.open(modal, panel, { blur: 'var(--dialog-backdrop-blur, 50px)' });

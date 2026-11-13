@@ -298,13 +298,14 @@
         <div class="project-workspace">
           <div class="content-header project-workspace-header">
             <div class="project-workspace-topline">
-              <button class="project-back-btn" id="pd-back-btn" type="button">${icon('back')}<span>所有專案</span></button>
+              <button class="project-back-btn" id="pd-back-btn" type="button" aria-label="返回所有專案">${icon('back')}</button>
+              <h1 class="project-workspace-title">${global.ProjectCard?.escapeHtml ? global.ProjectCard.escapeHtml(p.title) : p.title}</h1>
               <button class="project-workspace-btn" id="pd-export-json-btn" type="button" aria-label="匯出分鏡 JSON">${icon('export')}<span>匯出分鏡 JSON</span></button>
             </div>
             <div class="project-workspace-header-top">
               <div class="project-workspace-title-area">
                 <div class="project-workspace-title-box">
-                  <h1 class="project-workspace-title">${global.ProjectCard?.escapeHtml ? global.ProjectCard.escapeHtml(p.title) : p.title}</h1>
+
                   <div class="project-workspace-meta" id="pd-updated-at">最後編輯：${p.updatedAt ? new Date(p.updatedAt).toLocaleString('zh-TW') : (p.createAt ? new Date(p.createAt).toLocaleString('zh-TW') : '')}</div>
                 </div>
               </div>

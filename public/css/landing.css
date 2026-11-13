@@ -297,3 +297,8 @@ body:not(.dashboard-layout):not(.auth-layout) #page-main.page-landing #page-cont
     .is-cinematic .lp-film-stage { min-height: 100px; }
     .is-cinematic .lp-film { margin-top: var(--space-16); }
 }
+
+.lp-nav .brand-logo .brand-wordmark { width: auto; height: 24px; }
+.lp-footer-brand { display: inline-flex; align-items: center; gap: 8px; }
+.lp-footer-brand img:first-child { width: 30px; height: 30px; object-fit: contain; }
+.lp-footer-brand img:last-child { width: auto; height: 24px; }

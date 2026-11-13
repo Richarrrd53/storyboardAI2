@@ -43,6 +43,8 @@ const ModalAnimation = {
             panel.style.opacity = options.legacyMotion ? '0' : '1';
         }
 
+        // Commit the initial scale before changing it, even for freshly inserted nodes.
+        if (panel) void panel.offsetWidth;
         const reveal = () => {
             if (overlay.classList && typeof overlay.classList.add === 'function') {
                 overlay.classList.add('active');
@@ -233,6 +235,7 @@ function legacyDeleteConfirm(message, description, type = 'default', btnText, pr
 
         
 
+        bg.addEventListener("click", event => { if (event.target === bg && !accepted) btn1.onclick(); });
         btn1.onclick = () => {
             if (accepted || completed) return;
             closeWindow();

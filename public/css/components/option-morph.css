@@ -184,3 +184,15 @@
 
 .surface-morph-transparent-trigger .morph-icon { border-radius: inherit; overflow: hidden; }
 .surface-morph-transparent-trigger .morph-menu-content { border-radius: inherit; }
+
+/* Match account-panel rows across project actions, sorting and filtering. */
+.global-project-option-menu .morph-item {
+  min-height: 44px; height: auto; padding: 10px 14px; gap: 12px;
+  align-items: center; line-height: 24px; border-radius: 999px;
+}
+.global-project-option-menu .morph-item:hover { background: var(--color-surface-selected); }
+.global-project-option-menu.is-content-visible .morph-item:active { transform: scale(.97); }
+.global-project-option-menu .morph-item[aria-checked="true"] { color: var(--color-text-brand); }
+.global-project-option-menu .projects-sort-check { margin-left: auto; }
+.global-project-option-menu .projects-sort-directions .morph-item[aria-pressed="true"] { background: #eff5ff; color: #2156d9; }
+.global-project-option-menu .projects-sort-directions .morph-item[aria-pressed="true"]:hover { background: #dceaff; }

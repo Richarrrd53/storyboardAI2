@@ -179,7 +179,7 @@ function setupDashboardDOM() {
   root.appendChild(mobDiscovery);
 
   const homeAvatar = createMockElement('div');
-  homeAvatar.id = 'home-top-avatar';
+  homeAvatar.id = 'home-account-trigger';
   root.appendChild(homeAvatar);
 
   global._mockRoot = root;
@@ -196,7 +196,7 @@ function setupDashboardDOM() {
     'mob-shortcut-create': mobCreate,
     'mob-shortcut-template': mobTemplate,
     'mob-shortcut-discovery': mobDiscovery,
-    'home-top-avatar': homeAvatar
+    'home-account-trigger': homeAvatar
   };
 
   return { root, greeting, userName, homeBody, recentViewport, recentGrid };

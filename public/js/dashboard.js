@@ -949,7 +949,7 @@
     initMobileBottomNavGestures();
     updateMobileBottomNavActive();
 
-    const avatar = document.getElementById('top-avatar');
+    const avatar = document.getElementById('account-trigger');
     if (avatar) {
       avatar.onclick = (e) => {
         e.stopPropagation();

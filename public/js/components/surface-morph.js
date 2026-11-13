@@ -208,8 +208,8 @@
       measure.remove?.();if(measure.parentNode?.removeChild) measure.parentNode.removeChild(measure);
     } catch(_) {}
     height=Math.max(1,Math.min(height,v.height-24));
-    let left=opts.placement==='inline-end'?origin.right+12:opts.align==='start'?origin.left:origin.right-width;
-    let top=opts.placement==='inline-end'?origin.bottom-height:opts.placement==='overlap'?origin.top:origin.bottom+8;
+    let left=opts.placement==='inline-end'?origin.right+12:(opts.align==='start'||opts.placement==='aligned-above')?origin.left:origin.right-width;
+    let top=(opts.placement==='inline-end'||opts.placement==='aligned-above')?origin.bottom-height:opts.placement==='overlap'?origin.top:origin.bottom+8;
     if(top+height>v.top+v.height-12) top=opts.placement==='overlap'?v.top+v.height-height-12:origin.top-height-8;
     const bounds={left:clamp(left,v.left+12,v.left+v.width-width-12),top:clamp(top,v.top+12,v.top+v.height-height-12),width,height};
     let resolve;const closed=new Promise(done=>{resolve=done;});

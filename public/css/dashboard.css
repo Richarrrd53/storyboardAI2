@@ -638,7 +638,7 @@ body.dashboard-layout .spa-discovery-wrap > * {
     margin-left: 5px;
 }
 
-.top-avatar {
+.account-trigger {
     margin-top: 8px;
     width: 42px;
     height: 42px;
@@ -655,21 +655,21 @@ body.dashboard-layout .spa-discovery-wrap > * {
     overflow: hidden;
 }
 
-.top-avatar img {
+.account-trigger img {
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
 
-.top-avatar:hover {
+.account-trigger:hover {
     transform: scale(1.05);
 }
 
-.top-avatar:active {
+.account-trigger:active {
     transform: scale(0.95);
 }
 
-.top-avatar::before {
+.account-trigger::before {
     content: "";
     position: absolute;
     width: 42px;
@@ -679,7 +679,7 @@ body.dashboard-layout .spa-discovery-wrap > * {
     background-position: top right;
 }
 
-.top-avatar:hover::before {
+.account-trigger:hover::before {
     animation: glow 0.5s var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1));
 }
 
@@ -5066,3 +5066,14 @@ body.is-navigating #global-create-capsule .ai-pill-btn-glow-rotator,
     .history-back-btn:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring-color); outline-offset: var(--focus-ring-offset); }
     .history-back-btn:active { background: var(--color-surface-elevated); }
 }
+
+/* Shared modal and toolbar geometry. */
+.project-tags-modal-panel { border-radius: var(--modal-radius, 48px); }
+.projects-dropdown-options .morph-item { height: auto; min-height: 44px; }
+.projects-dropdown-options .project-filter-pill { border-radius: 999px; }
+.projects-dropdown-options .project-filter-pill[aria-checked="true"]:hover { background: #dceaff; }
+.home-brand-title img { display: block; width: auto; height: 24px; }
+.history-header { justify-content: flex-start; gap: 12px; }
+.history-back-btn { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 44px; width: 44px; height: 44px; border: 0; border-radius: 50%; background: var(--color-surface-elevated); color: var(--color-text-primary); text-decoration: none; box-shadow: 0 4px 16px rgb(15 23 42 / 12%); transition: transform 180ms var(--motion-ease-spring); }
+.history-back-btn:hover { transform: scale(1.08); }
+.history-back-btn:active { transform: scale(.94); }

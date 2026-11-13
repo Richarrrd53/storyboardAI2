@@ -132,6 +132,9 @@
     }
     active = { entry, finish };
     cancel.addEventListener('click', () => { if (!busy) finish(cancelled(kind, 'cancel')); });
+    overlay.addEventListener('click', event => {
+      if (event.target === overlay && !busy && !settled) finish(cancelled(kind, 'backdrop'));
+    });
     let composing = false;
     input?.addEventListener('compositionstart', () => { composing = true; });
     input?.addEventListener('compositionend', () => { composing = false; });

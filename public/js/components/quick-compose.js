@@ -250,8 +250,7 @@
           <div class="qc-card">
             <div class="qc-header">
               <div class="qc-brand">
-                <span class="qc-sparkle">✦</span>
-                <span class="qc-title">Storyboard AI</span>
+                <span class="qc-title">快速創作</span>
               </div>
               <button class="qc-close-btn" id="qc-close-btn" type="button" title="關閉 (Esc)" aria-label="關閉">✕</button>
             </div>

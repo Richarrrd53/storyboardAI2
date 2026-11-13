@@ -162,7 +162,7 @@
         dashboardTopbar = document.createElement('header');
         dashboardTopbar.className = 'topbar';
         dashboardTopbar.id = 'spa-topbar';
-        dashboardTopbar.innerHTML = `<div id="top-avatar"></div>`;
+        dashboardTopbar.innerHTML = `<div id="account-trigger"></div>`;
         document.body.appendChild(dashboardTopbar);
       }
     }
@@ -173,10 +173,10 @@
   }
 
   function ensureUserPanelDOM() {
-    let avatar = document.getElementById('top-avatar');
+    let avatar = document.getElementById('account-trigger');
     if (avatar && !avatar.classList.contains('account-row')) {
       const row = document.createElement('button');
-      row.id = 'top-avatar'; row.type = 'button'; row.className = 'account-row';
+      row.id = 'account-trigger'; row.type = 'button'; row.className = 'account-row';
       row.setAttribute('aria-label', '帳戶選單'); row.setAttribute('aria-haspopup', 'dialog');
       row.setAttribute('aria-expanded', 'false');
       row.innerHTML = `<span class="account-row__avatar" aria-hidden="true">帳</span><span class="account-row__identity"><span class="account-row__name">帳戶</span><span class="account-row__secondary" hidden></span></span><svg class="account-row__chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m9 6 6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
@@ -623,7 +623,7 @@
   }
 
   async function syncUserProfile(signal) {
-    const avatar = document.getElementById('top-avatar') || dashboardTopbar?.querySelector('#top-avatar');
+    const avatar = document.getElementById('account-trigger') || dashboardTopbar?.querySelector('#account-trigger');
     const panel = document.getElementById('spa-user-panel');
     const auth = shellOptions.spaAuth || window.spaAuth;
 
@@ -1727,7 +1727,7 @@
     const projectsLink = document.getElementById('nav-projects');
     if (projectsLink) delete projectsLink.dataset.toggleBound;
 
-    const avatar = document.getElementById('top-avatar');
+    const avatar = document.getElementById('account-trigger');
     if (avatar) {
       delete avatar.dataset.bound;
       avatar.onclick = null;

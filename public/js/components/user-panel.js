@@ -10,10 +10,10 @@
     const motion=root.matchMedia?.('(prefers-reduced-motion: reduce)');
     const listen=(target,name,fn,opts)=>{if(!target?.addEventListener)return;target.addEventListener(name,fn,opts);listeners.push(()=>target.removeEventListener(name,fn,opts));};
     const reduced=()=>!!motion?.matches;
-    const trigger=()=>doc.getElementById(isMobile()?'mob-nav-profile':'top-avatar')||doc.getElementById('top-avatar');
+    const trigger=()=>doc.getElementById(isMobile()?'mob-nav-profile':'account-trigger')||doc.getElementById('account-trigger');
     function publish(open) {
       panel.classList.toggle('active',open);
-      for(const id of ['top-avatar','mob-nav-profile']) {const node=doc.getElementById(id);node?.setAttribute('aria-expanded',String(open));node?.setAttribute('aria-controls','spa-user-panel-surface');}
+      for(const id of ['account-trigger','mob-nav-profile']) {const node=doc.getElementById(id);node?.setAttribute('aria-expanded',String(open));node?.setAttribute('aria-controls','spa-user-panel-surface');}
       onStateChange?.(open);
     }
     function stopMotion() {clearTimeout(timer);timer=null;animations.splice(0).forEach(animation=>animation.cancel());}
@@ -34,7 +34,7 @@
       phase='opening';mode='desktop';panel.hidden=false;panel.style.display='';publish(true);
       handle=root.SurfaceMorph.open(opener,{
         content:panel,id:'spa-user-panel-surface',className:'surface-morph-account',role:'dialog',keyboard:'content',
-        label:'帳戶與設定',width:320,height:400,placement:'inline-end',signal,transparentTrigger:true,
+        label:'帳戶與設定',width:320,height:400,placement:'aligned-above',signal,transparentTrigger:true,
         onOpened:()=>{phase='open';},
         onClose:reason=>{park();phase='closed';mode=null;handle=null;desired=false;publish(false);}
       });

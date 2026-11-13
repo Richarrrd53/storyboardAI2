@@ -250,3 +250,18 @@ test('Phase7 reduced alert, confirm and prompt complete once through both actual
   e.advance(5000);await e.tick();assert.equal(settled,1);
  }
 });
+
+
+test('backdrop dismisses central dialogs but clicks inside do not', async () => {
+  for (const kind of ['confirm', 'prompt', 'alert']) {
+    const e = environment(true);
+    const result = e.service[kind]({});
+    const overlay = e.document.querySelector('.sb-dialog-overlay');
+    overlay.dispatchEvent({ type: 'click', target: e.panel() });
+    assert.ok(e.panel());
+    overlay.click();
+    const value = await result;
+    assert.equal(value.reason, 'backdrop');
+    assert.equal(e.panel(), null);
+  }
+});
