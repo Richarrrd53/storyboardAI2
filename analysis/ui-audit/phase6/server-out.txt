@@ -1,1 +1,0 @@
-UI verification ready: http://127.0.0.1:4326/phase1-harness — memory-only fixture, no database

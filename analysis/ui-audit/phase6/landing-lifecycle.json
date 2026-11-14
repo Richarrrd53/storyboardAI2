@@ -1,9 +1,0 @@
-{
-  "openingClass": "lp-cinema-stage is-cinematic",
-  "workflowClass": "lp-wrap lp-workflow-layout is-workflow-motion",
-  "pinsBefore": 2,
-  "workflowAnchorTop": -15,
-  "viewportHeight": 720,
-  "exit": "clicked Login; existing mock session redirected to Dashboard",
-  "pinsAfter": 0
-}

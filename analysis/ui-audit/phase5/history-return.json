@@ -1,9 +1,0 @@
-{
-  "case": "Panel to History",
-  "route": "history",
-  "innerDocumentLoadsAfterMount": 0,
-  "bottomNavHidden": true,
-  "navInert": true,
-  "navAriaHidden": "true",
-  "passed": true
-}

@@ -1,2 +1,0 @@
-sloplint: clean. 0 FAIL, 0 REFLEX, 0 WARN across 1 file(s).
-render tier not run: no HTML page to render; pass --url for a running dev server

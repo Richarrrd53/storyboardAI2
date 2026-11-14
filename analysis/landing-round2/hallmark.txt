@@ -1,2 +1,0 @@
-sloplint: clean. 0 FAIL, 0 REFLEX, 0 WARN across 1 file(s) and 1 URL(s).
-render tier not run: Timed out after waiting 30000ms

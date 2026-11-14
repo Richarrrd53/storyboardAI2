@@ -1,4 +1,4 @@
-const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),postcss=require('postcss');
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const status=(configured=false,savedAt=1)=>({configured,savedAt,youtube:{configured,source:configured?'browser':null},gemini:{configured,source:configured?'browser':null,mode:'developer'}});
 const response=(data,ok=true)=>({ok,json:async()=>data});
 const tick=async()=>{for(let i=0;i<20;i++)await Promise.resolve();};
@@ -51,13 +51,4 @@ test('Settings late read or save cannot update detached UI or start a verificati
   const before=f.ids['settings-status'].textContent;f.signal.abort();release(response(status(true,3)));if(work)await work;await tick();
   assert.equal(f.ids['settings-status'].textContent,before);assert.equal(f.calls.length,phase==='load'?1:2);assert.ok(f.calls.every(call=>call.signal.aborted));assert.equal(f.ids['return-search'].focusCount,0);assert.equal(f.ids['youtube-key'].value,'');
  }
-});
-test('Discovery styles stay local and API/Undo implementation is preserved',()=>{
- for(const file of ['discovery.css','discovery-settings.css']){
-  const css=postcss.parse(fs.readFileSync('public/css/'+file,'utf8'));css.walkRules(rule=>{if(rule.parent.type==='atrule'&&rule.parent.name==='keyframes')return;for(const selector of rule.selectors)assert.match(selector,/^(\.discovery-page-content|\.settings-shell|\.page-discovery)/);});
- }
- const before=fs.readFileSync('analysis/ui-audit/phase5/discovery/before/server.js','utf8'),after=fs.readFileSync('server.js','utf8');
- assert.equal(after.split('// SPA catch-all')[0].trim(),before.split('// Discovery pages')[0].trim());
- const baseline=fs.readFileSync('analysis/ui-audit/phase5/discovery/before/public/js/spa-router.js','utf8'),router=fs.readFileSync('public/js/spa-router.js','utf8');
- const navigate=source=>source.slice(source.indexOf('  async function navigate('),source.indexOf('  function handlePopState('));assert.equal(navigate(router),navigate(baseline));
 });

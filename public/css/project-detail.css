@@ -1042,6 +1042,16 @@
 @media (max-width: 768px) {
   .project-workspace-title-area { flex-basis: 0; }
   .project-workspace-title { font-size: var(--font-size-2xl); }
+  #pd-export-json-btn {
+    flex: 0 0 var(--control-height-md);
+    width: var(--control-height-md);
+    height: var(--control-height-md);
+    box-sizing: border-box;
+    padding: 0;
+    gap: 0;
+    justify-content: center;
+  }
+  #pd-export-json-btn > span { display: none; }
   .project-workspace-toggle-btn { min-width: var(--control-height-md); min-height: var(--control-height-md); padding: var(--space-2); }
   .project-workspace-toggle-btn span { display: none; }
   .project-workspace-meta { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
