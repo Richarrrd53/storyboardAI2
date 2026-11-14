@@ -110,3 +110,7 @@ npm test
 此命令執行 `tests/*.test.js`。瀏覽器測試和真實服務驗證是獨立腳本；例如設定 `RUN_VERTEX_LIVE=1` 後可執行 `node --test tests/creative-conversation.live.js` 或 `node --test tests/storyboard-generation.live.js`。真實服務測試需要有效憑證，並可能產生費用。
 
 Vercel 路由設定見 [vercel.json](./vercel.json)：API 轉至 `api/index.js`，探索頁有專用路由，其餘頁面轉至主外框。部署時設定資料庫、JWT 和所需 Google 憑證；若使用探索頁儲存金鑰，需設定至少 32 字元的 `DISCOVERY_SETTINGS_SECRET`。函式執行期限由 Vercel 專案設定決定，應確保足以涵蓋 AI 請求。
+# 生成圖片儲存
+
+分鏡生成圖片使用 Supabase Storage。請在 Supabase 建立公開讀取的 bucket，預設名稱為 `storyboard-images`；可用 `SUPABASE_STORAGE_BUCKET` 指定其他公開 bucket。伺服器需設定 `SUPABASE_URL` 和 `SUPABASE_SERVICE_ROLE_KEY`（或 `SUPABASE_SECRET_KEY`），金鑰僅供伺服器使用。瀏覽器使用伺服器簽發的上傳網址直接上傳圖片，資料庫僅保存圖片公開網址。既有的資料 URI 圖片仍可讀取。
+

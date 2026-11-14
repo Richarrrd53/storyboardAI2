@@ -29,7 +29,19 @@ test('save failure preserves output; retry saves without generating again', asyn
   fail = false; await f.task.retrySave();
   assert.equal(f.task.getState().save.status, 'saved');
   assert.equal(f.calls.filter(c => c.body.type === 'image').length, imageCalls);
-  assert.equal(f.calls.filter(c => c.url === '/api/projects')[0].body.metadata.generationTaskId, f.calls.at(-1).body.metadata.generationTaskId);
+  assert.equal(f.calls.filter(c => c.url === '/api/projects')[0].body.metadata.generationTaskId, f.calls.filter(c => c.url === '/api/projects').at(-1).body.metadata.generationTaskId);
+});
+test('a failed image save retries the existing project without regenerating', async () => {
+  let fail = true;
+  const f = fixture(url => url.includes('/shots/') && !url.endsWith('/image-upload') && fail ? response({ error: 'storage unavailable' }, false, 503) : undefined);
+  const run = f.task.start(options()); await f.drain(); await run;
+  assert.equal(f.task.getState().save.status, 'failed');
+  assert.equal(f.task.getState().projectId, 'project-42');
+  fail = false;
+  await f.task.retrySave();
+  assert.equal(f.task.getState().save.status, 'saved');
+  assert.equal(f.calls.filter(c => c.url === '/api/projects').length, 1);
+  assert.equal(f.calls.filter(c => c.body.type === 'image').length, 2);
 });
 test('failed image repair reuses script, only renders failed shots and updates saved project', async () => {
   let imageCount = 0;
@@ -43,7 +55,7 @@ test('failed image repair reuses script, only renders failed shots and updates s
   assert.equal(imageCount, 5);
   assert.equal(f.calls.filter(c => c.body.type === 'story').length, 1);
   assert.equal(f.calls.filter(c => c.url === '/api/projects').length, 1);
-  assert.equal(f.calls.filter(c => c.url.includes('/shots/')).length, 2);
+  assert.equal(f.calls.filter(c => c.url.includes('/shots/') && !c.url.endsWith('/image-upload')).length, 4);
   assert.equal(f.task.getState().save.status, 'saved');
 });
 
@@ -142,7 +154,7 @@ test('template inputs reach adaptation; original fractional timing and cameras a
   assert.match(f.calls[0].body.question, /Feature Coffee/);
   assert.equal(f.task.getState().result.generatedShotData[0].duration, '1.5s');
   assert.equal(f.task.getState().result.generatedShotData[0].camera, 'close');
-  assert.equal(f.calls.at(-1).body.metadata.templateValues.product, 'Coffee');
+  assert.equal(f.calls.find(c => c.url === '/api/projects').body.metadata.templateValues.product, 'Coffee');
 });
 test('invalid templates and mismatched adaptation stop before image requests', async () => {
   for (const structure of [[], [{ action: 'one' }]]) {
@@ -172,7 +184,7 @@ test('lost save response retry reconciles recovered project without duplicate cr
   fail = false; await f.task.retrySave();
   assert.equal(f.task.getState().save.status, 'saved');
   assert.equal(f.task.getState().projectId, 'recovered');
-  assert.equal(f.calls.filter(c => c.url.includes('/shots/')).length, 2);
+  assert.equal(f.calls.filter(c => c.url.includes('/shots/') && !c.url.endsWith('/image-upload')).length, 2);
   assert.equal(f.calls.filter(c => c.body.type === 'story').length, 1);
 });
 async function tick() { for (let i = 0; i < 30; i++) await Promise.resolve(); }
@@ -181,15 +193,15 @@ function fixture(customFetch) {
   const calls = [], pill = [];
   let timerId = 0, invalidations = 0;
   const context = vm.createContext({
-    console: { log() {}, error() {} }, AbortController,
+    console: { log() {}, error() {} }, AbortController, atob, Uint8Array,
     setTimeout: (fn, ms) => { const id = ++timerId; timers.set(id, { fn, ms }); return id; },
     clearTimeout: id => timers.delete(id),
     fetch: async (url, init) => {
-      const body = init.body ? JSON.parse(init.body) : {};
+      const body = typeof init.body === 'string' ? JSON.parse(init.body) : {};
       calls.push({ url, body, signal: init.signal });
       const custom = customFetch?.(url, body, init, calls.length);
       if (custom !== undefined) return custom;
-      return response(url === '/api/projects' ? { project: { id: 'project-42', shots: (body.shots || []).map(shot => ({ id: `shot-${shot.order}`, order: shot.order })) } }
+      return response(url.endsWith('/image-upload') ? { uploadUrl: 'https://storage.test/upload', publicUrl: 'https://storage.test/image.png' } : url === '/api/projects' ? { project: { id: 'project-42', shots: (body.shots || []).map(shot => ({ id: `shot-${shot.order}`, order: shot.order })) } }
         : body.type === 'story' ? { response: JSON.stringify(storyboard) } : { image: ['data:image/png;base64,test'] });
     },
     spaAuth: { isLoggedIn: () => true, getToken: () => 'test-token' },
@@ -225,11 +237,15 @@ test('automatic template requests, real image progress and original save contrac
   assert.equal(state.taskId, taskId);
   assert.equal(state.status, 'completed'); assert.equal(state.projectId, 'project-42');
   assert.deepEqual([...new Set(states.filter(s => s.status === 'generating').map(s => s.progress.pct))], [0, 15, 50, 100]);
-  assert.deepEqual(f.calls.map(c => c.url), ['/api/ask-gemini', '/api/ask-gemini', '/api/ask-gemini', '/api/projects']);
+  assert.equal(f.calls.filter(c => c.url.endsWith('/image-upload')).length, 2);
+  assert.equal(f.calls.filter(c => c.url === 'https://storage.test/upload').length, 2);
   assert.deepEqual(f.calls.slice(0, 3).map(c => c.body.type), ['story', 'image', 'image']);
   assert.equal(f.calls[0].body.ratio, '橫向16:9');
   assert.match(f.calls[0].body.question, /^使用者故事：/m, 'prompt whitespace is preserved during extraction');
-  const saved = f.calls.at(-1).body;
+  const saved = f.calls.find(c => c.url === '/api/projects').body;
+  assert.equal(saved.shots[0].payload.image, null);
+  assert.equal(saved.shots[0].payload.imageStatus, 'pending');
+  assert.equal(f.calls.find(c => c.url === '/api/projects/project-42/shots/shot-1').body.payloadPatch.image, 'https://storage.test/image.png');
   assert.equal(saved.title, 'Journey'); assert.equal(saved.shots[0].duration, '4s');
   assert.equal(saved.shots[0].payload.emotion, 'joy'); assert.equal(saved.metadata.originalStory, options().story);
   assert.match(saved.shots[0].payload.finalPrompt, /young woman, blue jacket/);
@@ -253,7 +269,7 @@ test('template path retains normalized payload and image failure fallback', asyn
   const state = f.task.getState();
   assert.equal(state.status, 'error'); assert.equal(state.result.generatedImgs[0], '../icon/error.jpg');
   assert.equal(f.calls.some(c => c.body.type === 'story'), true);
-  const saved = f.calls.at(-1).body;
+  const saved = f.calls.find(c => c.url === '/api/projects').body;
   assert.equal(saved.title, 'Journey'); assert.equal(saved.metadata.templateId, 'tpl');
   assert.equal(saved.shots[0].duration, '2s'); assert.equal(Object.keys(saved.characters).length, 1);
   assert.equal(saved.shots[0].payload.imageStatus, 'failed');
@@ -306,7 +322,7 @@ test('reset followed by new task rejects obsolete writes and obsolete finally cl
   assert.equal(f.task.getState().taskId, newId); assert.equal(f.task.getState().status, 'generating');
   assert.equal(f.task.start(options()), next);
   await f.drain(); await next;
-  assert.equal(f.task.getState().status, 'completed'); assert.equal(f.calls.at(-1).body.metadata.originalStory, 'New story');
+  assert.equal(f.task.getState().status, 'completed'); assert.equal(f.calls.find(c => c.url === '/api/projects').body.metadata.originalStory, 'New story');
 });
 
 test('cancel during save suppresses cache invalidation from late success', async () => {
@@ -340,8 +356,8 @@ test('input/getState snapshots cannot mutate authoritative result or recreate le
   }
   assert.equal(f.task.getState().result.generatedImgs.length, 2);
   assert.equal(f.task.getState().result.generatedPrompts.length, 2);
-  assert.equal(f.calls.at(-1).body.metadata.originalStory, 'A small journey');
-  assert.equal(f.calls.at(-1).body.style, '預設風格'); assert.equal(f.calls.at(-1).body.ratio, '橫向16:9');
+  assert.equal(f.calls.find(c => c.url === '/api/projects').body.metadata.originalStory, 'A small journey');
+  assert.equal(f.calls.find(c => c.url === '/api/projects').body.style, '預設風格'); assert.equal(f.calls.find(c => c.url === '/api/projects').body.ratio, '橫向16:9');
 });
 
 test('unsubscribe simulates leave; resubscribe restores running and completed task without new requests', async () => {
@@ -353,7 +369,7 @@ test('unsubscribe simulates leave; resubscribe restores running and completed ta
   let restored;
   const leave = f.task.subscribe(s => { restored = s; }); leave();
   assert.equal(restored.status, 'completed'); assert.equal(restored.result.generatedImgs.length, 2);
-  assert.equal(f.calls.length, 4);
+  assert.equal(f.calls.length, 10);
   const singleton = f.task; vm.runInContext(taskSource, f.context); assert.equal(f.context.GenerationTask, singleton);
 });
 

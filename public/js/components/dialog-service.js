@@ -59,6 +59,8 @@
     const id = `sb-dialog-${++sequence}`;
     const overlay = node('div', 'sb-dialog-overlay');
     const panel = node('section', 'sb-dialog');
+    // Establish the hidden starting state before inserting or focusing the dialog.
+    if (!motion?.matches) { panel.style.scale = '0'; overlay.style.backdropFilter = 'blur(0px)'; overlay.style.webkitBackdropFilter = 'blur(0px)'; }
     panel.dataset.kind = kind; panel.tabIndex = -1;
     panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-modal', 'true');
     const mark = node('span', 'sb-dialog-mark');

@@ -222,7 +222,7 @@ main{
 
 .sys-window {
     padding: var(--space-6);
-    border-radius: var(--radius-xl);
+    border-radius: var(--radius-continuous-2xl);
     background-color: var(--color-surface-elevated);
     box-shadow: var(--elevation-overlay);
     border: var(--border-width-thin) solid var(--color-border-subtle);
@@ -814,8 +814,6 @@ main{
 
 
 /* Shared central modal geometry and controls. */
-:root { --modal-radius: 48px; }
-:is(.sys-window, .sb-dialog, .dialog-panel, .modal-panel, .template-modal-panel, .project-tags-modal-panel, .source-modal-panel, .gmodal-panel) { border-radius: var(--modal-radius); }
 @supports (corner-shape: squircle) {
   :is(.sys-window, .sb-dialog, .dialog-panel, .modal-panel, .template-modal-panel, .project-tags-modal-panel, .source-modal-panel, .gmodal-panel) { corner-shape: squircle; }
 }

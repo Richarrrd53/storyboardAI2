@@ -40,7 +40,7 @@
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
     border: 1.5px solid rgba(255, 255, 255, 0.95);
-    border-radius: var(--radius-continuous-xl);
+    border-radius: var(--radius-continuous-2xl);
     width: 90%;
     max-width: 680px;
     max-height: 88vh;
@@ -73,7 +73,7 @@
     width: 96vw;
     max-height: 92vh;
     max-height: 92dvh;
-    border-radius: var(--radius-continuous-lg);
+    border-radius: var(--radius-continuous-2xl);
 }
 
 /* Close button */
@@ -558,6 +558,6 @@
 }
 @media (max-width: 640px) {
     .gmodal-overlay { align-items:flex-end; }
-    .gmodal-panel { width:100%; max-width:100%; border-radius:var(--radius-continuous-lg) var(--radius-continuous-lg) 0 0; max-height:92vh; max-height:92dvh; }
-    .gmodal-overlay.result-mode .gmodal-panel { border-radius:var(--radius-continuous-md) var(--radius-continuous-md) 0 0; }
+    .gmodal-panel { width:100%; max-width:100%; border-radius:var(--radius-continuous-2xl); max-height:92vh; max-height:92dvh; }
+    .gmodal-overlay.result-mode .gmodal-panel { border-radius:var(--radius-continuous-2xl); }
 }

@@ -15,7 +15,7 @@
   const clone = value => JSON.parse(JSON.stringify(value));
   function initialState() {
     return {
-      taskId: null, projectId: null, projectShotIds: {}, status: 'idle', input: null, error: null, planDirty: false, retry: null, stage: 'planning', activity: { phase: 'requesting', thoughtSummaries: [] },
+      taskId: null, projectId: null, projectShotIds: {}, uploadedImages: {}, status: 'idle', input: null, error: null, planDirty: false, retry: null, stage: 'planning', activity: { phase: 'requesting', thoughtSummaries: [] },
       save: { status: 'idle', error: null },
       progress: { pct: 0, statusText: '', activeStepId: null },
       result: { storyboardData: null, generatedImgs: [], generatedStoryTitles: [],
@@ -260,8 +260,26 @@
         for (const shot of result.generatedShotData) {
           const shotId = run.projectShotIds[shot.order];
           if (!shotId) throw new Error('無法取得已儲存的鏡頭編號，請稍後重試儲存。');
+          let image = shot.payload.image;
+          if (image?.startsWith('data:')) {
+            const cached = run.uploadedImages[shot.order];
+            if (cached?.source === image) image = cached.url;
+            else {
+              const match = /^data:(image\/(?:png|jpeg|webp));base64,([\s\S]+)$/.exec(image);
+              if (!match) throw new Error('不支援的圖片格式，無法儲存。');
+              const upload = await requestJSON(run, controller, `/api/projects/${encodeURIComponent(run.projectId)}/shots/${encodeURIComponent(shotId)}/image-upload`, {
+                method: 'POST', headers, body: JSON.stringify({ contentType: match[1] })
+              });
+              const bytes = Uint8Array.from(atob(match[2]), char => char.charCodeAt(0));
+              const response = await fetch(upload.uploadUrl, { method: 'PUT', headers: { 'Content-Type': match[1], 'x-upsert': 'false' }, body: bytes, signal: controller.signal });
+              assertRun(run, controller);
+              if (!response.ok) throw new Error('圖片上傳失敗，請重試儲存。');
+              run.uploadedImages[shot.order] = { source: image, url: upload.publicUrl };
+              image = upload.publicUrl;
+            }
+          }
           await requestJSON(run, controller, `/api/projects/${encodeURIComponent(run.projectId)}/shots/${encodeURIComponent(shotId)}`, {
-            method: 'PATCH', headers, body: JSON.stringify({ title: shot.title, camera: shot.camera, duration: shot.duration, payloadPatch: shot.payload })
+            method: 'PATCH', headers, body: JSON.stringify({ title: shot.title, camera: shot.camera, duration: shot.duration, payloadPatch: { ...shot.payload, image } })
           });
         }
       } else {
@@ -271,17 +289,22 @@
           templateSnapshot: input.selectedTemplate || null,
           ...(!input.selectedTemplate ? { targetDuration: input.duration, creativeBrief: input.creativeBrief || null } : {})
         };
+        // Keep the create request small: generated images can exceed serverless
+        // request limits when all of their base64 data is sent together.
+        const imagesToSave = result.generatedShotData.filter(shot => shot.payload.image?.startsWith('data:'));
+        const initialShots = result.generatedShotData.map(shot => imagesToSave.includes(shot)
+          ? { ...shot, payload: { ...shot.payload, image: null, imageStatus: 'pending' } } : shot);
         const data = await requestJSON(run, controller, '/api/projects', {
           method: 'POST', headers, body: JSON.stringify({
             title: result.storyboardData?.meta?.title || input.story.slice(0, 32), style: input.style.name, ratio: input.ratio,
-            cover: result.generatedShotData.find(shot => shot.payload.imageStatus === 'succeeded')?.payload.image || null,
-            shots: result.generatedShotData, characters: result.storyboardData?.characters || {}, metadata
+            cover: initialShots.find(shot => shot.payload.imageStatus === 'succeeded')?.payload.image || null,
+            shots: initialShots, characters: result.storyboardData?.characters || {}, metadata
           })
         });
         if (!data.project?.id) throw new Error('儲存服務未回傳專案編號，請重試儲存。');
         run.projectId = data.project.id;
         for (const shot of data.project.shots || []) run.projectShotIds[shot.order] = shot.id;
-        if (data.reused) { await persistResult(run, controller); return; }
+        if (data.reused || imagesToSave.length) { await persistResult(run, controller); return; }
       }
       run.save = { status: 'saved', error: null };
       root.ProjectStore?.invalidateProjects?.();

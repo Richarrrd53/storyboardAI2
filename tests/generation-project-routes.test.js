@@ -31,6 +31,10 @@ test('project save retries deduplicate and repaired images retain storyboard fie
     const retry = await request('/api/projects', payload); assert.equal(retry.status, 200);
     const reused = await retry.json(); assert.equal(reused.reused, true); assert.equal(reused.project.id, project.id); assert.equal(creates, 1);
     const url = `/api/projects/${project.id}/shots/${project.shots[0].id}`;
+    const uploadUrl = `${url}/image-upload`;
+    assert.equal((await request(uploadUrl, { contentType: 'image/png' }, 'other')).status, 403);
+    assert.equal((await request(uploadUrl, { contentType: 'text/html' })).status, 400);
+    assert.equal((await request(`/api/projects/${project.id}/shots/missing/image-upload`, { contentType: 'image/png' })).status, 404);
     const update = { payloadPatch: { image: 'new', imageStatus: 'succeeded', imageError: null, dialogue: 'Hello', purpose: 'Hook', angle: 'eye level', characters: ['hero'], sourceShot: 1, disallowed: 'ignore' } };
     const rejected = await request(url, update, 'other', 'PATCH'); assert.equal(rejected.status, 403);
     const repair = await request(url, update, 'author', 'PATCH'); assert.equal(repair.status, 200);

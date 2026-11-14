@@ -196,3 +196,7 @@
 .global-project-option-menu .projects-sort-check { margin-left: auto; }
 .global-project-option-menu .projects-sort-directions .morph-item[aria-pressed="true"] { background: #eff5ff; color: #2156d9; }
 .global-project-option-menu .projects-sort-directions .morph-item[aria-pressed="true"]:hover { background: #dceaff; }
+
+/* Remove the inline SVG baseline gap so icon and label share a vertical center. */
+.project-actions-content .morph-item-icon { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 20px; width: 20px; height: 24px; line-height: 0; }
+.project-actions-content .morph-item-icon svg { display: block; }

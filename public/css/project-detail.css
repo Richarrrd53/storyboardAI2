@@ -1242,6 +1242,6 @@
 
 .project-workspace-topline { display: flex; align-items: center; gap: 12px; }
 .project-workspace-topline .project-workspace-title { min-width: 0; flex: 1; }
-.project-back-btn { display: inline-flex; justify-content: center; width: 44px; height: 44px; min-height: 44px; padding: 0; border: 0; border-radius: 50%; background: var(--color-surface-elevated); color: var(--color-text-primary); box-shadow: 0 4px 16px rgb(15 23 42 / 12%); transition: transform 180ms var(--motion-ease-spring); }
-.project-back-btn:hover { transform: scale(1.08); }
+.project-back-btn { display: inline-flex; justify-content: center; width: 44px; height: 44px; min-height: 44px; padding: 0; border: 0; border-radius: 50%; background: var(--color-surface-elevated); color: var(--color-text-primary); box-shadow: 0 2px 8px rgb(15 23 42 / 7%); transition: transform 180ms var(--motion-ease-spring); }
+.project-back-btn:hover { transform: scale(1.08); background: var(--color-surface-elevated); color: var(--color-text-primary); }
 .project-back-btn:active { transform: scale(.94); }

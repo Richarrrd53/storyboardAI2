@@ -265,3 +265,18 @@ test('backdrop dismisses central dialogs but clicks inside do not', async () => 
     assert.equal(e.panel(), null);
   }
 });
+
+
+test('shared modal commits its hidden entry state before the delayed reveal', async () => {
+  const e = environment();
+  const result = e.service.confirm({ title: 'entry' });
+  const panel = e.panel();
+  assert.equal(panel.style.scale, '0');
+  e.advance(9);
+  assert.equal(panel.style.scale, '0');
+  e.advance(1);
+  assert.equal(panel.style.scale, '1');
+  e.click('.sb-dialog-cancel');
+  e.advance(450);
+  assert.equal((await result).confirmed, false);
+});

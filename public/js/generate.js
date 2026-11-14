@@ -959,6 +959,10 @@
       const summary = document.getElementById('planning-thought-summary');
       if (summary) summary.innerHTML = task.stage === 'images' ? '' : window.AIActivity?.summaryMarkup(task.activity?.thoughtSummaries) || '';
       if (task.status === 'completed' && CreationSessionStore.currentPhase === 4) {
+          if (task.save.status === 'saved' && task.projectId && typeof window.navigate === 'function') {
+              window.navigate('project', { id: task.projectId });
+              return;
+          }
           renderResults(task);
       } else if (task.status === 'generating') {
           document.getElementById('generation-error-banner').hidden = true;

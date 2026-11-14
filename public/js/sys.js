@@ -28,7 +28,7 @@ const ModalAnimation = {
 
         overlay.style.display = 'flex';
         overlay.style.pointerEvents = 'none';
-        overlay.style.transition = `backdrop-filter ${duration}ms ${this.EASING_BACKDROP}, -webkit-backdrop-filter ${duration}ms ${this.EASING_BACKDROP}, background-color ${duration}ms ${this.EASING_BACKDROP}, opacity ${duration}ms ${this.EASING_BACKDROP}`;
+        overlay.style.transition = 'none';
         overlay.style.backdropFilter = 'blur(0px)';
         if (overlay.style.webkitBackdropFilter !== undefined) {
             overlay.style.webkitBackdropFilter = 'blur(0px)';
@@ -37,14 +37,19 @@ const ModalAnimation = {
         overlay.style.opacity = options.legacyMotion ? '0' : '1';
 
         if (panel) {
-            const enterEase = options.legacyMotion ? this.EASING_CARD_ENTER : this.EASING_DIALOG_ENTER;
-            panel.style.transition = `scale ${duration}ms ${enterEase}${options.legacyMotion ? `, opacity ${duration}ms ${enterEase}` : ''}`;
+            panel.style.transition = 'none';
             panel.style.scale = '0';
             panel.style.opacity = options.legacyMotion ? '0' : '1';
         }
 
         // Commit the initial scale before changing it, even for freshly inserted nodes.
+        void overlay.offsetWidth;
         if (panel) void panel.offsetWidth;
+        overlay.style.transition = `backdrop-filter ${duration}ms ${this.EASING_BACKDROP}, -webkit-backdrop-filter ${duration}ms ${this.EASING_BACKDROP}, background-color ${duration}ms ${this.EASING_BACKDROP}, opacity ${duration}ms ${this.EASING_BACKDROP}`;
+        if (panel) {
+            const enterEase = options.legacyMotion ? this.EASING_CARD_ENTER : this.EASING_DIALOG_ENTER;
+            panel.style.transition = `scale ${duration}ms ${enterEase}${options.legacyMotion ? `, opacity ${duration}ms ${enterEase}` : ''}`;
+        }
         const reveal = () => {
             if (overlay.classList && typeof overlay.classList.add === 'function') {
                 overlay.classList.add('active');

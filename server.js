@@ -16,6 +16,8 @@ const { ApiSettings } = require('./lib/discovery/api-settings');
 const { buildTemplateFromDiscovery } = require('./lib/discovery/template-builder');
 const { toCatalogTemplate } = require('./lib/template-catalog');
 const { generationProjectId } = require('./lib/generation-project-id');
+const { createClient } = require('@supabase/supabase-js');
+const { randomUUID } = require('node:crypto');
 
 const pool = new Pool({ 
     connectionString: process.env.DATABASE_URL,
@@ -755,6 +757,36 @@ async function runGeminiImageGeneration({ question, ratio }) {
 }
 
 // PATCH Shot（編輯鏡頭資料）
+app.post('/api/projects/:projectId/shots/:shotId/image-upload', async (req, res) => {
+    try {
+        const auth = req.headers.authorization || '';
+        if (!auth.startsWith('Bearer ')) return res.status(401).json({ error: '未授權' });
+        let decoded;
+        try { decoded = jwt.verify(auth.slice(7), JWT_SECRET); } catch (_) { return res.status(401).json({ error: '未授權' }); }
+        const { projectId, shotId } = req.params;
+        const project = await prisma.project.findUnique({ where: { id: projectId } });
+        if (!project || project.is_deleted) return res.status(404).json({ error: '找不到專案' });
+        if (project.authorId !== decoded.id) return res.status(403).json({ error: '沒有權限修改此專案' });
+        const shot = await prisma.shot.findUnique({ where: { id: shotId } });
+        if (!shot || shot.projectId !== projectId) return res.status(404).json({ error: '找不到鏡頭' });
+        const extensions = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp' };
+        const extension = extensions[req.body?.contentType];
+        if (!extension) return res.status(400).json({ error: '不支援的圖片格式' });
+        const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
+        if (!process.env.SUPABASE_URL || !key) throw new Error('Supabase Storage credentials are not configured');
+        const bucket = process.env.SUPABASE_STORAGE_BUCKET || 'storyboard-images';
+        const storage = createClient(process.env.SUPABASE_URL, key, { auth: { persistSession: false, autoRefreshToken: false } }).storage.from(bucket);
+        const objectPath = `${projectId}/${shotId}/${randomUUID()}.${extension}`;
+        const { data, error } = await storage.createSignedUploadUrl(objectPath);
+        if (error) throw error;
+        const publicUrl = storage.getPublicUrl(objectPath).data.publicUrl;
+        res.json({ uploadUrl: data.signedUrl, publicUrl });
+    } catch (error) {
+        console.error('Create image upload URL error:', error);
+        res.status(500).json({ error: '無法準備圖片上傳，請稍後重試。' });
+    }
+});
+
 app.patch('/api/projects/:projectId/shots/:shotId', async (req, res) => {
     try {
         const authHeader = req.headers.authorization;
