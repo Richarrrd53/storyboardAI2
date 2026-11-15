@@ -147,17 +147,17 @@ test('cancel during image validation clears validation timeout and cannot comple
   assert.equal(f.task.getState().status, 'cancelled');
   assert.equal(f.timers.size, 0);
 });
-test('template inputs reach adaptation; original fractional timing and cameras are preserved', async () => {
+test('template variables reach planning; generated timing and cameras take precedence', async () => {
   const f = fixture();
   const run = f.task.start({ ...options(), templateValues: { product: 'Coffee' }, selectedTemplate: { id: 'tpl', structure: [{ camera: 'close', duration: '1.5s' }, { camera: 'wide', duration: '2s' }], promptTemplate: { base: 'Feature {product}' } } });
   await f.drain(); await run;
   assert.match(f.calls[0].body.question, /Feature Coffee/);
-  assert.equal(f.task.getState().result.generatedShotData[0].duration, '1.5s');
-  assert.equal(f.task.getState().result.generatedShotData[0].camera, 'close');
+  assert.equal(f.task.getState().result.generatedShotData[0].duration, '4s');
+  assert.equal(f.task.getState().result.generatedShotData[0].camera, 'wide');
   assert.equal(f.calls.find(c => c.url === '/api/projects').body.metadata.templateValues.product, 'Coffee');
 });
-test('invalid templates and mismatched adaptation stop before image requests', async () => {
-  for (const structure of [[], [{ action: 'one' }]]) {
+test('templates without narrative nodes stop before image requests', async () => {
+  for (const structure of [[]]) {
     const f = fixture(); const run = f.task.start({ ...options(), selectedTemplate: { structure } });
     await f.drain(); await run;
     assert.equal(f.task.getState().status, 'error');
@@ -194,6 +194,9 @@ function fixture(customFetch) {
   let timerId = 0, invalidations = 0;
   const context = vm.createContext({
     console: { log() {}, error() {} }, AbortController, atob, Uint8Array,
+    // Two-shot fixtures isolate task lifecycle; real duration/mapping validation is
+    // covered by freeform-storyboard and creation-integration tests.
+    FreeformStoryboard: { duration: value => value || 30, prompt: input => require('../public/js/features/freeform-storyboard').prompt(input), validate: data => { if (!Array.isArray(data?.shots) || !data.shots.length || data.shots.some(shot => /\{[\w-]+\}/.test(shot.shotPrompt))) throw new Error('invalid storyboard'); return data; } },
     setTimeout: (fn, ms) => { const id = ++timerId; timers.set(id, { fn, ms }); return id; },
     clearTimeout: id => timers.delete(id),
     fetch: async (url, init) => {
@@ -236,7 +239,7 @@ test('automatic template requests, real image progress and original save contrac
   const state = f.task.getState();
   assert.equal(state.taskId, taskId);
   assert.equal(state.status, 'completed'); assert.equal(state.projectId, 'project-42');
-  assert.deepEqual([...new Set(states.filter(s => s.status === 'generating').map(s => s.progress.pct))], [0, 15, 50, 100]);
+  assert.deepEqual([...new Set(states.filter(s => s.status === 'generating').map(s => s.progress.pct))], [0, 50, 100]);
   assert.equal(f.calls.filter(c => c.url.endsWith('/image-upload')).length, 2);
   assert.equal(f.calls.filter(c => c.url === 'https://storage.test/upload').length, 2);
   assert.deepEqual(f.calls.slice(0, 3).map(c => c.body.type), ['story', 'image', 'image']);
@@ -271,7 +274,7 @@ test('template path retains normalized payload and image failure fallback', asyn
   assert.equal(f.calls.some(c => c.body.type === 'story'), true);
   const saved = f.calls.find(c => c.url === '/api/projects').body;
   assert.equal(saved.title, 'Journey'); assert.equal(saved.metadata.templateId, 'tpl');
-  assert.equal(saved.shots[0].duration, '2s'); assert.equal(Object.keys(saved.characters).length, 1);
+  assert.equal(saved.shots[0].duration, '4s'); assert.equal(Object.keys(saved.characters).length, 1);
   assert.equal(saved.shots[0].payload.imageStatus, 'failed');
 });
 
@@ -286,7 +289,7 @@ test('story error and malformed JSON are terminal, retry keeps original task inp
   assert.equal(f.task.getState().status, 'completed'); assert.equal(f.task.getState().taskId, oldId);
   const malformed = fixture(() => response({ response: 'not JSON' }));
   const bad = malformed.task.start(options()); await malformed.drain(); await bad;
-  assert.equal(malformed.task.getState().status, 'error'); assert.equal(malformed.calls.length, 1);
+  assert.equal(malformed.task.getState().status, 'error'); assert.equal(malformed.calls.length, 2);
 });
 
 test('cancel owns fetch signal; late uncooperative response cannot revive cancelled task', async () => {

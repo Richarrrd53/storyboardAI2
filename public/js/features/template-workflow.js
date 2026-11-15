@@ -4,10 +4,7 @@
   const escape = value => String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
   const variableLabels = { character: '主角／角色', scene: '場景', product: '商品／主題', emotion: '情緒', style: '視覺風格', brand: '品牌', audience: '目標受眾', cta: '行動指引' };
   function definitions(template) {
-    const explicit = (Array.isArray(template?.variables) ? template.variables : []).map(value => typeof value === 'string' ? { name: value } : value).filter(value => value && typeof value.name === 'string');
-    const prompts = [template?.promptTemplate?.base, ...(Array.isArray(template?.promptTemplate?.perShot) ? template.promptTemplate.perShot : [])].filter(value => typeof value === 'string').join('\n');
-    const found = [...prompts.matchAll(/\{([\w-]+)\}/g)].map(match => ({ name: match[1] }));
-    return [...new Map([...found, ...explicit].map(value => [value.name, value])).values()];
+    return root.FreeformStoryboard.variables(template);
   }
   function selection(session, state = {}, signal) {
     const template = session.selectedTemplate;
@@ -15,7 +12,7 @@
     if (banner) {
       banner.hidden = !template && !state.loading && !state.error;
       $('template-entry-title').textContent = state.loading ? '正在載入套用的模板…' : state.error || `已套用：${template?.name || template?.title || '模板'}`;
-      $('template-entry-description').textContent = template ? `${template.structure?.length || 0} 個鏡頭 · 填寫你的企劃，AI 將保留節奏並改寫內容。` : state.error ? '可以重試載入，或返回模板庫選擇其他模板。' : '正在取得鏡頭結構與製作設定。';
+      $('template-entry-description').textContent = template ? `${template.structure?.length || 0} 個敘事節點 · 依故事與目標時長展開鏡頭。` : state.error ? '可以重試載入，或返回模板庫選擇其他模板。' : '正在取得鏡頭結構與製作設定。';
       $('btn-reload-template').hidden = !state.error;
     }
     const section = $('template-customization');
@@ -24,12 +21,14 @@
     if (!template) return;
     $('template-customization-title').textContent = template.name || template.title || '模板客製';
     const seconds = (template.structure || []).reduce((sum, shot) => sum + (parseFloat(shot.duration) > 0 ? parseFloat(shot.duration) : 3), 0);
-    $('template-customization-summary').textContent = `${template.structure?.length || 0} 鏡頭 · ${seconds} 秒 · 保留鏡頭順序、拍攝方式與敘事節奏`;
+    $('template-customization-summary').textContent = `${template.structure?.length || 0} 個敘事節點 · 來源節奏約 ${seconds} 秒，生成以你的時長為準`;
     const list = $('template-variable-fields');
     session.templateValues ||= {};
-    list.innerHTML = definitions(template).map((value, index) => `<label class="template-variable-field" for="template-value-${index}"><span>${escape(value.label || variableLabels[value.name] || value.name)}</span><input id="template-value-${index}" data-template-variable="${escape(value.name)}" type="text" maxlength="500" value="${escape(session.templateValues[value.name] || '')}" placeholder="${escape(value.description || '選填，未填將依企劃自動規劃')}" autocomplete="off"></label>`).join('') || '<p>此模板沒有額外變數，AI 會依照你的企劃改寫鏡頭內容。</p>';
+    list.innerHTML = definitions(template).map((value, index) => `<label class="template-variable-field" for="template-value-${index}"><span>${escape(value.label || variableLabels[value.name] || value.name)} · ${Object.hasOwn(session.templateValues, value.name) ? '已確認' : session.templateSuggestions?.[value.name] ? '建議，待確認' : '尚未指定'}</span><input id="template-value-${index}" data-template-variable="${escape(value.name)}" type="text" maxlength="500" value="${escape(session.templateValues[value.name] ?? session.templateSuggestions?.[value.name] ?? '')}" placeholder="${escape(value.description || '選填，未填將依企劃自動規劃')}" autocomplete="off"></label>`).join('') || '<p>此模板沒有額外變數，AI 會依照你的企劃改寫鏡頭內容。</p>';
     list.querySelectorAll('input').forEach(input => input.addEventListener('input', () => {
       session.templateValues[input.dataset.templateVariable] = input.value;
+      delete session.templateSuggestions?.[input.dataset.templateVariable];
+      root.GenerationTask?.reset(); root.CreationController?.publish();
     }, signal ? { signal } : undefined));
     $('template-reference-summary').innerHTML = `<ol>${(template.structure || []).map(shot => `<li><strong>${escape(shot.action || '未提供畫面描述')}</strong><span>${escape(shot.duration || '3s')} · ${escape(shot.camera || '未提供拍攝方式')}</span></li>`).join('')}</ol>`;
   }

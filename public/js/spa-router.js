@@ -128,7 +128,7 @@
   function routeHistoryState(page, opts = {}, browseState) {
     return { page, id: opts.id || null, templateId: opts.templateId || null,
       ...(page === 'template' ? { templateBrowse: browseState || opts.browseState || null,
-        templateFromBrowse: !!opts.templateFromBrowse } : {}) };
+        templateFromBrowse: !!opts.templateFromBrowse, creationPreview: !!opts.creationPreview } : {}) };
   }
 
   function syncParentRoute(page, opts = {}) {
@@ -403,7 +403,7 @@
         id: stateId || undefined,
         templateId: templateId || undefined,
         browseState: e.state?.templateBrowse,
-        templateFromBrowse: e.state?.templateFromBrowse,
+        templateFromBrowse: e.state?.templateFromBrowse, creationPreview: e.state?.creationPreview,
         noHistory: true,
         noOpenQC: true
       });
@@ -473,7 +473,7 @@
     const savedRouteState = initialHistoryHost.history.state;
     if (savedRouteState?.page === initialPage && savedRouteState.templateId === (initialOpts.templateId || null)) {
       initialOpts.browseState = savedRouteState.templateBrowse;
-      initialOpts.templateFromBrowse = savedRouteState.templateFromBrowse;
+      initialOpts.templateFromBrowse = savedRouteState.templateFromBrowse; initialOpts.creationPreview = savedRouteState.creationPreview;
     }
 
     initialHistoryHost.history.replaceState(

@@ -22,7 +22,7 @@
                  頂部輕量進度導航列 (Spec item 20)
             ════════════════════════════════════════════════════ -->
             <header class="workspace-top-bar" id="workspace-top-bar">
-                <div class="workspace-brand">
+                <div class="workspace-brand"><button type="button" id="btn-workspace-back" class="template-circle-btn workspace-back" aria-label="返回上一個創作步驟"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button>
                     <span class="brand-title">生成分鏡</span>
                 </div>
                 
@@ -42,6 +42,7 @@
                     <span class="phase-count-badge" id="phase-count-badge">1 / 5</span>
                 </div>
             </header>
+            <p id="creation-recovery-notice" class="section-hint" role="status" hidden></p>
 
             <!-- ════════════════════════════════════════════════════
                  Persistent Creation Surface (Spec items 5, 7, 8, 9, 10, 44)
@@ -106,6 +107,7 @@
                             </div>
                         </button>
                     </div>
+                    <div class="creation-template-toolbar" id="generate-template-toolbar"><label><input type="checkbox" id="use-template-generation">使用模板生成</label><button type="button" class="copilot-text-action" id="browse-template-library">瀏覽模板庫</button><button type="button" class="copilot-text-action" id="change-selected-template" hidden>更換模板</button><button type="button" class="copilot-text-action" id="remove-selected-template" hidden>取消套用</button></div>
                     <div class="copilot-entry-actions" id="copilot-entry-actions"><button type="button" class="btn btn-ghost" id="btn-skip-copilot">略過討論，直接創作</button></div>
                     <section id="creative-copilot" class="copilot-workspace" aria-label="AI 創作討論" hidden></section>
                 </div>
@@ -132,6 +134,7 @@
                     <button type="button" class="copilot-text-action" id="btn-direction-discuss">繼續和 AI 調整</button>
 
                     <!-- 視覺風格區塊 -->
+                    <details id="template-customization" class="template-customization" hidden><summary>模板變數摘要與修改</summary><h3 id="template-customization-title"></h3><p id="template-customization-summary"></p><p>建議內容會在你確認創作設定時採用；你可以直接修改，明確指定優先。</p><div id="template-variable-fields"></div><details><summary>查看參考敘事結構</summary><div id="template-reference-summary"></div></details></details>
                     <div class="direction-section" id="section-visual-style">
                         <div class="section-label-row">
                             <h3 class="section-label" id="visual-style-label">視覺風格</h3>
@@ -217,21 +220,21 @@
                     <!-- AI 推薦提示橫條 -->
                     <div class="template-recommend-bar" id="template-recommend-bar">
                         <span class="rec-sparkle">✦</span>
-                        <span class="rec-title" id="template-rec-text">選擇適合故事的鏡頭結構</span>
+                        <span class="rec-title" id="template-rec-text">選擇適合故事的敘事結構</span>
                     </div>
 
                     <!-- 模板分類標籤與卡片庫 -->
                     <div class="template-browser-wrap">
-                        <div class="template-category-chips" id="template-category-chips"></div>
+                        <div class="template-search-controls"><label>搜尋模板<input id="template-search" type="search" maxlength="200" placeholder="標題、摘要或標籤"></label><label>標籤<input id="template-tag-filter" maxlength="60" placeholder="篩選標籤"></label><label>排序<select id="template-sort"><option value="catalog">最新加入</option><option value="name">名稱</option><option value="duration">來源時長</option></select></label><button type="button" class="btn btn-ghost" id="template-sort-direction">反向排序</button></div><div class="template-category-chips" id="template-category-chips"></div>
                         <div class="template-cards-container dynamic-gradient-mask" id="template-cards-container" data-dynamic-mask data-mask-direction="vertical" data-mask-size="36"></div>
                     </div>
 
                     <!-- 動作按鈕 -->
-                    <section id="template-customization" class="template-customization" aria-label="模板客製設定" hidden><h3 id="template-customization-title"></h3><p id="template-customization-summary"></p><p>填入你的角色、場景與商品。欄位為選填，未填內容將依企劃自動規劃。</p><div id="template-variable-fields"></div><details><summary>查看參考鏡頭結構</summary><div id="template-reference-summary"></div></details></section>
-                    <div class="phase-actions-footer template-actions-footer">
-                        <button type="button" class="btn btn-ghost" id="btn-template-back" onclick="switchPhase(2)">← 返回創作方向</button>
+
+                    <button type="button" id="template-load-more" class="btn btn-ghost" hidden>載入更多模板</button><div class="phase-actions-footer template-actions-footer">
+                        <button type="button" class="btn btn-ghost" id="btn-template-back" onclick="switchPhase(2)">← 返回故事討論</button>
                         <button type="button" class="btn btn-primary" id="btn-template-confirm" onclick="applySelectedTemplateAndGenerate()" disabled>
-                            套用模板並開始生成
+                            確認模板，繼續討論
                         </button>
                     </div>
                 </div>

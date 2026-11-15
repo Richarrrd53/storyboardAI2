@@ -32,6 +32,8 @@
   const loadedCSS = new Set();
   const loadedScripts = new Set();
 
+  let indexCache = null, pendingIndex = null;
+  const templateDetails = new Map();
   let pendingTemplatesPromise = null;
   let cacheTemplatesList = null;
   let cacheEpoch = 0;
@@ -45,7 +47,7 @@
   Object.defineProperty(root, 'cacheTemplatesList', {
     configurable: true,
     get: () => cacheTemplatesList,
-    set(value) { cacheTemplatesList = value; templateEpoch++; pendingTemplatesPromise = null; }
+    set(value) { cacheTemplatesList = value; templateEpoch++; pendingTemplatesPromise = null; indexCache = null; pendingIndex = null; templateDetails.clear(); }
   });
 
   function abortError() { return new DOMException('Navigation aborted', 'AbortError'); }
@@ -199,6 +201,42 @@
     return waitFor(pendingTemplatesPromise, signal);
   }
 
+  function fetchTemplateIndex(signal) {
+    if (signal?.aborted) return Promise.reject(abortError());
+    if (Array.isArray(cacheTemplatesList)) return Promise.resolve(cacheTemplatesList);
+    if (indexCache?.expires > Date.now()) return Promise.resolve(indexCache.items);
+    if (!pendingIndex) {
+      const epoch = templateEpoch;
+      const promise = (async () => {
+        const items = []; let total = Infinity;
+        while (items.length < total) {
+          const response = await fetch(`/api/get-templates?view=index&limit=100&offset=${items.length}`, { signal: cacheController.signal });
+          if (!response.ok) throw new Error('Catalog request failed');
+          const page = await response.json();
+          if (!Array.isArray(page.items) || !Number.isFinite(page.total)) throw new Error('Invalid catalog response');
+          items.push(...page.items); total = page.total;
+          if (!page.items.length) break;
+        }
+        if (epoch !== templateEpoch) throw abortError();
+        indexCache = { items, expires: Date.now() + 60000 }; return items;
+      })();
+      pendingIndex = promise;
+      const done = () => { if (pendingIndex === promise) pendingIndex = null; };
+      promise.then(done, done);
+    }
+    return waitFor(pendingIndex, signal);
+  }
+  async function fetchTemplateDetail(id, signal) {
+    const cached = templateDetails.get(id);
+    if (cached?.expires > Date.now()) return cached.item;
+    const epoch = templateEpoch;
+    const response = await fetch('/api/templates/' + encodeURIComponent(id), { signal });
+    if (!response.ok) throw new Error('Template request failed');
+    const item = await response.json();
+    if (epoch !== templateEpoch || signal?.aborted) throw abortError();
+    if (templateDetails.size >= 20) templateDetails.delete(templateDetails.keys().next().value);
+    templateDetails.set(id, { item, expires: Date.now() + 60000 }); return item;
+  }
   function fetchProjectDetail(projectId, signal) {
     return root.ProjectStore.fetchProjectDetail(projectId, { signal });
   }
@@ -225,7 +263,7 @@
           auth.fetchProjects().catch(() => {});
         }
       } else if (page === 'template') {
-        fetchTemplates().catch(() => {});
+        fetchTemplateIndex().catch(() => {});
       } else if (page === 'project' && opts.id) {
         fetchProjectDetail(opts.id).catch(() => {});
       }
@@ -250,6 +288,7 @@
     root.htmlMemoryCache = {};
     cacheTemplatesList = null;
     pendingTemplatesPromise = null;
+    indexCache = null; pendingIndex = null; templateDetails.clear();
     pendingDocs.clear();
     // CSS/JS registrations survive session cache invalidation.
   }
@@ -264,6 +303,7 @@
     prefetchPage,
     prefetchAuthResources,
     fetchTemplates,
+    fetchTemplateIndex, fetchTemplateDetail,
     fetchProjectDetail,
     clearMemoryCache,
     get loadedCSS() { return loadedCSS; },

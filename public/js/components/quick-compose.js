@@ -260,6 +260,7 @@
               <p class="qc-sub">描述故事或創作靈感，AI 將為您打造專業分鏡</p>
             </div>
 
+            <div class="creation-template-toolbar" id="qc-template-toolbar"><label><input type="checkbox" id="qc-use-template">使用模板生成</label><button type="button" id="qc-browse-templates">瀏覽模板庫</button><div id="qc-selected-template" hidden><span id="qc-template-name"></span><button type="button" id="qc-preview-template">預覽</button><button type="button" id="qc-change-template">更換</button><button type="button" id="qc-remove-template">取消套用</button></div></div>
             <div class="qc-suggestion-row" id="qc-suggestion-row">
               <span class="qc-sugg-label">靈感推薦：</span>
               <div class="qc-sugg-chips-list">
@@ -320,6 +321,23 @@
 
     mountCapsule();
     bindEvents();
+    const toolbar = document.getElementById('qc-template-toolbar');
+    if (toolbar && !toolbar.creationBound) {
+      toolbar.creationBound = true;
+      toolbar.addEventListener('change', event => { if (event.target.id === 'qc-use-template') root.CreationController.setTemplateMode(event.target.checked); });
+      toolbar.addEventListener('click', event => {
+        const id = event.target.closest('button')?.id;
+        if (!id) return;
+        event.stopPropagation();
+        if (id === 'qc-remove-template') { root.CreationController.setTemplateMode(false); updateTemplateControls(); return; }
+        if (['qc-browse-templates', 'qc-change-template', 'qc-preview-template'].includes(id)) {
+          root.CreationController.checkpoint();
+          const templateId = id === 'qc-preview-template' ? (root.CreationSessionStore.selectedTemplate?.id || root.CreationSessionStore.selectedTemplateId) : undefined;
+          close(true); root.spaNavigate('template', { templateId });
+        }
+      });
+    }
+    updateTemplateControls();
 
     // Async prefetch scripts for creation workspace if loader exists
     const injectFn = root.PageAssetLoader?.injectScripts || root.injectScripts;
@@ -774,7 +792,17 @@
   }
 
   // ── Generation Progress Presentation ──
+  function updateTemplateControls() {
+    const session = root.CreationSessionStore;
+    const mode = document.getElementById('qc-use-template');
+    if (mode) mode.checked = session?.generationMode === 'template';
+    const summary = document.getElementById('qc-selected-template');
+    if (summary) summary.hidden = !session?.selectedTemplate;
+    const name = document.getElementById('qc-template-name');
+    if (name) name.textContent = session?.selectedTemplate?.name || '';
+  }
   function updateProgress(pct = 0, isGenerating = false) {
+    updateTemplateControls();
     const work = root.CreationController?.workState();
     const label = work?.label || (isGenerating ? `正在規劃… ${Math.round(pct)}%` : pct >= 100 ? '分鏡已完成' : '開始創作');
     const busy = work ? work.task.status === 'generating' : isGenerating;
@@ -933,7 +961,7 @@
     }
     if (root.CreationSessionStore && root.CreationSessionStore.draft) {
       root.CreationSessionStore.draft.story = qcInput.value;
-      updateProgress();
+      root.CreationController?.checkpoint(); updateProgress();
     }
     autoGrow();
   }

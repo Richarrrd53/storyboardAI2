@@ -31,6 +31,17 @@
   const values=template.structure.map(shot=>seconds(shot.duration));return values.every(value=>value!==null)?Math.round(values.reduce((a,b)=>a+b,0)*100)/100:null;
  }
  function shotCountOf(template){const value=Number(template.shotsCount);return template.shotsCount!=null&&Number.isInteger(value)&&value>=0?value:Array.isArray(template.structure)?template.structure.length:null;}
- root.TemplatePresentation={present,tagsOf,externalUrl,durationOf,shotCountOf};
+ const CAT_MAP={product:'商品廣告',story:'敘事紀實',twist:'高留存節奏',custom:'團隊資產'};
+ const categoryOf=t=>['product','story','twist'].includes(t.category||t.type)?(t.category||t.type):'custom';
+ function filter(list,state={}) {
+  const query=(state.query||'').trim().toLocaleLowerCase();
+  let result=list.filter(t=>(!state.category||state.category==='全部'||categoryOf(t)===state.category)&&(!state.tag||tagsOf(t).includes(state.tag))&&(!query||[t.displayTitle,t.displaySummary,t.summary,t.narrative?.summary,t.name,t.title,t.description,t.source?.title,t.source?.description,t.categoryLabel,CAT_MAP[categoryOf(t)],...tagsOf(t),...(Array.isArray(t.platform)?t.platform:[])].some(value=>String(value||'').toLocaleLowerCase().includes(query))));
+  const dir=state.direction==='desc'?-1:1;
+  if(state.sort==='name')result=[...result].sort((a,b)=>(a.name||a.title||'').localeCompare(b.name||b.title||'','zh-Hant')*dir);
+  else if(state.sort==='duration')result=[...result].sort((a,b)=>{const x=durationOf(a),y=durationOf(b);return x===null?y===null?0:1:y===null?-1:(x-y)*dir;});
+  else if(dir===-1)result=[...result].reverse();
+  return result;
+ }
+ root.TemplatePresentation={present,tagsOf,externalUrl,durationOf,shotCountOf,categoryOf,filter};
  if(typeof module!=='undefined'&&module.exports)module.exports=root.TemplatePresentation;
 })(typeof window!=='undefined'?window:globalThis);

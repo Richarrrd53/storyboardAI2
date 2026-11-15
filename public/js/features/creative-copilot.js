@@ -85,7 +85,7 @@
     s.copilot.stackRounds ||= [];
     s.copilot.discussionLog ||= s.copilot.history.map(message => ({ ...message }));
     if (story !== s.creativeBrief.originalStory && story !== s.copilot.latestStory) {
-      cancel(); B.commit(s.creativeBrief, [], story); s.copilot.latestStory = story;
+      cancel(); s.discussionStage = 'story'; s.templateSuggestions = {}; B.commit(s.creativeBrief, [], story); s.copilot.latestStory = story;
       s.copilot.response = null; s.copilot.lastInsight = ''; s.copilot.retry = null; s.copilot.error = ''; s.copilot.drafts = {}; s.creativeBrief.suggestions = {}; syncSettings();
     }
     return s.copilot;
@@ -101,7 +101,7 @@
     const multi = q.type === 'multi_choice', free = q.type === 'free_text';
     const otherActive = free || d.otherActive === true;
     return `<fieldset class="copilot-question"><legend>${esc(q.label)}${q.required ? '（必填）' : ''}</legend><p class="section-hint">${esc(q.description)}</p>${multi ? `<p class="section-hint">既有選項可選 ${q.min}–${q.max} 項，另可自行補充。</p>` : ''}
-      <div class="copilot-options" data-question="${esc(q.id)}">${(q.options || []).map((o, i) => `<label class="copilot-option ${d.values.includes(o.value) ? 'is-selected' : ''}"><input type="${multi ? 'checkbox' : 'radio'}" name="${esc(q.id)}" value="${i}" ${d.values.includes(o.value) ? 'checked' : ''}><span><strong>${esc(o.label)}</strong>${o.value === q.recommended ? '<small class="copilot-recommend">AI 建議</small>' : ''}<span>${esc(o.description)}</span></span></label>`).join('')}
+      <div class="copilot-options" data-question="${esc(q.id)}">${(q.options || []).map((o, i) => `<label class="copilot-option ${d.values.includes(o.value) ? 'is-selected' : ''}"><input type="${multi ? 'checkbox' : 'radio'}" name="${esc(q.id)}" value="${i}" ${d.values.includes(o.value) ? 'checked' : ''}><span><strong>${esc(o.label)}</strong>${o.value === q.recommended ? '<small class="copilot-recommend">推薦</small>' : ''}<span>${esc(o.description)}</span></span></label>`).join('')}
       ${!free && q.allowOther ? `<label class="copilot-option ${otherActive ? 'is-selected' : ''}"><input type="${multi ? 'checkbox' : 'radio'}" name="${esc(q.id)}" value="other" ${otherActive ? 'checked' : ''}><span><strong>其他／自行描述</strong><span>用自己的方式描述${multi ? '補充元素' : '故事方向'}。</span></span></label>` : ''}</div>
       <label class="copilot-other" data-other-wrap="${esc(q.id)}" ${otherActive ? '' : 'hidden'}>${free ? '你的回答' : '描述你的方向'}<textarea data-other="${esc(q.id)}" maxlength="2000" rows="2" ${otherActive ? '' : 'disabled'}>${esc(d.other)}</textarea></label></fieldset>`;
   }
@@ -197,9 +197,9 @@
     const el = document.getElementById('creative-copilot'), s = session(), c = s.copilot;
     if (!el) return;
     const stackHost = document.getElementById('creation-discussion-stack');
-    const entering = c?.active && !s.selectedTemplate && !c.stackEntered;
+    const entering = c?.active && !c.stackEntered;
     const inputBounds = entering ? document.getElementById('phase1-composer')?.getBoundingClientRect() : null;
-    el.hidden = !c?.active || !!s.selectedTemplate;
+    el.hidden = !c?.active;
     el.closest('.phase-panel')?.classList.toggle('is-discussing', !el.hidden);
     if (el.hidden) { if (stackHost) stackHost.hidden = true; stopVisuals(); return; }
     if (el.copilotSession !== c) {
@@ -266,7 +266,7 @@
   }
   function syncSettings() {
     const s = session(), b = s.creativeBrief?.confirmed;
-    if (!b || s.selectedTemplate) return;
+    if (!b) return;
     if (b.duration) s.duration = b.duration;
     if (b.ratio) s.ratio = ({ '16:9': '橫向16:9', '9:16': '直向9:16', '3:2': '橫向3:2', '2:3': '直向2:3', '1:1': '1:1' })[b.ratio];
     if (b.baseStyle) s.styleIndex = B.styleIds.indexOf(b.baseStyle);
@@ -275,9 +275,9 @@
   async function request(intent = 'start', retry = false) {
     captureStory();
     const s = session(), c = prepare(s.story);
-    if (c.busy || s.selectedTemplate) return;
+    if (c.busy) return;
     c.active = true; c.error = '';
-    if (!c.provider) c.provider = root.spaAuth?.getAiProvider?.() || 'gemini';
+    c.provider = root.spaAuth?.getAiProvider?.() || 'gemini';
     let payload, archive;
     try {
       if (retry && c.retry) {
@@ -299,10 +299,11 @@
           c.stackRounds.push(round); archive = { id: round.id, origin };
         }
         payload = { story: s.story, brief: JSON.parse(JSON.stringify(s.creativeBrief)), history: c.history.slice(-12), message: c.message,
-          intent, autoRounds: c.rounds, provider: c.provider, requestId: 'copilot-' + Date.now() + '-' + Math.random().toString(36).slice(2), revision: s.creativeBrief.revision };
+          templateId: s.selectedTemplate?.id || null, templateValues: s.templateValues || {}, discussionStage: s.selectedTemplate && s.discussionStage !== 'story' ? 'template' : 'story', intent, autoRounds: c.rounds, provider: c.provider, requestId: 'copilot-' + Date.now() + '-' + Math.random().toString(36).slice(2), revision: s.creativeBrief.revision };
         c.retry = payload; c.message = ''; c.drafts = {};
       }
     } catch (e) { c.error = e.message; render(); return; }
+    if (payload.provider !== c.provider) { payload = { ...payload, provider: c.provider, requestId: 'copilot-' + Date.now() + '-' + Math.random().toString(36).slice(2) }; c.retry = payload; }
     cancel({ preserveIntro: true }); const ticket = version; controller = new AbortController(); const signal = controller.signal;
     c.response = null; c.busy = true; c.phase = 'thinking'; c.continuing = false; render({ archive });
     try {
@@ -315,6 +316,9 @@
       c.response = B.validateResponse(data);
       c.response.thoughtSummaries = Array.isArray(data.thoughtSummaries) ? data.thoughtSummaries.filter(t => typeof t === 'string').slice(0, 8).map(t => t.slice(0, 12000)) : [];
       B.suggest(s.creativeBrief, c.response.briefPatch);
+      const names = new Set(root.FreeformStoryboard?.variables(s.selectedTemplate).map(item => item.name) || []);
+      s.templateSuggestions ||= {};
+      for (const item of c.response.templatePatch || []) if (names.has(item.name) && !Object.hasOwn(s.templateValues, item.name)) s.templateSuggestions[item.name] = item.value;
       c.history.push({ role: 'assistant', text: c.response.message }); c.history = c.history.slice(-24);
       c.discussionLog.push({ role: 'assistant', text: c.response.message });
       c.rounds = c.response.action === 'ready' ? 0 : c.rounds + 1; c.retry = null; c.phase = 'revealing';
@@ -334,11 +338,15 @@
     }
   }
   function advance() { captureStory(); cancel(); syncSettings(); notify('advance'); }
+  function startTemplateDiscussion() { const s = session(), c = prepare(s.story); cancel(); s.discussionStage = 'template'; s.currentStep = 'template-discussion'; c.response = null; c.rounds = 0; c.retry = null; c.error = ''; c.drafts = {}; c.active = true; request('start'); }
   function discuss() { const c = prepare(session().story); c.active = true; c.continuing = true; notify('discuss'); render(); document.getElementById('copilot-message')?.focus(); }
   function editStory() { cancel(); const c = session().copilot; if (c) { c.active = false; c.stackEntered = false; } render(); notify('edit-story'); const input = document.getElementById('story-input'); if (input) { input.value = session().story; input.focus({ preventScroll: true }); } }
   function mount(signal, onAction) {
     notify = action => {
-      if (action === 'advance' || action === 'ready') session().currentPhase = session().targetPhase = 2;
+      if (action === 'advance' || action === 'ready') {
+        const s = session();
+        s.currentPhase = s.targetPhase = s.generationMode === 'template' && !s.selectedTemplate ? 3 : s.selectedTemplate && s.discussionStage === 'story' && root.FreeformStoryboard?.variables(s.selectedTemplate).length ? 1 : 2;
+      }
       if (!signal.aborted) onAction(action);
       root.CreationController?.publish();
     };
@@ -401,6 +409,6 @@
     document.getElementById('creation-discussion-stack')?.addEventListener('click', onClick, { signal });
     render();
   }
-  root.CreativeCopilot = { prepare, render, request, cancel, mount, advance, syncSettings, discuss, editStory };
+  root.CreativeCopilot = { prepare, render, request, cancel, mount, advance, syncSettings, discuss, editStory, startTemplateDiscussion };
   root.AskGeminiConversation = root.CreativeCopilot; // Existing pages retain their compatible entry point.
 })(typeof window !== 'undefined' ? window : globalThis);

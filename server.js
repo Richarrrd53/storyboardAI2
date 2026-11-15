@@ -170,7 +170,10 @@ app.post('/api/creation/copilot', async (req, res, next) => {
         } catch { return res.status(401).json({ error: '登入已失效，請重新登入。' }); }
     }
     next();
-}, createCopilotHandler(aiRouter));
+}, createCopilotHandler(aiRouter, { getTemplate: async id => {
+    const record = await prisma.template.findUnique({ where: { id } });
+    return record ? toCatalogTemplate(record) : null;
+} }));
 const DISCOVERY_PLATFORMS = new Set(['youtube-shorts']);
 const DISCOVERY_TIME_RANGES = new Set(['7', '30', '90', 'all']);
 const DISCOVERY_MAX_DURATIONS = new Set(['60', '180']);
@@ -333,6 +336,7 @@ app.post('/api/discovery/add-template', async (req, res) => {
             update: { name: template.name, category: template.category, tags: template.tags, description: template.description, content: template, is_custom: true },
             create: { id: template.id, name: template.name, category: template.category, tags: template.tags, description: template.description, content: template, is_custom: true }
         });
+        templateIndexCache = null;
         res.json({ success: true, template: { id: template.id, name: template.name, category: template.category, categoryLabel: template.categoryLabel } });
     } catch (error) {
         console.error('加入爆點模板庫失敗', error);
@@ -1264,6 +1268,14 @@ app.post('/api/ask-gemini', async (req, res) => {
     const task = type === 'image' ? 'image' : type === 'story' ? 'story' : 'fast';
     const structured = task === 'story' && req.body.contract === 'freeform-v2';
     if (structured && ![15, 30, 45, 60].includes(req.body.duration)) return res.status(400).json({ error: '無效的自由分鏡時長' });
+    let sourceIds = [];
+    if (structured && req.body.templateId) {
+        try {
+            const record = await prisma.template.findUnique({ where: { id: String(req.body.templateId).slice(0, 200) } });
+            if (!record) return res.status(404).json({ error: '找不到所選模板。' });
+            sourceIds = require('./public/js/features/freeform-storyboard').nodes(toCatalogTemplate(record)).map(node => node.id);
+        } catch { return res.status(503).json({ error: '模板暫時無法載入。' }); }
+    }
     const summaries = task !== 'image' && req.body.includeThoughts === true;
     const requestId = typeof req.body.requestId === 'string' && /^[A-Za-z0-9_-]{1,120}$/.test(req.body.requestId)
         ? req.body.requestId : require('node:crypto').randomUUID();
@@ -1280,7 +1292,8 @@ app.post('/api/ask-gemini', async (req, res) => {
                 includeThoughts: summaries,
                 requestId,
                 schemaName: structured ? 'freeform_storyboard' : undefined,
-                responseSchema: structured ? require('./public/js/features/freeform-storyboard').schema(req.body.duration) : undefined
+                responseMimeType: structured ? 'application/json' : undefined,
+                responseSchema: structured ? require('./public/js/features/freeform-storyboard').schema(req.body.duration, sourceIds) : undefined
             });
         res.json(result);
     } catch (error) {
@@ -1293,8 +1306,35 @@ app.post('/api/ask-gemini', async (req, res) => {
     }
 });
 
+const { templateIndex, createRecommendationHandler } = require('./lib/template-recommendations');
+let templateIndexCache = null, templateIndexPending = null;
+async function loadTemplateIndex() {
+    if (templateIndexCache?.expires > Date.now()) return templateIndexCache.items;
+    if (!templateIndexPending) templateIndexPending = prisma.template.findMany({ orderBy: { createAt: 'desc' } })
+        .then(records => {
+            const items = records.map(record => templateIndex(toCatalogTemplate(record)));
+            templateIndexCache = { items, expires: Date.now() + 60000 }; return items;
+        }).finally(() => { templateIndexPending = null; });
+    return templateIndexPending;
+}
+app.post('/api/templates/recommend', createRecommendationHandler({ loadIndex: loadTemplateIndex,
+    generateText: options => aiRouter.generateText(options), resolveProvider: resolveRequestProvider }));
+app.get('/api/templates/:id', async (req, res) => {
+    try {
+        const record = await prisma.template.findUnique({ where: { id: req.params.id } });
+        if (!record) return res.status(404).json({ error: '找不到此模板。' });
+        res.json(toCatalogTemplate(record));
+    } catch { res.status(503).json({ error: '模板暫時無法載入。' }); }
+});
 app.get('/api/get-templates', async (req, res) => {
     try {
+        if (req.query.view === 'index') {
+            const index = await loadTemplateIndex();
+            const filtered = require('./public/js/components/template-presentation').filter(index, req.query);
+            const offset = Math.max(0, Number.parseInt(req.query.offset, 10) || 0);
+            const limit = Math.min(100, Math.max(1, Number.parseInt(req.query.limit, 10) || 50));
+            return res.json({ items: filtered.slice(offset, offset + limit), total: filtered.length });
+        }
         const templates = await prisma.template.findMany({
             orderBy: { createAt: 'desc' }
         });
@@ -1324,6 +1364,7 @@ app.post('/api/templates', async (req, res) => {
                 is_custom: true
             }
         });
+        templateIndexCache = null;
         res.json({ success: true, template: newTpl });
     } catch (err) {
         console.error('新增模板失敗', err);

@@ -369,17 +369,17 @@ test('TemplatesPage: Page Lifecycle Contract - mount() returns { unmount() }', a
   });
 });
 
-test('TemplatesPage: Data loading from API and caches in window.cacheTemplatesList', async () => {
+test('TemplatesPage: lightweight index loading and caching', async () => {
   const dom = setupDOMStructure();
   window.cacheTemplatesList = null;
 
   let fetchCalled = false;
   global.fetch = async (url) => {
     fetchCalled = true;
-    assert.equal(url, '/api/get-templates');
+    assert.equal(url, '/api/get-templates?view=index&limit=100&offset=0');
     return {
       ok: true,
-      json: async () => sampleTemplates
+      json: async () => ({ items: sampleTemplates, total: sampleTemplates.length })
     };
   };
 
@@ -389,7 +389,8 @@ test('TemplatesPage: Data loading from API and caches in window.cacheTemplatesLi
   });
 
   assert.ok(fetchCalled, 'fetch should be called when cache is null');
-  assert.equal(window.cacheTemplatesList?.length, 4, 'templates should be cached');
+  assert.equal((await window.PageAssetLoader.fetchTemplateIndex()).length, 4, 'index should be cached');
+  assert.equal(window.cacheTemplatesList, null, 'full template cache is not populated');
   assert.equal(dom.templateGrid.children.length, 4);
 
   instance.unmount();

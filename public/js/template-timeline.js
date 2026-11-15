@@ -444,7 +444,7 @@ window.renderTemplateDetailTimeline = function(template, detailContainer) {
   ['btn-apply-template-main', 'btn-apply-template-bottom'].forEach(id => {
     const applyBtn = document.getElementById(id);
     if (applyBtn) applyBtn.onclick = () => {
-      window.spaNavigate('generate', { templateId: template.id });
+      window.CreationController.applyTemplateEntry(template, { page: 'template', templateId: template.id });
     };
   });
 
@@ -473,7 +473,7 @@ function renderHeroLeft(template, shots, totalSec, cleanTitle, tags) {
   const catBadge = document.getElementById('detail-category-badge');
   if (catBadge) catBadge.textContent = CAT_MAP[template.category] || template.category || '未分類';
   const shotsBadge = document.getElementById('detail-shots-count-badge');
-  if (shotsBadge) {const count=window.TemplatePresentation.shotCountOf(template);shotsBadge.textContent=count===null?'未提供鏡頭數':`${count} 鏡頭`;}
+  if (shotsBadge) {const count=window.TemplatePresentation.shotCountOf(template);shotsBadge.textContent=count===null?'未提供鏡頭數':`${count} 個敘事節點`;}
   const durBadge = document.getElementById('detail-duration-badge');
   if (durBadge) {const known=window.TemplatePresentation.durationOf(template);durBadge.textContent=known===null?'未提供時長':`${known}s`;}
 

@@ -16,6 +16,16 @@
       submitted: false,
       confirmBeforeImages: false,
       entryMode: 'full', // 'quick' | 'full'
+      generationMode: 'freeform',
+      entrySource: 'generate',
+      discussionStage: 'story',
+      currentStep: 'idea',
+      recoveryNotice: '',
+      returnContext: null,
+      templateSelectionState: { category: '全部', query: '', tag: '', sort: 'catalog', direction: 'asc', scrollTop: 0 },
+      templateRecommendation: null,
+      templateSuggestions: {},
+      selectedTemplateId: null,
       story: '',
       creativeBrief: null,
       copilot: null,
@@ -67,6 +77,88 @@
 
   root.CreationSessionStore = session;
 
+  // A bounded, tab-scoped draft checkpoint. Full templates, images, credentials and
+  // running tasks never enter browser storage. Reload is draft recovery, not job resume.
+  const checkpointKey = 'storyboard.creation.v1';
+  function checkpoint() {
+    try {
+      const keys = ['sessionId', 'submitted', 'confirmBeforeImages', 'entryMode', 'generationMode', 'entrySource', 'discussionStage', 'currentStep', 'returnContext', 'templateSelectionState', 'templateValues', 'templateSuggestions', 'story', 'creativeBrief', 'styleIndex', 'ratio', 'duration', 'draft'];
+      const data = Object.fromEntries(keys.map(key => [key, session[key]]));
+      data.selectedTemplateId = session.selectedTemplate?.id || session.selectedTemplateId || null;
+      data.currentPhase = [1, 2, 3].includes(session.currentPhase) ? session.currentPhase : 2;
+      data.copilot = session.copilot ? { ...session.copilot, busy: false, retry: null, phase: 'responded', stackEntered: true,
+        ...(session.copilot.busy ? { error: '上次討論已中斷，內容已保留，可以重試。' } : {}) } : null;
+      const task = root.GenerationTask?.getState?.();
+      data.interruptedTask = task && task.status !== 'idle' && task.save?.status !== 'saved';
+      data.savedAt = Date.now();
+      let encoded = JSON.stringify(data);
+      if (encoded.length > 120000) {
+        delete data.templateSuggestions;
+        if (data.copilot) { delete data.copilot.response; delete data.copilot.thoughtSummaries; }
+        encoded = JSON.stringify(data);
+      }
+      if (encoded.length <= 120000) root.sessionStorage?.setItem(checkpointKey, encoded);
+      else root.sessionStorage?.removeItem(checkpointKey);
+    } catch (_) { /* Private mode/quota must not block creation. */ }
+  }
+  try {
+    const saved = JSON.parse(root.sessionStorage?.getItem(checkpointKey) || 'null');
+    if (saved && Date.now() - saved.savedAt < 86400000 && typeof saved.story === 'string' && saved.story.length <= 12000 && ['freeform', 'template'].includes(saved.generationMode)) {
+      for (const key of Object.keys(createInitialSession())) if (Object.hasOwn(saved, key) && !['selectedTemplate', 'sessionId'].includes(key)) session[key] = saved[key];
+      session.targetPhase = session.currentPhase;
+      session.restoredDraft = true;
+      if (saved.interruptedTask) session.recoveryNotice = '已恢復故事與創作設定。重新整理會中斷尚未儲存的生成，請重新規劃分鏡；已儲存專案可從分鏡庫開啟。';
+    }
+  } catch (_) {}
+  root.addEventListener?.('pagehide', checkpoint);
+  root.addEventListener?.('beforeunload', event => {
+    const task = root.GenerationTask?.getState?.();
+    if (task?.status === 'generating' || task?.save?.status === 'saving' || (task?.result?.generatedShotData?.length && task.save?.status !== 'saved')) {
+      checkpoint(); event.preventDefault(); event.returnValue = '';
+    }
+  });
+
+  function mutable() {
+    const task = root.GenerationTask?.getState?.();
+    return task?.status !== 'generating' && task?.save?.status !== 'saving';
+  }
+  function selectTemplate(template) {
+    if (!mutable()) return false;
+    const changed = (session.selectedTemplate?.id || session.selectedTemplateId) !== (template?.id || null);
+    if (changed) {
+      root.CreativeCopilot?.cancel(); root.GenerationTask?.reset();
+      session.templateValues = {}; session.templateSuggestions = {};
+      session.discussionStage = 'story';
+      if (session.copilot) { session.copilot.response = null; session.copilot.retry = null; session.copilot.error = ''; session.copilot.rounds = 0; }
+    }
+    session.selectedTemplate = template || null; session.selectedTemplateId = template?.id || null;
+    session.generationMode = 'template';
+    checkpoint(); publish(); return true;
+  }
+  function setTemplateMode(enabled) {
+    if (!mutable()) return false;
+    if (!enabled) { selectTemplate(null); session.discussionStage = 'story'; session.templateRecommendation = null; }
+    session.generationMode = enabled ? 'template' : 'freeform';
+    checkpoint(); publish(); return true;
+  }
+  async function applyTemplateEntry(template, returnContext = { page: 'template', templateId: template.id }) {
+    if (!mutable()) return false;
+    if (!Array.isArray(template.structure)) {
+      const response = await fetch('/api/templates/' + encodeURIComponent(template.id));
+      if (!response.ok) return false;
+      template = await response.json();
+    }
+    if (!selectTemplate(template)) return false;
+    session.entrySource = 'template'; session.returnContext = returnContext;
+    // A template preview inside an existing selection returns to that selection.
+    if (session.currentStep === 'template-selection') return getNavigateFn()?.('generate', { creationIntent: 'resume', sessionId: session.sessionId });
+    session.currentPhase = session.targetPhase = 1;
+    if (!session.submitted && root.matchMedia?.('(max-width: 768px)').matches && root.QuickCompose) {
+      root.QuickCompose.open(); publish(); return true;
+    }
+    return getNavigateFn()?.('generate', { templateId: template.id, sessionId: session.sessionId });
+  }
+
   // ── 2. Creation Controller Business State ──
   // Standalone fallback only; with QuickCompose mounted, its UI state/accessors win.
   let surfaceState = 'closed'; // 'closed' | 'quick-compose' | 'closing' | 'workspace'
@@ -102,7 +194,7 @@
     }
     return { label, intent, hasWork: intent !== 'new', task };
   }
-  function publish() { root.QuickCompose?.updateProgress?.(); }
+  function publish() { checkpoint(); root.QuickCompose?.updateProgress?.(); }
   function canReplace() {
     const { task } = workState();
     const running = task.status === 'generating' || task.save.status === 'saving';
@@ -221,10 +313,12 @@
     if (isSubmitting) return false;
     const story = (promptText || session.draft?.story || '').trim();
     if (!story) return false;
+    const templateEntry = { generationMode: session.generationMode, selectedTemplate: session.selectedTemplate, selectedTemplateId: session.selectedTemplateId, returnContext: session.returnContext };
     const decision = newCreation({ preserveSurface: true });
     if (!(decision?.then ? await decision : decision)) return false;
+    Object.assign(session, templateEntry);
     session.story = story; session.submitted = true;
-    session.entryMode = 'quick'; session.targetPhase = 1;
+    session.entryMode = 'quick'; session.entrySource = 'qc'; session.targetPhase = 1;
     root.CreativeCopilot?.prepare(story);
     return handoff('new', story, options);
   }
@@ -347,7 +441,7 @@
       }
     },
 
-    workState, publish, newCreation, resolveEntry, resumeWorkspace, cleanupTransition,
+    workState, publish, newCreation, resolveEntry, resumeWorkspace, cleanupTransition, selectTemplate, setTemplateMode, checkpoint, applyTemplateEntry,
     submitFromQuickCompose,
     submitToWorkspace: submitFromQuickCompose,
     openWorkspace,

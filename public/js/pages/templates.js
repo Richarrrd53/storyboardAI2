@@ -28,7 +28,7 @@
     const sourceUrl = typeof source === 'string' ? source : '';
     const videoId = t.source?.videoId || t.videoId || sourceUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|shorts\/|embed\/))([\w-]{11})/)?.[1];
     const thumbnail = safeMediaUrl(t.thumbnail || t.cover || t.source?.thumbnail || (videoId ? 'https://i.ytimg.com/vi/' + encodeURIComponent(videoId) + '/hqdefault.jpg' : ''));
-    const specs = [duration !== null ? duration + ' 秒' : '', shotCount !== null ? shotCount + ' 鏡頭' : '', ...(Array.isArray(t.platform) ? t.platform.filter(p => typeof p === 'string').slice(0, 2) : [])].filter(Boolean);
+    const specs = [duration !== null ? duration + ' 秒' : '', shotCount !== null ? shotCount + ' 個敘事節點' : '', ...(Array.isArray(t.platform) ? t.platform.filter(p => typeof p === 'string').slice(0, 2) : [])].filter(Boolean);
     return '<article class="template-card' + (featured ? ' template-card-featured' : '') + '" data-id="' + escape(t.id) + '">' +
       '<a class="template-video-cover' + (thumbnail ? '' : ' no-cover') + '" href="/template/' + encodeURIComponent(t.id) + '" data-action="preview" aria-label="預覽 ' + escape(name) + '">' +
       (thumbnail ? '<img src="' + escape(thumbnail) + '" alt="" width="640" height="360" loading="' + (featured ? 'eager' : 'lazy') + '">' : '<span class="cover-placeholder">尚無封面</span>') +
@@ -98,7 +98,8 @@
           const action = event.target.closest?.('[data-action]')?.dataset.action;
           if (action === 'apply') {
             event.stopPropagation();
-            navigate('generate', { templateId: card.dataset.id });
+            if (window.CreationController?.applyTemplateEntry) window.CreationController.applyTemplateEntry(templates.find(t => t.id === card.dataset.id) || { id: card.dataset.id }, { page: 'template' });
+            else navigate('generate', { templateId: card.dataset.id });
           } else {
             lastPreviewId = card.dataset.id;
             navigate('template', { templateId: card.dataset.id });
@@ -115,12 +116,7 @@
       if (!fromSort) cancelSort();
       if (tagGrid) renderTagOptions(tagGrid);
       syncControls();
-      let filtered = templates.filter(t => (state.category === '全部' || categoryOf(t) === state.category) && (!state.tag || tagsOf(t).includes(state.tag)));
-      const query = state.query.trim().toLocaleLowerCase();
-      if (query) filtered = filtered.filter(t => [t.displayTitle, t.displaySummary, t.summary, t.narrative?.summary, t.name, t.title, t.description, t.source?.title, t.source?.description, t.categoryLabel, CAT_MAP[categoryOf(t)], ...tagsOf(t), ...(Array.isArray(t.platform) ? t.platform : [])].some(value => String(value || '').toLocaleLowerCase().includes(query)));
-      if (state.sort === 'catalog' && state.direction === 'desc') filtered = [...filtered].reverse();
-      if (state.sort === 'name') filtered = [...filtered].sort((a, b) => (a.name || a.title || '').localeCompare(b.name || b.title || '', 'zh-Hant') * (state.direction === 'desc' ? -1 : 1));
-      if (state.sort === 'duration') { const dir = state.direction === 'desc' ? -1 : 1; filtered = [...filtered].sort((a, b) => { const da = durationOf(a), db = durationOf(b); if (da === null && db === null) return 0; if (da === null) return 1; if (db === null) return -1; return (da - db) * dir; }); }
+      const filtered = window.TemplatePresentation.filter(templates, state);
 
       const title = getEl('current-category-title');
       if (title) title.textContent = state.category === '全部' ? '所有模板' : CAT_MAP[state.category];
@@ -159,7 +155,7 @@
       const focusLink = Array.from(gridEl.querySelectorAll('.template-card')).find(card => card.dataset.id === lastPreviewId)?.querySelector('.card-preview-btn');
       focusLink?.focus?.({ preventScroll: true });
     }
-    function updateRoute(opts = {}) {
+    async function updateRoute(opts = {}) {
       if (disposed) return;
       backPending = false;
       if (!activeId) snapshot();
@@ -169,7 +165,18 @@
       if (activeId === opts.templateId && !loadError) return;
       window.destroyTemplateTimeline?.();
       activeId = opts.templateId;
-      const template = templates.find(t => String(t.id) === String(opts.templateId));
+      const backButton = root?.querySelector?.('.btn-back-to-store');
+      backButton?.setAttribute('aria-label', opts.creationPreview ? '返回創作' : '返回模板庫');
+      let template = templates.find(t => String(t.id) === String(opts.templateId));
+      if (window.PageAssetLoader.fetchTemplateDetail && templates.some(item => item.structureCount != null) && !loadError) {
+        try {
+          template = await window.PageAssetLoader.fetchTemplateDetail(opts.templateId, signal);
+          if (disposed || signal?.aborted || activeId !== opts.templateId) return;
+        } catch (error) {
+          if (disposed || signal?.aborted || activeId !== opts.templateId) return;
+          template = null;
+        }
+      }
       if (template && window.renderTemplateDetailTimeline) {
         if (recoveryEl) recoveryEl.hidden = true;
         window.renderTemplateDetailTimeline(template, detailEl);
@@ -194,6 +201,7 @@
       if (disposed || backPending || !activeId) return;
       backPending = true;
       const historyHost = window.parent && window.parent !== window ? window.parent : window;
+      if (historyHost.history?.state?.creationPreview) { historyHost.history.back(); return; }
       if (historyHost.history?.state?.templateFromBrowse && typeof historyHost.history.back === 'function') historyHost.history.back();
       else navigate('template');
     }
@@ -350,7 +358,7 @@
       gridEl.setAttribute?.('aria-busy', 'true');
       gridEl.innerHTML = '<div class="template-skeleton" aria-hidden="true"></div>'.repeat(5) + '<span class="template-sr-only" role="status">正在載入模板…</span>';
       try {
-        templates = await window.PageAssetLoader.fetchTemplates(signal);
+        templates = await (window.PageAssetLoader.fetchTemplateIndex || window.PageAssetLoader.fetchTemplates)(signal);
       } catch (error) {
         if (error.name === 'AbortError' || signal?.aborted || disposed) return;
         loadError = true;
@@ -373,7 +381,7 @@
       filterAndDisplay();
       if (storeBody) storeBody.scrollTop = state.scrollTop;
       activeId = null;
-      updateRoute(currentRoute);
+      await updateRoute(currentRoute);
     }
     window.filterStoreTemplates = filterAndDisplay;
     window.initTemplatePage?.();

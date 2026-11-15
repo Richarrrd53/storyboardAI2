@@ -403,9 +403,15 @@ body.dashboard-layout .page-content-inner {
 
 /* ── 7. Mobile Safe Area & Bottom Nav Padding ── */
 @media (max-width: 768px) {
+  #dash-sidebar,
+  .sidebar {
+    display: none !important;
+  }
+
   body.dashboard-layout .page-shell,
   body.dashboard-layout #page-main {
     margin: 0 !important;
+    min-width: 0 !important;
     border-radius: 0 !important;
     height: 100vh !important;
     height: 100dvh !important;

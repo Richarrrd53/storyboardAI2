@@ -33,18 +33,23 @@
   let templateLoading = false, templateError = null, requestedTemplateId = null;
   function renderTemplateSelection() {
       window.TemplateWorkflow?.selection(CreationSessionStore, { loading: templateLoading, error: templateError }, pageController?.signal);
+      const hasTemplate = !!CreationSessionStore.selectedTemplate;
+      for (const id of ['change-selected-template', 'remove-selected-template']) { const button = document.getElementById(id); if (button) button.hidden = !hasTemplate; }
+      const mode = document.getElementById('use-template-generation'); if (mode) mode.checked = CreationSessionStore.generationMode === 'template';
       onStoryInput();
       window.CreativeCopilot?.render();
   }
   async function loadRequestedTemplate() {
       templateLoading = true; templateError = null; renderTemplateSelection();
       const mount = pageController, sessionId = CreationSessionStore.sessionId;
-      const templates = await ensureTemplatesLoaded();
-      if (mount !== pageController || mount?.signal.aborted || sessionId !== CreationSessionStore.sessionId) return;
-      templateLoading = false;
-      const template = templates.find(t => t.id === requestedTemplateId);
-      if (template) selectTemplateCard(template);
-      else { templateError ||= '無法載入此模板，請重試或選擇其他模板。'; renderTemplateSelection(); }
+      try {
+          const response = await fetch('/api/templates/' + encodeURIComponent(requestedTemplateId), { signal: mount?.signal });
+          const template = await response.json();
+          if (!response.ok) throw new Error(template.error || '無法載入此模板');
+          if (mount !== pageController || mount?.signal.aborted || sessionId !== CreationSessionStore.sessionId) return;
+          window.CreationController.selectTemplate(template);
+      } catch (error) { if (!mount?.signal.aborted) templateError = error.message; }
+      finally { if (mount === pageController) { templateLoading = false; renderTemplateSelection(); } }
   }
   let pageController = null;
   let unsubscribeTask = null;
@@ -117,7 +122,7 @@
       const next = document.getElementById('phase-panel-' + targetPhase);
       if (!next) return;
       const stackHost = document.getElementById('creation-discussion-stack');
-      const sharedStack = !CreationSessionStore.selectedTemplate && !!CreationSessionStore.story && [1, 2].includes(targetPhase);
+      const sharedStack = !!CreationSessionStore.story && [1, 2].includes(targetPhase);
       if (sharedStack && targetPhase === 2) {
           const discussion = window.CreativeCopilot?.prepare(CreationSessionStore.story);
           if (discussion) { discussion.active = true; window.CreativeCopilot.render(); }
@@ -154,6 +159,7 @@
           outgoing.finished.then(() => layer.remove()).catch(() => layer.remove());
           phaseAnimations.push(outgoing);
       }
+      CreationSessionStore.currentStep = ({ 1: CreationSessionStore.copilot?.active ? (CreationSessionStore.discussionStage === 'template' ? 'template-discussion' : 'story-discussion') : 'idea', 2: 'direction', 3: 'template-selection', 4: 'generation', 5: 'planning' })[targetPhase];
       CreationSessionStore.currentPhase = targetPhase;
       CreationSessionStore.targetPhase = targetPhase;
       window.CreationController.publish();
@@ -219,7 +225,8 @@
           syncDuration();
           for (const group of document.querySelectorAll('[data-choice-kind]')) window.ChoiceGroup.mount(group, {signal:pageController.signal});
           const templateMode = !!CreationSessionStore.selectedTemplate;
-          document.getElementById("section-duration").hidden = templateMode;
+          document.getElementById("section-duration").hidden = false;
+          renderTemplateSelection();
           syncDirectionAction();
           triggerDirectionAiText();
       } else if (targetPhase === 3) {
@@ -245,16 +252,18 @@
 
   function updateTopNav(phase) {
       const task = window.GenerationTask.getState();
-      const template = !!CreationSessionStore.selectedTemplate;
-      const position = phase === 5 ? 3 : phase === 4 ? (task.status === 'completed' ? 5 : task.stage === 'images' ? 4 : 3) : phase;
+      const template = CreationSessionStore.generationMode === 'template';
+      const position = template ? phase === 3 ? 2 : phase === 2 ? 3 : phase === 5 ? 4 : phase === 4 ? 5 : CreationSessionStore.discussionStage === 'template' ? 2 : 1
+          : phase === 5 ? 3 : phase === 4 ? (task.status === 'completed' ? 5 : task.stage === 'images' ? 4 : 3) : phase;
+      const labels = template ? ['故事討論', CreationSessionStore.selectedTemplate ? '模板討論' : '選擇模板', '創作設定', '分鏡企劃', task.status === 'completed' ? '完成' : '生成畫面'] : ['構思', '創作設定', '分鏡企劃', '生成畫面', '完成'];
       [1,2,3,4,5].forEach(p => {
           const el = document.getElementById('step-nav-' + p);
           if (!el) return;
+          el.textContent = labels[p - 1];
           el.classList.toggle('active', p === position);
           el.classList.toggle('completed', p < position);
           if (p === position) el.setAttribute('aria-current', 'step'); else el.removeAttribute('aria-current');
       });
-      document.getElementById('step-nav-3').textContent = template ? '模板' : '分鏡企劃';
       document.getElementById('phase-count-badge').textContent = position + ' / 5';
   }
 
@@ -324,6 +333,7 @@
       if (!input || !btn) return;
 
       const val = input.value.trim();
+      window.CreationController.checkpoint();
       if (val !== CreationSessionStore.story && CreationSessionStore.copilot?.busy) window.CreativeCopilot?.cancel();
       input.style.height = 'auto';
       const maxHeight = parseFloat(getComputedStyle(input).maxHeight) || 132;
@@ -360,10 +370,10 @@
       CreationSessionStore.submitted = true;
       CreationSessionStore.draft.story = '';
       window.CreationController.publish();
-      if (CreationSessionStore.selectedTemplate || skipDiscussion) {
+      if (skipDiscussion) {
           window.CreativeCopilot?.cancel();
-          if (!CreationSessionStore.selectedTemplate) window.CreativeCopilot?.prepare(story);
-          switchPhase(2);
+          window.CreativeCopilot?.prepare(story);
+          finishDiscussion();
       } else {
           const c = window.CreativeCopilot?.prepare(story);
           if (c) {
@@ -384,18 +394,18 @@
   function triggerDirectionAiText() {
       const text = document.getElementById('direction-ai-text');
       const s = CreationSessionStore, b = s.creativeBrief?.confirmed;
-      if (text) text.textContent = !s.selectedTemplate && s.copilot?.lastInsight || '接下來選好影像語言，先預覽完整文字分鏡。';
+      if (text) text.textContent = s.copilot?.lastInsight || '接下來選好影像語言，先預覽完整文字分鏡。';
       const reason = document.getElementById('direction-settings-reason');
-      if (reason) { reason.textContent = !s.selectedTemplate && b?.settingsReason || ''; reason.hidden = !reason.textContent; }
+      if (reason) { reason.textContent = b?.settingsReason || ''; reason.hidden = !reason.textContent; }
       const summary = document.getElementById('direction-thought-summary');
-      if (summary) summary.innerHTML = !s.selectedTemplate ? window.AIActivity?.summaryMarkup(s.copilot?.response?.thoughtSummaries) || '' : '';
+      if (summary) summary.innerHTML = window.AIActivity?.summaryMarkup(s.copilot?.response?.thoughtSummaries) || '';
       const notes = document.getElementById('direction-style-notes'), avoid = document.getElementById('direction-avoid');
       if (notes) notes.value = b?.styleNotes || '';
       if (avoid) avoid.value = b?.avoid?.join('、') || '';
       syncPersonalConditionSummaries();
       document.querySelectorAll('.direction-condition').forEach(details => { details.open = false; });
-      const extra = document.getElementById('section-personal-style'); if (extra) extra.hidden = !!s.selectedTemplate;
-      const discuss = document.getElementById('btn-direction-discuss'); if (discuss) discuss.hidden = !!s.selectedTemplate;
+      const extra = document.getElementById('section-personal-style'); if (extra) extra.hidden = false;
+      const discuss = document.getElementById('btn-direction-discuss'); if (discuss) discuss.hidden = false;
       const cursor = document.getElementById('direction-ai-cursor');
       if (cursor) cursor.hidden = true;
   }
@@ -424,7 +434,7 @@
 
       const suggestedStyle = CreationSessionStore.creativeBrief?.confirmed.baseStyle;
       const suggestedIndex = suggestedStyle ? window.CreativeBrief.styleIds.indexOf(suggestedStyle) : -1;
-      const recs = !CreationSessionStore.selectedTemplate && suggestedIndex >= 0 ? [suggestedIndex] : detectRecommendedStyles(CreationSessionStore.story);
+      const recs = suggestedIndex >= 0 && CreationSessionStore.creativeBrief?.sources?.baseStyle === 'ai' ? [suggestedIndex] : [];
       const savedStyleIndex = CreationSessionStore.styleIndex;
       const numericStyleIndex = typeof savedStyleIndex === 'number' || /^\d+$/.test(String(savedStyleIndex)) ? Number(savedStyleIndex) : NaN;
       if (Number.isInteger(numericStyleIndex) && STYLES[numericStyleIndex]) {
@@ -442,7 +452,7 @@
           card.className = `style-card ${isSelected ? 'active' : ''} ${isRec ? 'is-recommended' : ''}`;
           card.dataset.index = idx;card.dataset.choiceOption = '';
           card.setAttribute('role','radio');card.setAttribute('aria-checked',String(isSelected));card.tabIndex=isSelected?0:-1;
-          card.innerHTML = `<span class="style-card-info"><span class="style-card-name">${s.name}</span><span class="style-card-desc">${s.desc}</span></span><span class="style-card-check" aria-hidden="true">${isSelected ? '✓' : ''}</span>`;
+          card.innerHTML = `<span class="style-card-info"><span class="style-card-name">${s.name}${isRec ? '<small class="copilot-recommend">推薦</small>' : ''}</span><span class="style-card-desc">${s.desc}</span></span><span class="style-card-check" aria-hidden="true">${isSelected ? '✓' : ''}</span>`;
           bindPageEvent(card, 'click', () => { if (!card.disabled && card.getAttribute('aria-disabled') !== 'true') selectStyleCard(idx); });
           grid.appendChild(card);
       });
@@ -451,7 +461,7 @@
   function selectStyleCard(index) {
       if (!Number.isInteger(index) || !STYLES[index]) return;
       CreationSessionStore.styleIndex = index;
-      if (!CreationSessionStore.selectedTemplate && CreationSessionStore.creativeBrief) window.CreativeBrief.edit(CreationSessionStore.creativeBrief, { baseStyle: window.CreativeBrief.styleIds[index], visualStyle: STYLES[index].name });
+      if (CreationSessionStore.creativeBrief) window.CreativeBrief.edit(CreationSessionStore.creativeBrief, { baseStyle: window.CreativeBrief.styleIds[index], visualStyle: STYLES[index].name });
       document.querySelectorAll('.style-card').forEach(c => {
           const isTarget = Number(c.dataset.index) === index;
           c.classList.toggle('active', isTarget);
@@ -478,277 +488,155 @@
       if (!btn || btn.disabled || btn.getAttribute('aria-disabled') === 'true') return;
       const ratio = btn.dataset.ratio;
       CreationSessionStore.ratio = ratio;
-      if (!CreationSessionStore.selectedTemplate && CreationSessionStore.creativeBrief) window.CreativeBrief.edit(CreationSessionStore.creativeBrief, { ratio: ratio.replace(/橫向|直向/g, '') });
+      if (CreationSessionStore.creativeBrief) window.CreativeBrief.edit(CreationSessionStore.creativeBrief, { ratio: ratio.replace(/橫向|直向/g, '') });
       syncRatioChips();
   }
   window.selectRatioOption = selectRatioOption;
 
   function confirmDirectionAndAdvance() {
-      if (CreationSessionStore.selectedTemplate) switchPhase(3);
-      else if (currentPlanMatches()) switchPhase(5);
-      else skipTemplateAndGenerate();
+      if (CreationSessionStore.generationMode === 'template' && !CreationSessionStore.selectedTemplate) { switchPhase(3); return; }
+      for (const [name, value] of Object.entries(CreationSessionStore.templateSuggestions || {})) if (!Object.hasOwn(CreationSessionStore.templateValues, name)) CreationSessionStore.templateValues[name] = value;
+      CreationSessionStore.templateSuggestions = {};
+      if (currentPlanMatches()) switchPhase(5);
+      else { if (window.GenerationTask.getState().status !== 'generating') window.GenerationTask.reset(); switchPhase(4); }
   }
   window.confirmDirectionAndAdvance = confirmDirectionAndAdvance;
 
   // ════════════════════════════════════════════════════════════
   // 5. Phase 3 — Template Browser
   // ════════════════════════════════════════════════════════════
-  async function ensureTemplatesLoaded() {
-      if (TEMPLATES && TEMPLATES.length > 0) return TEMPLATES;
-      const mount = pageController;
-      templateLoading = true;
-      renderTemplateBrowser();
+  let catalogTotal = 0, catalogRequest = 0, recommendationRequest = 0, recommendationPending = null;
+  const browserState = () => CreationSessionStore.templateSelectionState;
+  const CAT_MAP = { product: '商品廣告', story: '敘事紀實', twist: '高留存節奏', custom: '團隊資產' };
+  async function ensureTemplatesLoaded(append = false) {
+      const mount = pageController, ticket = ++catalogRequest;
+      templateLoading = true; renderTemplateBrowser();
       try {
-          const res = await fetch('/api/get-templates', { signal: mount?.signal });
+          const query = new URLSearchParams({ view: 'index', ...browserState(), offset: append ? TEMPLATES.length : 0, limit: 50 });
+          const res = await fetch('/api/get-templates?' + query, { signal: mount?.signal });
           if (!res.ok) throw new Error('模板載入失敗，請重試。');
-          if (res.ok) {
-              const templates = await res.json();
-              if (pageController !== mount || mount?.signal.aborted) return TEMPLATES;
-              TEMPLATES = Array.isArray(templates) ? templates : [];
-              templateError = null;
-          }
-      } catch (err) {
-          if (err.name === 'AbortError' || pageController !== mount || mount?.signal.aborted) return TEMPLATES;
-          console.error("Failed to load templates:", err);
-          TEMPLATES = [];
-          templateError = err.message;
-          renderTemplateSelection();
+          const data = await res.json();
+          if (pageController !== mount || mount?.signal.aborted || ticket !== catalogRequest) return TEMPLATES;
+          TEMPLATES = append ? [...TEMPLATES, ...data.items] : data.items;
+          catalogTotal = data.total; templateError = null;
+      } catch (error) {
+          if (error.name !== 'AbortError' && ticket === catalogRequest) templateError = error.message;
+      } finally {
+          if (ticket === catalogRequest && pageController === mount) { templateLoading = false; renderTemplateBrowser(); }
       }
-      if (pageController === mount && !mount?.signal.aborted) templateLoading = false;
       return TEMPLATES;
   }
-
-  const CAT_MAP = {
-      'product': '商品廣告',
-      'story': '敘事紀實',
-      'twist': '高留存節奏',
-      'custom': '團隊資產',
-      '未分類': '未分類'
-  };
-
-  const CATEGORY_ITEMS = [
-      { id: '全部', label: '全部序列' },
-      { id: 'product', label: '商品廣告' },
-      { id: 'story', label: '敘事紀實' },
-      { id: 'twist', label: '高留存節奏' },
-      { id: 'custom', label: '團隊資產' }
-  ];
-
-  let currentTemplateCategory = '全部';
-
-  function getTemplatesForCategory(catId) {
-      if (catId === '全部') return TEMPLATES;
-      if (catId === 'custom') {
-          return TEMPLATES.filter(t => {
-              const c = t.category || t.type;
-              return c !== 'product' && c !== 'story' && c !== 'twist';
-          });
-      }
-      return TEMPLATES.filter(t => (t.category || t.type) === catId);
+  async function recommendTemplates() {
+      const s = CreationSessionStore;
+      const key = JSON.stringify({ story: s.story, brief: window.CreativeBrief?.snapshot(s.creativeBrief), provider: window.spaAuth?.getAiProvider?.() || 'gemini' });
+      if (recommendationPending === key || s.templateRecommendation?.key === key) return;
+      recommendationPending = key;
+      const ticket = ++recommendationRequest, mount = pageController, sessionId = s.sessionId;
+      const label = document.getElementById('template-rec-text');
+      if (label) label.textContent = '正在尋找適合故事的模板，你可以先手動選擇。';
+      try {
+          const response = await fetch('/api/templates/recommend', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: key, signal: mount.signal });
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.error);
+          if (ticket !== recommendationRequest || s.sessionId !== sessionId || mount.signal.aborted) return;
+          s.templateRecommendation = { key, items: data.recommendations || [] };
+          renderTemplateBrowser();
+      } catch (error) {
+          if (!mount.signal.aborted && ticket === recommendationRequest && label) label.textContent = '暫時無法推薦，仍可手動搜尋與選擇模板。';
+      } finally { if (ticket === recommendationRequest) recommendationPending = null; }
   }
-
   function renderTemplateBrowser() {
-      const catsEl = document.getElementById('template-category-chips');
-      const containerEl = document.getElementById('template-cards-container');
-      const confirmBtn = document.getElementById('btn-template-confirm');
-      const recBarText = document.getElementById('template-rec-text');
-      if (!containerEl) return;
-
-      if (recBarText) {
-          recBarText.textContent = '選擇適合故事的鏡頭結構，也可以使用自由結構生成。';
+      const categories = document.getElementById('template-category-chips'), state = browserState();
+      if (!document.getElementById('template-cards-container')) return;
+      if (categories) {
+          categories.innerHTML = [['全部', '全部模板'], ...Object.entries(CAT_MAP)].map(([id, label]) => `<button type="button" class="tpl-cat-chip ${state.category === id ? 'active' : ''}" aria-pressed="${state.category === id}" data-cat="${id}">${label}</button>`).join('');
+          categories.querySelectorAll('button').forEach(button => bindPageEvent(button, 'click', () => { state.category = button.dataset.cat; state.scrollTop = 0; ensureTemplatesLoaded(); }));
       }
-
-      // Calculate count per category
-      const catCounts = { '全部': TEMPLATES.length, 'product': 0, 'story': 0, 'twist': 0, 'custom': 0 };
-      TEMPLATES.forEach(t => {
-          const cat = t.category || t.type;
-          const key = (cat === 'custom' || cat === 'product' || cat === 'story' || cat === 'twist') ? cat : 'custom';
-          catCounts[key]++;
-      });
-
-      // Render Categories
-      if (catsEl) {
-          catsEl.innerHTML = CATEGORY_ITEMS.map((item, i) => {
-              const isActive = item.id === currentTemplateCategory;
-              return `
-                  <button type="button" class="tpl-cat-chip ${isActive ? 'active' : ''}" data-cat="${item.id}" aria-pressed="${isActive}">
-                      ${item.label} <span class="count">(${catCounts[item.id] || 0})</span>
-                  </button>
-              `;
-          }).join('');
-
-          catsEl.querySelectorAll('.tpl-cat-chip').forEach(btn => {
-              bindPageEvent(btn, 'click', () => {
-                  catsEl.querySelectorAll('.tpl-cat-chip').forEach(x => { x.classList.remove('active'); x.setAttribute('aria-pressed', 'false'); });
-                  btn.classList.add('active');
-                  btn.setAttribute('aria-pressed', 'true');
-                  currentTemplateCategory = btn.dataset.cat;
-                  renderFilteredTemplates(getTemplatesForCategory(currentTemplateCategory));
-              });
-          });
+      const recommendations = CreationSessionStore.templateRecommendation?.items || [];
+      let list = TEMPLATES;
+      if (state.category === '全部' && !state.query && !state.tag && state.sort === 'catalog') {
+          const recommended = recommendations.map(item => item.template).filter(Boolean);
+          list = [...new Map([...recommended, ...TEMPLATES].map(item => [item.id, item])).values()];
       }
-
-      renderFilteredTemplates(getTemplatesForCategory(currentTemplateCategory));
+      renderFilteredTemplates(list);
+      const text = document.getElementById('template-rec-text');
+      if (text && recommendations.length) text.textContent = '推薦僅供參考，請自行選擇適合的敘事結構。';
+      const more = document.getElementById('template-load-more');
+      if (more) { more.hidden = TEMPLATES.length >= catalogTotal; more.disabled = templateLoading; }
+      const tag = document.getElementById('template-tag-filter');
+      if (tag && !tag.value) tag.placeholder = '篩選標籤';
   }
-
+  function previewTemplate(id) {
+      const container = document.getElementById('template-cards-container');
+      browserState().scrollTop = container?.scrollTop || 0;
+      CreationSessionStore.currentStep = 'template-selection';
+      window.CreationController.checkpoint();
+      window.spaNavigate('template', { templateId: id, creationPreview: true });
+  }
   function renderFilteredTemplates(templates) {
-      const containerEl = document.getElementById('template-cards-container');
-      const confirmBtn = document.getElementById('btn-template-confirm');
-      if (!containerEl) return;
-
-      containerEl.scrollTop = 0;
-      containerEl.innerHTML = '';
-      containerEl.setAttribute('aria-busy', String(templateLoading));
-      if (templateLoading || templateError) {
-          const state = document.createElement('div');
-          state.className = 'tpl-empty-hint';
-          state.setAttribute('role', 'status');
-          state.textContent = templateLoading ? '正在載入模板…' : templateError;
-          if (templateError && !templateLoading) {
-              const retry = document.createElement('button');
-              retry.type = 'button'; retry.className = 'btn btn-outline'; retry.textContent = '重試載入模板';
-              bindPageEvent(retry, 'click', () => ensureTemplatesLoaded().then(() => { renderTemplateBrowser(); renderTemplateSelection(); }));
-              state.appendChild(retry);
-          }
-          containerEl.appendChild(state);
-          return;
-      }
-      if (!templates || templates.length === 0) {
-          containerEl.innerHTML = '<div class="tpl-empty-hint" role="status">此分類下目前無可用模板，可切換分類或使用自由結構生成。</div>';
-          if (window.DynamicMaskSystem) {
-              const maskInst = window.DynamicMaskSystem.get(containerEl);
-              if (maskInst) maskInst.scheduleUpdate();
-          }
-          return;
-      }
-
-      templates.forEach(t => {
-          const presentation = window.TemplatePresentation.present(t);
-          const isSelected = CreationSessionStore.selectedTemplate?.id === t.id;
-          const shotCount = window.TemplatePresentation.shotCountOf(t);
-          const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
-          const tags = Array.isArray(t.tags) ? t.tags.slice(0, 3).map(tag => `<span>${escape(tag)}</span>`).join(' ') : '';
-          const platforms = Array.isArray(t.platform) ? t.platform.map(p => `<span class="platform-badge">${escape(p)}</span>`).join('') : '';
-          
-          let duration = '';
-          if (t.structure && t.structure.length) {
-              const sumSec = t.structure.map(s => parseFloat(s.duration) || 0).reduce((a, b) => a + b, 0);
-              if (sumSec > 0) duration = `${sumSec}s`;
-          }
-
-          const knownDuration = window.TemplatePresentation.durationOf(t);
-          duration = knownDuration === null ? '' : `${knownDuration}s`;
-          const totalSeconds = parseInt(duration) || Math.max(shotCount * 3, 15);
-          const sourceUrl = t.videoUrl || t.source?.url || '';
-          const youtubeMatch = sourceUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|shorts\/|embed\/))([\w-]{11})/);
-          const sourceVideoId = t.source?.videoId || t.videoId || youtubeMatch?.[1] || '';
-          const rawThumbnail = t.thumbnail || t.cover || t.source?.thumbnail || (sourceVideoId ? `https://i.ytimg.com/vi/${encodeURIComponent(sourceVideoId)}/hqdefault.jpg` : '');
-          const thumbnail = /^(https?:\/\/|\/(?!\/))/.test(rawThumbnail) ? rawThumbnail : '';
-
-          const card = document.createElement('article');
-          card.className = `template-card ${isSelected ? 'selected' : ''}`;
-          card.id = `tpl-card-${t.id}`;
-          card.dataset.id = t.id;
-
-          card.innerHTML = `
-            <div class="template-card-header">
-              <div class="template-card-kicker">
-                <span class="template-card-cat">${escape(CAT_MAP[t.category] || t.category || '未分類')}</span>
-              </div>
-              <span class="template-selected-badge" style="${isSelected ? '' : 'display: none;'}">✓ 已選擇</span>
-            </div>
-            <div class="template-video-cover ${thumbnail ? '' : 'no-cover'}" aria-label="來源影片封面">
-              ${thumbnail ? `<img src="${escape(thumbnail)}" alt="${escape(t.source?.title || t.name || '來源影片')}封面" loading="lazy">` : ''}
-              ${sourceVideoId ? '<span class="cover-source">YOUTUBE</span>' : ''}
-              ${duration ? `<span class="cover-duration">${duration}</span>` : ''}
-              <span class="cover-play" aria-hidden="true">▶</span>
-            </div>
-            <div class="template-card-body">
-              <h3>${escape(presentation.title)}</h3>
-              <p class="template-display-summary"><span class="template-summary-label">${escape(presentation.summaryLabel)}</span>${escape(presentation.summary)}</p>
-              <div class="template-card-tags">
-                ${tags}
-              </div>
-            </div>
-            <div class="template-specs" aria-label="剪輯規格">
-              ${duration ? `<span><b>${duration}</b> 長度</span>` : ''}
-              ${shotCount ? `<span><b>${shotCount}</b> 鏡頭</span>` : ''}
-            </div>
-            <div class="template-card-footer">
-              <div class="platform-badges" aria-label="適用平台">
-                ${platforms}${t.ratio ? `<span class="aspect-badge">${escape(t.ratio)}</span>` : ''}
-              </div>
-              <div class="card-actions">
-                <button type="button" class="card-apply-btn ${isSelected ? 'is-selected' : ''}" data-action="apply" aria-label="選擇 ${escape(presentation.title)}" aria-pressed="${isSelected}">${isSelected ? '✓ 已選中' : '選擇模板'}</button>
-              </div>
-            </div>
-          `;
-
-          bindPageEvent(card, 'click', () => {
-              selectTemplateCard(t);
-          });
-
-          const image = card.querySelector('img');
-          if (image) bindPageEvent(image, 'error', () => { image.parentElement.classList.add('no-cover'); image.remove(); });
-
-          containerEl.appendChild(card);
-      });
-
-      if (confirmBtn) {
-          confirmBtn.disabled = !CreationSessionStore.selectedTemplate;
-          if (CreationSessionStore.selectedTemplate) {
-              confirmBtn.textContent = `✦ 套用「${CreationSessionStore.selectedTemplate.name || '模板'}」並開始生成 →`;
-          } else {
-              confirmBtn.textContent = '✦ 套用模板並開始生成 →';
-          }
-      }
-
-      if (window.DynamicMaskSystem) {
-          window.DynamicMaskSystem.attach(containerEl, { maskSize: 36, direction: 'vertical' });
-          const maskInst = window.DynamicMaskSystem.get(containerEl);
-          if (maskInst) maskInst.scheduleUpdate();
-      }
+      const container = document.getElementById('template-cards-container');
+      if (!container) return;
+      const escape = escapePlan;
+      const recommendations = CreationSessionStore.templateRecommendation?.items || [];
+      container.setAttribute('aria-busy', String(templateLoading));
+      container.classList.add('template-selection-rows');
+      container.innerHTML = templates.map(template => {
+          const presentation = window.TemplatePresentation.present(template), selected = CreationSessionStore.selectedTemplate?.id === template.id;
+          const recommendation = recommendations.find(item => item.id === template.id);
+          const videoId = template.source?.videoId;
+          const thumbnail = window.TemplatePresentation.externalUrl(template.thumbnail || (videoId ? `https://i.ytimg.com/vi/${encodeURIComponent(videoId)}/hqdefault.jpg` : ''));
+          return `<article class="template-selection-row ${selected ? 'selected' : ''}" data-id="${escape(template.id)}">
+              <div class="template-row-thumbnail">${thumbnail ? `<img loading="lazy" src="${escape(thumbnail)}" alt="" width="320" height="180">` : '<span>尚無封面</span>'}</div>
+              <div class="template-row-info"><h3>${escape(presentation.title)}${recommendation ? '<small class="copilot-recommend">推薦</small>' : ''}</h3><p>${escape(presentation.summary)}</p>
+              <span>${escape(CAT_MAP[template.category] || '團隊資產')} · ${Number(template.structureCount ?? template.structure?.length ?? 0)} 個敘事節點</span>
+              <div class="template-card-tags">${presentation.tags.slice(0, 3).map(tag => `<span>${escape(tag)}</span>`).join('')}</div>
+              <small>${escape(template.source?.channel || template.source?.title || '未提供來源影片資訊')}</small>${recommendation ? `<p class="section-hint">${escape(recommendation.reason)}</p>` : ''}</div>
+              <div class="template-row-actions"><button type="button" data-preview="${escape(template.id)}" class="template-circle-btn" aria-label="預覽 ${escape(presentation.title)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></button>
+              <button type="button" data-select="${escape(template.id)}" class="template-circle-btn ${selected ? 'is-selected' : ''}" aria-pressed="${selected}" aria-label="${selected ? '取消選擇' : '選擇'} ${escape(presentation.title)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button></div></article>`;
+      }).join('') || `<p class="tpl-empty-hint" role="status">${escape(templateError || (templateLoading ? '正在載入模板…' : '沒有符合條件的模板，請調整篩選。'))}</p>`;
+      container.querySelectorAll('[data-preview]').forEach(button => bindPageEvent(button, 'click', () => previewTemplate(button.dataset.preview)));
+      container.querySelectorAll('[data-select]').forEach(button => bindPageEvent(button, 'click', () => selectTemplateCard({ id: button.dataset.select })));
+      container.querySelectorAll('img').forEach(img => bindPageEvent(img, 'error', () => { img.hidden = true; }));
+      container.scrollTop = browserState().scrollTop || 0;
+      const confirm = document.getElementById('btn-template-confirm');
+      if (confirm) { confirm.disabled = !CreationSessionStore.selectedTemplate || templateLoading; confirm.textContent = '確認模板，繼續討論'; }
   }
-
-  function selectTemplateCard(tpl) {
-      if (CreationSessionStore.selectedTemplate?.id !== tpl.id) CreationSessionStore.templateValues = {};
-      CreationSessionStore.selectedTemplate = tpl;
-      templateError = null;
-      renderTemplateSelection();
-      document.querySelectorAll('#template-cards-container .template-card').forEach(c => {
-          const isThis = c.dataset.id === tpl.id;
-          c.classList.toggle('selected', isThis);
-          const badge = c.querySelector('.template-selected-badge');
-          if (badge) badge.style.display = isThis ? '' : 'none';
-          const btn = c.querySelector('.card-apply-btn');
-          if (btn) {
-              btn.setAttribute('aria-pressed', String(isThis));
-              btn.classList.toggle('is-selected', isThis);
-              btn.textContent = isThis ? '✓ 已選中' : '選擇模板';
-          }
-      });
-      const confirmBtn = document.getElementById('btn-template-confirm');
-      if (confirmBtn) {
-          confirmBtn.disabled = false;
-          confirmBtn.textContent = `✦ 套用「${tpl.name}」並開始生成 →`;
+  async function selectTemplateCard(template) {
+      if (CreationSessionStore.selectedTemplate?.id === template.id) {
+          window.CreationController.selectTemplate(null); renderTemplateSelection(); renderTemplateBrowser(); return;
       }
+      const mount = pageController, sessionId = CreationSessionStore.sessionId;
+      const ticket = ++templateSelectionRequest;
+      templateLoading = true; renderTemplateBrowser();
+      try {
+          const response = await fetch('/api/templates/' + encodeURIComponent(template.id), { signal: mount.signal });
+          const full = await response.json();
+          if (!response.ok) throw new Error(full.error || '模板載入失敗');
+          if (pageController !== mount || mount.signal.aborted || sessionId !== CreationSessionStore.sessionId || ticket !== templateSelectionRequest) return;
+          window.CreationController.selectTemplate(full);
+          templateError = null;
+      } catch (error) { if (!mount.signal.aborted && ticket === templateSelectionRequest) templateError = error.message; }
+      finally { if (pageController === mount && ticket === templateSelectionRequest) { templateLoading = false; renderTemplateSelection(); renderTemplateBrowser(); } }
   }
-
+  let templateSelectionRequest = 0;
+  function finishDiscussion() {
+      const s = CreationSessionStore;
+      if (s.generationMode === 'template' && !s.selectedTemplate) { switchPhase(3); recommendTemplates(); return; }
+      if (s.selectedTemplate && s.discussionStage === 'story' && window.FreeformStoryboard.variables(s.selectedTemplate).length) {
+          switchPhase(1); window.CreativeCopilot.startTemplateDiscussion(); return;
+      }
+      s.discussionStage = s.selectedTemplate ? 'complete' : 'story';
+      switchPhase(2); renderTemplateSelection();
+  }
   function skipTemplateAndGenerate() {
-      if (window.GenerationTask.getState().status !== 'generating') window.GenerationTask.reset();
-      CreationSessionStore.selectedTemplate = null;
-      CreationSessionStore.templateValues = {};
-      templateError = null; renderTemplateSelection();
-      switchPhase(4);
+      window.CreationController.setTemplateMode(false);
+      templateError = null; renderTemplateSelection(); switchPhase(2);
   }
   window.skipTemplateAndGenerate = skipTemplateAndGenerate;
-
   function applySelectedTemplateAndGenerate() {
-      if (!CreationSessionStore.selectedTemplate?.structure?.length) {
-          templateError = '請選擇含有鏡頭結構的模板。'; renderTemplateSelection(); return;
-      }
-      if (window.GenerationTask.getState().status !== 'generating') window.GenerationTask.reset();
-      switchPhase(4);
+      if (!CreationSessionStore.selectedTemplate?.structure?.length) { templateError = '請選擇含有敘事結構的模板。'; renderTemplateBrowser(); return; }
+      switchPhase(1);
+      window.CreativeCopilot.startTemplateDiscussion();
   }
   window.applySelectedTemplateAndGenerate = applySelectedTemplateAndGenerate;
 
@@ -799,7 +687,7 @@
           ratio: CreationSessionStore.ratio,
           duration: CreationSessionStore.duration || 30,
           confirmBeforeImages: CreationSessionStore.confirmBeforeImages,
-          creativeBrief: CreationSessionStore.selectedTemplate ? null : window.CreativeBrief?.snapshot(CreationSessionStore.creativeBrief),
+          creativeBrief: window.CreativeBrief?.snapshot(CreationSessionStore.creativeBrief),
           selectedTemplate: CreationSessionStore.selectedTemplate,
           templateValues: { ...CreationSessionStore.templateValues }
       });
@@ -871,14 +759,14 @@
   let renderedPlan = '';
   function currentPlanMatches() {
       const task = window.GenerationTask.getState(), session = CreationSessionStore;
-      return task.status === 'awaiting_confirmation' && !task.input.selectedTemplate &&
+      return task.status === 'awaiting_confirmation' && task.input.selectedTemplate?.id === session.selectedTemplate?.id && JSON.stringify(task.input.templateValues || {}) === JSON.stringify(session.templateValues || {}) &&
           task.input.story === session.story && task.input.style.name === STYLES[session.styleIndex || 0].name &&
           task.input.ratio === session.ratio && task.input.duration === (session.duration || 30) &&
           JSON.stringify(task.input.creativeBrief || null) === JSON.stringify(window.CreativeBrief?.snapshot(session.creativeBrief) || null);
   }
   function syncDirectionAction() {
       const button = document.getElementById('btn-direction-next');
-      if (button) button.textContent = CreationSessionStore.selectedTemplate ? '下一步：模板設定' : currentPlanMatches() ? '返回分鏡企劃' : CreationSessionStore.confirmBeforeImages ? '規劃文字分鏡' : '開始生成分鏡';
+      if (button) button.textContent = currentPlanMatches() ? '返回分鏡企劃' : CreationSessionStore.confirmBeforeImages ? '規劃文字分鏡' : '開始生成分鏡';
   }
   function syncDuration() {
       document.querySelectorAll('[data-duration]').forEach(button => {
@@ -987,14 +875,43 @@
       unmountGeneratePage();
       if (options.signal?.aborted) return null;
       pageController = new AbortController();
+      document.title = '生成分鏡 — Storyboard AI';
+      const recovery = document.getElementById('creation-recovery-notice');
+      if (recovery) { recovery.textContent = CreationSessionStore.recoveryNotice; recovery.hidden = !recovery.textContent; }
       window.CreativeCopilot?.mount(pageController.signal, action => {
-          if (action === 'advance' || action === 'ready') switchPhase(2);
+          if (action === 'advance' || action === 'ready') finishDiscussion();
           if (action === 'discuss') switchPhase(1);
           if (action === 'edit-story') switchPhase(1);
       });
+      const mode = document.getElementById('use-template-generation');
+      if (mode) mode.checked = CreationSessionStore.generationMode === 'template';
+      bindPageEvent(mode, 'change', () => { window.CreationController.setTemplateMode(mode.checked); renderTemplateSelection(); });
+      bindPageEvent(document.getElementById('browse-template-library'), 'click', () => { window.CreationController.checkpoint(); window.spaNavigate('template'); });
+      bindPageEvent(document.getElementById('remove-selected-template'), 'click', () => { window.CreationController.setTemplateMode(false); if (mode) mode.checked = false; renderTemplateSelection(); });
+      bindPageEvent(document.getElementById('change-selected-template'), 'click', () => { window.CreationController.setTemplateMode(true); switchPhase(3); });
+      bindPageEvent(document.getElementById('btn-workspace-back'), 'click', () => {
+          const phase = CreationSessionStore.currentPhase;
+          if (phase === 5) { switchPhase(2); return; }
+          if (phase === 2 || phase === 3) { switchPhase(1); return; }
+          const context = CreationSessionStore.returnContext || { page: window.CreationController.previousRoute || 'dashboard' };
+          window.spaNavigate(context.page || 'dashboard', { templateId: context.templateId });
+      });
+      let searchTimer;
+      pageController.signal.addEventListener('abort', () => clearTimeout(searchTimer), { once: true });
+      for (const [id, key] of [['template-search', 'query'], ['template-tag-filter', 'tag'], ['template-sort', 'sort']]) {
+          const control = document.getElementById(id);
+          if (control) control.value = browserState()[key];
+          bindPageEvent(control, key === 'sort' ? 'change' : 'input', () => {
+              browserState()[key] = control.value; browserState().scrollTop = 0;
+              window.CreationController.checkpoint(); clearTimeout(searchTimer);
+              searchTimer = setTimeout(() => ensureTemplatesLoaded(), key === 'sort' ? 0 : 180);
+          });
+      }
+      bindPageEvent(document.getElementById('template-sort-direction'), 'click', () => { browserState().direction = browserState().direction === 'asc' ? 'desc' : 'asc'; ensureTemplatesLoaded(); });
+      bindPageEvent(document.getElementById('template-load-more'), 'click', () => ensureTemplatesLoaded(true));
+      bindPageEvent(document.getElementById('template-cards-container'), 'scroll', event => { browserState().scrollTop = event.target.scrollTop; });
       bindPageEvent(document.getElementById('btn-direction-discuss'), 'click', () => window.CreativeCopilot?.discuss());
       const updateStyleConditions = () => {
-          if (CreationSessionStore.selectedTemplate) return;
           window.CreativeCopilot?.prepare(CreationSessionStore.story);
           window.CreativeBrief.edit(CreationSessionStore.creativeBrief, {
               styleNotes: document.getElementById('direction-style-notes').value.trim(),
@@ -1026,7 +943,7 @@
       document.querySelectorAll('[data-duration]').forEach(button => bindPageEvent(button, 'click', () => {
           if (button.disabled || button.getAttribute('aria-disabled') === 'true') return;
           CreationSessionStore.duration = Number(button.dataset.duration);
-          if (!CreationSessionStore.selectedTemplate && CreationSessionStore.creativeBrief) window.CreativeBrief.edit(CreationSessionStore.creativeBrief, { duration: CreationSessionStore.duration });
+          if (CreationSessionStore.creativeBrief) window.CreativeBrief.edit(CreationSessionStore.creativeBrief, { duration: CreationSessionStore.duration });
           syncDuration();
       }));
       bindPageEvent(document.getElementById('plan-title'), 'input', savePlanFromUI);
@@ -1053,7 +970,7 @@
 
       options.signal?.addEventListener('abort', unmount, { once: true });
       routeCleanup = () => options.signal?.removeEventListener('abort', unmount);
-      requestedTemplateId = options.templateId || window.preselectedTemplateId || null;
+      requestedTemplateId = options.templateId || window.preselectedTemplateId || (!CreationSessionStore.selectedTemplate && CreationSessionStore.selectedTemplateId) || null;
       window.preselectedTemplateId = null;
       templateLoading = false; templateError = null;
       if (requestedTemplateId && window.GenerationTask.getState().status === 'idle') {
@@ -1135,7 +1052,7 @@
           tplBack.dataset.bound = 'true';
           bindPageEvent(tplBack, 'click', (e) => {
               e.preventDefault();
-              switchPhase(2);
+              switchPhase(1);
           });
       }
 
@@ -1178,16 +1095,22 @@
           if (input) input.value = CreationSessionStore.draft.story || story;
       }
 
-      if (requestedTemplateId && task.status !== 'generating') loadRequestedTemplate();
-      else renderTemplateSelection();
+      const templateLoad = (requestedTemplateId && task.status !== 'generating' && requestedTemplateId !== CreationSessionStore.selectedTemplate?.id)
+          ? loadRequestedTemplate()
+          : (renderTemplateSelection(), null);
 
       unsubscribeTask = window.GenerationTask.subscribe(presentTask);
       switchPhase(targetPhase, false);
       const c = CreationSessionStore.copilot;
       const pendingQC = CreationSessionStore.entryMode === 'quick' && CreationSessionStore.submitted && !c?.active && !c?.retry && !c?.response && !c?.error;
-      if (((options.creationIntent === 'new' && options.fromQC) || pendingQC) && !CreationSessionStore.selectedTemplate && task.status === 'idle' && story) {
-          if (CreationSessionStore.copilot) CreationSessionStore.copilot.stackEntered = true;
-          submitPhase1Story();
+      if (((options.creationIntent === 'new' && options.fromQC) || pendingQC) && task.status === 'idle' && story) {
+          const startPendingQC = () => {
+              if (pageController?.signal.aborted) return;
+              if (CreationSessionStore.copilot) CreationSessionStore.copilot.stackEntered = true;
+              submitPhase1Story();
+          };
+          if (templateLoad) templateLoad.then(startPendingQC);
+          else startPendingQC();
       }
       return { unmount: () => {
           options.signal?.removeEventListener('abort', unmount);

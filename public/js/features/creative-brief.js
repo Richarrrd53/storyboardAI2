@@ -29,6 +29,10 @@
   function validateResponse(data) {
     if (!data || !['ask', 'propose', 'ready'].includes(data.action) || !text(data.message, 5000) || !data.message.trim()) throw new Error('AI 回應格式無效，請重試');
     const result = { action: data.action, message: data.message, briefPatch: patch(data.briefPatch || {}), form: null };
+    if (data.templatePatch != null) {
+      if (!Array.isArray(data.templatePatch) || data.templatePatch.length > 40 || data.templatePatch.some(item => !item || !/^[a-zA-Z][\w-]{0,63}$/.test(item.name) || !text(item.value, 500))) throw new Error('模板變數格式無效');
+      result.templatePatch = data.templatePatch.map(item => ({ name: item.name, value: item.value }));
+    }
     if (data.action === 'ready') return result;
     const form = data.form;
     if (!form || !text(form.title, 200) || !Array.isArray(form.questions) || form.questions.length < 1 || form.questions.length > 2) throw new Error('AI 問題格式無效');

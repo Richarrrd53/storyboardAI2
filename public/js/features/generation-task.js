@@ -50,7 +50,7 @@
     run.provider = options.provider || root.spaAuth?.getAiProvider?.() || 'gemini';
     run.status = 'generating';
     run.input = clone(options);
-    if (!options.selectedTemplate) {
+    {
       run.input.duration = freeform.duration(options.duration);
       run.input.ratio ||= '直向9:16';
     }
@@ -129,7 +129,7 @@
   function confirmPlan() {
     if (state.status === 'generating') return activePromise;
     if (state.status !== 'awaiting_confirmation') return Promise.resolve(getState());
-    try { freeform.validate(state.result.storyboardData, state.input.duration); }
+    try { freeform.validate(state.result.storyboardData, state.input.duration, state.input.selectedTemplate); }
     catch (error) { state.error = { message: error.message }; notify(); return Promise.resolve(getState()); }
     const run = state, controller = new AbortController();
     currentController = controller; run.status = 'generating'; run.error = null;
@@ -294,7 +294,7 @@
           originalStory: input.story, generationMode: input.selectedTemplate ? 'template' : 'freeform',
           templateId: input.selectedTemplate?.id || null, templateValues: input.templateValues || {}, generationTaskId: run.taskId,
           templateSnapshot: input.selectedTemplate || null,
-          ...(!input.selectedTemplate ? { targetDuration: input.duration, creativeBrief: input.creativeBrief || null } : {})
+          targetDuration: input.duration, creativeBrief: input.creativeBrief || null
         };
         // Keep the create request small: generated images can exceed serverless
         // request limits when all of their base64 data is sent together.
@@ -470,7 +470,7 @@
         const response = await askGemini(question, 'story');
         run.activity.phase = 'validating'; run.progress.statusText = '正在驗證角色、鏡頭與時長…'; notify();
         try {
-          result.storyboardData = freeform.validate(safeParseJson(response.response), input.duration);
+          result.storyboardData = freeform.validate(safeParseJson(response.response), input.duration, input.selectedTemplate);
           if (input.confirmBeforeImages) {
             run.status = 'awaiting_confirmation';
             run.progress = { pct: 0, statusText: '分鏡企劃已就緒，確認後才會生成圖片', activeStepId: null };
@@ -483,40 +483,6 @@
           updateGenProgress(0, '正在修正分鏡規劃…', 'step-analyze');
         }
       }
-    }
-
-    async function runTemplateGeneration() {
-      const tpl = input.selectedTemplate;
-      if (!Array.isArray(tpl.structure) || !tpl.structure.length) throw new Error('此模板沒有分鏡結構，請選擇其他模板或使用自由生成。');
-      const values = { style: input.style.name, ...(input.templateValues || {}) };
-      const replace = text => String(text || '').replace(/\{([\w-]+)\}/g, (match, key) => String(values[key] ?? '').trim() || match);
-      const reference = {
-        name: tpl.name, narrative: tpl.narrative, hook: tpl.hook, marketing: tpl.marketing,
-        visualFlow: tpl.visualFlow, controls: tpl.controls,
-        basePrompt: replace(tpl.promptTemplate?.base),
-        shots: tpl.structure.map((shot, index) => ({ ...shot, id: index + 1, referencePrompt: replace(tpl.promptTemplate?.perShot?.[index]) }))
-      };
-      updateGenProgress(15, '正在依照企劃改寫模板腳本與角色...', 'step-analyze');
-      const prompt = getStoryboardPrompt() + `
-請將參考模板改寫為上述使用者的新企劃，不要複製原影片的商品、場景或角色。
-參考模板：${JSON.stringify(reference)}
-使用者指定的可替換內容：${JSON.stringify(values)}
-必須輸出剛好 ${tpl.structure.length} 個 shots，維持原鏡頭順序、敘事目的、時長、運鏡與角度。
-每鏡 story 與 shotPrompt 必須依新企劃改寫，角色描述在所有鏡頭保持一致。
-shots 可另外提供 angle、purpose、dialogue（中文對白或旁白）、emotion。
-沒填寫的變數請依企劃合理規劃。英文 shotPrompt 不得留下 {variable} 佔位符。`;
-      const response = await askGemini(prompt, 'story');
-      const storyboard = validateStoryboard(safeParseJson(response.response));
-      if (storyboard.shots.length !== tpl.structure.length) throw new Error('改寫鏡頭數與模板不一致，請重試生成。');
-      storyboard.shots = storyboard.shots.map((shot, index) => ({
-        ...shot, id: index + 1, duration: `${positiveSeconds(tpl.structure[index].duration)}s`,
-        camera: tpl.structure[index].camera || shot.camera || 'medium shot',
-        angle: tpl.structure[index].angle || shot.angle || '',
-        purpose: tpl.structure[index].purpose || shot.purpose || '', sourceShot: index + 1
-      }));
-      if (storyboard.shots.some(shot => /\{[\w-]+\}/.test(shot.shotPrompt))) throw new Error('分鏡提示詞仍含未填寫的變數，請重試生成。');
-      result.storyboardData = storyboard;
-      await renderShots();
     }
 
     async function renderShots() {
@@ -541,7 +507,7 @@ shots 可另外提供 angle、purpose、dialogue（中文對白或旁白）、em
           payload: {
             image: '../icon/error.jpg', imageStatus: 'pending', emotion: shot.emotion || '', note: '',
             shotPrompt: shot.shotPrompt, finalPrompt, characters: shot.characters || [],
-            dialogue: shot.dialogue || '', purpose: shot.purpose || '', angle: shot.angle || '', sourceShot: shot.sourceShot || null
+            dialogue: shot.dialogue || '', purpose: shot.purpose || '', angle: shot.angle || '', sourceStructureId: shot.sourceStructureId || null, sourceShot: shot.sourceShot || null
           }
         };
         try {
@@ -571,7 +537,7 @@ shots 可另外提供 angle、purpose、dialogue（中文對白或旁白）、em
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ question, type, ratio: input.ratio, requestId: run.taskId, provider: run.provider,
-                ...(!input.selectedTemplate && type === 'story' ? { contract: 'freeform-v2', duration: input.duration, includeThoughts: true } : {}) })
+                ...(type === 'story' ? { contract: 'freeform-v2', duration: input.duration, templateId: input.selectedTemplate?.id || null, includeThoughts: true } : {}) })
         });
         assertActive();
         const data = await res.json();
@@ -583,7 +549,7 @@ shots 可另外提供 angle、purpose、dialogue（中文對白或旁白）、em
             err.requestId = data.diagnostics?.requestId;
             throw err;
         }
-        if (type === 'story' && !input.selectedTemplate) {
+        if (type === 'story') {
           run.activity.thoughtSummaries = Array.isArray(data.thoughtSummaries) ? data.thoughtSummaries.filter(s => typeof s === 'string').slice(0, 8).map(s => s.slice(0, 12000)) : [];
         }
         return data;
@@ -611,14 +577,13 @@ shots 可另外提供 angle、purpose、dialogue（中文對白或旁白）、em
           if (!Array.isArray(revised?.shots) || revised.shots.length !== result.storyboardData.shots.length || revised.shots.some((shot, i) => shot.id !== result.storyboardData.shots[i].id)) throw new Error('提示詞同步結果不完整，請重試確認。');
           const merged = clone(result.storyboardData);
           merged.shots.forEach((shot, i) => { shot.shotPrompt = revised.shots[i].shotPrompt; });
-          freeform.validate(merged, input.duration);
+          freeform.validate(merged, input.duration, input.selectedTemplate);
           result.storyboardData = merged; run.planDirty = false;
         }
-        if (!input.selectedTemplate) freeform.validate(result.storyboardData, input.duration);
+        freeform.validate(result.storyboardData, input.duration, input.selectedTemplate);
         result.failedShotIndexes = [];
         await renderShots();
-      } else if (input.selectedTemplate) await runTemplateGeneration();
-      else {
+      } else {
         await runFreeformGeneration();
         if (input.confirmBeforeImages) return getState();
         assertActive();
