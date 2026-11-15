@@ -114,37 +114,7 @@ main{
 
 /* Primary appearance and interaction states come from components/button.css. */
 
-/* ✨ 僅在明確指定 .btn-shine 啟用滑過光線掃描特效 (Sweep Shine) */
-.btn-shine::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -150%;
-    width: 60px;
-    height: 100%;
-    background: linear-gradient(
-        90deg,
-        rgba(255, 255, 255, 0) 0%,
-        rgba(255, 255, 255, 0.35) 50%,
-        rgba(255, 255, 255, 0) 100%
-    );
-    transform: skewX(-25deg);
-    transition: none;
-    pointer-events: none;
-}
-
-.btn-shine:hover::after {
-    animation: shineSweepGlobal 0.85s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-@keyframes shineSweepGlobal {
-    0% {
-        left: -150%;
-    }
-    100% {
-        left: 150%;
-    }
-}
+/* Button sweep shine effect removed. */
 
 .card {
     background: var(--card-bg);

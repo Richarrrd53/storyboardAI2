@@ -518,7 +518,7 @@ test('AppShell: toggleUserPanel() toggles active class', async () => {
   await new Promise(r => setTimeout(r, 500));
 
   AppShell.toggleUserPanel(false);
-  await new Promise(r => setTimeout(r, 470));
+  await new Promise(r => setTimeout(r, 720));
   assert.strictEqual(userPanel.classList.contains('active'), false);
 
   AppShell.destroy();

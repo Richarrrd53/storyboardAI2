@@ -44,6 +44,28 @@
   --motion-distance-slide-sm: 12px;
   --motion-distance-slide-md: 24px;
   --motion-distance-slide-lg: 48px;
+
+  /* ── Semantic SVG Icon Motion Tokens ── */
+  --motion-icon-mechanical:       1020ms;
+  --motion-icon-organic:          1020ms;
+  --motion-icon-directional:      960ms;
+  --motion-icon-complex:          1320ms;
+  --motion-icon-reverse:          450ms;
+  --motion-icon-hover-delay:      60ms;
+  --motion-icon-ease-mechanical:  var(--motion-ease-smooth);
+  --motion-icon-ease-organic:     var(--motion-ease-decelerate);
+  --motion-icon-ease-directional: var(--motion-ease-snappy);
+  --motion-icon-ease-settle:      var(--motion-ease-standard);
+}
+
+/* Semantic SVG Icon Motion part defaults */
+svg[data-im-icon] {
+  overflow: visible;
+}
+
+svg[data-im-icon] [data-im-part] {
+  transform-box: view-box;
+  will-change: transform;
 }
 
 /* ── Global prefers-reduced-motion Reset ── */

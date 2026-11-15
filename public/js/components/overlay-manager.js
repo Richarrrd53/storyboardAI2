@@ -87,10 +87,14 @@
       listeners.push(() => target.removeEventListener(type, handler, options));
     };
     const inside = (container, target) => !!target && !!container?.contains?.(target);
+    const isEditingInside = () => { const active = (root.document || document).activeElement; return inside(panel, active) && !!active?.matches?.('input, textarea, select, [contenteditable="true"]'); };
+    let lastWidth = root.innerWidth;
+    const openedAt = Date.now();
+    const isKeyboardTransition = () => root.innerWidth === lastWidth && (isEditingInside() || (Date.now() - openedAt) < 800);
     const entry = { dismiss: reason => onDismiss(reason) };
     popovers.add(entry);
     listen(root, 'scroll', event => { if (!inside(panel, event?.target)) entry.dismiss('scroll'); }, { capture: true, passive: true });
-    listen(root, 'resize', () => entry.dismiss('resize'), { passive: true });
+    listen(root, 'resize', () => { if (isKeyboardTransition()) return; lastWidth = root.innerWidth; entry.dismiss('resize'); }, { passive: true });
     listen(root, 'orientationchange', () => entry.dismiss('resize'), { passive: true });
     listen(root, 'keydown', event => {
       if (!stack.length && event.key === 'Escape' && !event.isComposing) {
@@ -103,8 +107,8 @@
     listen(root.document || document, 'focusin', event => {
       if (!stack.length && !inside(panel, event.target) && !inside(trigger, event.target)) entry.dismiss('focus_out');
     });
-    listen(root.visualViewport, 'resize', () => entry.dismiss('resize'), { passive: true });
-    listen(root.visualViewport, 'scroll', () => entry.dismiss('scroll'), { passive: true });
+    listen(root.visualViewport, 'resize', () => { if (!isKeyboardTransition()) { lastWidth = root.innerWidth; entry.dismiss('resize'); } }, { passive: true });
+    listen(root.visualViewport, 'scroll', () => { if (!isKeyboardTransition()) entry.dismiss('scroll'); }, { passive: true });
     listen(signal, 'abort', () => entry.dismiss('navigation'), { once: true });
     const Observer = root.MutationObserver || (typeof MutationObserver !== 'undefined' ? MutationObserver : null);
     const mutation = Observer ? new Observer(() => { if (trigger?.isConnected === false) entry.dismiss('trigger_removed'); }) : null;

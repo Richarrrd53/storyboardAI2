@@ -15,7 +15,7 @@
   const clone = value => JSON.parse(JSON.stringify(value));
   function initialState() {
     return {
-      taskId: null, projectId: null, projectShotIds: {}, uploadedImages: {}, status: 'idle', input: null, error: null, planDirty: false, retry: null, stage: 'planning', activity: { phase: 'requesting', thoughtSummaries: [] },
+      taskId: null, provider: 'gemini', projectId: null, projectShotIds: {}, uploadedImages: {}, status: 'idle', input: null, error: null, planDirty: false, retry: null, stage: 'planning', activity: { phase: 'requesting', thoughtSummaries: [] },
       save: { status: 'idle', error: null },
       progress: { pct: 0, statusText: '', activeStepId: null },
       result: { storyboardData: null, generatedImgs: [], generatedStoryTitles: [],
@@ -47,6 +47,7 @@
     currentController = controller;
     const run = initialState();
     run.taskId = `generation-${Date.now()}-${++sequence}-${Math.random().toString(36).slice(2, 10)}`;
+    run.provider = options.provider || root.spaAuth?.getAiProvider?.() || 'gemini';
     run.status = 'generating';
     run.input = clone(options);
     if (!options.selectedTemplate) {
@@ -222,7 +223,7 @@
       if (attempt) { run.progress = imageProgress(run, `正在重新生成第 ${shotIndex + 1} 個分鏡…`); notify(); }
       try {
         const data = await requestJSON(run, controller, '/api/ask-gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ question, type: 'image', ratio: run.input.ratio, requestId: run.taskId }) });
+          body: JSON.stringify({ question, type: 'image', ratio: run.input.ratio, requestId: run.taskId, provider: run.provider }) });
         if (!data.image?.[0]) throw Object.assign(new Error('圖片回應為空'), { code: 'AI_EMPTY_CONTENT', status: 502 });
         await verifyImage(run, controller, data.image[0]);
         return data;
@@ -267,15 +268,21 @@
             else {
               const match = /^data:(image\/(?:png|jpeg|webp));base64,([\s\S]+)$/.exec(image);
               if (!match) throw new Error('不支援的圖片格式，無法儲存。');
-              const upload = await requestJSON(run, controller, `/api/projects/${encodeURIComponent(run.projectId)}/shots/${encodeURIComponent(shotId)}/image-upload`, {
-                method: 'POST', headers, body: JSON.stringify({ contentType: match[1] })
-              });
-              const bytes = Uint8Array.from(atob(match[2]), char => char.charCodeAt(0));
-              const response = await fetch(upload.uploadUrl, { method: 'PUT', headers: { 'Content-Type': match[1], 'x-upsert': 'false' }, body: bytes, signal: controller.signal });
-              assertRun(run, controller);
-              if (!response.ok) throw new Error('圖片上傳失敗，請重試儲存。');
-              run.uploadedImages[shot.order] = { source: image, url: upload.publicUrl };
-              image = upload.publicUrl;
+              try {
+                const upload = await requestJSON(run, controller, `/api/projects/${encodeURIComponent(run.projectId)}/shots/${encodeURIComponent(shotId)}/image-upload`, {
+                  method: 'POST', headers, body: JSON.stringify({ contentType: match[1] })
+                });
+                const bytes = Uint8Array.from(atob(match[2]), char => char.charCodeAt(0));
+                const response = await fetch(upload.uploadUrl, { method: 'PUT', headers: { 'Content-Type': match[1], 'x-upsert': 'false' }, body: bytes, signal: controller.signal });
+                assertRun(run, controller);
+                if (!response.ok) throw new Error('圖片上傳失敗，請重試儲存。');
+                run.uploadedImages[shot.order] = { source: image, url: upload.publicUrl };
+                image = upload.publicUrl;
+              } catch (uploadError) {
+                assertRun(run, controller);
+                if (uploadError.name === 'AbortError') throw uploadError;
+                // Fallback: save data URI directly via PATCH when object storage is unavailable.
+              }
             }
           }
           await requestJSON(run, controller, `/api/projects/${encodeURIComponent(run.projectId)}/shots/${encodeURIComponent(shotId)}`, {
@@ -563,7 +570,7 @@ shots 可另外提供 angle、purpose、dialogue（中文對白或旁白）、em
             signal: controller.signal,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ question, type, ratio: input.ratio, requestId: run.taskId,
+            body: JSON.stringify({ question, type, ratio: input.ratio, requestId: run.taskId, provider: run.provider,
                 ...(!input.selectedTemplate && type === 'story' ? { contract: 'freeform-v2', duration: input.duration, includeThoughts: true } : {}) })
         });
         assertActive();

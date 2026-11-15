@@ -6,7 +6,7 @@
       name: "Rose Curve",
       tag: "r = a cos(kθ)",
       rotate: true,
-      particleCount: 78,
+      particleCount: 150,
       trailSpan: 0.32,
       durationMs: 5400,
       rotationDurationMs: 28000,

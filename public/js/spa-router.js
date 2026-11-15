@@ -234,6 +234,7 @@
     targetPage = page;
     targetOpts = opts;
     document.body.classList.add('is-navigating');
+    const wasInitial = !currentRouteMounted;
     let animation = null;
     let mounted = null;
     let committed = false;
@@ -376,7 +377,7 @@
           // check. Restore the source route's CSS as well as its active state.
           assets.removePageCSS(pageDefs[currentPage].css);
         }
-        window.AppShell.setPendingRoute?.(committed ? page : currentPage);
+        window.AppShell.setPendingRoute?.(committed ? page : currentPage, { committed, initial: wasInitial });
         if (!committed && opts.noHistory) getHistoryHost().history.replaceState(routeHistoryState(currentPage, currentOpts), '', getRouteUrl(currentPage, currentOpts));
         trace.total = now() - trace.request;
         trace.committed = committed;

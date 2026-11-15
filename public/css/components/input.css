@@ -76,10 +76,12 @@ textarea.input-text {
   line-height: var(--line-height-normal, 1.5);
 }
 
-/* Native controls remain native; a visible focus ring is never globally reset. */
-input:focus-visible, textarea:focus-visible, select:focus-visible {
-  outline: var(--focus-ring-width) solid var(--focus-ring-color);
-  outline-offset: var(--focus-ring-offset);
+/* Inputs never use native CSS outline; focus uses border-color and box-shadow. */
+input, textarea, select,
+input:focus, input:focus-visible,
+textarea:focus, textarea:focus-visible,
+select:focus, select:focus-visible {
+  outline: none !important;
 }
 .form-input, .input-text, .search-input { min-height: var(--control-height-md); }
 .form-input:disabled, .input-text:disabled, .search-input:disabled { opacity: var(--opacity-disabled); cursor: not-allowed; }

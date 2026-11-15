@@ -16,6 +16,10 @@
   };
 
   let selectedRoute = null;
+  let lastCommittedMainPage = null;
+  let disposeUserPanelHover = null;
+  let pendingMobNavRoute = null;
+  let mobNavSettleCheck = null;
   let secondaryRoute = false;
   let dashboardSidebar = null;
   let dashboardTopbar = null;
@@ -177,7 +181,7 @@
     if (avatar && !avatar.classList.contains('account-row')) {
       const row = document.createElement('button');
       row.id = 'account-trigger'; row.type = 'button'; row.className = 'account-row';
-      row.setAttribute('aria-label', '帳戶選單'); row.setAttribute('aria-haspopup', 'dialog');
+      row.setAttribute('data-morph-trigger', ''); row.setAttribute('aria-label', '帳戶選單'); row.setAttribute('aria-haspopup', 'dialog');
       row.setAttribute('aria-expanded', 'false');
       row.innerHTML = `<span class="account-row__avatar" aria-hidden="true">帳</span><span class="account-row__identity"><span class="account-row__name">帳戶</span><span class="account-row__secondary" hidden></span></span><svg class="account-row__chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m9 6 6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
       const parent = avatar.parentNode || avatar.parentElement;
@@ -193,13 +197,61 @@
       panel.id = 'spa-user-panel'; panel.className = 'account-panel';
       panel.innerHTML = `<div class="user-panel-handle" aria-hidden="true"></div>
         <button type="button" class="account-panel-close" aria-label="關閉帳戶面板">×</button>
-        <div class="up-header"><div class="up-avatar" aria-hidden="true">帳</div><div class="account-panel-identity"><p class="up-name">帳戶</p><p class="up-email" hidden></p><span class="up-plan" hidden></span></div></div>
-        <div class="up-body"><button type="button" class="up-btn" disabled><img src="../icon/profile.svg" alt=""><span>個人檔案</span></button><button type="button" class="up-btn" disabled><img src="../icon/upgrade.svg" alt=""><span>升級方案</span></button><a href="../history" class="up-btn" id="up-recycle-bin"><img src="../icon/trash-blur.svg" alt=""><span>資源回收桶</span></a><button type="button" class="up-btn" disabled><img src="../icon/setting.svg" alt=""><span>設定</span></button></div>
-        <div class="account-panel-footer"><button type="button" class="up-btn up-logout"><img src="../icon/logout.svg" alt=""><span>登出</span></button></div>`;
+        <div class="up-view-main" data-up-view="main">
+          <div class="up-header"><div class="up-avatar" aria-hidden="true">帳</div><div class="account-panel-identity"><p class="up-name">帳戶</p><p class="up-email" hidden></p><span class="up-plan" hidden></span></div></div>
+          <div class="up-body"><button type="button" class="up-btn" disabled><svg data-im-icon="profile" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle data-im-part="head" cx="12" cy="9" r="3" stroke="#2e2e2e" stroke-width="1.5"/><circle cx="12" cy="12" r="10" stroke="#2e2e2e" stroke-width="1.5"/><path data-im-part="shoulders" d="M17.9691 20C17.81 17.1085 16.9247 15 11.9999 15C7.07521 15 6.18991 17.1085 6.03076 20" stroke="#2e2e2e" stroke-width="1.5" stroke-linecap="round"/></svg><span>個人檔案</span></button><button type="button" class="up-btn" disabled><svg data-im-icon="upgrade" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="#2e2e2e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><g data-im-part="arrow"><path d="M12 15.5V9.5" stroke="#2e2e2e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 11.5L12 8.5L15 11.5" stroke="#2e2e2e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></g></svg><span>升級方案</span></button><a href="../history" class="up-btn" id="up-recycle-bin"><svg data-im-icon="trash" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><g data-im-part="lid"><path d="M3 6H21" stroke="#0f172a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 6V4C8 3 9 2 10 2H14C15 2 16 3 16 4V6" stroke="#0f172a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g><path data-im-part="body" d="M19 6V20C19 21 18 22 17 22H7C6 22 5 21 5 20V6" stroke="#0f172a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>資源回收桶</span></a><button type="button" class="up-btn" id="up-settings-btn"><svg data-im-icon="settings" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><g data-im-part="gear"><path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="#2e2e2e" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 12.8799V11.1199C2 10.0799 2.85 9.21994 3.9 9.21994C5.71 9.21994 6.45 7.93994 5.54 6.36994C5.02 5.46994 5.33 4.29994 6.24 3.77994L7.97 2.78994C8.76 2.31994 9.78 2.59994 10.25 3.38994L10.36 3.57994C11.26 5.14994 12.74 5.14994 13.65 3.57994L13.76 3.38994C14.23 2.59994 15.25 2.31994 16.04 2.78994L17.77 3.77994C18.68 4.29994 18.99 5.46994 18.47 6.36994C17.56 7.93994 18.3 9.21994 20.11 9.21994C21.15 9.21994 22.01 10.0699 22.01 11.1199V12.8799C22.01 13.9199 21.16 14.7799 20.11 14.7799C18.3 14.7799 17.56 16.0599 18.47 17.6299C18.99 18.5399 18.68 19.6999 17.77 20.2199L16.04 21.2099C15.25 21.6799 14.23 21.3999 13.76 20.6099L13.65 20.4199C12.75 18.8499 11.27 18.8499 10.36 20.4199L10.25 20.6099C9.78 21.3999 8.76 21.6799 7.97 21.2099L6.24 20.2199C5.33 19.6999 5.02 18.5299 5.54 17.6299C6.45 16.0599 5.71 14.7799 3.9 14.7799C2.85 14.7799 2 13.9199 2 12.8799Z" stroke="#2e2e2e" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/></g></svg><span>設定</span></button></div>
+          <div class="account-panel-footer"><button type="button" class="up-btn up-logout"><svg data-im-icon="logout" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8.90002 7.55999C9.21002 3.95999 11.06 2.48999 15.11 2.48999H15.24C19.71 2.48999 21.5 4.27999 21.5 8.74999V15.27C21.5 19.74 19.71 21.53 15.24 21.53H15.11C11.09 21.53 9.24002 20.08 8.91002 16.54" stroke="#2e2e2e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><g data-im-part="arrow"><path d="M15 12H3.62" stroke="#2e2e2e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.85 8.6499L2.5 11.9999L5.85 15.3499" stroke="#2e2e2e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></g></svg><span>登出</span></button></div>
+        </div>
+        <div class="up-view-settings" data-up-view="settings" hidden>
+          <div class="up-settings-head">
+            <button type="button" class="up-settings-back" id="up-settings-back" aria-label="返回帳戶選單">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m15 18-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <h3 class="up-settings-title">設定</h3>
+          </div>
+          <div class="up-settings-section">
+            <p class="up-settings-label">AI 模型</p>
+            <div class="up-provider-list" role="radiogroup" aria-label="預設 AI Provider">
+              <button type="button" class="up-provider-option is-selected" data-ai-provider="gemini" role="radio" aria-checked="true">
+                <span class="up-provider-meta">
+                  <span class="up-provider-name">Google Gemini</span>
+                  <span class="up-provider-desc">Vertex AI · 預設推薦</span>
+                </span>
+                <span class="up-provider-check" aria-hidden="true"></span>
+              </button>
+              <button type="button" class="up-provider-option" data-ai-provider="openai" role="radio" aria-checked="false">
+                <span class="up-provider-meta">
+                  <span class="up-provider-name">OpenAI</span>
+                  <span class="up-provider-desc" data-provider-status="openai">OpenAI API · GPT 模型</span>
+                </span>
+                <span class="up-provider-check" aria-hidden="true"></span>
+              </button>
+            </div>
+            <p class="up-settings-hint">切換僅影響後續新任務，進行中的生成不會中斷。</p>
+          </div>
+        </div>`;
     }
     dashboardUserPanel = panel;
+    if (!disposeUserPanelHover && window.IconMotion?.bindHoverContainer) {
+      disposeUserPanelHover = window.IconMotion.bindHoverContainer(panel, {
+        itemSelector: '.up-btn',
+        canAnimate: () => {
+          const surface = panel.closest?.('.surface-morph-surface');
+          return !surface || (surface.classList.contains('is-content-visible') && !surface.inert);
+        }
+      });
+    }
     if (!accountController) accountController = window.UserPanelController.create({panel, backdrop, isMobile:isMobileView,
-      onStateChange:()=>updateMobileBottomNavActive(), onDepth:setBackgroundDepthProgress, animateDepth:animateBackgroundDepth});
+      onStateChange:open=>{
+        updateMobileBottomNavActive();
+        if (!open) {
+          window.IconMotion?.cleanup?.(panel);
+          const mainView = panel.querySelector('[data-up-view="main"]');
+          const settingsView = panel.querySelector('[data-up-view="settings"]');
+          if (mainView) mainView.hidden = false;
+          if (settingsView) settingsView.hidden = true;
+        }
+      }, onDepth:setBackgroundDepthProgress, animateDepth:animateBackgroundDepth});
     return {panel, backdrop};
   }
 
@@ -255,17 +307,18 @@
         <div class="mobile-nav__track mobile-nav__track--focus" aria-hidden="true">
             <div class="mobile-nav__item mobile-nav__item--focus">
                 <div class="mobile-nav__icon-wrap">
-                    <svg class="mobile-nav__svg mobile-nav__svg--focus" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M3 9.5L12 3L21 9.5V20C21 20.5523 20.5523 21 20 21H15V12H9V21H4C3.44772 21 3 20.5523 3 20V9.5Z"></path>
+                    <svg class="mobile-nav__svg mobile-nav__svg--focus" data-im-icon="home" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                        <path data-im-part="body" d="M3 9.5H21V20C21 20.5523 20.5523 21 20 21H15V12H9V21H4C3.44772 21 3 20.5523 3 20V9.5Z"></path>
+                        <path data-im-part="roof" d="M3 9.5L12 3L21 9.5V9.65H3V9.5Z"></path>
                     </svg>
                 </div>
                 <span class="mobile-nav__label" style="visibility: hidden;">首頁</span>
             </div>
             <div class="mobile-nav__item mobile-nav__item--focus">
                 <div class="mobile-nav__icon-wrap">
-                    <svg class="mobile-nav__svg mobile-nav__svg--focus" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-                        <path fill-rule="evenodd" clip-rule="evenodd" d="M2 6.94975C2 6.06722 2 5.62595 2.06935 5.25839C2.37464 3.64031 3.64031 2.37464 5.25839 2.06935C5.62595 2 6.06722 2 6.94975 2C7.33642 2 7.52976 2 7.71557 2.01738C8.51665 2.09229 9.27652 2.40704 9.89594 2.92051C10.0396 3.03961 10.1763 3.17633 10.4497 3.44975L11 4C11.8158 4.81578 12.2237 5.22367 12.7121 5.49543C12.9804 5.64471 13.2651 5.7626 13.5604 5.84678C14.0979 6 14.6747 6 15.8284 6H16.2021C18.8345 6 20.1506 6 21.0062 6.76946C21.0849 6.84024 21.1598 6.91514 21.2305 6.99383C22 7.84935 22 9.16554 22 11.7979V14C22 17.7712 22 19.6569 20.8284 20.8284C19.6569 22 17.7712 22 14 22H10C6.22876 22 4.34315 22 3.17157 20.8284C2 19.6569 2 17.7712 2 14V6.94975ZM13 9.25C12.5858 9.25 12.25 9.58579 12.25 10C12.25 10.4142 12.5858 10.75 13 10.75H18C18.4142 10.75 18.75 10.4142 18.75 10C18.75 9.58579 18.4142 9.25 18 9.25H13Z"></path>
-                        <path d="M16.9856 3.02094C16.8321 3 16.6492 3 16.2835 3H12L12.3699 3.38312C13.0359 4.07299 13.2919 4.33051 13.5877 4.50096C13.7594 4.5999 13.9415 4.67804 14.1304 4.73383C14.4559 4.82993 14.8128 4.83538 15.7546 4.83538L16.089 4.83538C17.0914 4.83536 17.8995 4.83535 18.5389 4.91862C18.6984 4.93939 18.8521 4.96582 19 5C18.8144 3.96313 18.0043 3.15985 16.9856 3.02094Z"></path>
+                    <svg class="mobile-nav__svg mobile-nav__svg--focus" data-im-icon="folder" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                        <path data-im-part="body" fill-rule="evenodd" clip-rule="evenodd" d="M2 6.94975C2 6.06722 2 5.62595 2.06935 5.25839C2.37464 3.64031 3.64031 2.37464 5.25839 2.06935C5.62595 2 6.06722 2 6.94975 2C7.33642 2 7.52976 2 7.71557 2.01738C8.51665 2.09229 9.27652 2.40704 9.89594 2.92051C10.0396 3.03961 10.1763 3.17633 10.4497 3.44975L11 4C11.8158 4.81578 12.2237 5.22367 12.7121 5.49543C12.9804 5.64471 13.2651 5.7626 13.5604 5.84678C14.0979 6 14.6747 6 15.8284 6H16.2021C18.8345 6 20.1506 6 21.0062 6.76946C21.0849 6.84024 21.1598 6.91514 21.2305 6.99383C22 7.84935 22 9.16554 22 11.7979V14C22 17.7712 22 19.6569 20.8284 20.8284C19.6569 22 17.7712 22 14 22H10C6.22876 22 4.34315 22 3.17157 20.8284C2 19.6569 2 17.7712 2 14V6.94975ZM13 9.25C12.5858 9.25 12.25 9.58579 12.25 10C12.25 10.4142 12.5858 10.75 13 10.75H18C18.4142 10.75 18.75 10.4142 18.75 10C18.75 9.58579 18.4142 9.25 18 9.25H13Z"></path>
+                        <path data-im-part="lid" d="M16.9856 3.02094C16.8321 3 16.6492 3 16.2835 3H12L12.3699 3.38312C13.0359 4.07299 13.2919 4.33051 13.5877 4.50096C13.7594 4.5999 13.9415 4.67804 14.1304 4.73383C14.4559 4.82993 14.8128 4.83538 15.7546 4.83538L16.089 4.83538C17.0914 4.83536 17.8995 4.83535 18.5389 4.91862C18.6984 4.93939 18.8521 4.96582 19 5C18.8144 3.96313 18.0043 3.15985 16.9856 3.02094Z"></path>
                     </svg>
                 </div>
                 <span class="mobile-nav__label" style="visibility: hidden;">分鏡</span>
@@ -275,8 +328,9 @@
             </div>
             <div class="mobile-nav__item mobile-nav__item--focus">
                 <div class="mobile-nav__icon-wrap">
-                    <svg class="mobile-nav__svg mobile-nav__svg--focus" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path>
+                    <svg class="mobile-nav__svg mobile-nav__svg--focus" data-im-icon="flame" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path data-im-part="outer" d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path>
+                        <path data-im-part="tongue" d="M12 5.2c.7 1.8 1.9 3.6 2.7 5.1.8 1.5.7 3.7-.9 4.7-1.1.7-2.6.6-3.5-.3-.8-.8-.9-2.2-.3-3.3.5-.9 1.4-2.1 2-6.2z" opacity="0"></path>
                     </svg>
                 </div>
                 <span class="mobile-nav__label" style="visibility: hidden;">模板</span>
@@ -377,6 +431,9 @@
             if (fromSidebar && page !== 'projects' && page !== 'project') {
               expandSidebar(false);
             }
+            if (fromSidebar && a.classList.contains('active') && resolveMainPage(page) === lastCommittedMainPage) {
+              playSidebarIcon(lastCommittedMainPage);
+            }
             shellOptions.navigate(page, { fromSidebar });
           };
           addTrackedListener(a, 'click', onLinkClick);
@@ -429,6 +486,32 @@
       };
       addTrackedListener(projectsLink, 'click', onProjectsClick);
     }
+  }
+
+  function resolveMainPage(page) {
+    if (page === 'discovery-settings') return 'discovery';
+    if (page === 'project') return 'projects';
+    return page;
+  }
+
+  function playSidebarIcon(mainPage) {
+    const sidebar = document.getElementById('dash-sidebar') || dashboardSidebar;
+    if (!sidebar || !mainPage) return;
+    const idMap = {
+      dashboard: '#nav-home',
+      generate: '#nav-generate',
+      projects: '#nav-projects',
+      history: '#nav-history',
+      template: '#nav-template',
+      discovery: '#nav-discovery'
+    };
+    const targetLink = idMap[mainPage] ? sidebar.querySelector(idMap[mainPage]) : null;
+    sidebar.querySelectorAll('.side-link .side-icon-fill[data-im-icon]').forEach(svg => {
+      if (!targetLink || !targetLink.contains(svg)) window.IconMotion?.cancel?.(svg);
+    });
+    if (!targetLink || !targetLink.classList.contains('active')) return;
+    const fillSvg = targetLink.querySelector('.side-icon-fill[data-im-icon]');
+    if (fillSvg) window.IconMotion?.play?.(fillSvg);
   }
 
   function updateSidebarActive(page) {
@@ -648,6 +731,68 @@
       });
     }
 
+    const settingsBtn = panel?.querySelector('#up-settings-btn');
+    const settingsBack = panel?.querySelector('#up-settings-back');
+    const mainView = panel?.querySelector('[data-up-view="main"]');
+    const settingsView = panel?.querySelector('[data-up-view="settings"]');
+    const syncProviderUI = (activeProvider, caps) => {
+      if (!panel) return;
+      const current = activeProvider === 'openai' ? 'openai' : 'gemini';
+      const openaiInfo = caps?.providers?.openai;
+      const openaiAvailable = openaiInfo ? openaiInfo.available !== false : true;
+      for (const option of panel.querySelectorAll('[data-ai-provider]')) {
+        const id = option.dataset.aiProvider;
+        const selected = id === current;
+        option.classList.toggle('is-selected', selected);
+        option.setAttribute('aria-checked', String(selected));
+        if (id === 'openai') {
+          option.disabled = !openaiAvailable;
+          const desc = option.querySelector('[data-provider-status="openai"]');
+          if (desc) desc.textContent = openaiAvailable ? 'OpenAI API · GPT 模型' : '尚未設定後端金鑰（不可用）';
+        }
+      }
+    };
+    if (settingsBtn && !settingsBtn.dataset.spaBound) {
+      settingsBtn.dataset.spaBound = 'true';
+      addTrackedListener(settingsBtn, 'click', async () => {
+        if (mainView) mainView.hidden = true;
+        if (settingsView) settingsView.hidden = false;
+        settingsBack?.focus?.({ preventScroll: true });
+        const current = auth?.getAiProvider?.() || 'gemini';
+        syncProviderUI(current, null);
+        const caps = await auth?.fetchAiCapabilities?.();
+        syncProviderUI(auth?.getAiProvider?.() || current, caps);
+      });
+    }
+    if (settingsBack && !settingsBack.dataset.spaBound) {
+      settingsBack.dataset.spaBound = 'true';
+      addTrackedListener(settingsBack, 'click', () => {
+        if (settingsView) settingsView.hidden = true;
+        if (mainView) mainView.hidden = false;
+        settingsBtn?.focus?.({ preventScroll: true });
+      });
+    }
+    for (const option of panel?.querySelectorAll('[data-ai-provider]') || []) {
+      if (option.dataset.spaBound) continue;
+      option.dataset.spaBound = 'true';
+      addTrackedListener(option, 'click', async () => {
+        const nextProvider = option.dataset.aiProvider;
+        if (!nextProvider || option.disabled) return;
+        const previous = auth?.getAiProvider?.() || 'gemini';
+        syncProviderUI(nextProvider, null);
+        try {
+          const saved = await (auth?.setAiProvider ? auth.setAiProvider(nextProvider) : Promise.resolve(nextProvider));
+          const caps = await auth?.fetchAiCapabilities?.();
+          syncProviderUI(saved, caps);
+          window.GlobalToast?.show?.({ message: saved === 'openai' ? '已切換預設 AI 為 OpenAI' : '已切換預設 AI 為 Google Gemini' });
+        } catch (err) {
+          const caps = await auth?.fetchAiCapabilities?.();
+          syncProviderUI(previous, caps);
+          window.GlobalToast?.show?.({ message: err?.message || '無法切換 AI 模型', tone: 'error' });
+        }
+      });
+    }
+
     const logout = panel?.querySelector('.up-logout');
     if (logout && !logout.dataset.spaBound) {
       logout.dataset.spaBound = 'true';
@@ -807,6 +952,7 @@
       if (!visual || !isSettling || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
         visual = target;
         paintIndicator(visual.x, visual.scale, false, visual.opacity, visual.width);
+        mobNavSettleCheck?.();
         return;
       }
       const from = { ...visual };
@@ -818,7 +964,7 @@
         visual = Object.fromEntries(Object.keys(target).map(key => [key, from[key] + (target[key] - from[key]) * eased]));
         paintIndicator(visual.x, visual.scale, false, visual.opacity, visual.width);
         if (t < 1) selectorRaf = requestAnimationFrame(step);
-        else { selectorRaf = null; mobNav.classList.remove('is-selector-moving'); }
+        else { selectorRaf = null; mobNav.classList.remove('is-selector-moving'); mobNavSettleCheck?.(); }
       }
       selectorRaf = requestAnimationFrame(step);
     }
@@ -933,6 +1079,22 @@
     }
 
     updateMobNavVisual = updateIndicatorVisual;
+    mobNavSettleCheck = () => {
+      if (!pendingMobNavRoute || isNavInteracting || selectorRaf !== null || navSpringRaf !== null) return;
+      const activeItem = mobNav.querySelector('.mobile-nav__track--base .mobile-nav__item.active');
+      if (!activeItem) return;
+      const routeMatches =
+        (pendingMobNavRoute === 'profile' && activeItem.id === 'mob-nav-profile') ||
+        (pendingMobNavRoute === 'dashboard' && activeItem.id === 'mob-nav-home') ||
+        (pendingMobNavRoute === 'projects' && activeItem.id === 'mob-nav-projects') ||
+        (pendingMobNavRoute === 'template' && activeItem.id === 'mob-nav-template');
+      if (!routeMatches) return;
+      const idx = items.indexOf(activeItem);
+      const focusItemsList = mobNav.querySelectorAll('.mobile-nav__track--focus > .mobile-nav__item');
+      const focusSvg = idx >= 0 ? focusItemsList[idx]?.querySelector?.('svg[data-im-icon]') : null;
+      pendingMobNavRoute = null;
+      if (focusSvg) window.IconMotion?.play?.(focusSvg);
+    };
 
     function cacheMetrics() {
       if (!mobNav.getBoundingClientRect) return;
@@ -1062,6 +1224,8 @@
       mobNav.style.transform = '';
       mobNav.style.transition = 'none';
 
+      pendingMobNavRoute = null;
+      window.IconMotion?.cleanup?.(mobNav);
       isNavInteracting = true;
       mobNav.classList.add('is-interacting');
       activePointerId = e.pointerId;
@@ -1255,6 +1419,7 @@
           mobNav.style.transform = '';
           mobNav.style.transformOrigin = 'center center';
           navSpringRaf = null;
+          mobNavSettleCheck?.();
         }
       }
       if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -1263,6 +1428,7 @@
       } else navSpringRaf = requestAnimationFrame(springStep);
 
       if (releaseCancelled) {
+        pendingMobNavRoute = null;
         updateMobileBottomNavActive();
         return;
       }
@@ -1273,8 +1439,10 @@
 
       const targetItem = releasedTargetItem;
       if (targetItem.id === 'mob-nav-profile') {
+        pendingMobNavRoute = 'profile';
         toggleUserPanel();
       } else if (targetItem.id === 'mob-nav-generate' || targetItem.classList?.contains('mobile-nav__item--create')) {
+        pendingMobNavRoute = null;
         if (window.AICreationController) {
           if (window.AICreationController.surfaceState === 'quick-compose') {
             window.AICreationController.closeQuickCompose();
@@ -1295,8 +1463,10 @@
         else if (href.includes('template')) targetRoute = 'template';
         else if (href.includes('history')) targetRoute = 'history';
         else if (href.includes('discovery')) targetRoute = 'discovery';
+        pendingMobNavRoute = resolveMainPage(targetRoute);
         shellOptions.navigate(targetRoute);
       }
+      mobNavSettleCheck?.();
     }
 
     function onPointerUp(e) {
@@ -1336,7 +1506,9 @@
         if (justHandledPointerNav || (window.__justHandledPointerNav && Date.now() - window.__justHandledPointerNav < 450)) return;
 
         if (item.id === 'mob-nav-profile') {
+          pendingMobNavRoute = 'profile';
           toggleUserPanel();
+          mobNavSettleCheck?.();
           return;
         }
 
@@ -1372,7 +1544,9 @@
         else if (href.includes('history')) targetRoute = 'history';
         else if (href.includes('discovery')) targetRoute = 'discovery';
 
+        pendingMobNavRoute = resolveMainPage(targetRoute);
         shellOptions.navigate(targetRoute);
+        mobNavSettleCheck?.();
       };
       addTrackedListener(item, 'click', onItemClick);
     });
@@ -1615,11 +1789,19 @@
     };
   }
 
-  function setPendingRoute(page) {
+  function setPendingRoute(page, meta = {}) {
     if (selectedRoute !== page) accountController?.close('navigation', true);
     selectedRoute = page;
     updateSidebarActive(page);
     updateMobileBottomNavActive(page);
+    if (meta.committed) {
+      const nextMain = resolveMainPage(page);
+      const changed = nextMain !== lastCommittedMainPage;
+      lastCommittedMainPage = nextMain;
+      if (!meta.initial && changed) playSidebarIcon(nextMain);
+    } else if (meta.committed === false) {
+      pendingMobNavRoute = null;
+    }
   }
 
   function updateRoute(page, opts = {}) {
@@ -1684,6 +1866,10 @@
 
   function destroy() {
     document.body.classList.remove('motion-suspended');
+    disposeUserPanelHover?.(); disposeUserPanelHover = null;
+    lastCommittedMainPage = null;
+    pendingMobNavRoute = null;
+    mobNavSettleCheck = null;
     accountController?.destroy(); accountController = null;
     if (selectorRaf) cancelAnimationFrame(selectorRaf);
     selectorRaf = null;

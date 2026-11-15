@@ -28,16 +28,34 @@
 .account-panel .up-plan::before { content: none; }
 .account-panel .up-body { display: grid; grid-template-columns: minmax(0, 1fr); align-items: stretch; justify-items: stretch; justify-content: stretch; gap: 4px; }
 .account-panel .up-btn { display: flex; align-items: center; justify-content: flex-start; gap: 12px; width: 100%; min-height: 44px; padding: 10px 14px; border: 0; border-radius: 999px; color: inherit; background: transparent; font: inherit; font-size: 14px; line-height: 24px; text-align: start; text-decoration: none; cursor: pointer; }
-.account-panel .up-btn img { width: 20px; height: 20px; }
-.account-panel .up-btn:not(:disabled):hover { background: var(--color-surface-selected); }
+.account-panel .up-btn img, .account-panel .up-btn svg { width: 20px; height: 20px; flex-shrink: 0; }
+.account-panel .up-btn:not(:disabled):is(:hover, .is-gesture-hover) { background: var(--color-surface-selected); }
 .account-panel .up-btn:disabled { opacity: .45; cursor: default; }
 .account-panel-footer { border-top: 1px solid var(--color-border-default); margin-top: 12px; padding-top: 12px; }
 .account-panel-close { position: absolute; right: 4px; top: 0; width: 44px; height: 44px; border: 0; border-radius: 50%; background: transparent; color: inherit; font-size: 24px; cursor: pointer; }
 .account-panel .user-panel-handle { display: none; }
 .account-row:focus-visible, .account-panel :is(button,a):focus-visible { outline: 2px solid var(--color-border-focus); outline-offset: 2px; }
 .surface-morph-account .morph-menu-content { padding: 0; }
-.account-sheet-overlay { position: fixed; inset: 0; z-index: var(--layer-sheet); display: flex; align-items: flex-end; justify-content: center; background: var(--color-surface-overlay); }
+.account-sheet-overlay { position: fixed; inset: 0; z-index: var(--layer-sheet); display: flex; align-items: flex-end; justify-content: center; background: var(--color-surface-overlay); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
 .account-sheet { width: 100%; max-width: 540px; max-height: calc(100dvh - 24px); overflow-y: auto; overscroll-behavior: contain; border: var(--surface-floating-border); border-radius: 28px 28px 0 0; background: var(--surface-floating-reading-bg); box-shadow: var(--surface-floating-shadow); backdrop-filter: var(--surface-floating-blur); -webkit-backdrop-filter: var(--surface-floating-blur); }
 .account-sheet .account-panel { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
 .account-sheet .user-panel-handle { display: block; width: 36px; height: 4px; margin: 0 auto; border-radius: 999px; background: var(--color-border-default); touch-action: none; }
 .account-sheet .up-header { touch-action: pan-x; }
+.account-panel .up-settings-head { display: flex; align-items: center; gap: 8px; padding: 8px 0 12px; }
+.account-panel .up-settings-back { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border: 0; border-radius: 50%; background: transparent; color: inherit; cursor: pointer; }
+.account-panel .up-settings-back:hover { background: var(--color-surface-selected); }
+.account-panel .up-settings-title { margin: 0; font-size: 15px; line-height: 22px; font-weight: 600; }
+.account-panel .up-settings-section { display: grid; gap: 8px; }
+.account-panel .up-settings-label { margin: 0; padding-inline: 4px; font-size: 12px; line-height: 18px; font-weight: 600; color: var(--color-text-secondary); }
+.account-panel .up-provider-list { display: grid; gap: 8px; }
+.account-panel .up-provider-option { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 52px; padding: 10px 14px; border: 1px solid var(--color-border-default); border-radius: 16px; background: transparent; color: inherit; font: inherit; text-align: start; cursor: pointer; transition: background-color .16s ease, border-color .16s ease; }
+.account-panel .up-provider-option:not(:disabled):hover { background: var(--color-surface-selected); }
+.account-panel .up-provider-option.is-selected { background: var(--color-surface-selected); border-color: var(--color-border-selected); }
+.account-panel .up-provider-option:disabled { opacity: .5; cursor: not-allowed; }
+.account-panel .up-provider-meta { min-width: 0; display: grid; gap: 2px; }
+.account-panel .up-provider-name { font-size: 14px; line-height: 20px; font-weight: 600; }
+.account-panel .up-provider-desc { font-size: 12px; line-height: 16px; color: var(--color-text-secondary); }
+.account-panel .up-provider-check { flex: 0 0 18px; width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--color-border-default); display: grid; place-items: center; }
+.account-panel .up-provider-option.is-selected .up-provider-check { border-color: var(--color-action-primary-default); background: var(--color-action-primary-default); }
+.account-panel .up-provider-option.is-selected .up-provider-check::after { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--color-text-inverse); }
+.account-panel .up-settings-hint { margin: 4px 0 0; padding-inline: 4px; font-size: 12px; line-height: 18px; color: var(--color-text-secondary); }

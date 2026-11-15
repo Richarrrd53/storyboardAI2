@@ -53,6 +53,13 @@
     window.ProjectStore.invalidateProjects();
   };
   const AUTH_TOKEN_KEY = 'spa_auth_token';
+  const AI_PROVIDER_KEY = 'spa_ai_provider';
+  let cachedCapabilities = null;
+  let pendingCapabilities = null;
+
+  function normalizeProvider(value) {
+    return value === 'openai' ? 'openai' : 'gemini';
+  }
 
   window.spaAuth = {
     isLoggedIn: () => !!localStorage.getItem(AUTH_TOKEN_KEY),
@@ -157,6 +164,9 @@
             if (stale()) return { valid: false, stale: true };
             if (!data.user) return { valid: true, error: true };
             const result = { valid: true, user: data.user };
+            if (data.user.aiProvider) {
+              try { localStorage.setItem(AI_PROVIDER_KEY, normalizeProvider(data.user.aiProvider)); } catch (_) {}
+            }
             cachedUser = { token, session, result, expires: validationExpiry(token) };
             return result;
           } catch (_) { if (stale()) return { valid: false, stale: true }; cachedUser = null; return { valid: true, error: true }; }
@@ -172,6 +182,45 @@
         return list;
       }
       return [];
+    },
+    getAiProvider: () => {
+      const userProvider = cachedUser?.result?.user?.aiProvider;
+      if (userProvider === 'gemini' || userProvider === 'openai') return userProvider;
+      try {
+        return normalizeProvider(localStorage.getItem(AI_PROVIDER_KEY));
+      } catch (_) {
+        return 'gemini';
+      }
+    },
+    fetchAiCapabilities: async ({ force = false } = {}) => {
+      if (!force && cachedCapabilities) return cachedCapabilities;
+      if (!pendingCapabilities || force) {
+        pendingCapabilities = fetch('/api/ai/providers')
+          .then(res => res.ok ? res.json() : null)
+          .then(data => { if (data?.providers) cachedCapabilities = data; return cachedCapabilities; })
+          .catch(() => cachedCapabilities)
+          .finally(() => { pendingCapabilities = null; });
+      }
+      return pendingCapabilities;
+    },
+    setAiProvider: async (provider) => {
+      const next = normalizeProvider(provider);
+      const token = localStorage.getItem(AUTH_TOKEN_KEY);
+      if (token) {
+        const res = await fetch('/api/user/ai-provider', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ provider: next })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || '無法更新 AI 模型設定');
+        const saved = normalizeProvider(data.aiProvider || next);
+        if (cachedUser?.result?.user) cachedUser.result.user.aiProvider = saved;
+        try { localStorage.setItem(AI_PROVIDER_KEY, saved); } catch (_) {}
+        return saved;
+      }
+      try { localStorage.setItem(AI_PROVIDER_KEY, next); } catch (_) {}
+      return next;
     }
   };
 

@@ -271,36 +271,7 @@ body {
     height: 18px;
 }
 
-/* ✨ 滑過時的光線斜切滑過特效 */
-.btn::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -150%;
-    width: 60px;
-    height: 100%;
-    background: linear-gradient(
-        90deg,
-        rgba(255, 255, 255, 0) 0%,
-        rgba(255, 255, 255, 0.4) 50%,
-        rgba(255, 255, 255, 0) 100%
-    );
-    transform: skewX(-25deg);
-    transition: none;
-}
-
-.btn:hover::after {
-    animation: shineSweep 0.85s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-@keyframes shineSweep {
-    0% {
-        left: -150%;
-    }
-    100% {
-        left: 150%;
-    }
-}
+/* Button sweep shine effect removed. */
 
 /* ═══ 主視覺區 (Hero Section Layout) ═══ */
 .hero {
@@ -1007,7 +978,7 @@ body {
     left: 0;
     width: 100vw;
     height: 100vh; /* 覆蓋全螢幕 */
-    z-index: 9999;
+    z-index: var(--layer-overlay, 600);
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), backdrop-filter 0.4s cubic-bezier(0.16, 1, 0.3, 1), -webkit-backdrop-filter 0.4s cubic-bezier(0.16, 1, 0.3, 1);

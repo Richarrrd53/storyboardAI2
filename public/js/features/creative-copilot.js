@@ -277,6 +277,7 @@
     const s = session(), c = prepare(s.story);
     if (c.busy || s.selectedTemplate) return;
     c.active = true; c.error = '';
+    if (!c.provider) c.provider = root.spaAuth?.getAiProvider?.() || 'gemini';
     let payload, archive;
     try {
       if (retry && c.retry) {
@@ -298,7 +299,7 @@
           c.stackRounds.push(round); archive = { id: round.id, origin };
         }
         payload = { story: s.story, brief: JSON.parse(JSON.stringify(s.creativeBrief)), history: c.history.slice(-12), message: c.message,
-          intent, autoRounds: c.rounds, requestId: 'copilot-' + Date.now() + '-' + Math.random().toString(36).slice(2), revision: s.creativeBrief.revision };
+          intent, autoRounds: c.rounds, provider: c.provider, requestId: 'copilot-' + Date.now() + '-' + Math.random().toString(36).slice(2), revision: s.creativeBrief.revision };
         c.retry = payload; c.message = ''; c.drafts = {};
       }
     } catch (e) { c.error = e.message; render(); return; }

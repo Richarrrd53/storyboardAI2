@@ -125,7 +125,6 @@
 .sb-dialog .sb-dialog-cancel { color: var(--color-text-primary); background: var(--color-bg-subtle); border-color: var(--color-border-default); }
 .sb-dialog .sb-dialog-submit { color: var(--button-primary-text); background: var(--button-primary-bg); }
 .sb-dialog .sb-dialog-submit[data-danger="true"] { background: var(--color-action-danger-default); }
-.sb-dialog .sb-dialog-button:hover { box-shadow: var(--shadow-inner-soft); }
 .sb-dialog .sb-dialog-button:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring-color); outline-offset: var(--focus-ring-offset); }
 .sb-dialog .sb-dialog-button:disabled { opacity: var(--opacity-disabled); cursor: wait; }
 @media (max-width: 480px) {

@@ -50,14 +50,14 @@
             <span id="template-result-count" role="status" aria-live="polite" aria-atomic="true"></span>
           </div>
           <div class="store-filter-controls">
-            <label for="store-tag-filter" class="template-sr-only">依標籤篩選</label>
-            <select id="store-tag-filter" name="template-tag"><option value="">所有標籤</option></select>
-            <label for="store-sort" class="template-sr-only">模板排序</label>
-            <select id="store-sort" name="template-sort">
-              <option value="catalog">預設順序</option>
-              <option value="name">依名稱排序</option>
-              <option value="duration">時長由短到長</option>
-            </select>
+            <button type="button" class="projects-tool-trigger" id="store-tags-trigger" data-morph-align="start" aria-haspopup="dialog" aria-expanded="false"><span id="store-tags-label">所有標籤</span><span aria-hidden="true">⌄</span></button>
+
+            <button type="button" class="projects-tool-trigger projects-sort-trigger" id="store-sort-trigger" data-morph-align="end" aria-label="排序模板" aria-haspopup="menu" aria-expanded="false"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M7 4v16m-4-4 4 4 4-4M17 20V4m-4 4 4-4 4 4"/></svg></button>
+
+
+
+
+
             <button id="store-clear-filters" type="button" class="card-preview-btn" hidden>清除篩選</button>
           </div>
         </div>

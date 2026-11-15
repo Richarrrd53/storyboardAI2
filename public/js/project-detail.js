@@ -795,7 +795,8 @@
             title,
             camera: size,
             emotion,
-            cameraDetails: { size, angle, movement: move }
+            cameraDetails: { size, angle, movement: move },
+            provider: window.spaAuth?.getAiProvider?.() || 'gemini'
           })
         });
 
@@ -857,7 +858,7 @@
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           },
-          body: JSON.stringify({ prompt })
+          body: JSON.stringify({ prompt, provider: window.spaAuth?.getAiProvider?.() || 'gemini' })
         });
 
         if (!res.ok) {

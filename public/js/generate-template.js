@@ -1218,7 +1218,7 @@ async function askGemini(question, type) {
     const res = await fetch('/api/ask-gemini', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question, type })
+        body: JSON.stringify({ question, type, provider: window.spaAuth?.getAiProvider?.() || 'gemini' })
     });
     return await res.json();
 }

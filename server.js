@@ -37,10 +37,12 @@ const prisma = new PrismaClient({ adapter });
 const JWT_SECRET = process.env.JWT_SECRET || 'storyboard-secret-key-123';
 
 const { GoogleGenAI } = require('@google/genai');
-const { getModel, getModelConfig } = require('./lib/ai/model-config');
+const OpenAI = require('openai');
+const { getModel, getModelConfig, isValidProvider, isProviderConfigured } = require('./lib/ai/model-config');
 const { parseResponse, generateImage, emptyContent, validatePrompt, reportAIError } = require('./lib/ai/generation');
 const { vertexAuthOptions } = require('./lib/google-credentials');
 const { createCopilotHandler } = require('./lib/ai/copilot');
+const { createProviderRouter } = require('./lib/ai/provider-router');
 
 const app = express();
 
@@ -70,7 +72,7 @@ app.use((req, res, next) => {
     // 2. 若由 Vercel 或其他 proxy 轉發時遺失 /api 前綴，自動補充
     if (!req.url.startsWith('/api') && req.url !== '/' && !req.url.startsWith('/public') && !req.url.startsWith('/css') && !req.url.startsWith('/js') && !req.url.startsWith('/images') && !req.url.startsWith('/html') && !req.url.startsWith('/video') && !req.url.startsWith('/icon')) {
         const isDiscoveryApi = req.url.startsWith('/discovery/search') || req.url.startsWith('/discovery/analyze') || req.url.startsWith('/discovery/skills') || req.url.startsWith('/discovery/add-template');
-        if (req.url.startsWith('/auth') || req.url.startsWith('/projects') || req.url.startsWith('/creation/copilot') || req.url.startsWith('/ask-gemini') || req.url.startsWith('/get-templates') || req.url.startsWith('/templates') || isDiscoveryApi) {
+        if (req.url.startsWith('/auth') || req.url.startsWith('/user') || req.url.startsWith('/ai') || req.url.startsWith('/projects') || req.url.startsWith('/creation/copilot') || req.url.startsWith('/ask-gemini') || req.url.startsWith('/get-templates') || req.url.startsWith('/templates') || isDiscoveryApi) {
             req.url = '/api' + (req.url.startsWith('/') ? req.url : '/' + req.url);
         }
     }
@@ -97,6 +99,43 @@ function getGenAI() {
     return genAIInstance;
 }
 
+let openAIInstance = null;
+function getOpenAI() {
+    if (!openAIInstance) {
+        const apiKey = process.env.OPENAI_API_KEY?.trim();
+        if (!apiKey) {
+            throw Object.assign(new Error('找不到 OPENAI_API_KEY 環境變數。請在 Vercel 或 .env 中設定。'), {
+                status: 503,
+                code: 'AI_AUTH_ERROR'
+            });
+        }
+        openAIInstance = new OpenAI({ apiKey });
+    }
+    return openAIInstance;
+}
+
+const aiRouter = createProviderRouter({
+    getGeminiClient: getGenAI,
+    getOpenAIClient: getOpenAI
+});
+
+async function resolveRequestProvider(req, explicitProvider) {
+    if (explicitProvider !== undefined && explicitProvider !== null && explicitProvider !== '') {
+        return aiRouter.resolveProvider({ requestedProvider: explicitProvider });
+    }
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+        try {
+            const decoded = jwt.verify(authHeader.slice(7), JWT_SECRET);
+            if (prisma.user?.findUnique) {
+                const user = await prisma.user.findUnique({ where: { id: decoded.id }, select: { aiProvider: true } });
+                if (user?.aiProvider) return aiRouter.resolveProvider({ userProvider: user.aiProvider });
+            }
+        } catch (_) { /* Keep default provider when optional auth lookup is unavailable */ }
+    }
+    return aiRouter.resolveProvider({});
+}
+
 app.get('/', (req, res) => {
     const filePath = path.join(process.cwd(), 'public', 'main.html');
     res.sendFile(filePath, (err) => {
@@ -116,14 +155,22 @@ app.use(express.urlencoded({ limit: '100mb', extended: true })); // 增加 URL �
 
 const discoverySettings = new ApiSettings();
 // Existing text generation permits guests; authenticated callers use their verified identity.
-app.post('/api/creation/copilot', (req, res, next) => {
+app.post('/api/creation/copilot', async (req, res, next) => {
     const authorization = req.get('authorization');
     if (authorization) {
-        try { req.copilotIdentity = 'user:' + jwt.verify(authorization.replace(/^Bearer /, ''), JWT_SECRET).id; }
-        catch { return res.status(401).json({ error: '登入已失效，請重新登入。' }); }
+        try {
+            const decoded = jwt.verify(authorization.replace(/^Bearer /, ''), JWT_SECRET);
+            req.copilotIdentity = 'user:' + decoded.id;
+            if (!req.body?.provider && prisma.user?.findUnique) {
+                try {
+                    const user = await prisma.user.findUnique({ where: { id: decoded.id }, select: { aiProvider: true } });
+                    if (user?.aiProvider) req.userAiProvider = user.aiProvider;
+                } catch (_) {}
+            }
+        } catch { return res.status(401).json({ error: '登入已失效，請重新登入。' }); }
     }
     next();
-}, createCopilotHandler(getGenAI));
+}, createCopilotHandler(aiRouter));
 const DISCOVERY_PLATFORMS = new Set(['youtube-shorts']);
 const DISCOVERY_TIME_RANGES = new Set(['7', '30', '90', 'all']);
 const DISCOVERY_MAX_DURATIONS = new Set(['60', '180']);
@@ -301,6 +348,40 @@ function toTaipeiTZ(date) {
     return taipeiTime.toISOString().replace('Z', '+08:00');
 }
 
+app.get('/api/ai/providers', (req, res) => {
+    res.json(aiRouter.getCapabilities());
+});
+
+app.patch('/api/user/ai-provider', async (req, res) => {
+    try {
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ error: '未授權' });
+        }
+        const token = authHeader.split(' ')[1];
+        const decoded = jwt.verify(token, JWT_SECRET);
+        const provider = req.body?.provider;
+        if (!isValidProvider(provider)) {
+            return res.status(400).json({ error: '無效的 AI Provider 設定' });
+        }
+        if (provider === 'openai' && !isProviderConfigured('openai')) {
+            return res.status(503).json({ error: '後端尚未設定 OpenAI API 金鑰，無法切換至此 Provider。', code: 'AI_AUTH_ERROR' });
+        }
+        const updated = await prisma.user.update({
+            where: { id: decoded.id },
+            data: { aiProvider: provider },
+            select: { aiProvider: true }
+        });
+        res.json({ aiProvider: updated.aiProvider || 'gemini' });
+    } catch (error) {
+        if (error?.name === 'JsonWebTokenError' || error?.name === 'TokenExpiredError') {
+            return res.status(401).json({ error: 'Token 無效或已過期' });
+        }
+        console.error('Update AI Provider Error:', error);
+        res.status(500).json({ error: '無法儲存 AI 模型設定' });
+    }
+});
+
 // === AUTHENTICATION API ===
 app.post('/api/auth/login', async (req, res) => {
     try {
@@ -333,6 +414,7 @@ app.post('/api/auth/login', async (req, res) => {
                 name: user.name,
                 email: user.email,
                 image: user.image,
+                aiProvider: user.aiProvider || 'gemini',
                 createAt: toTaipeiTZ(user.createAt)
             }
         });
@@ -383,6 +465,7 @@ app.post('/api/auth/register', async (req, res) => {
                 name: user.name,
                 email: user.email,
                 image: user.image,
+                aiProvider: user.aiProvider || 'gemini',
                 createAt: toTaipeiTZ(user.createAt)
             }
         });
@@ -404,7 +487,7 @@ app.get('/api/auth/me', async (req, res) => {
 
         const user = await prisma.user.findUnique({
             where: { id: decoded.id },
-            select: { id: true, name: true, email: true, image: true, plan: true, createAt: true }
+            select: { id: true, name: true, email: true, image: true, plan: true, aiProvider: true, createAt: true }
         });
 
         if (!user) {
@@ -418,6 +501,7 @@ app.get('/api/auth/me', async (req, res) => {
                 email: user.email,
                 image: user.image,
                 plan: user.plan,
+                aiProvider: user.aiProvider || 'gemini',
                 createAt: toTaipeiTZ(user.createAt)
             }
         });
@@ -894,11 +978,14 @@ app.post('/api/projects/:projectId/shots/:shotId/regenerate', async (req, res) =
             return res.status(400).json({ error: '缺少生圖提示詞' });
         }
 
-        // 呼叫 Gemini 生成圖片
-        const newImageDataUri = await runGeminiImageGeneration({
+        const provider = await resolveRequestProvider(req, req.body?.provider);
+        // 呼叫 AI Provider 生成圖片
+        const imageResult = await aiRouter.generateImage({
+            provider,
             question: prompt,
             ratio: project.ratio
         });
+        const newImageDataUri = imageResult.image[0];
 
         // 整理歷史版本（最多保存 5 筆）
         const currentPayload = shot.payload || {};
@@ -956,7 +1043,8 @@ app.post('/api/projects/:projectId/shots/:shotId/regenerate', async (req, res) =
             }
         });
     } catch (error) {
-        const failure = reportAIError(error, { task: 'regenerate-image', model: getModel('image') });
+        const provider = req.body?.provider === 'openai' ? 'openai' : 'gemini';
+        const failure = reportAIError(error, { task: 'regenerate-image', provider, model: aiRouter.getModel(provider, 'image') || undefined });
         res.status(failure.status).json({ error: '重新生成圖片失敗：' + failure.message, code: failure.code });
     }
 });
@@ -989,7 +1077,7 @@ app.post('/api/projects/:projectId/shots/:shotId/optimize-prompt', async (req, r
         const style = project.style || 'Cinematic';
         const ratio = project.ratio || '16:9';
 
-        const ai = getGenAI();
+        const provider = await resolveRequestProvider(req, req.body?.provider);
         const promptGenRequest = `You are a professional cinematographer and AI image prompt engineer.
 Convert this storyboard shot description into a highly detailed, evocative English image prompt for visual generation.
 - Story/Action: "${shotStory}"
@@ -1003,20 +1091,19 @@ Requirements:
 - Output ONLY the English prompt, no explanations, no markdown ticks, no quotation marks.
 - Include cinematic lighting, environment composition, framing, and mood.`;
 
-        const response = await ai.models.generateContent({
-            ...getModelConfig('fast'),
-            contents: [{ text: promptGenRequest }],
-            config: { ...getModelConfig('fast').config,
-                systemInstruction: 'Return only the complete English image prompt. No headings, introduction, markdown, JSON, surrounding quotes or explanations.' }
+        const optimized = await aiRouter.optimizePrompt({
+            provider,
+            promptGenRequest,
+            systemInstruction: 'Return only the complete English image prompt. No headings, introduction, markdown, JSON, surrounding quotes or explanations.'
         });
-
-        const generatedPrompt = validatePrompt(parseResponse(response).response);
 
         res.json({
-            prompt: generatedPrompt
+            prompt: optimized.prompt,
+            provider: optimized.provider
         });
     } catch (error) {
-        const failure = reportAIError(error, { task: 'optimize-prompt', model: getModel('fast') });
+        const provider = req.body?.provider === 'openai' ? 'openai' : 'gemini';
+        const failure = reportAIError(error, { task: 'optimize-prompt', provider, model: aiRouter.getModel(provider, 'fast') || undefined });
         res.status(failure.status).json({ error: failure.message, code: failure.code });
     }
 });
@@ -1181,19 +1268,27 @@ app.post('/api/ask-gemini', async (req, res) => {
     const requestId = typeof req.body.requestId === 'string' && /^[A-Za-z0-9_-]{1,120}$/.test(req.body.requestId)
         ? req.body.requestId : require('node:crypto').randomUUID();
     const started = Date.now();
+    let provider = 'gemini';
     try {
-        const ai = getGenAI();
-        const result = task === 'image' ? await generateImage(ai, { question, ratio })
-            : parseResponse(await ai.models.generateContent({ ...getModelConfig(task, { includeThoughts: summaries }),
-                config: { ...getModelConfig(task, { includeThoughts: summaries }).config, ...(structured ? { responseJsonSchema: require('./public/js/features/freeform-storyboard').schema(req.body.duration) } : {}) },
-                contents: [{ text: question }] }), { includeThoughts: summaries });
-        if (task !== 'image' && !result.response.trim()) throw emptyContent('模型未回傳有效文字，請重試。');
+        provider = await resolveRequestProvider(req, req.body?.provider);
+        const result = task === 'image'
+            ? await aiRouter.generateImage({ provider, question, ratio, requestId })
+            : await aiRouter.generateText({
+                provider,
+                task,
+                prompt: question,
+                includeThoughts: summaries,
+                requestId,
+                schemaName: structured ? 'freeform_storyboard' : undefined,
+                responseSchema: structured ? require('./public/js/features/freeform-storyboard').schema(req.body.duration) : undefined
+            });
         res.json(result);
     } catch (error) {
-        const failure = reportAIError(error, { requestId, task, provider: 'vertex-ai', model: getModel(task),
-            stage: 'call_vertex', contract: structured ? 'freeform-v2' : 'legacy', elapsedMs: Date.now() - started });
-        res.status(failure.status).json({ error: 'Internal Server Error', details: failure.message, code: failure.code,
-            diagnostics: { requestId, stage: 'call_vertex', upstreamStatus: Number(error?.status || error?.error?.code) || null,
+        const stage = provider === 'openai' ? 'call_openai' : 'call_vertex';
+        const failure = reportAIError(error, { requestId, task, provider: provider === 'openai' ? 'openai' : 'vertex-ai', model: aiRouter.getModel(provider, task) || undefined,
+            stage, contract: structured ? 'freeform-v2' : 'legacy', elapsedMs: Date.now() - started });
+        res.status(failure.status).json({ error: 'Internal Server Error', details: failure.message, code: failure.code, provider,
+            diagnostics: { requestId, stage, upstreamStatus: Number(error?.status || error?.error?.code) || null,
                 ...require('./lib/ai/generation').requestIssue(error) } });
     }
 });

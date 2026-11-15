@@ -1,7 +1,7 @@
 /* ============================================================
    STORYBOARD AI DESIGN SYSTEM v3.0
    Component: Option Morph Menu (public/css/components/option-morph.css)
-   PROTECTED INTERACTION CONTRACT: Button -> Dot -> Parabola -> Surface
+   Shared liquid surface; SDF geometry and reveal follow temp/morph.html.
    ============================================================ */
 
 .project-option-overlay {
@@ -17,7 +17,7 @@
 }
 
 :root {
-  --morph-ease: cubic-bezier(.4, 0, .2, 1);
+  --morph-ease: cubic-bezier(.16, 1, .3, 1);
 }
 
 .global-project-option-menu {
@@ -32,7 +32,7 @@
   backdrop-filter: var(--surface-floating-blur);
   -webkit-backdrop-filter: var(--surface-floating-blur);
   transform-origin: center center;
-  will-change: width, height, top, left, border-radius, transform;
+
 }
 
 .global-project-option-menu.is-settled {
@@ -51,13 +51,7 @@
   opacity: 1;
   filter: blur(0);
   transform: scale(1);
-  transition: opacity 70ms var(--morph-ease), filter 70ms var(--morph-ease), transform 70ms var(--morph-ease);
-}
 
-.global-project-option-menu.is-icon-dissolved .morph-icon {
-  opacity: 0;
-  filter: blur(4px);
-  transform: scale(0.7);
 }
 
 /* Menu Content Container */
@@ -73,15 +67,14 @@
   box-sizing: border-box;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 70ms var(--morph-ease);
+  filter: blur(3px);
 }
 
 .global-project-option-menu.is-content-visible .morph-menu-content {
-  opacity: 1;
   pointer-events: auto;
 }
 
-/* Menu Items (stagger 14ms, blur 4px -> 0, opacity 0 -> 1, translateY 4px -> 0) */
+/* Row blur and stagger are driven by the shared liquid progress. */
 .global-project-option-menu .morph-item {
   display: flex;
   align-items: center;
@@ -101,86 +94,39 @@
   text-align: left;
   outline: none;
   white-space: nowrap;
-  opacity: 0;
-  filter: blur(4px);
-  transform: translateY(4px);
-  transition: opacity 0.14s var(--morph-ease),
-              filter 0.14s var(--morph-ease),
-              transform 0.14s var(--morph-ease),
-              background 0.12s ease,
+  transition: background 0.12s ease,
               color 0.12s ease;
 }
-
-.global-project-option-menu.is-content-visible .morph-item {
-  opacity: 1;
-  filter: blur(0);
-  transform: translateY(0);
-}
-
-/* Stagger Delays (14ms intervals) */
-.global-project-option-menu.is-content-visible .morph-item:nth-child(1) { transition-delay: 0ms; }
-.global-project-option-menu.is-content-visible .morph-item:nth-child(2) { transition-delay: 14ms; }
-.global-project-option-menu.is-content-visible .morph-item:nth-child(3) { transition-delay: 28ms; }
-.global-project-option-menu.is-content-visible .morph-divider { transition-delay: 38ms; }
-.global-project-option-menu.is-content-visible .morph-item:nth-child(5) { transition-delay: 48ms; }
-
-/* Closing: Reverse Stagger + Soft Blur (re-melt into Surface) */
-.global-project-option-menu.is-items-collapsing .morph-item {
-  opacity: 0 !important;
-  filter: blur(3px) !important;
-  transform: translateY(3px) !important;
-  transition: opacity 0.11s var(--morph-ease),
-              filter 0.11s var(--morph-ease),
-              transform 0.11s var(--morph-ease) !important;
-}
-
-/* Reverse Stagger Delays: Delete (child 5) melts first -> Divider -> Export -> Duplicate -> Rename */
-.global-project-option-menu.is-items-collapsing .morph-item:nth-child(5) { transition-delay: 0ms !important; }
-.global-project-option-menu.is-items-collapsing .morph-divider { transition-delay: 14ms !important; }
-.global-project-option-menu.is-items-collapsing .morph-item:nth-child(3) { transition-delay: 26ms !important; }
-.global-project-option-menu.is-items-collapsing .morph-item:nth-child(2) { transition-delay: 38ms !important; }
-.global-project-option-menu.is-items-collapsing .morph-item:nth-child(1) { transition-delay: 50ms !important; }
-.global-project-option-menu.is-items-collapsing .morph-item:only-child { transition-delay: 0ms !important; }
 
 .global-project-option-menu .morph-divider {
   height: 1px;
   background: var(--color-border-subtle);
   margin: 3px 6px;
-  opacity: 0;
-  transition: opacity 0.14s var(--morph-ease);
+
 }
 
-.global-project-option-menu.is-content-visible .morph-divider {
-  opacity: 1;
-}
+/* Keep the full click catcher through the entire return animation. */
+.surface-morph-overlay.is-active { pointer-events: auto; z-index: var(--layer-overlay); }
 
-/* Generic toolbar surfaces reuse the card morph's material and trajectory. */
-.project-option-overlay:has(.morph-dropdown-surface) { z-index:var(--layer-dropdown); }
+/* All toolbar and project surfaces share the liquid material. */
+.project-option-overlay:has(.morph-dropdown-surface) { z-index:var(--layer-overlay); }
 .morph-dropdown-surface .morph-menu-content { overscroll-behavior:contain; }
-.global-project-option-menu .morph-item:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring-color); outline-offset: -2px; }
 
 .morph-icon--trigger > span:first-child { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .morph-icon--trigger > svg { flex-shrink:0; }
 
 /* Shared engine anatomy; project data remains in the adapter. */
-.surface-morph-trigger-hidden { opacity: 0; }
+
 .project-actions-content { display: flex; flex-direction: column; gap: 4px; }
 .global-project-option-menu .morph-item { min-height: 44px; border-radius: 999px; font-size: 14px; }
 .global-project-option-menu .morph-item svg { width: 20px; height: 20px; flex-shrink: 0; }
-
-/* Account trigger is transparent; the material plate dissolves on the return leg. */
-.surface-morph-transparent-trigger.global-project-option-menu { background: transparent; border-color: transparent; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; isolation: isolate; overflow: visible; }
-.surface-morph-transparent-trigger::before { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: var(--surface-floating-reading-bg); border: var(--surface-floating-border); box-shadow: var(--surface-floating-shadow), var(--surface-floating-highlight); backdrop-filter: var(--surface-floating-blur); -webkit-backdrop-filter: var(--surface-floating-blur); opacity: var(--morph-surface-presence, 0); pointer-events: none; }
-
-.surface-morph-transparent-trigger .morph-icon { border-radius: inherit; overflow: hidden; }
-.surface-morph-transparent-trigger .morph-menu-content { border-radius: inherit; }
 
 /* Match account-panel rows across project actions, sorting and filtering. */
 .global-project-option-menu .morph-item {
   min-height: 44px; height: auto; padding: 10px 14px; gap: 12px;
   align-items: center; line-height: 24px; border-radius: 999px;
 }
-.global-project-option-menu .morph-item:not(:disabled, [aria-disabled="true"]):hover { background: var(--color-surface-selected); }
+.global-project-option-menu .morph-item:not(:disabled, [aria-disabled="true"]):is(:hover, .is-gesture-hover) { background: var(--color-surface-selected); }
 .global-project-option-menu.is-content-visible .morph-item:not(:disabled, [aria-disabled="true"]):active { transform: scale(.97); }
 .global-project-option-menu .morph-item[aria-checked="true"]:not(:disabled, [aria-disabled="true"]) { color: var(--color-action-primary-hover); }
 .global-project-option-menu .projects-sort-check { margin-left: auto; }
@@ -192,13 +138,13 @@
   color: var(--color-action-primary-hover);
 }
 @supports (background: color-mix(in srgb, currentColor 16%, transparent)) {
-  .global-project-option-menu .projects-sort-directions .morph-item[aria-pressed="true"]:not(:disabled, [aria-disabled="true"]):hover,
-  .global-project-option-menu .project-filter-pill[aria-checked="true"]:not(:disabled, [aria-disabled="true"]):hover {
+  .global-project-option-menu .projects-sort-directions .morph-item[aria-pressed="true"]:not(:disabled, [aria-disabled="true"]):is(:hover, .is-gesture-hover),
+  .global-project-option-menu .project-filter-pill[aria-checked="true"]:not(:disabled, [aria-disabled="true"]):is(:hover, .is-gesture-hover) {
     background: color-mix(in srgb, var(--color-action-primary-default) 16%, var(--color-surface-elevated));
   }
 }
 .global-project-option-menu .morph-item:is(.danger, [data-action="delete"]):not(:disabled, [aria-disabled="true"]) { color: var(--color-text-danger); }
-.global-project-option-menu .morph-item:is(.danger, [data-action="delete"]):not(:disabled, [aria-disabled="true"]):hover {
+.global-project-option-menu .morph-item:is(.danger, [data-action="delete"]):not(:disabled, [aria-disabled="true"]):is(:hover, .is-gesture-hover) {
   background: var(--color-status-error-bg);
   color: var(--color-action-danger-hover);
 }
@@ -212,3 +158,56 @@
 /* Remove the inline SVG baseline gap so icon and label share a vertical center. */
 .project-actions-content .morph-item-icon { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 20px; width: 20px; height: 24px; line-height: 0; }
 .project-actions-content .morph-item-icon svg { display: block; }
+
+/* temp/morph.html: one SDF material under the independently scaled DOM layer. */
+.surface-morph-sdf { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+.surface-morph-overlay > .morph-icon { display: flex; align-items: center; justify-content: center; box-sizing: border-box; pointer-events: none; z-index: 2; transform-origin: center; }
+.surface-morph-liquid.global-project-option-menu { background: transparent; border: var(--surface-floating-border); border-color: transparent; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; transform-origin: 0 0; z-index: 1; pointer-events: none; overflow: visible; }
+.surface-morph-liquid.global-project-option-menu.is-terminal-blur { backdrop-filter: var(--surface-floating-blur); -webkit-backdrop-filter: var(--surface-floating-blur); }
+/* The terminal plate crossfades in as liquid geometry reaches its menu bounds. */
+.surface-morph-liquid.global-project-option-menu::before {
+  content: ''; position: absolute; inset: calc(-1 * var(--morph-material-border-width, 1px));
+  box-sizing: border-box; border-radius: inherit; pointer-events: none;
+  background: var(--surface-floating-reading-bg);
+  border: var(--surface-floating-border);
+  box-shadow: var(--surface-floating-shadow), var(--surface-floating-highlight);
+  opacity: var(--morph-terminal-material, 0);
+}
+/* At rest the menu itself owns the shared recipe, including real backdrop blur. */
+.surface-morph-liquid.global-project-option-menu.is-settled {
+  background: var(--surface-floating-reading-bg);
+  border: var(--surface-floating-border);
+  box-shadow: var(--surface-floating-shadow), var(--surface-floating-highlight) !important;
+  backdrop-filter: var(--surface-floating-blur);
+  -webkit-backdrop-filter: var(--surface-floating-blur);
+}
+.surface-morph-liquid.global-project-option-menu.is-settled::before { opacity: 0; }
+.surface-morph-liquid.global-project-option-menu.is-content-visible { pointer-events: auto; }
+.surface-morph-liquid.global-project-option-menu .morph-menu-content { opacity: 1; filter: none; border-radius: inherit; }
+.surface-morph-liquid.global-project-option-menu:not(.is-settled) .morph-menu-content { overflow: hidden !important; }
+.surface-morph-trigger-hidden { opacity: 0 !important; pointer-events: auto !important; }
+
+/* Touch tracking uses the same hover material as a mouse, including account controls. */
+.surface-morph-surface .is-gesture-hover:not(:disabled, [aria-disabled="true"]) { background: var(--color-surface-selected); }
+.surface-morph-surface.is-gesture-tracking { touch-action: none; }
+/* Decide touch ownership at contact time, including menus opened with a tap. */
+.surface-morph-surface :is(button, a[href], .up-btn, [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"]) { touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+/* Apply to the actual hit targets (SVG/span included), without relying on
+   pointer media queries or user-select inheritance in mobile browsers. */
+:is([data-morph-trigger], [data-morph-align]),
+:is([data-morph-trigger], [data-morph-align]) * { touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+body.is-morph-holding,
+body.is-morph-holding * { -webkit-touch-callout: none !important; -webkit-user-select: none !important; user-select: none !important; }
+
+/* Morph surfaces and their openers use hover feedback only, in every input mode.
+   Clear both component outlines and the global two-layer focus box-shadow,
+   including the opener after focus is restored when a surface closes. */
+:is(.surface-morph-surface, .surface-morph-surface *, [data-morph-trigger], [data-morph-trigger] *, [data-morph-align], [data-morph-align] *) {
+  --focus-ring-shadow: none;
+  -webkit-tap-highlight-color: transparent;
+}
+:is(.surface-morph-surface, .surface-morph-surface *, [data-morph-trigger], [data-morph-trigger] *, [data-morph-align], [data-morph-align] *):is(:focus, :focus-visible, :focus-within) {
+  outline: none !important;
+  outline-offset: 0 !important;
+  box-shadow: none !important;
+}

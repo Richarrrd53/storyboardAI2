@@ -70,11 +70,14 @@ html, body { overflow-x: clip; }
 .generate-workspace p { margin: 0; text-wrap: pretty; }
 .generate-workspace :is(button, input, textarea, select, summary) { font-family: var(--font-family-body); font-size: var(--font-size-sm); }
 .generate-workspace :is(button, summary) { cursor: pointer; }
-.generate-workspace :is(button, input, textarea, select, summary, a):focus-visible {
+.generate-workspace :is(button, summary, a):focus-visible {
     outline: 2px solid var(--creation-focus) !important;
     outline-offset: 3px;
 }
-.generate-workspace :is(input,textarea,select):focus-visible { outline-offset: -3px; }
+.generate-workspace :is(input,textarea,select):focus,
+.generate-workspace :is(input,textarea,select):focus-visible {
+    outline: none !important;
+}
 .generate-workspace button { min-height: 44px; white-space: nowrap; transition: background-color var(--creation-state) var(--creation-ease), transform var(--creation-press) var(--creation-ease); }
 .generate-workspace button:active { transform: translateY(1px); }
 .generate-workspace button:disabled { opacity: .55; cursor: not-allowed; transform: none; }

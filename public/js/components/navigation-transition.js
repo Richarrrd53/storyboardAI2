@@ -190,7 +190,7 @@
         }
 
       },
-      prepared() { if (valid()) loader.pausePending?.(); },
+      prepared() { if (valid() && internal) loader.pausePending?.(); },
       mounting() {
         if (!valid()) return;
         if (internal) loader.showInnerLoader();

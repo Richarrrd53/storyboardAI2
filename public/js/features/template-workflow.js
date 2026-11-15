@@ -62,7 +62,11 @@
     $('btn-retry-save').textContent = root.spaAuth?.isLoggedIn() ? '重試儲存' : '登入後儲存';
     $('btn-retry-save').onclick = () => root.spaAuth?.isLoggedIn() ? root.GenerationTask.retrySave() : root.spaNavigate?.('login');
     $('btn-open-generated-project').hidden = !task.projectId || save.status !== 'saved';
-    $('btn-open-generated-project').onclick = () => root.spaNavigate?.('project', { id: task.projectId });
+    $('btn-open-generated-project').onclick = () => {
+      if (typeof root.navigate === 'function') return root.navigate('project', { id: task.projectId });
+      if (typeof root.spaNavigate === 'function') return root.spaNavigate('project', { id: task.projectId });
+      root.location.href = `/project/${encodeURIComponent(task.projectId)}`;
+    };
     $('btn-retry-failed-images').hidden = !failed.length;
     $('btn-retry-failed-images').textContent = `重試失敗圖片（${failed.length}）`;
     $('btn-retry-failed-images').onclick = () => { root.GenerationTask.retryFailedImages(); root.switchPhase(4, false); };

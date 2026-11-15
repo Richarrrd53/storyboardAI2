@@ -594,7 +594,7 @@
       if (focused) [...container.children].find(button => button.getAttribute('data-tag') === focused)?.focus?.({preventScroll:true});
     }
     function openMenu(trigger, content, label, onClose) {
-      global.ProjectOptionMorph?.openSurface(trigger, {content,width:240,label,align:trigger === tagsTrigger ? 'start' : 'end',
+      global.ProjectOptionMorph?.openSurface(trigger, {content,width:240,label,align:trigger.dataset?.morphAlign,
         onClose: reason => { onClose(); if (!['navigation','unmount','destroy','modal','focus_out','tab','replaced'].includes(reason) && isMounted && trigger.isConnected && !global.ProjectOptionMorph.isOpen()) trigger.focus({preventScroll:true}); }});
     }
     listen(tagsTrigger, 'click', () => {

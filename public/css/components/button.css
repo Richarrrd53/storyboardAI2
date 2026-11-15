@@ -145,33 +145,7 @@
   font-weight: var(--font-weight-bold);
 }
 
-/* ── Opt-in Sweep Shine ── */
-.btn-shine::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -150%;
-  width: 60px;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.35) 50%,
-    rgba(255, 255, 255, 0) 100%
-  );
-  transform: skewX(-25deg);
-  transition: none;
-  pointer-events: none;
-}
-
-.btn-shine:hover::after {
-  animation: shineSweepGlobal 0.85s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-@keyframes shineSweepGlobal {
-  0% { left: -150%; }
-  100% { left: 150%; }
-}
+/* Button sweep shine effect removed. */
 
 /* v4 explicit states; API/interaction locking remains owned by controllers. */
 .btn:disabled, .btn[aria-disabled="true"] { opacity: var(--opacity-disabled); cursor: not-allowed; transform: none; }

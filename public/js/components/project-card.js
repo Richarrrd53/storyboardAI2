@@ -282,7 +282,7 @@
           </div>
           <div class="project-folder-notch-wrap">
             <div class="project-option-slot">
-              ${readonly ? '<span class="project-option-btn" aria-hidden="true">' : '<button class="project-option-btn" type="button" title="更多選項" aria-label="更多選項">'}
+              ${readonly ? '<span class="project-option-btn" aria-hidden="true">' : '<button class="project-option-btn" type="button" title="更多選項" aria-label="更多選項" data-morph-align="end">'}
                 <span class="option-icon">
                   <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
                     <circle cx="8" cy="5" r="1.5" />

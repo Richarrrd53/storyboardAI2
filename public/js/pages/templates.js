@@ -54,20 +54,20 @@
     const featuredEl = getEl('template-featured-grid');
     const featuredSection = getEl('template-featured');
     const searchInput = getEl('store-search-input');
-    const tagInput = getEl('store-tag-filter');
-    const sortInput = getEl('store-sort');
+    const tagsTrigger = getEl('store-tags-trigger');const tagsLabel = getEl('store-tags-label');
+    const sortTrigger = getEl('store-sort-trigger');
     const clearButton = getEl('store-clear-filters');
     if (!categoriesEl || !gridEl || !detailEl) return { unmount() {} };
     const pageMain = document.getElementById('page-main');
     let backPending = false;
-    let state = { category: '全部', query: '', tag: '', sort: 'catalog', scrollTop: 0, ...browseMemory, ...route.browseState };
+    let state = { category: '全部', query: '', tag: '', sort: 'catalog', direction: 'asc', scrollTop: 0, ...browseMemory, ...route.browseState };
     let currentRoute = route;
     let activeId = null;
     let templates = [];
     let loadError = false;
     let disposed = false;
     let loading = false;
-    let lastPreviewId = null;
+    let lastPreviewId = null, sortSequence = 0, animations = [], tagMenu = null, tagGrid = null, tagSearchQuery = '', sortMenu = null;
     const listeners = [];
     const on = (el, event, handler) => {
       if (!el) return;
@@ -81,8 +81,8 @@
     }
     function syncControls() {
       if (searchInput) searchInput.value = state.query;
-      if (tagInput) tagInput.value = state.tag;
-      if (sortInput) sortInput.value = state.sort;
+      if (tagsLabel) tagsLabel.textContent = state.tag || '所有標籤';
+
       categoriesEl.querySelectorAll('.category-card').forEach(button => {
         const selected = button.dataset.catId === state.category;
         button.classList.toggle('active', selected);
@@ -110,13 +110,18 @@
         }, { once: true });
       });
     }
-    function filterAndDisplay() {
+    function cancelSort() { sortSequence++; animations.forEach(a => a.cancel()); animations = []; }
+    function filterAndDisplay(fromSort = false) {
+      if (!fromSort) cancelSort();
+      if (tagGrid) renderTagOptions(tagGrid);
       syncControls();
       let filtered = templates.filter(t => (state.category === '全部' || categoryOf(t) === state.category) && (!state.tag || tagsOf(t).includes(state.tag)));
       const query = state.query.trim().toLocaleLowerCase();
       if (query) filtered = filtered.filter(t => [t.displayTitle, t.displaySummary, t.summary, t.narrative?.summary, t.name, t.title, t.description, t.source?.title, t.source?.description, t.categoryLabel, CAT_MAP[categoryOf(t)], ...tagsOf(t), ...(Array.isArray(t.platform) ? t.platform : [])].some(value => String(value || '').toLocaleLowerCase().includes(query)));
-      if (state.sort === 'name') filtered = [...filtered].sort((a, b) => (a.name || a.title || '').localeCompare(b.name || b.title || '', 'zh-Hant'));
-      if (state.sort === 'duration') filtered = [...filtered].sort((a, b) => (durationOf(a) ?? Infinity) - (durationOf(b) ?? Infinity));
+      if (state.sort === 'catalog' && state.direction === 'desc') filtered = [...filtered].reverse();
+      if (state.sort === 'name') filtered = [...filtered].sort((a, b) => (a.name || a.title || '').localeCompare(b.name || b.title || '', 'zh-Hant') * (state.direction === 'desc' ? -1 : 1));
+      if (state.sort === 'duration') { const dir = state.direction === 'desc' ? -1 : 1; filtered = [...filtered].sort((a, b) => { const da = durationOf(a), db = durationOf(b); if (da === null && db === null) return 0; if (da === null) return 1; if (db === null) return -1; return (da - db) * dir; }); }
+
       const title = getEl('current-category-title');
       if (title) title.textContent = state.category === '全部' ? '所有模板' : CAT_MAP[state.category];
       const count = getEl('template-result-count');
@@ -208,8 +213,134 @@
       filterAndDisplay();
     }));
     on(searchInput, 'input', event => { state.query = event.target.value; filterAndDisplay(); });
-    on(tagInput, 'change', event => { state.tag = event.target.value; filterAndDisplay(); });
-    on(sortInput, 'change', event => { state.sort = event.target.value; filterAndDisplay(); });
+    function extractTagsWithCounts(list) {
+      const counts = Object.create(null);
+      for (const item of list) for (const tag of new Set(tagsOf(item))) counts[tag] = (counts[tag] || 0) + 1;
+      const allTags = Object.keys(counts).sort((a, b) => a.localeCompare(b, 'zh-Hant'));
+      return { allTags, counts };
+    }
+    function renderTagOptions(container) {
+      if (!container) return;
+      const { allTags, counts } = extractTagsWithCounts(templates);
+      const q = tagSearchQuery.trim().toLocaleLowerCase();
+      const matched = q ? allTags.filter(tag => tag.toLocaleLowerCase().includes(q)) : allTags;
+      const focused = document.activeElement?.getAttribute?.('data-tag');
+      container.innerHTML = '';
+      const choices = [['__ALL__', '全部標籤', templates.length], ...matched.map(tag => [tag, tag, counts[tag]])];
+      if (!matched.length && q) {
+        const empty = document.createElement('p');
+        empty.className = 'template-tag-empty';
+        empty.textContent = '找不到符合的標籤';
+        container.appendChild(empty);
+        return;
+      }
+      for (const [tag, label, count] of choices) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'project-filter-pill template-tag-pill morph-item';
+        const active = tag === '__ALL__' ? !state.tag : state.tag === tag;
+        button.classList.toggle('is-active', active);
+        button.setAttribute('data-tag', tag);
+        button.setAttribute('aria-pressed', String(active));
+        button.setAttribute('role', 'menuitemcheckbox');
+        button.setAttribute('aria-checked', String(active));
+        button.innerHTML = `<span>${escape(label)}</span><span class="filter-count">${count}</span>`;
+        button.addEventListener('click', () => {
+          state.tag = tag === '__ALL__' ? '' : (state.tag === tag ? '' : tag);
+          if (tagsLabel) tagsLabel.textContent = state.tag || '所有標籤';
+          if (window.ProjectOptionMorph?.isOpen?.()) window.ProjectOptionMorph.close('action', () => filterAndDisplay());
+          else filterAndDisplay();
+        });
+        container.appendChild(button);
+      }
+      if (focused) [...container.children].find(button => button.getAttribute('data-tag') === focused)?.focus?.({ preventScroll: true });
+      window.DynamicMaskSystem?.refresh?.();
+    }
+    function openMenu(trigger, content, opts, onClose) {
+      window.ProjectOptionMorph?.openSurface(trigger, {
+        content, width: opts.width || 240, label: opts.label, role: opts.role, keyboard: opts.keyboard, align: trigger.dataset?.morphAlign,
+        onClose: reason => { onClose(); if (!['navigation', 'unmount', 'destroy', 'modal', 'focus_out', 'tab', 'replaced'].includes(reason) && !disposed && trigger.isConnected && !window.ProjectOptionMorph.isOpen()) trigger.focus({ preventScroll: true }); }
+      });
+    }
+    on(tagsTrigger, 'click', () => {
+      tagSearchQuery = '';
+      tagMenu = document.createElement('div');
+      tagMenu.className = 'template-tag-panel';
+      const searchBox = document.createElement('label');
+      searchBox.className = 'template-tag-search';
+      searchBox.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><input type="search" placeholder="搜尋標籤…" aria-label="搜尋標籤" autocomplete="off">';
+      const tagSearchInput = searchBox.querySelector('input');
+      tagSearchInput.addEventListener('input', () => { tagSearchQuery = tagSearchInput.value; renderTagOptions(tagGrid); });
+      tagGrid = document.createElement('div');
+      tagGrid.className = 'template-tag-grid';
+      renderTagOptions(tagGrid);
+      tagMenu.appendChild(searchBox);
+      tagMenu.appendChild(tagGrid);
+      const gridRef = tagGrid;
+      openMenu(tagsTrigger, tagMenu, { width: 380, label: '標籤篩選', role: 'dialog', keyboard: 'content' }, () => { window.DynamicMaskSystem?.detach?.(gridRef); tagMenu = null; tagGrid = null; tagSearchQuery = ''; });
+      window.DynamicMaskSystem?.attach?.(gridRef, { maskSize: 28, direction: 'vertical' });
+    });
+    function renderSortOptions() {
+      if (!sortMenu) return;
+      const focused = document.activeElement?.getAttribute?.('data-sort') || document.activeElement?.getAttribute?.('data-direction');
+      sortMenu.innerHTML = '';
+      const choices = [['catalog', '預設順序'], ['name', '依名稱排序'], ['duration', '模板時長']];
+      for (const [key, label] of choices) {
+        const button = document.createElement('button'); button.type = 'button'; button.className = 'morph-item';
+        button.setAttribute('data-sort', key); button.setAttribute('role', 'menuitemradio'); button.setAttribute('aria-checked', String(state.sort === key));
+        button.textContent = label;
+        if (state.sort === key) { const check = document.createElement('span'); check.className = 'projects-sort-check'; check.setAttribute('aria-hidden', 'true'); check.textContent = '✓'; button.appendChild(check); }
+        button.addEventListener('click', () => { state.sort = key; renderSortOptions(); sortCards(); }); sortMenu.appendChild(button);
+      }
+      const directions = document.createElement('div'); directions.className = 'projects-sort-directions';
+      for (const [value, label] of [['asc', '遞增 ↑'], ['desc', '遞減 ↓']]) {
+        const button = document.createElement('button'); button.type = 'button'; button.className = 'morph-item';
+        button.setAttribute('data-direction', value); button.setAttribute('aria-pressed', String(state.direction === value)); button.textContent = label;
+        button.addEventListener('click', () => { state.direction = value; renderSortOptions(); sortCards(); }); directions.appendChild(button);
+      }
+      sortMenu.appendChild(directions);
+      if (focused) [...sortMenu.querySelectorAll('button')].find(button => button.getAttribute('data-sort') === focused || button.getAttribute('data-direction') === focused)?.focus?.({ preventScroll: true });
+    }
+    on(sortTrigger, 'click', () => {
+      sortMenu = document.createElement('div'); sortMenu.className = 'projects-dropdown-options'; renderSortOptions();
+      openMenu(sortTrigger, sortMenu, { width: 240, label: '排序模板' }, () => { sortMenu = null; });
+    });
+    async function sortCards() {
+      const current = new Map(animations.map(animation => { const card = animation.effect.target; return [card.dataset.id, window.getComputedStyle(card).transform]; }));
+      cancelSort(); const sequence = sortSequence;
+      if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches || !gridEl.animate) { filterAndDisplay(); return; }
+      const viewport = (storeBody || gridEl.parentElement).getBoundingClientRect();
+      const cards = [...gridEl.querySelectorAll('.template-card')].filter(card => { const r = card.getBoundingClientRect(); return r.bottom > viewport.top && r.top < viewport.bottom; });
+      if (!cards.length) { filterAndDisplay(); return; }
+      const rects = new Map(cards.map(card => [card, card.getBoundingClientRect()]));
+      const visibleLeft = Math.max(viewport.left, Math.min(...cards.map(card => rects.get(card).left)));
+      const visibleRight = Math.min(viewport.right, Math.max(...cards.map(card => rects.get(card).right)));
+      const visibleTop = Math.max(viewport.top, Math.min(...cards.map(card => rects.get(card).top)));
+      const visibleBottom = Math.min(viewport.bottom, Math.max(...cards.map(card => rects.get(card).bottom)));
+      const centerX = (visibleLeft + visibleRight) / 2;
+      const centerY = (visibleTop + visibleBottom) / 2;
+      const gatherScale = .72;
+      const transforms = new Map(cards.map(card => { const r = rects.get(card); return [card, { x: centerX - r.left - r.width / 2, y: centerY - r.top - r.height / 2 }]; }));
+      const gather = cards.map(card => { const { x, y } = transforms.get(card); return card.animate([{ transform: !current.get(card.dataset.id) || current.get(card.dataset.id) === 'none' ? 'translate(0,0) scale(1)' : current.get(card.dataset.id) }, { transform: `translate(${x}px,${y}px) scale(${gatherScale})` }], { duration: 240, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' }); });
+      animations = gather;
+      await Promise.allSettled(gather.map(animation => animation.finished));
+      await new Promise(resolve => setTimeout(resolve, 40));
+      if (disposed || sequence !== sortSequence) return;
+      const gathered = new Map(cards.map(card => [card.dataset.id, card.getBoundingClientRect()]));
+      gather.forEach(animation => animation.cancel());
+      filterAndDisplay(true);
+      const nextCards = [...gridEl.querySelectorAll('.template-card')].filter(card => { const r = card.getBoundingClientRect(); return (r.bottom > viewport.top && r.top < viewport.bottom) || gathered.has(card.dataset.id); });
+      animations = nextCards.map(card => {
+        const to = card.getBoundingClientRect();
+        const from = gathered.get(card.dataset.id) || { left: centerX - to.width * gatherScale / 2, top: centerY - to.height * gatherScale / 2 };
+        const x = from.left - to.left - to.width * (1 - gatherScale) / 2;
+        const y = from.top - to.top - to.height * (1 - gatherScale) / 2;
+        return card.animate([{ transform: `translate(${x}px,${y}px) scale(${gatherScale})` }, { transform: 'translate(0,0) scale(1)' }], { duration: 400, easing: 'cubic-bezier(.2,.85,.25,1.15)', fill: 'none' });
+      });
+      await Promise.allSettled(animations.map(animation => animation.finished));
+      if (sequence === sortSequence) animations = [];
+    }
+
     on(clearButton, 'click', clearFilters);
     on(getEl('new-template-button'), 'click', () => window.openNewTemplateModal?.());
     async function loadCatalog() {
@@ -231,11 +362,8 @@
         const el = getEl('count-' + id);
         if (el) el.textContent = String(counts[cat]);
       });
-      if (tagInput) {
-        const tags = [...new Set(templates.flatMap(tagsOf))].sort((a, b) => a.localeCompare(b, 'zh-Hant'));
-        tagInput.innerHTML = '<option value="">所有標籤</option>' + tags.map(tag => '<option value="' + escape(tag) + '">' + escape(tag) + '</option>').join('');
-        if (!tags.includes(state.tag)) state.tag = '';
-      }
+      const tags = extractTagsWithCounts(templates).allTags;
+      if (state.tag && !tags.includes(state.tag)) state.tag = '';
       if (featuredEl) {
         // Represent distinct content directions; no invented popularity or ranking.
         const featured = templates.filter((t, i, list) => list.findIndex(item => categoryOf(item) === categoryOf(t)) === i).slice(0, 2);
@@ -255,6 +383,8 @@
       unmount() {
         browseMemory = snapshot();
         disposed = true;
+        cancelSort();
+        if (tagMenu || sortMenu) window.ProjectOptionMorph?.close('unmount');
         window.destroyTemplateTimeline?.();
         window.destroyTemplatePage?.();
         listeners.forEach(off => off());
