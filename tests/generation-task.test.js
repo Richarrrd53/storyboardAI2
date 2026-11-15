@@ -12,6 +12,110 @@ const storyboard = {
 };
 function deferred() { let resolve; const promise = new Promise(r => { resolve = r; }); return { promise, resolve }; }
 const response = (data, ok = true, status = 200) => ({ ok, status, json: async () => data });
+
+test('OpenAI bounds parallel images to three and preserves shot order on out-of-order completion', async () => {
+  const held = [];
+  const shots = [1, 2, 3, 4, 5].map(id => ({ ...storyboard.shots[0], id, story: `Shot ${id}`, shotPrompt: `scene ${id}` }));
+  const f = fixture((url, body) => {
+    if (body.type === 'story') return response({ response: JSON.stringify({ ...storyboard, shots }) });
+    if (body.type === 'image') { const d = deferred(); held.push({ ...d, body }); return d.promise; }
+  });
+  const pending = f.task.start({ ...options(), provider: 'openai' });
+  await tick();
+  assert.equal(held.length, 3);
+  assert.equal(f.calls.filter(c => c.url === '/api/projects').length, 0);
+  held[2].resolve(response({ image: ['https://image.test/3.png'] })); await tick();
+  assert.equal(held.length, 4);
+  held[0].resolve(response({ image: ['https://image.test/1.png'] })); await tick();
+  assert.equal(held.length, 5);
+  held[4].resolve(response({ image: ['https://image.test/5.png'] }));
+  held[3].resolve(response({ image: ['https://image.test/4.png'] }));
+  held[1].resolve(response({ image: ['https://image.test/2.png'] }));
+  await pending;
+  const state = f.task.getState();
+  assert.equal(state.status, 'completed');
+  assert.deepEqual(Array.from(state.result.generatedImgs), [1, 2, 3, 4, 5].map(id => `https://image.test/${id}.png`));
+  assert.deepEqual(Array.from(state.result.generatedShotData, shot => shot.order), [1, 2, 3, 4, 5]);
+  assert.ok(held.every(item => item.body.provider === 'openai'));
+  assert.equal(f.calls.filter(c => c.url === '/api/projects').length, 1);
+});
+
+test('Gemini keeps image requests sequential', async () => {
+  const held = [];
+  const f = fixture((url, body) => {
+    if (body.type === 'image') { const d = deferred(); held.push(d); return d.promise; }
+  });
+  const pending = f.task.start({ ...options(), provider: 'gemini' }); await tick();
+  assert.equal(held.length, 1);
+  held[0].resolve(response({ image: ['https://image.test/1.png'] })); await tick();
+  assert.equal(held.length, 2);
+  held[1].resolve(response({ image: ['https://image.test/2.png'] })); await pending;
+  assert.equal(f.task.getState().status, 'completed');
+});
+
+test('OpenAI retries multiple failed shots in parallel and waits before saving', async () => {
+  let failing = true;
+  const held = [];
+  const f = fixture((url, body) => {
+    if (body.type !== 'image') return;
+    if (failing) return response({ error: 'invalid request' }, false, 400);
+    const d = deferred(); held.push(d); return d.promise;
+  });
+  await f.task.start({ ...options(), provider: 'openai' });
+  assert.equal(f.task.getState().result.failedShotIndexes.length, 2);
+  const savedBefore = f.calls.filter(c => c.url.includes('/shots/')).length;
+  failing = false;
+  const pending = f.task.retryFailedImages(); await tick();
+  assert.equal(held.length, 2);
+  held[1].resolve(response({ image: ['https://image.test/2.png'] })); await tick();
+  assert.equal(f.calls.filter(c => c.url.includes('/shots/')).length, savedBefore);
+  held[0].resolve(response({ image: ['https://image.test/1.png'] })); await pending;
+  assert.equal(f.task.getState().status, 'completed');
+  assert.equal(f.task.getState().save.status, 'saved');
+  assert.equal(f.task.getState().result.failedShotIndexes.length, 0);
+});
+
+test('cancelling parallel images aborts every request and ignores late results after reset', async () => {
+  const held = [];
+  const f = fixture((url, body, init) => {
+    if (body.type === 'image') { const d = deferred(); held.push({ ...d, signal: init.signal }); return d.promise; }
+  });
+  const pending = f.task.start({ ...options(), provider: 'openai' }); await tick();
+  assert.equal(held.length, 2);
+  f.task.cancel(); f.task.reset();
+  assert.ok(held.every(item => item.signal.aborted));
+  held.forEach(item => item.resolve(response({ image: ['https://image.test/late.png'] })));
+  await pending;
+  assert.equal(f.task.getState().status, 'idle');
+  assert.equal(f.calls.filter(c => c.url === '/api/projects').length, 0);
+});
+
+test('parallel rate-limit waits survive another image finishing and retry only failed shots', async () => {
+  const held = [], counts = new Map(); let failing = true;
+  const f = fixture((url, body) => {
+    if (body.type !== 'image') return;
+    const shot = body.question.includes('scene two') ? 2 : 1;
+    counts.set(shot, (counts.get(shot) || 0) + 1);
+    if (failing && shot === 1) return response({ error: 'busy' }, false, 429);
+    const d = deferred(); held.push(d); return d.promise;
+  });
+  // Distinguish the prompts so retries can be counted per shot.
+  const original = f.context.FreeformStoryboard.validate;
+  f.context.FreeformStoryboard.validate = data => { data.shots[1].shotPrompt = 'scene two'; return original(data); };
+  const pending = f.task.start({ ...options(), provider: 'openai' }); await tick();
+  assert.equal(f.task.getState().retry.shotIndex, 0);
+  held[0].resolve(response({ image: ['https://image.test/2.png'] })); await tick();
+  assert.equal(f.task.getState().retry.shotIndex, 0);
+  await f.drain(); await pending;
+  assert.equal(f.task.getState().status, 'error');
+  assert.equal(counts.get(1), 3); assert.equal(counts.get(2), 1);
+  failing = false;
+  const retry = f.task.retryFailedImages(); await tick();
+  held[1].resolve(response({ image: ['https://image.test/1.png'] })); await retry;
+  assert.equal(f.task.getState().status, 'completed');
+  assert.equal(counts.get(1), 4); assert.equal(counts.get(2), 1);
+  assert.equal(f.calls.filter(c => c.body.type === 'story').length, 1);
+});
 test('generation project IDs deduplicate retries and isolate authors', () => {
   const { generationProjectId } = require('../lib/generation-project-id');
   assert.equal(generationProjectId('a', 'task'), generationProjectId('a', 'task'));
@@ -187,7 +291,7 @@ test('lost save response retry reconciles recovered project without duplicate cr
   assert.equal(f.calls.filter(c => c.url.includes('/shots/') && !c.url.endsWith('/image-upload')).length, 2);
   assert.equal(f.calls.filter(c => c.body.type === 'story').length, 1);
 });
-async function tick() { for (let i = 0; i < 30; i++) await Promise.resolve(); }
+async function tick() { for (let i = 0; i < 60; i++) await Promise.resolve(); }
 function fixture(customFetch) {
   const timers = new Map();
   const calls = [], pill = [];

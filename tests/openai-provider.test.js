@@ -110,7 +110,8 @@ test('OpenAI model config and capabilities enforce task boundaries and disable u
 
     const imgConfig = getOpenAIModelConfig('image', { ratio: '直向9:16' }, { OPENAI_API_KEY: 'sk-test' });
     assert.equal(imgConfig.aspectRatio, '9:16');
-    assert.equal(imgConfig.size, '1024x1536');
+    assert.equal(imgConfig.size, '864x1536');
+    assert.equal(imgConfig.model, 'gpt-image-2-2026-04-21');
 });
 
 test('OpenAI adapter handles text, structured JSON, usage, refusal, incomplete, empty, and timeout', async () => {
@@ -172,6 +173,21 @@ test('OpenAI adapter handles text, structured JSON, usage, refusal, incomplete, 
     assert.equal(imgRes.provider, 'openai');
     assert.equal(imgRes.image.length, 1);
     assert.match(imgRes.image[0], /^data:image\/jpeg;base64,/);
+});
+
+test('OpenAI image requests use the pinned GPT Image 2 snapshot and native aspect ratios', async () => {
+    const calls = [];
+    const client = { images: { generate: async params => {
+        calls.push(params);
+        return { data: [{ b64_json: Buffer.from('fixture').toString('base64') }] };
+    } } };
+    for (const [ratio, size] of Object.entries({ '16:9': '1536x864', '9:16': '864x1536', '1:1': '1024x1024', '3:2': '1536x1024', '2:3': '1024x1536' })) {
+        await openaiAdapter.generateImage(client, { question: 'a scene', ratio, env: {} });
+        assert.deepEqual(calls.at(-1), { model: 'gpt-image-2-2026-04-21', prompt: 'a scene', n: 1, size, output_format: 'jpeg' });
+    }
+    assert.equal(getOpenAIModelConfig('image', { ratio: '16:9' }, { OPENAI_MODEL_IMAGE: 'gpt-image-2.5-flare-2026-09-08' }).size, '1536x864');
+    assert.equal(getOpenAIModelConfig('image', { ratio: '16:9' }, { OPENAI_MODEL_IMAGE: 'gpt-image-1.5' }).size, '1536x1024');
+    assert.equal(getOpenAIModelConfig('image', { ratio: '9:16' }, { OPENAI_MODEL_IMAGE: 'gpt-image-1.5' }).size, '1024x1536');
 });
 
 test('OpenAI error classification distinguishes auth, rate limit, model, schema, timeout, and cancellation', () => {

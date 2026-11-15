@@ -12,6 +12,8 @@
 - **短片探索**：搜尋 YouTube 影片，分析開場、問題、解法與結尾，並可將分析結果加入模板。其他平台目前尚未串接。搜尋結果可能包含一般短片，詳見 [探索模組說明](./lib/discovery/README.md)。
 - **操作介面**：原生 JavaScript SPA、響應式導覽及背景生成狀態；登入後可管理自己的專案。
 
+OpenAI 圖片預設使用固定穩定版本 `gpt-image-2-2026-04-21`（[官方模型說明](https://developers.openai.com/api/docs/models/gpt-image-2)），可透過 `OPENAI_MODEL_IMAGE` 指定其他版本。OpenAI 分鏡圖片最多並行生成 3 張，失敗重試也沿用此上限；Gemini Vertex AI 維持逐張生成。遇到流量限制會依照 `Retry-After` 等待再重試，成功的圖片會保留。
+
 <table><tr><td><img src="./public/screenshot/dahboard_pc.png" alt="桌面儀表板"></td><td><img src="./public/screenshot/dashboard_mobile.png" alt="行動版儀表板"></td></tr></table>
 
 ## 技術架構

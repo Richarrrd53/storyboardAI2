@@ -1,6 +1,6 @@
 /**
  * App-level generation task. Survives page unmount; never owns page DOM.
- * Existing API is sequential request/response (there is no backend polling endpoint).
+ * OpenAI images use bounded parallel requests; Gemini images remain sequential.
  * Persistence here means SPA route lifetime, not reload/server job resumption.
  */
 (function (root) {
@@ -8,6 +8,7 @@
   if (root.GenerationTask) return;
 
   const listeners = new Set();
+  const imageRetries = new WeakMap();
   let sequence = 0;
   let currentController = null;
   let activePromise = null;
@@ -217,31 +218,54 @@
     }
   }
   async function requestImage(run, controller, question, shotIndex) {
-    for (let attempt = 0; attempt < 3; attempt++) {
-      assertRun(run, controller);
-      run.retry = null;
-      if (attempt) { run.progress = imageProgress(run, `正在重新生成第 ${shotIndex + 1} 個分鏡…`); notify(); }
-      try {
-        const data = await requestJSON(run, controller, '/api/ask-gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ question, type: 'image', ratio: run.input.ratio, requestId: run.taskId, provider: run.provider }) });
-        if (!data.image?.[0]) throw Object.assign(new Error('圖片回應為空'), { code: 'AI_EMPTY_CONTENT', status: 502 });
-        await verifyImage(run, controller, data.image[0]);
-        return data;
-      } catch (error) {
-        assertRun(run, controller);
-        if (error.name === 'AbortError') throw error;
-        const retryable = !error.status || [408, 429, 500, 502, 503, 504].includes(error.status);
-        const permanent = ['AI_AUTH_PERMISSION', 'AI_API_DISABLED', 'AI_MODEL_UNAVAILABLE', 'AI_SCHEMA_ERROR', 'AI_INVALID_REQUEST'].includes(error.code);
-        if (!retryable || permanent || attempt === 2 || error.retryAfterMs > 60000) {
-          error.message = retryable && !permanent ? '伺服器繁忙，圖片暫時無法生成，請稍後重試。' : '圖片服務暫時無法使用，請稍後重試。';
-          throw error;
-        }
-        const delay = Math.max(10000 * 2 ** attempt, error.retryAfterMs || 0);
-        run.retry = { retryAt: Date.now() + delay, shotIndex, attempt: attempt + 1, maxAttempts: 3 };
-        run.progress = imageProgress(run, `伺服器繁忙中，將在 ${Math.ceil(delay / 1000)} 秒後自動重試`); notify();
-        await waitForImageRetry(run, controller, delay);
+    let retries = imageRetries.get(controller);
+    if (!retries) { retries = new Map(); imageRetries.set(controller, retries); }
+    function updateRetry(value) {
+      if (value) retries.set(shotIndex, value); else retries.delete(shotIndex);
+      if (state === run && currentController === controller) {
+        run.retry = [...retries.values()].sort((a, b) => a.retryAt - b.retryAt)[0] || null;
       }
     }
+    try {
+      for (let attempt = 0; attempt < 3; attempt++) {
+        assertRun(run, controller);
+        updateRetry(null);
+        if (attempt) { run.progress = imageProgress(run, `正在重新生成第 ${shotIndex + 1} 個分鏡…`); notify(); }
+        try {
+          const data = await requestJSON(run, controller, '/api/ask-gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ question, type: 'image', ratio: run.input.ratio, requestId: run.taskId, provider: run.provider }) });
+          if (!data.image?.[0]) throw Object.assign(new Error('圖片回應為空'), { code: 'AI_EMPTY_CONTENT', status: 502 });
+          await verifyImage(run, controller, data.image[0]);
+          return data;
+        } catch (error) {
+          assertRun(run, controller);
+          if (error.name === 'AbortError') throw error;
+          const retryable = !error.status || [408, 429, 500, 502, 503, 504].includes(error.status);
+          const permanent = ['AI_AUTH_PERMISSION', 'AI_API_DISABLED', 'AI_MODEL_UNAVAILABLE', 'AI_SCHEMA_ERROR', 'AI_INVALID_REQUEST'].includes(error.code);
+          if (!retryable || permanent || attempt === 2 || error.retryAfterMs > 60000) {
+            error.message = retryable && !permanent ? '伺服器繁忙，圖片暫時無法生成，請稍後重試。' : '圖片服務暫時無法使用，請稍後重試。';
+            throw error;
+          }
+          const delay = Math.max(10000 * 2 ** attempt, error.retryAfterMs || 0);
+          updateRetry({ retryAt: Date.now() + delay, shotIndex, attempt: attempt + 1, maxAttempts: 3 });
+          run.progress = imageProgress(run, `伺服器繁忙中，將在 ${Math.ceil(delay / 1000)} 秒後自動重試`); notify();
+          await waitForImageRetry(run, controller, delay);
+        }
+      }
+    } finally { updateRetry(null); }
+  }
+  async function forEachImage(run, controller, indexes, generate) {
+    let next = 0;
+    const workers = Array.from({ length: Math.min(run.provider === 'openai' ? 3 : 1, indexes.length) }, async () => {
+      while (next < indexes.length) {
+        assertRun(run, controller);
+        await generate(indexes[next++]);
+      }
+    });
+    // Drain every worker before saving or letting a cancelled run settle.
+    const results = await Promise.allSettled(workers);
+    const failure = results.find(result => result.status === 'rejected');
+    if (failure) throw failure.reason;
   }
   async function persistResult(run, controller) {
     assertRun(run, controller);
@@ -343,8 +367,7 @@
     currentController = controller; run.status = 'generating'; run.error = null;
     activePromise = (async () => {
       const failures = Number.isInteger(shotIndex) ? run.result.failedShotIndexes.filter(i => i === shotIndex) : [...run.result.failedShotIndexes];
-      for (let index = 0; index < failures.length; index++) {
-        const i = failures[index];
+      await forEachImage(run, controller, failures, async i => {
         assertRun(run, controller);
         run.progress = imageProgress(run, `重試鏡頭 ${i + 1}`); notify();
         try {
@@ -357,7 +380,7 @@
           run.result.generatedShotData[i].payload.imageError = error.message;
         }
         run.progress = imageProgress(run); notify();
-      }
+      });
       await persistResult(run, controller);
       assertRun(run, controller);
       requireCompleteImages(run);
@@ -494,9 +517,9 @@
       result.generatedStoryTitles = shots.map(shot => shot.story);
       result.generatedStoryCams = shots.map(shot => shot.camera || 'medium shot');
       run.progress = imageProgress(run); notify();
-      for (let i = 0; i < total; i++) {
+      const pending = shots.map((_, i) => i).filter(i => result.generatedShotData[i]?.payload.imageStatus !== 'succeeded');
+      await forEachImage(run, controller, pending, async i => {
         const shot = shots[i];
-        if (result.generatedShotData[i]?.payload.imageStatus === 'succeeded') continue;
         run.progress = imageProgress(run, `正在生成第 ${i + 1} / ${total} 張畫面`); notify();
         const finalPrompt = await buildFinalPrompt(shot);
         assertActive();
@@ -518,12 +541,12 @@
         } catch (error) {
           assertActive();
           if (error.name === 'AbortError') throw error;
-          result.failedShotIndexes.push(i);
+          if (!result.failedShotIndexes.includes(i)) result.failedShotIndexes.push(i);
           result.generatedShotData[i].payload.imageStatus = 'failed';
           result.generatedShotData[i].payload.imageError = error.message;
         }
         run.progress = imageProgress(run); notify();
-      }
+      });
       run.progress = imageProgress(run, '正在儲存分鏡'); notify();
       await persistResult(run, controller);
       assertActive();
