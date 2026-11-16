@@ -260,7 +260,7 @@
               <p class="qc-sub">描述故事或創作靈感，AI 將為您打造專業分鏡</p>
             </div>
 
-            <div class="creation-template-toolbar" id="qc-template-toolbar"><label><input type="checkbox" id="qc-use-template">使用模板生成</label><button type="button" id="qc-browse-templates">瀏覽模板庫</button><div id="qc-selected-template" hidden><span id="qc-template-name"></span><button type="button" id="qc-preview-template">預覽</button><button type="button" id="qc-change-template">更換</button><button type="button" id="qc-remove-template">取消套用</button></div></div>
+            <div class="creation-template-toolbar" id="qc-template-toolbar"><label class="creation-checkbox"><input type="checkbox" id="qc-use-template">使用模板生成</label><button type="button" id="qc-browse-templates">瀏覽模板庫</button><div id="qc-selected-template" hidden><span id="qc-template-name"></span><button type="button" id="qc-preview-template">預覽</button><button type="button" id="qc-change-template">更換</button><button type="button" id="qc-remove-template">取消套用</button></div></div>
             <div class="qc-suggestion-row" id="qc-suggestion-row">
               <span class="qc-sugg-label">靈感推薦：</span>
               <div class="qc-sugg-chips-list">

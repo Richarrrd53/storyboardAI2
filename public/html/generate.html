@@ -107,7 +107,7 @@
                             </div>
                         </button>
                     </div>
-                    <div class="creation-template-toolbar" id="generate-template-toolbar"><label><input type="checkbox" id="use-template-generation">使用模板生成</label><button type="button" class="copilot-text-action" id="browse-template-library">瀏覽模板庫</button><button type="button" class="copilot-text-action" id="change-selected-template" hidden>更換模板</button><button type="button" class="copilot-text-action" id="remove-selected-template" hidden>取消套用</button></div>
+                    <div class="creation-template-toolbar" id="generate-template-toolbar"><label class="creation-checkbox"><input type="checkbox" id="use-template-generation">使用模板生成</label><button type="button" class="copilot-text-action" id="browse-template-library">瀏覽模板庫</button><button type="button" class="copilot-text-action" id="change-selected-template" hidden>更換模板</button><button type="button" class="copilot-text-action" id="remove-selected-template" hidden>取消套用</button></div>
                     <div class="copilot-entry-actions" id="copilot-entry-actions"><button type="button" class="btn btn-ghost" id="btn-skip-copilot">略過討論，直接創作</button></div>
                     <section id="creative-copilot" class="copilot-workspace" aria-label="AI 創作討論" hidden></section>
                 </div>
@@ -192,7 +192,7 @@
                         </div>
                     </div>
                     <p id="duration-current" class="section-hint" hidden></p>
-                    <label class="section-hint plan-confirm-option"><input type="checkbox" id="confirm-before-images"><span>進階：先確認文字分鏡</span></label>
+                    <label class="creation-checkbox plan-confirm-option"><input type="checkbox" id="confirm-before-images"><span>進階：先確認文字分鏡</span></label>
                     <!-- 動作按鈕 -->
                     <div class="phase-actions-footer">
                         <button type="button" class="btn btn-ghost" id="btn-direction-back" onclick="switchPhase(1)">返回構思</button>
