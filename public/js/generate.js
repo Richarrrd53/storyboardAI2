@@ -59,6 +59,60 @@
   let mathLoader = null;
   let inspirationField = null;
 
+  const assistantCopy = {
+      received: '收到！我先把你的想法整理成故事，接著再想辦法讓畫面活起來。',
+      planning: '故事有雛形了，讓我想想每個鏡頭該怎麼安排……',
+      planned: '劇本準備好了！接下來，就讓這些文字變成真正的畫面。',
+      images: '正在努力把想像畫出來，這部分需要一點魔法……還有運算。',
+      completed: '完成！你的故事現在有畫面了，來看看是不是你想像中的模樣吧。',
+      waiting: [
+          '這個鏡頭好像還能更有戲一點……',
+          '導演請稍候，攝影棚正在準備中。',
+          '畫面正在成形，希望這次光影能漂亮一點。',
+          '再給我一點時間，好畫面值得多花點心思。'
+      ]
+  };
+  let assistantStage = null, assistantTimer = null, assistantAnimation = null, assistantLastLine = -1;
+  function stopAssistant() {
+      clearTimeout(assistantTimer); assistantTimer = null;
+      assistantAnimation?.cancel(); assistantAnimation = null;
+      assistantStage = null; assistantLastLine = -1;
+  }
+  function showAssistantLine(message, immediate = false) {
+      const node = document.getElementById('generation-assistant-message');
+      if (!node) return;
+      assistantAnimation?.cancel(); assistantAnimation = null;
+      const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (immediate || reduced || !node.textContent || !node.animate) {
+          node.textContent = message;
+          if (!reduced && node.animate) assistantAnimation = node.animate([{ opacity: 0, transform: 'translateY(5px)' }, { opacity: 1, transform: 'translateY(0)' }], { duration: 220, easing: 'ease-out' });
+          return;
+      }
+      const stage = assistantStage;
+      assistantAnimation = node.animate([{ opacity: 1, transform: 'translateY(0)' }, { opacity: 0, transform: 'translateY(-4px)' }], { duration: 120, easing: 'ease-in', fill: 'forwards' });
+      assistantAnimation.onfinish = () => {
+          if (stage !== assistantStage || !pageController || pageController.signal.aborted) return;
+          node.textContent = message;
+          assistantAnimation = node.animate([{ opacity: 0, transform: 'translateY(5px)' }, { opacity: 1, transform: 'translateY(0)' }], { duration: 180, easing: 'ease-out' });
+      };
+  }
+  function syncAssistant(task) {
+      if (task.status !== 'generating') { stopAssistant(); return; }
+      const stage = task.stage === 'images' ? 'images' : task.progress.statusText === '正在規劃分鏡…' ? 'received' : 'planning';
+      const key = `${task.taskId}:${stage}`;
+      if (assistantStage === key) return;
+      stopAssistant(); assistantStage = key;
+      showAssistantLine(assistantCopy[stage], true);
+      const rotate = () => {
+          if (assistantStage !== key || !pageController || pageController.signal.aborted) return;
+          const choices = assistantCopy.waiting.map((_, i) => i).filter(i => i !== assistantLastLine);
+          assistantLastLine = choices[Math.floor(Math.random() * choices.length)];
+          showAssistantLine(assistantCopy.waiting[assistantLastLine]);
+          assistantTimer = setTimeout(rotate, 7000);
+      };
+      if (stage !== 'received') assistantTimer = setTimeout(rotate, 10000);
+  }
+
   function syncMathLoader(task = window.GenerationTask.getState()) {
       const visible = CreationSessionStore.currentPhase === 4 && task.status === 'generating';
       if (!visible) {
@@ -91,6 +145,7 @@
           CreationSessionStore.currentPhase = 1;
       }
       clearInterval(retryDisplayTimer); retryDisplayTimer = null;
+      stopAssistant();
       if (pageController) window.CreationController.cleanupTransition();
       mathLoader?.stop();
       mathLoader = null;
@@ -708,6 +763,8 @@
           }
       }
 
+      const assistantResult = document.getElementById('result-assistant-message');
+      if (assistantResult) assistantResult.textContent = task.status === 'completed' && !task.result.failedShotIndexes.length ? assistantCopy.completed : '';
       window.TemplateWorkflow.results(task);
   }
 
@@ -828,6 +885,7 @@
           }, 250);
       }
       syncMathLoader(task);
+      syncAssistant(task);
       const edit = document.getElementById('context-edit-btn');
       if (edit) edit.disabled = task.status === 'generating';
       if (task.status === 'idle') return;
@@ -835,6 +893,8 @@
       if (task.status === 'awaiting_confirmation') {
           if (CreationSessionStore.currentPhase !== 5) switchPhase(5);
           renderPlan(task);
+          const planMessage = document.getElementById('plan-assistant-message');
+          if (planMessage) planMessage.textContent = assistantCopy.planned;
           const summary = document.getElementById('plan-thought-summary');
           if (summary) summary.innerHTML = window.AIActivity?.summaryMarkup(task.activity?.thoughtSummaries) || '';
           return;

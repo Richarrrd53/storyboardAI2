@@ -156,6 +156,8 @@ html, body { overflow-x: clip; }
 .plan-shot-fields { display: flex; flex-direction: column; gap: var(--space-4); min-width: 0; }
 .plan-tech-fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: var(--space-4); }
 .plan-shot summary { min-height: 44px; padding-block: var(--space-3); color: var(--color-text-secondary); }
+.generation-assistant-message { margin: 0; min-height: 3em; max-width: 36rem; color: var(--color-text-secondary); line-height: 1.5; overflow-wrap: anywhere; }
+.generation-result-wrap .generation-assistant-message { min-height: 0; margin-top: var(--space-2); }
 .generation-progress-wrap { display: flex; flex-direction: column; gap: var(--space-6); padding-block: var(--space-8); }
 .math-loader-box { position: relative; isolation: isolate; display: grid; place-items: center; color: var(--color-brand-primary); min-height: 18rem; }
 .math-loader-box .math-loader-svg.loader { position: relative; z-index: 2; width: 7rem; height: 7rem; pointer-events: none; }
