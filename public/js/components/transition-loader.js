@@ -34,7 +34,7 @@
   /**
    * Pure mathematical rose curve particle & SVG path animation engine
    */
-  function setupRoseAnimation(group, path, particleCount = 45, depth = null) {
+  function setupRoseAnimation(group, path, particleCount = 150, depth = null) {
     if (!group || !path) return null;
     const SVG_NS = 'http://www.w3.org/2000/svg';
     const trailSpan = 0.32;
