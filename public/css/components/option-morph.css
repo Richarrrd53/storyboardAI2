@@ -127,7 +127,16 @@
   align-items: center; line-height: 24px; border-radius: 999px;
 }
 .global-project-option-menu .morph-item:not(:disabled, [aria-disabled="true"]):is(:hover, .is-gesture-hover) { background: var(--color-surface-selected); }
-.global-project-option-menu.is-content-visible .morph-item:not(:disabled, [aria-disabled="true"]):active { transform: scale(.97); }
+.surface-morph-surface.is-settled :is(button, a[href], .up-btn, .morph-item, [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"]):not(:disabled, [aria-disabled="true"]) {
+  transition: background 0.12s ease,
+              color 0.12s ease,
+              scale 0.3s var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1)),
+              opacity 0.3s var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1));
+}
+.surface-morph-surface.is-content-visible :is(button, a[href], .up-btn, .morph-item, [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"]):not(:disabled, [aria-disabled="true"]):active {
+  scale: 0.98;
+  opacity: 0.8 !important;
+}
 .global-project-option-menu .morph-item[aria-checked="true"]:not(:disabled, [aria-disabled="true"]) { color: var(--color-action-primary-hover); }
 .global-project-option-menu .projects-sort-check { margin-left: auto; }
 

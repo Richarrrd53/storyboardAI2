@@ -14,9 +14,21 @@
         const controller = new AbortController();
         const listeners = [];
         const listen = (element, type, handler) => {
+            if (!element?.addEventListener) return;
             element.addEventListener(type, handler);
             listeners.push(() => element.removeEventListener(type, handler));
         };
+        const settingsLink = document.getElementById('skill-status');
+        listen(settingsLink, 'click', event => {
+            if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+            if (typeof window.openApiSettingsDialog === 'function') {
+                event.preventDefault();
+                window.openApiSettingsDialog({ returnFocus: settingsLink, onSaved: () => loadSkills() });
+            }
+        });
+        listen(window, 'discovery:settings-updated', () => {
+            if (!disposed) loadSkills();
+        });
         function unmount() {
             if (disposed) return;
             disposed = true;

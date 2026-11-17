@@ -16,6 +16,7 @@
   };
 
   let selectedRoute = null;
+  let selectedProjectId = null;
   let lastCommittedMainPage = null;
   let disposeUserPanelHover = null;
   let pendingMobNavRoute = null;
@@ -176,6 +177,92 @@
     updateRailHoles();
   }
 
+  let upViewAnimations = [];
+
+  function cancelUserPanelViewAnimations(panel) {
+    upViewAnimations.splice(0).forEach(anim => { try { anim.cancel(); } catch (_) {} });
+    const viewsWrap = panel?.querySelector('.up-views');
+    if (viewsWrap) viewsWrap.style.height = '';
+    panel?.querySelectorAll('[data-up-view]').forEach(view => view.classList.remove('is-leaving'));
+  }
+
+  function resetUserPanelViews(panel) {
+    if (!panel) return;
+    cancelUserPanelViewAnimations(panel);
+    const mainView = panel.querySelector('[data-up-view="main"]');
+    const settingsView = panel.querySelector('[data-up-view="settings"]');
+    if (mainView) mainView.hidden = false;
+    if (settingsView) settingsView.hidden = true;
+  }
+
+  function switchUserPanelView(panel, direction, onReady) {
+    if (!panel) return;
+    const viewsWrap = panel.querySelector('.up-views');
+    const mainView = panel.querySelector('[data-up-view="main"]');
+    const settingsView = panel.querySelector('[data-up-view="settings"]');
+    if (!mainView || !settingsView) return;
+
+    const incoming = direction === 'forward' ? settingsView : mainView;
+    const outgoing = direction === 'forward' ? mainView : settingsView;
+    const reduced = !!window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+
+    cancelUserPanelViewAnimations(panel);
+
+    if (reduced || typeof incoming.animate !== 'function' || typeof outgoing.animate !== 'function') {
+      outgoing.hidden = true;
+      incoming.hidden = false;
+      onReady?.();
+      return;
+    }
+
+    const fromHeight = viewsWrap?.getBoundingClientRect?.().height || 0;
+    outgoing.hidden = false;
+    outgoing.classList.add('is-leaving');
+    incoming.hidden = false;
+    const toHeight = incoming.getBoundingClientRect?.().height || 0;
+
+    const duration = 240;
+    const easing = 'cubic-bezier(0.16, 1, 0.3, 1)';
+    const outOffset = direction === 'forward' ? '-36%' : '36%';
+    const inOffset = direction === 'forward' ? '36%' : '-36%';
+
+    if (viewsWrap && fromHeight > 0 && toHeight > 0 && Math.abs(fromHeight - toHeight) > 1 && typeof viewsWrap.animate === 'function') {
+      upViewAnimations.push(viewsWrap.animate(
+        [{ height: `${fromHeight}px` }, { height: `${toHeight}px` }],
+        { duration, easing }
+      ));
+    }
+
+    const outAnim = outgoing.animate(
+      [
+        { transform: 'translate3d(0, 0, 0)', opacity: 1 },
+        { transform: `translate3d(${outOffset}, 0, 0)`, opacity: 0 }
+      ],
+      { duration, easing, fill: 'both' }
+    );
+    const inAnim = incoming.animate(
+      [
+        { transform: `translate3d(${inOffset}, 0, 0)`, opacity: 0 },
+        { transform: 'translate3d(0, 0, 0)', opacity: 1 }
+      ],
+      { duration, easing, fill: 'both' }
+    );
+    upViewAnimations.push(outAnim, inAnim);
+
+    let finished = false;
+    const settle = () => {
+      if (finished) return;
+      finished = true;
+      outgoing.hidden = true;
+      outgoing.classList.remove('is-leaving');
+      if (viewsWrap) viewsWrap.style.height = '';
+      upViewAnimations.splice(0).forEach(anim => { try { anim.cancel(); } catch (_) {} });
+    };
+    inAnim.onfinish = settle;
+    inAnim.oncancel = () => { finished = true; };
+    onReady?.();
+  }
+
   function ensureUserPanelDOM() {
     let avatar = document.getElementById('account-trigger');
     if (avatar && !avatar.classList.contains('account-row')) {
@@ -196,7 +283,7 @@
     if (!panel.classList.contains('account-panel')) {
       panel.id = 'spa-user-panel'; panel.className = 'account-panel';
       panel.innerHTML = `<div class="user-panel-handle" aria-hidden="true"></div>
-        <button type="button" class="account-panel-close" aria-label="關閉帳戶面板">×</button>
+        <div class="up-views">
         <div class="up-view-main" data-up-view="main">
           <div class="up-header"><div class="up-avatar" aria-hidden="true">帳</div><div class="account-panel-identity"><p class="up-name">帳戶</p><p class="up-email" hidden></p><span class="up-plan" hidden></span></div></div>
           <div class="up-body"><button type="button" class="up-btn" disabled><svg data-im-icon="profile" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle data-im-part="head" cx="12" cy="9" r="3" stroke="#2e2e2e" stroke-width="1.5"/><circle cx="12" cy="12" r="10" stroke="#2e2e2e" stroke-width="1.5"/><path data-im-part="shoulders" d="M17.9691 20C17.81 17.1085 16.9247 15 11.9999 15C7.07521 15 6.18991 17.1085 6.03076 20" stroke="#2e2e2e" stroke-width="1.5" stroke-linecap="round"/></svg><span>個人檔案</span></button><button type="button" class="up-btn" disabled><svg data-im-icon="upgrade" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="#2e2e2e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><g data-im-part="arrow"><path d="M12 15.5V9.5" stroke="#2e2e2e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 11.5L12 8.5L15 11.5" stroke="#2e2e2e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></g></svg><span>升級方案</span></button><a href="../history" class="up-btn" id="up-recycle-bin"><svg data-im-icon="trash" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><g data-im-part="lid"><path d="M3 6H21" stroke="#0f172a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 6V4C8 3 9 2 10 2H14C15 2 16 3 16 4V6" stroke="#0f172a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g><path data-im-part="body" d="M19 6V20C19 21 18 22 17 22H7C6 22 5 21 5 20V6" stroke="#0f172a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>資源回收桶</span></a><button type="button" class="up-btn" id="up-settings-btn"><svg data-im-icon="settings" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><g data-im-part="gear"><path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="#2e2e2e" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 12.8799V11.1199C2 10.0799 2.85 9.21994 3.9 9.21994C5.71 9.21994 6.45 7.93994 5.54 6.36994C5.02 5.46994 5.33 4.29994 6.24 3.77994L7.97 2.78994C8.76 2.31994 9.78 2.59994 10.25 3.38994L10.36 3.57994C11.26 5.14994 12.74 5.14994 13.65 3.57994L13.76 3.38994C14.23 2.59994 15.25 2.31994 16.04 2.78994L17.77 3.77994C18.68 4.29994 18.99 5.46994 18.47 6.36994C17.56 7.93994 18.3 9.21994 20.11 9.21994C21.15 9.21994 22.01 10.0699 22.01 11.1199V12.8799C22.01 13.9199 21.16 14.7799 20.11 14.7799C18.3 14.7799 17.56 16.0599 18.47 17.6299C18.99 18.5399 18.68 19.6999 17.77 20.2199L16.04 21.2099C15.25 21.6799 14.23 21.3999 13.76 20.6099L13.65 20.4199C12.75 18.8499 11.27 18.8499 10.36 20.4199L10.25 20.6099C9.78 21.3999 8.76 21.6799 7.97 21.2099L6.24 20.2199C5.33 19.6999 5.02 18.5299 5.54 17.6299C6.45 16.0599 5.71 14.7799 3.9 14.7799C2.85 14.7799 2 13.9199 2 12.8799Z" stroke="#2e2e2e" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/></g></svg><span>設定</span></button></div>
@@ -210,7 +297,7 @@
             <h3 class="up-settings-title">設定</h3>
           </div>
           <div class="up-settings-section">
-            <a href="/discovery/settings" class="up-btn up-api-settings" id="up-api-settings"><img src="/icon/setting.svg" alt=""><span>API 設定</span><span aria-hidden="true">↗</span></a>
+            <button type="button" class="btn btn-secondary up-api-settings" id="up-api-settings"><img src="/icon/setting.svg" alt="" width="18" height="18"><span>API 設定</span><svg class="up-api-settings__chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m9 6 6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
             <p class="up-settings-label">AI 模型</p>
             <div class="up-provider-list" role="radiogroup" aria-label="預設 AI Provider">
               <button type="button" class="up-provider-option is-selected" data-ai-provider="gemini" role="radio" aria-checked="true">
@@ -230,6 +317,7 @@
             </div>
             <p class="up-settings-hint">切換僅影響後續新任務，進行中的生成不會中斷。</p>
           </div>
+        </div>
         </div>`;
     }
     dashboardUserPanel = panel;
@@ -247,10 +335,7 @@
         updateMobileBottomNavActive();
         if (!open) {
           window.IconMotion?.cleanup?.(panel);
-          const mainView = panel.querySelector('[data-up-view="main"]');
-          const settingsView = panel.querySelector('[data-up-view="settings"]');
-          if (mainView) mainView.hidden = false;
-          if (settingsView) settingsView.hidden = true;
+          resetUserPanelViews(panel);
         }
       }, onDepth:setBackgroundDepthProgress, animateDepth:animateBackgroundDepth});
     return {panel, backdrop};
@@ -471,6 +556,7 @@
             subList.classList.add('expanded');
             navProjectsGroup.classList.add('expanded');
             localStorage.setItem('sidebar_projects_expanded', 'true');
+            window.DynamicMaskSystem?.update?.(subList);
           }
         };
         addTrackedListener(toggleBtn, 'click', onToggleClick);
@@ -614,20 +700,31 @@
 
       sidebarList.innerHTML = '';
 
-      activeProjects.forEach(p => {
-        const a = document.createElement('a');
-        a.href = `../project/${p.id}`;
-        a.className = 'sub-link project-sub-link';
-        a.dataset.id = p.id;
-        a.title = p.title;
-        a.innerHTML = `<span class="sub-text">${p.title}</span><div class="link-glow"></div>`;
-        sidebarList.appendChild(a);
-      });
+      if (activeProjects.length === 0) {
+        const emptyEl = document.createElement('p');
+        emptyEl.className = 'side-sub-empty';
+        emptyEl.textContent = '目前沒有任何分鏡...';
+        sidebarList.appendChild(emptyEl);
+      } else {
+        activeProjects.forEach(p => {
+          const a = document.createElement('a');
+          a.href = `../project/${p.id}`;
+          a.className = 'sub-link project-sub-link';
+          a.dataset.id = p.id;
+          a.title = p.title;
+          a.innerHTML = `<span class="sub-text">${p.title}</span><div class="link-glow"></div>`;
+          sidebarList.appendChild(a);
+        });
 
-      bindSidebarSubLinks(sidebarList);
+        bindSidebarSubLinks(sidebarList);
+      }
     }
 
     highlightActiveSidebarProject(sidebarList);
+    if (window.DynamicMaskSystem) {
+      window.DynamicMaskSystem.attach?.(sidebarList, { maskSize: 24, direction: 'vertical' });
+      window.DynamicMaskSystem.update?.(sidebarList);
+    }
   }
 
   function bindSidebarSubLinks(container) {
@@ -654,17 +751,36 @@
     });
   }
 
+  function getProjectIdFromLocation() {
+    const hash = window.location.hash || '';
+    const hashMatch = hash.match(/^#\/project\/([^?#]+)/);
+    if (hashMatch && hashMatch[1]) {
+      try { return decodeURIComponent(hashMatch[1]); } catch (_) { return hashMatch[1]; }
+    }
+    const pathname = window.location.pathname || '';
+    const pathMatch = pathname.match(/^\/project\/([^/?#]+)/);
+    if (pathMatch && pathMatch[1]) {
+      try { return decodeURIComponent(pathMatch[1]); } catch (_) { return pathMatch[1]; }
+    }
+    return null;
+  }
+
   function highlightActiveSidebarProject(sidebarList) {
     if (!sidebarList) return;
     sidebarList.querySelectorAll('.sub-link').forEach(l => l.classList.remove('active'));
 
-    const currentHash = window.location.hash || '';
-    const match = currentHash.match(/^#\/project\/(.+)$/);
-    if (match && match[1]) {
-      const activeId = decodeURIComponent(match[1]);
-      const activeLink = sidebarList.querySelector(`.project-sub-link[data-id="${activeId}"]`);
+    const activeId = (selectedRoute === 'project' && selectedProjectId)
+      ? String(selectedProjectId)
+      : (selectedRoute === null || selectedRoute === 'project' ? getProjectIdFromLocation() : null);
+
+    if (activeId) {
+      const activeLink = Array.from(sidebarList.querySelectorAll('.project-sub-link'))
+        .find(l => l.dataset.id === String(activeId));
       if (activeLink) {
         activeLink.classList.add('active');
+        if (sidebarList.classList.contains('expanded') && typeof activeLink.scrollIntoView === 'function') {
+          activeLink.scrollIntoView({ block: 'nearest' });
+        }
       }
     }
   }
@@ -738,13 +854,17 @@
       addTrackedListener(apiSettingsLink, 'click', event => {
         if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
         event.preventDefault();
-        shellOptions.navigate('discovery-settings');
+        const returnFocus = accountController?.trigger;
+        toggleUserPanel(false);
+        if (typeof window.openApiSettingsDialog === 'function') {
+          window.openApiSettingsDialog({ returnFocus });
+        } else {
+          shellOptions.navigate('discovery-settings');
+        }
       });
     }
     const settingsBtn = panel?.querySelector('#up-settings-btn');
     const settingsBack = panel?.querySelector('#up-settings-back');
-    const mainView = panel?.querySelector('[data-up-view="main"]');
-    const settingsView = panel?.querySelector('[data-up-view="settings"]');
     const syncProviderUI = (activeProvider, caps) => {
       if (!panel) return;
       const current = activeProvider === 'openai' ? 'openai' : 'gemini';
@@ -765,9 +885,7 @@
     if (settingsBtn && !settingsBtn.dataset.spaBound) {
       settingsBtn.dataset.spaBound = 'true';
       addTrackedListener(settingsBtn, 'click', async () => {
-        if (mainView) mainView.hidden = true;
-        if (settingsView) settingsView.hidden = false;
-        settingsBack?.focus?.({ preventScroll: true });
+        switchUserPanelView(panel, 'forward', () => settingsBack?.focus?.({ preventScroll: true }));
         const current = auth?.getAiProvider?.() || 'gemini';
         syncProviderUI(current, null);
         const caps = await auth?.fetchAiCapabilities?.();
@@ -777,9 +895,7 @@
     if (settingsBack && !settingsBack.dataset.spaBound) {
       settingsBack.dataset.spaBound = 'true';
       addTrackedListener(settingsBack, 'click', () => {
-        if (settingsView) settingsView.hidden = true;
-        if (mainView) mainView.hidden = false;
-        settingsBtn?.focus?.({ preventScroll: true });
+        switchUserPanelView(panel, 'back', () => settingsBtn?.focus?.({ preventScroll: true }));
       });
     }
     for (const option of panel?.querySelectorAll('[data-ai-provider]') || []) {
@@ -1791,6 +1907,9 @@
     bindSidebarLinks();
     bindGlobalListeners();
     subscribeProjectStore();
+    if (window.ProjectStore && typeof window.ProjectStore.fetchProjects === 'function' && !window.ProjectStore.getProjects()) {
+      Promise.resolve(window.ProjectStore.fetchProjects()).catch(() => {});
+    }
     void syncUserProfile(options.signal);
     updateSidebarProjects();
 
@@ -1802,6 +1921,11 @@
   function setPendingRoute(page, meta = {}) {
     if (selectedRoute !== page) accountController?.close('navigation', true);
     selectedRoute = page;
+    if (page === 'project') {
+      if (meta.id) selectedProjectId = meta.id;
+    } else {
+      selectedProjectId = null;
+    }
     updateSidebarActive(page);
     updateMobileBottomNavActive(page);
     if (meta.committed) {
@@ -1818,7 +1942,11 @@
     cancelMobNavInteraction?.();
     if (selectedRoute !== page) accountController?.close('navigation', true);
     selectedRoute = page;
+    selectedProjectId = page === 'project' ? (opts.id || getProjectIdFromLocation() || null) : null;
     const isDashboard = isDashboardPage(page);
+    if (isDashboard && window.ProjectStore && typeof window.ProjectStore.fetchProjects === 'function' && !window.ProjectStore.getProjects()) {
+      Promise.resolve(window.ProjectStore.fetchProjects()).catch(() => {});
+    }
     secondaryRoute = page === 'project' || page === 'discovery-settings' || page === 'generate' || (page === 'template' && !!opts.templateId);
     document.body.classList.toggle('workspace-secondary', secondaryRoute);
 
@@ -1877,6 +2005,8 @@
   function destroy() {
     document.body.classList.remove('motion-suspended');
     disposeUserPanelHover?.(); disposeUserPanelHover = null;
+    selectedRoute = null;
+    selectedProjectId = null;
     lastCommittedMainPage = null;
     pendingMobNavRoute = null;
     mobNavSettleCheck = null;

@@ -62,3 +62,15 @@ test('Settings late read or save cannot update detached UI or start a verificati
   assert.equal(f.ids['settings-status'].textContent,before);assert.equal(f.calls.length,phase==='load'?1:2);assert.ok(f.calls.every(call=>call.signal.aborted));assert.equal(f.ids['return-search'].focusCount,0);assert.equal(f.ids['youtube-key'].value,'');
  }
 });
+test('Discovery page removes back-link and settings page keeps 3 API fields with close/save buttons',()=>{
+ const discoveryHtml=fs.readFileSync('public/html/discovery.html','utf8');
+ const settingsHtml=fs.readFileSync('public/html/discovery-settings.html','utf8');
+ assert.equal(discoveryHtml.includes('class="back-link"'),false);
+ assert.match(discoveryHtml,/id="skill-status"/);
+ assert.equal(settingsHtml.includes('settings-aside'),false);
+ assert.match(settingsHtml,/id="openai-key"/);
+ assert.match(settingsHtml,/id="youtube-key"/);
+ assert.match(settingsHtml,/id="gemini-key"/);
+ assert.match(settingsHtml,/>關閉</);
+ assert.match(settingsHtml,/>儲存並檢查設定</);
+});

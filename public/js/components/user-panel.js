@@ -50,7 +50,7 @@
       sheet=doc.createElement('section');sheet.className='account-sheet';sheet.id='spa-user-panel-surface';sheet.tabIndex=-1;
       sheet.setAttribute('role','dialog');sheet.setAttribute('aria-modal','true');sheet.setAttribute('aria-label','帳戶與設定');
       sheet.appendChild(panel);host.appendChild(sheet);doc.body.appendChild(host);publish(true);
-      lease=root.OverlayManager.acquire({overlay:host,panel:sheet,initialFocus:panel.querySelector('.account-panel-close')||sheet,returnFocus:opener,onEscape:()=>close('escape')});
+      lease=root.OverlayManager.acquire({overlay:host,panel:sheet,initialFocus:sheet,returnFocus:opener,onEscape:()=>close('escape')});
       const settle=()=>{phase='open';stopMotion();if(sheet)sheet.style.transform='translate3d(0,0,0)';};
       animate(sheet,[{transform:'translate3d(0,100%,0)'},{transform:'translate3d(0,0,0)'}],350);
       animate(host,[overlayFrame('transparent','blur(0px)'),overlayFrame('var(--color-surface-overlay)','blur(4px)')],350);
@@ -134,7 +134,7 @@
     }
     const abort=()=>close('navigation',true);
     listen(root,'resize',resize,{passive:true});listen(root,'orientationchange',resize,{passive:true});
-    listen(panel,'pointerdown',down);listen(panel.querySelector('.account-panel-close'),'click',()=>close('close_button'));
+    listen(panel,'pointerdown',down);
     listen(motion,'change',()=>{if(!motion.matches||mode!=='mobile')return;if(phase==='closing')cleanupSheet('close');else if(mode==='mobile'){stopMotion();endPointer();phase='open';sheet.style.transform='translate3d(0,0,0)';}});
     park();panel.setAttribute('role','group');panel.setAttribute('aria-label','帳戶資訊與操作');
     return {open,close,toggle(force){if(typeof force==='boolean'){if(force)open();else close();}else if(desired)close();else open();},

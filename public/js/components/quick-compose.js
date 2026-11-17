@@ -95,7 +95,7 @@
     if (typeof root.isDashboardPage === 'function') {
       return root.isDashboardPage(page);
     }
-    return ['dashboard', 'projects', 'generate', 'history', 'template', 'project', 'discovery'].includes(page);
+    return ['dashboard', 'projects', 'generate', 'history', 'template', 'project', 'discovery', 'discovery-settings', 'analysis'].includes(page);
   }
 
   function updateMobileNav(page) {
@@ -382,6 +382,11 @@
       ? targetPage
       : (root.spaRouter?.currentPage || root.currentPage || 'dashboard');
 
+    const layer = getLayer();
+    if (layer) {
+      layer.style.removeProperty('display');
+    }
+
     const qcContainer = getContainer();
     if (qcContainer) {
       qcContainer.style.removeProperty('opacity');
@@ -490,6 +495,7 @@
     document.body.classList.add('ai-quick-compose-active');
 
     if (layer) {
+      layer.style.removeProperty('display');
       layer.classList.remove('state-closed', 'state-closing', 'state-workspace', 'state-transitioning');
       layer.classList.add('state-quick-compose');
     }
@@ -748,8 +754,9 @@
     const capsule = getCapsule();
     const mobGen = document.getElementById('mob-nav-generate');
 
-    // On Dashboard pages, ensure trigger is visible
+    // On Dashboard pages, ensure trigger and layer are visible
     trigger.style.display = '';
+    layer.style.removeProperty('display');
 
     if (page === 'generate') {
       // In /generate, the capsule trigger is hidden by the workspace

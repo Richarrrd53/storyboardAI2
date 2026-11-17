@@ -11,16 +11,9 @@
 <body>
     <main id="page-main" class="page-shell page-discovery-settings dash-main">
         <div class="discovery-page-content settings-shell">
-        <header class="settings-header">
-            <a class="back-link" href="/discovery" aria-label="返回"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></a>
-            <p class="settings-breadcrumb">使用者設定 / API 設定</p>
-            <div class="settings-title-row"><h1>API 設定</h1></div>
-            <p class="intro">連接你的創作工具，自由使用自己的 API 金鑰。</p>
-        </header>
-
         <div class="settings-layout">
             <section class="settings-panel" aria-labelledby="settings-title">
-                <div class="panel-heading"><div><span class="step">01</span><h2 id="settings-title">API 金鑰設定</h2></div><span id="settings-status" class="status-chip" role="status" aria-live="polite">讀取設定中…</span></div>
+                <div class="panel-heading"><div><h2 id="settings-title">API 設定</h2></div><span id="settings-status" class="status-chip" role="status" aria-live="polite">讀取設定中…</span></div>
                 <form id="api-settings-form" autocomplete="off">
                     <fieldset id="key-fields" disabled>
                         <section class="provider-block" aria-labelledby="openai-title">
@@ -45,16 +38,14 @@
                             <a class="provider-link" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">前往 Google AI Studio 取得金鑰 ↗</a>
                         </section>
                     </fieldset>
-                    <div class="save-bar"><p>金鑰會加密保存，<br />已儲存的內容不會完整顯示。</p><button id="save-settings" class="search-button" type="submit" disabled>檢查並儲存設定 <span aria-hidden="true">↗</span></button></div>
-                    <button id="retry-settings" class="retry-button" type="button" hidden>重新讀取設定</button>
+                    <button id="retry-settings" class="btn btn-secondary retry-button" type="button" hidden>重新讀取設定</button>
                     <p id="settings-message" class="form-message" role="status" aria-live="polite"></p>
-                    <a id="return-search" class="return-search" href="/discovery" hidden>設定完成，開始搜尋影片 →</a>
+                    <div class="api-settings-dialog-actions">
+                        <a href="/discovery" class="btn btn-secondary api-settings-close">關閉</a>
+                        <button id="save-settings" class="btn btn-primary api-settings-save" type="submit" disabled>儲存並檢查設定</button>
+                    </div>
                 </form>
             </section>
-            <aside class="settings-aside" aria-label="設定說明">
-                <div class="connection-note"><h2>從影片到敘事結構</h2><ol class="connection-flow"><li><span>01</span><div><strong>找到影片</strong><p>YouTube 搜尋符合條件的公開影片。</p></div></li><li><span>02</span><div><strong>理解內容</strong><p>Gemini 分析開場、問題、解法與結尾。</p></div></li><li><span>03</span><div><strong>開始創作</strong><p>搭配時間戳，回看片段與敘事結構。</p></div></li></ol></div>
-                <div class="storage-note"><strong>只使用此帳號的 API</strong><p>各服務可分開儲存。OpenAI 與 Gemini 用於 AI 創作；YouTube 搜尋搭配 Gemini 影片分析。未設定的服務無法使用，不會借用其他帳號或網站的金鑰。</p><p>金鑰綁定目前登入帳號，加密保存在此瀏覽器 90 天，不會跨裝置同步。切換帳號會使用各自的設定，清除瀏覽資料後需重新填寫。欄位留空保留此帳號的現有金鑰。</p></div>
-            </aside>
         </div>
         </div>
     </main>

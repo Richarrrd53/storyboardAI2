@@ -748,7 +748,8 @@ test('AppShell: ProjectStore subscription event compatibility across all mutatio
 
   // 8. Reset / Logout
   window.ProjectStore.reset();
-  assert.strictEqual(sidebarList.children.length, 0);
+  assert.strictEqual(sidebarList.querySelectorAll('.project-sub-link').length, 0);
+  assert.strictEqual(sidebarList.querySelector('.side-sub-empty')?.textContent, '目前沒有任何分鏡...');
 
   AppShell.destroy();
 });
@@ -1351,4 +1352,46 @@ test('Phase 6 shell pauses only ambient motion while hidden and releases the vis
  doc.hidden=true;doc.dispatchEvent({type:'visibilitychange'});assert.equal(body.classList.contains('motion-suspended'),true);
  doc.hidden=false;doc.dispatchEvent({type:'visibilitychange'});assert.equal(body.classList.contains('motion-suspended'),false);
  shell.destroy();doc.hidden=true;doc.dispatchEvent({type:'visibilitychange'});assert.equal(body.classList.contains('motion-suspended'),false);
+});
+
+test('AppShell: fetches projects on /project/:id refresh and highlights active project link', async () => {
+  const { windowMock } = setupMockEnvironment();
+  windowMock.location.pathname = '/project/p2';
+  windowMock.location.hash = '';
+
+  let projects = null;
+  let fetchCalls = 0;
+  const listeners = new Set();
+  window.ProjectStore = {
+    getProjects: () => projects,
+    subscribe: (fn) => { listeners.add(fn); return () => listeners.delete(fn); },
+    fetchProjects: async () => {
+      fetchCalls += 1;
+      projects = [
+        { id: 'p1', title: 'Project One', is_deleted: false },
+        { id: 'p2', title: 'Project Two', is_deleted: false }
+      ];
+      listeners.forEach(fn => fn(projects, { type: 'loaded', projects }));
+      return projects;
+    }
+  };
+
+  const AppShell = loadAppShell();
+  await AppShell.init({});
+  AppShell.updateRoute('project', { id: 'p2' });
+  await new Promise(r => setTimeout(r, 0));
+
+  assert.strictEqual(fetchCalls, 1, 'Should fetch projects when ProjectStore is empty on initial load');
+  const sidebarList = document.getElementById('sidebar-projects-list');
+  const links = sidebarList.querySelectorAll('.project-sub-link');
+  assert.strictEqual(links.length, 2);
+  assert.strictEqual(links[0].classList.contains('active'), false);
+  assert.strictEqual(links[1].classList.contains('active'), true);
+
+  // Switching to another project via updateRoute before location changes still updates active link
+  AppShell.updateRoute('project', { id: 'p1' });
+  assert.strictEqual(links[0].classList.contains('active'), true);
+  assert.strictEqual(links[1].classList.contains('active'), false);
+
+  AppShell.destroy();
 });

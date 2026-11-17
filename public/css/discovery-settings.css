@@ -13,72 +13,177 @@ body.dashboard-layout #page-content.spa-discovery-settings-wrap > .settings-shel
     min-width: 0;
     box-sizing: border-box;
 }
-.settings-shell .settings-breadcrumb { margin: var(--space-4) 0 0; color: var(--color-text-tertiary); font-size: var(--font-size-xs); }
-.settings-shell .openai-icon { color: var(--color-text-success); background: var(--color-bg-subtle); }
-.settings-shell .provider-block:first-child { padding-top: var(--space-4); }
+.settings-shell .openai-icon,
+.api-settings-dialog .openai-icon { color: var(--color-text-success); background: var(--color-bg-subtle); }
+.settings-shell .provider-block:first-child,
+.api-settings-dialog .provider-block:first-child { padding-top: var(--space-4); }
 .settings-shell .settings-header { margin-bottom: var(--space-6); }
 .settings-shell .settings-title-row { display: flex; align-items: center; gap: var(--space-4); }
 .settings-shell h1 { margin: var(--space-4) 0 0; font-size: var(--font-size-2xl); line-height: 1.35; overflow-wrap: anywhere; }
-.settings-shell .intro { margin-top: var(--space-3); color: var(--color-text-secondary); }
-.settings-shell .settings-layout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(240px, 1fr); gap: var(--space-6); align-items: start; }
+.settings-shell .settings-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-6); align-items: start; max-width: 720px; margin-inline: auto; }
 .settings-shell .settings-panel { min-width: 0; padding: var(--space-6); background: var(--color-surface-elevated); border: var(--border-width-thin) solid var(--color-border-subtle); border-radius: var(--radius-continuous-lg); box-shadow: var(--elevation-1); }
-.settings-shell .panel-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-3); }
+.settings-shell .panel-heading,
+.api-settings-dialog-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-3); }
 .settings-shell .panel-heading > div { display: flex; align-items: center; gap: var(--space-2); }
 .settings-shell .panel-heading h2 { margin: 0; font-size: var(--font-size-lg); }
-.settings-shell .step { color: var(--color-text-tertiary); font-size: var(--font-size-xs); }
-.settings-shell #api-settings-form { display: block; }
-.settings-shell #key-fields { padding: 0; margin: 0; border: 0; min-width: 0; }
-.settings-shell .provider-block { padding: var(--space-6) 0; border-bottom: var(--border-width-thin) solid var(--color-border-subtle); }
-.settings-shell .provider-heading { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-3); margin-bottom: var(--space-4); }
-.settings-shell .provider-icon { width: 42px; height: 42px; display: grid; place-items: center; flex-shrink: 0; border-radius: var(--radius-md); background: var(--color-bg-subtle); color: var(--color-text-brand); font-size: var(--font-size-xl); }
-.settings-shell .youtube-icon { color: var(--color-text-danger); }
-.settings-shell .provider-heading h3 { margin: 0 0 var(--space-1); font-size: var(--font-size-base); }
-.settings-shell .provider-heading p { margin: 0; font-size: var(--font-size-xs); color: var(--color-text-secondary); overflow-wrap: anywhere; }
-.settings-shell .provider-status { margin-left: auto; font-size: var(--font-size-xs); color: var(--color-text-secondary); }
-.settings-shell .provider-status.is-ready, .settings-shell .form-message.is-success { color: var(--color-text-success); }
-.settings-shell .field { font-size: var(--font-size-sm); font-weight: var(--font-weight-semibold); }
-.settings-shell .key-input { display: flex; min-width: 0; margin-top: var(--space-2); background: var(--color-bg-subtle); border: var(--border-width-thin) solid var(--input-border); border-radius: var(--radius-continuous-md); outline: none; }
-.settings-shell .key-input:focus-within { border-color: var(--focus-ring-color); outline: none; box-shadow: none; }
-.settings-shell .key-input input { width: 100%; min-width: 0; height: 48px; border: 0; background: transparent; padding: 0 var(--space-3); color: var(--color-text-primary); font: inherit; outline: none !important; box-shadow: none !important; }
+.settings-shell #api-settings-form,
+.api-settings-dialog #api-settings-form { display: block; }
+.settings-shell #key-fields,
+.api-settings-dialog #key-fields { padding: 0; margin: 0; border: 0; min-width: 0; }
+.settings-shell .provider-block,
+.api-settings-dialog .provider-block { padding: var(--space-5) 0; border-bottom: var(--border-width-thin) solid var(--color-border-subtle); }
+.api-settings-dialog .provider-block:last-child,
+.settings-shell .provider-block:last-child { border-bottom: 0; padding-bottom: var(--space-2); }
+.settings-shell .provider-heading,
+.api-settings-dialog .provider-heading { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-3); margin-bottom: var(--space-3); }
+.settings-shell .provider-icon,
+.api-settings-dialog .provider-icon { width: 40px; height: 40px; display: grid; place-items: center; flex-shrink: 0; border-radius: var(--radius-md); background: var(--color-bg-subtle); color: var(--color-text-brand); font-size: var(--font-size-xl); }
+.settings-shell .youtube-icon,
+.api-settings-dialog .youtube-icon { color: var(--color-text-danger); }
+.settings-shell .provider-heading h3,
+.api-settings-dialog .provider-heading h3 { margin: 0 0 var(--space-1); font-size: var(--font-size-base); }
+.settings-shell .provider-heading p,
+.api-settings-dialog .provider-heading p { margin: 0; font-size: var(--font-size-xs); color: var(--color-text-secondary); overflow-wrap: anywhere; }
+.settings-shell .provider-status,
+.api-settings-dialog .provider-status { margin-left: auto; font-size: var(--font-size-xs); color: var(--color-text-secondary); }
+.settings-shell .provider-status.is-ready,
+.settings-shell .form-message.is-success,
+.api-settings-dialog .provider-status.is-ready,
+.api-settings-dialog .form-message.is-success { color: var(--color-text-success); }
+.settings-shell .field,
+.api-settings-dialog .field { font-size: var(--font-size-sm); font-weight: var(--font-weight-semibold); }
+.settings-shell .key-input,
+.api-settings-dialog .key-input { display: flex; min-width: 0; margin-top: var(--space-2); background: var(--color-bg-subtle); border: var(--border-width-thin) solid var(--input-border); border-radius: var(--radius-continuous-md); outline: none; }
+.settings-shell .key-input:focus-within,
+.api-settings-dialog .key-input:focus-within { border-color: var(--focus-ring-color); outline: none; box-shadow: none; }
+.settings-shell .key-input input,
+.api-settings-dialog .key-input input { width: 100%; min-width: 0; height: 46px; border: 0; background: transparent; padding: 0 var(--space-3); color: var(--color-text-primary); font: inherit; outline: none !important; box-shadow: none !important; }
 .settings-shell .key-input input:focus,
-.settings-shell .key-input input:focus-visible { border: 0; outline: none !important; box-shadow: none !important; }
-.settings-shell .visibility-button { flex-shrink: 0; min-height: 44px; border: 0; border-radius: var(--radius-pill); background: transparent; padding: 0 var(--space-3); cursor: pointer; color: var(--color-text-secondary); font-size: var(--font-size-xs); white-space: nowrap; }
-.settings-shell .field-hint, .settings-shell .provider-link { font-size: var(--font-size-xs); line-height: 1.7; }
-.settings-shell .field-hint { margin: var(--space-2) 0; color: var(--color-text-secondary); }
-.settings-shell .provider-link { color: var(--color-text-brand); text-decoration: underline; overflow-wrap: anywhere; }
-.settings-shell .save-bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-4); margin-top: var(--space-5); }
-.settings-shell .save-bar p { font-size: var(--font-size-xs); color: var(--color-text-secondary); line-height: 1.7; margin: 0; }
-.settings-shell .search-button { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: var(--space-3) var(--space-4); border: 0; border-radius: var(--radius-pill); background: var(--button-primary-bg); color: var(--button-primary-text); font: inherit; font-size: var(--font-size-sm); font-weight: var(--font-weight-semibold); cursor: pointer; }
-.settings-shell button:disabled { opacity: var(--opacity-disabled); cursor: wait; }
-.settings-shell .form-message { margin-top: var(--space-3); margin-bottom: 0; min-height: 20px; color: var(--color-text-danger); font-size: var(--font-size-sm); line-height: 1.6; overflow-wrap: anywhere; }
-.settings-shell .return-search { display: inline-flex; align-items: center; min-height: 44px; padding: var(--space-3) var(--space-4); border-radius: var(--radius-pill); background: var(--color-bg-subtle); color: var(--color-text-brand); margin-top: var(--space-4); font-size: var(--font-size-sm); font-weight: var(--font-weight-semibold); text-decoration: none; }
-.settings-shell [hidden] { display: none; }
-.settings-shell .retry-button { margin-top: var(--space-4); min-height: 44px; border-radius: var(--radius-pill); }
-.settings-shell .connection-note { padding: var(--space-5); border-radius: var(--radius-continuous-lg); background: var(--color-bg-subtle); border: var(--border-width-thin) solid var(--color-border-subtle); }
-.settings-shell .connection-note h2 { margin: 0 0 var(--space-5); font-size: var(--font-size-lg); line-height: 1.5; }
-.settings-shell .connection-flow { list-style: none; margin: 0; padding: 0; }
-.settings-shell .connection-flow li { display: flex; gap: var(--space-3); padding-bottom: var(--space-5); }
-.settings-shell .connection-flow li:last-child { padding-bottom: 0; }
-.settings-shell .connection-flow li > span { color: var(--color-text-tertiary); font-size: var(--font-size-xs); margin-top: var(--space-1); }
-.settings-shell .connection-flow strong, .settings-shell .storage-note strong { font-size: var(--font-size-sm); }
-.settings-shell .connection-flow p, .settings-shell .storage-note p { color: var(--color-text-secondary); font-size: var(--font-size-xs); line-height: 1.7; margin: var(--space-2) 0 0; }
-.settings-shell .storage-note { margin-top: var(--space-5); padding-inline: var(--space-2); }
-.settings-shell .status-chip { border: var(--border-width-thin) solid var(--color-border-subtle); border-radius: var(--radius-pill); background: var(--color-bg-subtle); color: var(--color-text-secondary); padding: var(--space-2) var(--space-3); font-size: var(--font-size-xs); line-height: 1.5; }
-.settings-shell .status-chip.is-ready { color: var(--color-text-success); }
-.settings-shell .status-chip.is-pending { color: var(--color-text-secondary); }
-@media (max-width: 1024px) {
-    .settings-shell .settings-layout { grid-template-columns: minmax(0, 1fr); }
-    .settings-shell .settings-aside { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-5); }
-    .settings-shell .storage-note { margin-top: 0; }
+.settings-shell .key-input input:focus-visible,
+.api-settings-dialog .key-input input:focus,
+.api-settings-dialog .key-input input:focus-visible { border: 0; outline: none !important; box-shadow: none !important; }
+.settings-shell .visibility-button,
+.api-settings-dialog .visibility-button { flex-shrink: 0; min-height: 44px; border: 0; border-radius: var(--radius-pill); background: transparent; padding: 0 var(--space-3); cursor: pointer; color: var(--color-text-secondary); font-size: var(--font-size-xs); white-space: nowrap; }
+.settings-shell .field-hint,
+.settings-shell .provider-link,
+.api-settings-dialog .field-hint,
+.api-settings-dialog .provider-link { font-size: var(--font-size-xs); line-height: 1.65; }
+.settings-shell .field-hint,
+.api-settings-dialog .field-hint { margin: var(--space-2) 0; color: var(--color-text-secondary); }
+.settings-shell .provider-link,
+.api-settings-dialog .provider-link { color: var(--color-text-brand); text-decoration: underline; overflow-wrap: anywhere; }
+.settings-shell button:disabled,
+.api-settings-dialog button:disabled { opacity: var(--opacity-disabled); cursor: wait; }
+.settings-shell .form-message,
+.api-settings-dialog .form-message { margin-top: var(--space-3); margin-bottom: 0; min-height: 20px; color: var(--color-text-danger); font-size: var(--font-size-sm); line-height: 1.6; overflow-wrap: anywhere; }
+.settings-shell [hidden],
+.api-settings-dialog [hidden] { display: none; }
+.settings-shell .retry-button,
+.api-settings-dialog .retry-button { margin-top: var(--space-3); min-height: 44px; border-radius: var(--radius-pill); }
+.settings-shell .status-chip,
+.api-settings-dialog .status-chip { border: var(--border-width-thin) solid var(--color-border-subtle); border-radius: var(--radius-pill); background: var(--color-bg-subtle); color: var(--color-text-secondary); padding: var(--space-2) var(--space-3); font-size: var(--font-size-xs); line-height: 1.5; }
+.settings-shell .status-chip.is-ready,
+.api-settings-dialog .status-chip.is-ready { color: var(--color-text-success); }
+.settings-shell .status-chip.is-pending,
+.api-settings-dialog .status-chip.is-pending { color: var(--color-text-secondary); }
+
+/* Independent larger dialog modal for API settings */
+.sb-dialog.api-settings-dialog {
+    width: min(100%, 640px);
+    padding: 28px;
 }
-@media (max-width: 768px) {
+.api-settings-sheet-handle {
+    display: none;
+}
+.api-settings-dialog-head {
+    padding-bottom: var(--space-3);
+    border-bottom: var(--border-width-thin) solid var(--color-border-subtle);
+}
+.api-settings-dialog-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3, 12px);
+    width: 100%;
+    margin-top: var(--space-5);
+    padding-top: var(--space-4);
+    border-top: var(--border-width-thin) solid var(--color-border-subtle);
+}
+.api-settings-dialog-actions .btn {
+    flex: 1 1 0;
+    min-width: 0;
+    width: 100%;
+    min-height: var(--control-height-md, 44px);
+    border-radius: var(--radius-pill, 999px);
+}
+
+@media (max-width: 768px), (max-width: 767px) and (orientation: portrait), (max-width: 480px) {
     .settings-shell h1 { font-size: var(--font-size-xl); }
     .settings-shell .settings-panel { padding: var(--space-4); }
-    .settings-shell .settings-aside { grid-template-columns: minmax(0, 1fr); }
-    .settings-shell .save-bar { align-items: stretch; flex-direction: column; }
-    .settings-shell .provider-status { margin-left: 0; }
+    .settings-shell .provider-status,
+    .api-settings-dialog .provider-status { margin-left: 0; }
+    .sb-dialog-overlay.api-settings-overlay {
+        align-items: flex-end;
+        justify-content: center;
+        padding: 0;
+        background: var(--color-surface-overlay);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+    }
+    .sb-dialog.api-settings-dialog {
+        width: 100%;
+        max-width: 540px;
+        height: 95dvh;
+        max-height: 95dvh;
+        padding: 12px 20px max(20px, env(safe-area-inset-bottom));
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        border: var(--surface-floating-border);
+        border-radius: 28px 28px 0 0;
+        background: var(--surface-floating-reading-bg);
+        box-shadow: var(--surface-floating-shadow);
+        backdrop-filter: var(--surface-floating-blur);
+        -webkit-backdrop-filter: var(--surface-floating-blur);
+        transform-origin: bottom center;
+    }
+    .api-settings-sheet-handle {
+        display: block;
+        width: 36px;
+        height: 4px;
+        margin: 0 auto 12px;
+        flex-shrink: 0;
+        border-radius: 999px;
+        background: var(--color-border-default);
+    }
+    .api-settings-dialog-head {
+        flex-shrink: 0;
+    }
+    .api-settings-dialog #api-settings-form {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-height: 0;
+    }
+    .api-settings-dialog #key-fields {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        padding-right: 2px;
+    }
+    .api-settings-dialog .form-message,
+    .api-settings-dialog .retry-button,
+    .api-settings-dialog-actions {
+        flex-shrink: 0;
+    }
+    .api-settings-dialog-actions {
+        margin-top: var(--space-3);
+    }
 }
 
 @supports (corner-shape: squircle) {
-    .settings-shell .settings-panel, .settings-shell .connection-note, .settings-shell .key-input { corner-shape: squircle; }
+    .settings-shell .settings-panel,
+    .settings-shell .key-input,
+    .api-settings-dialog .key-input { corner-shape: squircle; }
 }

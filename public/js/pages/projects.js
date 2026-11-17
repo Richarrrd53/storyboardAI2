@@ -328,7 +328,6 @@
             <h3 id="project-tags-modal-title" class="project-tags-modal-title">編輯分鏡標籤</h3>
             <p class="project-tags-modal-subtitle">「${projectTitleEsc}」</p>
           </div>
-          <button type="button" class="project-tags-modal-close" aria-label="關閉">&times;</button>
         </div>
         <div class="project-tags-modal-body">
           <div class="project-tags-section">
@@ -367,7 +366,6 @@
     const addBtn = overlay.querySelector('#modal-tag-add-btn');
     const saveBtn = overlay.querySelector('#modal-save-btn');
     const cancelBtn = overlay.querySelector('#modal-cancel-btn');
-    const closeBtn = overlay.querySelector('.project-tags-modal-close');
     const backdrop = overlay.querySelector('.project-tags-modal-backdrop');
     const statusEl = overlay.querySelector('#modal-tags-status');
 
@@ -496,7 +494,6 @@
       window.addEventListener('keydown', onKeyDown);
     }
 
-    if (closeBtn) closeBtn.addEventListener('click', destroyModal);
     if (cancelBtn) cancelBtn.addEventListener('click', destroyModal);
     if (backdrop) backdrop.addEventListener('click', destroyModal);
     overlay.addEventListener('click', (e) => {

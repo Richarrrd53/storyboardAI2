@@ -240,7 +240,7 @@
     let committed = false;
     const trace = { page, request: now(), phases: {} };
     const phase = (name, start) => { trace.phases[name] = now() - start; };
-    window.AppShell.setPendingRoute?.(page);
+    window.AppShell.setPendingRoute?.(page, { id: opts.id });
     requestAnimationFrame(() => { trace.feedback = now() - trace.request; });
     try {
       animation = transition.create({ signal, internal, fromQC: !!opts.fromQC, routeUpdate: !!reuse });
@@ -377,7 +377,7 @@
           // check. Restore the source route's CSS as well as its active state.
           assets.removePageCSS(pageDefs[currentPage].css);
         }
-        window.AppShell.setPendingRoute?.(committed ? page : currentPage, { committed, initial: wasInitial });
+        window.AppShell.setPendingRoute?.(committed ? page : currentPage, { committed, initial: wasInitial, id: committed ? opts.id : currentOpts?.id });
         if (!committed && opts.noHistory) getHistoryHost().history.replaceState(routeHistoryState(currentPage, currentOpts), '', getRouteUrl(currentPage, currentOpts));
         trace.total = now() - trace.request;
         trace.committed = committed;

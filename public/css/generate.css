@@ -475,6 +475,7 @@ body.ai-quick-compose-closing .ai-pill-btn-glow-container,
 .qc-header,
 .qc-greeting,
 .qc-sub,
+#qc-template-toolbar,
 .qc-sugg-label,
 .qc-sugg-chip {
     opacity: 0;
@@ -508,39 +509,46 @@ body.ai-quick-compose-closing .ai-pill-btn-glow-container,
     transition-delay: 380ms;
 }
 
+.ai-creation-layer.state-quick-compose #qc-template-toolbar {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+    transition-delay: 440ms;
+}
+
 .ai-creation-layer.state-quick-compose .qc-sugg-label {
     opacity: 1;
     transform: translateY(0);
     filter: blur(0);
-    transition-delay: 460ms;
+    transition-delay: 500ms;
 }
 
 .ai-creation-layer.state-quick-compose .qc-sugg-chips-list > .qc-sugg-chip:nth-child(1) {
     opacity: 1;
     transform: translateY(0);
     filter: blur(0);
-    transition-delay: 520ms;
+    transition-delay: 560ms;
 }
 
 .ai-creation-layer.state-quick-compose .qc-sugg-chips-list > .qc-sugg-chip:nth-child(2) {
     opacity: 1;
     transform: translateY(0);
     filter: blur(0);
-    transition-delay: 580ms;
+    transition-delay: 620ms;
 }
 
 .ai-creation-layer.state-quick-compose .qc-sugg-chips-list > .qc-sugg-chip:nth-child(3) {
     opacity: 1;
     transform: translateY(0);
     filter: blur(0);
-    transition-delay: 640ms;
+    transition-delay: 680ms;
 }
 
 .ai-creation-layer.state-quick-compose .qc-sugg-tray .qc-sugg-chip {
     opacity: 1;
     transform: translateY(0);
     filter: blur(0);
-    transition-delay: 700ms;
+    transition-delay: 740ms;
 }
 
 /* On closing, instantly clear delays and fade out downward */
@@ -550,6 +558,7 @@ body.ai-quick-compose-closing .ai-pill-btn-glow-container,
 .ai-creation-layer:not(.state-quick-compose) .qc-intro,
 .ai-creation-layer:not(.state-quick-compose) .qc-greeting,
 .ai-creation-layer:not(.state-quick-compose) .qc-sub,
+.ai-creation-layer:not(.state-quick-compose) #qc-template-toolbar,
 .ai-creation-layer:not(.state-quick-compose) .qc-suggestion-row,
 .ai-creation-layer:not(.state-quick-compose) .qc-sugg-label,
 .ai-creation-layer:not(.state-quick-compose) .qc-sugg-chip {
