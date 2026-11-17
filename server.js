@@ -40,7 +40,6 @@ const { GoogleGenAI } = require('@google/genai');
 const OpenAI = require('openai');
 const { getModel, getModelConfig, isValidProvider, isProviderConfigured } = require('./lib/ai/model-config');
 const { parseResponse, generateImage, emptyContent, validatePrompt, reportAIError } = require('./lib/ai/generation');
-const { vertexAuthOptions } = require('./lib/google-credentials');
 const { createCopilotHandler } = require('./lib/ai/copilot');
 const { createProviderRouter } = require('./lib/ai/provider-router');
 
@@ -79,49 +78,24 @@ app.use((req, res, next) => {
     next();
 });
 
-const googleCLoudProjectId = process.env.GOOGLE_CLOUD_PROJECT_ID;
-const location = "global";
-
-let genAIInstance = null;
 const { AsyncLocalStorage } = require('node:async_hooks');
 const apiRequestContext = new AsyncLocalStorage();
 function requestAIEnv() {
-    const keys = apiRequestContext.getStore();
-    return keys ? { ...process.env, OPENAI_API_KEY: keys.openaiApiKey, GEMINI_API_KEY: keys.geminiApiKey } : process.env;
+    const keys = apiRequestContext.getStore() || {};
+    return { ...process.env, API_KEYS_ACCOUNT_ONLY: true, OPENAI_API_KEY: keys.openaiApiKey || '',
+        GEMINI_API_KEY: keys.geminiApiKey || '', GOOGLE_API_KEY: '', YOUTUBE_API_KEY: keys.youtubeApiKey || '' };
+}
+function requirePersonalKey(field, provider) {
+    const key = apiRequestContext.getStore()?.[field];
+    if (!key) throw Object.assign(new Error(`請先在 API 設定填入此帳號自己的 ${provider} API Key。`),
+        { status: 403, code: 'PERSONAL_API_KEY_REQUIRED' });
+    return key;
 }
 function getGenAI() {
-    const keys = apiRequestContext.getStore();
-    if (keys?.geminiApiKey) return new GoogleGenAI({ vertexai: false, apiKey: keys.geminiApiKey });
-    if (!genAIInstance) {
-        const projectId = process.env.GOOGLE_CLOUD_PROJECT_ID || googleCLoudProjectId;
-        if (!projectId) {
-            throw new Error("找不到 GOOGLE_CLOUD_PROJECT_ID 環境變數。請在 Vercel 或 .env 中設定。");
-        }
-        genAIInstance = new GoogleGenAI({
-            vertexai: true,
-            project: projectId,
-            location: location,
-            ...vertexAuthOptions(),
-        });
-    }
-    return genAIInstance;
+    return new GoogleGenAI({ vertexai: false, apiKey: requirePersonalKey('geminiApiKey', 'Gemini') });
 }
-
-let openAIInstance = null;
 function getOpenAI() {
-    const keys = apiRequestContext.getStore();
-    if (keys?.openaiApiKey) return new OpenAI({ apiKey: keys.openaiApiKey });
-    if (!openAIInstance) {
-        const apiKey = process.env.OPENAI_API_KEY?.trim();
-        if (!apiKey) {
-            throw Object.assign(new Error('找不到 OPENAI_API_KEY 環境變數。請在 Vercel 或 .env 中設定。'), {
-                status: 503,
-                code: 'AI_AUTH_ERROR'
-            });
-        }
-        openAIInstance = new OpenAI({ apiKey });
-    }
-    return openAIInstance;
+    return new OpenAI({ apiKey: requirePersonalKey('openaiApiKey', 'OpenAI') });
 }
 
 const aiRouter = createProviderRouter({
@@ -166,9 +140,18 @@ app.use(express.urlencoded({ limit: '100mb', extended: true })); // 增加 URL �
 
 const discoverySettings = new ApiSettings();
 app.use('/api', (req, res, next) => {
+    const protectedRequest = /^\/(?:discovery(?:\/|$)|ask-gemini(?:\/|$)|creation\/copilot(?:\/|$)|ai\/providers(?:\/|$)|user\/ai-provider(?:\/|$)|templates\/recommend(?:\/|$))/.test(req.path);
+    const authorization = req.get('authorization') || '';
+    if (authorization.startsWith('Bearer ')) {
+        try {
+            const identity = jwt.verify(authorization.slice(7), JWT_SECRET);
+            if (typeof identity.id === 'string' && identity.id) req.apiSettingsUserId = identity.id;
+        } catch { /* Protected requests fail closed below. */ }
+    }
+    if (protectedRequest && !req.apiSettingsUserId) return res.status(401).json({ error: '請先登入，才能設定或使用此帳號的 API 金鑰。', code: 'AUTH_REQUIRED' });
     apiRequestContext.run(discoverySettings.effective(discoverySettings.read(req)), next);
 });
-// Existing text generation permits guests; authenticated callers use their verified identity.
+// All user AI requests require the verified account identity established above.
 app.post('/api/creation/copilot', async (req, res, next) => {
     const authorization = req.get('authorization');
     if (authorization) {
@@ -202,7 +185,7 @@ app.get('/api/discovery/settings', (req, res) => {
 });
 
 app.post('/api/discovery/settings', async (req, res) => {
-    // Settings affect only this browser. Reject cross-site writes and non-JSON forms.
+    // Settings affect only the verified account in this browser. Reject cross-site writes.
     let sameOrigin = true;
     if (req.headers.origin) {
         try { sameOrigin = new URL(req.headers.origin).host === req.get('host'); }
@@ -236,7 +219,7 @@ app.post('/api/discovery/settings', async (req, res) => {
             }
         }
         next.savedAt = new Date().toISOString();
-        discoverySettings.write(res, next, req.secure || req.get('x-forwarded-proto') === 'https');
+        discoverySettings.write(res, next, req.secure || req.get('x-forwarded-proto') === 'https', req.apiSettingsUserId);
         res.json(discoverySettings.status(next));
     } catch (error) {
         res.status(502).json({ error: error.message.startsWith('OpenAI') || error.message.startsWith('YouTube') || error.message.startsWith('Gemini') || error.message.includes('DISCOVERY_SETTINGS_SECRET')

@@ -26,17 +26,21 @@ test('settings page, validated save, reload and search use browser credentials w
     const server = app.listen(0, '127.0.0.1');
     await new Promise(resolve => server.once('listening', resolve));
     const base = `http://127.0.0.1:${server.address().port}`;
-    const post = (url, payload, cookie = '', origin = base) => fetch(base + url, {
+    const token = require('jsonwebtoken').sign({ id: 'account-settings-fixture' }, process.env.JWT_SECRET || 'storyboard-secret-key-123');
+    const auth = { Authorization: `Bearer ${token}` };
+    const nativeFetch = fetch;
+    const fetchAsUser = (url, options = {}) => nativeFetch(url, { ...options, headers: { ...auth, ...options.headers } });
+    const post = (url, payload, cookie = '', origin = base) => fetchAsUser(base + url, {
         method: 'POST', headers: { 'Content-Type': 'application/json', Cookie: cookie, Origin: origin }, body: JSON.stringify(payload)
     });
     try {
-        const page = await fetch(base + '/discovery/settings');
+        const page = await fetchAsUser(base + '/discovery/settings');
         assert.equal(page.status, 200);
         assert.match(await page.text(), /js\/main\.js/);
-        assert.match(await (await fetch(base + '/html/discovery-settings.html')).text(), /id="api-settings-form"/);
-        assert.match(await (await fetch(base + '/discovery')).text(), /js\/main\.js/);
-        assert.match(await (await fetch(base + '/html/discovery.html')).text(), /href="\/discovery\/settings"/);
-        assert.equal((await (await fetch(base + '/api/discovery/settings')).json()).configured, false);
+        assert.match(await (await fetchAsUser(base + '/html/discovery-settings.html')).text(), /id="api-settings-form"/);
+        assert.match(await (await fetchAsUser(base + '/discovery')).text(), /js\/main\.js/);
+        assert.match(await (await fetchAsUser(base + '/html/discovery.html')).text(), /href="\/discovery\/settings"/);
+        assert.equal((await (await fetchAsUser(base + '/api/discovery/settings')).json()).configured, false);
         const invalid = await post('/api/discovery/settings', { youtubeApiKey: 'bad' });
         assert.equal(invalid.status, 400);
         assert.equal(invalid.headers.get('set-cookie'), null);
@@ -51,11 +55,11 @@ test('settings page, validated save, reload and search use browser credentials w
         assert.equal(checkedGemini, 1);
         assert.ok(!JSON.stringify(savedStatus).includes(keys.youtubeApiKey));
         const cookie = saved.headers.get('set-cookie').split(';')[0];
-        const reload = await fetch(base + '/api/discovery/settings', { headers: { Cookie: cookie } });
+        const reload = await fetchAsUser(base + '/api/discovery/settings', { headers: { Cookie: cookie } });
         assert.equal(reload.headers.get('cache-control'), 'no-store');
         assert.equal((await reload.json()).savedAt, savedStatus.savedAt);
-        assert.equal((await (await fetch(base + '/api/discovery/skills', { headers: { Cookie: cookie } })).json()).configured, true);
-        assert.equal((await (await fetch(base + '/api/discovery/settings')).json()).configured, false);
+        assert.equal((await (await fetchAsUser(base + '/api/discovery/skills', { headers: { Cookie: cookie } })).json()).configured, true);
+        assert.equal((await (await fetchAsUser(base + '/api/discovery/settings')).json()).configured, false);
         const search = await post('/api/discovery/search', { query: '#food', platform: 'youtube-shorts' }, cookie);
         assert.equal(search.status, 200);
         assert.equal(searchedKey, keys.youtubeApiKey);

@@ -13,6 +13,16 @@ const storyboard = {
 function deferred() { let resolve; const promise = new Promise(r => { resolve = r; }); return { promise, resolve }; }
 const response = (data, ok = true, status = 200) => ({ ok, status, json: async () => data });
 
+test('switching accounts during generation prevents subsequent API calls and saves', async () => {
+  const held = deferred();
+  const f = fixture((url, body) => body.type === 'story' ? held.promise : undefined);
+  const pending = f.task.start(options());await tick();
+  f.context.spaAuth.getToken = () => 'other-account-token';
+  held.resolve(response({ response: JSON.stringify(storyboard) }));await pending;
+  assert.equal(f.calls.filter(call => call.body?.type === 'image').length, 0);
+  assert.equal(f.calls.filter(call => call.url === '/api/projects').length, 0);
+});
+
 test('OpenAI bounds parallel images to three and preserves shot order on out-of-order completion', async () => {
   const held = [];
   const shots = [1, 2, 3, 4, 5].map(id => ({ ...storyboard.shots[0], id, story: `Shot ${id}`, shotPrompt: `scene ${id}` }));

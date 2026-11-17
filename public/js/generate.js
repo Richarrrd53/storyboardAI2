@@ -590,7 +590,7 @@
       const label = document.getElementById('template-rec-text');
       if (label) label.textContent = '正在尋找適合故事的模板，你可以先手動選擇。';
       try {
-          const response = await fetch('/api/templates/recommend', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: key, signal: mount.signal });
+          const response = await fetch('/api/templates/recommend', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(window.spaAuth?.getToken?.() ? { Authorization: `Bearer ${window.spaAuth.getToken()}` } : {}) }, body: key, signal: mount.signal });
           const data = await response.json();
           if (!response.ok) throw new Error(data.error);
           if (ticket !== recommendationRequest || s.sessionId !== sessionId || mount.signal.aborted) return;

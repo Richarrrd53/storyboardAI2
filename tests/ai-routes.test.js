@@ -35,7 +35,9 @@ test('AI routes preserve task contracts, edited shots and provider isolation', a
     await new Promise(resolve => server.once('listening', resolve));
     const base = `http://127.0.0.1:${server.address().port}`;
     const token = require('jsonwebtoken').sign({ id: 'u' }, process.env.JWT_SECRET);
-    const post = async (url, body, cookie = '') => {
+    let accountCookie;
+    new (require('../lib/discovery/api-settings').ApiSettings)().write({ cookie(name, value) { accountCookie = name + '=' + value; } }, { geminiApiKey: 'fixture-personal-key-1234567890' }, false, 'u');
+    const post = async (url, body, cookie = accountCookie) => {
         const res = await fetch(base + url, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, Cookie: cookie }, body: JSON.stringify(body) });
         return { status: res.status, data: await res.json() };
     };
@@ -51,7 +53,7 @@ test('AI routes preserve task contracts, edited shots and provider isolation', a
         assert.equal(request.config.thinkingConfig.thinkingLevel, 'MEDIUM');
         assert.equal(request.config.responseMimeType, 'application/json');
         assert.ok(request.config.responseJsonSchema.properties.form);
-        assert.equal(clientOptions.vertexai, true);
+        assert.equal(clientOptions.vertexai, false);
         const unauthorized = await fetch(base + '/api/creation/copilot', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer invalid' }, body: JSON.stringify(copilotInput) });
         assert.equal(unauthorized.status, 401);
         const oversized = await post('/api/creation/copilot', { ...copilotInput, story: 'a'.repeat(70000) });
@@ -123,15 +125,15 @@ test('AI routes preserve task contracts, edited shots and provider isolation', a
         response = parts([{ thought: true, text: 'summary' }, { text: JSON.stringify({ sections }) }]);
         const analysis = await post('/api/discovery/analyze', { videoId: 'abcdefghijk', skill: 'short-video-template-lab' });
         assert.equal(analysis.status, 200);
-        assert.equal(analysis.data.provider, 'vertex-ai');
-        assert.equal(clientOptions.vertexai, true);
-        assert.equal(clientOptions.location, 'global');
+        assert.equal(analysis.data.provider, 'gemini-developer-api');
+        assert.equal(clientOptions.vertexai, false);
+        assert.equal(clientOptions.project, undefined);
         assert.equal(request.model, getModel('discovery'));
         assert.equal(request.config.thinkingConfig.thinkingLevel, 'MEDIUM');
         assert.match(request.contents[0].parts[0].fileData.fileUri, /youtube.com/);
         const { ApiSettings } = require('../lib/discovery/api-settings');
         let cookie;
-        new ApiSettings().write({ cookie: (name, value) => { cookie = `${name}=${value}`; } }, { geminiApiKey: 'fixture-developer-api-key-12345' }, false);
+        new ApiSettings().write({ cookie: (name, value) => { cookie = `${name}=${value}`; } }, { geminiApiKey: 'fixture-developer-api-key-12345' }, false, 'u');
         const developer = await post('/api/discovery/analyze', { videoId: 'abcdefghijk', skill: 'short-video-template-lab' }, cookie);
         assert.equal(developer.data.provider, 'gemini-developer-api');
         assert.equal(checkedModel, getModel('discovery'));

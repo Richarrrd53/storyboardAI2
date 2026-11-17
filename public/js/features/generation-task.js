@@ -9,6 +9,7 @@
 
   const listeners = new Set();
   const imageRetries = new WeakMap();
+  const runOwners = new WeakMap();
   let sequence = 0;
   let currentController = null;
   let activePromise = null;
@@ -47,6 +48,7 @@
     const controller = new AbortController();
     currentController = controller;
     const run = initialState();
+    runOwners.set(run, root.spaAuth?.getToken?.());
     run.taskId = `generation-${Date.now()}-${++sequence}-${Math.random().toString(36).slice(2, 10)}`;
     run.provider = options.provider || root.spaAuth?.getAiProvider?.() || 'gemini';
     run.status = 'generating';
@@ -150,12 +152,14 @@
     return data;
   }
   function assertRun(run, controller) {
-    if (state !== run || controller.signal.aborted) {
+    if (state !== run || controller.signal.aborted || root.spaAuth?.getToken?.() !== runOwners.get(run)) {
       const error = new Error('Generation cancelled'); error.name = 'AbortError'; throw error;
     }
   }
   async function requestJSON(run, controller, url, options) {
-    const response = await fetch(url, { ...options, signal: controller.signal });
+    assertRun(run, controller);
+    const token = runOwners.get(run);
+    const response = await fetch(url, { ...options, headers: { ...options?.headers, ...(token ? { Authorization: `Bearer ${token}` } : {}) }, signal: controller.signal });
     assertRun(run, controller);
     const data = await response.json();
     assertRun(run, controller);
@@ -275,7 +279,8 @@
     run.retry = null;
     run.save = { status: 'saving', error: null }; notify();
     const input = run.input, result = run.result;
-    const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${root.spaAuth.getToken()}` };
+    assertRun(run, controller);
+    const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${runOwners.get(run)}` };
     try {
       if (run.projectId) {
         if (result.generatedShotData.some(shot => !run.projectShotIds[shot.order])) {
@@ -402,6 +407,7 @@
     const input = run.input;
     const result = run.result;
     function assertActive() {
+      assertRun(run, controller);
       if (controller.signal.aborted || state !== run || currentController !== controller) {
         const error = new Error('Generation cancelled');
         error.name = 'AbortError';
@@ -555,10 +561,11 @@
     }
 
     async function askGemini(question, type) {
+        assertActive();
         const res = await fetch('/api/ask-gemini', {
             signal: controller.signal,
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', ...(runOwners.get(run) ? { Authorization: `Bearer ${runOwners.get(run)}` } : {}) },
             body: JSON.stringify({ question, type, ratio: input.ratio, requestId: run.taskId, provider: run.provider,
                 ...(type === 'story' ? { contract: 'freeform-v2', duration: input.duration, templateId: input.selectedTemplate?.id || null, includeThoughts: true } : {}) })
         });

@@ -360,9 +360,16 @@ test('HTTP routes support /api/ai/providers, /api/user/ai-provider, and provider
     await new Promise(resolve => server.once('listening', resolve));
     const base = `http://127.0.0.1:${server.address().port}`;
     const token = require('jsonwebtoken').sign({ id: 'u1' }, process.env.JWT_SECRET);
+    const settings = new (require('../lib/discovery/api-settings').ApiSettings)({ env: { DISCOVERY_SETTINGS_SECRET: 'test-openai-account-cookie-secret-at-least-32' } });
+    process.env.DISCOVERY_SETTINGS_SECRET = 'test-openai-account-cookie-secret-at-least-32';
+    let cookie;
+    settings.write({ cookie(name, value) { cookie = name + '=' + value; } }, { openaiApiKey: 'sk-personal-fixture-key-1234567890' }, false, 'u1');
+    const nativeFetch = global.fetch;
+    const fetch = (url, options = {}) => nativeFetch(url, { ...options, headers: { Cookie: cookie, ...options.headers } });
+
 
     try {
-        const capsRes = await fetch(base + '/api/ai/providers');
+        const capsRes = await fetch(base + '/api/ai/providers', { headers: { Authorization: `Bearer ${token}` } });
         assert.equal(capsRes.status, 200);
         const caps = await capsRes.json();
         assert.equal(caps.defaultProvider, 'gemini');

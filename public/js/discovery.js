@@ -10,6 +10,7 @@
         form.dataset.discoveryInitialized = 'true';
         document.title = '熱門短影音搜尋與分析 — Storyboard AI';
         let disposed = false;
+        const ownerToken = window.spaAuth?.getToken?.();
         const controller = new AbortController();
         const listeners = [];
         const listen = (element, type, handler) => {
@@ -32,10 +33,11 @@
         let currentSkill;
 
         async function api(url, payload) {
-            const response = await fetch(url, { ...(payload ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) } : {}), signal: AbortSignal.any([controller.signal, AbortSignal.timeout(120000)]) });
+            if (window.spaAuth?.getToken?.() !== ownerToken) throw new DOMException('Account changed', 'AbortError');
+            const response = await fetch(url, { headers: { ...(ownerToken ? { Authorization: `Bearer ${ownerToken}` } : {}), ...(payload ? { 'Content-Type': 'application/json' } : {}) }, ...(payload ? { method: 'POST', body: JSON.stringify(payload) } : {}), signal: AbortSignal.any([controller.signal, AbortSignal.timeout(120000)]) });
             let data;
             try { data = await response.json(); } catch { throw new Error('伺服器沒有回傳有效結果，請稍後重試。'); }
-            if (disposed) throw new DOMException('Discovery unmounted', 'AbortError');
+            if (disposed || window.spaAuth?.getToken?.() !== ownerToken) throw new DOMException('Discovery unmounted or account changed', 'AbortError');
             if (!response.ok) throw new Error(data.error || '請求失敗');
             return data;
         }

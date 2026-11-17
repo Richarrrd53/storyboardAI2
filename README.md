@@ -53,7 +53,7 @@ tests/               自動化、瀏覽器及真實服務驗證
    # DISCOVERY_SETTINGS_SECRET="at-least-32-random-characters"
    ```
 
-   創作功能使用 Vertex AI；本機可使用現有 Application Default Credentials（ADC）或指定認證檔案，部署環境可設定 Base64 服務帳戶憑證。正式環境務必設定自己的 `JWT_SECRET`，避免使用程式內的開發預設值。探索頁也可儲存瀏覽器專用的 YouTube 與 Gemini API 金鑰；其 provider 與設定細節見[探索模組說明](./lib/discovery/README.md)。
+   使用者登入後，須在 API 設定填入自己的 OpenAI、Gemini 或 YouTube 金鑰；未設定的服務無法使用，不會沿用伺服器金鑰或 ADC。正式環境務必設定自己的 `JWT_SECRET` 與 `DISCOVERY_SETTINGS_SECRET`。帳號綁定及加密方式見[探索模組說明](./lib/discovery/README.md)。
 
 3. 同步資料庫結構並生成 Prisma Client：
 
@@ -105,13 +105,15 @@ Prisma schema 包含 `User`、`Project`、`Shot` 和 `Template`。專案可包�
 
 ## 測試與部署
 
+帳號 API 隔離：所有使用者必須登入並在「設定 → API 設定」輸入自己的金鑰。後端不會沿用伺服器共用金鑰或 Vertex AI 憑證。金鑰以帳號 ID 綁定的加密 Cookie 保存在目前瀏覽器，不跨裝置同步；舊版未綁定帳號的 Cookie 不再讀取，須重新輸入。部署仍必須設定至少 32 字元的隨機 `DISCOVERY_SETTINGS_SECRET`，作為全站加密密鑰；它不是供使用者呼叫服務的 API 金鑰。
+
 ```bash
 npm test
 ```
 
 此命令執行 `tests/*.test.js`。瀏覽器測試和真實服務驗證是獨立腳本；例如設定 `RUN_VERTEX_LIVE=1` 後可執行 `node --test tests/creative-conversation.live.js` 或 `node --test tests/storyboard-generation.live.js`。真實服務測試需要有效憑證，並可能產生費用。
 
-Vercel 路由設定見 [vercel.json](./vercel.json)：API 轉至 `api/index.js`，探索頁有專用路由，其餘頁面轉至主外框。部署時設定資料庫、JWT 和所需 Google 憑證；若使用探索頁儲存金鑰，需設定至少 32 字元的 `DISCOVERY_SETTINGS_SECRET`。函式執行期限由 Vercel 專案設定決定，應確保足以涵蓋 AI 請求。
+Vercel 路由設定見 [vercel.json](./vercel.json)：API 轉至 `api/index.js`，探索頁有專用路由，其餘頁面轉至主外框。部署時設定資料庫、JWT，以及至少 32 字元的隨機 `DISCOVERY_SETTINGS_SECRET`；使用者 API 金鑰必須由各自帳號填寫。函式執行期限由 Vercel 專案設定決定，應確保足以涵蓋 AI 請求。
 # 生成圖片儲存
 
 分鏡生成圖片使用 Supabase Storage。請在 Supabase 建立公開讀取的 bucket，預設名稱為 `storyboard-images`；可用 `SUPABASE_STORAGE_BUCKET` 指定其他公開 bucket。伺服器需設定 `SUPABASE_URL` 和 `SUPABASE_SERVICE_ROLE_KEY`（或 `SUPABASE_SECRET_KEY`），金鑰僅供伺服器使用。瀏覽器使用伺服器簽發的上傳網址直接上傳圖片，資料庫僅保存圖片公開網址。既有的資料 URI 圖片仍可讀取。

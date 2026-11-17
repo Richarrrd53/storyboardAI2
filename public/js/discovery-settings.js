@@ -16,11 +16,13 @@
             element.addEventListener(event, callback);
             listeners.push(() => element.removeEventListener(event, callback));
         };
-        const active = () => !disposed && !signal?.aborted;
+        const ownerToken = window.spaAuth?.getToken?.();
+        const active = () => !disposed && !signal?.aborted && window.spaAuth?.getToken?.() === ownerToken;
         async function request(payload) {
             const response = await fetch('/api/discovery/settings', {
                 cache: 'no-store', signal: AbortSignal.any([controller.signal, AbortSignal.timeout(60000)]),
-                ...(payload ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) } : {})
+                headers: { ...(ownerToken ? { Authorization: `Bearer ${ownerToken}` } : {}), ...(payload ? { 'Content-Type': 'application/json' } : {}) },
+                ...(payload ? { method: 'POST', body: JSON.stringify(payload) } : {})
             });
             let data;
             try { data = await response.json(); } catch { throw new Error('伺服器未回傳有效結果，請稍後重試。'); }
@@ -36,14 +38,12 @@
             for (const provider of ['youtube', 'gemini', 'openai']) {
                 const state = data[provider] || { configured: false }, input = find(`${provider}-key`), badge = find(`${provider}-status`);
                 if (!input || !badge) continue;
-                badge.textContent = state.configured ? (state.source === 'browser' ? '已儲存' : '沿用伺服器設定') : '待設定';
+                badge.textContent = state.configured ? '此帳號已儲存' : '待設定';
                 badge.className = `provider-status ${state.configured ? 'is-ready' : ''}`;
                 input.required = false;
                 input.placeholder = state.configured ? '已設定，留空保留；貼上新金鑰可更新' : `貼上 ${provider === 'youtube' ? 'YouTube' : provider === 'openai' ? 'OpenAI' : 'Gemini'} API Key`;
             }
-            find('gemini-hint').textContent = data.gemini.mode === 'vertex'
-                ? '目前使用 Vertex AI／Google Cloud ADC 與 Google Cloud 計費。填入 Gemini API Key 後將切換至獨立計費的 Gemini Developer API。'
-                : '使用 Google AI Studio 的 Gemini Developer API Key；此模式獨立計費，不使用 Vertex AI 抵用額。';
+            find('gemini-hint').textContent = '請填入此帳號自己的 Google AI Studio API Key；使用量由該金鑰所屬專案計費。';
             returnLink.hidden = !data.configured;
         }
         function clearInputs() {

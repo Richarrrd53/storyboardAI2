@@ -13,7 +13,7 @@
     } catch (_) { /* Opaque tokens still use the short server-validation TTL. */ }
     return expires;
   }
-  function invalidateUser() { userRevision++; cachedUser = null; pendingUser = null; }
+  function invalidateUser() { userRevision++; cachedUser = null; pendingUser = null; cachedCapabilities = null; pendingCapabilities = null; }
   function consumeUser(promise, signal) {
     if (!signal) return promise;
     if (signal.aborted) return Promise.resolve({ valid: true, aborted: true });
@@ -195,11 +195,13 @@
     fetchAiCapabilities: async ({ force = false } = {}) => {
       if (!force && cachedCapabilities) return cachedCapabilities;
       if (!pendingCapabilities || force) {
-        pendingCapabilities = fetch('/api/ai/providers')
+        const token = localStorage.getItem(AUTH_TOKEN_KEY), requestSession = session;
+        const pending = fetch('/api/ai/providers', { cache: 'no-store', headers: token ? { Authorization: `Bearer ${token}` } : {} })
           .then(res => res.ok ? res.json() : null)
-          .then(data => { if (data?.providers) cachedCapabilities = data; return cachedCapabilities; })
-          .catch(() => cachedCapabilities)
-          .finally(() => { pendingCapabilities = null; });
+          .then(data => { if (requestSession !== session || token !== localStorage.getItem(AUTH_TOKEN_KEY)) return null; if (data?.providers) cachedCapabilities = data; return cachedCapabilities; })
+          .catch(() => requestSession === session ? cachedCapabilities : null)
+          .finally(() => { if (pendingCapabilities === pending) pendingCapabilities = null; });
+        pendingCapabilities = pending;
       }
       return pendingCapabilities;
     },

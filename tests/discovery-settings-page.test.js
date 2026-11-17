@@ -15,7 +15,7 @@ function fixture(responses=[response(status())]){
  const root={querySelector:selector=>ids[selector.slice(1)]};const calls=[],pending=[...responses],document={readyState:'complete',getElementById:id=>ids[id]};
  const ctx={document,console,AbortController,AbortSignal,DOMException,FormData:class{constructor(){this.entries=[['youtubeApiKey',ids['youtube-key'].value],['geminiApiKey',ids['gemini-key'].value],['openaiApiKey',ids['openai-key'].value]];}[Symbol.iterator](){return this.entries[Symbol.iterator]();}},
  fetch(url,options){calls.push({url,...options});const next=pending.shift();if(!next)throw new Error('unexpected request');return typeof next==='function'?next(options):Promise.resolve(next);}};
- ctx.window=ctx;ctx.PageHost={};vm.createContext(ctx);vm.runInContext(fs.readFileSync('public/js/discovery-settings.js','utf8'),ctx);
+ ctx.currentToken='account-a';ctx.spaAuth={getToken:()=>ctx.currentToken};ctx.window=ctx;ctx.PageHost={};vm.createContext(ctx);vm.runInContext(fs.readFileSync('public/js/discovery-settings.js','utf8'),ctx);
  const signal=new AbortController();const owner=ctx.initDiscoverySettingsPage({root,signal:signal.signal});
  return {ctx,root,ids,form,fields,toggles,calls,pending,signal,owner};
 }
@@ -25,6 +25,16 @@ test('Settings mounts once, reads status only and exposes no persisted keys',asy
  assert.equal(f.ctx.initDiscoverySettingsPage({root:f.root}),f.owner);assert.equal(f.calls.length,1);
  await f.form.emit('click',{target:f.toggles[0]});assert.equal(f.ids['youtube-key'].type,'text');assert.equal(f.toggles[0].getAttribute('aria-pressed'),'true');
  f.ids['youtube-key'].value='fixture-only';f.owner.unmount();assert.equal(f.ids['youtube-key'].value,'');assert.equal(f.ids['youtube-key'].type,'password');assert.equal(f.form.listenerCount(),0);assert.equal(f.calls[0].signal.aborted,true);
+});
+
+test('account changes prevent old forms from sending keys or applying stale status',async()=>{
+ const f=fixture([response(status())]);await tick();
+ assert.equal(f.calls[0].headers.Authorization,'Bearer account-a');
+ f.ids['openai-key'].value='sk-account-a-private-fixture';f.ctx.currentToken='account-b';
+ await f.form.emit('submit');assert.equal(f.calls.length,1);f.owner.unmount();
+ let release;const pending=fixture([()=>new Promise(resolve=>{release=resolve})]);
+ pending.ctx.currentToken='account-b';release(response(status(true)));await tick();
+ assert.equal(pending.fields.disabled,true);assert.equal(pending.ids['save-settings'].disabled,true);pending.owner.unmount();
 });
 test('Settings load failure keeps save disabled and retry recovers without a page reload',async()=>{
  const f=fixture([response({error:'offline'},false),response(status())]);

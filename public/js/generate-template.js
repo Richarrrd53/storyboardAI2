@@ -1217,7 +1217,7 @@ function exportStoryboardJson() {
 async function askGemini(question, type) {
     const res = await fetch('/api/ask-gemini', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(window.spaAuth?.getToken?.() ? { Authorization: `Bearer ${window.spaAuth.getToken()}` } : {}) },
         body: JSON.stringify({ question, type, provider: window.spaAuth?.getAiProvider?.() || 'gemini' })
     });
     return await res.json();
