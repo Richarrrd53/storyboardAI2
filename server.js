@@ -83,7 +83,15 @@ const googleCLoudProjectId = process.env.GOOGLE_CLOUD_PROJECT_ID;
 const location = "global";
 
 let genAIInstance = null;
+const { AsyncLocalStorage } = require('node:async_hooks');
+const apiRequestContext = new AsyncLocalStorage();
+function requestAIEnv() {
+    const keys = apiRequestContext.getStore();
+    return keys ? { ...process.env, OPENAI_API_KEY: keys.openaiApiKey, GEMINI_API_KEY: keys.geminiApiKey } : process.env;
+}
 function getGenAI() {
+    const keys = apiRequestContext.getStore();
+    if (keys?.geminiApiKey) return new GoogleGenAI({ vertexai: false, apiKey: keys.geminiApiKey });
     if (!genAIInstance) {
         const projectId = process.env.GOOGLE_CLOUD_PROJECT_ID || googleCLoudProjectId;
         if (!projectId) {
@@ -101,6 +109,8 @@ function getGenAI() {
 
 let openAIInstance = null;
 function getOpenAI() {
+    const keys = apiRequestContext.getStore();
+    if (keys?.openaiApiKey) return new OpenAI({ apiKey: keys.openaiApiKey });
     if (!openAIInstance) {
         const apiKey = process.env.OPENAI_API_KEY?.trim();
         if (!apiKey) {
@@ -115,6 +125,7 @@ function getOpenAI() {
 }
 
 const aiRouter = createProviderRouter({
+    getRuntimeEnv: requestAIEnv,
     getGeminiClient: getGenAI,
     getOpenAIClient: getOpenAI
 });
@@ -154,6 +165,9 @@ app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ limit: '100mb', extended: true })); // 增加 URL 編碼限制
 
 const discoverySettings = new ApiSettings();
+app.use('/api', (req, res, next) => {
+    apiRequestContext.run(discoverySettings.effective(discoverySettings.read(req)), next);
+});
 // Existing text generation permits guests; authenticated callers use their verified identity.
 app.post('/api/creation/copilot', async (req, res, next) => {
     const authorization = req.get('authorization');
@@ -170,7 +184,7 @@ app.post('/api/creation/copilot', async (req, res, next) => {
         } catch { return res.status(401).json({ error: '登入已失效，請重新登入。' }); }
     }
     next();
-}, createCopilotHandler(aiRouter, { getTemplate: async id => {
+}, createCopilotHandler(aiRouter, { getRuntimeEnv: requestAIEnv, getTemplate: async id => {
     const record = await prisma.template.findUnique({ where: { id } });
     return record ? toCatalogTemplate(record) : null;
 } }));
@@ -201,6 +215,13 @@ app.post('/api/discovery/settings', async (req, res) => {
     try { next = discoverySettings.merge(discoverySettings.read(req), req.body); }
     catch (error) { return res.status(400).json({ error: error.message }); }
     try {
+        if (req.body.openaiApiKey?.trim()) {
+            try {
+                await new OpenAI({ apiKey: next.openaiApiKey, timeout: 20000, maxRetries: 0 }).models.list();
+            } catch {
+                throw new Error('OpenAI 連線檢查失敗，請確認金鑰與 API 存取權限後重試。');
+            }
+        }
         if (req.body.youtubeApiKey?.trim()) {
             await new YouTubeCollector({ apiKey: next.youtubeApiKey }).request('videos', { part: 'id', id: 'wToeNUwRb_k' });
         }
@@ -218,7 +239,7 @@ app.post('/api/discovery/settings', async (req, res) => {
         discoverySettings.write(res, next, req.secure || req.get('x-forwarded-proto') === 'https');
         res.json(discoverySettings.status(next));
     } catch (error) {
-        res.status(502).json({ error: error.message.startsWith('YouTube') || error.message.startsWith('Gemini') || error.message.includes('DISCOVERY_SETTINGS_SECRET')
+        res.status(502).json({ error: error.message.startsWith('OpenAI') || error.message.startsWith('YouTube') || error.message.startsWith('Gemini') || error.message.includes('DISCOVERY_SETTINGS_SECRET')
             ? error.message : '無法儲存 API 設定，請檢查伺服器設定目錄權限並重試。' });
     }
 });
@@ -353,7 +374,8 @@ function toTaipeiTZ(date) {
 }
 
 app.get('/api/ai/providers', (req, res) => {
-    res.json(aiRouter.getCapabilities());
+    res.set('Cache-Control', 'no-store');
+    res.json(aiRouter.getCapabilities(requestAIEnv()));
 });
 
 app.patch('/api/user/ai-provider', async (req, res) => {
@@ -368,7 +390,7 @@ app.patch('/api/user/ai-provider', async (req, res) => {
         if (!isValidProvider(provider)) {
             return res.status(400).json({ error: '無效的 AI Provider 設定' });
         }
-        if (provider === 'openai' && !isProviderConfigured('openai')) {
+        if (provider === 'openai' && !isProviderConfigured('openai', requestAIEnv())) {
             return res.status(503).json({ error: '後端尚未設定 OpenAI API 金鑰，無法切換至此 Provider。', code: 'AI_AUTH_ERROR' });
         }
         const updated = await prisma.user.update({

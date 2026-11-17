@@ -1,4 +1,21 @@
 /* Settings uses solid reading surfaces; floating material remains owned by the shell. */
+/* The fixed workspace clips its children; this route owns the content scroll. */
+body.dashboard-layout #page-content.spa-discovery-settings-wrap {
+    --page-content-overflow-y: auto;
+    padding: var(--space-6) var(--page-gutter) var(--workspace-bottom-inset) !important;
+    scroll-padding-bottom: var(--workspace-bottom-inset);
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+}
+body.dashboard-layout #page-content.spa-discovery-settings-wrap > .settings-shell {
+    flex: 0 0 auto;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+.settings-shell .settings-breadcrumb { margin: var(--space-4) 0 0; color: var(--color-text-tertiary); font-size: var(--font-size-xs); }
+.settings-shell .openai-icon { color: var(--color-text-success); background: var(--color-bg-subtle); }
+.settings-shell .provider-block:first-child { padding-top: var(--space-4); }
 .settings-shell .settings-header { margin-bottom: var(--space-6); }
 .settings-shell .settings-title-row { display: flex; align-items: center; gap: var(--space-4); }
 .settings-shell h1 { margin: var(--space-4) 0 0; font-size: var(--font-size-2xl); line-height: 1.35; overflow-wrap: anywhere; }

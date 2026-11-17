@@ -9,11 +9,11 @@ function node(){const events={},attrs={},classes=new Set();return {value:'',type
  async emit(type,event={}){const e={target:this,preventDefault(){this.defaultPrevented=true},...event};await Promise.all([...(events[type]||[])].map(fn=>fn(e)));},
  listenerCount(){return Object.values(events).reduce((sum,set)=>sum+set.size,0)},querySelectorAll(){return []}};}
 function fixture(responses=[response(status())]){
- const ids=Object.fromEntries(['api-settings-form','key-fields','save-settings','settings-message','settings-status','return-search','retry-settings','youtube-key','gemini-key','youtube-status','gemini-status','gemini-hint'].map(id=>[id,node()]));
- const form=ids['api-settings-form'],fields=ids['key-fields'];const toggles=['youtube-key','gemini-key'].map(id=>{const n=node();n.dataset.toggle=id;n.closest=()=>n;return n;});
+ const ids=Object.fromEntries(['api-settings-form','key-fields','save-settings','settings-message','settings-status','return-search','retry-settings','youtube-key','gemini-key','openai-key','openai-status','youtube-status','gemini-status','gemini-hint'].map(id=>[id,node()]));
+ const form=ids['api-settings-form'],fields=ids['key-fields'];const toggles=['youtube-key','gemini-key','openai-key'].map(id=>{const n=node();n.dataset.toggle=id;n.closest=()=>n;return n;});
  form.querySelectorAll=selector=>selector==='[data-toggle]'?toggles:[];form.checkValidity=()=>true;fields.querySelectorAll=()=>[ids['youtube-key'],ids['gemini-key']];
  const root={querySelector:selector=>ids[selector.slice(1)]};const calls=[],pending=[...responses],document={readyState:'complete',getElementById:id=>ids[id]};
- const ctx={document,console,AbortController,AbortSignal,DOMException,FormData:class{constructor(){this.entries=[['youtubeApiKey',ids['youtube-key'].value],['geminiApiKey',ids['gemini-key'].value]];}[Symbol.iterator](){return this.entries[Symbol.iterator]();}},
+ const ctx={document,console,AbortController,AbortSignal,DOMException,FormData:class{constructor(){this.entries=[['youtubeApiKey',ids['youtube-key'].value],['geminiApiKey',ids['gemini-key'].value],['openaiApiKey',ids['openai-key'].value]];}[Symbol.iterator](){return this.entries[Symbol.iterator]();}},
  fetch(url,options){calls.push({url,...options});const next=pending.shift();if(!next)throw new Error('unexpected request');return typeof next==='function'?next(options):Promise.resolve(next);}};
  ctx.window=ctx;ctx.PageHost={};vm.createContext(ctx);vm.runInContext(fs.readFileSync('public/js/discovery-settings.js','utf8'),ctx);
  const signal=new AbortController();const owner=ctx.initDiscoverySettingsPage({root,signal:signal.signal});
@@ -29,7 +29,7 @@ test('Settings mounts once, reads status only and exposes no persisted keys',asy
 test('Settings load failure keeps save disabled and retry recovers without a page reload',async()=>{
  const f=fixture([response({error:'offline'},false),response(status())]);
  await f.form.emit('input');await tick();assert.equal(f.ids['retry-settings'].hidden,false);assert.equal(f.fields.disabled,true);assert.equal(f.ids['save-settings'].disabled,true);
- await f.ids['retry-settings'].emit('click');assert.equal(f.calls.length,2);assert.equal(f.fields.disabled,false);assert.equal(f.ids['youtube-key'].required,true);f.owner.unmount();
+ await f.ids['retry-settings'].emit('click');assert.equal(f.calls.length,2);assert.equal(f.fields.disabled,false);assert.equal(f.ids['youtube-key'].required,false);f.owner.unmount();
 });
 test('Settings single submit verifies persistence, clears inputs and focuses the return link',async()=>{
  let release;const f=fixture([response(status()),()=>new Promise(resolve=>{release=resolve}),response(status(true,5))]);await tick();

@@ -210,6 +210,7 @@
             <h3 class="up-settings-title">設定</h3>
           </div>
           <div class="up-settings-section">
+            <a href="/discovery/settings" class="up-btn up-api-settings" id="up-api-settings"><img src="/icon/setting.svg" alt=""><span>API 設定</span><span aria-hidden="true">↗</span></a>
             <p class="up-settings-label">AI 模型</p>
             <div class="up-provider-list" role="radiogroup" aria-label="預設 AI Provider">
               <button type="button" class="up-provider-option is-selected" data-ai-provider="gemini" role="radio" aria-checked="true">
@@ -731,6 +732,15 @@
       });
     }
 
+    const apiSettingsLink = panel?.querySelector('#up-api-settings');
+    if (apiSettingsLink && !apiSettingsLink.dataset.spaBound) {
+      apiSettingsLink.dataset.spaBound = 'true';
+      addTrackedListener(apiSettingsLink, 'click', event => {
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        event.preventDefault();
+        shellOptions.navigate('discovery-settings');
+      });
+    }
     const settingsBtn = panel?.querySelector('#up-settings-btn');
     const settingsBack = panel?.querySelector('#up-settings-back');
     const mainView = panel?.querySelector('[data-up-view="main"]');
@@ -748,7 +758,7 @@
         if (id === 'openai') {
           option.disabled = !openaiAvailable;
           const desc = option.querySelector('[data-provider-status="openai"]');
-          if (desc) desc.textContent = openaiAvailable ? 'OpenAI API · GPT 模型' : '尚未設定後端金鑰（不可用）';
+          if (desc) desc.textContent = openaiAvailable ? 'OpenAI API · GPT 模型' : '請先至 API 設定填入金鑰';
         }
       }
     };

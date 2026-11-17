@@ -9,6 +9,7 @@
         const status = find('settings-status'), returnLink = find('return-search'), retry = find('retry-settings');
         const controller = new AbortController(), listeners = [];
         let current, disposed = false, saving = false, loading = false;
+        const summary = data => `已連接 ${['openai', 'gemini', 'youtube'].filter(name => data?.[name]?.configured).length} / 3 項服務`;
         document.title = 'API 連線設定 — Storyboard AI';
         const listen = (element, event, callback) => {
             if (!element) return;
@@ -30,14 +31,15 @@
         }
         function render(data) {
             current = data;
-            status.textContent = data.configured ? '已設定完畢' : '尚未完成 API 設定';
+            status.textContent = summary(data);
             status.className = `status-chip ${data.configured ? 'is-ready' : 'is-pending'}`;
-            for (const provider of ['youtube', 'gemini']) {
-                const state = data[provider], input = find(`${provider}-key`), badge = find(`${provider}-status`);
+            for (const provider of ['youtube', 'gemini', 'openai']) {
+                const state = data[provider] || { configured: false }, input = find(`${provider}-key`), badge = find(`${provider}-status`);
+                if (!input || !badge) continue;
                 badge.textContent = state.configured ? (state.source === 'browser' ? '已儲存' : '沿用伺服器設定') : '待設定';
                 badge.className = `provider-status ${state.configured ? 'is-ready' : ''}`;
-                input.required = !state.configured;
-                input.placeholder = state.configured ? '已設定，留空保留；貼上新金鑰可更新' : `貼上 ${provider === 'youtube' ? 'YouTube' : 'Gemini'} API Key`;
+                input.required = false;
+                input.placeholder = state.configured ? '已設定，留空保留；貼上新金鑰可更新' : `貼上 ${provider === 'youtube' ? 'YouTube' : provider === 'openai' ? 'OpenAI' : 'Gemini'} API Key`;
             }
             find('gemini-hint').textContent = data.gemini.mode === 'vertex'
                 ? '目前使用 Vertex AI／Google Cloud ADC 與 Google Cloud 計費。填入 Gemini API Key 後將切換至獨立計費的 Gemini Developer API。'
@@ -48,7 +50,7 @@
             for (const toggle of form.querySelectorAll('[data-toggle]')) {
                 const input = find(toggle.dataset.toggle);input.value = '';input.type = 'password';
                 toggle.textContent = '顯示';toggle.setAttribute('aria-pressed', 'false');
-                toggle.setAttribute('aria-label', `顯示 ${toggle.dataset.toggle === 'youtube-key' ? 'YouTube' : 'Gemini'} API Key`);
+                toggle.setAttribute('aria-label', `顯示 ${toggle.dataset.toggle === 'youtube-key' ? 'YouTube' : toggle.dataset.toggle === 'openai-key' ? 'OpenAI' : 'Gemini'} API Key`);
             }
         }
         async function load() {
@@ -71,12 +73,12 @@
             const input = find(toggle.dataset.toggle), show = input.type === 'password';
             input.type = show ? 'text' : 'password';toggle.textContent = show ? '隱藏' : '顯示';
             toggle.setAttribute('aria-pressed', String(show));
-            toggle.setAttribute('aria-label', `${show ? '隱藏' : '顯示'} ${toggle.dataset.toggle === 'youtube-key' ? 'YouTube' : 'Gemini'} API Key`);
+            toggle.setAttribute('aria-label', `${show ? '隱藏' : '顯示'} ${toggle.dataset.toggle === 'youtube-key' ? 'YouTube' : toggle.dataset.toggle === 'openai-key' ? 'OpenAI' : 'Gemini'} API Key`);
         });
         listen(form, 'input', () => {
             message.textContent = '';message.classList.remove('is-success');
             const dirty = [...fields.querySelectorAll('input')].some(input => input.value.trim());
-            status.textContent = dirty ? '有尚未儲存的變更' : current?.configured ? '已設定完畢' : '尚未完成 API 設定';
+            status.textContent = dirty ? '有尚未儲存的變更' : summary(current);
             status.className = `status-chip ${dirty || !current?.configured ? 'is-pending' : 'is-ready'}`;
             returnLink.hidden = dirty || !current?.configured;
         });
@@ -92,7 +94,9 @@
                 if (!active()) return;
                 if (persisted.savedAt !== data.savedAt) throw new Error('瀏覽器未保存設定，請允許本站 Cookie 後再試一次。');
                 clearInputs();render(persisted);message.classList.add('is-success');
-                message.textContent = '已設定完畢！設定已儲存並立即生效，可以開始搜尋影片。';returnLink.focus();
+                message.textContent = '金鑰已通過連線檢查並加密儲存，後續請求將使用新設定。';
+                window.spaAuth?.fetchAiCapabilities?.({ force: true });
+                if (!returnLink.hidden) returnLink.focus();
             } catch (error) {
                 if (!active()) return;
                 message.textContent = error.name === 'TimeoutError' ? '連線檢查逾時，請稍後重試。' : error.message;

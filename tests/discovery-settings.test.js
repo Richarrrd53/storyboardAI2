@@ -5,6 +5,20 @@ const env = { DISCOVERY_SETTINGS_SECRET: 'test-only-encryption-key-32-characters
 const keyA = 'test-youtube-key-1234567890';
 const keyB = 'test-gemini-key-1234567890';
 
+test('OpenAI can be saved independently and remains isolated from server defaults', () => {
+    const settings = new ApiSettings({ env: { ...env, OPENAI_API_KEY: 'server-openai-key-1234567890' } });
+    const own = 'sk-test-personal-openai-key-1234567890';
+    const saved = settings.merge({}, { openaiApiKey: own });
+    const cookie = saveCookie(settings, saved);
+    const read = settings.read({ headers: { cookie: `${COOKIE_NAME}=${cookie.value}` } });
+    assert.equal(settings.effective(read).openaiApiKey, own);
+    assert.equal(settings.effective().openaiApiKey, 'server-openai-key-1234567890');
+    assert.equal(settings.status(read).openai.source, 'browser');
+    assert.equal(settings.status(read).configured, false);
+    assert.ok(!JSON.stringify(settings.status(read)).includes(own));
+    assert.throws(() => settings.merge({}, { openaiApiKey: ['invalid'] }), /OpenAI/);
+});
+
 function saveCookie(manager, values) {
     let cookie;
     manager.write({ cookie(name, value, options) { cookie = { name, value, options }; } }, values, true);
@@ -20,7 +34,7 @@ test('encrypted settings persist across instances and never return secret values
     assert.equal(cookie.options.httpOnly, true);
     assert.equal(cookie.options.secure, true);
     assert.equal(cookie.options.sameSite, 'strict');
-    assert.equal(cookie.options.path, '/api/discovery');
+    assert.equal(cookie.options.path, '/api');
     assert.ok(!cookie.value.includes(keyA));
     const reloaded = new ApiSettings({ env });
     const data = reloaded.read({ headers: { cookie: `${cookie.name}=${cookie.value}` } });
@@ -50,7 +64,7 @@ test('empty fields keep existing keys, server defaults are recognized and malfor
     assert.deepEqual(settings.merge({ youtubeApiKey: keyA }, { youtubeApiKey: '' }), { youtubeApiKey: keyA });
     assert.throws(() => settings.merge({}, { geminiApiKey: 'bad key' }), /Gemini/);
     assert.throws(() => settings.merge({}, { youtubeApiKey: ['bad'] }), /YouTube/);
-    assert.throws(() => new ApiSettings({ env }).merge({}, { youtubeApiKey: keyA }), /完成/);
+    assert.equal(new ApiSettings({ env }).merge({}, { youtubeApiKey: keyA }).youtubeApiKey, keyA);
 });
 
 test('cloud encryption requires a stable secret, and valid configuration does not require a local file', () => {

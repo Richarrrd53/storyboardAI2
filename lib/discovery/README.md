@@ -6,7 +6,9 @@
 
 ## 設定
 
-在搜尋頁點選狀態按鈕進入 `/discovery/settings`，可填入 YouTube API Key 與 Google AI Studio 的 Gemini API Key。新填金鑰通過 API 連線檢查後，會以 AES-256-GCM 加密保存於 HttpOnly、SameSite=Strict Cookie（90 天，僅套用目前瀏覽器）。回傳的狀態不包含完整金鑰；欄位留空保留現有設定，新金鑰優先於環境變數且不修改全站設定。已設定環境變數或 Vertex AI 認證仍可直接沿用。
+從帳戶選單的「設定 → API 設定」，或搜尋頁的狀態按鈕，進入 `/discovery/settings`。可分別填入 OpenAI、YouTube Data API 與 Google AI Studio 的 Gemini API Key；搜尋與影片分析仍需 YouTube 與 Gemini。OpenAI 儲存後可在「設定 → AI 模型」選用。
+
+新填金鑰通過 API 連線檢查後，以 AES-256-GCM 加密保存於 HttpOnly、SameSite=Strict Cookie（90 天，僅套用目前瀏覽器；HTTPS 使用 Secure）。Cookie 路徑為 `/api`，儲存時清除舊的 `/api/discovery` Cookie。回傳狀態不含完整金鑰，欄位留空保留現有設定；使用者金鑰優先於環境變數，透過 AsyncLocalStorage 隔離每個請求，套用到創作討論、分鏡、圖片、模板推薦及搜尋分析，不修改全站設定。已設定環境變數或 Vertex AI 認證仍可沿用。OpenAI 連線檢查使用模型清單，不執行文字或圖片生成，通過檢查不代表所有模型皆有使用權限。
 
 本機會自動建立 `.private/discovery-settings.key` 保存 Cookie 加密金鑰，此目錄禁止提交 Git。Vercel／多實例部署必須設定相同且至少 32 字元的隨機 `DISCOVERY_SETTINGS_SECRET`，避免不同實例無法讀取設定；變更此值會使原有 Cookie 失效。前端無法讀取已儲存的金鑰，搜尋及分析均由本站後端呼叫服務。
 

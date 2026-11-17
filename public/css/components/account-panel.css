@@ -46,6 +46,8 @@
 .account-panel .up-settings-back:hover { background: var(--color-surface-selected); }
 .account-panel .up-settings-title { margin: 0; font-size: 15px; line-height: 22px; font-weight: 600; }
 .account-panel .up-settings-section { display: grid; gap: 8px; }
+.account-panel .up-api-settings { background: var(--color-bg-subtle); margin-bottom: 4px; }
+.account-panel .up-api-settings > span:last-child { margin-left: auto; color: var(--color-text-secondary); }
 .account-panel .up-settings-label { margin: 0; padding-inline: 4px; font-size: 12px; line-height: 18px; font-weight: 600; color: var(--color-text-secondary); }
 .account-panel .up-provider-list { display: grid; gap: 8px; }
 .account-panel .up-provider-option { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 52px; padding: 10px 14px; border: 1px solid var(--color-border-default); border-radius: 16px; background: transparent; color: inherit; font: inherit; text-align: start; cursor: pointer; transition: background-color .16s ease, border-color .16s ease; }
