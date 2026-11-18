@@ -2609,7 +2609,7 @@ body.dashboard-layout .spa-discovery-wrap > * {
 }
 
 .sidebar.open .side-sub-list.expanded {
-    max-height: 300px;
+    max-height: 200px;
     max-width: 100%;
     width: calc(100% - 12px);
     filter: blur(0px);
@@ -2620,7 +2620,7 @@ body.dashboard-layout .spa-discovery-wrap > * {
     overscroll-behavior: contain;
     scrollbar-width: none;
     -ms-overflow-style: none;
-    margin-top: 24px;
+    margin-top: 14px;
 }
 
 .sidebar:not(.open) .side-sub-list {
