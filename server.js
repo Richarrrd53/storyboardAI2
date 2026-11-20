@@ -12,7 +12,9 @@ const jwt = require('jsonwebtoken');
 const YouTubeCollector = require('./lib/discovery/youtube-collector');
 const { analyzeVideo } = require('./lib/discovery/video-analyzer');
 const { getSkill, listSkills } = require('./lib/discovery/skill-registry');
-const { ApiSettings } = require('./lib/discovery/api-settings');
+const { ApiSettings, isSiteGeminiEnabled, isSiteYouTubeEnabled } = require('./lib/discovery/api-settings');
+const { vertexAuthOptions } = require('./lib/google-credentials');
+const { createSiteRateLimiter, createSearchCache } = require('./lib/site-quota');
 const { buildTemplateFromDiscovery } = require('./lib/discovery/template-builder');
 const { toCatalogTemplate } = require('./lib/template-catalog');
 const { generationProjectId } = require('./lib/generation-project-id');
@@ -80,10 +82,20 @@ app.use((req, res, next) => {
 
 const { AsyncLocalStorage } = require('node:async_hooks');
 const apiRequestContext = new AsyncLocalStorage();
+const siteGeminiLimiter = createSiteRateLimiter({ windowMs: 60000, defaultLimit: 20 });
+const siteYouTubeLimiter = createSiteRateLimiter({ windowMs: 60000, defaultLimit: 15 });
+const youtubeSearchCache = createSearchCache({ ttlMs: 300000, maxEntries: 200 });
+
 function requestAIEnv() {
     const keys = apiRequestContext.getStore() || {};
-    return { ...process.env, API_KEYS_ACCOUNT_ONLY: true, OPENAI_API_KEY: keys.openaiApiKey || '',
-        GEMINI_API_KEY: keys.geminiApiKey || '', GOOGLE_API_KEY: '', YOUTUBE_API_KEY: keys.youtubeApiKey || '' };
+    return {
+        ...process.env,
+        OPENAI_API_KEY: keys.openaiApiKey || '',
+        GEMINI_API_KEY: keys.geminiApiKey || '',
+        GOOGLE_API_KEY: '',
+        YOUTUBE_API_KEY: keys.youtubeApiKey || '',
+        SITE_GEMINI_ENABLED: isSiteGeminiEnabled(process.env) ? 'true' : 'false'
+    };
 }
 function requirePersonalKey(field, provider) {
     const key = apiRequestContext.getStore()?.[field];
@@ -92,10 +104,58 @@ function requirePersonalKey(field, provider) {
     return key;
 }
 function getGenAI() {
-    return new GoogleGenAI({ vertexai: false, apiKey: requirePersonalKey('geminiApiKey', 'Gemini') });
+    const keys = apiRequestContext.getStore() || {};
+    if (keys.geminiApiKey) {
+        return new GoogleGenAI({ vertexai: false, apiKey: keys.geminiApiKey });
+    }
+    if (keys.vertexAvailable) {
+        return new GoogleGenAI({
+            vertexai: true,
+            project: process.env.GOOGLE_CLOUD_PROJECT_ID,
+            location: process.env.GOOGLE_CLOUD_LOCATION || 'global',
+            ...vertexAuthOptions(process.env)
+        });
+    }
+    throw Object.assign(new Error('目前網站的 Gemini 服務暫時無法使用，請稍後重試或於 API 設定填入個人金鑰。'), {
+        status: 503,
+        code: 'AI_AUTH_PERMISSION'
+    });
 }
 function getOpenAI() {
     return new OpenAI({ apiKey: requirePersonalKey('openaiApiKey', 'OpenAI') });
+}
+function enforceSiteGeminiLimit(req, res, provider = 'gemini') {
+    if (provider !== 'gemini') return true;
+    const keys = apiRequestContext.getStore() || {};
+    if (keys.hasPersonalGeminiKey || keys.geminiApiKey) return true;
+    const limit = Number(process.env.SITE_GEMINI_RPM || 20);
+    const check = siteGeminiLimiter.consume(req.apiSettingsUserId || req.ip, limit);
+    if (!check.allowed) {
+        res.set('Retry-After', String(check.retryAfterSeconds));
+        res.status(429).json({
+            error: '目前使用 Gemini 的人數較多，服務暫時繁忙。請稍後再試，或在 API 設定中使用自己的 Gemini API Key。',
+            code: 'AI_RATE_LIMIT',
+            retryAfter: check.retryAfterSeconds
+        });
+        return false;
+    }
+    return true;
+}
+function enforceSiteYouTubeLimit(req, res) {
+    const keys = apiRequestContext.getStore() || {};
+    if (keys.hasPersonalYoutubeKey) return true;
+    const limit = Number(process.env.SITE_YOUTUBE_RPM || 15);
+    const check = siteYouTubeLimiter.consume(req.apiSettingsUserId || req.ip, limit);
+    if (!check.allowed) {
+        res.set('Retry-After', String(check.retryAfterSeconds));
+        res.status(429).json({
+            error: '目前使用 YouTube 搜尋的人數較多，服務暫時繁忙。請稍後再試，或在 API 設定中使用自己的 YouTube API Key。',
+            code: 'YOUTUBE_RATE_LIMIT',
+            retryAfter: check.retryAfterSeconds
+        });
+        return false;
+    }
+    return true;
 }
 
 const aiRouter = createProviderRouter({
@@ -166,6 +226,8 @@ app.post('/api/creation/copilot', async (req, res, next) => {
             }
         } catch { return res.status(401).json({ error: '登入已失效，請重新登入。' }); }
     }
+    const targetProvider = req.body?.provider || req.userAiProvider || 'gemini';
+    if (!enforceSiteGeminiLimit(req, res, targetProvider)) return;
     next();
 }, createCopilotHandler(aiRouter, { getRuntimeEnv: requestAIEnv, getTemplate: async id => {
     const record = await prisma.template.findUnique({ where: { id } });
@@ -227,6 +289,50 @@ app.post('/api/discovery/settings', async (req, res) => {
     }
 });
 
+app.delete('/api/discovery/settings/:provider', async (req, res) => {
+    let sameOrigin = true;
+    if (req.headers.origin) {
+        try { sameOrigin = new URL(req.headers.origin).host === req.get('host'); }
+        catch { sameOrigin = false; }
+    }
+    if (!sameOrigin || req.get('sec-fetch-site') === 'cross-site') {
+        return res.status(403).json({ error: '請從本站 API 設定頁解除綁定。' });
+    }
+    const provider = String(req.params.provider || '').trim().toLowerCase();
+    if (!['gemini', 'youtube', 'openai'].includes(provider)) {
+        return res.status(400).json({ error: '不支援的 API 服務類型。' });
+    }
+    try {
+        const next = discoverySettings.clear(discoverySettings.read(req), provider);
+        next.savedAt = new Date().toISOString();
+        discoverySettings.write(res, next, req.secure || req.get('x-forwarded-proto') === 'https', req.apiSettingsUserId);
+        let aiProviderReset = false;
+        if (provider === 'openai' && req.apiSettingsUserId && prisma.user) {
+            try {
+                if (typeof prisma.user.updateMany === 'function') {
+                    const updated = await prisma.user.updateMany({
+                        where: { id: req.apiSettingsUserId, aiProvider: 'openai' },
+                        data: { aiProvider: 'gemini' }
+                    });
+                    aiProviderReset = (updated?.count || 0) > 0;
+                } else if (typeof prisma.user.findUnique === 'function' && typeof prisma.user.update === 'function') {
+                    const user = await prisma.user.findUnique({ where: { id: req.apiSettingsUserId }, select: { aiProvider: true } });
+                    if (user?.aiProvider === 'openai') {
+                        await prisma.user.update({ where: { id: req.apiSettingsUserId }, data: { aiProvider: 'gemini' } });
+                        aiProviderReset = true;
+                    }
+                }
+            } catch (_) { /* Ignore DB reset failure when DB is mocked or unavailable */ }
+        }
+        res.json({
+            ...discoverySettings.status(next),
+            ...(provider === 'openai' ? { aiProvider: 'gemini', aiProviderReset } : {})
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message || '無法解除綁定，請稍後重試。' });
+    }
+});
+
 app.get('/api/discovery/skills', (req, res) => {
     res.json({ skills: listSkills(), configured: discoverySettings.status(discoverySettings.read(req)).configured,
         platforms: [{ id: 'youtube-shorts', name: 'YouTube Shorts', available: true },
@@ -269,6 +375,27 @@ app.post('/api/discovery/search', async (req, res) => {
         }
 
         const keys = discoverySettings.effective(discoverySettings.read(req));
+        if (!keys.youtubeApiKey) {
+            return res.status(503).json({ error: '目前網站的 YouTube 搜尋服務暫時無法使用，請稍後重試或於 API 設定填入個人金鑰。', code: 'YOUTUBE_UNAVAILABLE' });
+        }
+        const usingSiteKey = !keys.hasPersonalYoutubeKey;
+        const cacheKey = JSON.stringify({
+            query: normalizedQuery.toLowerCase(),
+            platform,
+            timeRange: String(timeRange),
+            maxDuration: Number(maxDuration),
+            resultLimit: normalizedLimit
+        });
+        const cachedPayload = usingSiteKey ? youtubeSearchCache.get(cacheKey) : null;
+        if (cachedPayload) {
+            return res.json({
+                query: { query: normalizedQuery, platform, skill, timeRange: String(timeRange), maxDuration: Number(maxDuration), resultLimit: normalizedLimit },
+                results: cachedPayload.results,
+                meta: { ...cachedPayload.meta, cached: true }
+            });
+        }
+        if (usingSiteKey && !enforceSiteYouTubeLimit(req, res)) return;
+
         const { videos, channel, diagnostics } = await new YouTubeCollector({ apiKey: keys.youtubeApiKey }).search({
             query: normalizedQuery,
             platform,
@@ -277,12 +404,21 @@ app.post('/api/discovery/search', async (req, res) => {
             resultLimit: normalizedLimit
         });
         const results = videos;
+        const meta = {
+            collector: 'YouTube Data API',
+            channel,
+            diagnostics,
+            returnedAt: new Date().toISOString(),
+            warning: diagnostics?.limitation || 'YouTube API 無法直接確認影片是否為直式 Shorts。'
+        };
+        if (usingSiteKey) {
+            youtubeSearchCache.set(cacheKey, { results, meta }, Number(process.env.SITE_YOUTUBE_CACHE_TTL_MS || 300000));
+        }
 
         res.json({
             query: { query: normalizedQuery, platform, skill, timeRange: String(timeRange), maxDuration: Number(maxDuration), resultLimit: normalizedLimit },
             results,
-            meta: { collector: 'YouTube Data API', channel, diagnostics, returnedAt: new Date().toISOString(),
-                warning: diagnostics?.limitation || 'YouTube API 無法直接確認影片是否為直式 Shorts。' }
+            meta
         });
     } catch (error) {
         res.status(502).json({ error: error.message || '搜尋失敗，請稍後再試。' });
@@ -297,12 +433,14 @@ app.post('/api/discovery/analyze', async (req, res) => {
     }
     try {
         const keys = discoverySettings.effective(discoverySettings.read(req));
+        if (!keys.geminiApiKey && !enforceSiteGeminiLimit(req, res, 'gemini')) return;
         const client = keys.geminiApiKey ? new GoogleGenAI({ vertexai: false, apiKey: keys.geminiApiKey }) : getGenAI();
         if (keys.geminiApiKey) await client.models.get({ model: getModel('discovery'), config: { httpOptions: { timeout: 20000 } } });
         res.json({ analysis: await analyzeVideo(client, videoId, skill),
             provider: keys.geminiApiKey ? 'gemini-developer-api' : 'vertex-ai', model: getModel('discovery') });
     } catch (error) {
         const failure = reportAIError(error, { task: 'discovery', model: getModel('discovery') });
+        if (failure.status === 429 && !res.get('Retry-After')) res.set('Retry-After', '60');
         res.status(failure.status).json({ error: failure.message, code: failure.code });
     }
 });
@@ -358,7 +496,17 @@ function toTaipeiTZ(date) {
 
 app.get('/api/ai/providers', (req, res) => {
     res.set('Cache-Control', 'no-store');
-    res.json(aiRouter.getCapabilities(requestAIEnv()));
+    const saved = discoverySettings.read(req);
+    const caps = aiRouter.getCapabilities(requestAIEnv());
+    const status = discoverySettings.status(saved);
+    res.json({
+        ...caps,
+        services: {
+            gemini: status.gemini,
+            youtube: status.youtube,
+            openai: status.openai
+        }
+    });
 });
 
 app.patch('/api/user/ai-provider', async (req, res) => {
@@ -374,7 +522,7 @@ app.patch('/api/user/ai-provider', async (req, res) => {
             return res.status(400).json({ error: '無效的 AI Provider 設定' });
         }
         if (provider === 'openai' && !isProviderConfigured('openai', requestAIEnv())) {
-            return res.status(503).json({ error: '後端尚未設定 OpenAI API 金鑰，無法切換至此 Provider。', code: 'AI_AUTH_ERROR' });
+            return res.status(503).json({ error: '請先在 API 設定綁定個人 OpenAI API 金鑰，再切換至此模型。', code: 'PERSONAL_API_KEY_REQUIRED' });
         }
         const updated = await prisma.user.update({
             where: { id: decoded.id },
@@ -988,6 +1136,7 @@ app.post('/api/projects/:projectId/shots/:shotId/regenerate', async (req, res) =
         }
 
         const provider = await resolveRequestProvider(req, req.body?.provider);
+        if (!enforceSiteGeminiLimit(req, res, provider)) return;
         // 呼叫 AI Provider 生成圖片
         const imageResult = await aiRouter.generateImage({
             provider,
@@ -1087,6 +1236,7 @@ app.post('/api/projects/:projectId/shots/:shotId/optimize-prompt', async (req, r
         const ratio = project.ratio || '16:9';
 
         const provider = await resolveRequestProvider(req, req.body?.provider);
+        if (!enforceSiteGeminiLimit(req, res, provider)) return;
         const promptGenRequest = `You are a professional cinematographer and AI image prompt engineer.
 Convert this storyboard shot description into a highly detailed, evocative English image prompt for visual generation.
 - Story/Action: "${shotStory}"
@@ -1288,6 +1438,7 @@ app.post('/api/ask-gemini', async (req, res) => {
     let provider = 'gemini';
     try {
         provider = await resolveRequestProvider(req, req.body?.provider);
+        if (!enforceSiteGeminiLimit(req, res, provider)) return;
         const result = task === 'image'
             ? await aiRouter.generateImage({ provider, question, ratio, requestId })
             : await aiRouter.generateText({
@@ -1305,6 +1456,7 @@ app.post('/api/ask-gemini', async (req, res) => {
         const stage = provider === 'openai' ? 'call_openai' : 'call_vertex';
         const failure = reportAIError(error, { requestId, task, provider: provider === 'openai' ? 'openai' : 'vertex-ai', model: aiRouter.getModel(provider, task) || undefined,
             stage, contract: structured ? 'freeform-v2' : 'legacy', elapsedMs: Date.now() - started });
+        if (failure.status === 429 && !res.get('Retry-After')) res.set('Retry-After', '60');
         res.status(failure.status).json({ error: 'Internal Server Error', details: failure.message, code: failure.code, provider,
             diagnostics: { requestId, stage, upstreamStatus: Number(error?.status || error?.error?.code) || null,
                 ...require('./lib/ai/generation').requestIssue(error) } });

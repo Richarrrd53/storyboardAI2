@@ -192,6 +192,12 @@
         return 'gemini';
       }
     },
+    syncAiProviderLocal: (provider) => {
+      const next = normalizeProvider(provider);
+      if (cachedUser?.result?.user) cachedUser.result.user.aiProvider = next;
+      try { localStorage.setItem(AI_PROVIDER_KEY, next); } catch (_) {}
+      return next;
+    },
     fetchAiCapabilities: async ({ force = false } = {}) => {
       if (!force && cachedCapabilities) return cachedCapabilities;
       if (!pendingCapabilities || force) {

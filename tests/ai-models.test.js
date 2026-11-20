@@ -121,8 +121,9 @@ test('credential path takes precedence and base64 deployment credentials stay in
     assert.throws(() => vertexAuthOptions({ GCP_SERVICE_ACCOUNT_BASE64: 'invalid' }), /credentials/);
     assert.equal(vertexAvailable({ GOOGLE_CLOUD_PROJECT_ID: 'fixture', GOOGLE_APPLICATION_CREDENTIALS: __filename }), true);
     const status = new ApiSettings({ env: { GOOGLE_CLOUD_PROJECT_ID: 'fixture', GOOGLE_APPLICATION_CREDENTIALS: __filename } }).status();
-    assert.equal(status.gemini.mode, 'none');
-    assert.equal(status.gemini.provider, 'none');
+    assert.equal(status.gemini.mode, 'vertex');
+    assert.equal(status.gemini.provider, 'vertex-ai');
+    assert.equal(status.gemini.source, 'server');
     assert.equal(status.gemini.model, DEFAULT_MODELS.discovery);
 });
 
@@ -150,8 +151,8 @@ test('well-known local ADC works without an explicit credential path and wins ov
             GCP_SERVICE_ACCOUNT_BASE64: 'invalid-stale-key' };
         assert.equal(vertexAvailable(env), true);
         assert.deepEqual(vertexAuthOptions(env), {});
-        assert.equal(new ApiSettings({ env }).status().gemini.mode, 'none');
-        assert.equal(new ApiSettings({ env: { ...env, GEMINI_API_KEY: 'explicit-key' } }).status().gemini.provider, 'none');
+        assert.equal(new ApiSettings({ env }).status().gemini.mode, 'vertex');
+        assert.equal(new ApiSettings({ env: { ...env, GEMINI_API_KEY: 'explicit-key', SITE_GEMINI_ENABLED: 'false' } }).status().gemini.provider, 'none');
     } finally { fs.rmSync(root, { recursive: true, force: true }); }
 });
 

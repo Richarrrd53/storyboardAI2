@@ -6,6 +6,8 @@ test('personal OpenAI keys validate, drive generation and stay isolated across c
     process.env.GEMINI_API_KEY = 'server-gemini-key-must-never-be-used-123456';
     process.env.GOOGLE_API_KEY = 'server-google-key-must-never-be-used-123456';
     process.env.YOUTUBE_API_KEY = 'server-youtube-key-must-never-be-used-123456';
+    process.env.SITE_GEMINI_ENABLED = 'false';
+    process.env.SITE_YOUTUBE_ENABLED = 'false';
     process.env.JWT_SECRET = 'account-api-test-jwt-secret';
     const jwt = require('jsonwebtoken');
     const tokens = ['account-a', 'account-b'].map(id => jwt.sign({ id }, process.env.JWT_SECRET));
@@ -48,7 +50,7 @@ test('personal OpenAI keys validate, drive generation and stay isolated across c
         assert.equal(capabilities.providers.openai.available, true);
         assert.equal(capabilities.providers.gemini.available, false);
         const missingGemini = await post('/api/ask-gemini', { provider: 'gemini', type: 'text', question: 'fixture' }, cookies[0]);
-        assert.equal(missingGemini.status, 403);
+        assert.equal(missingGemini.status, 503);
         const mine = await fetch(base + '/api/discovery/settings', { headers: { Cookie: cookies[0], Authorization: `Bearer ${tokens[0]}` } });
         const mineStatus = await mine.json();
         assert.equal(mineStatus.youtube.configured, false);

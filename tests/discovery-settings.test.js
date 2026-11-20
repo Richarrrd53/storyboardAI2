@@ -57,10 +57,12 @@ test('tampered cookies cannot supply keys and another browser does not inherit t
     assert.equal(settings.status().configured, false);
 });
 
-test('empty fields keep existing keys, server defaults are recognized and malformed updates fail', () => {
+test('empty fields keep existing keys, server YouTube default is recognized when enabled, and malformed updates fail', () => {
     const settings = new ApiSettings({ env: { ...env, YOUTUBE_API_KEY: keyA, GEMINI_API_KEY: keyB } });
     assert.equal(settings.status().configured, false);
-    assert.equal(settings.status().youtube.source, 'none');
+    assert.equal(settings.status().youtube.configured, true);
+    assert.equal(settings.status().youtube.source, 'server');
+    assert.equal(settings.status().gemini.configured, false);
     assert.deepEqual(settings.merge({ youtubeApiKey: keyA }, { youtubeApiKey: '' }), { youtubeApiKey: keyA });
     assert.throws(() => settings.merge({}, { geminiApiKey: 'bad key' }), /Gemini/);
     assert.throws(() => settings.merge({}, { youtubeApiKey: ['bad'] }), /YouTube/);

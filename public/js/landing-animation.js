@@ -43,13 +43,38 @@ window.initLandingPage = () => {
             stage.classList.add('is-cinematic');
             workflow.classList.add('is-workflow-motion');
             const hero = select('.lp-hero');
+            const navLinks = document.querySelectorAll('.lp-nav-sections a');
+            const navDefaultColor = navLinks[0] ? getComputedStyle(navLinks[0]).color : '#475569';
+            const navLightColor = getComputedStyle(document.documentElement).getPropertyValue('--lp-inverse').trim() || '#ffffff';
             const film = select('.lp-film');
+            const filmEl = film[0];
+            const filmStage = select('.lp-film-stage')[0];
+            const shellFrame = select('.lp-film-frame-shell')[0] || select('.lp-film-frame:last-child')[0];
+            const perspective = desktop ? 1000 : 750;
+            const approachScale = desktop ? 1.25 : 1.65;
+            const approachZ = desktop ? 350 : 0;
+            const crossScale = desktop ? 2.8 : 4.2;
+            const crossZ = desktop ? 720 : 0;
+            const crossAngle = desktop ? 6 : 3;
+            const baseY = desktop ? -25 : -55;
+            // Shift the strip left so the new shell frame stays centered as it tilts and scales.
+            const filmCenterOffset = (scale, z, angleDeg = 0) => {
+                if (!filmEl || !filmStage || !shellFrame) return { x: 0, y: baseY };
+                const marginLeft = parseFloat(getComputedStyle(filmEl).marginLeft) || 0;
+                const baseLeft = filmStage.getBoundingClientRect().left + marginLeft;
+                const frameCenter = shellFrame.offsetLeft + shellFrame.offsetWidth / 2;
+                const rad = (angleDeg * Math.PI) / 180;
+                return {
+                    x: (innerWidth / 2 - baseLeft) * ((perspective - z) / perspective) - scale * frameCenter * Math.cos(rad),
+                    y: baseY - scale * frameCenter * Math.sin(rad)
+                };
+            };
             const product = select('.lp-product');
             // One camera move owns A + B. The generated pin space is viewport-relative.
             // Transform children, never the pinned stage or the document dimensions.
             gsap.set(product, {autoAlpha: 0});
             gsap.set(select('.lp-stage-depth'), {opacity: 0});
-            gsap.set(film, {transformPerspective: desktop ? 1000 : 750, rotationY: desktop ? -38 : -16,
+            gsap.set(film, {transformPerspective: perspective, rotationY: desktop ? -38 : -16,
                 rotationX: desktop ? 12 : 3, rotationZ: desktop ? -13 : -7, z: desktop ? -120 : 0});
             const opening = gsap.timeline({defaults: {ease: 'none'}, scrollTrigger: {
                 id: 'landing-opening', trigger: stage, start: 'top top',
@@ -61,12 +86,13 @@ window.initLandingPage = () => {
                 .to(select('.lp-hero-copy, .lp-hero-note'), {autoAlpha: 0, y: -45, duration: 0.55}, 0.15)
                 .to(select('.lp-stage-depth'), {opacity: 1, duration: 0.8}, 0.45)
                 .addLabel('approach', 0.3)
-                .to(film, {xPercent: desktop ? -30 : -20, y: desktop ? -25 : -55,
-                    rotationY: 0, rotationX: 0, rotationZ: 0, z: desktop ? 350 : 0,
-                    scale: desktop ? 1.25 : 1.65, duration: 1}, 'approach')
+                .to(film, {x: () => filmCenterOffset(approachScale, approachZ).x, y: baseY,
+                    rotationY: 0, rotationX: 0, rotationZ: 0, z: approachZ,
+                    scale: approachScale, duration: 1}, 'approach')
                 .addLabel('crossLens', 1.3)
-                .to(film, {xPercent: desktop ? -60 : -65, z: desktop ? 720 : 0,
-                    scale: desktop ? 2.8 : 4.2, rotationZ: desktop ? 6 : 3, duration: 0.75}, 'crossLens')
+                .to(film, {x: () => filmCenterOffset(crossScale, crossZ, crossAngle).x,
+                    y: () => filmCenterOffset(crossScale, crossZ, crossAngle).y, z: crossZ,
+                    scale: crossScale, rotationZ: crossAngle, duration: 0.75}, 'crossLens')
                 .to(select('.lp-hero-light'), {opacity: 0, duration: 0.5}, 1.1)
                 .to(hero, {autoAlpha: 0, duration: 0.3}, 1.9)
                 .addLabel('workspace', 1.65)
@@ -78,6 +104,15 @@ window.initLandingPage = () => {
                 .fromTo(select('.lp-product .lp-section-head'), {opacity: 0, y: 35}, {opacity: 1, y: 0, duration: 0.5}, 2.4)
                 .fromTo(select('.lp-reveal-tool'), {opacity: 0, y: 30, scale: 0.8}, {opacity: 1, y: 0, scale: 1, duration: 0.4}, 2.65)
                 .to({}, {duration: 0.35});
+            if (navLinks.length) {
+                opening.to(navLinks, {color: navLightColor, duration: 0.5}, 1.1);
+                ScrollTrigger.create({
+                    trigger: workflow,
+                    start: 'top 80px',
+                    onEnter: () => gsap.to(navLinks, {color: navDefaultColor, duration: 0.25, overwrite: 'auto'}),
+                    onLeaveBack: () => gsap.to(navLinks, {color: navLightColor, duration: 0.25, overwrite: 'auto'})
+                });
+            }
 
             // Workflow states are a single reversible sequence, including the shot edit.
             const steps = select('.lp-workflow-steps > li');
@@ -104,6 +139,7 @@ window.initLandingPage = () => {
             return () => {
                 stage.classList.remove('is-cinematic');
                 workflow.classList.remove('is-workflow-motion');
+                if (navLinks.length) gsap.set(navLinks, {clearProps: 'color'});
             };
         }, root);
     }

@@ -303,14 +303,14 @@
               <button type="button" class="up-provider-option is-selected" data-ai-provider="gemini" role="radio" aria-checked="true">
                 <span class="up-provider-meta">
                   <span class="up-provider-name">Google Gemini</span>
-                  <span class="up-provider-desc">Vertex AI · 預設推薦</span>
+                  <span class="up-provider-desc" data-provider-status="gemini">網站提供 · 預設推薦</span>
                 </span>
                 <span class="up-provider-check" aria-hidden="true"></span>
               </button>
               <button type="button" class="up-provider-option" data-ai-provider="openai" role="radio" aria-checked="false">
                 <span class="up-provider-meta">
                   <span class="up-provider-name">OpenAI</span>
-                  <span class="up-provider-desc" data-provider-status="openai">OpenAI API · GPT 模型</span>
+                  <span class="up-provider-desc" data-provider-status="openai">個人金鑰 · GPT 模型</span>
                 </span>
                 <span class="up-provider-check" aria-hidden="true"></span>
               </button>
@@ -865,29 +865,54 @@
     }
     const settingsBtn = panel?.querySelector('#up-settings-btn');
     const settingsBack = panel?.querySelector('#up-settings-back');
-    const syncProviderUI = (activeProvider, caps) => {
+    let lastProviderCaps = null;
+    const syncProviderUI = (activeProvider, caps = lastProviderCaps) => {
       if (!panel) return;
-      const current = activeProvider === 'openai' ? 'openai' : 'gemini';
-      const openaiInfo = caps?.providers?.openai;
-      const openaiAvailable = openaiInfo ? openaiInfo.available !== false : true;
+      if (caps) lastProviderCaps = caps;
+      const resolvedCaps = caps || lastProviderCaps;
+      const services = resolvedCaps?.services;
+      const openaiInfo = resolvedCaps?.providers?.openai;
+      const geminiInfo = resolvedCaps?.providers?.gemini;
+      const openaiAvailable = openaiInfo ? openaiInfo.available !== false : false;
+      const geminiAvailable = geminiInfo ? geminiInfo.available !== false : true;
+      const current = (activeProvider === 'openai' && openaiAvailable) ? 'openai' : 'gemini';
+
       for (const option of panel.querySelectorAll('[data-ai-provider]')) {
         const id = option.dataset.aiProvider;
         const selected = id === current;
         option.classList.toggle('is-selected', selected);
         option.setAttribute('aria-checked', String(selected));
+        if (id === 'gemini') {
+          option.disabled = !geminiAvailable;
+          const desc = option.querySelector('[data-provider-status="gemini"]');
+          if (desc) {
+            if (!geminiAvailable) desc.textContent = '目前暫不可用';
+            else if (services?.gemini?.personalConfigured) desc.textContent = '個人金鑰 · 預設推薦';
+            else desc.textContent = '網站提供 · 預設推薦';
+          }
+        }
         if (id === 'openai') {
           option.disabled = !openaiAvailable;
           const desc = option.querySelector('[data-provider-status="openai"]');
-          if (desc) desc.textContent = openaiAvailable ? 'OpenAI API · GPT 模型' : '請先至 API 設定填入金鑰';
+          if (desc) desc.textContent = openaiAvailable ? '個人金鑰 · GPT 模型' : '請先至 API 設定綁定金鑰';
         }
       }
     };
+    if (panel && !panel.dataset.settingsSyncBound) {
+      panel.dataset.settingsSyncBound = 'true';
+      addTrackedListener(window, 'discovery:settings-updated', async event => {
+        const detail = event?.detail;
+        if (detail?.aiProvider) auth?.syncAiProviderLocal?.(detail.aiProvider);
+        const caps = await auth?.fetchAiCapabilities?.({ force: true });
+        syncProviderUI(auth?.getAiProvider?.() || 'gemini', caps);
+      });
+    }
     if (settingsBtn && !settingsBtn.dataset.spaBound) {
       settingsBtn.dataset.spaBound = 'true';
       addTrackedListener(settingsBtn, 'click', async () => {
         switchUserPanelView(panel, 'forward', () => settingsBack?.focus?.({ preventScroll: true }));
         const current = auth?.getAiProvider?.() || 'gemini';
-        syncProviderUI(current, null);
+        syncProviderUI(current, lastProviderCaps);
         const caps = await auth?.fetchAiCapabilities?.();
         syncProviderUI(auth?.getAiProvider?.() || current, caps);
       });
@@ -905,7 +930,7 @@
         const nextProvider = option.dataset.aiProvider;
         if (!nextProvider || option.disabled) return;
         const previous = auth?.getAiProvider?.() || 'gemini';
-        syncProviderUI(nextProvider, null);
+        syncProviderUI(nextProvider, lastProviderCaps);
         try {
           const saved = await (auth?.setAiProvider ? auth.setAiProvider(nextProvider) : Promise.resolve(nextProvider));
           const caps = await auth?.fetchAiCapabilities?.();
