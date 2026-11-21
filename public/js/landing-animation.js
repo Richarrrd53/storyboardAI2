@@ -1,6 +1,9 @@
 /* The router caches this module. Every visit owns a fresh, scoped session. */
 const { gsap, ScrollTrigger } = window;
-if (gsap && ScrollTrigger) gsap.registerPlugin(ScrollTrigger);
+if (gsap && ScrollTrigger) {
+    gsap.registerPlugin(ScrollTrigger);
+    ScrollTrigger.config({ ignoreMobileResize: true });
+}
 let activeLanding = null;
 
 window.initLandingPage = () => {
@@ -24,6 +27,7 @@ window.initLandingPage = () => {
         abort.abort();
         clearTimeout(refreshTimer);
         media?.revert();
+        ScrollTrigger?.normalizeScroll(false);
         window.destroyLandingLogic?.();
         activeLanding = null;
     };
@@ -37,15 +41,16 @@ window.initLandingPage = () => {
         media.add({ desktop: '(min-width: 900px)', mobile: '(max-width: 899px)', reduce: '(prefers-reduced-motion: reduce)' }, context => {
             if (context.conditions.reduce) return;
             const desktop = context.conditions.desktop;
+            if (!desktop && ScrollTrigger.isTouch) {
+                ScrollTrigger.normalizeScroll(true);
+            }
             const select = gsap.utils.selector(root);
             const stage = select('.lp-cinema-stage')[0];
             const workflow = select('.lp-workflow-layout')[0];
             stage.classList.add('is-cinematic');
             workflow.classList.add('is-workflow-motion');
             const hero = select('.lp-hero');
-            const navLinks = document.querySelectorAll('.lp-nav-sections a');
-            const navDefaultColor = navLinks[0] ? getComputedStyle(navLinks[0]).color : '#475569';
-            const navLightColor = getComputedStyle(document.documentElement).getPropertyValue('--lp-inverse').trim() || '#ffffff';
+            const nav = document.getElementById('nav');
             const film = select('.lp-film');
             const filmEl = film[0];
             const filmStage = select('.lp-film-stage')[0];
@@ -76,10 +81,18 @@ window.initLandingPage = () => {
             gsap.set(select('.lp-stage-depth'), {opacity: 0});
             gsap.set(film, {transformPerspective: perspective, rotationY: desktop ? -38 : -16,
                 rotationX: desktop ? 12 : 3, rotationZ: desktop ? -13 : -7, z: desktop ? -120 : 0});
-            const opening = gsap.timeline({defaults: {ease: 'none'}, scrollTrigger: {
+            let opening;
+            const stableHeight = () => stage.offsetHeight || innerHeight;
+            const syncNavTheme = () => {
+                if (!nav || !opening) return;
+                const inDarkPhase = opening.time() >= 1.25 && stage.getBoundingClientRect().bottom > 60;
+                nav.classList.toggle('lp-nav--dark', inDarkPhase);
+            };
+            opening = gsap.timeline({defaults: {ease: 'none'}, scrollTrigger: {
                 id: 'landing-opening', trigger: stage, start: 'top top',
-                end: () => '+=' + Math.round(innerHeight * (desktop ? 2.8 : 1.65)),
-                pin: true, scrub: desktop ? 0.5 : 0.22, anticipatePin: 1, invalidateOnRefresh: true
+                end: () => '+=' + Math.round(stableHeight() * (desktop ? 2.8 : 1.65)),
+                pin: true, scrub: desktop ? 0.5 : 0.22, anticipatePin: desktop ? 1 : 0, invalidateOnRefresh: true,
+                onUpdate: syncNavTheme
             }});
             opening.addLabel('expand', 0)
                 .to(select('.lp-hero-light'), {scaleX: 1.2, scaleY: 1.4, borderRadius: 0, duration: 0.8}, 0)
@@ -98,20 +111,22 @@ window.initLandingPage = () => {
                 .addLabel('workspace', 1.65)
                 .to(product, {autoAlpha: 1, duration: 0.3}, 'workspace')
                 .fromTo(select('.lp-product-image'),
-                    {scale: desktop ? 0.38 : 0.62, rotationX: desktop ? 24 : 0, y: desktop ? 120 : 65,
-                        clipPath: desktop ? 'inset(12% 23% 12% 23% round 48px)' : 'inset(12% 8% 12% 8% round 32px)'},
-                    {scale: 1, rotationX: 0, y: 0, clipPath: 'inset(0% 0% 0% 0% round 24px)', duration: 1.1}, 'workspace')
+                    {scale: desktop ? 0.38 : 0.62, rotationX: desktop ? 24 : 0, y: desktop ? 120 : 65},
+                    {scale: 1, rotationX: 0, y: 0, duration: 1.1}, 'workspace')
+                .fromTo(select('.lp-product-image img'),
+                    {clipPath: desktop ? 'inset(12% 23% 12% 23% round 48px)' : 'inset(14% 18% 14% 18% round 36px)'},
+                    {clipPath: 'inset(0% 0% 0% 0% round 24px)', duration: 1.1}, 'workspace')
                 .fromTo(select('.lp-product .lp-section-head'), {opacity: 0, y: 35}, {opacity: 1, y: 0, duration: 0.5}, 2.4)
                 .fromTo(select('.lp-reveal-tool'), {opacity: 0, y: 30, scale: 0.8}, {opacity: 1, y: 0, scale: 1, duration: 0.4}, 2.65)
                 .to({}, {duration: 0.35});
-            if (navLinks.length) {
-                opening.to(navLinks, {color: navLightColor, duration: 0.5}, 1.1);
+            if (nav) {
                 ScrollTrigger.create({
-                    trigger: workflow,
-                    start: 'top 80px',
-                    onEnter: () => gsap.to(navLinks, {color: navDefaultColor, duration: 0.25, overwrite: 'auto'}),
-                    onLeaveBack: () => gsap.to(navLinks, {color: navLightColor, duration: 0.25, overwrite: 'auto'})
+                    trigger: stage,
+                    start: 'bottom 60px',
+                    onEnter: syncNavTheme,
+                    onLeaveBack: syncNavTheme
                 });
+                syncNavTheme();
             }
 
             // Workflow states are a single reversible sequence, including the shot edit.
@@ -119,8 +134,8 @@ window.initLandingPage = () => {
             gsap.set(steps.slice(1), {autoAlpha: 0, y: 60});
             const sheet = gsap.timeline({defaults: {ease: 'none'}, scrollTrigger: {
                 id: 'landing-workflow', trigger: workflow, start: desktop ? 'top 100px' : 'top 82px',
-                end: () => '+=' + Math.round(innerHeight * (desktop ? 2.5 : 1.85)),
-                pin: true, scrub: 0.25, anticipatePin: 1, invalidateOnRefresh: true
+                end: () => '+=' + Math.round(stableHeight() * (desktop ? 2.5 : 1.85)),
+                pin: true, scrub: 0.25, anticipatePin: desktop ? 1 : 0, invalidateOnRefresh: true
             }});
             steps.forEach((step, index) => {
                 sheet.addLabel(['story','discussion','shots','editing'][index], index);
@@ -137,9 +152,10 @@ window.initLandingPage = () => {
                 .fromTo(select('.lp-workflow-progress span'), {scaleX: 0}, {scaleX: 1, duration: 3.8}, 0);
             // class mutations are owned by the same media session as the pin spacers.
             return () => {
+                if (!desktop && ScrollTrigger.isTouch) ScrollTrigger.normalizeScroll(false);
                 stage.classList.remove('is-cinematic');
                 workflow.classList.remove('is-workflow-motion');
-                if (navLinks.length) gsap.set(navLinks, {clearProps: 'color'});
+                nav?.classList.remove('lp-nav--dark');
             };
         }, root);
     }

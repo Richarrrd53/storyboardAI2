@@ -22,7 +22,8 @@
         direction: 'vertical', // 'vertical' | 'horizontal'
         edgeMode: 'auto', // 'auto' | 'both' | 'bottom'
         scrollElement: null, // 自訂滾動元素 (若容器本身不滾動但內部滾動)
-        activeClass: 'has-dynamic-mask'
+        activeClass: 'has-dynamic-mask',
+        keepMaskOnFocus: false
       }, options);
 
       // 支援從 HTML 屬性覆寫設定
@@ -35,6 +36,7 @@
           this.options.direction = element.dataset.maskDirection;
         }
         if (element.dataset.maskEdges) this.options.edgeMode = element.dataset.maskEdges;
+        if (element.dataset.maskKeepOnFocus === 'true') this.options.keepMaskOnFocus = true;
       }
 
       this.scrollElement = this.resolveScrollElement();
@@ -358,8 +360,8 @@
       const mobile = window.matchMedia('(max-width: 768px)').matches;
       const size = Math.max(1, this.options.maskSize);
       const bottomOnly = this.options.edgeMode === 'bottom' || (this.options.edgeMode === 'auto' && page);
-      // A focused control must never be attenuated by an overflow hint.
-      const contentFocused = this.scrollElement.contains(document.activeElement);
+      // A focused control must never be attenuated by an overflow hint unless opted out.
+      const contentFocused = !this.options.keepMaskOnFocus && this.scrollElement.contains(document.activeElement);
       if (max <= 1 || contentFocused) this.clearMask();
       else if (vertical) this.applyVerticalMask(bottomOnly ? 0 : position, max - position, size);
       else this.applyHorizontalMask(position, max - position, size);

@@ -121,7 +121,7 @@
     const nav = landingNav();
     if (nav) {
       nav.style.transition = reduced() ? 'none' : 'transform 0.45s cubic-bezier(0.76,0,0.24,1)';
-      nav.style.transform = 'translateY(-100%)';
+      nav.style.transform = 'translateY(calc(-100% - 28px))';
     }
   }
 
@@ -148,10 +148,11 @@
     }
   }
   function setLayout(page, dashboard, opts) {
+    const isAuth = page === 'login' || page === 'register';
     document.body.classList.toggle('dashboard-layout', dashboard);
-    document.body.classList.toggle('auth-layout', page === 'login' || page === 'register');
+    document.body.classList.toggle('auth-layout', isAuth);
     window.AppShell.updateRoute(page, opts);
-    if (dashboard) showDashTopbar();
+    if (dashboard || isAuth) showDashTopbar();
     else {
       const nav = document.getElementById('nav') || landingNav();
       if (nav) nav.style.display = '';

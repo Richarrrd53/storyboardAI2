@@ -31,6 +31,16 @@
     const panelObserver = window.ResizeObserver ? new window.ResizeObserver(syncPanelHeight) : null;
     root.querySelectorAll('.auth-panel').forEach(panel => panelObserver?.observe(panel));
 
+    const backBtn = root.querySelector('#auth-back-btn');
+    if (backBtn) {
+      const onBack = (e) => {
+        e.preventDefault();
+        navigate('landing');
+      };
+      backBtn.addEventListener('click', onBack);
+      listeners.push(() => backBtn.removeEventListener('click', onBack));
+    }
+
     const brandLogos = root.querySelectorAll('.brand-logo, .logo');
     brandLogos.forEach(logo => {
       if (logo.dataset.spaLogoBound) return;

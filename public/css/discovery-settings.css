@@ -431,6 +431,10 @@ body.dashboard-layout #page-content.spa-discovery-settings-wrap > .settings-shel
         flex-shrink: 0;
         border-radius: var(--radius-pill);
         background: var(--color-border-default);
+        touch-action: none;
+    }
+    .api-settings-dialog-head {
+        touch-action: pan-x;
     }
     .api-settings-dialog-actions {
         margin-top: var(--space-3);

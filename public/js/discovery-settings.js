@@ -590,9 +590,24 @@
         const closeBtn = panel.querySelector('#close-api-settings');
         const settingsOwner = window.initDiscoverySettingsPage({ root: panel, signal: dialogController.signal, onSaved });
         const focusTarget = returnFocus || document.activeElement;
+        const depth = window.BackgroundDepth;
         let settled = false;
         let timer = null;
+        let pointer = null;
         const animations = [];
+        const stopAnimations = () => {
+            clearTimeout(timer);
+            timer = null;
+            animations.splice(0).forEach(a => a.cancel());
+        };
+        const overlayFrame = (color, blur) => ({ backgroundColor: color, backdropFilter: blur, webkitBackdropFilter: blur });
+        const currentOverlay = () => {
+            const style = window.getComputedStyle?.(overlay);
+            return overlayFrame(
+                style?.backgroundColor || overlay.style.backgroundColor || 'var(--color-surface-overlay)',
+                style?.backdropFilter || overlay.style.backdropFilter || 'blur(4px)'
+            );
+        };
 
         let resolvePromise;
         const promise = new Promise(resolve => { resolvePromise = resolve; });
@@ -605,13 +620,111 @@
             onEscape: () => { if (!settingsOwner.isSaving?.()) close('escape'); }
         });
 
+        function endPointer() {
+            if (!pointer) return;
+            try { panel.releasePointerCapture?.(pointer.id); } catch (_) {}
+            window.removeEventListener('pointermove', onPointerMove);
+            window.removeEventListener('pointerup', onPointerUp);
+            window.removeEventListener('pointercancel', onPointerCancel);
+            pointer = null;
+        }
+
+        function onPointerDown(event) {
+            if (!mobileSheet || settled || event.button > 0 || settingsOwner.isSaving?.()) return;
+            const target = event.target;
+            if (!target?.closest?.('.api-settings-sheet-handle') && (!target?.closest?.('.api-settings-dialog-head') || target.closest('a,button,input,select,textarea'))) return;
+            const transform = window.getComputedStyle?.(panel)?.transform || '';
+            const match = transform.match(/matrix\([^,]+,[^,]+,[^,]+,[^,]+,[^,]+,\s*([-\d.]+)\)/);
+            const offset = match ? Math.max(0, Number(match[1])) : 0;
+            stopAnimations();
+            pointer = {
+                id: event.pointerId,
+                start: event.clientY,
+                last: event.clientY,
+                time: Date.now(),
+                dy: offset,
+                offset,
+                velocity: 0,
+                height: panel.getBoundingClientRect().height || 480,
+                moved: false
+            };
+            window.addEventListener('pointermove', onPointerMove, { passive: false });
+            window.addEventListener('pointerup', onPointerUp);
+            window.addEventListener('pointercancel', onPointerCancel);
+        }
+
+        function onPointerMove(event) {
+            if (!pointer || event.pointerId !== pointer.id) return;
+            const delta = event.clientY - pointer.start;
+            if (!pointer.moved && Math.abs(delta) < 6) return;
+            if (!pointer.moved) {
+                pointer.moved = true;
+                try { panel.setPointerCapture?.(pointer.id); } catch (_) {}
+            }
+            event.preventDefault?.();
+            const stamp = Date.now();
+            pointer.velocity = (event.clientY - pointer.last) / Math.max(1, stamp - pointer.time);
+            pointer.last = event.clientY;
+            pointer.time = stamp;
+            pointer.dy = Math.max(0, pointer.offset + delta);
+            panel.style.transform = `translate3d(0,${pointer.dy}px,0)`;
+            const progress = Math.max(0, 1 - pointer.dy / pointer.height);
+            overlay.style.backgroundColor = `rgba(15,23,42,${0.45 * progress})`;
+            overlay.style.backdropFilter = `blur(${4 * progress}px)`;
+            overlay.style.webkitBackdropFilter = `blur(${4 * progress}px)`;
+            depth?.setProgress?.(progress);
+        }
+
+        function snapBack() {
+            if (!mobileSheet || settled) return;
+            const from = panel.style.transform || 'translate3d(0,0,0)';
+            const overlayFrom = currentOverlay();
+            stopAnimations();
+            const duration = 260;
+            const easing = 'cubic-bezier(.16,1,.3,1)';
+            overlay.style.backgroundColor = '';
+            overlay.style.backdropFilter = '';
+            overlay.style.webkitBackdropFilter = '';
+            if (!motion?.matches && overlay.animate) {
+                animations.push(overlay.animate([overlayFrom, overlayFrame('var(--color-surface-overlay)', 'blur(4px)')], { duration, easing, fill: 'both' }));
+            }
+            if (!motion?.matches && panel.animate) {
+                animations.push(panel.animate([{ transform: from }, { transform: 'translate3d(0,0,0)' }], { duration, easing, fill: 'both' }));
+            }
+            depth?.animate?.(true, motion?.matches ? 0 : 0.26);
+            if (motion?.matches) {
+                panel.style.transform = 'translate3d(0,0,0)';
+            } else {
+                timer = setTimeout(() => {
+                    stopAnimations();
+                    panel.style.transform = 'translate3d(0,0,0)';
+                }, duration);
+            }
+        }
+
+        function onPointerUp(event) {
+            if (!pointer || event.pointerId !== pointer.id) return;
+            const dismiss = pointer.moved && (pointer.dy / pointer.height >= 0.30 || pointer.velocity > 0.38);
+            endPointer();
+            if (dismiss && !settingsOwner.isSaving?.()) close('drag');
+            else snapBack();
+        }
+
+        function onPointerCancel(event) {
+            if (!pointer || event.pointerId !== pointer.id) return;
+            endPointer();
+            snapBack();
+        }
+
         function dispose(reason) {
-            clearTimeout(timer);
+            stopAnimations();
+            endPointer();
+            panel.removeEventListener('pointerdown', onPointerDown);
             modalMotion?.cancel?.(overlay);
-            animations.forEach(a => a.cancel());
             signal?.removeEventListener('abort', onAbort);
             dialogController.abort();
             overlay.remove();
+            if (mobileSheet) depth?.setProgress?.(0);
             lease?.release?.({ restoreFocus: reason !== 'abort' });
             if (activeDialog?.overlay === overlay) activeDialog = null;
             resolvePromise({ closed: true, reason });
@@ -623,8 +736,10 @@
                 return;
             }
             settled = true;
+            endPointer();
             if (closeBtn) closeBtn.disabled = true;
             if (immediate || motion?.matches) {
+                if (mobileSheet) depth?.animate?.(false, 0);
                 dispose(reason);
                 return;
             }
@@ -635,21 +750,25 @@
             if (mobileSheet) {
                 const duration = 260;
                 const easing = 'cubic-bezier(.16,1,.3,1)';
+                const from = window.getComputedStyle?.(panel)?.transform || panel.style.transform || 'translate3d(0,0,0)';
+                const overlayFrom = currentOverlay();
+                stopAnimations();
                 if (overlay.animate) {
                     animations.push(overlay.animate(
                         [
-                            { backgroundColor: 'var(--color-surface-overlay)', backdropFilter: 'blur(4px)', webkitBackdropFilter: 'blur(4px)' },
-                            { backgroundColor: 'transparent', backdropFilter: 'blur(0px)', webkitBackdropFilter: 'blur(0px)' }
+                            overlayFrom,
+                            overlayFrame('transparent', 'blur(0px)')
                         ],
                         { duration, easing, fill: 'both' }
                     ));
                 }
                 if (panel.animate) {
                     animations.push(panel.animate(
-                        [{ transform: 'translate3d(0,0,0)' }, { transform: 'translate3d(0,100%,0)' }],
+                        [{ transform: from }, { transform: 'translate3d(0,100%,0)' }],
                         { duration, easing, fill: 'both' }
                     ));
                 }
+                depth?.animate?.(false, 0.26);
                 timer = setTimeout(() => dispose(reason), duration);
                 return;
             }
@@ -679,21 +798,30 @@
             if (event.target === overlay && !settled && !settingsOwner.isSaving?.()) close('backdrop');
         });
 
+        panel.addEventListener('pointerdown', onPointerDown);
+
         if (!motion?.matches && modalMotion) {
             modalMotion.open(overlay, panel, { blur: 'var(--dialog-backdrop-blur, 50px)', backdropBg: 'var(--dialog-backdrop-bg)' });
-        } else if (!motion?.matches && mobileSheet && panel.animate) {
-            const easing = 'cubic-bezier(.16,1,.3,1)';
-            animations.push(overlay.animate(
-                [
-                    { backgroundColor: 'transparent', backdropFilter: 'blur(0px)', webkitBackdropFilter: 'blur(0px)' },
-                    { backgroundColor: 'var(--color-surface-overlay)', backdropFilter: 'blur(4px)', webkitBackdropFilter: 'blur(4px)' }
-                ],
-                { duration: 350, easing, fill: 'both' }
-            ));
-            animations.push(panel.animate(
-                [{ transform: 'translate3d(0,100%,0)' }, { transform: 'translate3d(0,0,0)' }],
-                { duration: 350, easing, fill: 'both' }
-            ));
+        } else if (mobileSheet) {
+            if (!motion?.matches && panel.animate) {
+                const easing = 'cubic-bezier(.16,1,.3,1)';
+                animations.push(overlay.animate(
+                    [
+                        overlayFrame('transparent', 'blur(0px)'),
+                        overlayFrame('var(--color-surface-overlay)', 'blur(4px)')
+                    ],
+                    { duration: 350, easing, fill: 'both' }
+                ));
+                animations.push(panel.animate(
+                    [{ transform: 'translate3d(0,100%,0)' }, { transform: 'translate3d(0,0,0)' }],
+                    { duration: 350, easing, fill: 'both' }
+                ));
+                timer = setTimeout(() => {
+                    stopAnimations();
+                    panel.style.transform = 'translate3d(0,0,0)';
+                }, 350);
+            }
+            depth?.animate?.(true, motion?.matches ? 0 : 0.35);
         } else if (!motion?.matches && panel.animate) {
             animations.push(overlay.animate(
                 [{ backdropFilter: 'blur(0px)' }, { backdropFilter: 'blur(var(--dialog-backdrop-blur, 50px))' }],

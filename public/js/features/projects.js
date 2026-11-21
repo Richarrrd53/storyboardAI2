@@ -615,7 +615,7 @@
       const confirmFn = typeof global !== 'undefined' && typeof global.confirm === 'function' ? global.confirm : async () => true;
       const isConfirmed = await confirmFn(
         '是否刪除此分鏡？',
-        `「${p.title}」將從此頁面上刪除，刪除後的分鏡將會移至「資源回收桶」，您可以在「歷史分鏡」復原`,
+        `「${p.title}」將從此頁面上刪除，刪除後的分鏡將會移至「資源回收桶」，您可以在「資源回收桶」復原`,
         'delete',
         '刪除',
         card

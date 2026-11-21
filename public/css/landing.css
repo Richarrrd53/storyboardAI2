@@ -39,10 +39,14 @@ body:not(.dashboard-layout):not(.auth-layout) #page-main.page-landing #page-cont
 .lp-nav .brand-logo-img { width: 30px; height: 30px; object-fit: contain; }
 .lp-nav-sections, .lp-nav-actions { display: flex; align-items: center; gap: 28px; }
 .lp-nav-sections a, .lp-login { color: var(--lp-secondary); text-decoration: none; font-size: 14px; white-space: nowrap; min-height: 44px; display: inline-flex; align-items: center; }
-.lp-nav-sections a { transform-origin: center; transition: transform var(--motion-duration-fast, 160ms) var(--motion-ease-spring, cubic-bezier(.33, 1.53, .69, .99)); }
+.lp-nav-sections a { transform-origin: center; transition: transform var(--motion-duration-fast, 160ms) var(--motion-ease-spring, cubic-bezier(.33, 1.53, .69, .99)), color 280ms var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1)); }
+.lp-login { transition: color 280ms var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1)); }
 .lp-nav-sections a:hover { transform: scale(1.04); }
 .lp-nav-sections a:active { transform: scale(0.96); transition-duration: var(--motion-duration-instant, 120ms); transition-timing-function: var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1)); }
 .lp-login:hover { color: var(--lp-blue); }
+.lp-nav.lp-nav--dark .lp-nav-sections a,
+.lp-nav.lp-nav--dark .lp-nav-actions .lp-login { color: var(--lp-inverse); }
+.lp-nav.lp-nav--dark .lp-nav-actions .lp-login:hover { color: var(--lp-inverse); }
 .lp-button { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: var(--space-3) 28px; border: 1px solid transparent; border-radius: var(--radius-pill); background: var(--lp-blue); color: var(--lp-inverse); font: 500 16px/1.4 var(--font-body); text-decoration: none; white-space: nowrap; cursor: pointer; transition: background-color 160ms var(--motion-ease-standard); }
 .lp-button:hover { background: var(--lp-blue-hover); }
 .lp-button:active { background: var(--lp-blue-active); }
@@ -206,7 +210,11 @@ body:not(.dashboard-layout):not(.auth-layout) #page-main.page-landing #page-cont
 .lp-nav-blur span:nth-child(1) { backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px); mask-image: linear-gradient(to bottom, #000 0%, #000 65%, transparent 100%); -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 65%, transparent 100%); }
 .lp-nav-blur span:nth-child(2) { backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); mask-image: linear-gradient(to bottom, #000 0%, #000 25%, transparent 75%); -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 25%, transparent 75%); }
 .lp-nav-blur span:nth-child(3) { backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); mask-image: linear-gradient(to bottom, #000 0%, transparent 48%); -webkit-mask-image: linear-gradient(to bottom, #000 0%, transparent 48%); }
-.lp-nav-blur span:nth-child(4) { display: block; background: var(--edge-tint-fallback-bg); background: linear-gradient(to bottom, color-mix(in srgb, var(--lp-paper) var(--edge-tint-start, 50%), transparent) 0%, color-mix(in srgb, var(--lp-paper) var(--edge-tint-middle, 30%), transparent) 40%, color-mix(in srgb, var(--lp-paper) 0%, transparent) 100%); }
+.lp-nav-blur span:nth-child(4) { display: block; transition: opacity 280ms var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1)); background: var(--edge-tint-fallback-bg); background: linear-gradient(to bottom, color-mix(in srgb, var(--lp-paper) var(--edge-tint-start, 50%), transparent) 0%, color-mix(in srgb, var(--lp-paper) var(--edge-tint-middle, 30%), transparent) 40%, color-mix(in srgb, var(--lp-paper) 0%, transparent) 100%); }
+.lp-nav-blur span:nth-child(5) { display: block; opacity: 0; transition: opacity 280ms var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1)); background: linear-gradient(to bottom, color-mix(in srgb, var(--lp-shell) var(--edge-tint-start, 50%), transparent) 0%, color-mix(in srgb, var(--lp-shell) var(--edge-tint-middle, 30%), transparent) 40%, color-mix(in srgb, var(--lp-shell) 0%, transparent) 100%); }
+.lp-nav.lp-nav--dark .lp-nav-blur span:nth-child(4) { opacity: 0; }
+.lp-nav.lp-nav--dark .lp-nav-blur span:nth-child(5) { opacity: 1; }
+body.auth-layout .lp-nav { transform: translateY(calc(-100% - 28px)); }
 .lp-cinema-stage { position: relative; isolation: isolate; }
 /* Browser anchoring must not fight the scrubbed camera or a smooth scene link. */
 .landing-story { overflow-anchor: none; }

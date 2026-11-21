@@ -3,24 +3,30 @@
   'use strict';
   const clamp = n => Math.max(0, Math.min(1,n));
   function sample(geometry, progress) {
-    const t=clamp(progress), q=1-t;
-    const x=2*q*t*geometry.dx*.45+t*t*geometry.dx;
-    const y=2*q*t*(-geometry.lift)+t*t*geometry.dy;
-    const shrink=clamp((t-.15)/.85);
-    return {x,y,scale:1+(geometry.endScale-1)*shrink,rotate:135*t,
-      opacity:1-clamp((t-.82)/.18),blur:Math.max(0,(t-.65)*6),
-      bin:Math.min(1,t/.18),lid:30*Math.sin(Math.PI*clamp((t-.08)/.84))};
+    const t=clamp(progress), f=clamp(t/.75), q=1-f;
+    const x=2*q*f*geometry.dx*.45+f*f*geometry.dx;
+    const y=2*q*f*(-geometry.lift)+f*f*geometry.dy;
+    const scale=1/(1+(1/geometry.endScale-1)*f);
+    const rotate=360*f;
+    return {x,y,scale,rotate,
+      zIndex:rotate<90?4:1,
+      opacity:f>=1?0:1-clamp((f-.75)/.25),blur:0,
+      bin:Math.min(1,t/.22),lid:34*Math.sin(Math.PI*clamp((t-.05)/.9))};
   }
   function measure(preview, bin) {
     const card=root.ProjectCard?.captureGeometry(preview);
     const a=preview.getBoundingClientRect();
     bin.style.transform='translateX(-50%) scale(1)';
-    const mouth=bin.querySelector('.sys-delete-trashbin-top').getBoundingClientRect();
+    const lidEl=bin.querySelector('.sys-delete-trashbin-top');
+    const bodyEl=bin.querySelector('.sys-delete-trashbin-bottom');
+    const mouth=lidEl.getBoundingClientRect();
+    const body=bodyEl?.getBoundingClientRect?.()||mouth;
     bin.style.transform='translateX(-50%) scale(0)';
     const parentScale=a.width/(preview.clientWidth||a.width)||1;
+    const targetY=bodyEl&&bodyEl!==lidEl?body.top+body.height*.28:mouth.top+mouth.height/2;
     return {snapshot:card,dx:(mouth.left+mouth.width/2-a.left-a.width/2)/parentScale,
-      dy:(mouth.top+mouth.height/2-a.top-a.height/2)/parentScale,
-      lift:Math.max(48,(a.height/parentScale)*.45),endScale:Math.max(.08,Math.min(.35,mouth.width/Math.max(1,a.width)*.65))};
+      dy:Math.max(24,(targetY-a.top-a.height/2)/parentScale),
+      lift:Math.max(72,(a.height/parentScale)*.68),endScale:Math.max(.04,Math.min(.14,mouth.width/Math.max(1,a.width)*.14))};
   }
   function animate({preview,bin,signal,duration=1000}) {
     const geometry=measure(preview,bin),lid=bin.querySelector('.sys-delete-trashbin-top');
@@ -35,8 +41,9 @@
     }
     function paint(t) {
       const p=sample(geometry,t);
+      preview.style.zIndex=String(p.zIndex);
       preview.style.transform=`translate3d(${p.x}px,${p.y}px,0) rotateX(${p.rotate}deg) scale(${p.scale})`;
-      preview.style.opacity=String(p.opacity);preview.style.filter=`blur(${p.blur}px)`;
+      preview.style.opacity=String(p.opacity);
       bin.style.transform=`translateX(-50%) scale(${p.bin})`;
       lid.style.transform=`rotate(${p.lid}deg)`;
     }

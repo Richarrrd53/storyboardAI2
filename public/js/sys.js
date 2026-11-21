@@ -182,7 +182,8 @@ function legacyDeleteConfirm(message, description, type = 'default', btnText, pr
             previewContainer.classList.add("sys-preview");
 
             const sourceWidth = projectEl?.getBoundingClientRect?.().width || projectEl?.clientWidth || 240;
-            const width = Math.min(240, sourceWidth, Math.max(120, window.innerWidth - 80));
+            const maxByViewport = Math.min(240, Math.max(132, window.innerWidth - 96), Math.max(132, Math.round(window.innerHeight * 0.28)));
+            const width = Math.min(maxByViewport, Math.max(132, sourceWidth));
             const preview = window.ProjectCard?.createPreview(projectEl, {width});
             if (preview) previewContainer.appendChild(preview);
             else {const label=document.createElement('p');label.textContent=projectEl?.querySelector?.('.project-title')?.textContent || message;previewContainer.appendChild(label);}

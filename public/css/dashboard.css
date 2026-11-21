@@ -4163,9 +4163,10 @@ body.dashboard-layout .spa-discovery-wrap > * {
         scroll-snap-align: start;
     }
 
+    .home-side-col,
     .home-quick-entry-card,
     .home-activity-card {
-        padding: var(--space-4);
+        display: none !important;
     }
 
     .desktop-quick-actions {

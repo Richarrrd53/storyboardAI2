@@ -44,3 +44,11 @@ test('dynamic mask header stays revealed for reduced motion without changing nor
 test('navigation publication does not wake standalone horizontal masks',()=>{
  const f=fixture(),inst=f.window.DynamicMaskSystem.attach(f.scroll,{direction:'horizontal'});f.window.DynamicMaskSystem.setNavigation('bottom',{enabled:true,progress:1});assert.equal(f.frames.size,0);inst.destroy();
 });
+test('dynamic mask with keepMaskOnFocus preserves mask when descendant receives focus',()=>{
+ const f=fixture();f.scroll.dataset.maskKeepOnFocus='true';
+ const inst=f.window.DynamicMaskSystem.attach(f.scroll);
+ assert.match(f.scroll.props['mask-image'],/transparent/);
+ const control=f.element();f.scroll.appendChild(control);f.document.activeElement=control;f.scroll.fire('focusin');f.flush();
+ assert.match(f.scroll.props['mask-image'],/transparent/);
+ inst.destroy();
+});

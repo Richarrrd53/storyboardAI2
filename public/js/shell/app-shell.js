@@ -113,6 +113,8 @@
     }, duration * 1000);
   }
 
+  window.BackgroundDepth = { setProgress: setBackgroundDepthProgress, animate: animateBackgroundDepth };
+
   /* ==========================================================================
      DOM ENSURANCE: SIDEBAR, TOPBAR, USER PANEL, MOBILE NAV
      ========================================================================== */
@@ -722,7 +724,7 @@
 
     highlightActiveSidebarProject(sidebarList);
     if (window.DynamicMaskSystem) {
-      window.DynamicMaskSystem.attach?.(sidebarList, { maskSize: 24, direction: 'vertical' });
+      window.DynamicMaskSystem.attach?.(sidebarList, { maskSize: 24, direction: 'vertical', keepMaskOnFocus: true });
       window.DynamicMaskSystem.update?.(sidebarList);
     }
   }
@@ -744,6 +746,7 @@
         const id = href.split('project/')[1];
         const onProjClick = (e) => {
           e.preventDefault();
+          if (e.detail > 0) a.blur?.();
           shellOptions.navigate('project', { id });
         };
         addTrackedListener(a, 'click', onProjClick);
