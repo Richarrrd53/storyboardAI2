@@ -196,7 +196,17 @@
             }
           });
           if (frames?.style) frames.style.opacity = '0';
+          const restoreHero = () => {
+            fadeTargets.forEach(el => {
+              if (el.style) {
+                el.style.opacity = '';
+                el.style.transition = '';
+              }
+            });
+            if (frames?.style) frames.style.opacity = '';
+          };
           const proxyCard = {
+            get isConnected() { return hero.isConnected; },
             classList: hero.classList,
             querySelector(sel) {
               if (sel === '.project-preview-primary') return coverFrame;
@@ -204,7 +214,7 @@
               return hero.querySelector?.(sel) || null;
             }
           };
-          global.ProjectCoverTransition.launch(proxyCard, recentProject, { navigate });
+          global.ProjectCoverTransition.launch(proxyCard, recentProject, { navigate, onCleanup: restoreHero });
           return;
         }
         navigate('project', { id: model.id });

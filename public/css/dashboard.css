@@ -4138,7 +4138,7 @@ body.dashboard-layout .spa-discovery-wrap > * {
         max-height: unset;
     }
 
-    .home-hero-card { display: block; height: auto; min-height: 160px; padding: var(--space-4); padding-bottom: 60px; clip-path: none; overflow: hidden; }
+    .home-hero-card { display: block; height: auto; min-height: 160px; padding: var(--space-4); padding-bottom: 60px; clip-path: none; overflow: visible; }
     .workspace-hero-resume-dock { padding: 8px 0 0 8px; border-top-left-radius: 25px; }
     .workspace-hero-resume-dock::before,
     .workspace-hero-resume-dock::after { width: 20px; height: 20px; background: radial-gradient(circle at 0 0, transparent 20px, var(--canvas, var(--color-bg-page, #f8fafc)) 20.5px); }

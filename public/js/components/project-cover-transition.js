@@ -364,7 +364,8 @@
           Object.assign(this.flyingCover.style, { left: `${from.left}px`, top: `${from.top}px`, width: `${from.width}px`, height: `${from.height}px`, transform: 'none' });
         }
         this.cancelOpening?.();
-        const canReturn = this.card.isConnected !== false && document.body.contains(this.card);
+        const targetEl = (typeof Node === 'function' && !(this.card instanceof Node)) ? this.primaryCover : this.card;
+        const canReturn = Boolean(targetEl && targetEl.isConnected !== false && document.body.contains(targetEl));
         const to = canReturn ? this.primaryCover.getBoundingClientRect() : null;
         const keyframes = to && to.width > 0 && to.height > 0 ? [
           { left: `${from.left}px`, top: `${from.top}px`, width: `${from.width}px`, height: `${from.height}px`, opacity: 1 },
@@ -572,6 +573,9 @@
         }
         if (this.card && this.card.classList) {
           this.card.classList.remove('is-navigating', 'is-expanded');
+        }
+        if (typeof options.onCleanup === 'function') {
+          try { options.onCleanup(); } catch (_) {}
         }
 
         if (activeTransitionSession === this) {
