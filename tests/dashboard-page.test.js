@@ -146,9 +146,21 @@ function setupDashboardDOM() {
   recentViewport.appendChild(recentGrid);
   root.appendChild(recentGrid);
 
+  const heroCreate = createMockElement('button');
+  heroCreate.id = 'hero-create-btn';
+  root.appendChild(heroCreate);
+
   const heroExplore = createMockElement('button');
   heroExplore.id = 'hero-explore-btn';
   root.appendChild(heroExplore);
+
+  const qaProjects = createMockElement('button');
+  qaProjects.id = 'qa-projects';
+  root.appendChild(qaProjects);
+
+  const qaHistory = createMockElement('button');
+  qaHistory.id = 'qa-history';
+  root.appendChild(qaHistory);
 
   const qaScript = createMockElement('div');
   qaScript.id = 'qa-script-analysis';
@@ -188,10 +200,13 @@ function setupDashboardDOM() {
     'home-user-name': userName,
     'home-recent-viewport': recentViewport,
     'recent-projects-grid': recentGrid,
+    'hero-create-btn': heroCreate,
     'hero-explore-btn': heroExplore,
     'qa-script-analysis': qaScript,
+    'qa-projects': qaProjects,
     'qa-template-hook': qaTemplate,
     'qa-discovery-search': qaDiscovery,
+    'qa-history': qaHistory,
     'mob-shortcut-script': mobScript,
     'mob-shortcut-create': mobCreate,
     'mob-shortcut-template': mobTemplate,
@@ -304,9 +319,22 @@ test('DashboardPage: Quick Actions navigation events', async () => {
 
   const instance = await DashboardPage.mount({ root, navigate: navigateMock });
 
-  // Hero Explore
+  // Hero Create -> Quick Compose
+  qcOpened = false;
+  global._mockElements['hero-create-btn'].onclick({ preventDefault: () => {} });
+  assert.equal(qcOpened, true);
+
+  // Hero Explore -> discovery
   global._mockElements['hero-explore-btn'].onclick({ preventDefault: () => {} });
-  assert.equal(navigatedTo, 'template');
+  assert.equal(navigatedTo, 'discovery');
+
+  // Quick Entry Projects -> projects
+  global._mockElements['qa-projects'].onclick({ preventDefault: () => {} });
+  assert.equal(navigatedTo, 'projects');
+
+  // Quick Entry History -> history
+  global._mockElements['qa-history'].onclick({ preventDefault: () => {} });
+  assert.equal(navigatedTo, 'history');
 
   // Script analysis -> Quick Compose
   qcOpened = false;

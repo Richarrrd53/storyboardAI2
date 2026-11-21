@@ -118,28 +118,321 @@
     return { state: 'project', id: project.id, title: project.title || '未命名分鏡', context: '接續最近編輯的分鏡，讓畫面與節奏再往前一步。', images };
   }
 
+  const TEMPLATE_CAT_MAP = { product: '商品廣告', story: '敘事紀實', twist: '高留存節奏', custom: '團隊資產', '未分類': '精選模板' };
+
+  function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+  }
+
+  function safeMediaUrl(value) {
+    if (typeof value !== 'string') return '';
+    try {
+      const url = new URL(value, document.baseURI || window.location?.href || 'http://localhost/');
+      return ['http:', 'https:', 'data:'].includes(url.protocol) || value.startsWith('/') ? value : '';
+    } catch (_) {
+      return value.startsWith('/') ? value : '';
+    }
+  }
+
+  function formatRelativeTime(dateInput) {
+    if (!dateInput) return '剛剛';
+    const ts = new Date(dateInput).getTime();
+    if (!Number.isFinite(ts)) return '最近';
+    const diffMin = Math.max(1, Math.floor((Date.now() - ts) / 60000));
+    if (diffMin < 60) return `${diffMin} 分鐘前`;
+    const diffHr = Math.floor(diffMin / 60);
+    if (diffHr < 24) return `${diffHr} 小時前`;
+    const diffDay = Math.floor(diffHr / 24);
+    if (diffDay < 30) return `${diffDay} 天前`;
+    return new Date(ts).toLocaleDateString('zh-TW');
+  }
+
+  function syncLandscapeHeroWidth(hero, frames) {
+    if (!hero || !frames || !frames.classList?.contains('is-landscape')) return;
+    if (typeof window !== 'undefined' && window.innerWidth <= 768) {
+      if (frames.style) frames.style.width = '';
+      return;
+    }
+    const actions = hero.querySelector?.('.workspace-hero-actions');
+    const cardInnerWidth = Math.max(0, (hero.clientWidth || 0) - 48);
+    if (!cardInnerWidth) return;
+    const minLeftWidth = Math.max(280, (actions?.scrollWidth || 240) + 20);
+    const maxAllowed = Math.max(200, cardInnerWidth - 24 - minLeftWidth);
+    const targetWidth = Math.min(Math.round(cardInnerWidth * 0.5), maxAllowed);
+    if (frames.style) frames.style.width = `${targetWidth}px`;
+  }
+
   function renderHero(root, projects, navigate, failed = false) {
     const find = id => root?.querySelector('#' + id) || document.getElementById(id);
     const hero = find('home-hero-card'), title = find('workspace-hero-title'), context = find('workspace-hero-context');
     if (!hero || !title || !context) return;
-    const model = buildHeroModel(projects, failed);hero.dataset.state = model.state;title.textContent = model.title;context.textContent = model.context;
+    const model = buildHeroModel(projects, failed);
+    hero.dataset.state = model.state;
+    title.textContent = '靈感，一鍵轉換';
+    context.textContent = '讓靈感成為看得見的故事，探索模板、案例與短影音創作靈感。';
+    const recentProject = Array.isArray(projects) ? (getRecentProjects(projects)[0] || null) : null;
     const resume = find('workspace-hero-resume');
+    const resumeDock = find('workspace-hero-resume-dock');
+    if (resumeDock) resumeDock.hidden = model.state !== 'project';
     if (resume) {
-      resume.hidden = model.state !== 'project';resume.href = model.state === 'project' ? '/project/' + encodeURIComponent(model.id) : '/projects';
-      resume.onclick = event => { if (event.button > 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return; event.preventDefault(); navigate('project', {id: model.id}); };
+      resume.hidden = model.state !== 'project';
+      resume.href = model.state === 'project' ? '/project/' + encodeURIComponent(model.id) : '/projects';
+      resume.onclick = event => {
+        if (event.button > 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        event.preventDefault();
+        const coverFrame = frames?.querySelector?.('.workspace-frame-cover') || frames?.querySelector?.('.workspace-frame');
+        const hasCoverImg = Boolean(coverFrame?.querySelector?.('img')?.src);
+        if (global.ProjectCoverTransition && typeof global.ProjectCoverTransition.launch === 'function' && recentProject && coverFrame && hasCoverImg) {
+          if (hero.classList?.contains('is-navigating')) return;
+          const fadeTargets = [
+            hero.querySelector?.('.workspace-hero-backdrop'),
+            hero.querySelector?.('.workspace-hero-copy'),
+            hero.querySelector?.('.workspace-hero-resume-dock')
+          ].filter(Boolean);
+          fadeTargets.forEach(el => {
+            if (el.style) {
+              el.style.transition = 'opacity 220ms ease, transform 280ms cubic-bezier(.4, 0, .2, 1)';
+              el.style.opacity = '0';
+            }
+          });
+          if (frames?.style) frames.style.opacity = '0';
+          const proxyCard = {
+            classList: hero.classList,
+            querySelector(sel) {
+              if (sel === '.project-preview-primary') return coverFrame;
+              if (sel === '.project-folder-shell') return hero.querySelector?.('.workspace-hero-backdrop') || null;
+              return hero.querySelector?.(sel) || null;
+            }
+          };
+          global.ProjectCoverTransition.launch(proxyCard, recentProject, { navigate });
+          return;
+        }
+        navigate('project', { id: model.id });
+      };
     }
-    const frames = find('workspace-hero-frames');if (!frames) return;
-    frames.textContent = '';frames.dataset.count = String(model.images.length);frames.setAttribute('aria-label', model.images.length ? '最近分鏡的畫面' : '分鏡構圖');
+    const bgImg = find('workspace-hero-bg-img');
+    const coverUrl = model.images[0] || (model.state === 'project' && model.id ? `/api/projects/${encodeURIComponent(model.id)}/cover` : '');
+
+    if (bgImg) {
+      if (coverUrl) {
+        bgImg.hidden = false;
+        bgImg.onerror = () => {
+          bgImg.hidden = true;
+          bgImg.removeAttribute('src');
+        };
+        bgImg.src = coverUrl;
+      } else {
+        bgImg.hidden = true;
+        bgImg.removeAttribute('src');
+      }
+    }
+
+    const frames = find('workspace-hero-frames');
+    if (!frames) return;
+    frames.textContent = '';
+    frames.classList?.remove('is-tall', 'is-landscape');
+    if (frames.style) frames.style.width = '';
+    frames.dataset.count = coverUrl ? '1' : '0';
+    frames.setAttribute('aria-label', coverUrl ? `${model.title} 專案封面` : '專案封面');
     const addEmpty = () => {
-      const frame = document.createElement('div');frame.className = 'workspace-frame workspace-frame-empty';frame.setAttribute('aria-hidden','true');
-      for (const text of ['畫面', '運鏡 / 秒數']) {const label = document.createElement('span');label.textContent = text;frame.appendChild(label);}frames.appendChild(frame);
+      const frame = document.createElement('div');
+      frame.className = 'workspace-frame workspace-frame-empty';
+      frame.setAttribute('aria-hidden', 'true');
+      for (const text of ['畫面', '運鏡 / 秒數']) {
+        const label = document.createElement('span');
+        label.textContent = text;
+        frame.appendChild(label);
+      }
+      frames.appendChild(frame);
     };
-    if (!model.images.length) addEmpty();
-    model.images.forEach((url,index) => {
-      const frame = document.createElement('figure');frame.className = 'workspace-frame';
-      const image = document.createElement('img');image.src = url;image.alt = '分鏡畫面 ' + (index + 1);image.decoding = 'async';
-      image.onerror = () => {image.remove();frame.classList.add('workspace-frame-empty');frame.textContent = '畫面尚未載入';};
-      frame.appendChild(image);frames.appendChild(frame);
+    if (!coverUrl) {
+      addEmpty();
+    } else {
+      const frame = document.createElement('figure');
+      frame.className = 'workspace-frame workspace-frame-cover';
+      if (recentProject?.ratio) frame.dataset.ratio = recentProject.ratio;
+      const image = document.createElement('img');
+      image.src = coverUrl;
+      image.alt = `${model.title} 封面`;
+      image.decoding = 'async';
+      image.onload = () => {
+        if (image.naturalWidth > 0 && image.naturalHeight > 0) {
+          const aspect = image.naturalWidth / image.naturalHeight;
+          frame.dataset.trueRatio = String(aspect);
+          if (aspect >= 1.2) {
+            frames.classList?.add('is-landscape');
+            syncLandscapeHeroWidth(hero, frames);
+          } else if (aspect >= 0.9) {
+            if (frames.style) frames.style.width = '260px';
+          } else {
+            frames.classList?.add('is-tall');
+            if (frames.style) frames.style.width = '220px';
+          }
+        }
+      };
+      image.onerror = () => {
+        frame.remove();
+        frames.classList?.remove('is-tall', 'is-landscape');
+        if (frames.style) frames.style.width = '';
+        frames.dataset.count = '0';
+        addEmpty();
+      };
+      frame.appendChild(image);
+      frames.appendChild(frame);
+    }
+  }
+
+  function buildMilestones(activeProjects, totalShots) {
+    const milestones = [];
+    if (!activeProjects.length) return milestones;
+
+    const earliest = [...activeProjects].sort((a, b) => new Date(a.createAt || a.updateAt) - new Date(b.createAt || b.updateAt))[0];
+    if (earliest) {
+      milestones.push({
+        icon: 'clapper',
+        title: '第一次完成分鏡',
+        meta: `「${earliest.title || '未命名分鏡'}」`
+      });
+    }
+
+    const shotThreshold = [500, 300, 100, 50, 10].find(n => totalShots >= n);
+    if (shotThreshold) {
+      milestones.push({
+        icon: 'layers',
+        title: `累積 ${shotThreshold} 個鏡頭`,
+        meta: `目前已累積 ${totalShots} 個分鏡鏡頭`
+      });
+    }
+
+    const templateProject = activeProjects.find(p => Boolean(p.templateId || p.templateName || p.sourceTemplateId || p.fromTemplate));
+    if (templateProject) {
+      milestones.push({
+        icon: 'flame',
+        title: '使用模板完成創作',
+        meta: `「${templateProject.title || '未命名分鏡'}」`
+      });
+    } else if (activeProjects.length >= 5) {
+      const projectThreshold = activeProjects.length >= 10 ? 10 : 5;
+      milestones.push({
+        icon: 'folder',
+        title: `累積 ${projectThreshold} 個分鏡專案`,
+        meta: `持續創作中，共 ${activeProjects.length} 部作品`
+      });
+    }
+
+    return milestones.slice(0, 3);
+  }
+
+  function milestoneIconSvg(kind) {
+    if (kind === 'layers') {
+      return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>';
+    }
+    if (kind === 'flame') {
+      return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path></svg>';
+    }
+    if (kind === 'folder') {
+      return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>';
+    }
+    return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8H4Z"></path><path d="m4 11 2.3-4.6A2 2 0 0 1 8.1 5h7.8a2 2 0 0 1 1.8 1.4L20 11H4Z"></path></svg>';
+  }
+
+  function renderActivityRail(root, projects, navigate) {
+    const find = id => root?.querySelector('#' + id) || document.getElementById(id);
+    const statProjects = find('home-stat-projects');
+    const statShots = find('home-stat-shots');
+    const summaryEl = find('home-stats-summary');
+    const listEl = find('home-activity-list');
+
+    if (!Array.isArray(projects)) {
+      if (summaryEl) summaryEl.textContent = '載入中';
+      return;
+    }
+
+    const active = projects.filter(p => !p.is_deleted);
+    const totalShots = active.reduce((sum, p) => sum + (Array.isArray(p.shots) ? p.shots.length : (Number(p.shotCount) || 0)), 0);
+
+    if (statProjects) statProjects.textContent = String(active.length);
+    if (statShots) statShots.textContent = String(totalShots);
+    if (summaryEl) summaryEl.textContent = active.length ? `共 ${active.length} 個進行中` : '準備出發';
+
+    if (!listEl) return;
+    const milestones = buildMilestones(active, totalShots);
+    if (!milestones.length) {
+      listEl.innerHTML = `
+        <div class="home-milestone-goal">
+          <p class="home-milestone-goal-title">下一個目標：完成第一個分鏡</p>
+          <p class="home-milestone-goal-desc">點擊「立刻創建分鏡」，寫下你的第一個故事鏡頭。</p>
+        </div>
+      `;
+      return;
+    }
+
+    listEl.innerHTML = milestones.map(item => `
+      <div class="home-milestone-item">
+        <span class="home-milestone-icon">${milestoneIconSvg(item.icon)}</span>
+        <div class="home-activity-info">
+          <span class="home-activity-title">${escapeHtml(item.title)}</span>
+          <span class="home-activity-meta">${escapeHtml(item.meta)}</span>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function renderTopTemplates(root, templates, navigate, failed = false) {
+    const grid = (root ? root.querySelector('#home-top-templates-grid') : null) || document.getElementById('home-top-templates-grid');
+    if (!grid) return;
+
+    if (failed) {
+      grid.innerHTML = '<div class="home-templates-empty">暫時無法載入熱門模板，請稍後再試。</div>';
+      return;
+    }
+
+    const list = Array.isArray(templates) ? templates.slice(0, 4) : [];
+    if (!list.length) {
+      grid.innerHTML = '<div class="home-templates-empty">目前尚無可顯示的模板。</div>';
+      return;
+    }
+
+    grid.innerHTML = list.map(t => {
+      const presented = global.TemplatePresentation?.present ? global.TemplatePresentation.present(t) : null;
+      const title = presented?.title || t.name || t.title || '精選敘事模板';
+      const catKey = ['product', 'story', 'twist'].includes(t.category || t.type) ? (t.category || t.type) : 'custom';
+      const catLabel = t.categoryLabel || TEMPLATE_CAT_MAP[catKey] || '精選模板';
+      const duration = global.TemplatePresentation?.durationOf ? global.TemplatePresentation.durationOf(t) : (t.duration || null);
+      const shotCount = global.TemplatePresentation?.shotCountOf ? global.TemplatePresentation.shotCountOf(t) : (t.structureCount || (Array.isArray(t.structure) ? t.structure.length : null));
+      const source = t.videoUrl || t.source?.url || '';
+      const videoId = t.source?.videoId || t.videoId || (typeof source === 'string' ? source.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|shorts\/|embed\/))([\w-]{11})/)?.[1] : '');
+      const thumb = safeMediaUrl(t.thumbnail || t.cover || t.source?.thumbnail || (videoId ? `https://i.ytimg.com/vi/${encodeURIComponent(videoId)}/hqdefault.jpg` : ''));
+      const metaParts = [duration !== null ? `${duration} 秒` : '', shotCount !== null ? `${shotCount} 節點` : ''].filter(Boolean);
+
+      return `
+        <a class="home-template-card" href="/template/${encodeURIComponent(t.id)}" data-template-id="${escapeHtml(t.id)}">
+          <div class="home-template-cover${thumb ? '' : ' no-cover'}">
+            ${thumb ? `<img src="${escapeHtml(thumb)}" alt="${escapeHtml(title)}" loading="lazy">` : '<span class="home-template-placeholder">模板預覽</span>'}
+            <span class="home-template-cat">${escapeHtml(catLabel)}</span>
+          </div>
+          <div class="home-template-body">
+            <h3 class="home-template-title">${escapeHtml(title)}</h3>
+            <p class="home-template-meta">${escapeHtml(metaParts.join(' · ') || '敘事結構模板')}</p>
+          </div>
+        </a>
+      `;
+    }).join('');
+
+    grid.querySelectorAll('.home-template-card').forEach(card => {
+      card.addEventListener('click', (e) => {
+        if (e.button > 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        e.preventDefault();
+        const tid = card.dataset.templateId;
+        if (tid) navigate('template', { templateId: tid });
+      });
+      const img = card.querySelector('img');
+      if (img) {
+        img.addEventListener('error', () => {
+          img.parentElement?.classList.add('no-cover');
+          img.replaceWith(Object.assign(document.createElement('span'), { className: 'home-template-placeholder', textContent: '模板預覽' }));
+        }, { once: true });
+      }
     });
   }
 
@@ -157,22 +450,58 @@
   function bindQuickActionEvents(root, navFn) {
     const el = (id) => (root ? root.querySelector(`#${id}`) : null) || document.getElementById(id);
 
-    // Hero Explore
+    // Hero Create & Explore
+    const createBtn = el('hero-create-btn');
+    if (createBtn) {
+      createBtn.onclick = (e) => {
+        e.preventDefault();
+        if (global.AICreationController) global.AICreationController.openQuickCompose();
+        else navFn('generate');
+      };
+    }
+
     const exploreBtn = el('hero-explore-btn');
     if (exploreBtn) {
       exploreBtn.onclick = (e) => {
+        e.preventDefault();
+        navFn('discovery');
+      };
+    }
+
+    // Section Header Links
+    const viewAllProjects = el('home-view-all-projects');
+    if (viewAllProjects) {
+      viewAllProjects.onclick = (e) => {
+        if (e.button > 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        e.preventDefault();
+        navFn('projects');
+      };
+    }
+
+    const viewAllTemplates = el('home-view-all-templates');
+    if (viewAllTemplates) {
+      viewAllTemplates.onclick = (e) => {
+        if (e.button > 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
         e.preventDefault();
         navFn('template');
       };
     }
 
-    // Desktop Quick Actions
+    // Desktop Quick Actions (快速入口)
     const qaScript = el('qa-script-analysis');
     if (qaScript) {
       qaScript.onclick = (e) => {
         e.preventDefault();
         if (global.AICreationController) global.AICreationController.openQuickCompose();
         else navFn('generate', { targetPhase: 1 });
+      };
+    }
+
+    const qaProjects = el('qa-projects');
+    if (qaProjects) {
+      qaProjects.onclick = (e) => {
+        e.preventDefault();
+        navFn('projects');
       };
     }
 
@@ -192,22 +521,49 @@
       };
     }
 
-    // Mobile shortcut buttons
-    const mobScript = el('mob-shortcut-script');
-    if (mobScript) {
-      mobScript.onclick = (e) => {
+    const qaHistory = el('qa-history');
+    if (qaHistory) {
+      qaHistory.onclick = (e) => {
         e.preventDefault();
-        if (global.AICreationController) global.AICreationController.openQuickCompose();
-        else navFn('generate', { targetPhase: 1 });
+        navFn('history');
       };
     }
 
+    const quickEntryContainer = (root ? root.querySelector('.home-quick-entry-buttons') : null) || document.querySelector('.home-quick-entry-buttons');
+    if (quickEntryContainer && typeof quickEntryContainer.querySelectorAll === 'function') {
+      quickEntryContainer.querySelectorAll('.quick-entry-btn').forEach(btn => {
+        btn.onmouseenter = () => {
+          const fillSvg = btn.querySelector?.('.quick-entry-icon-fill[data-im-icon]');
+          if (fillSvg && global.IconMotion && typeof global.IconMotion.play === 'function') {
+            global.IconMotion.play(fillSvg);
+          }
+        };
+      });
+    }
+
+    // Mobile shortcut buttons (first 4 links matching 快速入口)
     const mobCreate = el('mob-shortcut-create');
     if (mobCreate) {
       mobCreate.onclick = (e) => {
         e.preventDefault();
         if (global.AICreationController) global.AICreationController.openQuickCompose();
         else navFn('generate');
+      };
+    }
+
+    const mobProjects = el('mob-shortcut-projects');
+    if (mobProjects) {
+      mobProjects.onclick = (e) => {
+        e.preventDefault();
+        navFn('projects');
+      };
+    }
+
+    const mobHistory = el('mob-shortcut-history');
+    if (mobHistory) {
+      mobHistory.onclick = (e) => {
+        e.preventDefault();
+        navFn('history');
       };
     }
 
@@ -219,12 +575,26 @@
       };
     }
 
-    const mobDiscovery = el('mob-shortcut-discovery');
-    if (mobDiscovery) {
-      mobDiscovery.onclick = (e) => {
-        e.preventDefault();
-        navFn('discovery');
-      };
+    const mobShortcutContainer = (root ? root.querySelector('.mobile-quick-actions') : null) || document.querySelector('.mobile-quick-actions');
+    if (mobShortcutContainer && typeof mobShortcutContainer.querySelectorAll === 'function') {
+      mobShortcutContainer.querySelectorAll('.mob-shortcut-btn').forEach(btn => {
+        let touchTimer = null;
+        const triggerTouchMotion = () => {
+          btn.classList?.add('is-touched');
+          const fillSvg = btn.querySelector?.('.quick-entry-icon-fill[data-im-icon]');
+          if (fillSvg && global.IconMotion && typeof global.IconMotion.play === 'function') {
+            global.IconMotion.play(fillSvg);
+          }
+          if (touchTimer) clearTimeout(touchTimer);
+          touchTimer = setTimeout(() => {
+            btn.classList?.remove('is-touched');
+          }, 520);
+        };
+        if (typeof btn.addEventListener === 'function') {
+          btn.addEventListener('pointerdown', triggerTouchMotion, { passive: true });
+          btn.addEventListener('touchstart', triggerTouchMotion, { passive: true });
+        }
+      });
     }
 
     // Notification & Avatar
@@ -283,6 +653,7 @@
         : null;
 
       renderHero(root, list, navFn);
+      renderActivityRail(root, list, navFn);
       if (!list) {
         recentProjectsGrid.innerHTML = SKELETON_RECENT_CARDS_HTML;
         return;
@@ -341,6 +712,42 @@
       });
     }
 
+    // 4.5 熱門模板 (Top Collection - Single Row)
+    const templatesGrid = (root ? root.querySelector('#home-top-templates-grid') : null) || document.getElementById('home-top-templates-grid');
+    if (templatesGrid) {
+      const loadTemplates = global.PageAssetLoader?.fetchTemplateIndex || global.PageAssetLoader?.fetchTemplates;
+      if (typeof loadTemplates === 'function') {
+        loadTemplates(signal)
+          .then(items => {
+            if (isMounted) renderTopTemplates(root, items, navFn);
+          })
+          .catch(() => {
+            if (isMounted) renderTopTemplates(root, [], navFn, true);
+          });
+      } else if (typeof fetch === 'function') {
+        fetch('/api/get-templates?view=index&limit=4', { signal })
+          .then(res => (res.ok ? res.json() : Promise.reject(new Error('Failed'))))
+          .then(data => {
+            const items = Array.isArray(data) ? data : (Array.isArray(data?.items) ? data.items : []);
+            if (isMounted) renderTopTemplates(root, items, navFn);
+          })
+          .catch(() => {
+            if (isMounted) renderTopTemplates(root, [], navFn, true);
+          });
+      }
+    }
+
+    // 4.6 Hero 橫向封面與左側按鈕寬度自適應監聽
+    let heroResizeObserver = null;
+    const heroCardEl = (root ? root.querySelector('#home-hero-card') : null) || document.getElementById('home-hero-card');
+    const heroFramesEl = (root ? root.querySelector('#workspace-hero-frames') : null) || document.getElementById('workspace-hero-frames');
+    if (heroCardEl && heroFramesEl && typeof global.ResizeObserver === 'function') {
+      heroResizeObserver = new global.ResizeObserver(() => {
+        if (isMounted) syncLandscapeHeroWidth(heroCardEl, heroFramesEl);
+      });
+      heroResizeObserver.observe(heroCardEl);
+    }
+
     // 5. 接入 Dynamic Gradient Mask (垂直內容身與水平最近專案 Viewport)
     const contentBody = (root ? root.querySelector('.home-body') : null) || document.querySelector('.home-body') || document.querySelector('.content-body');
     if (contentBody && global.DynamicMaskSystem && typeof global.DynamicMaskSystem.attach === 'function') {
@@ -360,6 +767,10 @@
       if (resume) resume.onclick = null;
       if (signal) {
         signal.removeEventListener('abort', unmount);
+      }
+      if (heroResizeObserver) {
+        heroResizeObserver.disconnect();
+        heroResizeObserver = null;
       }
       if (unsubscribeStore) {
         unsubscribeStore();

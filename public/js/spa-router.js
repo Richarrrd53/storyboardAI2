@@ -37,7 +37,7 @@
 
     dashboard: {
       css: ['/css/dashboard.css', '/css/generate.css', '/css/math-curve-loader.css'],
-      js: ['/js/generate-prefill-path.js'],
+      js: ['/js/components/template-presentation.js', '/js/generate-prefill-path.js'],
     },
 
     projects: {
