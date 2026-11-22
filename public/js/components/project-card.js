@@ -221,6 +221,29 @@
     return `${diffYear} 年前編輯`;
   }
 
+  function formatTrashRetentionText(p, nowMs = Date.now()) {
+    if (!p) return '已刪除';
+    const retention = p.retention;
+    if (retention && typeof retention === 'object') {
+      if (retention.pendingCleanup || retention.isExpired) return '等待清理';
+      if (typeof retention.remainingMs === 'number') {
+        if (retention.remainingMs <= 0) return '等待清理';
+        if (retention.remainingMs < 24 * 60 * 60 * 1000) return '剩餘不到 1 天';
+        return `${Math.ceil(retention.remainingMs / (24 * 60 * 60 * 1000))} 天後永久刪除`;
+      }
+    }
+    if (p.deletedAt) {
+      const deletedMs = new Date(p.deletedAt).getTime();
+      if (Number.isFinite(deletedMs)) {
+        const remainingMs = (deletedMs + 30 * 24 * 60 * 60 * 1000) - nowMs;
+        if (remainingMs <= 0) return '等待清理';
+        if (remainingMs < 24 * 60 * 60 * 1000) return '剩餘不到 1 天';
+        return `${Math.ceil(remainingMs / (24 * 60 * 60 * 1000))} 天後永久刪除`;
+      }
+    }
+    return '保留 30 天後自動刪除';
+  }
+
   function renderProjectCard(p, options = {}) {
     if (!p) return '';
     const variant = options.variant || (options.isCompact ? 'compact' : 'default');
@@ -280,6 +303,9 @@
           <div class="project-folder-tab">
             <span class="project-folder-tab-dot"></span>
           </div>
+          <span class="project-select-indicator" aria-hidden="true">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          </span>
           <div class="project-folder-notch-wrap">
             <div class="project-option-slot">
               ${readonly ? '<span class="project-option-btn" aria-hidden="true">' : '<button class="project-option-btn" type="button" title="更多選項" aria-label="更多選項" data-morph-align="end">'}
@@ -294,7 +320,7 @@
           </div>
         </div>
         <div class="project-folder-content">
-          <div class="project-updated">${isHistory || p.is_deleted ? '已刪除' : relativeTime}</div>
+          <div class="project-updated${(isHistory || p.is_deleted) ? ' project-retention-label' : ''}">${isHistory || p.is_deleted ? escapeHtml(formatTrashRetentionText(p)) : relativeTime}</div>
           <div class="project-title-wrapper">
             <${titleTag} class="project-title" ${titleAttrs} title="${titleEsc}">${titleEsc}</${titleTag}>
           </div>
@@ -390,6 +416,7 @@
     calculateBalancedPreviewSize,
     formatRatioText,
     formatRelativeTime,
+    formatTrashRetentionText,
     renderProjectCard,
     buildLightFilmCardHTML,
     buildHomeRecentCardHTML

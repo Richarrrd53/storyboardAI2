@@ -58,14 +58,18 @@
 
     return projectsList
       .filter(p => p.is_deleted && !isPendingDelete(p.id))
-      .sort((a, b) => new Date(b.updateAt || b.createAt) - new Date(a.updateAt || a.createAt));
+      .sort((a, b) => new Date(b.deletedAt || b.updateAt || b.createAt) - new Date(a.deletedAt || a.updateAt || a.createAt));
   }
 
-  function renderHistoryList(projectsGrid, deletedProjects, onCardMutate) {
+  function renderHistoryList(projectsGrid, deletedProjects, onCardMutate, selectionController = null) {
     if (!projectsGrid) return;
+    if (global.ProjectCardInteractions?.destroyWithin) {
+      global.ProjectCardInteractions.destroyWithin(projectsGrid);
+    }
     projectsGrid.innerHTML = '';
     if (deletedProjects.length === 0) {
       renderEmptyState(projectsGrid);
+      selectionController?.syncItems?.([]);
       return;
     }
 
@@ -77,13 +81,23 @@
         card.innerHTML = global.buildLightFilmCardHTML(p, true);
       }
 
-      if (typeof global.setupProjectCardEvents === 'function') {
+      if (global.ProjectCardInteractions?.bind) {
+        global.ProjectCardInteractions.bind(card, p, {
+          isHistoryPage: true,
+          selectionController,
+          refreshCallback: () => {
+            if (typeof onCardMutate === 'function') onCardMutate();
+          }
+        });
+      } else if (typeof global.setupProjectCardEvents === 'function') {
         global.setupProjectCardEvents(card, p, true, () => {
           if (typeof onCardMutate === 'function') onCardMutate();
         });
       }
       projectsGrid.appendChild(card);
     });
+
+    selectionController?.syncItems?.(deletedProjects.map(p => String(p.id)));
 
     if (typeof global.lazyLoadProjectThumbs === 'function') {
       global.lazyLoadProjectThumbs(projectsGrid);
@@ -93,19 +107,111 @@
   async function mount(context = {}) {
     const { root, signal } = context;
     let isMounted = true;
+    let isBatchBusy = false;
+    let currentDeletedIds = [];
 
-    const projectsGrid = (root ? root.querySelector('#projects-grid') : null) || document.getElementById('projects-grid');
+    const find = selector => (root ? root.querySelector(selector) : null) || document.querySelector(selector);
+    const projectsGrid = find('#projects-grid');
     if (!projectsGrid) {
       return { unmount() {} };
     }
 
+    const historyBody = find('.history-body');
     const backButton = root?.querySelector('.history-back-btn');
+    const headerActions = find('#history-header-actions');
+    const restoreAllBtn = find('#history-restore-all-btn');
+    const emptyTrashBtn = find('#history-empty-trash-btn');
+    const selectionBar = find('#history-selection-bar');
+    const selectionCountEl = find('#history-selection-count');
+    const batchRestoreBtn = find('#history-batch-restore-btn');
+    const batchDeleteBtn = find('#history-batch-delete-btn');
+    const selectAllBtn = find('#history-select-all-btn');
+    const cancelSelectBtn = find('#history-cancel-select-btn');
+
     const goBack = event => {
       if (event.button > 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       const navigate = context.navigate || global.spaNavigate;
       if (typeof navigate === 'function') { event.preventDefault(); navigate('projects'); }
     };
     backButton?.addEventListener('click', goBack);
+
+    function syncSelectionUI(selState) {
+      if (!selectionBar) return;
+      const active = Boolean(selState?.active && selState.count > 0);
+      selectionBar.hidden = !active;
+      selectionBar.classList.toggle('is-visible', active);
+      if (selectionCountEl) {
+        selectionCountEl.textContent = `已選取 ${selState?.count || 0} 個專案`;
+      }
+      if (batchRestoreBtn) batchRestoreBtn.disabled = isBatchBusy || !selState?.count;
+      if (batchDeleteBtn) batchDeleteBtn.disabled = isBatchBusy || !selState?.count;
+      if (selectAllBtn) selectAllBtn.disabled = isBatchBusy || currentDeletedIds.length === 0;
+    }
+
+    const selectionController = global.ProjectSelectionController?.create
+      ? global.ProjectSelectionController.create({
+          container: projectsGrid,
+          scrollContainer: historyBody || projectsGrid.parentElement,
+          mode: 'history',
+          getOrderedIds: () => currentDeletedIds,
+          onChange: syncSelectionUI
+        })
+      : null;
+
+    if (selectionController) {
+      projectsGrid._selectionController = selectionController;
+    }
+
+    const listeners = [];
+    const listen = (el, type, fn) => {
+      if (!el) return;
+      el.addEventListener(type, fn);
+      listeners.push(() => el.removeEventListener(type, fn));
+    };
+
+    const runBatch = async (fn) => {
+      if (isBatchBusy || !isMounted) return;
+      isBatchBusy = true;
+      syncSelectionUI({ active: selectionController?.isActive(), count: selectionController?.getCount?.() || 0 });
+      try {
+        await fn();
+      } finally {
+        isBatchBusy = false;
+        if (isMounted) {
+          syncSelectionUI({ active: selectionController?.isActive(), count: selectionController?.getCount?.() || 0 });
+        }
+      }
+    };
+
+    listen(restoreAllBtn, 'click', () => runBatch(async () => {
+      const res = await global.ProjectActions?.batchRestoreProjects?.([], () => updateView(), { all: true });
+      if (res?.ok) selectionController?.clear();
+    }));
+
+    listen(emptyTrashBtn, 'click', () => runBatch(async () => {
+      const res = await global.ProjectActions?.emptyTrash?.(() => updateView());
+      if (res?.ok) selectionController?.clear();
+    }));
+
+    listen(batchRestoreBtn, 'click', () => runBatch(async () => {
+      const ids = selectionController?.getSelectedIds() || [];
+      const res = await global.ProjectActions?.batchRestoreProjects?.(ids, () => updateView());
+      if (res?.ok) selectionController?.clear();
+    }));
+
+    listen(batchDeleteBtn, 'click', () => runBatch(async () => {
+      const ids = selectionController?.getSelectedIds() || [];
+      const res = await global.ProjectActions?.batchPermanentDeleteProjects?.(ids, () => updateView());
+      if (res?.ok) selectionController?.clear();
+    }));
+
+    listen(selectAllBtn, 'click', () => {
+      selectionController?.selectAll();
+    });
+
+    listen(cancelSelectBtn, 'click', () => {
+      selectionController?.clear();
+    });
 
     function updateView() {
       if (!isMounted) return;
@@ -115,16 +221,21 @@
 
       if (!list) {
         projectsGrid.innerHTML = SKELETON_CARDS_HTML;
+        if (headerActions) headerActions.hidden = true;
         return;
       }
 
       const deletedProjects = getDeletedProjects(list);
+      currentDeletedIds = deletedProjects.map(p => String(p.id));
+      if (headerActions) {
+        headerActions.hidden = deletedProjects.length === 0;
+      }
       renderHistoryList(projectsGrid, deletedProjects, () => {
         updateView();
         if (typeof global.updateSidebarProjects === 'function') {
           global.updateSidebarProjects();
         }
-      });
+      }, selectionController);
     }
 
     // 1. 畫面首載：快取優先 (Stale-While-Revalidate)
@@ -162,7 +273,6 @@
     }
 
     // 3. 接入 Dynamic Gradient Mask
-    const historyBody = (root ? root.querySelector('.history-body') : null) || document.querySelector('.history-body');
     if (historyBody && global.DynamicMaskSystem && typeof global.DynamicMaskSystem.attach === 'function') {
       global.DynamicMaskSystem.attach(historyBody, { maskSize: 36, direction: 'vertical' });
     }
@@ -172,6 +282,17 @@
       if (!isMounted) return;
       isMounted = false;
       backButton?.removeEventListener('click', goBack);
+      listeners.forEach(off => off());
+      listeners.length = 0;
+      if (selectionController) {
+        selectionController.destroy();
+        if (projectsGrid._selectionController === selectionController) {
+          delete projectsGrid._selectionController;
+        }
+      }
+      if (global.ProjectCardInteractions?.destroyWithin) {
+        global.ProjectCardInteractions.destroyWithin(projectsGrid);
+      }
       if (signal) {
         signal.removeEventListener('abort', unmount);
       }

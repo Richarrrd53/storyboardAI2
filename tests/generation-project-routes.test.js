@@ -35,11 +35,16 @@ test('project save retries deduplicate and repaired images retain storyboard fie
     assert.equal((await request(uploadUrl, { contentType: 'image/png' }, 'other')).status, 403);
     assert.equal((await request(uploadUrl, { contentType: 'text/html' })).status, 400);
     assert.equal((await request(`/api/projects/${project.id}/shots/missing/image-upload`, { contentType: 'image/png' })).status, 404);
-    const update = { payloadPatch: { image: 'new', imageStatus: 'succeeded', imageError: null, dialogue: 'Hello', purpose: 'Hook', angle: 'eye level', characters: ['hero'], sourceShot: 1, disallowed: 'ignore' } };
+    const shotId = project.shots[0].id;
+    const validRef = `storage://storyboard-images/projects/${project.id}/${shotId}/img-1.png`;
+    const update = { payloadPatch: { image: validRef, imageStatus: 'succeeded', imageError: null, dialogue: 'Hello', purpose: 'Hook', angle: 'eye level', characters: ['hero'], sourceShot: 1, disallowed: 'ignore' } };
     const rejected = await request(url, update, 'other', 'PATCH'); assert.equal(rejected.status, 403);
+    const untrusted = await request(url, { payloadPatch: { image: 'https://evil.example/a.png' } }, 'author', 'PATCH'); assert.equal(untrusted.status, 400);
+    const base64Rejected = await request(url, { payloadPatch: { image: 'data:image/png;base64,AAAA' } }, 'author', 'PATCH'); assert.equal(base64Rejected.status, 400);
     const repair = await request(url, update, 'author', 'PATCH'); assert.equal(repair.status, 200);
     const shot = (await repair.json()).shot; assert.equal(shot.payload.dialogue, 'Hello'); assert.equal(shot.payload.note, 'keep'); assert.equal(shot.payload.imageStatus, 'succeeded'); assert.equal(shot.payload.disallowed, undefined);
-    assert.equal(projects.get(project.id).cover, 'new');
+    assert.equal(projects.get(project.id).cover, null);
+    assert.equal(shots.get(shotId).payload.image, validRef);
     const other = await request('/api/projects', payload, 'other'); assert.equal(other.status, 200); assert.notEqual((await other.json()).project.id, project.id);
   } finally { require.cache[prismaPath].exports = original; await new Promise(resolve => server.close(resolve)); }
 });

@@ -119,6 +119,92 @@
       }
     },
 
+    async permanentDeleteProject(projectId) {
+      const token = this.getAuthToken();
+      try {
+        const res = await fetch(`/api/projects/${projectId}/permanent`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json().catch(() => ({}));
+        return { ok: res.ok, status: res.status, data };
+      } catch (err) {
+        return { ok: false, error: err.message };
+      }
+    },
+
+    async batchTrashProjects(projectIds) {
+      const token = this.getAuthToken();
+      try {
+        const res = await fetch('/api/projects/batch/trash', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ projectIds })
+        });
+        const data = await res.json().catch(() => ({}));
+        return { ok: res.ok, status: res.status, data };
+      } catch (err) {
+        return { ok: false, error: err.message };
+      }
+    },
+
+    async batchRestoreProjects(projectIds, options = {}) {
+      const token = this.getAuthToken();
+      try {
+        const res = await fetch('/api/projects/batch/restore', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(options.all ? { all: true } : { projectIds })
+        });
+        const data = await res.json().catch(() => ({}));
+        return { ok: res.ok, status: res.status, data };
+      } catch (err) {
+        return { ok: false, error: err.message };
+      }
+    },
+
+    async batchPermanentDeleteProjects(projectIds) {
+      const token = this.getAuthToken();
+      try {
+        const res = await fetch('/api/projects/batch/permanent-delete', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ projectIds })
+        });
+        const data = await res.json().catch(() => ({}));
+        return { ok: res.ok, status: res.status, data };
+      } catch (err) {
+        return { ok: false, error: err.message };
+      }
+    },
+
+    async emptyTrash() {
+      const token = this.getAuthToken();
+      try {
+        const res = await fetch('/api/projects/trash/empty', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ confirm: true })
+        });
+        const data = await res.json().catch(() => ({}));
+        return { ok: res.ok, status: res.status, data };
+      } catch (err) {
+        return { ok: false, error: err.message };
+      }
+    },
+
     async renameProject(projectId, title) {
       const token = this.getAuthToken();
       try {
@@ -899,6 +985,173 @@
         return true;
       }
       return false;
+    },
+
+    async permanentDeleteProject(p, card, refreshCallback) {
+      if (!p || !p.id) return false;
+      const requestEpoch = ProjectStore.resetEpoch;
+      const confirmFn = typeof global !== 'undefined' && typeof global.confirm === 'function' ? global.confirm : async () => false;
+      const isConfirmed = await confirmFn(
+        '永久刪除此分鏡？',
+        `「${p.title || '未命名分鏡'}」及其所有分鏡圖片將永久刪除，無法再復原。`,
+        'delete',
+        '永久刪除',
+        card
+      );
+      if (!isConfirmed || requestEpoch !== ProjectStore.resetEpoch) return false;
+
+      const toastFn = typeof global !== 'undefined' && typeof global.showSpaToast === 'function'
+        ? global.showSpaToast
+        : () => {};
+
+      try {
+        const res = await ProjectsApi.permanentDeleteProject(p.id);
+        if (requestEpoch !== ProjectStore.resetEpoch) return false;
+        if (!res.ok) {
+          const msg = res.data?.error || res.error || '永久刪除失敗，請稍後重試';
+          if (typeof global !== 'undefined' && typeof global.alert === 'function') global.alert(msg);
+          return false;
+        }
+        ProjectStore.invalidateProjectDetail(p.id);
+        await ProjectStore.fetchProjects({ force: true });
+        if (requestEpoch !== ProjectStore.resetEpoch) return false;
+        if (typeof refreshCallback === 'function') refreshCallback();
+        if (typeof global.updateSidebarProjects === 'function') global.updateSidebarProjects();
+        toastFn(`分鏡「${p.title || '未命名分鏡'}」已永久刪除。`);
+        ProjectStore.notify({ type: 'permanent_deleted', id: p.id, project: p });
+        return true;
+      } catch (err) {
+        if (requestEpoch !== ProjectStore.resetEpoch) return false;
+        console.error('Failed to permanently delete project', err);
+        if (typeof global !== 'undefined' && typeof global.alert === 'function') {
+          global.alert('永久刪除失敗，請稍後再試');
+        }
+        return false;
+      }
+    },
+
+    async batchTrashProjects(projectIds, refreshCallback) {
+      const ids = Array.isArray(projectIds) ? projectIds.filter(Boolean) : [];
+      if (!ids.length) return { ok: false, summary: { succeeded: 0, failed: 0, skipped: 0 } };
+      const requestEpoch = ProjectStore.resetEpoch;
+      const confirmFn = typeof global !== 'undefined' && typeof global.confirm === 'function' ? global.confirm : async () => false;
+      const isConfirmed = await confirmFn(
+        `將 ${ids.length} 個分鏡移至資源回收桶？`,
+        '移至資源回收桶的專案將保留 30 天，您可以在資源回收桶中還原。',
+        'delete',
+        '移至回收桶',
+        null
+      );
+      if (!isConfirmed || requestEpoch !== ProjectStore.resetEpoch) return { ok: false, cancelled: true };
+
+      const toastFn = typeof global !== 'undefined' && typeof global.showSpaToast === 'function' ? global.showSpaToast : () => {};
+      const res = await ProjectsApi.batchTrashProjects(ids);
+      if (requestEpoch !== ProjectStore.resetEpoch) return { ok: false };
+      if (!res.ok) {
+        toastFn(res.data?.error || '批次移入回收桶失敗');
+        return res;
+      }
+      await ProjectStore.fetchProjects({ force: true });
+      if (requestEpoch !== ProjectStore.resetEpoch) return { ok: false };
+      if (typeof refreshCallback === 'function') refreshCallback();
+      if (typeof global.updateSidebarProjects === 'function') global.updateSidebarProjects();
+      const s = res.data?.summary || { succeeded: ids.length, failed: 0 };
+      toastFn(s.failed > 0 ? `已移入回收桶 ${s.succeeded} 個分鏡，${s.failed} 個失敗。` : `已將 ${s.succeeded} 個分鏡移至資源回收桶。`);
+      return res;
+    },
+
+    async batchRestoreProjects(projectIds, refreshCallback, options = {}) {
+      const ids = Array.isArray(projectIds) ? projectIds.filter(Boolean) : [];
+      if (!options.all && !ids.length) return { ok: false };
+      const requestEpoch = ProjectStore.resetEpoch;
+      const confirmFn = typeof global !== 'undefined' && typeof global.confirm === 'function' ? global.confirm : async () => false;
+      const title = options.all ? '還原回收桶中全部專案？' : `還原所選的 ${ids.length} 個分鏡？`;
+      const desc = options.all ? '資源回收桶中的所有分鏡都將還原至「我的分鏡」。' : '所選分鏡將還原至「我的分鏡」。';
+      const isConfirmed = await confirmFn(title, desc, 'default', '確認還原', null);
+      if (!isConfirmed || requestEpoch !== ProjectStore.resetEpoch) return { ok: false, cancelled: true };
+
+      const toastFn = typeof global !== 'undefined' && typeof global.showSpaToast === 'function' ? global.showSpaToast : () => {};
+      const res = await ProjectsApi.batchRestoreProjects(ids, options);
+      if (requestEpoch !== ProjectStore.resetEpoch) return { ok: false };
+      if (!res.ok) {
+        toastFn(res.data?.error || '批次還原失敗');
+        return res;
+      }
+      await ProjectStore.fetchProjects({ force: true });
+      if (requestEpoch !== ProjectStore.resetEpoch) return { ok: false };
+      if (typeof refreshCallback === 'function') refreshCallback();
+      if (typeof global.updateSidebarProjects === 'function') global.updateSidebarProjects();
+      const s = res.data?.summary || { succeeded: ids.length, failed: 0 };
+      toastFn(s.failed > 0 ? `已還原 ${s.succeeded} 個分鏡，${s.failed} 個失敗。` : `已成功還原 ${s.succeeded} 個分鏡。`);
+      return res;
+    },
+
+    async batchPermanentDeleteProjects(projectIds, refreshCallback) {
+      const ids = Array.isArray(projectIds) ? projectIds.filter(Boolean) : [];
+      if (!ids.length) return { ok: false };
+      const requestEpoch = ProjectStore.resetEpoch;
+      const confirmFn = typeof global !== 'undefined' && typeof global.confirm === 'function' ? global.confirm : async () => false;
+      const isConfirmed = await confirmFn(
+        `永久刪除所選的 ${ids.length} 個分鏡？`,
+        '所選專案及其分鏡圖片將永久清除且無法復原，確定要繼續嗎？',
+        'delete',
+        '永久刪除',
+        null
+      );
+      if (!isConfirmed || requestEpoch !== ProjectStore.resetEpoch) return { ok: false, cancelled: true };
+
+      const toastFn = typeof global !== 'undefined' && typeof global.showSpaToast === 'function' ? global.showSpaToast : () => {};
+      const res = await ProjectsApi.batchPermanentDeleteProjects(ids);
+      if (requestEpoch !== ProjectStore.resetEpoch) return { ok: false };
+      if (!res.ok) {
+        toastFn(res.data?.error || '批次永久刪除失敗');
+        return res;
+      }
+      ids.forEach(id => ProjectStore.invalidateProjectDetail(id));
+      await ProjectStore.fetchProjects({ force: true });
+      if (requestEpoch !== ProjectStore.resetEpoch) return { ok: false };
+      if (typeof refreshCallback === 'function') refreshCallback();
+      if (typeof global.updateSidebarProjects === 'function') global.updateSidebarProjects();
+      const s = res.data?.summary || { succeeded: ids.length, failed: 0 };
+      toastFn(s.failed > 0 ? `已永久刪除 ${s.succeeded} 個分鏡，${s.failed} 個失敗。` : `已永久刪除 ${s.succeeded} 個分鏡。`);
+      return res;
+    },
+
+    async emptyTrash(refreshCallback) {
+      const requestEpoch = ProjectStore.resetEpoch;
+      const confirmFn = typeof global !== 'undefined' && typeof global.confirm === 'function' ? global.confirm : async () => false;
+      const firstConfirm = await confirmFn(
+        '清空資源回收桶？',
+        '這將永久刪除資源回收桶中的所有分鏡與圖片，且無法復原。',
+        'delete',
+        '繼續清空',
+        null
+      );
+      if (!firstConfirm || requestEpoch !== ProjectStore.resetEpoch) return { ok: false, cancelled: true };
+
+      const secondConfirm = await confirmFn(
+        '再次確認：永久清空所有專案',
+        '此動作無法撤銷，所有已刪除分鏡及圖片資產將立即從伺服器移除。',
+        'delete',
+        '確定永久清空',
+        null
+      );
+      if (!secondConfirm || requestEpoch !== ProjectStore.resetEpoch) return { ok: false, cancelled: true };
+
+      const toastFn = typeof global !== 'undefined' && typeof global.showSpaToast === 'function' ? global.showSpaToast : () => {};
+      const res = await ProjectsApi.emptyTrash();
+      if (requestEpoch !== ProjectStore.resetEpoch) return { ok: false };
+      if (!res.ok) {
+        toastFn(res.data?.error || '清空資源回收桶失敗');
+        return res;
+      }
+      await ProjectStore.fetchProjects({ force: true });
+      if (requestEpoch !== ProjectStore.resetEpoch) return { ok: false };
+      if (typeof refreshCallback === 'function') refreshCallback();
+      if (typeof global.updateSidebarProjects === 'function') global.updateSidebarProjects();
+      const s = res.data?.summary || { succeeded: 0, failed: 0 };
+      toastFn(s.failed > 0 ? `已永久清除 ${s.succeeded} 個分鏡，${s.failed} 個清理失敗。` : `資源回收桶已清空（共移除 ${s.succeeded} 個分鏡）。`);
+      return res;
     }
   };
 

@@ -376,13 +376,15 @@
 
       // 歷史版本清單
       const history = Array.isArray(p.imageHistory) ? p.imageHistory : [];
+      const activeRef = p.imageRef || imageUrl;
       let versionListHtml = '';
       if (history.length > 0) {
         versionListHtml = history.map((item, idx) => {
-          const isCurrent = item.image === imageUrl;
+          const itemRef = item.imageRef || item.image || '';
+          const isCurrent = Boolean(itemRef && (itemRef === activeRef || item.image === imageUrl));
           const vNum = history.length - idx;
           return `
-            <button type="button" class="editor-version-item ${isCurrent ? 'active' : ''}" aria-pressed="${isCurrent}" data-version-img="${this._escHtml(item.image)}" data-version-prompt="${this._escHtml(item.prompt || '')}">
+            <button type="button" class="editor-version-item ${isCurrent ? 'active' : ''}" aria-pressed="${isCurrent}" data-version-img="${this._escHtml(item.image || '')}" data-version-ref="${this._escHtml(itemRef)}" data-version-index="${idx}" data-version-prompt="${this._escHtml(item.prompt || '')}">
               <span class="version-radio-dot" aria-hidden="true"></span>
               <span class="version-label">Version ${vNum}</span>
               ${isCurrent ? '<span class="version-tag">目前使用</span>' : ''}
@@ -527,11 +529,30 @@
       el.querySelector('#pd-btn-regenerate')?.addEventListener('click', () => this._handleRegenerate());
 
       // 切換歷史版本
+      const bindPreviewFallback = (imgEl, fallbackUrl) => {
+        if (!imgEl) return;
+        imgEl.onerror = () => {
+          if (fallbackUrl && imgEl.dataset.retriedFallback !== '1') {
+            imgEl.dataset.retriedFallback = '1';
+            imgEl.src = fallbackUrl;
+            return;
+          }
+          imgEl.alt = '圖片載入失敗或已過期';
+          imgEl.classList.add('is-broken');
+        };
+      };
+      const initialPreviewImg = el.querySelector('#pd-preview-img');
+      if (initialPreviewImg) {
+        bindPreviewFallback(initialPreviewImg, `/api/projects/${encodeURIComponent(this._projectId)}/shots/${encodeURIComponent(shot.id)}/image?v=${Date.now()}`);
+      }
+
       el.querySelectorAll('.editor-version-item').forEach(item => {
         item.addEventListener('click', () => {
           const vImg = item.dataset.versionImg;
+          const vRef = item.dataset.versionRef || vImg;
+          const vIdx = item.dataset.versionIndex;
           const vPrompt = item.dataset.versionPrompt;
-          if (!vImg) return;
+          if (!vImg && !vRef) return;
 
           // 標記 active
           el.querySelectorAll('.editor-version-item').forEach(v => { v.classList.remove('active'); v.setAttribute('aria-pressed', 'false'); });
@@ -540,7 +561,12 @@
 
           // 切換當前大圖預覽
           const previewImg = el.querySelector('#pd-preview-img');
-          if (previewImg) previewImg.src = vImg;
+          if (previewImg) {
+            delete previewImg.dataset.retriedFallback;
+            previewImg.classList.remove('is-broken');
+            bindPreviewFallback(previewImg, vIdx !== undefined ? `/api/projects/${encodeURIComponent(this._projectId)}/shots/${encodeURIComponent(shot.id)}/image?history=${encodeURIComponent(vIdx)}&v=${Date.now()}` : null);
+            previewImg.src = vImg;
+          }
 
           // 若有對應的 prompt 亦同步載入
           if (vPrompt) {
@@ -550,6 +576,7 @@
 
           this._editorDirty = true;
           this._activeVersionImage = vImg;
+          this._activeVersionImageRef = vRef;
           const lbl = el.querySelector('#pd-lbl-save');
           if (lbl) lbl.textContent = '儲存版本變更';
         });
@@ -667,6 +694,7 @@
       this._selectedShotId = null;
       this._editorDirty = false;
       this._activeVersionImage = null;
+      this._activeVersionImageRef = null;
     },
 
     // ── 儲存變更 ──
@@ -706,9 +734,12 @@
           cameraDetails: { size, angle, movement: move }
         };
 
-        // 如果切換了歷史版本
-        if (this._activeVersionImage) {
-          payloadPatch.image = this._activeVersionImage;
+        // 如果切換了歷史版本（優先使用永久 imageRef，絕不把過期 Signed URL 存入資料庫）
+        if (this._activeVersionImageRef || this._activeVersionImage) {
+          payloadPatch.image = this._activeVersionImageRef || this._activeVersionImage;
+          if (this._activeVersionImageRef && this._activeVersionImageRef.startsWith('storage://')) {
+            payloadPatch.imageRef = this._activeVersionImageRef;
+          }
         }
 
         const token = window.spaAuth?.getToken();
@@ -748,7 +779,9 @@
         this._toast('鏡頭變更已儲存！', 'success');
         this.closeEditor();
 
-        // 標記快取失效
+        // 標記快取失效（若為第一鏡亦同步刷新專案列表封面）
+        window.ProjectStore?.invalidateProjectDetail?.(this._projectId);
+        window.ProjectStore?.invalidateProjects?.();
         if (typeof window.spaInvalidateProjectCache === 'function') {
           window.spaInvalidateProjectCache(this._projectId);
         }
@@ -880,13 +913,15 @@
         }
 
         // 重新繪製版本清單
-        this._rebuildVersionList(updatedShot.payload?.imageHistory || [], updatedShot.payload?.image);
+        this._rebuildVersionList(updatedShot.payload?.imageHistory || [], updatedShot.payload?.image, updatedShot.payload?.imageRef);
 
         // 同步更新表格與膠捲
         this._refreshTableAndFilm(updatedShot);
 
         this._toast('新分鏡圖片生成完成！', 'success');
 
+        window.ProjectStore?.invalidateProjectDetail?.(this._projectId);
+        window.ProjectStore?.invalidateProjects?.();
         if (typeof window.spaInvalidateProjectCache === 'function') {
           window.spaInvalidateProjectCache(this._projectId);
         }
@@ -903,7 +938,7 @@
     },
 
     // ── 重新構建 Version History 列表 ──
-    _rebuildVersionList(history, activeImg) {
+    _rebuildVersionList(history, activeImg, activeRef = null) {
       const el = this._editorEl;
       if (!el) return;
       const listWrap = el.querySelector('#pd-version-list');
@@ -911,11 +946,13 @@
 
       if (!history || history.length === 0) return;
 
+      const currentRef = activeRef || activeImg;
       listWrap.innerHTML = history.map((item, idx) => {
-        const isCurrent = item.image === activeImg;
+        const itemRef = item.imageRef || item.image || '';
+        const isCurrent = Boolean(itemRef && (itemRef === currentRef || item.image === activeImg));
         const vNum = history.length - idx;
         return `
-          <button type="button" class="editor-version-item ${isCurrent ? 'active' : ''}" aria-pressed="${isCurrent}" data-version-img="${this._escHtml(item.image)}" data-version-prompt="${this._escHtml(item.prompt || '')}">
+          <button type="button" class="editor-version-item ${isCurrent ? 'active' : ''}" aria-pressed="${isCurrent}" data-version-img="${this._escHtml(item.image || '')}" data-version-ref="${this._escHtml(itemRef)}" data-version-index="${idx}" data-version-prompt="${this._escHtml(item.prompt || '')}">
             <span class="version-radio-dot" aria-hidden="true"></span>
             <span class="version-label">Version ${vNum}</span>
             ${isCurrent ? '<span class="version-tag">目前使用</span>' : ''}
@@ -927,15 +964,20 @@
       listWrap.querySelectorAll('.editor-version-item').forEach(item => {
         item.addEventListener('click', () => {
           const vImg = item.dataset.versionImg;
+          const vRef = item.dataset.versionRef || vImg;
           const vPrompt = item.dataset.versionPrompt;
-          if (!vImg) return;
+          if (!vImg && !vRef) return;
 
           listWrap.querySelectorAll('.editor-version-item').forEach(v => { v.classList.remove('active'); v.setAttribute('aria-pressed', 'false'); });
           item.classList.add('active');
           item.setAttribute('aria-pressed', 'true');
 
           const previewImg = el.querySelector('#pd-preview-img');
-          if (previewImg) previewImg.src = vImg;
+          if (previewImg) {
+            delete previewImg.dataset.retriedFallback;
+            previewImg.classList.remove('is-broken');
+            previewImg.src = vImg;
+          }
 
           if (vPrompt) {
             const promptInput = el.querySelector('#pd-f-prompt');
@@ -944,6 +986,7 @@
 
           this._editorDirty = true;
           this._activeVersionImage = vImg;
+          this._activeVersionImageRef = vRef;
           const saveLbl = el.querySelector('#pd-lbl-save');
           if (saveLbl) saveLbl.textContent = '儲存版本變更';
         });

@@ -18,6 +18,19 @@
           </span>
           <span>還原分鏡</span>
         </button>
+        <div class="morph-divider"></div>
+        <button class="morph-item delete permanent-delete" type="button" data-action="permanentDelete">
+          <span class="morph-item-icon">
+            <svg data-im-icon="trash" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <g data-im-part="lid">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </g>
+              <path data-im-part="body" d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>
+            </svg>
+          </span>
+          <span>永久刪除</span>
+        </button>
       `;
     } else {
       menuContent.innerHTML = `
@@ -97,7 +110,7 @@
           const environment=typeof window!=='undefined'?window:root;
           const fallback=typeof global!=='undefined'?global:{};
           const actions=opts.projectActions||environment.ProjectActions||fallback.ProjectActions;
-          const names={rename:'renameProject',tags:'editProjectTags',duplicate:'duplicateProject',export:'exportProject',delete:'deleteProject',restore:'restoreProject'};
+          const names={rename:'renameProject',tags:'editProjectTags',duplicate:'duplicateProject',export:'exportProject',delete:'deleteProject',restore:'restoreProject',permanentDelete:'permanentDeleteProject'};
           const name=names[item.dataset.action],action=actions?.[name]||environment[name]||fallback[name];
           const refresh=()=>{opts.refreshCallback?.();(environment.updateSidebarProjects||fallback.updateSidebarProjects)?.();};
           if(typeof action==='function') action(project,...(item.dataset.action==='export'?[]:[card,refresh]));
@@ -107,7 +120,7 @@
     card?.classList?.add('is-menu-open','is-expanded');
     const iconSize=parseFloat(root.getComputedStyle?.(trigger)?.getPropertyValue?.('--folder-option-icon-size'))||15;
     const onClose=opts.onClose;
-    return engine().open(trigger,{...opts,content:menuContent,width:opts.width||196,height:isHistory?60:256,placement:'below',align:opts.align??trigger.dataset?.morphAlign,label:'專案選單',
+    return engine().open(trigger,{...opts,content:menuContent,width:opts.width||196,height:isHistory?112:256,placement:'below',align:opts.align??trigger.dataset?.morphAlign,label:'專案選單',
       triggerIconHTML:`<svg width="${iconSize}" height="${iconSize}" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="5" r="1.5"/><circle cx="8" cy="11" r="1.5"/></svg>`,
       onClose:reason=>{disposeHover?.();root.IconMotion?.cleanup?.(menuContent);card?.classList?.remove('is-menu-open');if(!card?.matches?.(':hover'))card?.classList?.remove('is-expanded');onClose?.(reason);}
     });

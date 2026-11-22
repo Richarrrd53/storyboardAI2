@@ -35,6 +35,17 @@
             </div>
         </div>
 
+        <div class="projects-selection-bar" id="projects-selection-bar" role="toolbar" aria-label="專案批次操作" hidden>
+            <div class="selection-bar-info">
+                <span class="selection-bar-count" id="projects-selection-count">已選取 0 個專案</span>
+            </div>
+            <div class="selection-bar-actions">
+                <button type="button" class="selection-bar-btn danger" id="projects-batch-trash-btn">移至回收桶</button>
+                <button type="button" class="selection-bar-btn" id="projects-select-all-btn">全選</button>
+                <button type="button" class="selection-bar-btn ghost" id="projects-cancel-select-btn">取消選取</button>
+            </div>
+        </div>
+
         <div class="content-body projects-body anim-fadeInUp anim-delay-1" data-dynamic-mask data-mask-direction="vertical" data-mask-size="36">
             <div class="projects-grid" id="projects-grid">
                 <!-- Projects will be dynamically rendered here -->

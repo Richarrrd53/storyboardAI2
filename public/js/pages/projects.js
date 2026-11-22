@@ -681,6 +681,61 @@
     const tagsScroll = (root ? root.querySelector('#projects-tags-scroll') : null) || document.getElementById('projects-tags-scroll');
     const clearFilterBtn = (root ? root.querySelector('#projects-clear-filter-btn') : null) || document.getElementById('projects-clear-filter-btn');
     const countBadge = (root ? root.querySelector('#projects-count-badge') : null) || document.getElementById('projects-count-badge');
+    const projectsBody = (root ? root.querySelector('.projects-body') : null) || document.querySelector('.projects-body');
+
+    const selectionBar = find('#projects-selection-bar');
+    const selectionCountEl = find('#projects-selection-count');
+    const batchTrashBtn = find('#projects-batch-trash-btn');
+    const selectAllBtn = find('#projects-select-all-btn');
+    const cancelSelectBtn = find('#projects-cancel-select-btn');
+
+    let currentFilteredIds = [];
+    let isBatchBusy = false;
+
+    function syncSelectionUI(selState) {
+      if (!selectionBar) return;
+      const active = Boolean(selState?.active && selState.count > 0);
+      selectionBar.hidden = !active;
+      selectionBar.classList.toggle('is-visible', active);
+      if (selectionCountEl) {
+        selectionCountEl.textContent = `已選取 ${selState?.count || 0} 個專案`;
+      }
+      if (batchTrashBtn) batchTrashBtn.disabled = isBatchBusy || !selState?.count;
+      if (selectAllBtn) selectAllBtn.disabled = isBatchBusy || currentFilteredIds.length === 0;
+    }
+
+    const selectionController = global.ProjectSelectionController?.create
+      ? global.ProjectSelectionController.create({
+          container: projectsGrid,
+          scrollContainer: projectsBody || projectsGrid.parentElement,
+          mode: 'projects',
+          getOrderedIds: () => currentFilteredIds,
+          onChange: syncSelectionUI
+        })
+      : null;
+
+    if (selectionController) {
+      projectsGrid._selectionController = selectionController;
+    }
+
+    listen(batchTrashBtn, 'click', async () => {
+      if (isBatchBusy || !isMounted) return;
+      const ids = selectionController?.getSelectedIds() || [];
+      if (!ids.length) return;
+      isBatchBusy = true;
+      syncSelectionUI({ active: selectionController?.isActive(), count: selectionController?.getCount?.() || 0 });
+      try {
+        const res = await global.ProjectActions?.batchTrashProjects?.(ids, () => updateView());
+        if (res?.ok) selectionController?.clear();
+      } finally {
+        isBatchBusy = false;
+        if (isMounted) {
+          syncSelectionUI({ active: selectionController?.isActive(), count: selectionController?.getCount?.() || 0 });
+        }
+      }
+    });
+    listen(selectAllBtn, 'click', () => selectionController?.selectAll());
+    listen(cancelSelectBtn, 'click', () => selectionController?.clear());
 
     function updateView(fromSort = false) {
       if (!isMounted) return;
@@ -699,6 +754,7 @@
 
       const filteredProjects = getFilteredAndSortedProjects(list, selectedTags, {query,sort,direction});
       const filteredCount = filteredProjects.length;
+      currentFilteredIds = filteredProjects.map(p => String(p.id));
 
       if (tagsScroll) renderTagOptions(tagsScroll, list, totalCount);
       if (tagMenu) renderTagOptions(tagMenu, list, totalCount);
@@ -741,6 +797,7 @@
         isFiltered,
         clearFilters
       );
+      selectionController?.syncItems?.(currentFilteredIds);
     }
 
     // 1. 畫面首載：快取優先 (Stale-While-Revalidate)
@@ -778,7 +835,6 @@
     }
 
     // 3. 接入 Dynamic Gradient Mask
-    const projectsBody = (root ? root.querySelector('.projects-body') : null) || document.querySelector('.projects-body');
     if (projectsBody && global.DynamicMaskSystem && typeof global.DynamicMaskSystem.attach === 'function') {
       global.DynamicMaskSystem.attach(projectsBody, { maskSize: 36, direction: 'vertical' });
     }
@@ -790,6 +846,12 @@
       selectedTags.clear();
       clearTimeout(searchTimer); cancelSort();
       handlers.forEach(cleanup => cleanup());
+      if (selectionController) {
+        selectionController.destroy();
+        if (projectsGrid._selectionController === selectionController) {
+          delete projectsGrid._selectionController;
+        }
+      }
       if (tagMenu || sortMenu) global.ProjectOptionMorph?.close('unmount');
       const state = cardStates.get(projectsGrid);
       state?.forEach(entry => global.ProjectCardInteractions?.unbind?.(entry.card));

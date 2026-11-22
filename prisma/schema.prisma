@@ -18,12 +18,33 @@ model Project {
   metadata     Json?
   characters   Json?
   shots        Shot[]
-  is_deleted   Boolean  @default(false)
-  createAt     DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  is_deleted   Boolean   @default(false)
+  deletedAt    DateTime?
+  createAt     DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   @@index([authorId])
   @@index([authorId, is_deleted, createAt])
+  @@index([is_deleted, deletedAt])
+  @@index([authorId, is_deleted, deletedAt])
+}
+
+model CleanupJob {
+  id           String    @id @default(uuid())
+  projectId    String    @unique
+  authorId     String?
+  reason       String
+  status       String    @default("pending")
+  storagePaths Json      @default("[]")
+  deletedPaths Json      @default("[]")
+  dbDeleted    Boolean   @default(false)
+  attempts     Int       @default(0)
+  lastError    String?
+  lockedAt     DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([status, updatedAt])
 }
 
 model Shot {

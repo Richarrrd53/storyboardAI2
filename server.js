@@ -18,8 +18,9 @@ const { createSiteRateLimiter, createSearchCache } = require('./lib/site-quota')
 const { buildTemplateFromDiscovery } = require('./lib/discovery/template-builder');
 const { toCatalogTemplate } = require('./lib/template-catalog');
 const { generationProjectId } = require('./lib/generation-project-id');
-const { createClient } = require('@supabase/supabase-js');
 const { randomUUID } = require('node:crypto');
+const storyboardImages = require('./lib/storage/storyboard-images');
+const projectLifecycle = require('./lib/projects/lifecycle');
 
 const pool = new Pool({ 
     connectionString: process.env.DATABASE_URL,
@@ -789,19 +790,33 @@ app.post('/api/auth/logout', (req, res) => {
 });
 
 // === PROJECTS API ===
+function getInjectedStorageClient() {
+    return app.locals?.storageClient || undefined;
+}
+
+function requireAuthUser(req, res) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        res.status(401).json({ error: '未授權' });
+        return null;
+    }
+    try {
+        return jwt.verify(authHeader.split(' ')[1], JWT_SECRET);
+    } catch (error) {
+        res.status(401).json({ error: 'Token 無效或已過期' });
+        return null;
+    }
+}
+
 app.get('/api/projects', async (req, res) => {
     try {
-        const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return res.status(401).json({ error: '未授權' });
-        }
-        const token = authHeader.split(' ')[1];
-        const decoded = jwt.verify(token, JWT_SECRET);
+        const decoded = requireAuthUser(req, res);
+        if (!decoded) return;
 
         const includeDeleted = req.query.include_deleted === 'true';
 
         const projects = await prisma.project.findMany({
-            where: { 
+            where: {
                 authorId: decoded.id,
                 ...(includeDeleted ? {} : { is_deleted: false })
             },
@@ -811,9 +826,20 @@ app.get('/api/projects', async (req, res) => {
                 ratio: true,
                 style: true,
                 is_deleted: true,
+                deletedAt: true,
                 metadata: true,
                 createAt: true,
                 updatedAt: true,
+                shots: {
+                    orderBy: { order: 'asc' },
+                    take: 1,
+                    select: {
+                        id: true,
+                        order: true,
+                        updateAt: true,
+                        payload: true
+                    }
+                },
                 _count: {
                     select: { shots: true }
                 }
@@ -821,55 +847,86 @@ app.get('/api/projects', async (req, res) => {
             orderBy: { createAt: 'desc' }
         });
 
-        const formattedProjects = projects.map(p => ({
-            ...p,
-            tags: (p.metadata && typeof p.metadata === 'object' && Array.isArray(p.metadata.tags)) ? p.metadata.tags : [],
-            shotCount: p._count ? p._count.shots : 0,
-            createAt: toTaipeiTZ(p.createAt),
-            updateAt: toTaipeiTZ(p.updatedAt || p.createAt)
+        const now = new Date();
+        const storageClient = getInjectedStorageClient();
+        const formattedProjects = await Promise.all(projects.map(async (p) => {
+            const dynamicCover = await projectLifecycle.resolveProjectCover(p, { storageClient });
+            const retention = projectLifecycle.computeTrashRetention(p, now);
+            const { shots: _firstShotOnly, _count, ...rest } = p;
+            return {
+                ...rest,
+                cover: dynamicCover,
+                tags: (p.metadata && typeof p.metadata === 'object' && Array.isArray(p.metadata.tags)) ? p.metadata.tags : [],
+                shotCount: _count ? _count.shots : (Array.isArray(p.shots) ? p.shots.length : 0),
+                deletedAt: p.deletedAt ? new Date(p.deletedAt).toISOString() : null,
+                retention,
+                createAt: toTaipeiTZ(p.createAt),
+                updateAt: toTaipeiTZ(p.updatedAt || p.createAt)
+            };
         }));
 
         res.json({ projects: formattedProjects });
     } catch (error) {
-        if (['JsonWebTokenError','TokenExpiredError','NotBeforeError'].includes(error.name)) {
-            return res.status(401).json({error:'Token 無效或已過期'});
+        if (['JsonWebTokenError', 'TokenExpiredError', 'NotBeforeError'].includes(error.name)) {
+            return res.status(401).json({ error: 'Token 無效或已過期' });
         }
         console.error('Fetch Projects Error:', error);
         res.status(500).json({ error: '獲取專案失敗' });
     }
 });
 
-// GET project cover (binary stream endpoint)
+// GET project cover (dynamic from first shot with lowest order)
 app.get('/api/projects/:id/cover', async (req, res) => {
     try {
         const { id } = req.params;
-        const project = await prisma.project.findUnique({
-            where: { id },
-            select: { cover: true }
-        });
-        if (!project || !project.cover) {
+        let firstShot = null;
+        if (prisma.shot?.findFirst) {
+            firstShot = await prisma.shot.findFirst({
+                where: { projectId: id },
+                orderBy: { order: 'asc' },
+                select: { id: true, order: true, payload: true, updateAt: true }
+            });
+        } else if (prisma.project?.findUnique) {
+            const proj = await prisma.project.findUnique({
+                where: { id },
+                include: { shots: true }
+            });
+            firstShot = projectLifecycle.getFirstShot(proj?.shots);
+        }
+
+        const rawImage = firstShot?.payload?.image;
+        if (!rawImage || rawImage === '../icon/error.jpg' || rawImage === '/icon/error.jpg') {
             return res.status(404).send('Not Found');
         }
 
-        if (project.cover.startsWith('data:')) {
-            const matches = project.cover.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+        if (storyboardImages.isBase64DataUri(rawImage)) {
+            const matches = rawImage.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
             if (matches && matches.length === 3) {
                 const contentType = matches[1];
                 const buffer = Buffer.from(matches[2], 'base64');
                 res.setHeader('Content-Type', contentType);
-                res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
+                res.setHeader('Cache-Control', 'private, max-age=300');
                 return res.send(buffer);
             }
+            return res.status(404).send('Not Found');
         }
 
-        res.redirect(project.cover);
+        const resolvedUrl = await storyboardImages.resolveImageUrl(rawImage, {
+            storageClient: getInjectedStorageClient()
+        });
+        if (!resolvedUrl) {
+            return res.status(404).send('Not Found');
+        }
+
+        res.setHeader('Cache-Control', 'private, max-age=300');
+        return res.redirect(302, resolvedUrl);
     } catch (err) {
         console.error('Fetch Cover Error:', err);
         res.status(500).send('Server Error');
     }
 });
 
-// GET shot image (binary stream endpoint)
+// GET shot image (supports signed URL redirect and legacy base64 stream + ?history=index)
 app.get('/api/projects/:projectId/shots/:shotId/image', async (req, res) => {
     try {
         const { projectId, shotId } = req.params;
@@ -878,86 +935,231 @@ app.get('/api/projects/:projectId/shots/:shotId/image', async (req, res) => {
             select: { payload: true, projectId: true }
         });
 
-        if (!shot || !shot.payload || !shot.payload.image) {
+        if (!shot || !shot.payload || shot.projectId !== projectId) {
             return res.status(404).send('Not Found');
         }
 
-        // 驗證 Shot 確實屬於此 Project
-        if (shot.projectId !== projectId) {
+        let imageSource = shot.payload.image;
+        if (req.query.history !== undefined) {
+            const idx = Number.parseInt(req.query.history, 10);
+            const hist = Array.isArray(shot.payload.imageHistory) ? shot.payload.imageHistory : [];
+            if (!Number.isInteger(idx) || idx < 0 || idx >= hist.length) {
+                return res.status(404).send('Not Found');
+            }
+            imageSource = hist[idx]?.imageRef || hist[idx]?.image;
+        }
+
+        if (!imageSource || imageSource === '../icon/error.jpg' || imageSource === '/icon/error.jpg') {
             return res.status(404).send('Not Found');
         }
 
-        const imageUrl = shot.payload.image;
-        if (imageUrl.startsWith('data:')) {
-            const matches = imageUrl.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+        if (storyboardImages.isBase64DataUri(imageSource)) {
+            const matches = imageSource.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
             if (matches && matches.length === 3) {
                 const contentType = matches[1];
                 const buffer = Buffer.from(matches[2], 'base64');
                 res.setHeader('Content-Type', contentType);
-                res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
+                res.setHeader('Cache-Control', 'private, max-age=300');
                 return res.send(buffer);
             }
+            return res.status(404).send('Not Found');
         }
 
-        res.redirect(imageUrl);
+        const resolvedUrl = await storyboardImages.resolveImageUrl(imageSource, {
+            storageClient: getInjectedStorageClient()
+        });
+        if (!resolvedUrl) {
+            return res.status(404).send('Not Found');
+        }
+
+        res.setHeader('Cache-Control', 'private, max-age=300');
+        return res.redirect(302, resolvedUrl);
     } catch (err) {
         console.error('Fetch Shot Image Error:', err);
         res.status(500).send('Server Error');
     }
 });
 
-// DELETE project (soft delete)
+// BATCH trash projects (for /projects multi-select; never bypasses trash)
+app.post('/api/projects/batch/trash', async (req, res) => {
+    try {
+        const decoded = requireAuthUser(req, res);
+        if (!decoded) return;
+        const result = await projectLifecycle.batchTrashProjects({
+            prisma,
+            authorId: decoded.id,
+            projectIds: req.body?.projectIds
+        });
+        return res.status(result.status).json(result);
+    } catch (error) {
+        console.error('Batch Trash Projects Error:', error);
+        res.status(500).json({ error: '批次移入回收桶失敗' });
+    }
+});
+
+// BATCH restore projects (specific IDs or all trashed projects)
+app.post('/api/projects/batch/restore', async (req, res) => {
+    try {
+        const decoded = requireAuthUser(req, res);
+        if (!decoded) return;
+        const result = await projectLifecycle.batchRestoreProjects({
+            prisma,
+            authorId: decoded.id,
+            projectIds: req.body?.projectIds,
+            all: req.body?.all === true
+        });
+        return res.status(result.status).json(result);
+    } catch (error) {
+        console.error('Batch Restore Projects Error:', error);
+        res.status(500).json({ error: '批次還原專案失敗' });
+    }
+});
+
+// BATCH permanent delete projects (only trashed projects owned by user)
+app.post('/api/projects/batch/permanent-delete', async (req, res) => {
+    try {
+        const decoded = requireAuthUser(req, res);
+        if (!decoded) return;
+        const result = await projectLifecycle.batchPermanentDeleteProjects({
+            prisma,
+            authorId: decoded.id,
+            projectIds: req.body?.projectIds,
+            storageClient: getInjectedStorageClient()
+        });
+        return res.status(result.status).json(result);
+    } catch (error) {
+        console.error('Batch Permanent Delete Error:', error);
+        res.status(500).json({ error: '批次永久刪除失敗' });
+    }
+});
+
+// EMPTY trash (requires confirm: true)
+app.post('/api/projects/trash/empty', async (req, res) => {
+    try {
+        const decoded = requireAuthUser(req, res);
+        if (!decoded) return;
+        if (req.body?.confirm !== true) {
+            return res.status(400).json({ error: '請先確認清空資源回收桶（此操作無法復原）', code: 'CONFIRM_REQUIRED' });
+        }
+        const result = await projectLifecycle.emptyTrash({
+            prisma,
+            authorId: decoded.id,
+            storageClient: getInjectedStorageClient()
+        });
+        return res.status(result.status).json(result);
+    } catch (error) {
+        console.error('Empty Trash Error:', error);
+        res.status(500).json({ error: '清空資源回收桶失敗' });
+    }
+});
+
+// INTERNAL CRON: 30-day automatic trash cleanup (protected by CRON_SECRET)
+app.post('/api/internal/cron/cleanup-trash', async (req, res) => {
+    try {
+        const expectedSecret = process.env.CRON_SECRET;
+        if (!expectedSecret) {
+            return res.status(503).json({ error: '伺服器尚未設定 CRON_SECRET，自動清理端點已停用。', code: 'CRON_NOT_CONFIGURED' });
+        }
+        const auth = req.headers.authorization || '';
+        const headerSecret = req.headers['x-cron-secret'] || (auth.startsWith('Bearer ') ? auth.slice(7) : '');
+        if (!headerSecret || headerSecret !== expectedSecret) {
+            return res.status(401).json({ error: '未授權的排程請求' });
+        }
+        const dryRun = req.body?.dryRun === true || req.query.dryRun === 'true';
+        const batchSize = Number(req.body?.batchSize || req.query.batchSize || 20);
+        const report = await projectLifecycle.runRetentionCleanup({
+            prisma,
+            storageClient: getInjectedStorageClient(),
+            dryRun,
+            batchSize
+        });
+        res.json({ ok: report.failed.length === 0, report });
+    } catch (error) {
+        console.error('Cron Cleanup Trash Error:', error);
+        res.status(500).json({ error: '自動清理排程執行失敗' });
+    }
+});
+
+// DELETE project (soft delete -> move to trash)
 app.delete('/api/projects/:id', async (req, res) => {
     try {
-        const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return res.status(401).json({ error: '未授權' });
-        }
-        const token = authHeader.split(' ')[1];
-        const decoded = jwt.verify(token, JWT_SECRET);
+        const decoded = requireAuthUser(req, res);
+        if (!decoded) return;
         const { id } = req.params;
 
-        const project = await prisma.project.findUnique({
-            where: { id }
-        });
-
+        const project = await prisma.project.findUnique({ where: { id } });
         if (!project) return res.status(404).json({ error: '找不到專案' });
         if (project.authorId !== decoded.id) return res.status(403).json({ error: '沒有權限刪除此專案' });
 
+        // Do not extend retention if project is already in trash with a deletedAt timestamp
+        if (project.is_deleted && project.deletedAt) {
+            return res.json({
+                message: '專案已在回收桶中',
+                deletedAt: new Date(project.deletedAt).toISOString()
+            });
+        }
+
+        const deletedAt = project.deletedAt || new Date();
         await prisma.project.update({
             where: { id },
-            data: { is_deleted: true }
+            data: { is_deleted: true, deletedAt }
         });
 
-        res.json({ message: '專案已成功移至回收桶' });
+        res.json({
+            message: '專案已成功移至回收桶',
+            deletedAt: deletedAt.toISOString()
+        });
     } catch (error) {
         console.error('Delete Project Error:', error);
         res.status(500).json({ error: '刪除專案失敗' });
     }
 });
 
+// DELETE project permanently (must be in trash & owned by user)
+app.delete('/api/projects/:id/permanent', async (req, res) => {
+    try {
+        const decoded = requireAuthUser(req, res);
+        if (!decoded) return;
+        const { id } = req.params;
+        const result = await projectLifecycle.permanentlyDeleteProject({
+            prisma,
+            projectId: id,
+            authorId: decoded.id,
+            requireOwnership: true,
+            reason: 'manual_permanent_delete',
+            storageClient: getInjectedStorageClient()
+        });
+        if (!result.ok) {
+            return res.status(result.status).json({ error: result.error, code: result.code });
+        }
+        res.json({
+            message: '專案已永久刪除',
+            projectId: id,
+            deletedStorageCount: result.deletedStorageCount || 0,
+            skippedSharedCount: result.skippedSharedCount || 0
+        });
+    } catch (error) {
+        console.error('Permanent Delete Project Error:', error);
+        res.status(500).json({ error: '永久刪除專案失敗' });
+    }
+});
+
 // POST restore project
 app.post('/api/projects/:id/restore', async (req, res) => {
     try {
-        const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return res.status(401).json({ error: '未授權' });
-        }
-        const token = authHeader.split(' ')[1];
-        const decoded = jwt.verify(token, JWT_SECRET);
+        const decoded = requireAuthUser(req, res);
+        if (!decoded) return;
         const { id } = req.params;
 
-        const project = await prisma.project.findUnique({
-            where: { id }
-        });
-
+        const project = await prisma.project.findUnique({ where: { id } });
         if (!project) return res.status(404).json({ error: '找不到專案' });
         if (project.authorId !== decoded.id) return res.status(403).json({ error: '沒有權限還原此專案' });
 
         await prisma.project.update({
             where: { id },
-            data: { is_deleted: false }
+            data: { is_deleted: false, deletedAt: null }
         });
+        await projectLifecycle.cancelPendingCleanupJob(prisma, id);
 
         res.json({ message: '專案已成功還原' });
     } catch (error) {
@@ -966,15 +1168,11 @@ app.post('/api/projects/:id/restore', async (req, res) => {
     }
 });
 
-// PATCH update project (e.g. rename title)
+// PATCH update project (e.g. rename title, tags)
 app.patch('/api/projects/:id', async (req, res) => {
     try {
-        const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return res.status(401).json({ error: '未授權' });
-        }
-        const token = authHeader.split(' ')[1];
-        const decoded = jwt.verify(token, JWT_SECRET);
+        const decoded = requireAuthUser(req, res);
+        if (!decoded) return;
         const { id } = req.params;
         const { title, tags } = req.body;
 
@@ -982,10 +1180,7 @@ app.patch('/api/projects/:id', async (req, res) => {
             return res.status(400).json({ error: '請提供要更新的欄位' });
         }
 
-        const project = await prisma.project.findUnique({
-            where: { id }
-        });
-
+        const project = await prisma.project.findUnique({ where: { id } });
         if (!project) return res.status(404).json({ error: '找不到專案' });
         if (project.authorId !== decoded.id) return res.status(403).json({ error: '沒有權限修改此專案' });
 
@@ -1029,15 +1224,12 @@ app.patch('/api/projects/:id', async (req, res) => {
     }
 });
 
-// POST duplicate project
+// POST duplicate project (with independent Storage copy & dynamic cover from first shot)
 app.post('/api/projects/:id/duplicate', async (req, res) => {
+    let copiedStoragePaths = [];
     try {
-        const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return res.status(401).json({ error: '未授權' });
-        }
-        const token = authHeader.split(' ')[1];
-        const decoded = jwt.verify(token, JWT_SECRET);
+        const decoded = requireAuthUser(req, res);
+        if (!decoded) return;
         const { id } = req.params;
 
         const original = await prisma.project.findUnique({
@@ -1048,7 +1240,6 @@ app.post('/api/projects/:id/duplicate', async (req, res) => {
         if (!original) return res.status(404).json({ error: '找不到專案' });
         if (original.authorId !== decoded.id) return res.status(403).json({ error: '沒有權限複製此專案' });
 
-        // 產生唯一的 shortId
         let shortId = generateShortId();
         let exists = await prisma.project.findUnique({ where: { shortId } });
         let attempts = 0;
@@ -1058,25 +1249,42 @@ app.post('/api/projects/:id/duplicate', async (req, res) => {
             attempts++;
         }
 
+        const newProjectId = randomUUID();
         const duplicateTitle = `${original.title} (副本)`;
+        const sourceShots = Array.isArray(original.shots) ? original.shots : [];
+        const targetShotIdByOrder = new Map();
+        for (const shot of sourceShots) {
+            targetShotIdByOrder.set(shot.order, randomUUID());
+        }
+
+        const storageClient = getInjectedStorageClient();
+        const { refMap, copiedPaths } = await storyboardImages.copyStorageObjectsForDuplicate({
+            sourceShots,
+            targetProjectId: newProjectId,
+            targetShotIdByOrder,
+            storageClient
+        });
+        copiedStoragePaths = copiedPaths;
 
         const newProject = await prisma.project.create({
             data: {
+                id: newProjectId,
                 shortId,
                 authorId: decoded.id,
                 title: duplicateTitle,
                 style: original.style || '',
                 ratio: original.ratio || '',
-                cover: original.cover || null,
+                cover: null,
                 metadata: original.metadata || {},
                 characters: original.characters || {},
                 shots: {
-                    create: (original.shots || []).map((shot) => ({
+                    create: sourceShots.map((shot) => ({
+                        id: targetShotIdByOrder.get(shot.order),
                         order: shot.order,
                         title: shot.title || '',
                         camera: shot.camera || '',
                         duration: shot.duration || '3s',
-                        payload: shot.payload || {}
+                        payload: storyboardImages.rewriteShotPayloadWithRefMap(shot.payload || {}, refMap)
                     }))
                 }
             },
@@ -1085,22 +1293,32 @@ app.post('/api/projects/:id/duplicate', async (req, res) => {
             }
         });
 
+        const dynamicCover = await projectLifecycle.resolveProjectCover(newProject, { storageClient });
+        const resolvedShots = await Promise.all((newProject.shots || []).map(async (s) => ({
+            ...s,
+            payload: await storyboardImages.resolveShotPayloadForResponse(s, newProject.id, { storageClient }),
+            createAt: toTaipeiTZ(s.createAt),
+            updateAt: toTaipeiTZ(s.updateAt)
+        })));
+
         const formattedProject = {
             ...newProject,
+            cover: dynamicCover,
             tags: (newProject.metadata && typeof newProject.metadata === 'object' && Array.isArray(newProject.metadata.tags)) ? newProject.metadata.tags : [],
             createAt: toTaipeiTZ(newProject.createAt),
             updatedAt: toTaipeiTZ(newProject.updatedAt),
-            shots: (newProject.shots || []).map(s => ({
-                ...s,
-                createAt: toTaipeiTZ(s.createAt),
-                updateAt: toTaipeiTZ(s.updateAt)
-            }))
+            shots: resolvedShots
         };
 
         res.json({ message: '專案複製成功', project: formattedProject });
     } catch (error) {
+        if (copiedStoragePaths.length > 0) {
+            await storyboardImages.removeStorageObjects(copiedStoragePaths, {
+                storageClient: getInjectedStorageClient()
+            }).catch(() => {});
+        }
         console.error('Duplicate Project Error:', error);
-        res.status(500).json({ error: '複製專案失敗' });
+        res.status(error.status || 500).json({ error: error.message || '複製專案失敗', code: error.code });
     }
 });
 
@@ -1113,96 +1331,209 @@ async function runGeminiImageGeneration({ question, ratio }) {
     return (await generateImage(getGenAI(), { question, ratio })).image[0];
 }
 
-// PATCH Shot（編輯鏡頭資料）
+// POST 準備圖片 Signed Upload URL（前端直傳 Supabase Storage）
 app.post('/api/projects/:projectId/shots/:shotId/image-upload', async (req, res) => {
     try {
-        const auth = req.headers.authorization || '';
-        if (!auth.startsWith('Bearer ')) return res.status(401).json({ error: '未授權' });
-        let decoded;
-        try { decoded = jwt.verify(auth.slice(7), JWT_SECRET); } catch (_) { return res.status(401).json({ error: '未授權' }); }
+        const decoded = requireAuthUser(req, res);
+        if (!decoded) return;
         const { projectId, shotId } = req.params;
         const project = await prisma.project.findUnique({ where: { id: projectId } });
         if (!project || project.is_deleted) return res.status(404).json({ error: '找不到專案' });
         if (project.authorId !== decoded.id) return res.status(403).json({ error: '沒有權限修改此專案' });
         const shot = await prisma.shot.findUnique({ where: { id: shotId } });
         if (!shot || shot.projectId !== projectId) return res.status(404).json({ error: '找不到鏡頭' });
-        const extensions = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp' };
-        const extension = extensions[req.body?.contentType];
-        if (!extension) return res.status(400).json({ error: '不支援的圖片格式' });
-        const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
-        if (!process.env.SUPABASE_URL || !key) throw new Error('Supabase Storage credentials are not configured');
-        const bucket = process.env.SUPABASE_STORAGE_BUCKET || 'storyboard-images';
-        const storage = createClient(process.env.SUPABASE_URL, key, { auth: { persistSession: false, autoRefreshToken: false } }).storage.from(bucket);
-        const objectPath = `${projectId}/${shotId}/${randomUUID()}.${extension}`;
-        const { data, error } = await storage.createSignedUploadUrl(objectPath);
-        if (error) throw error;
-        const publicUrl = storage.getPublicUrl(objectPath).data.publicUrl;
-        res.json({ uploadUrl: data.signedUrl, publicUrl });
+
+        const prepared = await storyboardImages.createSignedUpload({
+            projectId,
+            shotId,
+            contentType: req.body?.contentType,
+            storageClient: getInjectedStorageClient()
+        });
+        res.json(prepared);
     } catch (error) {
         console.error('Create image upload URL error:', error);
-        res.status(500).json({ error: '無法準備圖片上傳，請稍後重試。' });
+        res.status(error.status || 500).json({
+            error: error.message || '無法準備圖片上傳，請稍後重試。',
+            code: error.code
+        });
+    }
+});
+
+// POST 後端驗證並上傳鏡頭圖片（供上傳/替換圖片或重試，嚴格禁止 Base64 寫入 DB）
+app.post('/api/projects/:projectId/shots/:shotId/image', async (req, res) => {
+    try {
+        const decoded = requireAuthUser(req, res);
+        if (!decoded) return;
+        const { projectId, shotId } = req.params;
+        const project = await prisma.project.findUnique({ where: { id: projectId } });
+        if (!project || project.is_deleted) return res.status(404).json({ error: '找不到專案' });
+        if (project.authorId !== decoded.id) return res.status(403).json({ error: '沒有權限修改此專案' });
+        const shot = await prisma.shot.findUnique({ where: { id: shotId } });
+        if (!shot || shot.projectId !== projectId) return res.status(404).json({ error: '找不到鏡頭' });
+
+        const { dataUri, prompt } = req.body || {};
+        if (!dataUri || !storyboardImages.isBase64DataUri(dataUri)) {
+            return res.status(400).json({ error: '請提供有效的圖片資料', code: 'INVALID_IMAGE_DATA' });
+        }
+
+        const parsed = storyboardImages.parseBase64DataUri(dataUri);
+        const currentPayload = shot.payload && typeof shot.payload === 'object' ? shot.payload : {};
+        const storageClient = getInjectedStorageClient();
+
+        const uploaded = await storyboardImages.uploadImageBuffer({
+            projectId,
+            shotId,
+            buffer: parsed.buffer,
+            mimeType: parsed.mimeType,
+            existingHistory: currentPayload.imageHistory,
+            storageClient
+        });
+
+        let history = Array.isArray(currentPayload.imageHistory) ? [...currentPayload.imageHistory] : [];
+        if (currentPayload.image && !storyboardImages.isBase64DataUri(currentPayload.image) && currentPayload.image !== '../icon/error.jpg') {
+            const currentRef = storyboardImages.parseStorageRef(currentPayload.image)?.ref || currentPayload.image;
+            if (!history.some(h => (h?.imageRef || h?.image) === currentRef)) {
+                history.unshift({
+                    version: history.length + 1,
+                    image: currentRef,
+                    imageRef: currentRef,
+                    prompt: currentPayload.finalPrompt || '',
+                    createdAt: new Date().toISOString()
+                });
+            }
+        }
+        if (!history.some(h => (h?.imageRef || h?.image) === uploaded.storageRef)) {
+            history.unshift({
+                version: history.length + 1,
+                image: uploaded.storageRef,
+                imageRef: uploaded.storageRef,
+                prompt: typeof prompt === 'string' && prompt.trim() ? prompt.trim() : (currentPayload.finalPrompt || ''),
+                sha256: uploaded.sha256,
+                mimeType: uploaded.mimeType,
+                size: uploaded.size,
+                createdAt: new Date().toISOString()
+            });
+        }
+        history = history.slice(0, 5);
+
+        const updatedPayload = {
+            ...currentPayload,
+            image: uploaded.storageRef,
+            imageRef: uploaded.storageRef,
+            imageAsset: {
+                bucket: uploaded.bucket,
+                path: uploaded.objectPath,
+                mimeType: uploaded.mimeType,
+                size: uploaded.size,
+                sha256: uploaded.sha256
+            },
+            imageStatus: 'succeeded',
+            imageError: null,
+            imageHistory: history
+        };
+
+        const updatedShot = await prisma.shot.update({
+            where: { id: shotId },
+            data: { payload: updatedPayload }
+        });
+
+        await prisma.project.update({ where: { id: projectId }, data: { updatedAt: new Date() } });
+
+        const cleanPayload = await storyboardImages.resolveShotPayloadForResponse(updatedShot, projectId, { storageClient });
+        res.json({
+            message: '鏡頭圖片已成功上傳並儲存',
+            storageRef: uploaded.storageRef,
+            deduplicated: uploaded.deduplicated,
+            shot: {
+                ...updatedShot,
+                payload: cleanPayload,
+                createAt: toTaipeiTZ(updatedShot.createAt),
+                updateAt: toTaipeiTZ(updatedShot.updateAt)
+            }
+        });
+    } catch (error) {
+        console.error('Upload Shot Image Error:', error);
+        res.status(error.status || 500).json({
+            error: error.message || '圖片上傳失敗，請稍後重試。',
+            code: error.code || 'STORAGE_UPLOAD_FAILED'
+        });
     }
 });
 
 app.patch('/api/projects/:projectId/shots/:shotId', async (req, res) => {
     try {
-        const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return res.status(401).json({ error: '未授權' });
-        }
-        const token = authHeader.split(' ')[1];
-        const decoded = jwt.verify(token, JWT_SECRET);
+        const decoded = requireAuthUser(req, res);
+        if (!decoded) return;
         const { projectId, shotId } = req.params;
 
-        // 驗證 Project 存在且屬於登入使用者
         const project = await prisma.project.findUnique({ where: { id: projectId } });
         if (!project) return res.status(404).json({ error: '找不到專案' });
         if (project.authorId !== decoded.id) return res.status(403).json({ error: '沒有權限修改此專案' });
 
-        // 驗證 Shot 存在且屬於此 Project
         const shot = await prisma.shot.findUnique({ where: { id: shotId } });
-        if (!shot) return res.status(404).json({ error: '找不到鏡頭' });
-        if (shot.projectId !== projectId) return res.status(404).json({ error: '找不到鏡頭' });
+        if (!shot || shot.projectId !== projectId) return res.status(404).json({ error: '找不到鏡頭' });
 
-        // Whitelist 可修改欄位
-        const { title, camera, duration, payloadPatch } = req.body;
+        const { title, camera, duration, order, payloadPatch } = req.body;
         const updateData = {};
         if (title !== undefined) updateData.title = String(title).trim();
         if (camera !== undefined) updateData.camera = String(camera).trim();
         if (duration !== undefined) updateData.duration = String(duration).trim();
+        if (order !== undefined && Number.isInteger(Number(order)) && Number(order) >= 1) {
+            updateData.order = Number(order);
+        }
 
-        // Payload merge（不覆蓋，只更新指定欄位）
         if (payloadPatch && typeof payloadPatch === 'object') {
+            storyboardImages.assertNoBase64InShotPayload(payloadPatch);
+
             const currentPayload = shot.payload || {};
-            const allowedPayloadKeys = ['emotion', 'note', 'shotPrompt', 'finalPrompt', 'cameraDetails', 'image', 'imageHistory', 'imageStatus', 'imageError', 'characters', 'dialogue', 'purpose', 'angle', 'sourceShot'];
+            const allowedPayloadKeys = [
+                'emotion', 'note', 'shotPrompt', 'finalPrompt', 'cameraDetails',
+                'image', 'imageRef', 'imageAsset', 'imageHistory', 'imageStatus', 'imageError',
+                'characters', 'dialogue', 'purpose', 'angle', 'sourceShot'
+            ];
             const patchedPayload = { ...currentPayload };
             for (const key of allowedPayloadKeys) {
                 if (payloadPatch[key] !== undefined) {
                     patchedPayload[key] = payloadPatch[key];
                 }
             }
+
+            // Normalize image / imageRef to permanent storage:// reference (never store expiring signed URLs or base64)
+            const incomingImage = payloadPatch.imageRef !== undefined ? payloadPatch.imageRef : payloadPatch.image;
+            if (incomingImage !== undefined) {
+                const normalizedRef = storyboardImages.normalizeIncomingImageRef(incomingImage, {
+                    projectId,
+                    shotId,
+                    existingPayload: currentPayload
+                });
+                patchedPayload.image = normalizedRef;
+                if (normalizedRef && normalizedRef.startsWith('storage://')) {
+                    patchedPayload.imageRef = normalizedRef;
+                }
+            }
+
+            if (payloadPatch.imageHistory !== undefined) {
+                patchedPayload.imageHistory = storyboardImages.normalizeImageHistoryForStorage(payloadPatch.imageHistory, {
+                    projectId,
+                    shotId,
+                    existingPayload: currentPayload
+                });
+            }
+
+            storyboardImages.assertNoBase64InShotPayload(patchedPayload);
             updateData.payload = patchedPayload;
         }
 
-        // 更新 Shot
         const updatedShot = await prisma.shot.update({
             where: { id: shotId },
             data: updateData
         });
 
-        // Touch Project.updatedAt
-        const projectUpdateData = { updatedAt: new Date() };
-        if (shot.order === 1 && updateData.payload?.image) {
-            projectUpdateData.cover = updateData.payload.image;
-        }
-        await prisma.project.update({ where: { id: projectId }, data: projectUpdateData });
+        // Touch Project.updatedAt only — cover is dynamically derived from first shot, never duplicated to Project.cover
+        await prisma.project.update({ where: { id: projectId }, data: { updatedAt: new Date() } });
 
-        // 回傳 Shot（image URL 帶版本號）
-        const versionTs = updatedShot.updateAt ? new Date(updatedShot.updateAt).getTime() : Date.now();
-        const cleanPayload = { ...updatedShot.payload };
-        if (cleanPayload.image && cleanPayload.image.startsWith('data:')) {
-            cleanPayload.image = `/api/projects/${projectId}/shots/${shotId}/image?v=${versionTs}`;
-        }
+        const storageClient = getInjectedStorageClient();
+        const cleanPayload = await storyboardImages.resolveShotPayloadForResponse(updatedShot, projectId, { storageClient });
 
         res.json({
             message: '鏡頭已成功更新',
@@ -1214,33 +1545,28 @@ app.patch('/api/projects/:projectId/shots/:shotId', async (req, res) => {
             }
         });
     } catch (error) {
+        if (error.status && error.status >= 400 && error.status < 500) {
+            return res.status(error.status).json({ error: error.message, code: error.code });
+        }
         console.error('Update Shot Error:', error);
         res.status(500).json({ error: '更新鏡頭失敗' });
     }
 });
 
-// POST 重新生成單一鏡頭圖片
+// POST 重新生成單一鏡頭圖片（強制上傳 Supabase Storage，絕不將 Base64 寫入 DB）
 app.post('/api/projects/:projectId/shots/:shotId/regenerate', async (req, res) => {
     try {
-        const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return res.status(401).json({ error: '未授權' });
-        }
-        const token = authHeader.split(' ')[1];
-        const decoded = jwt.verify(token, JWT_SECRET);
+        const decoded = requireAuthUser(req, res);
+        if (!decoded) return;
         const { projectId, shotId } = req.params;
 
-        // 驗證 Project 存在且屬於登入使用者
         const project = await prisma.project.findUnique({ where: { id: projectId } });
         if (!project) return res.status(404).json({ error: '找不到專案' });
         if (project.authorId !== decoded.id) return res.status(403).json({ error: '沒有權限修改此專案' });
 
-        // 驗證 Shot 存在且屬於此 Project
         const shot = await prisma.shot.findUnique({ where: { id: shotId } });
-        if (!shot) return res.status(404).json({ error: '找不到鏡頭' });
-        if (shot.projectId !== projectId) return res.status(404).json({ error: '找不到鏡頭' });
+        if (!shot || shot.projectId !== projectId) return res.status(404).json({ error: '找不到鏡頭' });
 
-        // 取得 prompt（body.prompt > payload.finalPrompt > payload.shotPrompt > title）
         const prompt = req.body.prompt
             || (shot.payload && shot.payload.finalPrompt)
             || (shot.payload && shot.payload.shotPrompt)
@@ -1253,7 +1579,6 @@ app.post('/api/projects/:projectId/shots/:shotId/regenerate', async (req, res) =
 
         const provider = await resolveRequestProvider(req, req.body?.provider);
         if (!enforceSiteGeminiLimit(req, res, provider)) return;
-        // 呼叫 AI Provider 生成圖片
         const imageResult = await aiRouter.generateImage({
             provider,
             question: prompt,
@@ -1261,30 +1586,68 @@ app.post('/api/projects/:projectId/shots/:shotId/regenerate', async (req, res) =
         });
         const newImageDataUri = imageResult.image[0];
 
-        // 整理歷史版本（最多保存 5 筆）
+        // Decode, validate, and upload to Supabase Storage BEFORE touching PostgreSQL.
+        // If Storage upload fails, original saved image remains untouched and we return an error.
         const currentPayload = shot.payload || {};
+        const parsedImage = storyboardImages.parseBase64DataUri(newImageDataUri);
+        const storageClient = getInjectedStorageClient();
+        const uploaded = await storyboardImages.uploadImageBuffer({
+            projectId,
+            shotId,
+            buffer: parsedImage.buffer,
+            mimeType: parsedImage.mimeType,
+            existingHistory: currentPayload.imageHistory,
+            storageClient
+        });
+
+        // Build imageHistory (max 5 versions, all permanent storage refs)
         let history = Array.isArray(currentPayload.imageHistory) ? [...currentPayload.imageHistory] : [];
-        if (currentPayload.image && !history.some(h => h.image === currentPayload.image)) {
-            history.unshift({
-                version: history.length + 1,
-                image: currentPayload.image,
-                prompt: currentPayload.finalPrompt || '',
-                createdAt: new Date().toISOString()
-            });
+        if (currentPayload.image && !storyboardImages.isBase64DataUri(currentPayload.image) && currentPayload.image !== '../icon/error.jpg') {
+            const currentRef = storyboardImages.parseStorageRef(currentPayload.image)?.ref || currentPayload.image;
+            if (!history.some(h => (h?.imageRef || h?.image) === currentRef)) {
+                history.unshift({
+                    version: history.length + 1,
+                    image: currentRef,
+                    imageRef: currentRef,
+                    prompt: currentPayload.finalPrompt || '',
+                    createdAt: new Date().toISOString()
+                });
+            }
         }
+        const effectivePrompt = req.body.prompt ? prompt : (currentPayload.finalPrompt || prompt);
         history.unshift({
             version: history.length + 1,
-            image: newImageDataUri,
-            prompt: req.body.prompt ? prompt : (currentPayload.finalPrompt || prompt),
+            image: uploaded.storageRef,
+            imageRef: uploaded.storageRef,
+            prompt: effectivePrompt,
+            sha256: uploaded.sha256,
+            mimeType: uploaded.mimeType,
+            size: uploaded.size,
             createdAt: new Date().toISOString()
         });
-        history = history.slice(0, 5);
+        // Deduplicate by storageRef while keeping newest order, max 5
+        const seenHistory = new Set();
+        history = history.filter(item => {
+            const key = item?.imageRef || item?.image;
+            if (!key || seenHistory.has(key)) return false;
+            seenHistory.add(key);
+            return true;
+        }).slice(0, 5);
 
-        // 更新 Shot payload
         const updatedPayload = {
             ...currentPayload,
-            image: newImageDataUri,
-            finalPrompt: req.body.prompt ? prompt : (currentPayload.finalPrompt || prompt),
+            image: uploaded.storageRef,
+            imageRef: uploaded.storageRef,
+            imageAsset: {
+                bucket: uploaded.bucket,
+                path: uploaded.objectPath,
+                mimeType: uploaded.mimeType,
+                size: uploaded.size,
+                sha256: uploaded.sha256
+            },
+            imageStatus: 'succeeded',
+            imageError: null,
+            finalPrompt: effectivePrompt,
             imageHistory: history
         };
 
@@ -1293,19 +1656,10 @@ app.post('/api/projects/:projectId/shots/:shotId/regenerate', async (req, res) =
             data: { payload: updatedPayload }
         });
 
-        // Touch Project.updatedAt，若是第一鏡也更新 cover
-        const projectUpdateData = { updatedAt: new Date() };
-        if (shot.order === 1) {
-            projectUpdateData.cover = newImageDataUri;
-        }
-        await prisma.project.update({ where: { id: projectId }, data: projectUpdateData });
+        // Touch Project.updatedAt only (cover is derived dynamically from first shot)
+        await prisma.project.update({ where: { id: projectId }, data: { updatedAt: new Date() } });
 
-        // 回傳 updated Shot（image URL 帶版本號）
-        const versionTs = updatedShot.updateAt ? new Date(updatedShot.updateAt).getTime() : Date.now();
-        const cleanPayload = { ...updatedShot.payload };
-        if (cleanPayload.image && cleanPayload.image.startsWith('data:')) {
-            cleanPayload.image = `/api/projects/${projectId}/shots/${shotId}/image?v=${versionTs}`;
-        }
+        const cleanPayload = await storyboardImages.resolveShotPayloadForResponse(updatedShot, projectId, { storageClient });
 
         res.json({
             message: '鏡頭圖片已重新生成',
@@ -1317,6 +1671,12 @@ app.post('/api/projects/:projectId/shots/:shotId/regenerate', async (req, res) =
             }
         });
     } catch (error) {
+        if (error.code && (error.code.startsWith('STORAGE_') || error.code.startsWith('INVALID_IMAGE') || error.code === 'UNSUPPORTED_IMAGE_FORMAT' || error.code === 'IMAGE_TOO_LARGE')) {
+            return res.status(error.status || 502).json({
+                error: error.message || '圖片上傳至儲存空間失敗，已保留原有圖片，請稍後重試。',
+                code: error.code
+            });
+        }
         const provider = req.body?.provider === 'openai' ? 'openai' : 'gemini';
         const failure = reportAIError(error, { task: 'regenerate-image', provider, model: aiRouter.getModel(provider, 'image') || undefined });
         res.status(failure.status).json({ error: '重新生成圖片失敗：' + failure.message, code: failure.code });
@@ -1383,53 +1743,56 @@ Requirements:
     }
 });
 
-// GET single project (with shots and metadata)
+// GET single project (with shots and safe author projection)
 app.get('/api/projects/:id', async (req, res) => {
     try {
-        const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return res.status(401).json({ error: '未授權' });
-        }
-        const token = authHeader.split(' ')[1];
-        const decoded = jwt.verify(token, JWT_SECRET);
+        const decoded = requireAuthUser(req, res);
+        if (!decoded) return;
 
         const id = req.params.id;
         const project = await prisma.project.findUnique({
             where: { id },
-            include: { shots: true, author: true }
+            include: {
+                shots: { orderBy: { order: 'asc' } },
+                author: { select: projectLifecycle.SAFE_AUTHOR_SELECT }
+            }
         });
 
         if (!project) return res.status(404).json({ error: '找不到專案' });
         if (project.authorId !== decoded.id) return res.status(403).json({ error: '沒有權限存取此專案' });
 
-        let cleanCover = project.cover;
-        if (cleanCover && cleanCover.startsWith('data:')) {
-            cleanCover = `/api/projects/${project.id}/cover`;
-        }
+        const storageClient = getInjectedStorageClient();
+        const dynamicCover = await projectLifecycle.resolveProjectCover(project, { storageClient });
+        const retention = projectLifecycle.computeTrashRetention(project);
+
+        const resolvedShots = await Promise.all((project.shots || []).map(async (s) => ({
+            ...s,
+            payload: await storyboardImages.resolveShotPayloadForResponse(s, project.id, { storageClient }),
+            createAt: toTaipeiTZ(s.createAt),
+            updateAt: toTaipeiTZ(s.updateAt)
+        })));
+
+        // Defensive projection in case a test mock ignored `select` and returned full user fields
+        const safeAuthor = project.author ? {
+            id: project.author.id,
+            name: project.author.name,
+            email: project.author.email,
+            image: project.author.image,
+            plan: project.author.plan,
+            aiProvider: project.author.aiProvider || 'gemini',
+            createAt: toTaipeiTZ(project.author.createAt)
+        } : null;
 
         const formattedProject = {
             ...project,
             tags: (project.metadata && typeof project.metadata === 'object' && Array.isArray(project.metadata.tags)) ? project.metadata.tags : [],
-            cover: cleanCover,
+            cover: dynamicCover,
+            deletedAt: project.deletedAt ? new Date(project.deletedAt).toISOString() : null,
+            retention,
             createAt: toTaipeiTZ(project.createAt),
             updatedAt: toTaipeiTZ(project.updatedAt),
-            shots: (project.shots || []).map(s => {
-                let cleanPayload = { ...s.payload };
-                const versionTs = s.updateAt ? new Date(s.updateAt).getTime() : Date.now();
-                if (cleanPayload.image && cleanPayload.image.startsWith('data:')) {
-                    cleanPayload.image = `/api/projects/${project.id}/shots/${s.id}/image?v=${versionTs}`;
-                }
-                return {
-                    ...s,
-                    payload: cleanPayload,
-                    createAt: toTaipeiTZ(s.createAt),
-                    updateAt: toTaipeiTZ(s.updateAt)
-                };
-            }),
-            author: project.author ? {
-                ...project.author,
-                createAt: toTaipeiTZ(project.author.createAt)
-            } : null
+            shots: resolvedShots,
+            author: safeAuthor
         };
 
         res.json({ project: formattedProject });
@@ -1450,14 +1813,10 @@ function generateShortId() {
 
 app.post('/api/projects', async (req, res) => {
     try {
-        const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return res.status(401).json({ error: '未授權' });
-        }
-        const token = authHeader.split(' ')[1];
-        const decoded = jwt.verify(token, JWT_SECRET);
+        const decoded = requireAuthUser(req, res);
+        if (!decoded) return;
 
-        const { title, style, ratio, cover, metadata, characters, shots } = req.body;
+        const { title, style, ratio, metadata, characters, shots } = req.body;
 
         const generationId = generationProjectId(decoded.id, metadata?.generationTaskId);
         if (generationId) {
@@ -1470,6 +1829,12 @@ app.post('/api/projects', async (req, res) => {
 
         if (!title) {
             return res.status(400).json({ error: '專案標題為必填欄位' });
+        }
+
+        // Enforce no Base64 images written to PostgreSQL
+        const incomingShots = Array.isArray(shots) ? shots : [];
+        for (const shot of incomingShots) {
+            storyboardImages.assertNoBase64InShotPayload(shot?.payload);
         }
 
         // 產生唯一的 shortId
@@ -1490,11 +1855,11 @@ app.post('/api/projects', async (req, res) => {
                 title,
                 style: style || '',
                 ratio: ratio || '',
-                cover: cover || null,
+                cover: null,
                 metadata: metadata || {},
                 characters: characters || {},
                 shots: {
-                    create: (shots || []).map((shot) => ({
+                    create: incomingShots.map((shot) => ({
                         order: shot.order,
                         title: shot.title || '',
                         camera: shot.camera || '',
@@ -1508,19 +1873,28 @@ app.post('/api/projects', async (req, res) => {
             }
         });
 
+        const storageClient = getInjectedStorageClient();
+        const dynamicCover = await projectLifecycle.resolveProjectCover(project, { storageClient });
+        const resolvedShots = await Promise.all((project.shots || []).map(async (s) => ({
+            ...s,
+            payload: await storyboardImages.resolveShotPayloadForResponse(s, project.id, { storageClient }),
+            createAt: toTaipeiTZ(s.createAt),
+            updateAt: toTaipeiTZ(s.updateAt)
+        })));
+
         const formattedProject = {
             ...project,
+            cover: dynamicCover,
             createAt: toTaipeiTZ(project.createAt),
             updatedAt: toTaipeiTZ(project.updatedAt),
-            shots: (project.shots || []).map(s => ({
-                ...s,
-                createAt: toTaipeiTZ(s.createAt),
-                updateAt: toTaipeiTZ(s.updateAt)
-            }))
+            shots: resolvedShots
         };
 
         res.json({ message: '專案儲存成功', project: formattedProject });
     } catch (error) {
+        if (error.status && error.status >= 400 && error.status < 500) {
+            return res.status(error.status).json({ error: error.message, code: error.code });
+        }
         console.error('Create Project Error:', error);
         res.status(500).json({ error: '建立專案失敗' });
     }

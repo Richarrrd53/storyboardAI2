@@ -525,14 +525,30 @@ test('planning retry retains task ID and cannot create a second task', async () 
 });
 
 
-test('image upload failure falls back to saving data URI directly via shot PATCH', async () => {
-  const f = fixture(url => url.endsWith('/image-upload') ? response({ error: '無法準備圖片上傳，請稍後重試。' }, false, 500) : undefined);
+test('image upload failure forbids Base64 fallback, marks pending_retry, and succeeds on retrySave', async () => {
+  let failUpload = true;
+  const f = fixture(url => {
+    if (url.endsWith('/image-upload') && failUpload) {
+      return response({ error: '無法準備圖片上傳，請稍後重試。' }, false, 500);
+    }
+    return undefined;
+  });
   const pending = f.task.start(options());
   await f.drain(); await pending;
   const state = f.task.getState();
   assert.equal(state.status, 'completed');
-  assert.equal(state.save.status, 'saved');
+  assert.equal(state.save.status, 'failed');
   assert.equal(state.projectId, 'project-42');
+  assert.equal(state.result.generatedShotData[0].payload.uploadStatus, 'pending_retry');
+  // Must NOT send Base64 data URI via PATCH
+  const badPatch = f.calls.find(c => c.url === '/api/projects/project-42/shots/shot-1' && String(c.body?.payloadPatch?.image || '').startsWith('data:'));
+  assert.equal(badPatch, undefined);
+
+  // Retry succeeds when storage recovers without regenerating images
+  failUpload = false;
+  const retried = await f.task.retrySave();
+  assert.equal(retried.save.status, 'saved');
   const patch = f.calls.find(c => c.url === '/api/projects/project-42/shots/shot-1');
-  assert.equal(patch.body.payloadPatch.image, 'data:image/png;base64,test');
+  assert.ok(patch);
+  assert.ok(!String(patch.body.payloadPatch.image || '').startsWith('data:'));
 });

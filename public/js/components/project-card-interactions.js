@@ -86,11 +86,12 @@
       card.dataset.interactionsBound = 'true';
     }
 
-    // 保留特定現有 class（例如 is-menu-open, is-navigating 等）
+    // 保留特定現有 class（例如 is-menu-open, is-navigating, is-selected 等）
     const keepClasses = [];
     if (card.classList?.contains('is-menu-open')) keepClasses.push('is-menu-open');
     if (card.classList?.contains('is-navigating')) keepClasses.push('is-navigating');
     if (card.classList?.contains('is-expanded')) keepClasses.push('is-expanded');
+    if (card.classList?.contains('is-selected')) keepClasses.push('is-selected');
 
     card.className = `project-card project-folder-card variant-${variant}${isDeleted ? ' project-card-deleted' : ''}${keepClasses.length ? ' ' + keepClasses.join(' ') : ''}`;
 
@@ -224,14 +225,23 @@
     let lastClickTime = 0;
 
     const onCardClick = (e) => {
+      // 確保不是點擊在 Option Button 上
+      if (e && e.target && e.target.closest && e.target.closest('.project-option-btn')) {
+        return;
+      }
+
+      // 多選模式 / 修飾鍵 / 長按抑制：優先交給 ProjectSelectionController 處理
+      const selCtrl = opts.selectionController || card.closest?.('#projects-grid')?._selectionController;
+      if (selCtrl && typeof selCtrl.handleCardClick === 'function') {
+        if (selCtrl.handleCardClick(project.id, e)) {
+          return;
+        }
+      }
+
       const titleLink = e?.target?.closest?.('a.project-title');
       if (titleLink) {
         if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button > 0) return;
         e.preventDefault?.();
-      }
-      // 確保不是點擊在 Option Button 上
-      if (e && e.target && e.target.closest && e.target.closest('.project-option-btn')) {
-        return;
       }
 
       // 防止短時間內重複觸發 (Card click 仍只觸發一次 transition)

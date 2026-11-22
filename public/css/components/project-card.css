@@ -885,3 +885,272 @@
     line-height: 18px; white-space: nowrap; overflow: hidden; text-overflow: clip;
   }
 }
+
+/* ── 8. Shared Multi-Selection Mode & Trash Retention UI ── */
+.project-folder-card .project-select-indicator {
+  position: absolute;
+  top: 8px;
+  left: 12px;
+  z-index: 6;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-pill, 9999px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface-primary);
+  border: 2px solid var(--color-border-strong);
+  color: transparent;
+  opacity: 0;
+  transform: scale(0.8);
+  pointer-events: none;
+  transition: opacity 160ms var(--motion-ease-standard, ease),
+              transform 180ms var(--motion-ease-standard, ease),
+              background-color 160ms var(--motion-ease-standard, ease),
+              border-color 160ms var(--motion-ease-standard, ease),
+              color 160ms var(--motion-ease-standard, ease);
+}
+
+.projects-grid.is-selection-mode .project-folder-card .project-select-indicator {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.project-folder-card.is-selected .project-select-indicator {
+  opacity: 1;
+  transform: scale(1);
+  background: var(--color-brand-primary);
+  border-color: var(--color-brand-primary);
+  color: var(--color-text-inverse);
+}
+
+.project-folder-card.is-selected .project-folder-shell {
+  box-shadow: 0 0 0 2px var(--color-border-selected), var(--folder-shadow-hover);
+  background: var(--color-surface-primary);
+}
+
+.project-folder-card.is-selected .project-preview-primary {
+  box-shadow: 0 0 0 2px var(--color-border-selected), 0 12px 28px rgba(15, 23, 42, 0.14);
+}
+
+.projects-grid.is-selection-mode {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.project-selection-marquee {
+  position: fixed;
+  z-index: 9000;
+  pointer-events: none;
+  border-radius: var(--radius-sm, 8px);
+  border: 1.5px solid var(--color-border-selected);
+  background: var(--color-surface-selected);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+}
+
+/* Floating Batch Selection Toolbar */
+.projects-selection-bar {
+  position: sticky;
+  top: 10px;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 var(--page-gutter, 24px) 12px;
+  padding: 10px 16px;
+  border-radius: var(--radius-lg, 16px);
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--color-border-default);
+  box-shadow: var(--shadow-md, 0 8px 24px rgba(15, 23, 42, 0.08));
+  transition: opacity 180ms var(--motion-ease-standard, ease),
+              transform 220ms var(--motion-ease-standard, ease);
+}
+
+.projects-selection-bar[hidden] {
+  display: none !important;
+}
+
+.selection-bar-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.selection-bar-count {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.selection-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.selection-bar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: var(--radius-pill, 9999px);
+  border: 1px solid var(--color-border-default);
+  background: var(--color-surface-primary);
+  color: var(--color-text-primary);
+  font-size: 0.84rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 120ms ease;
+}
+
+.selection-bar-btn:hover:not(:disabled) {
+  background: var(--color-action-secondary-hover);
+}
+
+.selection-bar-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.selection-bar-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.selection-bar-btn.primary {
+  background: var(--color-action-primary-default);
+  border-color: var(--color-action-primary-default);
+  color: var(--color-text-inverse);
+}
+
+.selection-bar-btn.primary:hover:not(:disabled) {
+  background: var(--color-action-primary-hover);
+  border-color: var(--color-action-primary-hover);
+}
+
+.selection-bar-btn.danger {
+  background: var(--color-status-error-bg);
+  border-color: var(--color-border-danger);
+  color: var(--color-text-danger);
+}
+
+.selection-bar-btn.danger:hover:not(:disabled) {
+  background: var(--color-action-danger-default);
+  border-color: var(--color-action-danger-default);
+  color: var(--color-text-inverse);
+}
+
+.selection-bar-btn.ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--color-text-secondary);
+}
+
+.selection-bar-btn.ghost:hover:not(:disabled) {
+  background: var(--color-action-secondary-default);
+  color: var(--color-text-primary);
+}
+
+/* Trash Header Retention Hint & Quick Actions */
+.history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.history-header-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.history-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.history-retention-hint {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--color-text-tertiary);
+  line-height: 1.4;
+}
+
+.history-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.history-header-actions[hidden] {
+  display: none !important;
+}
+
+.history-action-btn {
+  height: 36px;
+  padding: 0 14px;
+  border-radius: var(--radius-pill, 9999px);
+  font-size: 0.84rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.btn-danger-subtle {
+  background: var(--color-status-error-bg);
+  border: 1px solid var(--color-border-danger);
+  color: var(--color-text-danger);
+}
+
+.btn-danger-subtle:hover:not(:disabled) {
+  background: var(--color-action-danger-default);
+  border-color: var(--color-action-danger-default);
+  color: var(--color-text-inverse);
+}
+
+.project-retention-label {
+  color: var(--color-text-danger);
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .projects-selection-bar {
+    margin: 0 12px 10px;
+    padding: 10px 12px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .selection-bar-actions {
+    justify-content: flex-start;
+  }
+
+  .selection-bar-btn {
+    flex: 1 1 auto;
+    min-height: 38px;
+  }
+
+  .history-header {
+    align-items: flex-start;
+  }
+
+  .history-header-actions {
+    width: 100%;
+  }
+
+  .history-action-btn {
+    flex: 1 1 auto;
+  }
+}

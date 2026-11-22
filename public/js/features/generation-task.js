@@ -287,16 +287,23 @@
           const detail = await requestJSON(run, controller, '/api/projects/' + encodeURIComponent(run.projectId), { headers });
           for (const shot of detail.project?.shots || []) run.projectShotIds[shot.order] = shot.id;
         }
+        const uploadFailures = [];
         for (const shot of result.generatedShotData) {
           const shotId = run.projectShotIds[shot.order];
           if (!shotId) throw new Error('無法取得已儲存的鏡頭編號，請稍後重試儲存。');
-          let image = shot.payload.image;
-          if (image?.startsWith('data:')) {
+          let imageRef = shot.payload.imageRef || shot.payload.image;
+          if (imageRef?.startsWith('data:')) {
             const cached = run.uploadedImages[shot.order];
-            if (cached?.source === image) image = cached.url;
-            else {
-              const match = /^data:(image\/(?:png|jpeg|webp));base64,([\s\S]+)$/.exec(image);
-              if (!match) throw new Error('不支援的圖片格式，無法儲存。');
+            if (cached?.source === imageRef && cached?.storageRef) {
+              imageRef = cached.storageRef;
+            } else {
+              const match = /^data:(image\/(?:png|jpeg|webp));base64,([\s\S]+)$/.exec(imageRef);
+              if (!match) {
+                shot.payload.uploadStatus = 'pending_retry';
+                shot.payload.uploadError = '不支援的圖片格式，無法儲存。';
+                uploadFailures.push(shot.order);
+                continue;
+              }
               try {
                 const upload = await requestJSON(run, controller, `/api/projects/${encodeURIComponent(run.projectId)}/shots/${encodeURIComponent(shotId)}/image-upload`, {
                   method: 'POST', headers, body: JSON.stringify({ contentType: match[1] })
@@ -304,19 +311,34 @@
                 const bytes = Uint8Array.from(atob(match[2]), char => char.charCodeAt(0));
                 const response = await fetch(upload.uploadUrl, { method: 'PUT', headers: { 'Content-Type': match[1], 'x-upsert': 'false' }, body: bytes, signal: controller.signal });
                 assertRun(run, controller);
-                if (!response.ok) throw new Error('圖片上傳失敗，請重試儲存。');
-                run.uploadedImages[shot.order] = { source: image, url: upload.publicUrl };
-                image = upload.publicUrl;
+                if (!response.ok) throw new Error('圖片上傳至儲存空間失敗，請重試儲存。');
+                const permanentRef = upload.storageRef || upload.publicUrl;
+                run.uploadedImages[shot.order] = { source: imageRef, storageRef: permanentRef, url: upload.publicUrl };
+                shot.payload.uploadStatus = 'uploaded';
+                shot.payload.uploadError = null;
+                imageRef = permanentRef;
               } catch (uploadError) {
                 assertRun(run, controller);
                 if (uploadError.name === 'AbortError') throw uploadError;
-                // Fallback: save data URI directly via PATCH when object storage is unavailable.
+                // Strictly forbid Base64 fallback: mark shot pending retry while preserving other succeeded shots.
+                shot.payload.uploadStatus = 'pending_retry';
+                shot.payload.uploadError = uploadError.message || '圖片上傳失敗，等待重試';
+                uploadFailures.push(shot.order);
+                continue;
               }
             }
           }
           await requestJSON(run, controller, `/api/projects/${encodeURIComponent(run.projectId)}/shots/${encodeURIComponent(shotId)}`, {
-            method: 'PATCH', headers, body: JSON.stringify({ title: shot.title, camera: shot.camera, duration: shot.duration, payloadPatch: { ...shot.payload, image } })
+            method: 'PATCH', headers, body: JSON.stringify({
+              title: shot.title,
+              camera: shot.camera,
+              duration: shot.duration,
+              payloadPatch: { ...shot.payload, image: imageRef, ...(imageRef?.startsWith('storage://') ? { imageRef } : {}) }
+            })
           });
+        }
+        if (uploadFailures.length > 0) {
+          throw new Error(`第 ${uploadFailures.join('、')} 鏡圖片上傳至儲存空間失敗，已保留其他完成的鏡頭，請點擊重試儲存。`);
         }
       } else {
         const metadata = {
@@ -325,15 +347,14 @@
           templateSnapshot: input.selectedTemplate || null,
           targetDuration: input.duration, creativeBrief: input.creativeBrief || null
         };
-        // Keep the create request small: generated images can exceed serverless
-        // request limits when all of their base64 data is sent together.
+        // Keep the create request free of Base64: images are uploaded to Supabase Storage per shot.
         const imagesToSave = result.generatedShotData.filter(shot => shot.payload.image?.startsWith('data:'));
         const initialShots = result.generatedShotData.map(shot => imagesToSave.includes(shot)
           ? { ...shot, payload: { ...shot.payload, image: null, imageStatus: 'pending' } } : shot);
         const data = await requestJSON(run, controller, '/api/projects', {
           method: 'POST', headers, body: JSON.stringify({
             title: result.storyboardData?.meta?.title || input.story.slice(0, 32), style: input.style.name, ratio: input.ratio,
-            cover: initialShots.find(shot => shot.payload.imageStatus === 'succeeded')?.payload.image || null,
+            cover: null,
             shots: initialShots, characters: result.storyboardData?.characters || {}, metadata
           })
         });
