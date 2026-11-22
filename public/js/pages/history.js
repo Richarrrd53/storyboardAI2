@@ -116,6 +116,7 @@
       return { unmount() {} };
     }
 
+    const historyHeader = find('.history-header');
     const historyBody = find('.history-body');
     const backButton = root?.querySelector('.history-back-btn');
     const headerActions = find('#history-header-actions');
@@ -138,6 +139,12 @@
     function syncSelectionUI(selState) {
       if (!selectionBar) return;
       const active = Boolean(selState?.active && selState.count > 0);
+      if (historyHeader && historyHeader.hidden !== active) {
+        historyHeader.hidden = active;
+        if (historyBody && global.DynamicMaskSystem?.update) {
+          global.DynamicMaskSystem.update(historyBody);
+        }
+      }
       selectionBar.hidden = !active;
       selectionBar.classList.toggle('is-visible', active);
       if (selectionCountEl) {

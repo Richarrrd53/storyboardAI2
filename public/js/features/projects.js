@@ -996,13 +996,15 @@
         `「${p.title || '未命名分鏡'}」及其所有分鏡圖片將永久刪除，無法再復原。`,
         'delete',
         '永久刪除',
-        card
+        null
       );
       if (!isConfirmed || requestEpoch !== ProjectStore.resetEpoch) return false;
 
       const toastFn = typeof global !== 'undefined' && typeof global.showSpaToast === 'function'
         ? global.showSpaToast
         : () => {};
+
+      toastFn(`正在永久刪除「${p.title || '未命名分鏡'}」...`, null, 15000);
 
       try {
         const res = await ProjectsApi.permanentDeleteProject(p.id);
@@ -1101,6 +1103,7 @@
       if (!isConfirmed || requestEpoch !== ProjectStore.resetEpoch) return { ok: false, cancelled: true };
 
       const toastFn = typeof global !== 'undefined' && typeof global.showSpaToast === 'function' ? global.showSpaToast : () => {};
+      toastFn(`正在永久刪除所選的 ${ids.length} 個分鏡...`, null, 15000);
       const res = await ProjectsApi.batchPermanentDeleteProjects(ids);
       if (requestEpoch !== ProjectStore.resetEpoch) return { ok: false };
       if (!res.ok) {
@@ -1139,6 +1142,7 @@
       if (!secondConfirm || requestEpoch !== ProjectStore.resetEpoch) return { ok: false, cancelled: true };
 
       const toastFn = typeof global !== 'undefined' && typeof global.showSpaToast === 'function' ? global.showSpaToast : () => {};
+      toastFn('正在清空資源回收桶...', null, 15000);
       const res = await ProjectsApi.emptyTrash();
       if (requestEpoch !== ProjectStore.resetEpoch) return { ok: false };
       if (!res.ok) {

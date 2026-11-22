@@ -152,8 +152,8 @@
     background: color-mix(in srgb, var(--color-action-primary-default) 16%, var(--color-surface-elevated));
   }
 }
-.global-project-option-menu .morph-item:is(.danger, [data-action="delete"]):not(:disabled, [aria-disabled="true"]) { color: var(--color-text-danger); }
-.global-project-option-menu .morph-item:is(.danger, [data-action="delete"]):not(:disabled, [aria-disabled="true"]):is(:hover, .is-gesture-hover) {
+.global-project-option-menu .morph-item:is(.danger, .delete, [data-action="delete"], [data-action="permanentDelete"]):not(:disabled, [aria-disabled="true"]) { color: var(--color-text-danger); }
+.global-project-option-menu .morph-item:is(.danger, .delete, [data-action="delete"], [data-action="permanentDelete"]):not(:disabled, [aria-disabled="true"]):is(:hover, .is-gesture-hover) {
   background: var(--color-status-error-bg);
   color: var(--color-action-danger-hover);
 }

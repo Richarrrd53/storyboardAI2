@@ -96,6 +96,7 @@
     card.className = `project-card project-folder-card variant-${variant}${isDeleted ? ' project-card-deleted' : ''}${keepClasses.length ? ' ' + keepClasses.join(' ') : ''}`;
 
     const cleanupFns = [];
+    const getSelectionController = () => opts.selectionController || card.closest?.('#projects-grid')?._selectionController;
 
     // 2. Option 按鈕點擊與事件冒泡隔離
     const optionBtn = card.querySelector ? card.querySelector('.project-option-btn') : null;
@@ -103,6 +104,11 @@
       const onOptionClick = (e) => {
         if (e && typeof e.stopPropagation === 'function') {
           e.stopPropagation();
+        }
+        const selCtrl = getSelectionController();
+        if (selCtrl?.isActive?.()) {
+          selCtrl.handleCardClick?.(project.id, e);
+          return;
         }
         if (typeof opts.openOptionMorph === 'function') {
           opts.openOptionMorph(optionBtn, project, card, isDeleted, opts.refreshCallback);
@@ -124,6 +130,11 @@
         const onTagClick = (e) => {
           if (e && typeof e.stopPropagation === 'function') {
             e.stopPropagation();
+          }
+          const selCtrl = getSelectionController();
+          if (selCtrl?.isActive?.()) {
+            selCtrl.handleCardClick?.(project.id, e);
+            return;
           }
           const tag = tagBtn.dataset ? tagBtn.dataset.tag : tagBtn.getAttribute?.('data-tag');
           if (tag) {
@@ -197,13 +208,12 @@
     // 4. 卡片懸浮展開與 Prefetch
     const onCardEnter = (event) => {
       if (event?.pointerType === 'touch') return;
+      if (isDeleted) return;
       card.classList?.add('is-expanded');
-      if (!isDeleted) {
-        if (typeof opts.prefetchPage === 'function') {
-          opts.prefetchPage('project', { id: project.id });
-        } else if (typeof global.prefetchPage === 'function') {
-          global.prefetchPage('project', { id: project.id });
-        }
+      if (typeof opts.prefetchPage === 'function') {
+        opts.prefetchPage('project', { id: project.id });
+      } else if (typeof global.prefetchPage === 'function') {
+        global.prefetchPage('project', { id: project.id });
       }
     };
 
@@ -225,13 +235,19 @@
     let lastClickTime = 0;
 
     const onCardClick = (e) => {
+      const selCtrl = getSelectionController();
+      if (selCtrl?.isActive?.()) {
+        if (selCtrl.handleCardClick?.(project.id, e)) {
+          return;
+        }
+      }
+
       // 確保不是點擊在 Option Button 上
       if (e && e.target && e.target.closest && e.target.closest('.project-option-btn')) {
         return;
       }
 
       // 多選模式 / 修飾鍵 / 長按抑制：優先交給 ProjectSelectionController 處理
-      const selCtrl = opts.selectionController || card.closest?.('#projects-grid')?._selectionController;
       if (selCtrl && typeof selCtrl.handleCardClick === 'function') {
         if (selCtrl.handleCardClick(project.id, e)) {
           return;
@@ -255,6 +271,9 @@
 
       // (A) 回收桶專案點擊：彈出還原提示
       if (isDeleted) {
+        if (selCtrl?.isActive?.() || selCtrl?.shouldSuppressCardClick?.()) {
+          return;
+        }
         // The feature action owns confirmation. Never treat a Promise as a boolean here.
         const onRestored = () => {
           if (typeof opts.refreshCallback === 'function') opts.refreshCallback();
@@ -301,13 +320,9 @@
     };
 
     card.addEventListener('click', onCardClick);
-    card.onclick = onCardClick;
 
     cleanupFns.push(() => {
       card.removeEventListener('click', onCardClick);
-      if (card.onclick === onCardClick) {
-        card.onclick = null;
-      }
     });
 
     // 註冊卡片清理函式

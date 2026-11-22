@@ -5331,6 +5331,11 @@ body.is-navigating #global-create-capsule .ai-pill-btn-glow-rotator,
         gap: var(--space-2);
     }
 
+    .history-header {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
     .projects-title {
         font-size: 1.25rem !important;
     }
@@ -5836,7 +5841,7 @@ body.is-navigating #global-create-capsule .ai-pill-btn-glow-rotator,
 .projects-dropdown-options .morph-item { height: auto; min-height: 44px; }
 .projects-dropdown-options .project-filter-pill { border-radius: 999px; }
 .home-brand-title img { display: block; width: auto; height: 24px; }
-.history-header.content-header { justify-content: flex-start !important; gap: 12px; }
+.history-header.content-header { justify-content: space-between !important; gap: 12px; }
 .history-back-btn { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 44px; width: 44px; height: 44px; border: 0; border-radius: 50%; background: var(--color-surface-elevated); color: var(--color-text-primary); text-decoration: none; box-shadow: 0 2px 8px rgb(15 23 42 / 7%); transition: transform 180ms var(--motion-ease-spring); }
 .history-back-btn:hover { transform: scale(1.08); }
 .history-back-btn:active { transform: scale(.94); }

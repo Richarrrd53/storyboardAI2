@@ -572,15 +572,15 @@
 /* Density changes information only; every host uses the same folder geometry. */
 /* ── 6. Hover Motion (Physical Storyboard Pull - Keep 16:9 Frame) ── */
 @media (hover: hover) and (pointer: fine) {
-.project-folder-card:hover .project-folder-shell,
-.project-folder-card.is-expanded .project-folder-shell {
+.project-folder-card:not(.project-card-deleted):hover .project-folder-shell,
+.project-folder-card:not(.project-card-deleted).is-expanded .project-folder-shell {
   transform: translateY(-2px);
   box-shadow: var(--folder-shadow-hover);
 }
 
 /* Primary Cover lifts and tilts without changing 16:9 aspect ratio */
-.project-folder-card:hover .project-preview-primary,
-.project-folder-card.is-expanded .project-preview-primary {
+.project-folder-card:not(.project-card-deleted):hover .project-preview-primary,
+.project-folder-card:not(.project-card-deleted).is-expanded .project-preview-primary {
   width: var(--folder-preview-width, var(--cover-width, var(--collapsed-width, 282px))) !important;
   height: var(--folder-preview-height, var(--cover-height, var(--collapsed-height, 158.6px))) !important;
   transform: translateY(calc(var(--folder-insert-depth, var(--insert-depth, var(--collapsed-insert-depth, 46px))) - var(--folder-insert-depth, 46px) - var(--folder-hover-lift, var(--hover-lift, 16px))))
@@ -591,8 +591,8 @@
   box-shadow: 0 16px 36px rgba(15, 23, 42, 0.18);
 }
 
-.project-folder-card:hover .project-preview-secondary,
-.project-folder-card.is-expanded .project-preview-secondary {
+.project-folder-card:not(.project-card-deleted):hover .project-preview-secondary,
+.project-folder-card:not(.project-card-deleted).is-expanded .project-preview-secondary {
   transform: translate(calc(-50% + 18px), -8px) rotate(6deg) scale(0.98);
   visibility: visible;
   transition-delay: 0s;
@@ -600,7 +600,7 @@
   opacity: 0.96;
 }
 
-.project-folder-card:hover .fallback-clapper {
+.project-folder-card:not(.project-card-deleted):hover .fallback-clapper {
   transform: scale(1.08) rotate(4deg);
 }
 
@@ -938,6 +938,10 @@
   -webkit-user-select: none;
 }
 
+.projects-grid.is-selection-mode .project-card {
+  touch-action: none;
+}
+
 .project-selection-marquee {
   position: fixed;
   z-index: 9000;
@@ -1065,11 +1069,21 @@
   flex-wrap: wrap;
 }
 
+.history-header[hidden] {
+  display: none !important;
+}
+
+.history-header[hidden] ~ .history-body.has-header-underlay {
+  padding-top: var(--space-4, 16px) !important;
+  scroll-padding-top: 0;
+}
+
 .history-header-main {
   display: flex;
   align-items: center;
   gap: 12px;
   min-width: 0;
+  flex: 1 1 auto;
 }
 
 .history-title-group {
@@ -1089,7 +1103,9 @@
 .history-header-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-left: auto;
   flex-shrink: 0;
 }
 
@@ -1098,13 +1114,49 @@
 }
 
 .history-action-btn {
-  height: 36px;
-  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  padding: 0 18px;
+  border: 0;
   border-radius: var(--radius-pill, 9999px);
-  font-size: 0.84rem;
+  background: var(--color-surface-elevated);
+  color: var(--color-text-primary);
+  box-shadow: 0 2px 8px rgb(15 23 42 / 7%);
+  font-size: 0.86rem;
   font-weight: 600;
   font-family: inherit;
+  white-space: nowrap;
   cursor: pointer;
+  transition: transform 180ms var(--motion-ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1)),
+              background-color 160ms ease,
+              color 160ms ease;
+}
+
+.history-action-btn:hover:not(:disabled) {
+  transform: scale(1.04);
+  background: var(--color-surface-primary);
+}
+
+.history-action-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.history-action-btn:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.history-action-btn.btn-danger-subtle {
+  background: var(--color-surface-elevated);
+  border: 0;
+  color: var(--color-text-danger);
+}
+
+.history-action-btn.btn-danger-subtle:hover:not(:disabled) {
+  background: var(--color-status-error-bg);
+  color: var(--color-text-danger);
 }
 
 .btn-danger-subtle {
@@ -1125,8 +1177,12 @@
 }
 
 @media (max-width: 768px) {
+  .history-header[hidden] ~ .history-body.has-header-underlay {
+    padding-top: var(--space-2, 8px) !important;
+  }
+
   .projects-selection-bar {
-    margin: 0 12px 10px;
+    margin: max(10px, env(safe-area-inset-top)) 12px 10px;
     padding: 10px 12px;
     flex-direction: column;
     align-items: stretch;
@@ -1134,23 +1190,37 @@
   }
 
   .selection-bar-actions {
-    justify-content: flex-start;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
   }
 
   .selection-bar-btn {
-    flex: 1 1 auto;
+    width: 100%;
     min-height: 38px;
+    padding: 0 10px;
   }
 
   .history-header {
     align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .history-header-main {
+    width: 100%;
+    flex: 1 1 100%;
   }
 
   .history-header-actions {
     width: 100%;
+    margin-left: 0;
+    justify-content: flex-end;
   }
 
   .history-action-btn {
-    flex: 1 1 auto;
+    flex: 1 1 0;
+    height: 40px;
+    padding: 0 14px;
   }
 }

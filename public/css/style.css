@@ -497,7 +497,7 @@ main{
     filter: grayscale(40%);
     border: 2px dashed var(--card-border) !important;
     background: rgba(0, 0, 0, 0.04) !important;
-    cursor: not-allowed !important;
+    cursor: pointer;
 }
 
 .project-card-deleted:hover {

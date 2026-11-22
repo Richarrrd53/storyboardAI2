@@ -73,6 +73,7 @@
     let pressStart = null;
     let pressCardId = null;
     let pressPointerType = 'mouse';
+    let longPressTriggered = false;
     let touchDragSelecting = false;
     let dragVisited = new Set();
 
@@ -264,6 +265,7 @@
       pressPointerId = null;
       pressStart = null;
       pressCardId = null;
+      longPressTriggered = false;
       touchDragSelecting = false;
       dragVisited.clear();
     }
@@ -271,7 +273,7 @@
     function onCardPointerDown(event) {
       if (destroyed) return;
       if (event.pointerType === 'mouse' && event.button !== 0) return;
-      if (isInteractiveTarget(event.target)) return;
+      if (!active && isInteractiveTarget(event.target)) return;
 
       const card = event.target?.closest?.('.project-card[data-id]');
       if (!card || !container.contains(card)) return;
@@ -290,6 +292,7 @@
       pressTimer = setTimeout(() => {
         pressTimer = null;
         if (destroyed || !pressCardId) return;
+        longPressTriggered = true;
         // Close any open Morph Menu before entering selection mode
         global.ProjectOptionMorph?.close?.('selection');
 
@@ -327,13 +330,39 @@
         return;
       }
 
-      // 2. Cancel pending long-press if user moved finger/mouse (allows normal scrolling!)
+      // 2. When already in selection mode, sliding finger across cards immediately starts continuous slide-select;
+      //    outside selection mode, moving finger/mouse cancels pending long-press so normal scrolling works.
       if (pressTimer && event.pointerId === pressPointerId && pressStart) {
         const tolerance = pressPointerType === 'touch' ? TOUCH_MOVE_TOLERANCE : DESKTOP_MOVE_TOLERANCE;
         const dx = Math.abs(event.clientX - pressStart.x);
         const dy = Math.abs(event.clientY - pressStart.y);
         if (dx > tolerance || dy > tolerance) {
-          clearPressState();
+          if (active && pressPointerType === 'touch' && pressCardId) {
+            clearTimeout(pressTimer);
+            pressTimer = null;
+            touchDragSelecting = true;
+            dragVisited = new Set([pressCardId]);
+            if (!selected.has(pressCardId)) {
+              selected.add(pressCardId);
+              anchorId = pressCardId;
+              notify();
+            }
+            if (doc?.elementFromPoint) {
+              const hit = doc.elementFromPoint(event.clientX, event.clientY);
+              const card = hit?.closest?.('.project-card[data-id]');
+              if (card && container.contains(card)) {
+                const id = String(card.dataset.id || '');
+                if (id && !dragVisited.has(id)) {
+                  dragVisited.add(id);
+                  selected.add(id);
+                  anchorId = id;
+                  notify();
+                }
+              }
+            }
+          } else {
+            clearPressState();
+          }
         }
       }
 
@@ -365,8 +394,8 @@
 
     function onGlobalPointerUpOrCancel(event) {
       if (pressPointerId !== null && event.pointerId === pressPointerId) {
-        if (touchDragSelecting) {
-          suppressNextClick(400);
+        if (longPressTriggered || touchDragSelecting) {
+          suppressNextClick(500);
         }
         clearPressState();
       }
