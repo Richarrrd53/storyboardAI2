@@ -40,15 +40,32 @@ model Shot {
 }
 
 model User {
-  id           String    @id @default(uuid())
-  name         String?
-  email        String    @unique
-  passwordHash String
-  image        String?
-  plan         String    @default("free")
-  aiProvider   String    @default("gemini")
-  project      Project[]
-  createAt     DateTime  @default(now())
+  id             String              @id @default(uuid())
+  name           String?
+  email          String              @unique
+  passwordHash   String
+  image          String?
+  plan           String              @default("free")
+  aiProvider     String              @default("gemini")
+  project        Project[]
+  apiCredentials UserApiCredential[]
+  createAt       DateTime            @default(now())
+}
+
+model UserApiCredential {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider     String
+  encryptedKey String
+  iv           String
+  authTag      String
+  keyVersion   String   @default("v1")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([userId, provider])
+  @@index([userId])
 }
 
 model Template {

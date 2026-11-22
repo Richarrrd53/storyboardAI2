@@ -308,3 +308,60 @@ test('confirm dialog supports optional checkbox and reports checked state on con
   assert.equal(res2.reason, 'cancel');
   assert.equal(res2.checked, false);
 });
+
+test('password prompt supports visibility toggle, submittingText, and clears input on cancel', async () => {
+  const e = environment(true);
+  const resPromise = e.service.prompt({
+    title: '驗證帳號密碼',
+    label: '目前的帳號密碼',
+    inputType: 'password',
+    confirmText: '驗證並儲存',
+    submittingText: '驗證中…',
+    onSubmit: async value => {
+      if (value === 'bad') throw new Error('帳號密碼錯誤');
+    }
+  });
+  const input = e.document.querySelector('input');
+  const toggle = e.document.querySelector('.sb-dialog-visibility');
+  assert.equal(input.type, 'password');
+  assert.ok(toggle);
+  toggle.click();
+  assert.equal(input.type, 'text');
+  assert.equal(toggle.getAttribute('aria-pressed'), 'true');
+  toggle.click();
+  assert.equal(input.type, 'password');
+
+  input.value = 'bad';
+  e.submit(); await e.tick();
+  assert.equal(e.document.querySelector('.sb-dialog-error').textContent, '帳號密碼錯誤');
+  assert.ok(e.panel());
+
+  e.click('.sb-dialog-cancel');
+  const res = await resPromise;
+  assert.equal(res.confirmed, false);
+  assert.equal(input.value, '');
+});
+
+test('password prompt animates input blur and eye slash on toggle when motion is enabled', async () => {
+  const e = environment(false, false);
+  const resPromise = e.service.prompt({
+    title: '驗證帳號密碼',
+    label: '目前的帳號密碼',
+    inputType: 'password'
+  });
+  const input = e.document.querySelector('input');
+  const toggle = e.document.querySelector('.sb-dialog-visibility');
+  assert.match(toggle.innerHTML, /showControl\.svg/);
+  assert.match(toggle.innerHTML, /showSlash\.svg/);
+
+  toggle.click();
+  assert.equal(input.style.filter, 'blur(3px)');
+  assert.equal(input.type, 'password');
+  e.advance(300);
+  assert.equal(input.style.filter, 'blur(0px)');
+  assert.equal(input.type, 'text');
+
+  e.click('.sb-dialog-cancel');
+  e.advance(450);
+  await resPromise;
+});

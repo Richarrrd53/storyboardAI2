@@ -22,6 +22,13 @@
                 </div>
                 <form id="api-settings-form" autocomplete="off">
                     <div id="api-settings-scroll" class="api-settings-scroll">
+                    <div id="legacy-migration-banner" class="legacy-migration-banner" hidden>
+                        <div class="legacy-migration-copy">
+                            <strong>偵測到舊版瀏覽器金鑰</strong>
+                            <p id="legacy-migration-desc">可驗證帳號密碼後一次性匯入至您的帳號，以便跨裝置同步使用。</p>
+                        </div>
+                        <button id="migrate-legacy-keys" class="btn btn-secondary btn-migrate-legacy" type="button">匯入至帳號</button>
+                    </div>
                     <fieldset id="key-fields" disabled>
                         <div class="settings-category" aria-labelledby="cat-generative-title">
                             <div class="settings-category-head">

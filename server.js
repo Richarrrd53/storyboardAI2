@@ -198,8 +198,58 @@ app.use('/api/creation/copilot', express.json({ limit: '64kb' }));
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ limit: '100mb', extended: true })); // 增加 URL 編碼限制
 
-const discoverySettings = new ApiSettings();
-app.use('/api', (req, res, next) => {
+const discoverySettings = new ApiSettings({ prisma });
+const passwordVerifyLimiter = createSiteRateLimiter({
+    windowMs: 15 * 60 * 1000,
+    defaultLimit: Number(process.env.PASSWORD_VERIFY_LIMIT || 10)
+});
+
+function isSameOriginWrite(req) {
+    let sameOrigin = true;
+    if (req.headers.origin) {
+        try { sameOrigin = new URL(req.headers.origin).host === req.get('host'); }
+        catch { sameOrigin = false; }
+    }
+    return sameOrigin && req.get('sec-fetch-site') !== 'cross-site';
+}
+
+async function verifyAccountPassword(req, res, password) {
+    const userId = req.apiSettingsUserId;
+    if (!userId) {
+        res.status(401).json({ error: '請先登入後再執行此操作。', code: 'AUTH_REQUIRED' });
+        return false;
+    }
+    if (typeof password !== 'string' || !password) {
+        res.status(400).json({ error: '請輸入目前的帳號密碼以驗證身分。', code: 'PASSWORD_REQUIRED' });
+        return false;
+    }
+    const rate = passwordVerifyLimiter.consume(userId);
+    if (!rate.allowed) {
+        res.set('Retry-After', String(rate.retryAfterSeconds));
+        res.status(429).json({
+            error: '密碼驗證嘗試次數過多，請稍後再試。',
+            code: 'PASSWORD_RATE_LIMIT',
+            retryAfter: rate.retryAfterSeconds
+        });
+        return false;
+    }
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, passwordHash: true }
+    });
+    if (!user || !user.passwordHash) {
+        res.status(404).json({ error: '找不到對應的使用者帳號。', code: 'USER_NOT_FOUND' });
+        return false;
+    }
+    const valid = await bcrypt.compare(password, user.passwordHash);
+    if (!valid) {
+        res.status(403).json({ error: '帳號密碼錯誤，請重新輸入。', code: 'INVALID_PASSWORD' });
+        return false;
+    }
+    return true;
+}
+
+app.use('/api', async (req, res, next) => {
     const protectedRequest = /^\/(?:discovery(?:\/|$)|ask-gemini(?:\/|$)|creation\/copilot(?:\/|$)|ai\/providers(?:\/|$)|user\/ai-provider(?:\/|$)|templates\/recommend(?:\/|$))/.test(req.path);
     const authorization = req.get('authorization') || '';
     if (authorization.startsWith('Bearer ')) {
@@ -209,7 +259,19 @@ app.use('/api', (req, res, next) => {
         } catch { /* Protected requests fail closed below. */ }
     }
     if (protectedRequest && !req.apiSettingsUserId) return res.status(401).json({ error: '請先登入，才能設定或使用此帳號的 API 金鑰。', code: 'AUTH_REQUIRED' });
-    apiRequestContext.run(discoverySettings.effective(discoverySettings.read(req)), next);
+    let saved = {};
+    if (req.apiSettingsUserId) {
+        try {
+            saved = await discoverySettings.readFromDb(req.apiSettingsUserId);
+        } catch (error) {
+            console.error('讀取使用者 API 憑證失敗:', error.message);
+            if (protectedRequest) {
+                return res.status(500).json({ error: '無法讀取帳號 API 金鑰設定，請檢查伺服器加密設定或稍後重試。' });
+            }
+        }
+    }
+    req.apiSettingsSaved = saved;
+    apiRequestContext.run(discoverySettings.effective(saved), () => next());
 });
 // All user AI requests require the verified account identity established above.
 app.post('/api/creation/copilot', async (req, res, next) => {
@@ -243,36 +305,44 @@ app.use('/api/discovery', (req, res, next) => {
 });
 
 app.get('/api/discovery/settings', (req, res) => {
-    res.json(discoverySettings.status(discoverySettings.read(req)));
+    const saved = req.apiSettingsSaved || {};
+    const legacyMigration = discoverySettings.legacyMigrationInfo(req, saved);
+    res.json(discoverySettings.status(saved, { legacyMigration }));
 });
 
 app.post('/api/discovery/settings', async (req, res) => {
-    // Settings affect only the verified account in this browser. Reject cross-site writes.
-    let sameOrigin = true;
-    if (req.headers.origin) {
-        try { sameOrigin = new URL(req.headers.origin).host === req.get('host'); }
-        catch { sameOrigin = false; }
-    }
-    if (!sameOrigin || req.get('sec-fetch-site') === 'cross-site' || !req.is('application/json')) {
+    // Settings affect only the verified account in DB. Reject cross-site writes.
+    if (!isSameOriginWrite(req) || !req.is('application/json')) {
         return res.status(403).json({ error: '請從本站 API 設定頁儲存設定。' });
     }
-    let next;
-    try { next = discoverySettings.merge(discoverySettings.read(req), req.body); }
+    let updates;
+    try { updates = discoverySettings.extractUpdates(req.body); }
     catch (error) { return res.status(400).json({ error: error.message }); }
+
+    const currentSaved = req.apiSettingsSaved || {};
+    const hasKeyUpdates = Object.keys(updates).length > 0;
+    if (!hasKeyUpdates) {
+        const legacyMigration = discoverySettings.legacyMigrationInfo(req, currentSaved);
+        return res.json(discoverySettings.status(currentSaved, { legacyMigration }));
+    }
+
     try {
-        if (req.body.openaiApiKey?.trim()) {
+        const verified = await verifyAccountPassword(req, res, req.body?.currentPassword);
+        if (!verified) return;
+
+        if (updates.openaiApiKey) {
             try {
-                await new OpenAI({ apiKey: next.openaiApiKey, timeout: 20000, maxRetries: 0 }).models.list();
+                await new OpenAI({ apiKey: updates.openaiApiKey, timeout: 20000, maxRetries: 0 }).models.list();
             } catch {
                 throw new Error('OpenAI 連線檢查失敗，請確認金鑰與 API 存取權限後重試。');
             }
         }
-        if (req.body.youtubeApiKey?.trim()) {
-            await new YouTubeCollector({ apiKey: next.youtubeApiKey }).request('videos', { part: 'id', id: 'wToeNUwRb_k' });
+        if (updates.youtubeApiKey) {
+            await new YouTubeCollector({ apiKey: updates.youtubeApiKey }).request('videos', { part: 'id', id: 'wToeNUwRb_k' });
         }
-        if (req.body.geminiApiKey?.trim()) {
+        if (updates.geminiApiKey) {
             try {
-                await new GoogleGenAI({ vertexai: false, apiKey: next.geminiApiKey }).models.get({
+                await new GoogleGenAI({ vertexai: false, apiKey: updates.geminiApiKey }).models.get({
                     model: getModel('discovery'), config: { httpOptions: { timeout: 20000 } }
                 });
             } catch (error) {
@@ -280,22 +350,63 @@ app.post('/api/discovery/settings', async (req, res) => {
                 throw new Error('Gemini Developer API 連線檢查失敗：' + failure.message);
             }
         }
-        next.savedAt = new Date().toISOString();
-        discoverySettings.write(res, next, req.secure || req.get('x-forwarded-proto') === 'https', req.apiSettingsUserId);
-        res.json(discoverySettings.status(next));
+
+        await discoverySettings.saveToDb(req.apiSettingsUserId, updates);
+        const nextSaved = { ...currentSaved, ...updates, savedAt: new Date().toISOString() };
+        req.apiSettingsSaved = nextSaved;
+        const legacyMigration = discoverySettings.legacyMigrationInfo(req, nextSaved);
+        res.json(discoverySettings.status(nextSaved, { legacyMigration }));
     } catch (error) {
-        res.status(502).json({ error: error.message.startsWith('OpenAI') || error.message.startsWith('YouTube') || error.message.startsWith('Gemini') || error.message.includes('DISCOVERY_SETTINGS_SECRET')
-            ? error.message : '無法儲存 API 設定，請檢查伺服器設定目錄權限並重試。' });
+        const msg = error?.message || '';
+        const isConfigError = msg.includes('API_KEYS_ENCRYPTION_SECRET') || msg.includes('加密');
+        const isProviderError = msg.startsWith('OpenAI') || msg.startsWith('YouTube') || msg.startsWith('Gemini');
+        res.status(isConfigError ? 500 : 502).json({
+            error: (isConfigError || isProviderError)
+                ? msg
+                : '無法儲存 API 設定，請稍後重試。'
+        });
+    }
+});
+
+app.post('/api/discovery/settings/migrate-cookie', async (req, res) => {
+    if (!isSameOriginWrite(req) || !req.is('application/json')) {
+        return res.status(403).json({ error: '請從本站 API 設定頁匯入設定。' });
+    }
+    try {
+        const verified = await verifyAccountPassword(req, res, req.body?.currentPassword);
+        if (!verified) return;
+
+        const currentSaved = req.apiSettingsSaved || {};
+        const legacy = discoverySettings.readLegacyCookie(req);
+        const toMigrate = {};
+        const migratedProviders = [];
+        for (const [provider, field] of Object.entries({ gemini: 'geminiApiKey', youtube: 'youtubeApiKey', openai: 'openaiApiKey' })) {
+            if (legacy[field] && !currentSaved[field]) {
+                toMigrate[field] = legacy[field];
+                migratedProviders.push(provider);
+            }
+        }
+        if (migratedProviders.length === 0) {
+            discoverySettings.clearLegacyCookie(res, req.apiSettingsUserId);
+            return res.status(400).json({ error: '目前瀏覽器沒有可匯入的舊版 API 金鑰，請直接輸入金鑰綁定。' });
+        }
+
+        await discoverySettings.saveToDb(req.apiSettingsUserId, toMigrate);
+        discoverySettings.clearLegacyCookie(res, req.apiSettingsUserId);
+        const nextSaved = { ...currentSaved, ...toMigrate, savedAt: new Date().toISOString() };
+        req.apiSettingsSaved = nextSaved;
+        res.json({
+            ...discoverySettings.status(nextSaved, { legacyMigration: { available: false, providers: [] } }),
+            migratedProviders
+        });
+    } catch (error) {
+        const msg = error?.message || '';
+        res.status(500).json({ error: msg.includes('API_KEYS_ENCRYPTION_SECRET') || msg.includes('加密') ? msg : '匯入舊版 API 金鑰失敗，請重新綁定。' });
     }
 });
 
 app.delete('/api/discovery/settings/:provider', async (req, res) => {
-    let sameOrigin = true;
-    if (req.headers.origin) {
-        try { sameOrigin = new URL(req.headers.origin).host === req.get('host'); }
-        catch { sameOrigin = false; }
-    }
-    if (!sameOrigin || req.get('sec-fetch-site') === 'cross-site') {
+    if (!isSameOriginWrite(req)) {
         return res.status(403).json({ error: '請從本站 API 設定頁解除綁定。' });
     }
     const provider = String(req.params.provider || '').trim().toLowerCase();
@@ -303,9 +414,13 @@ app.delete('/api/discovery/settings/:provider', async (req, res) => {
         return res.status(400).json({ error: '不支援的 API 服務類型。' });
     }
     try {
-        const next = discoverySettings.clear(discoverySettings.read(req), provider);
+        const verified = await verifyAccountPassword(req, res, req.body?.currentPassword);
+        if (!verified) return;
+
+        await discoverySettings.deleteFromDb(req.apiSettingsUserId, provider);
+        const next = discoverySettings.clear(req.apiSettingsSaved || {}, provider);
         next.savedAt = new Date().toISOString();
-        discoverySettings.write(res, next, req.secure || req.get('x-forwarded-proto') === 'https', req.apiSettingsUserId);
+        req.apiSettingsSaved = next;
         let aiProviderReset = false;
         if (provider === 'openai' && req.apiSettingsUserId && prisma.user) {
             try {
@@ -324,8 +439,9 @@ app.delete('/api/discovery/settings/:provider', async (req, res) => {
                 }
             } catch (_) { /* Ignore DB reset failure when DB is mocked or unavailable */ }
         }
+        const legacyMigration = discoverySettings.legacyMigrationInfo(req, next);
         res.json({
-            ...discoverySettings.status(next),
+            ...discoverySettings.status(next, { legacyMigration }),
             ...(provider === 'openai' ? { aiProvider: 'gemini', aiProviderReset } : {})
         });
     } catch (error) {
@@ -334,7 +450,7 @@ app.delete('/api/discovery/settings/:provider', async (req, res) => {
 });
 
 app.get('/api/discovery/skills', (req, res) => {
-    res.json({ skills: listSkills(), configured: discoverySettings.status(discoverySettings.read(req)).configured,
+    res.json({ skills: listSkills(), configured: discoverySettings.status(req.apiSettingsSaved || {}).configured,
         platforms: [{ id: 'youtube-shorts', name: 'YouTube Shorts', available: true },
             { id: 'tiktok', name: 'TikTok（尚未串接）', available: false },
             { id: 'instagram-reels', name: 'Instagram Reels（尚未串接）', available: false }] });
@@ -374,7 +490,7 @@ app.post('/api/discovery/search', async (req, res) => {
             return res.status(400).json({ error: '找不到指定的 skill' });
         }
 
-        const keys = discoverySettings.effective(discoverySettings.read(req));
+        const keys = discoverySettings.effective(req.apiSettingsSaved || {});
         if (!keys.youtubeApiKey) {
             return res.status(503).json({ error: '目前網站的 YouTube 搜尋服務暫時無法使用，請稍後重試或於 API 設定填入個人金鑰。', code: 'YOUTUBE_UNAVAILABLE' });
         }
@@ -432,7 +548,7 @@ app.post('/api/discovery/analyze', async (req, res) => {
         return res.status(400).json({ error: '影片 ID 或 SKILL 無效。' });
     }
     try {
-        const keys = discoverySettings.effective(discoverySettings.read(req));
+        const keys = discoverySettings.effective(req.apiSettingsSaved || {});
         if (!keys.geminiApiKey && !enforceSiteGeminiLimit(req, res, 'gemini')) return;
         const client = keys.geminiApiKey ? new GoogleGenAI({ vertexai: false, apiKey: keys.geminiApiKey }) : getGenAI();
         if (keys.geminiApiKey) await client.models.get({ model: getModel('discovery'), config: { httpOptions: { timeout: 20000 } } });
@@ -496,7 +612,7 @@ function toTaipeiTZ(date) {
 
 app.get('/api/ai/providers', (req, res) => {
     res.set('Cache-Control', 'no-store');
-    const saved = discoverySettings.read(req);
+    const saved = req.apiSettingsSaved || {};
     const caps = aiRouter.getCapabilities(requestAIEnv());
     const status = discoverySettings.status(saved);
     res.json({

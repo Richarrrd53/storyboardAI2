@@ -339,12 +339,20 @@ test('HTTP routes support /api/ai/providers, /api/user/ai-provider, and provider
         payload: { image: 'data:image/png;base64,old', finalPrompt: 'Old prompt', emotion: 'calm' }
     };
     const project = { id: 'p1', authorId: 'u1', ratio: '9:16', style: 'Cinematic' };
+    process.env.API_KEYS_ENCRYPTION_SECRET = 'test-openai-account-db-secret-at-least-32-chars';
+    const { ApiKeyCipher } = require('../lib/security/api-key-cipher');
+    const cipher = new ApiKeyCipher({ env: process.env });
     require.cache[prismaPath].exports = {
         PrismaClient: class {
             constructor() {
                 this.user = {
                     findUnique: async () => ({ id: 'u1', name: 'Tester', email: 't@example.com', image: null, plan: 'free', aiProvider: updatedProvider, createAt: new Date() }),
                     update: async ({ data }) => { updatedProvider = data.aiProvider; return { aiProvider: updatedProvider }; }
+                };
+                this.userApiCredential = {
+                    findMany: async ({ where }) => (where.userId === 'u1'
+                        ? [{ userId: 'u1', provider: 'openai', ...cipher.encrypt('sk-personal-fixture-key-1234567890', { userId: 'u1', provider: 'openai' }), updatedAt: new Date() }]
+                        : [])
                 };
                 this.project = { findUnique: async () => project, update: async () => project };
                 this.shot = { findUnique: async () => shot, update: async ({ data }) => Object.assign(shot, data) };
@@ -360,12 +368,8 @@ test('HTTP routes support /api/ai/providers, /api/user/ai-provider, and provider
     await new Promise(resolve => server.once('listening', resolve));
     const base = `http://127.0.0.1:${server.address().port}`;
     const token = require('jsonwebtoken').sign({ id: 'u1' }, process.env.JWT_SECRET);
-    const settings = new (require('../lib/discovery/api-settings').ApiSettings)({ env: { DISCOVERY_SETTINGS_SECRET: 'test-openai-account-cookie-secret-at-least-32' } });
-    process.env.DISCOVERY_SETTINGS_SECRET = 'test-openai-account-cookie-secret-at-least-32';
-    let cookie;
-    settings.write({ cookie(name, value) { cookie = name + '=' + value; } }, { openaiApiKey: 'sk-personal-fixture-key-1234567890' }, false, 'u1');
     const nativeFetch = global.fetch;
-    const fetch = (url, options = {}) => nativeFetch(url, { ...options, headers: { Cookie: cookie, ...options.headers } });
+    const fetch = (url, options = {}) => nativeFetch(url, { ...options, headers: { ...options.headers } });
 
 
     try {

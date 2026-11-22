@@ -107,6 +107,35 @@
 .sb-dialog-form { margin: 24px 0 0; }
 .sb-dialog-label { display: block; margin-bottom: 8px; font-size: var(--font-size-sm); font-weight: var(--font-weight-semibold); }
 .sb-dialog-field { border: 1px solid var(--input-border); border-radius: var(--radius-continuous-md, 16px); background: var(--input-bg); }
+.sb-dialog-field.has-visibility { display: flex; align-items: center; gap: var(--space-1, 4px); padding-right: var(--space-2, 8px); }
+.sb-dialog-field.has-visibility .sb-dialog-input { flex: 1 1 auto; min-width: 0; transition: filter 0.3s cubic-bezier(.4, 0, .2, 1); }
+.sb-dialog-visibility {
+  position: relative; flex-shrink: 0; width: 32px; height: 32px; padding: 0; margin: 0;
+  border: 0; background: none; border-radius: var(--radius-pill, 999px);
+  display: inline-flex; align-items: center; justify-content: center; overflow: hidden; cursor: pointer;
+  transition: transform .3s cubic-bezier(.33, 1.53, .69, .99);
+}
+.sb-dialog-visibility:hover { transform: scale(1.1); }
+.sb-dialog-visibility:active { transform: scale(0.9); }
+.sb-dialog-visibility:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring-color); outline-offset: 2px; }
+.sb-dialog-visibility img { width: 20px; height: 20px; pointer-events: none; }
+.sb-dialog-eye { position: absolute; mask-composite: subtract; -webkit-mask-composite: source-out; }
+.sb-dialog-eye-slash {
+  position: absolute; rotate: 45deg; transform: translateY(0px); height: 24px; width: 24px;
+  transition: transform 0.4s cubic-bezier(.4, 0, .2, 1); pointer-events: none;
+}
+.sb-dialog-eye-mask-svg { position: absolute; width: 24px; height: 24px; pointer-events: none; }
+.sb-dialog-eye-mask { display: flex; align-items: center; justify-content: center; }
+.sb-dialog-eye-mask-cut {
+  position: absolute; transform: translateX(18px) rotate(45deg);
+  transition: transform 0.4s cubic-bezier(.4, 0, .2, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .sb-dialog-field.has-visibility .sb-dialog-input,
+  .sb-dialog-visibility,
+  .sb-dialog-eye-slash,
+  .sb-dialog-eye-mask-cut { transition: none; }
+}
 .sb-dialog-field:focus-within { border-color: var(--focus-ring-color); outline: none; box-shadow: none; }
 .sb-dialog .sb-dialog-input {
   box-sizing: border-box; display: block; width: 100%; min-height: var(--control-height-md, 44px);

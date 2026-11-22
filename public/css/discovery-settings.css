@@ -457,3 +457,48 @@ body.dashboard-layout #page-content.spa-discovery-settings-wrap > .settings-shel
     .settings-shell .key-input,
     .api-settings-dialog .key-input { corner-shape: squircle; }
 }
+
+.legacy-migration-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3, 12px);
+    padding: 14px 16px;
+    margin-bottom: var(--space-4, 16px);
+    border: var(--border-width-thin, 1px) solid var(--color-border-default);
+    border-radius: var(--radius-continuous-md, 16px);
+    background: var(--color-surface-selected);
+}
+.legacy-migration-banner[hidden] {
+    display: none;
+}
+.legacy-migration-copy {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+.legacy-migration-copy strong {
+    display: block;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    margin-bottom: 4px;
+}
+.legacy-migration-copy p {
+    margin: 0;
+    font-size: var(--font-size-xs);
+    line-height: 1.5;
+    color: var(--color-text-secondary);
+}
+.btn-migrate-legacy {
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+@media (max-width: 600px) {
+    .legacy-migration-banner {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .btn-migrate-legacy {
+        width: 100%;
+    }
+}

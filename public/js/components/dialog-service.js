@@ -78,13 +78,60 @@
     const form = node('form', 'sb-dialog-form'); form.noValidate = true;
     let input = null;
     let checkboxInput = null;
+    let blurTimer = null;
     const error = node('p', 'sb-dialog-error'); error.id = `${id}-error`; error.setAttribute('aria-live', 'polite');
     if (kind === 'prompt') {
       const label = node('label', 'sb-dialog-label', opts.label || '分鏡名稱');
-      input = node('input', 'sb-dialog-input'); input.id = `${id}-input`; input.type = 'text';
-      input.value = opts.value == null ? '' : String(opts.value); input.autocomplete = 'off';
+      input = node('input', 'sb-dialog-input'); input.id = `${id}-input`;
+      input.type = opts.inputType || 'text';
+      input.value = opts.value == null ? '' : String(opts.value);
+      input.autocomplete = opts.autocomplete || 'off';
+      if (opts.placeholder) input.placeholder = String(opts.placeholder);
       label.htmlFor = input.id; input.setAttribute('aria-describedby', error.id);
       const field = node('div', 'sb-dialog-field'); field.append(input);
+      if (opts.inputType === 'password' && opts.showPasswordToggle !== false) {
+        field.classList.add('has-visibility');
+        const toggle = node('button', 'sb-dialog-visibility');
+        toggle.type = 'button';
+        toggle.setAttribute('aria-label', '顯示密碼');
+        toggle.setAttribute('aria-pressed', 'false');
+        toggle.setAttribute('aria-controls', input.id);
+        const maskId = `${id}-eye-mask`;
+        toggle.innerHTML =
+          `<img src="/icon/showControl.svg" alt="" class="sb-dialog-eye" style="mask:url(#${maskId});-webkit-mask:url(#${maskId});">` +
+          `<img src="/icon/showSlash.svg" alt="" class="sb-dialog-eye-slash">` +
+          `<svg class="sb-dialog-eye-mask-svg" viewBox="0 0 60 60" aria-hidden="true">` +
+            `<defs><mask id="${maskId}" class="sb-dialog-eye-mask">` +
+              `<rect x="0" y="0" width="24" height="24" rx="1" ry="1" fill="#ffffff"/>` +
+              `<rect class="sb-dialog-eye-mask-cut" x="0" y="0" width="2" height="34" rx="1" ry="1" fill="#000000"/>` +
+            `</mask></defs>` +
+          `</svg>`;
+        const slash = toggle.querySelector?.('.sb-dialog-eye-slash');
+        const maskCut = toggle.querySelector?.('.sb-dialog-eye-mask-cut');
+        let showing = false;
+        toggle.addEventListener('click', () => {
+          showing = !showing;
+          const nextType = showing ? 'text' : 'password';
+          toggle.setAttribute('aria-pressed', String(showing));
+          toggle.setAttribute('aria-label', showing ? '隱藏密碼' : '顯示密碼');
+          if (slash) slash.style.transform = showing ? 'translateY(-36px)' : 'translateY(0px)';
+          if (maskCut) maskCut.style.transform = showing ? 'translate(54px, -36px) rotate(45deg)' : 'translate(18px, 0px) rotate(45deg)';
+          clearTimeout(blurTimer);
+          const applyType = () => {
+            if (settled) return;
+            input.style.filter = 'blur(0px)';
+            input.type = nextType;
+          };
+          if (motion?.matches) {
+            applyType();
+          } else {
+            input.style.filter = 'blur(3px)';
+            blurTimer = setTimeout(applyType, 300);
+          }
+          input.focus();
+        });
+        field.append(toggle);
+      }
       form.append(label, field);
     }
     form.append(error);
@@ -117,8 +164,9 @@
     });
     if (input) input.select();
     function dispose(result) {
-      clearTimeout(timer); modalMotion?.cancel(overlay); animations.forEach(a => a.cancel());
+      clearTimeout(timer); clearTimeout(blurTimer); modalMotion?.cancel(overlay); animations.forEach(a => a.cancel());
       entry.signal?.removeEventListener('abort', entry.abort);
+      if (input && opts.inputType === 'password') input.value = '';
       overlay.remove(); lease.release({ restoreFocus: result.reason !== 'abort' });
       active = null; entry.resolve(result); drain();
     }
@@ -168,7 +216,7 @@
         const message = await opts.validate?.(value);
         if (settled) return;
         if (message) throw new Error(message);
-        submit.textContent = opts.onSubmit ? '儲存中…' : submit.textContent;
+        submit.textContent = opts.onSubmit ? (opts.submittingText || '儲存中…') : submit.textContent;
         await opts.onSubmit?.(value);
         if (settled) return;
         finish(kind === 'alert' ? { dismissed: true, reason: 'acknowledge' } : kind === 'prompt' ? withCheckbox({ confirmed: true, value }) : withCheckbox({ confirmed: true }));

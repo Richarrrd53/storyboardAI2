@@ -28,6 +28,13 @@
             </div>
             <form id="api-settings-form" autocomplete="off">
                 <div id="api-settings-scroll" class="api-settings-scroll">
+                <div id="legacy-migration-banner" class="legacy-migration-banner" hidden>
+                    <div class="legacy-migration-copy">
+                        <strong>偵測到舊版瀏覽器金鑰</strong>
+                        <p id="legacy-migration-desc">可驗證帳號密碼後一次性匯入至您的帳號，以便跨裝置同步使用。</p>
+                    </div>
+                    <button id="migrate-legacy-keys" class="btn btn-secondary btn-migrate-legacy" type="button">匯入至帳號</button>
+                </div>
                 <fieldset id="key-fields" disabled>
                     <div class="settings-category" aria-labelledby="cat-generative-title">
                         <div class="settings-category-head">
@@ -271,14 +278,18 @@
             return data;
         }
 
+        function isPersonalState(state) {
+            return Boolean(state?.personalConfigured || ((state?.source === 'account' || state?.source === 'browser') && state?.configured));
+        }
+
         function formatProviderState(provider, state) {
-            const personal = Boolean(state?.personalConfigured || (state?.source === 'browser' && state?.configured));
+            const personal = isPersonalState(state);
             if (provider === 'openai') {
                 return personal
                     ? { badge: '已綁定', summary: '個人金鑰', ready: true, unavailable: false }
                     : { badge: '未綁定', summary: '未綁定', ready: false, unavailable: true };
             }
-            if (personal) return { badge: '個人金鑰', summary: '個人金鑰', ready: true, unavailable: false };
+            if (personal) return { badge: '已綁定', summary: '個人金鑰', ready: true, unavailable: false };
             if (state?.configured) return { badge: '網站提供', summary: '網站提供', ready: true, unavailable: false };
             return { badge: '暫不可用', summary: '暫不可用', ready: false, unavailable: true };
         }
@@ -290,7 +301,7 @@
             const switchHint = find(`${provider}-switch-hint`);
             const siteNotice = provider === 'gemini' ? find('gemini-site-notice') : null;
             const state = current?.[provider] || {};
-            const personal = Boolean(state.personalConfigured || (state.source === 'browser' && state.configured));
+            const personal = isPersonalState(state);
 
             for (const radio of findAll(`input[name="${provider}Mode"]`)) {
                 radio.checked = radio.value === mode;
@@ -309,9 +320,20 @@
             status.textContent = summary(data);
             status.className = `status-chip ${data.configured ? 'is-ready' : 'is-pending'}`;
 
+            const migrationBanner = find('legacy-migration-banner');
+            const migrationDesc = find('legacy-migration-desc');
+            if (migrationBanner) {
+                const legacy = data?.legacyMigration;
+                migrationBanner.hidden = !legacy?.available;
+                if (legacy?.available && migrationDesc && Array.isArray(legacy.providers)) {
+                    const labels = legacy.providers.map(p => p === 'youtube' ? 'YouTube' : p === 'openai' ? 'OpenAI' : 'Gemini').join('、');
+                    migrationDesc.textContent = `偵測到此瀏覽器尚有舊版加密儲存的 ${labels} 金鑰，可驗證帳號密碼後一次性匯入至您的帳號，以便跨裝置同步使用。`;
+                }
+            }
+
             for (const provider of ['gemini', 'youtube', 'openai']) {
                 const state = data[provider] || { configured: false };
-                const personal = Boolean(state.personalConfigured || (state.source === 'browser' && state.configured));
+                const personal = isPersonalState(state);
                 const formatted = formatProviderState(provider, state);
                 const input = find(`${provider}-key`), badge = find(`${provider}-status`), sumVal = find(`summary-${provider}`);
 
@@ -326,7 +348,7 @@
                 if (input) {
                     input.required = false;
                     input.placeholder = personal
-                        ? '已綁定個人金鑰（留空保留，貼上新金鑰可更換）'
+                        ? '已綁定（••••••••••••，留空保留，貼上新金鑰可更換）'
                         : `貼上 ${provider === 'youtube' ? 'YouTube' : provider === 'openai' ? 'OpenAI' : 'Gemini'} API Key`;
                 }
                 for (const unbindBtn of findAll(`[data-unbind="${provider}"]`)) {
@@ -405,6 +427,38 @@
             return true;
         }
 
+        async function verifyPasswordAndRun({ confirmText = '驗證並儲存', danger = false, returnFocus, onVerify }) {
+            if (window.DialogService?.prompt) {
+                const result = await window.DialogService.prompt({
+                    title: '驗證帳號密碼',
+                    description: '為了保護你的 API 金鑰，修改敏感設定前需要再次確認帳號密碼。',
+                    label: '目前的帳號密碼',
+                    inputType: 'password',
+                    autocomplete: 'current-password',
+                    placeholder: '輸入目前的帳號密碼',
+                    confirmText,
+                    submittingText: '驗證中…',
+                    cancelText: '取消',
+                    danger: Boolean(danger),
+                    returnFocus,
+                    signal: controller.signal,
+                    validate: value => (value && value.length > 0 ? '' : '請輸入目前的帳號密碼。'),
+                    onSubmit: async password => {
+                        await onVerify(password);
+                    }
+                });
+                return Boolean(result?.confirmed);
+            }
+            if (typeof window.prompt === 'function') {
+                const password = window.prompt('為了保護你的 API 金鑰，修改敏感設定前需要再次確認帳號密碼。\n請輸入目前的帳號密碼：');
+                if (!password) return false;
+                await onVerify(password);
+                return true;
+            }
+            await onVerify('');
+            return true;
+        }
+
         async function handleUnbind(provider, triggerBtn) {
             if (!active() || saving || loading || !current) return;
             const confirmed = await confirmUnbind(provider, triggerBtn);
@@ -416,10 +470,23 @@
             save.disabled = true;
             message.classList.remove('is-success');
             message.classList.add('is-pending');
-            message.textContent = '正在解除綁定，請稍候…';
+            message.textContent = '請驗證帳號密碼以解除綁定…';
             try {
-                const data = await request(null, { method: 'DELETE', url: `/api/discovery/settings/${provider}` });
+                let data = null;
+                const verified = await verifyPasswordAndRun({
+                    confirmText: '驗證並解除綁定',
+                    danger: true,
+                    returnFocus: triggerBtn,
+                    onVerify: async currentPassword => {
+                        data = await request({ currentPassword }, { method: 'DELETE', url: `/api/discovery/settings/${provider}` });
+                    }
+                });
                 if (!active()) return;
+                if (!verified || !data) {
+                    message.classList.remove('is-pending', 'is-success');
+                    message.textContent = '';
+                    return;
+                }
                 clearInputs(provider);
                 render(data);
                 message.classList.remove('is-pending');
@@ -448,6 +515,54 @@
                 }
             }
         }
+
+        const migrateBtn = find('migrate-legacy-keys');
+        listen(migrateBtn, 'click', async () => {
+            if (!active() || saving || loading || !current) return;
+            saving = true;
+            form.setAttribute('aria-busy', 'true');
+            fields.disabled = true;
+            save.disabled = true;
+            if (migrateBtn) migrateBtn.disabled = true;
+            message.classList.remove('is-success');
+            message.classList.add('is-pending');
+            message.textContent = '請驗證帳號密碼以匯入舊版金鑰…';
+            try {
+                let data = null;
+                const verified = await verifyPasswordAndRun({
+                    confirmText: '驗證並匯入',
+                    returnFocus: migrateBtn,
+                    onVerify: async currentPassword => {
+                        data = await request({ currentPassword }, { method: 'POST', url: '/api/discovery/settings/migrate-cookie' });
+                    }
+                });
+                if (!active()) return;
+                if (!verified || !data) {
+                    message.classList.remove('is-pending', 'is-success');
+                    message.textContent = '';
+                    return;
+                }
+                render(data);
+                message.classList.remove('is-pending');
+                message.classList.add('is-success');
+                message.textContent = '舊版 API 金鑰已加密匯入至您的帳號，可跨裝置同步使用。';
+                window.spaAuth?.fetchAiCapabilities?.({ force: true });
+                window.dispatchEvent?.(new CustomEvent('discovery:settings-updated', { detail: data }));
+                onSaved?.(data);
+            } catch (error) {
+                if (!active()) return;
+                message.classList.remove('is-pending', 'is-success');
+                message.textContent = error.message || '匯入失敗，請直接輸入金鑰重新綁定。';
+            } finally {
+                saving = false;
+                if (active()) {
+                    form.setAttribute('aria-busy', 'false');
+                    fields.disabled = false;
+                    save.disabled = false;
+                    if (migrateBtn) migrateBtn.disabled = false;
+                }
+            }
+        });
 
         listen(retry, 'click', load);
 
@@ -501,18 +616,42 @@
                 .filter(([name]) => ['openaiApiKey', 'youtubeApiKey', 'geminiApiKey'].includes(name))
                 .map(([name, value]) => [name, String(value).trim()]);
             const payload = Object.fromEntries(entries);
+            const hasKeyUpdates = Object.values(payload).some(v => v.length > 0);
             saving = true; form.setAttribute('aria-busy', 'true'); fields.disabled = true; save.disabled = true; save.textContent = '檢查連線並儲存中…';
-            message.classList.remove('is-success'); message.classList.add('is-pending'); message.textContent = '正在檢查新金鑰，請稍候。';
+            message.classList.remove('is-success'); message.classList.add('is-pending');
+            message.textContent = hasKeyUpdates ? '請驗證帳號密碼以儲存新金鑰…' : '正在確認目前設定…';
             if (returnLink) returnLink.hidden = true;
             try {
-                const data = await request(payload), persisted = await request();
+                let data = null;
+                if (hasKeyUpdates) {
+                    const verified = await verifyPasswordAndRun({
+                        confirmText: '驗證並儲存',
+                        returnFocus: save,
+                        onVerify: async currentPassword => {
+                            data = await request({ ...payload, currentPassword });
+                        }
+                    });
+                    if (!active()) return;
+                    if (!verified || !data) {
+                        message.classList.remove('is-pending', 'is-success');
+                        message.textContent = '';
+                        if (returnLink) returnLink.hidden = !current?.configured;
+                        return;
+                    }
+                } else {
+                    data = await request(payload);
+                    if (!active()) return;
+                }
+                const persisted = await request();
                 if (!active()) return;
-                if (persisted.savedAt !== data.savedAt) throw new Error('瀏覽器未保存設定，請允許本站 Cookie 後再試一次。');
+                if (persisted.savedAt !== data.savedAt) throw new Error('設定狀態同步失敗，請重新讀取後再試一次。');
                 clearInputs();
                 render(persisted);
                 message.classList.remove('is-pending');
                 message.classList.add('is-success');
-                message.textContent = '金鑰已通過連線檢查並加密儲存，後續請求將使用新設定。';
+                message.textContent = hasKeyUpdates
+                    ? '金鑰已通過連線檢查並加密儲存至帳號，後續跨裝置登入將自動同步。'
+                    : '目前已保存的設定維持不變。';
                 window.spaAuth?.fetchAiCapabilities?.({ force: true });
                 window.dispatchEvent?.(new CustomEvent('discovery:settings-updated', { detail: persisted }));
                 onSaved?.(persisted);

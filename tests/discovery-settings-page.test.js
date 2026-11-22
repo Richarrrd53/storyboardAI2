@@ -88,3 +88,30 @@ test('Discovery page removes back-link and settings page keeps 3 API fields, rad
  assert.equal(/vertex\s*ai|\badc\b/i.test(settingsJs),false);
  assert.equal(/vertex\s*ai|\badc\b/i.test(shellJs),false);
 });
+test('Settings save and unbind require password dialog confirmation and cancel aborts without DB write',async()=>{
+ const f=fixture([response(status(true)),response(status(true,9)),response(status(true,9))]);await tick();
+ let promptCount=0,cancelNext=true;
+ f.ctx.DialogService={
+  confirm:async()=>({confirmed:true}),
+  prompt:async opts=>{
+   promptCount++;
+   if(cancelNext)return{confirmed:false,reason:'cancel'};
+   await opts.onSubmit('user-secret-pw');
+   return{confirmed:true,value:'user-secret-pw'};
+  }
+ };
+ f.ids['youtube-key'].value='fixture-youtube-new';
+ await f.form.emit('submit');
+ assert.equal(promptCount,1);
+ assert.equal(f.calls.filter(c=>c.method==='POST').length,0);
+ assert.equal(f.ids['youtube-key'].value,'fixture-youtube-new');
+
+ cancelNext=false;
+ await f.form.emit('submit');
+ assert.equal(promptCount,2);
+ const postCall=f.calls.find(c=>c.method==='POST');
+ assert.ok(postCall);
+ assert.equal(JSON.parse(postCall.body).currentPassword,'user-secret-pw');
+ assert.equal(f.ids['youtube-key'].value,'');
+ f.owner.unmount();
+});

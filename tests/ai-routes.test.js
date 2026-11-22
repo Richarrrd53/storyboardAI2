@@ -4,7 +4,9 @@ const assert = require('node:assert/strict');
 test('AI routes preserve task contracts, edited shots and provider isolation', async () => {
     Object.assign(process.env, { NODE_ENV: 'production', JWT_SECRET: 'ai-route-fixture',
         GOOGLE_CLOUD_PROJECT_ID: 'fixture', GOOGLE_APPLICATION_CREDENTIALS: '', GCP_SERVICE_ACCOUNT_BASE64: '',
-        GEMINI_API_KEY: '', GOOGLE_API_KEY: '', DISCOVERY_SETTINGS_SECRET: 'fixture-only-encryption-secret-long-enough' });
+        GEMINI_API_KEY: '', GOOGLE_API_KEY: '',
+        API_KEYS_ENCRYPTION_SECRET: 'fixture-only-db-encryption-secret-long-enough',
+        DISCOVERY_SETTINGS_SECRET: 'fixture-only-encryption-secret-long-enough' });
     const { getModel } = require('../lib/ai/model-config');
     const sdkPath = require.resolve('@google/genai');
     const originalSdk = require(sdkPath);
@@ -22,12 +24,20 @@ test('AI routes preserve task contracts, edited shots and provider isolation', a
     const shot = { id: 's', projectId: 'p', order: 1, title: 'Edited shot', camera: 'close-up',
         createAt: new Date(), updateAt: new Date(), payload: { image: 'data:image/png;base64,old', finalPrompt: 'Edited prompt', emotion: 'calm', custom: 'keep' } };
     const project = { id: 'p', authorId: 'u', ratio: '9:16', style: 'Watercolor' };
+    const { ApiKeyCipher } = require('../lib/security/api-key-cipher');
+    const cipher = new ApiKeyCipher({ env: process.env });
+    let activeGeminiKey = 'fixture-personal-key-1234567890';
     const prismaPath = require.resolve('@prisma/client');
     const originalPrisma = require(prismaPath);
     require.cache[prismaPath].exports = { PrismaClient: class {
         constructor() {
             this.project = { findUnique: async () => project, update: async () => project };
             this.shot = { findUnique: async () => shot, update: async ({ data }) => { writes++; Object.assign(shot, data); return shot; } };
+            this.userApiCredential = {
+                findMany: async ({ where }) => (where.userId === 'u'
+                    ? [{ userId: 'u', provider: 'gemini', ...cipher.encrypt(activeGeminiKey, { userId: 'u', provider: 'gemini' }), updatedAt: new Date() }]
+                    : [])
+            };
         }
     } };
     const app = require('../server');
@@ -35,10 +45,8 @@ test('AI routes preserve task contracts, edited shots and provider isolation', a
     await new Promise(resolve => server.once('listening', resolve));
     const base = `http://127.0.0.1:${server.address().port}`;
     const token = require('jsonwebtoken').sign({ id: 'u' }, process.env.JWT_SECRET);
-    let accountCookie;
-    new (require('../lib/discovery/api-settings').ApiSettings)().write({ cookie(name, value) { accountCookie = name + '=' + value; } }, { geminiApiKey: 'fixture-personal-key-1234567890' }, false, 'u');
-    const post = async (url, body, cookie = accountCookie) => {
-        const res = await fetch(base + url, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, Cookie: cookie }, body: JSON.stringify(body) });
+    const post = async (url, body) => {
+        const res = await fetch(base + url, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(body) });
         return { status: res.status, data: await res.json() };
     };
     const parts = values => ({ candidates: [{ content: { parts: values } }] });
@@ -131,10 +139,8 @@ test('AI routes preserve task contracts, edited shots and provider isolation', a
         assert.equal(request.model, getModel('discovery'));
         assert.equal(request.config.thinkingConfig.thinkingLevel, 'MEDIUM');
         assert.match(request.contents[0].parts[0].fileData.fileUri, /youtube.com/);
-        const { ApiSettings } = require('../lib/discovery/api-settings');
-        let cookie;
-        new ApiSettings().write({ cookie: (name, value) => { cookie = `${name}=${value}`; } }, { geminiApiKey: 'fixture-developer-api-key-12345' }, false, 'u');
-        const developer = await post('/api/discovery/analyze', { videoId: 'abcdefghijk', skill: 'short-video-template-lab' }, cookie);
+        activeGeminiKey = 'fixture-developer-api-key-12345';
+        const developer = await post('/api/discovery/analyze', { videoId: 'abcdefghijk', skill: 'short-video-template-lab' });
         assert.equal(developer.data.provider, 'gemini-developer-api');
         assert.equal(checkedModel, getModel('discovery'));
         assert.equal(clientOptions.vertexai, false);
