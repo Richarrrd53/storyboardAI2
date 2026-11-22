@@ -100,9 +100,10 @@
     const d = Object.hasOwn(drafts, q.id) ? drafts[q.id] : { values: [], other: '', otherActive: false };
     const multi = q.type === 'multi_choice', free = q.type === 'free_text';
     const otherActive = free || d.otherActive === true;
+    const checkboxVisual = multi ? '<span class="checkbox-wrapper" aria-hidden="true"><span class="checkbox-bg"></span><svg class="checkbox-icon" viewBox="0 0 24 24" fill="none"><path class="check-path" d="M4 12L10 18L20 6" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>' : '';
     return `<fieldset class="copilot-question"><legend>${esc(q.label)}${q.required ? '（必填）' : ''}</legend><p class="section-hint">${esc(q.description)}</p>${multi ? `<p class="section-hint">既有選項可選 ${q.min}–${q.max} 項，另可自行補充。</p>` : ''}
-      <div class="copilot-options" data-question="${esc(q.id)}">${(q.options || []).map((o, i) => `<label class="copilot-option ${d.values.includes(o.value) ? 'is-selected' : ''}"><input type="${multi ? 'checkbox' : 'radio'}" name="${esc(q.id)}" value="${i}" ${d.values.includes(o.value) ? 'checked' : ''}><span><strong>${esc(o.label)}</strong>${o.value === q.recommended ? '<small class="copilot-recommend">推薦</small>' : ''}<span>${esc(o.description)}</span></span></label>`).join('')}
-      ${!free && q.allowOther ? `<label class="copilot-option ${otherActive ? 'is-selected' : ''}"><input type="${multi ? 'checkbox' : 'radio'}" name="${esc(q.id)}" value="other" ${otherActive ? 'checked' : ''}><span><strong>其他／自行描述</strong><span>用自己的方式描述${multi ? '補充元素' : '故事方向'}。</span></span></label>` : ''}</div>
+      <div class="copilot-options" data-question="${esc(q.id)}">${(q.options || []).map((o, i) => `<label class="copilot-option ${d.values.includes(o.value) ? 'is-selected' : ''}"><input type="${multi ? 'checkbox' : 'radio'}" name="${esc(q.id)}" value="${i}" ${d.values.includes(o.value) ? 'checked' : ''}>${checkboxVisual}<span><strong>${esc(o.label)}</strong>${o.value === q.recommended ? '<small class="copilot-recommend">推薦</small>' : ''}<span>${esc(o.description)}</span></span></label>`).join('')}
+      ${!free && q.allowOther ? `<label class="copilot-option ${otherActive ? 'is-selected' : ''}"><input type="${multi ? 'checkbox' : 'radio'}" name="${esc(q.id)}" value="other" ${otherActive ? 'checked' : ''}>${checkboxVisual}<span><strong>其他／自行描述</strong><span>用自己的方式描述${multi ? '補充元素' : '故事方向'}。</span></span></label>` : ''}</div>
       <label class="copilot-other" data-other-wrap="${esc(q.id)}" ${otherActive ? '' : 'hidden'}>${free ? '你的回答' : '描述你的方向'}<textarea data-other="${esc(q.id)}" maxlength="2000" rows="2" ${otherActive ? '' : 'disabled'}>${esc(d.other)}</textarea></label></fieldset>`;
   }
   function briefMarkup(b) {
@@ -340,7 +341,43 @@
   function advance() { captureStory(); cancel(); syncSettings(); notify('advance'); }
   function startTemplateDiscussion() { const s = session(), c = prepare(s.story); cancel(); s.discussionStage = 'template'; s.currentStep = 'template-discussion'; c.response = null; c.rounds = 0; c.retry = null; c.error = ''; c.drafts = {}; c.active = true; request('start'); }
   function discuss() { const c = prepare(session().story); c.active = true; c.continuing = true; notify('discuss'); render(); document.getElementById('copilot-message')?.focus(); }
-  function editStory() { cancel(); const c = session().copilot; if (c) { c.active = false; c.stackEntered = false; } render(); notify('edit-story'); const input = document.getElementById('story-input'); if (input) { input.value = session().story; input.focus({ preventScroll: true }); } }
+  function isMobileView() {
+    if (root.AppShell?.isMobileView) return root.AppShell.isMobileView();
+    if (typeof root.isMobileView === 'function') return root.isMobileView();
+    return Boolean(root.matchMedia?.('(max-width: 768px), (max-width: 767px) and (orientation: portrait), (max-width: 480px)').matches);
+  }
+  async function editStory() {
+    cancel();
+    const s = session();
+    if (isMobileView() && root.spaNavigate && (root.QuickCompose?.open || root.CreationController?.openQuickCompose)) {
+      const originalStory = s.story || s.draft?.story || '';
+      const returnContext = s.returnContext;
+      const templateEntry = {
+        generationMode: s.generationMode,
+        selectedTemplate: s.selectedTemplate,
+        selectedTemplateId: s.selectedTemplateId,
+        returnContext
+      };
+      const prevRoute = root.CreationController?.previousRoute;
+      const targetPage = (returnContext?.page && returnContext.page !== 'generate')
+        ? returnContext.page
+        : (prevRoute && prevRoute !== 'generate' ? prevRoute : 'dashboard');
+      root.CreationController?.reset?.({ preserveSurface: true });
+      Object.assign(s, templateEntry);
+      s.draft.story = originalStory;
+      root.CreationController?.publish?.();
+      await root.spaNavigate(targetPage, { ...(returnContext?.templateId ? { templateId: returnContext.templateId } : {}), skipLeaveGuard: true });
+      if (root.QuickCompose?.open) root.QuickCompose.open();
+      else root.CreationController?.openQuickCompose?.();
+      return;
+    }
+    const c = s.copilot;
+    if (c) { c.active = false; c.stackEntered = false; }
+    render();
+    notify('edit-story');
+    const input = document.getElementById('story-input');
+    if (input) { input.value = s.story; input.focus({ preventScroll: true }); }
+  }
   function mount(signal, onAction) {
     notify = action => {
       if (action === 'advance' || action === 'ready') {

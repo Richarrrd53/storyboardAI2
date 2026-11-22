@@ -531,3 +531,24 @@ test('QuickCompose: bindEvents() guards against missing DOM elements and tracks 
   assert.equal(QuickCompose.bindEvents(), true, 'bindEvents must rebind to newly created elements');
 });
 
+test('QuickCompose: open() prefetches /generate HTML and assets in the background', async () => {
+  const { win, QuickCompose } = setupMockEnvironment();
+  const prefetchedPages = [];
+  const fetchedUrls = [];
+  win.PageAssetLoader = {
+    prefetchPage: async page => { prefetchedPages.push(page); }
+  };
+  win.fetch = async url => {
+    fetchedUrls.push(url);
+    return { ok: true };
+  };
+
+  QuickCompose.mount();
+  QuickCompose.open();
+  await new Promise(resolve => setTimeout(resolve, 10));
+
+  assert.deepEqual(prefetchedPages, ['generate']);
+  assert.ok(fetchedUrls.includes('/css/generate.css'));
+  assert.ok(fetchedUrls.includes('/js/generate.js?v=20261006-4'));
+});
+

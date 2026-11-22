@@ -749,7 +749,7 @@
 .editor-field-textarea:focus {
   outline: none;
   border-color: var(--color-brand-primary, #2563eb);
-  box-shadow: 0 0 0 3px var(--color-brand-primary-soft, rgba(37, 99, 235, 0.15));
+  box-shadow: none;
 }
 
 /* 拆解的鏡頭語言 (景別、視角、運鏡、時長) */
@@ -792,7 +792,7 @@
 .editor-camera-item input:focus {
   outline: none;
   border-color: var(--color-brand-primary, #2563eb);
-  box-shadow: 0 0 0 2px var(--color-brand-primary-soft, rgba(37, 99, 235, 0.15));
+  box-shadow: none;
 }
 
 /* AI 提示詞與操作按鈕 */

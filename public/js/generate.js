@@ -653,6 +653,8 @@
       container.querySelectorAll('[data-select]').forEach(button => bindPageEvent(button, 'click', () => selectTemplateCard({ id: button.dataset.select })));
       container.querySelectorAll('img').forEach(img => bindPageEvent(img, 'error', () => { img.hidden = true; }));
       container.scrollTop = browserState().scrollTop || 0;
+      window.DynamicMaskSystem?.attach?.(container, { maskSize: 36, direction: 'vertical' });
+      window.DynamicMaskSystem?.update?.(container);
       const confirm = document.getElementById('btn-template-confirm');
       if (confirm) { confirm.disabled = !CreationSessionStore.selectedTemplate || templateLoading; confirm.textContent = '確認模板，繼續討論'; }
   }
@@ -773,18 +775,24 @@
   }
   window.abortGeneration = abortGeneration;
 
-  async function resetCreationWorkflow() {
-      if (!await window.CreationController.newCreation()) return;
+  function clearGenerateWorkspaceUI() {
       renderedPlan = ''; requestedTemplateId = null; templateLoading = false;
-      document.getElementById('generation-result-wrap').style.display = 'none';
-      document.getElementById('generation-progress-wrap').style.display = 'none';
+      const resultWrap = document.getElementById('generation-result-wrap');
+      if (resultWrap) resultWrap.style.display = 'none';
+      const progressWrap = document.getElementById('generation-progress-wrap');
+      if (progressWrap) progressWrap.style.display = 'none';
       for (const id of ['storyboard-grid', 'generated-storyboard-body', 'plan-shots']) document.getElementById(id)?.replaceChildren();
       const confirmation = document.getElementById('confirm-before-images');
       if (confirmation) confirmation.checked = false;
-      document.getElementById('storyboard-grid').hidden = false;
-      document.getElementById('generated-storyboard-table').hidden = true;
+      const grid = document.getElementById('storyboard-grid');
+      if (grid) grid.hidden = false;
+      const table = document.getElementById('generated-storyboard-table');
+      if (table) table.hidden = true;
       window.CreativeCopilot?.render();
-      document.getElementById('generation-error-banner').hidden = true;
+      const errorBanner = document.getElementById('generation-error-banner');
+      if (errorBanner) errorBanner.hidden = true;
+      const recovery = document.getElementById('creation-recovery-notice');
+      if (recovery) { recovery.textContent = ''; recovery.hidden = true; }
       const phaseTitle = document.querySelector('.generation-phase-title');
       if (phaseTitle) phaseTitle.style.display = '';
       CreationSessionStore.targetPhase = 1;
@@ -795,9 +803,45 @@
       CreationSessionStore.draft.story = '';
       const input = document.getElementById('story-input');
       if (input) input.value = '';
+      window.QuickCompose?.updateProgress?.();
       switchPhase(1);
   }
+
+  async function resetCreationWorkflow() {
+      if (!await window.CreationController.newCreation()) return;
+      clearGenerateWorkspaceUI();
+  }
   window.resetCreationWorkflow = resetCreationWorkflow;
+
+  async function startNewGenerationSession() {
+      const confirmed = window.DialogService?.confirm
+          ? (await window.DialogService.confirm({
+              title: '是否結束目前的工作階段',
+              description: '結束後生成階段會回歸到初始狀態並重新開始，不會保留紀錄。',
+              confirmText: '結束並重新開始',
+              cancelText: '取消',
+              danger: true
+          }))?.confirmed === true
+          : (window.confirm?.('是否結束目前的工作階段\n結束後生成階段會回歸到初始狀態並重新開始，不會保留紀錄。') ?? false);
+      if (!confirmed) return;
+      const returnContext = CreationSessionStore.returnContext;
+      const prevRoute = window.CreationController?.previousRoute;
+      const targetPage = (returnContext?.page && returnContext.page !== 'generate')
+          ? returnContext.page
+          : (prevRoute && prevRoute !== 'generate' ? prevRoute : 'dashboard');
+      const isMobile = window.AppShell?.isMobileView?.()
+          || Boolean(window.matchMedia?.('(max-width: 768px), (max-width: 767px) and (orientation: portrait), (max-width: 480px)').matches);
+      window.CreationController.reset({ preserveSurface: true });
+      if (isMobile && window.spaNavigate && (window.QuickCompose?.open || window.CreationController?.openQuickCompose)) {
+          window.QuickCompose?.updateProgress?.();
+          await window.spaNavigate(targetPage, { ...(returnContext?.templateId ? { templateId: returnContext.templateId } : {}), skipLeaveGuard: true });
+          if (window.QuickCompose?.open) window.QuickCompose.open();
+          else window.CreationController?.openQuickCompose?.();
+          return;
+      }
+      clearGenerateWorkspaceUI();
+  }
+  window.startNewGenerationSession = startNewGenerationSession;
 
   // ════════════════════════════════════════════════════════════
   // 7. Helpers & API Connections
@@ -949,6 +993,9 @@
       bindPageEvent(document.getElementById('browse-template-library'), 'click', () => { window.CreationController.checkpoint(); window.spaNavigate('template'); });
       bindPageEvent(document.getElementById('remove-selected-template'), 'click', () => { window.CreationController.setTemplateMode(false); if (mode) mode.checked = false; renderTemplateSelection(); });
       bindPageEvent(document.getElementById('change-selected-template'), 'click', () => { window.CreationController.setTemplateMode(true); switchPhase(3); });
+      bindPageEvent(document.getElementById('btn-new-creation-session'), 'click', () => {
+          startNewGenerationSession();
+      });
       bindPageEvent(document.getElementById('btn-workspace-back'), 'click', () => {
           const phase = CreationSessionStore.currentPhase;
           if (phase === 5) { switchPhase(2); return; }

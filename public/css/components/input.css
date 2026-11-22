@@ -26,13 +26,13 @@
 .input-text:focus-visible,
 .search-input:focus,
 .search-input:focus-visible,
-input:focus,
-input:focus-visible,
+input:not([type="checkbox"]):not([type="radio"]):focus,
+input:not([type="checkbox"]):not([type="radio"]):focus-visible,
 textarea:focus,
 textarea:focus-visible {
   outline: none;
   border-color: var(--color-brand-primary, #2563eb);
-  box-shadow: var(--focus-ring-shadow);
+  box-shadow: none;
 }
 
 .form-input::placeholder,
@@ -76,13 +76,136 @@ textarea.input-text {
   line-height: var(--line-height-normal, 1.5);
 }
 
-/* Inputs never use native CSS outline; focus uses border-color and box-shadow. */
+/* Inputs and checkboxes never use native CSS outline or focus-ring box-shadow. */
 input, textarea, select,
 input:focus, input:focus-visible,
 textarea:focus, textarea:focus-visible,
 select:focus, select:focus-visible {
   outline: none !important;
+  box-shadow: none;
+}
+input[type="checkbox"],
+input[type="checkbox"]:focus,
+input[type="checkbox"]:focus-visible,
+input[type="radio"],
+input[type="radio"]:focus,
+input[type="radio"]:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
 }
 .form-input, .input-text, .search-input { min-height: var(--control-height-md); }
 .form-input:disabled, .input-text:disabled, .search-input:disabled { opacity: var(--opacity-disabled); cursor: not-allowed; }
 .form-input[aria-invalid="true"], .input-text[aria-invalid="true"], .search-input[aria-invalid="true"] { border-color: var(--color-border-danger); }
+
+/* ── Animated Brand Checkbox (no outer container, no focus outline) ── */
+:is(.creation-checkbox, .sb-dialog-checkbox, .copilot-option, .ios-checkbox, .sb-checkbox) {
+  --checkbox-size: 20px;
+  --checkbox-color: var(--color-brand-primary, #2563eb);
+  --checkbox-border: var(--color-brand-primary-light, #60a5fa);
+  --checkbox-surface: var(--color-surface-primary, #ffffff);
+  --checkbox-check: var(--color-text-inverse, #ffffff);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.creation-checkbox:has(input[type="checkbox"]),
+.sb-dialog-checkbox:has(input[type="checkbox"]),
+.ios-checkbox,
+.sb-checkbox {
+  position: relative;
+}
+
+:is(.creation-checkbox, .sb-dialog-checkbox, .copilot-option, .ios-checkbox, .sb-checkbox) input[type="checkbox"]:has(+ .checkbox-wrapper) {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  pointer-events: none;
+}
+
+.checkbox-wrapper {
+  position: relative;
+  display: inline-block;
+  flex: 0 0 var(--checkbox-size, 20px);
+  width: var(--checkbox-size, 20px);
+  height: var(--checkbox-size, 20px);
+  border-radius: 7px;
+  transition: transform 0.2s var(--motion-ease-standard, ease);
+}
+
+.checkbox-bg {
+  position: absolute;
+  inset: 0;
+  border-radius: 7px;
+  border: 2px solid var(--checkbox-border, #60a5fa);
+  background: var(--checkbox-surface, #ffffff);
+  box-sizing: border-box;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.checkbox-icon {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 78%;
+  height: 78%;
+  color: var(--checkbox-check, #ffffff);
+  transform: scale(0);
+  transition: transform 0.2s ease;
+}
+
+.check-path {
+  stroke-dasharray: 40;
+  stroke-dashoffset: 40;
+  transition: stroke-dashoffset 0.3s ease 0.1s;
+}
+
+input[type="checkbox"]:checked + .checkbox-wrapper {
+  animation: sb-checkbox-bounce 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+input[type="checkbox"]:checked + .checkbox-wrapper .checkbox-bg {
+  background: var(--checkbox-color, #2563eb);
+  border-color: var(--checkbox-color, #2563eb);
+}
+
+input[type="checkbox"]:checked + .checkbox-wrapper .checkbox-icon {
+  transform: scale(1);
+}
+
+input[type="checkbox"]:checked + .checkbox-wrapper .check-path {
+  stroke-dashoffset: 0;
+}
+
+:is(.creation-checkbox, .sb-dialog-checkbox, .copilot-option, .ios-checkbox, .sb-checkbox):hover .checkbox-wrapper {
+  transform: scale(1.05);
+}
+
+:is(.creation-checkbox, .sb-dialog-checkbox, .copilot-option, .ios-checkbox, .sb-checkbox):active .checkbox-wrapper {
+  transform: scale(0.95);
+}
+
+@keyframes sb-checkbox-bounce {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .checkbox-wrapper,
+  .checkbox-bg,
+  .checkbox-icon,
+  .check-path {
+    transition: none;
+  }
+  input[type="checkbox"]:checked + .checkbox-wrapper {
+    animation: none;
+  }
+}

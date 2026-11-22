@@ -98,7 +98,7 @@
 }
 .template-store-container .store-search-wrapper:focus-within {
   border-color: var(--color-border-selected);
-  box-shadow: 0 0 0 3px var(--color-brand-primary-soft, rgba(37, 99, 235, 0.15));
+  box-shadow: none;
   outline: none !important;
 }
 .template-store-container .store-search-wrapper input:focus,

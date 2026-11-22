@@ -107,7 +107,7 @@ main{
     transition: all 0.5s cubic-bezier(.4,0,.2,1);
 }
 
-:focus-visible {
+:focus-visible:not(input):not(textarea):not(select) {
     outline: none;
     box-shadow: var(--focus-ring-shadow);
 }
@@ -142,8 +142,9 @@ main{
 }
 
 .input-field:focus {
+    outline: none;
     border-color: var(--input-border-focus);
-    box-shadow: 0 0 0 3px var(--color-brand-primary-soft);
+    box-shadow: none;
 }
 
 .input-field::placeholder {

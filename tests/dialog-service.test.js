@@ -280,3 +280,31 @@ test('shared modal commits its hidden entry state before the delayed reveal', as
   e.advance(450);
   assert.equal((await result).confirmed, false);
 });
+
+test('confirm dialog supports optional checkbox and reports checked state on confirm and cancel', async () => {
+  const e = environment(true);
+  const first = e.service.confirm({
+    title: '是否保留目前工作階段？',
+    confirmText: '保留',
+    cancelText: '不保留',
+    checkbox: { label: '此次生成中記住這個選擇', checked: false }
+  });
+  const checkbox1 = e.document.querySelector('.sb-dialog-checkbox-input');
+  assert.ok(checkbox1);
+  assert.equal(checkbox1.checked, false);
+  checkbox1.checked = true;
+  e.submit(); await e.tick();
+  const res1 = await first;
+  assert.equal(res1.confirmed, true);
+  assert.equal(res1.checked, true);
+
+  const second = e.service.confirm({
+    title: '是否保留目前工作階段？',
+    checkbox: { label: '此次生成中記住這個選擇', checked: false }
+  });
+  e.click('.sb-dialog-cancel');
+  const res2 = await second;
+  assert.equal(res2.confirmed, false);
+  assert.equal(res2.reason, 'cancel');
+  assert.equal(res2.checked, false);
+});

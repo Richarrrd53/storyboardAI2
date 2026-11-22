@@ -586,3 +586,63 @@ test('stale QC route intents cannot enter a newer session', () => {
   const old = s.sessionId; c.reset();
   assert.equal(c.resolveEntry({ fromQC: true, creationIntent: 'new', sessionId: old }), null);
 });
+
+test('confirmLeaveWorkspace resets unstarted session without prompting so next QC opens dialog', async () => {
+  const { win, CreationController: c, CreationSessionStore: s } = setupMockEnvironment();
+  let prompted = 0;
+  win.DialogService = { confirm: async () => { prompted++; return { confirmed: true }; } };
+  s.draft.story = 'unsent draft';
+  assert.equal(c.hasStartedWork(), false);
+  const allowed = await c.confirmLeaveWorkspace();
+  assert.equal(allowed, true);
+  assert.equal(prompted, 0);
+  assert.equal(s.draft.story, '');
+  assert.equal(c.workState().hasWork, false);
+});
+
+test('confirmLeaveWorkspace prompts when discussion started or AI errored, supports keep/discard and remember choice', async () => {
+  const { win, CreationController: c, CreationSessionStore: s } = setupMockEnvironment();
+  let calls = [];
+  win.DialogService = {
+    confirm: async (opts) => {
+      calls.push(opts);
+      return calls.length === 1
+        ? { confirmed: true, checked: true }
+        : { confirmed: false, reason: 'cancel', checked: false };
+    }
+  };
+  s.story = 'my story';
+  s.submitted = true;
+  s.copilot = { active: true, error: 'AI 暫時無法回應' };
+  assert.equal(c.hasStartedWork(), true);
+
+  // First leave: user chooses "保留" + "此次生成中記住這個選擇"
+  assert.equal(await c.confirmLeaveWorkspace(), true);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].checkbox?.label, '此次生成中記住這個選擇');
+  assert.equal(s.leavePromptChoice, 'keep');
+  assert.equal(c.workState().hasWork, true);
+
+  // Second leave in same generation: remembered "keep", no prompt
+  assert.equal(await c.confirmLeaveWorkspace(), true);
+  assert.equal(calls.length, 1);
+  assert.equal(c.workState().hasWork, true);
+
+  // New session clears leavePromptChoice; choosing "不保留" resets session
+  s.leavePromptChoice = null;
+  assert.equal(await c.confirmLeaveWorkspace(), true);
+  assert.equal(calls.length, 2);
+  assert.equal(s.submitted, false);
+  assert.equal(s.story, '');
+  assert.equal(c.workState().hasWork, false);
+});
+
+test('confirmLeaveWorkspace stays on /generate when dialog is dismissed via backdrop or escape', async () => {
+  const { win, CreationController: c, CreationSessionStore: s } = setupMockEnvironment();
+  win.DialogService = { confirm: async () => ({ confirmed: false, reason: 'backdrop' }) };
+  s.story = 'active story';
+  s.submitted = true;
+  assert.equal(await c.confirmLeaveWorkspace(), false);
+  assert.equal(s.submitted, true);
+  assert.equal(s.story, 'active story');
+});

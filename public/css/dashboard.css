@@ -1784,8 +1784,9 @@ body.dashboard-layout .spa-discovery-wrap > * {
 }
 
 .project-tags-input:focus {
+    outline: none;
     border-color: #2563eb;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    box-shadow: none;
 }
 
 .project-tags-add-btn {
@@ -5802,7 +5803,8 @@ body.is-navigating #global-create-capsule .ai-pill-btn-glow-rotator,
 .projects-search svg { flex-shrink:0; color:var(--color-text-secondary); }
 .projects-search input { width:100%; min-width:0; border:0; outline:0; background:transparent; color:inherit; font:inherit; }
 .projects-search input:focus,.projects-search input:focus-visible { outline:none !important; box-shadow:none !important; border:0 !important; }
-.projects-search:focus-within,.projects-tool-trigger:focus-visible { outline:2px solid #93b4ff; outline-offset:2px; }
+.projects-search:focus-within { outline: none; }
+.projects-tool-trigger:focus-visible { outline:2px solid #93b4ff; outline-offset:2px; }
 .projects-sort-trigger { width:42px; justify-content:center; padding:0; flex-shrink:0; }
 .projects-sort-directions { display:flex; flex-direction:column; border-top:1px solid #edf0f4; margin-top:6px; padding-top:6px; }
 .projects-dropdown-options .morph-item { height:36px; flex-shrink:0; }

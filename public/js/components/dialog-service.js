@@ -77,6 +77,7 @@
     }
     const form = node('form', 'sb-dialog-form'); form.noValidate = true;
     let input = null;
+    let checkboxInput = null;
     const error = node('p', 'sb-dialog-error'); error.id = `${id}-error`; error.setAttribute('aria-live', 'polite');
     if (kind === 'prompt') {
       const label = node('label', 'sb-dialog-label', opts.label || '分鏡名稱');
@@ -87,6 +88,19 @@
       form.append(label, field);
     }
     form.append(error);
+    if (opts.checkbox && opts.checkbox.label) {
+      const checkboxLabel = node('label', 'sb-dialog-checkbox');
+      checkboxInput = node('input', 'sb-dialog-checkbox-input');
+      checkboxInput.type = 'checkbox';
+      checkboxInput.id = `${id}-checkbox`;
+      checkboxInput.checked = Boolean(opts.checkbox.checked);
+      const checkboxText = node('span', '', opts.checkbox.label);
+      const checkboxWrapper = node('span', 'checkbox-wrapper');
+      checkboxWrapper.setAttribute('aria-hidden', 'true');
+      checkboxWrapper.innerHTML = '<span class="checkbox-bg"></span><svg class="checkbox-icon" viewBox="0 0 24 24" fill="none"><path class="check-path" d="M4 12L10 18L20 6" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
+      checkboxLabel.append(checkboxInput, checkboxWrapper, checkboxText);
+      form.append(checkboxLabel);
+    }
     const actions = node('div', 'sb-dialog-actions');
     const cancel = node('button', 'sb-dialog-button sb-dialog-cancel sys-btn secondary', opts.cancelText || '取消'); cancel.type = 'button';
     const submit = node('button', 'sb-dialog-button sb-dialog-submit sys-btn primary', opts.confirmText || (kind === 'prompt' ? '儲存名稱' : '確定')); submit.type = 'submit';
@@ -133,7 +147,8 @@
       if (el.animate) animations.push(el.animate(frames, { duration, easing, fill: 'both' }));
     }
     active = { entry, finish };
-    cancel.addEventListener('click', () => { if (!busy) finish(cancelled(kind, 'cancel')); });
+    const withCheckbox = result => checkboxInput ? { ...result, checked: Boolean(checkboxInput.checked) } : result;
+    cancel.addEventListener('click', () => { if (!busy) finish(withCheckbox(cancelled(kind, 'cancel'))); });
     overlay.addEventListener('click', event => {
       if (event.target === overlay && !busy && !settled) finish(cancelled(kind, 'backdrop'));
     });
@@ -156,7 +171,7 @@
         submit.textContent = opts.onSubmit ? '儲存中…' : submit.textContent;
         await opts.onSubmit?.(value);
         if (settled) return;
-        finish(kind === 'alert' ? { dismissed: true, reason: 'acknowledge' } : kind === 'prompt' ? { confirmed: true, value } : { confirmed: true });
+        finish(kind === 'alert' ? { dismissed: true, reason: 'acknowledge' } : kind === 'prompt' ? withCheckbox({ confirmed: true, value }) : withCheckbox({ confirmed: true }));
       } catch (err) {
         if (settled) return;
         error.textContent = err?.message || '操作失敗，請稍後再試';

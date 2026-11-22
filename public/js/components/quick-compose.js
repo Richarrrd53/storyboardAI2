@@ -260,7 +260,7 @@
               <p class="qc-sub">描述故事或創作靈感，AI 將為您打造專業分鏡</p>
             </div>
 
-            <div class="creation-template-toolbar" id="qc-template-toolbar"><label class="creation-checkbox"><input type="checkbox" id="qc-use-template">使用模板生成</label><button type="button" id="qc-browse-templates">瀏覽模板庫</button><div id="qc-selected-template" hidden><span id="qc-template-name"></span><button type="button" id="qc-preview-template">預覽</button><button type="button" id="qc-change-template">更換</button><button type="button" id="qc-remove-template">取消套用</button></div></div>
+            <div class="creation-template-toolbar" id="qc-template-toolbar"><label class="creation-checkbox"><input type="checkbox" id="qc-use-template"><span class="checkbox-wrapper" aria-hidden="true"><span class="checkbox-bg"></span><svg class="checkbox-icon" viewBox="0 0 24 24" fill="none"><path class="check-path" d="M4 12L10 18L20 6" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>使用模板生成</label><button type="button" id="qc-browse-templates">瀏覽模板庫</button><div id="qc-selected-template" hidden><span id="qc-template-name"></span><button type="button" id="qc-preview-template">預覽</button><button type="button" id="qc-change-template">更換</button><button type="button" id="qc-remove-template">取消套用</button></div></div>
             <div class="qc-suggestion-row" id="qc-suggestion-row">
               <span class="qc-sugg-label">靈感推薦：</span>
               <div class="qc-sugg-chips-list">
@@ -445,16 +445,36 @@
     }
   }
 
+  let generateCssPrefetched = false;
+  function prefetchGenerateWorkspace() {
+    root.PageAssetLoader?.prefetchPage?.('generate')?.catch?.(() => {});
+    if (generateCssPrefetched || typeof root.fetch !== 'function') return;
+    generateCssPrefetched = true;
+    const assets = [
+      '/css/generate.css',
+      '/css/math-curve-loader.css',
+      '/css/template.css',
+      '/css/template-workflow.css?v=20261006-4',
+      '/js/components/choice-group.js',
+      '/js/components/template-presentation.js',
+      '/js/features/template-workflow.js?v=20261006-3',
+      '/js/generate.js?v=20261006-4'
+    ];
+    for (const url of assets) {
+      Promise.resolve().then(() => root.fetch(url, { credentials: 'same-origin' })).catch(() => {});
+    }
+  }
+
   // ── Expand & Open UI State ──
   function open() {
+    const currentRoute = root.spaRouter?.currentPage || root.currentPage || 'dashboard';
+    if (surfaceState === 'workspace' || currentRoute === 'generate') return;
     if (root.CreationController?.workState().hasWork) return root.CreationController.resumeWorkspace();
     if (root.CreationController?.workState().task.status === 'completed') root.CreationController.newCreation({ preserveSurface: true });
+    prefetchGenerateWorkspace();
     ensureDOM();
     mountCapsule();
     bindEvents();
-
-    const currentRoute = root.spaRouter?.currentPage || root.currentPage || 'dashboard';
-    if (surfaceState === 'workspace' || currentRoute === 'generate') return;
 
     // Clean up any residual inline styles so all elements display cleanly
     resetVisuals();

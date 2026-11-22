@@ -22,24 +22,37 @@
                  頂部輕量進度導航列 (Spec item 20)
             ════════════════════════════════════════════════════ -->
             <header class="workspace-top-bar" id="workspace-top-bar">
-                <div class="workspace-brand"><button type="button" id="btn-workspace-back" class="template-circle-btn workspace-back" aria-label="返回上一個創作步驟"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button>
-                    <span class="brand-title">生成分鏡</span>
+                <div class="workspace-header-top">
+                    <div class="workspace-brand">
+                        <button type="button" id="btn-workspace-back" class="workspace-header-btn workspace-back" aria-label="返回上一個創作步驟">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 5-7 7 7 7M5 12h14"/></svg>
+                        </button>
+                        <h1 class="workspace-header-title">分鏡生成</h1>
+                    </div>
+                    <div class="workspace-header-actions">
+                        <button type="button" id="btn-new-creation-session" class="workspace-header-btn workspace-reset-btn" title="開啟新生成階段" aria-label="開啟新生成階段">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="12" cy="12" r="9"/>
+                                <rect x="9" y="9" width="6" height="6" rx="1" fill="currentColor" stroke="none"/>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
-                
-                <nav class="workspace-stage-nav" id="workspace-stage-nav" aria-label="創作流程進度">
-                    <span class="stage-step active" id="step-nav-1" data-phase="1">構思</span>
-                    <span class="stage-sep">―</span>
-                    <span class="stage-step" id="step-nav-2" data-phase="2">創作設定</span>
-                    <span class="stage-sep">―</span>
-                    <span class="stage-step" id="step-nav-3" data-phase="3">分鏡企劃</span>
-                    <span class="stage-sep">―</span>
-                    <span class="stage-step" id="step-nav-4" data-phase="4">生成畫面</span>
-                    <span class="stage-sep">―</span>
-                    <span class="stage-step" id="step-nav-5">完成</span>
-                </nav>
-                
-                <div class="workspace-progress-indicator">
-                    <span class="phase-count-badge" id="phase-count-badge">1 / 5</span>
+                <div class="workspace-header-progress">
+                    <nav class="workspace-stage-nav" id="workspace-stage-nav" aria-label="創作流程進度">
+                        <span class="stage-step active" id="step-nav-1" data-phase="1">構思</span>
+                        <span class="stage-sep">―</span>
+                        <span class="stage-step" id="step-nav-2" data-phase="2">創作設定</span>
+                        <span class="stage-sep">―</span>
+                        <span class="stage-step" id="step-nav-3" data-phase="3">分鏡企劃</span>
+                        <span class="stage-sep">―</span>
+                        <span class="stage-step" id="step-nav-4" data-phase="4">生成畫面</span>
+                        <span class="stage-sep">―</span>
+                        <span class="stage-step" id="step-nav-5">完成</span>
+                    </nav>
+                    <div class="workspace-progress-indicator">
+                        <span class="phase-count-badge" id="phase-count-badge">1 / 5</span>
+                    </div>
                 </div>
             </header>
             <p id="creation-recovery-notice" class="section-hint" role="status" hidden></p>
@@ -107,7 +120,7 @@
                             </div>
                         </button>
                     </div>
-                    <div class="creation-template-toolbar" id="generate-template-toolbar"><label class="creation-checkbox"><input type="checkbox" id="use-template-generation">使用模板生成</label><button type="button" class="copilot-text-action" id="browse-template-library">瀏覽模板庫</button><button type="button" class="copilot-text-action" id="change-selected-template" hidden>更換模板</button><button type="button" class="copilot-text-action" id="remove-selected-template" hidden>取消套用</button></div>
+                    <div class="creation-template-toolbar" id="generate-template-toolbar"><label class="creation-checkbox"><input type="checkbox" id="use-template-generation"><span class="checkbox-wrapper" aria-hidden="true"><span class="checkbox-bg"></span><svg class="checkbox-icon" viewBox="0 0 24 24" fill="none"><path class="check-path" d="M4 12L10 18L20 6" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>使用模板生成</label><button type="button" class="copilot-text-action" id="browse-template-library">瀏覽模板庫</button><button type="button" class="copilot-text-action" id="change-selected-template" hidden>更換模板</button><button type="button" class="copilot-text-action" id="remove-selected-template" hidden>取消套用</button></div>
                     <div class="copilot-entry-actions" id="copilot-entry-actions"><button type="button" class="btn btn-ghost" id="btn-skip-copilot">略過討論，直接創作</button></div>
                     <section id="creative-copilot" class="copilot-workspace" aria-label="AI 創作討論" hidden></section>
                 </div>
@@ -192,7 +205,7 @@
                         </div>
                     </div>
                     <p id="duration-current" class="section-hint" hidden></p>
-                    <label class="creation-checkbox plan-confirm-option"><input type="checkbox" id="confirm-before-images"><span>進階：先確認文字分鏡</span></label>
+                    <label class="creation-checkbox plan-confirm-option"><input type="checkbox" id="confirm-before-images"><span class="checkbox-wrapper" aria-hidden="true"><span class="checkbox-bg"></span><svg class="checkbox-icon" viewBox="0 0 24 24" fill="none"><path class="check-path" d="M4 12L10 18L20 6" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></span><span>進階：先確認文字分鏡</span></label>
                     <!-- 動作按鈕 -->
                     <div class="phase-actions-footer">
                         <button type="button" class="btn btn-ghost" id="btn-direction-back" onclick="switchPhase(1)">返回構思</button>

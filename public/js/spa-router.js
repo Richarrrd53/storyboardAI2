@@ -221,6 +221,18 @@
       opts = { ...opts, force: true };
     }
 
+    if (currentPage === 'generate' && page !== 'generate' && !opts.skipLeaveGuard && window.CreationController?.confirmLeaveWorkspace) {
+      const guardSeq = navSeq;
+      const allowed = await window.CreationController.confirmLeaveWorkspace({ targetPage: page, opts });
+      if (guardSeq !== navSeq) return;
+      if (!allowed) {
+        window.AppShell?.setPendingRoute?.(currentPage, { committed: false, id: currentOpts?.id });
+        if (opts.noOpenQC) window.CreationController.syncRoute?.('generate');
+        if (opts.noHistory) getHistoryHost().history.pushState(routeHistoryState('generate', currentOpts), '', getRouteUrl('generate', currentOpts));
+        return;
+      }
+    }
+
     const browse = activePageInstance?.getHistoryState?.();
     if (page === 'template' && opts.templateId && activePage === 'template' && !activeOpts?.templateId) opts = { ...opts, templateFromBrowse: true };
     const reuse = page === 'template' && currentPage === 'template' && activePageInstance?.updateRoute && !opts.force;

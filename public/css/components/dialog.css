@@ -107,7 +107,7 @@
 .sb-dialog-form { margin: 24px 0 0; }
 .sb-dialog-label { display: block; margin-bottom: 8px; font-size: var(--font-size-sm); font-weight: var(--font-weight-semibold); }
 .sb-dialog-field { border: 1px solid var(--input-border); border-radius: var(--radius-continuous-md, 16px); background: var(--input-bg); }
-.sb-dialog-field:focus-within { border-color: var(--focus-ring-color); box-shadow: var(--focus-ring-shadow); }
+.sb-dialog-field:focus-within { border-color: var(--focus-ring-color); outline: none; box-shadow: none; }
 .sb-dialog .sb-dialog-input {
   box-sizing: border-box; display: block; width: 100%; min-height: var(--control-height-md, 44px);
   border: 0; background: transparent; color: inherit; padding: 10px 14px;
@@ -115,6 +115,20 @@
 }
 .sb-dialog .sb-dialog-input[aria-invalid="true"] { color: var(--color-text-danger); }
 .sb-dialog .sb-dialog-error { min-height: 20px; margin: 8px 0 16px; font-size: var(--font-size-xs); line-height: 1.6; color: var(--color-text-danger); overflow-wrap: anywhere; }
+.sb-dialog-checkbox {
+  display: flex; align-items: center; gap: var(--space-2, 8px);
+  margin: 0 0 var(--space-4, 16px); font-size: var(--font-size-sm);
+  color: var(--color-text-secondary); cursor: pointer; user-select: none;
+}
+.sb-dialog-checkbox input[type="checkbox"] {
+  width: 16px; height: 16px; margin: 0;
+  accent-color: var(--color-brand-primary); cursor: pointer;
+  outline: none; box-shadow: none;
+}
+.sb-dialog-checkbox input[type="checkbox"]:focus,
+.sb-dialog-checkbox input[type="checkbox"]:focus-visible {
+  outline: none; box-shadow: none;
+}
 .sb-dialog-actions { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3, 12px); width: 100%; }
 .sb-dialog .sb-dialog-button {
   display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;
@@ -132,8 +146,9 @@
 }
 @media (prefers-reduced-motion: reduce) { .sb-dialog .sb-dialog-button { transition: none; } }
 
-/* The field wrapper supplies the continuous focus ring. */
-.sb-dialog .sb-dialog-input:focus-visible { outline: none; }
+/* Keep dialog inputs free of focus outline/ring. */
+.sb-dialog .sb-dialog-input:focus,
+.sb-dialog .sb-dialog-input:focus-visible { outline: none; box-shadow: none; }
 
 /* Central-dialog footers share the same equal-width pill anatomy as Delete. */
 .dialog-actions, .template-modal-actions, .project-tags-modal-footer, .source-modal-actions {

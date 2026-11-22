@@ -36,6 +36,7 @@
       templateValues: {},
       currentPhase: 1,
       targetPhase: 1,
+      leavePromptChoice: null,
       draft: {
         story: '',
         styleIndex: 0,
@@ -72,6 +73,7 @@
         session[key] = fresh[key];
       }
     });
+    try { root.sessionStorage?.removeItem(checkpointKey); } catch (_) {}
     return session;
   };
 
@@ -82,7 +84,7 @@
   const checkpointKey = 'storyboard.creation.v1';
   function checkpoint() {
     try {
-      const keys = ['sessionId', 'submitted', 'confirmBeforeImages', 'entryMode', 'generationMode', 'entrySource', 'discussionStage', 'currentStep', 'returnContext', 'templateSelectionState', 'templateValues', 'templateSuggestions', 'story', 'creativeBrief', 'styleIndex', 'ratio', 'duration', 'draft'];
+      const keys = ['sessionId', 'submitted', 'confirmBeforeImages', 'entryMode', 'generationMode', 'entrySource', 'discussionStage', 'currentStep', 'returnContext', 'templateSelectionState', 'templateValues', 'templateSuggestions', 'story', 'creativeBrief', 'styleIndex', 'ratio', 'duration', 'leavePromptChoice', 'draft'];
       const data = Object.fromEntries(keys.map(key => [key, session[key]]));
       data.selectedTemplateId = session.selectedTemplate?.id || session.selectedTemplateId || null;
       data.currentPhase = [1, 2, 3].includes(session.currentPhase) ? session.currentPhase : 2;
@@ -193,6 +195,61 @@
       label = session.currentPhase === 2 || session.currentPhase === 3 ? '創作設定中' : session.copilot?.busy ? '正在構思…' : '待確認創作方向';
     }
     return { label, intent, hasWork: intent !== 'new', task };
+  }
+  function hasStartedWork() {
+    const task = root.GenerationTask?.getState?.() || { status: 'idle', save: {} };
+    if (task.status && task.status !== 'idle') return true;
+    if (session.submitted || session.currentPhase > 1 || session.creativeBrief) return true;
+    const c = session.copilot;
+    if (c && (c.active || c.busy || c.response || c.error || (Array.isArray(c.history) && c.history.length > 0))) return true;
+    return false;
+  }
+  let leavePromptPromise = null;
+  async function confirmLeaveWorkspace() {
+    if (leavePromptPromise) return leavePromptPromise;
+    const task = root.GenerationTask?.getState?.() || { status: 'idle', save: {} };
+    if (!hasStartedWork() || (task.status === 'completed' && task.save?.status === 'saved')) {
+      reset({ preserveSurface: true });
+      return true;
+    }
+    if (session.leavePromptChoice === 'keep') return true;
+    if (session.leavePromptChoice === 'discard') {
+      reset({ preserveSurface: true });
+      return true;
+    }
+    leavePromptPromise = (async () => {
+      if (root.DialogService?.confirm) {
+        const result = await root.DialogService.confirm({
+          title: '是否保留目前工作階段？',
+          description: '保留後下次點擊建立按鈕可回到這裡繼續；不保留則會清除目前紀錄並重新開始。',
+          confirmText: '保留',
+          cancelText: '不保留',
+          checkbox: { label: '此次生成中記住這個選擇', checked: false }
+        });
+        if (result?.confirmed) {
+          if (result.checked) session.leavePromptChoice = 'keep';
+          publish();
+          return true;
+        }
+        if (result?.reason === 'cancel') {
+          if (result.checked) session.leavePromptChoice = 'discard';
+          reset({ preserveSurface: true });
+          return true;
+        }
+        return false;
+      }
+      if (typeof root.confirm === 'function') {
+        const keep = await root.confirm('是否保留目前工作階段？按下「確定」保留，按下「取消」將清除目前紀錄。');
+        if (!keep) reset({ preserveSurface: true });
+        return true;
+      }
+      return true;
+    })();
+    try {
+      return await leavePromptPromise;
+    } finally {
+      leavePromptPromise = null;
+    }
   }
   function publish() { checkpoint(); root.QuickCompose?.updateProgress?.(); }
   function canReplace() {
@@ -441,7 +498,7 @@
       }
     },
 
-    workState, publish, newCreation, resolveEntry, resumeWorkspace, cleanupTransition, selectTemplate, setTemplateMode, checkpoint, applyTemplateEntry,
+    workState, hasStartedWork, confirmLeaveWorkspace, publish, newCreation, resolveEntry, resumeWorkspace, cleanupTransition, selectTemplate, setTemplateMode, checkpoint, applyTemplateEntry,
     submitFromQuickCompose,
     submitToWorkspace: submitFromQuickCompose,
     openWorkspace,
