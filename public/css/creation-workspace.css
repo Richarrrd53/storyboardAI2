@@ -240,12 +240,21 @@ html, body { overflow-x: clip; }
 .template-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-4); }
 .template-browser-wrap { min-width: 0; display: flex; flex-direction: column; gap: var(--space-4); }
 .generate-workspace .template-cards-container {
-  height: clamp(240px, 42vh, 420px);
-  max-height: clamp(240px, 42vh, 420px);
+  height: clamp(200px, 32vh, 280px);
+  max-height: clamp(200px, 32vh, 280px);
+  min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
   padding-block: var(--space-2);
   padding-inline-end: var(--space-1);
+}
+.template-actions-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  background: var(--color-surface-primary);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border-subtle);
 }
 .template-category-chips { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .tpl-cat-chip { min-height: var(--control-height-md); padding: var(--space-2) var(--space-4); display: inline-flex; align-items: center; gap: var(--space-2); border: 1px solid var(--color-border-default); border-radius: var(--radius-pill); background: var(--color-surface-primary); color: var(--color-text-secondary); font: inherit; font-size: var(--font-size-sm); cursor: pointer; }
@@ -275,8 +284,8 @@ html, body { overflow-x: clip; }
     .stage-sep { display: none; }
     .phase-count-badge { font-size: var(--font-size-xs); }
     .generate-workspace .template-cards-container {
-      height: clamp(220px, 38dvh, 340px);
-      max-height: clamp(220px, 38dvh, 340px);
+      height: clamp(180px, 28dvh, 240px);
+      max-height: clamp(180px, 28dvh, 240px);
     }
     .generate-workspace h1 { font-size: var(--font-size-2xl); }
     .phase-hero-headline { padding-block: var(--space-3); }
