@@ -75,7 +75,9 @@
     let pressPointerType = 'mouse';
     let longPressTriggered = false;
     let touchDragSelecting = false;
-    let dragVisited = new Set();
+    let touchDragBaseSelected = new Set();
+    let touchDragClientX = 0;
+    let touchDragClientY = 0;
 
     // Desktop marquee box selection state
     let marqueeState = null;
@@ -111,6 +113,13 @@
       if (!active) {
         active = true;
       }
+    }
+
+    function enter() {
+      if (destroyed || active) return;
+      global.ProjectOptionMorph?.close?.('selection');
+      enterSelectionMode();
+      notify();
     }
 
     function select(id, { updateAnchor = true } = {}) {
@@ -267,13 +276,50 @@
       pressCardId = null;
       longPressTriggered = false;
       touchDragSelecting = false;
-      dragVisited.clear();
+      touchDragBaseSelected.clear();
+      container.classList?.remove('is-touch-drag-selecting');
+      if (!marqueeState?.started) {
+        stopAutoScrollLoop();
+      }
+    }
+
+    function updateTouchDragSelection(clientX, clientY) {
+      if (!touchDragSelecting || !pressCardId || !doc?.elementFromPoint) return;
+      const hit = doc.elementFromPoint(clientX, clientY);
+      const card = hit?.closest?.('.project-card[data-id]');
+      if (!card || !container.contains(card)) return;
+      const targetId = String(card.dataset.id || '');
+      if (!targetId) return;
+
+      const ordered = getOrderedIds().map(String).filter(Boolean);
+      const startIdx = ordered.indexOf(String(pressCardId));
+      const endIdx = ordered.indexOf(targetId);
+
+      const nextSet = new Set(touchDragBaseSelected);
+      if (startIdx !== -1 && endIdx !== -1) {
+        const minIdx = Math.min(startIdx, endIdx);
+        const maxIdx = Math.max(startIdx, endIdx);
+        for (let i = minIdx; i <= maxIdx; i++) {
+          nextSet.add(ordered[i]);
+        }
+      } else {
+        nextSet.add(targetId);
+      }
+
+      const changed = nextSet.size !== selected.size || Array.from(nextSet).some(id => !selected.has(id));
+      if (changed) {
+        selected.clear();
+        nextSet.forEach(id => selected.add(id));
+        anchorId = targetId;
+        notify();
+      }
     }
 
     function onCardPointerDown(event) {
       if (destroyed) return;
       if (event.pointerType === 'mouse' && event.button !== 0) return;
-      if (!active && isInteractiveTarget(event.target)) return;
+      if (active) return; // Continuous drag-select only triggers on initial entry into selection mode
+      if (isInteractiveTarget(event.target)) return;
 
       const card = event.target?.closest?.('.project-card[data-id]');
       if (!card || !container.contains(card)) return;
@@ -299,9 +345,13 @@
         enterSelectionMode();
         selected.add(pressCardId);
         anchorId = pressCardId;
-        dragVisited = new Set([pressCardId]);
         if (pressPointerType === 'touch') {
           touchDragSelecting = true;
+          touchDragBaseSelected = new Set(selected);
+          touchDragClientX = pressStart?.x || 0;
+          touchDragClientY = pressStart?.y || 0;
+          container.classList?.add('is-touch-drag-selecting');
+          startAutoScrollLoop();
           try { global.navigator?.vibrate?.(12); } catch (_) {}
         }
         suppressNextClick(500);
@@ -312,57 +362,21 @@
     function onGlobalPointerMove(event) {
       if (destroyed) return;
 
-      // 1. Touch slide-select active after long press
+      // 1. Touch range slide-select active after initial long press
       if (touchDragSelecting && event.pointerId === pressPointerId) {
-        if (doc?.elementFromPoint) {
-          const hit = doc.elementFromPoint(event.clientX, event.clientY);
-          const card = hit?.closest?.('.project-card[data-id]');
-          if (card && container.contains(card)) {
-            const id = String(card.dataset.id || '');
-            if (id && !dragVisited.has(id)) {
-              dragVisited.add(id);
-              selected.add(id);
-              anchorId = id;
-              notify();
-            }
-          }
-        }
+        touchDragClientX = event.clientX;
+        touchDragClientY = event.clientY;
+        updateTouchDragSelection(event.clientX, event.clientY);
         return;
       }
 
-      // 2. When already in selection mode, sliding finger across cards immediately starts continuous slide-select;
-      //    outside selection mode, moving finger/mouse cancels pending long-press so normal scrolling works.
+      // 2. Cancel pending long-press if user moved finger/mouse (allows normal scrolling!)
       if (pressTimer && event.pointerId === pressPointerId && pressStart) {
         const tolerance = pressPointerType === 'touch' ? TOUCH_MOVE_TOLERANCE : DESKTOP_MOVE_TOLERANCE;
         const dx = Math.abs(event.clientX - pressStart.x);
         const dy = Math.abs(event.clientY - pressStart.y);
         if (dx > tolerance || dy > tolerance) {
-          if (active && pressPointerType === 'touch' && pressCardId) {
-            clearTimeout(pressTimer);
-            pressTimer = null;
-            touchDragSelecting = true;
-            dragVisited = new Set([pressCardId]);
-            if (!selected.has(pressCardId)) {
-              selected.add(pressCardId);
-              anchorId = pressCardId;
-              notify();
-            }
-            if (doc?.elementFromPoint) {
-              const hit = doc.elementFromPoint(event.clientX, event.clientY);
-              const card = hit?.closest?.('.project-card[data-id]');
-              if (card && container.contains(card)) {
-                const id = String(card.dataset.id || '');
-                if (id && !dragVisited.has(id)) {
-                  dragVisited.add(id);
-                  selected.add(id);
-                  anchorId = id;
-                  notify();
-                }
-              }
-            }
-          } else {
-            clearPressState();
-          }
+          clearPressState();
         }
       }
 
@@ -434,24 +448,30 @@
 
     function startAutoScrollLoop() {
       if (!scrollContainer || typeof win.requestAnimationFrame !== 'function') return;
+      if (autoScrollRaf !== null) return;
       const tick = () => {
-        if (!marqueeState || !marqueeState.started || destroyed) {
+        const isMarquee = Boolean(marqueeState && marqueeState.started);
+        const isTouchDrag = Boolean(touchDragSelecting);
+        if ((!isMarquee && !isTouchDrag) || destroyed) {
           autoScrollRaf = null;
           return;
         }
         const hostRect = scrollContainer.getBoundingClientRect();
-        const y = marqueeState.currentClientY;
+        const y = isTouchDrag ? touchDragClientY : marqueeState.currentClientY;
+        const topEdge = Math.max(hostRect.top, 0) + AUTO_SCROLL_EDGE;
+        const bottomEdge = Math.min(hostRect.bottom, win.innerHeight || hostRect.bottom) - AUTO_SCROLL_EDGE;
         let deltaY = 0;
-        if (y < hostRect.top + AUTO_SCROLL_EDGE) {
+        if (y < topEdge) {
           deltaY = -AUTO_SCROLL_SPEED;
-        } else if (y > hostRect.bottom - AUTO_SCROLL_EDGE) {
+        } else if (y > bottomEdge) {
           deltaY = AUTO_SCROLL_SPEED;
         }
         if (deltaY !== 0) {
           const before = scrollContainer.scrollTop;
           scrollContainer.scrollTop += deltaY;
           if (scrollContainer.scrollTop !== before) {
-            updateMarqueeSelection();
+            if (isMarquee) updateMarqueeSelection();
+            if (isTouchDrag) updateTouchDragSelection(touchDragClientX, touchDragClientY);
           }
         }
         autoScrollRaf = win.requestAnimationFrame(tick);
@@ -605,6 +625,7 @@
       isSelected: (id) => selected.has(String(id)),
       getSelectedIds: () => Array.from(selected),
       getCount: () => selected.size,
+      enter,
       select,
       deselect,
       toggle,

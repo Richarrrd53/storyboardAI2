@@ -370,12 +370,19 @@
       // retain Dynamic Mask, including both horizontal edges and overflow fading.
       let topExtent = 0;
       if (vertical && page && this.header && this.options.edgeMode !== 'bottom') {
-        const bottom = this.headerToolbar?.getBoundingClientRect().bottom || this.header.getBoundingClientRect().bottom;
+        const selectionBar = this.headerHost?.classList?.contains('is-selection-active')
+          ? this.headerHost.querySelector('.projects-selection-bar')
+          : null;
+        const bottom = selectionBar
+          ? selectionBar.getBoundingClientRect().bottom
+          : (this.headerToolbar?.getBoundingClientRect().bottom || this.header.getBoundingClientRect().bottom);
         // Projects has a second navigation row. Size its fade from the full
         // header stack so the pinned filters retain a light backdrop as it hides.
-        const transition = this.headerToolbar
-          ? Math.max(edgePattern.topTransition, (this.header.offsetHeight + this.headerToolbar.offsetHeight) * 0.4)
-          : edgePattern.topTransition;
+        const transition = selectionBar
+          ? edgePattern.topTransition
+          : this.headerToolbar
+            ? Math.max(edgePattern.topTransition, (this.header.offsetHeight + this.headerToolbar.offsetHeight) * 0.4)
+            : edgePattern.topTransition;
         topExtent = Math.max(edgePattern.topBase, bottom - this.rect.top + transition);
       }
       const nav = document.getElementById('spa-mobile-nav');

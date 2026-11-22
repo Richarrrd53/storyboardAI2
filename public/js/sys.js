@@ -145,10 +145,10 @@ async function alert(message, options = {}) {
 }
 async function confirm(message, description = '', type = 'default', btnText, projectEl) {
     const service = await ensureDialogService();
-    if (type === 'delete') {
+    if (type === 'delete' && projectEl) {
         return service.runLegacy({ run: signal => legacyDeleteConfirm(message, description, type, btnText, projectEl, signal) }).then(value => value === true);
     }
-    const result = await service.confirm({ title: message, description, confirmText: btnText || '確定', danger: type === 'danger' });
+    const result = await service.confirm({ title: message, description, confirmText: btnText || '確定', danger: type === 'danger' || type === 'delete' });
     return result.confirmed === true;
 }
 

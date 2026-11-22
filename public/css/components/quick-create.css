@@ -4,12 +4,18 @@
    PROTECTED INTERACTION CONTRACT: Signature Create Trigger Glow & Morph
    ============================================================ */
 
-/* Hard suppression: Never show capsule or glow on non-dashboard layouts (Landing, Login, Register) */
+/* Hard suppression: Never show capsule or glow on non-dashboard layouts (Landing, Login, Register), /history, or during selection mode */
 body:not(.dashboard-layout) #global-create-capsule,
 body:not(.dashboard-layout) #ai-creation-layer,
 body:not(.dashboard-layout) .ai-unified-capsule,
 body:not(.dashboard-layout) .ai-pill-btn-glow-ambient,
-body:not(.dashboard-layout) .ai-pill-btn-glow-container {
+body:not(.dashboard-layout) .ai-pill-btn-glow-container,
+body.is-history-page #global-create-capsule,
+body.is-history-page #ai-creation-layer,
+body.is-history-page .ai-unified-capsule,
+body.is-project-selection-active #global-create-capsule,
+body.is-project-selection-active #ai-creation-layer,
+body.is-project-selection-active .ai-unified-capsule {
   display: none !important;
   opacity: 0 !important;
   visibility: hidden !important;

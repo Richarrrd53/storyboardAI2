@@ -410,7 +410,7 @@
     const capsule = getCapsule();
     if (capsule) {
       capsule.style.removeProperty('height');
-      if (activeRoute === 'generate') {
+      if (activeRoute === 'generate' || activeRoute === 'history') {
         capsule.classList.add('hidden-by-workspace');
         capsule.classList.remove('is-expanded');
         capsule.style.setProperty('opacity', '0', 'important');
@@ -631,7 +631,7 @@
       if (capsule) {
         capsule.classList.remove('is-expanded', 'is-closing');
         const currentRoute = root.spaRouter?.currentPage || root.currentPage || 'dashboard';
-        if (currentRoute === 'generate') {
+        if (currentRoute === 'generate' || currentRoute === 'history') {
           capsule.classList.add('hidden-by-workspace');
           capsule.style.opacity = '0';
           capsule.style.pointerEvents = 'none';
@@ -778,7 +778,7 @@
     trigger.style.display = '';
     layer.style.removeProperty('display');
 
-    if (page === 'generate') {
+    if (page === 'generate' || page === 'history') {
       // In /generate, the capsule trigger is hidden by the workspace
       if (capsule) {
         capsule.classList.remove('is-expanded');
@@ -889,7 +889,7 @@
   function onCapsuleClick(e) {
     const currentRoute = root.spaRouter?.currentPage || root.currentPage || 'dashboard';
     const capsule = getCapsule();
-    if (currentRoute === 'generate' || (capsule && capsule.classList.contains('hidden-by-workspace'))) {
+    if (currentRoute === 'generate' || currentRoute === 'history' || (capsule && capsule.classList.contains('hidden-by-workspace'))) {
       e.preventDefault();
       e.stopPropagation();
       return;

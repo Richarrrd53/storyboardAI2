@@ -116,10 +116,13 @@
       return { unmount() {} };
     }
 
+    const historyMain = root?.classList?.contains?.('history-main') ? root : find('.history-main');
     const historyHeader = find('.history-header');
     const historyBody = find('.history-body');
     const backButton = root?.querySelector('.history-back-btn');
     const headerActions = find('#history-header-actions');
+    const selectModeBtn = find('#history-select-mode-btn');
+    const bottomDock = find('#history-bottom-dock');
     const restoreAllBtn = find('#history-restore-all-btn');
     const emptyTrashBtn = find('#history-empty-trash-btn');
     const selectionBar = find('#history-selection-bar');
@@ -129,6 +132,8 @@
     const selectAllBtn = find('#history-select-all-btn');
     const cancelSelectBtn = find('#history-cancel-select-btn');
 
+    document?.body?.classList?.add?.('is-history-page');
+
     const goBack = event => {
       if (event.button > 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       const navigate = context.navigate || global.spaNavigate;
@@ -137,21 +142,28 @@
     backButton?.addEventListener('click', goBack);
 
     function syncSelectionUI(selState) {
-      if (!selectionBar) return;
-      const active = Boolean(selState?.active && selState.count > 0);
-      if (historyHeader && historyHeader.hidden !== active) {
-        historyHeader.hidden = active;
-        if (historyBody && global.DynamicMaskSystem?.update) {
-          global.DynamicMaskSystem.update(historyBody);
-        }
+      const active = Boolean(selState?.active);
+      const count = selState?.count || 0;
+      root?.classList?.toggle?.('is-selection-active', active);
+      historyMain?.classList?.toggle?.('is-selection-active', active);
+      historyHeader?.setAttribute?.('aria-hidden', active ? 'true' : 'false');
+      if (historyBody && global.DynamicMaskSystem?.update) {
+        global.DynamicMaskSystem.update(historyBody);
       }
-      selectionBar.hidden = !active;
-      selectionBar.classList.toggle('is-visible', active);
+      if (selectionBar) {
+        selectionBar.classList?.toggle?.('is-visible', active);
+        selectionBar.setAttribute?.('aria-hidden', active ? 'false' : 'true');
+      }
+      if (bottomDock) {
+        bottomDock.classList?.toggle?.('is-selection-active', active);
+        bottomDock.querySelector?.('.selection-dock-group--default')?.setAttribute?.('aria-hidden', active ? 'true' : 'false');
+        bottomDock.querySelector?.('.selection-dock-group--selection')?.setAttribute?.('aria-hidden', active ? 'false' : 'true');
+      }
       if (selectionCountEl) {
-        selectionCountEl.textContent = `已選取 ${selState?.count || 0} 個專案`;
+        selectionCountEl.textContent = `已選取 ${count} 項`;
       }
-      if (batchRestoreBtn) batchRestoreBtn.disabled = isBatchBusy || !selState?.count;
-      if (batchDeleteBtn) batchDeleteBtn.disabled = isBatchBusy || !selState?.count;
+      if (batchRestoreBtn) batchRestoreBtn.disabled = isBatchBusy || count === 0;
+      if (batchDeleteBtn) batchDeleteBtn.disabled = isBatchBusy || count === 0;
       if (selectAllBtn) selectAllBtn.disabled = isBatchBusy || currentDeletedIds.length === 0;
     }
 
@@ -189,6 +201,10 @@
         }
       }
     };
+
+    listen(selectModeBtn, 'click', () => {
+      selectionController?.enter?.();
+    });
 
     listen(restoreAllBtn, 'click', () => runBatch(async () => {
       const res = await global.ProjectActions?.batchRestoreProjects?.([], () => updateView(), { all: true });
@@ -229,13 +245,19 @@
       if (!list) {
         projectsGrid.innerHTML = SKELETON_CARDS_HTML;
         if (headerActions) headerActions.hidden = true;
+        bottomDock?.classList?.add?.('is-empty');
         return;
       }
 
       const deletedProjects = getDeletedProjects(list);
       currentDeletedIds = deletedProjects.map(p => String(p.id));
+      const isEmpty = deletedProjects.length === 0;
       if (headerActions) {
-        headerActions.hidden = deletedProjects.length === 0;
+        headerActions.hidden = isEmpty;
+      }
+      bottomDock?.classList?.toggle?.('is-empty', isEmpty);
+      if (isEmpty && selectionController?.isActive?.()) {
+        selectionController.clear();
       }
       renderHistoryList(projectsGrid, deletedProjects, () => {
         updateView();
@@ -288,6 +310,9 @@
     function unmount() {
       if (!isMounted) return;
       isMounted = false;
+      document?.body?.classList?.remove?.('is-history-page');
+      root?.classList?.remove?.('is-selection-active');
+      historyMain?.classList?.remove?.('is-selection-active');
       backButton?.removeEventListener('click', goBack);
       listeners.forEach(off => off());
       listeners.length = 0;

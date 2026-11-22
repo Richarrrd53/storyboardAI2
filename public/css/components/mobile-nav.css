@@ -43,7 +43,8 @@
   }
 
   body.mobile-nav-compact .mobile-bottom-nav { scale: .9; }
-  body.workspace-secondary .mobile-bottom-nav {
+  body.workspace-secondary .mobile-bottom-nav,
+  body.is-project-selection-active .mobile-bottom-nav {
     translate: 0 calc(100% + var(--mobile-nav-offset) + env(safe-area-inset-bottom, 0px) + var(--space-16));
     pointer-events: none !important;
   }

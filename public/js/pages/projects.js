@@ -677,14 +677,21 @@
     }
     global.onProjectCardTagClick = onCardTagClick;
 
+    const projectsMain = root?.classList?.contains?.('projects-main') ? root : find('.projects-main');
+    const projectsHeader = find('.projects-header');
     const projectsToolbar = (root ? root.querySelector('#projects-toolbar') : null) || document.getElementById('projects-toolbar');
     const tagsScroll = (root ? root.querySelector('#projects-tags-scroll') : null) || document.getElementById('projects-tags-scroll');
     const clearFilterBtn = (root ? root.querySelector('#projects-clear-filter-btn') : null) || document.getElementById('projects-clear-filter-btn');
     const countBadge = (root ? root.querySelector('#projects-count-badge') : null) || document.getElementById('projects-count-badge');
     const projectsBody = (root ? root.querySelector('.projects-body') : null) || document.querySelector('.projects-body');
+    const headerActions = find('#projects-header-actions');
+    const historyLinkBtn = find('#projects-history-link');
+    const selectModeBtn = find('#projects-select-mode-btn');
+    const bottomDock = find('#projects-bottom-dock');
 
     const selectionBar = find('#projects-selection-bar');
     const selectionCountEl = find('#projects-selection-count');
+    const batchTagsBtn = find('#projects-batch-tags-btn');
     const batchTrashBtn = find('#projects-batch-trash-btn');
     const selectAllBtn = find('#projects-select-all-btn');
     const cancelSelectBtn = find('#projects-cancel-select-btn');
@@ -693,14 +700,29 @@
     let isBatchBusy = false;
 
     function syncSelectionUI(selState) {
-      if (!selectionBar) return;
-      const active = Boolean(selState?.active && selState.count > 0);
-      selectionBar.hidden = !active;
-      selectionBar.classList.toggle('is-visible', active);
-      if (selectionCountEl) {
-        selectionCountEl.textContent = `已選取 ${selState?.count || 0} 個專案`;
+      const active = Boolean(selState?.active);
+      const count = selState?.count || 0;
+      root?.classList?.toggle?.('is-selection-active', active);
+      projectsMain?.classList?.toggle?.('is-selection-active', active);
+      document?.body?.classList?.toggle?.('is-project-selection-active', active);
+      projectsHeader?.setAttribute?.('aria-hidden', active ? 'true' : 'false');
+      projectsToolbar?.setAttribute?.('aria-hidden', active ? 'true' : 'false');
+      if (projectsBody && global.DynamicMaskSystem?.update) {
+        global.DynamicMaskSystem.update(projectsBody);
       }
-      if (batchTrashBtn) batchTrashBtn.disabled = isBatchBusy || !selState?.count;
+      if (selectionBar) {
+        selectionBar.classList?.toggle?.('is-visible', active);
+        selectionBar.setAttribute?.('aria-hidden', active ? 'false' : 'true');
+      }
+      if (bottomDock) {
+        bottomDock.classList?.toggle?.('is-selection-active', active);
+        bottomDock.querySelector?.('.selection-dock-group--selection')?.setAttribute?.('aria-hidden', active ? 'false' : 'true');
+      }
+      if (selectionCountEl) {
+        selectionCountEl.textContent = `已選取 ${count} 項`;
+      }
+      if (batchTagsBtn) batchTagsBtn.disabled = isBatchBusy || count === 0;
+      if (batchTrashBtn) batchTrashBtn.disabled = isBatchBusy || count === 0;
       if (selectAllBtn) selectAllBtn.disabled = isBatchBusy || currentFilteredIds.length === 0;
     }
 
@@ -717,6 +739,70 @@
     if (selectionController) {
       projectsGrid._selectionController = selectionController;
     }
+
+    const goHistory = event => {
+      if (event.button > 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      const navigate = context.navigate || global.spaNavigate;
+      if (typeof navigate === 'function') { event.preventDefault(); navigate('history'); }
+    };
+    listen(historyLinkBtn, 'click', goHistory);
+    if (historyLinkBtn) {
+      let historyTouchTimer = null;
+      const playHistoryIcon = () => {
+        const fillSvg = historyLinkBtn.querySelector?.('.quick-entry-icon-fill[data-im-icon]');
+        if (fillSvg && global.IconMotion && typeof global.IconMotion.play === 'function') {
+          global.IconMotion.play(fillSvg);
+        }
+      };
+      const triggerHistoryTouch = () => {
+        historyLinkBtn.classList?.add('is-touched');
+        playHistoryIcon();
+        if (historyTouchTimer) clearTimeout(historyTouchTimer);
+        historyTouchTimer = setTimeout(() => {
+          historyLinkBtn.classList?.remove('is-touched');
+        }, 520);
+      };
+      listen(historyLinkBtn, 'mouseenter', playHistoryIcon);
+      listen(historyLinkBtn, 'pointerdown', triggerHistoryTouch);
+      handlers.push(() => {
+        if (historyTouchTimer) clearTimeout(historyTouchTimer);
+        historyLinkBtn.classList?.remove('is-touched');
+      });
+    }
+    listen(selectModeBtn, 'click', () => selectionController?.enter?.());
+
+    listen(batchTagsBtn, 'click', () => {
+      if (isBatchBusy || !isMounted) return;
+      const ids = selectionController?.getSelectedIds() || [];
+      if (!ids.length) return;
+      const allProjects = global.ProjectStore?.getProjects?.() || [];
+      const selectedProjects = ids
+        .map(id => allProjects.find(item => String(item.id) === String(id)))
+        .filter(Boolean);
+      const tagSets = selectedProjects.map(item => new Set(projectTags(item)));
+      const commonTags = tagSets.length > 0
+        ? Array.from(tagSets[0]).filter(tag => tagSets.every(set => set.has(tag)))
+        : [];
+      openProjectTagModal({
+        id: 'batch',
+        title: `已選取的 ${ids.length} 個專案`,
+        tags: commonTags
+      }, async (newTags) => {
+        if (isBatchBusy || !isMounted) return false;
+        isBatchBusy = true;
+        syncSelectionUI({ active: selectionController?.isActive(), count: selectionController?.getCount?.() || 0 });
+        try {
+          const ok = await global.ProjectActions?.batchUpdateProjectTags?.(ids, newTags, () => updateView());
+          if (ok) selectionController?.clear();
+          return Boolean(ok);
+        } finally {
+          isBatchBusy = false;
+          if (isMounted) {
+            syncSelectionUI({ active: selectionController?.isActive(), count: selectionController?.getCount?.() || 0 });
+          }
+        }
+      });
+    });
 
     listen(batchTrashBtn, 'click', async () => {
       if (isBatchBusy || !isMounted) return;
@@ -746,6 +832,7 @@
 
       if (!list) {
         projectsGrid.innerHTML = SKELETON_CARDS_HTML;
+        if (selectModeBtn) selectModeBtn.hidden = true;
         return;
       }
 
@@ -755,6 +842,9 @@
       const filteredProjects = getFilteredAndSortedProjects(list, selectedTags, {query,sort,direction});
       const filteredCount = filteredProjects.length;
       currentFilteredIds = filteredProjects.map(p => String(p.id));
+      if (selectModeBtn) {
+        selectModeBtn.hidden = filteredCount === 0;
+      }
 
       if (tagsScroll) renderTagOptions(tagsScroll, list, totalCount);
       if (tagMenu) renderTagOptions(tagMenu, list, totalCount);
@@ -843,6 +933,9 @@
     function unmount() {
       if (!isMounted) return;
       isMounted = false;
+      document?.body?.classList?.remove?.('is-project-selection-active');
+      root?.classList?.remove?.('is-selection-active');
+      projectsMain?.classList?.remove?.('is-selection-active');
       selectedTags.clear();
       clearTimeout(searchTimer); cancelSort();
       handlers.forEach(cleanup => cleanup());

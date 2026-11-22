@@ -987,6 +987,54 @@
       return false;
     },
 
+    async batchUpdateProjectTags(projectIds, newTags, refreshCallback) {
+      const ids = Array.isArray(projectIds) ? projectIds.filter(Boolean) : [];
+      if (!ids.length) return false;
+      const requestEpoch = ProjectStore.resetEpoch;
+      const normalized = Array.isArray(newTags)
+        ? Array.from(new Set(newTags.filter(t => typeof t === 'string').map(t => t.trim()).filter(Boolean)))
+        : [];
+      const toastFn = typeof global !== 'undefined' && typeof global.showSpaToast === 'function' ? global.showSpaToast : () => {};
+
+      const results = await Promise.allSettled(ids.map(id => ProjectsApi.updateProjectTags(id, normalized)));
+      if (requestEpoch !== ProjectStore.resetEpoch) return false;
+
+      let succeeded = 0;
+      let failed = 0;
+      const currentList = ProjectStore.getProjects() || [];
+
+      results.forEach((entry, idx) => {
+        if (entry.status === 'fulfilled' && entry.value?.ok) {
+          succeeded++;
+          const id = ids[idx];
+          const updatedProject = entry.value.data?.project;
+          if (updatedProject) {
+            ProjectStore.upsertProject(updatedProject);
+          } else {
+            const existing = currentList.find(item => String(item.id) === String(id));
+            if (existing) {
+              ProjectStore.upsertProject({
+                ...existing,
+                tags: normalized,
+                metadata: { ...(existing.metadata || {}), tags: normalized }
+              });
+            }
+          }
+        } else {
+          failed++;
+        }
+      });
+
+      if (succeeded > 0) {
+        if (typeof refreshCallback === 'function') refreshCallback();
+        if (typeof global.updateSidebarProjects === 'function') global.updateSidebarProjects();
+        toastFn(failed > 0 ? `已更新 ${succeeded} 個專案的標籤，${failed} 個失敗。` : `已更新 ${succeeded} 個專案的標籤。`);
+        return true;
+      }
+      toastFn('批次更新標籤失敗，請稍後再試');
+      return false;
+    },
+
     async permanentDeleteProject(p, card, refreshCallback) {
       if (!p || !p.id) return false;
       const requestEpoch = ProjectStore.resetEpoch;

@@ -3334,17 +3334,20 @@ body.dashboard-layout .spa-discovery-wrap > * {
 }
 
 .quick-entry-btn:hover .quick-entry-icon-wrap,
-.mob-shortcut-btn:is(:hover, .is-touched) .quick-entry-icon-wrap {
+.mob-shortcut-btn:is(:hover, .is-touched) .quick-entry-icon-wrap,
+.projects-history-btn:is(:hover, .is-touched) .quick-entry-icon-wrap {
     transform: scale(1.08);
 }
 
 .quick-entry-btn:hover .quick-entry-icon-line,
-.mob-shortcut-btn:is(:hover, .is-touched) .quick-entry-icon-line {
+.mob-shortcut-btn:is(:hover, .is-touched) .quick-entry-icon-line,
+.projects-history-btn:is(:hover, .is-touched) .quick-entry-icon-line {
     display: none;
 }
 
 .quick-entry-btn:hover .quick-entry-icon-fill,
-.mob-shortcut-btn:is(:hover, .is-touched) .quick-entry-icon-fill {
+.mob-shortcut-btn:is(:hover, .is-touched) .quick-entry-icon-fill,
+.projects-history-btn:is(:hover, .is-touched) .quick-entry-icon-fill {
     display: block;
     color: var(--color-nav-active, #172554);
     animation: icon-fill-in 0.5s cubic-bezier(.33, 1.53, .69, .99);

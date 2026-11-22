@@ -208,7 +208,7 @@
     // 4. 卡片懸浮展開與 Prefetch
     const onCardEnter = (event) => {
       if (event?.pointerType === 'touch') return;
-      if (isDeleted) return;
+      if (isDeleted || getSelectionController()?.isActive?.()) return;
       card.classList?.add('is-expanded');
       if (typeof opts.prefetchPage === 'function') {
         opts.prefetchPage('project', { id: project.id });
