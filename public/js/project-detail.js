@@ -85,10 +85,14 @@
         });
       }
 
-      // 匯出 JSON 按鈕
+      // 匯出分鏡按鈕（展開統一匯出選單）
       const exportBtn = root.querySelector('#pd-export-json-btn');
       if (exportBtn) {
-        exportBtn.addEventListener('click', () => this._exportProjectJson());
+        exportBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          this._openExportMenu(exportBtn);
+        });
       }
     },
 
@@ -1054,39 +1058,25 @@
       }
     },
 
-    // ── 匯出分鏡 JSON ──
-    _exportProjectJson() {
-      if (!this._project) return;
-      const exportData = {
-        id: this._project.id,
-        title: this._project.title,
-        style: this._project.style,
-        ratio: this._project.ratio,
-        updatedAt: this._project.updatedAt || new Date().toISOString(),
-        metadata: this._project.metadata || {},
-        characters: this._project.characters || {},
-        shots: (this._project.shots || []).map(s => ({
-          order: s.order,
-          title: s.title,
-          camera: s.camera,
-          cameraDetails: s.payload?.cameraDetails || {},
-          duration: s.duration,
-          emotion: s.payload?.emotion || '',
-          note: s.payload?.note || '',
-          shotPrompt: s.payload?.shotPrompt || '',
-          finalPrompt: s.payload?.finalPrompt || '',
-          image: s.payload?.image || ''
-        }))
-      };
+    // ── 匯出分鏡（統一透過 StoryboardExport） ──
+    _openExportMenu(triggerBtn) {
+      if (!this._projectId && !this._project) return;
+      const source = { projectId: this._projectId || this._project?.id, project: this._project };
+      if (window.StoryboardExport && typeof window.StoryboardExport.openExportMenu === 'function') {
+        window.StoryboardExport.openExportMenu(triggerBtn, source, { align: 'right' });
+        return;
+      }
+      this._exportProjectJson();
+    },
 
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${this._project.title || 'storyboard'}_${Date.now()}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      this._toast('分鏡 JSON 已成功匯出！', 'success');
+    async _exportProjectJson() {
+      if (!this._projectId && !this._project) return;
+      const source = { projectId: this._projectId || this._project?.id, project: this._project };
+      if (window.StoryboardExport && typeof window.StoryboardExport.exportJson === 'function') {
+        await window.StoryboardExport.exportJson(source);
+        return;
+      }
+      this._toast('匯出服務尚未載入，請重新整理後再試。', 'error');
     },
 
     // ── Toast 通知 ──

@@ -300,7 +300,7 @@
             <div class="project-workspace-topline">
               <button class="project-back-btn" id="pd-back-btn" type="button" aria-label="返回所有專案">${icon('back')}</button>
               <h1 class="project-workspace-title">${global.ProjectCard?.escapeHtml ? global.ProjectCard.escapeHtml(p.title) : p.title}</h1>
-              <button class="project-workspace-btn" id="pd-export-json-btn" type="button" aria-label="匯出分鏡 JSON">${icon('export')}<span>匯出分鏡 JSON</span></button>
+              <button class="project-workspace-btn" id="pd-export-json-btn" type="button" aria-label="匯出分鏡" aria-haspopup="menu">${icon('export')}<span>匯出分鏡</span></button>
             </div>
             <div class="project-workspace-header-top">
               <div class="project-workspace-title-area">

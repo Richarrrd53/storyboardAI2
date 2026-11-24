@@ -39,7 +39,16 @@
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
   function exportJSON(task) {
-    download(JSON.stringify({ title: task.result.storyboardData?.meta?.title, story: task.input.story, style: task.input.style.name, ratio: task.input.ratio, templateId: task.input.selectedTemplate?.id || null, templateValues: task.input.templateValues || {}, characters: task.result.storyboardData?.characters || {}, shots: task.result.generatedShotData.map(shot => ({ ...shot, shot: shot.order, image: shot.payload.image })) }, null, 2), `storyboard_${Date.now()}.json`, 'application/json');
+    if (root.StoryboardExport && typeof root.StoryboardExport.exportJson === 'function') {
+      return root.StoryboardExport.exportJson({ generationTask: task });
+    }
+    if (root.StoryboardProjectSerializer && root.StoryboardJsonExporter) {
+      const normalized = root.StoryboardProjectSerializer.normalizeGenerationTask(task);
+      if (!normalized) return false;
+      const bundle = root.StoryboardProjectSerializer.serializeProject(normalized);
+      return root.StoryboardJsonExporter.exportJsonDocument(bundle);
+    }
+    download(JSON.stringify({ title: task.result.storyboardData?.meta?.title, story: task.input.story, style: task.input.style.name, ratio: task.input.ratio, templateId: task.input.selectedTemplate?.id || null, templateValues: task.input.templateValues || {}, characters: task.result.storyboardData?.characters || {}, shots: task.result.generatedShotData.map(shot => ({ ...shot, shot: shot.order, image: null })) }, null, 2), `storyboard_${Date.now()}.json`, 'application/json');
   }
   function exportCSV(task) {
     const rows = [['鏡頭', '畫面內容', '拍攝方式', '時長', '拍攝角度', '情緒', '對白／旁白', '目的', '圖像狀態', '製作提示詞']];

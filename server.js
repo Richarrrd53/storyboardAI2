@@ -926,10 +926,23 @@ app.get('/api/projects/:id/cover', async (req, res) => {
     }
 });
 
-// GET shot image (supports signed URL redirect and legacy base64 stream + ?history=index)
+// GET shot image (supports signed URL redirect, authenticated ?proxy=1 binary stream for PDF export, and legacy base64 stream + ?history=index)
 app.get('/api/projects/:projectId/shots/:shotId/image', async (req, res) => {
     try {
         const { projectId, shotId } = req.params;
+        const wantsProxy = req.query.proxy === '1' || req.query.proxy === 'true';
+
+        if (wantsProxy) {
+            const decoded = requireAuthUser(req, res);
+            if (!decoded) return;
+            const project = await prisma.project.findUnique({
+                where: { id: projectId },
+                select: { id: true, authorId: true }
+            });
+            if (!project) return res.status(404).json({ error: '找不到專案' });
+            if (project.authorId !== decoded.id) return res.status(403).json({ error: '沒有權限存取此專案圖片' });
+        }
+
         const shot = await prisma.shot.findUnique({
             where: { id: shotId },
             select: { payload: true, projectId: true }
@@ -963,6 +976,36 @@ app.get('/api/projects/:projectId/shots/:shotId/image', async (req, res) => {
                 return res.send(buffer);
             }
             return res.status(404).send('Not Found');
+        }
+
+        if (wantsProxy) {
+            const storageClient = getInjectedStorageClient();
+            const parsed = storyboardImages.parseStorageRef(imageSource);
+            if (!parsed) {
+                return res.status(400).json({ error: '無法解析受信任的圖片儲存引用' });
+            }
+            try {
+                const downloaded = await storyboardImages.downloadStorageObject(parsed.ref, {
+                    projectId,
+                    storageClient
+                });
+                res.setHeader('Content-Type', downloaded.mimeType);
+                res.setHeader('Cache-Control', 'private, max-age=300');
+                return res.send(downloaded.buffer);
+            } catch (downloadErr) {
+                // Fallback: fetch from freshly resolved signed URL (still strictly bound to trusted parsed storageRef)
+                const freshUrl = await storyboardImages.resolveImageUrl(parsed.ref, { storageClient });
+                if (!freshUrl || !/^https?:\/\//i.test(freshUrl)) {
+                    return res.status(downloadErr.status || 404).send('Not Found');
+                }
+                const upstream = await fetch(freshUrl);
+                if (!upstream.ok) return res.status(upstream.status === 404 ? 404 : 502).send('Image Fetch Failed');
+                const buf = Buffer.from(await upstream.arrayBuffer());
+                const meta = storyboardImages.validateImageBuffer(buf);
+                res.setHeader('Content-Type', meta.mimeType);
+                res.setHeader('Cache-Control', 'private, max-age=300');
+                return res.send(buf);
+            }
         }
 
         const resolvedUrl = await storyboardImages.resolveImageUrl(imageSource, {

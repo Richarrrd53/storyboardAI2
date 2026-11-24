@@ -258,30 +258,38 @@
 
     async exportProject(project) {
       if (!project || !project.id) return false;
-      const token = this.getAuthToken();
-      let projectData = project;
-
-      try {
-        const res = await fetch(`/api/projects/${project.id}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (res.ok) {
-          const data = await res.json().catch(() => ({}));
-          if (data.project) projectData = data.project;
+      if (typeof global !== 'undefined' && global.StoryboardExport && typeof global.StoryboardExport.exportJson === 'function') {
+        const res = await global.StoryboardExport.exportJson({ projectId: project.id, project }, { silent: true });
+        if (!res.ok && !res.aborted) {
+          throw new Error(res.error || '無法取得完整專案資料，請稍後重試。');
         }
-      } catch (e) {
-        // Fallback to project passed in memory
+        return Boolean(res.ok);
+      }
+
+      const token = this.getAuthToken();
+      if (!token) throw new Error('請先登入後再匯出此專案。');
+
+      const res = await fetch(`/api/projects/${encodeURIComponent(project.id)}`, {
+        cache: 'no-store',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) {
+        throw new Error('無法取得完整專案資料，請稍後重試。');
+      }
+      const data = await res.json().catch(() => null);
+      if (!data?.project || !Array.isArray(data.project.shots)) {
+        throw new Error('伺服器回傳的專案資料不完整，無法匯出。');
       }
 
       if (typeof document === 'undefined') return true;
 
-      const jsonStr = JSON.stringify(projectData, null, 2);
-      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const jsonStr = JSON.stringify(data.project, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      const safeTitle = (project.title || 'storyboard').replace(/[\\/:*?"<>|]/g, '_');
+      const safeTitle = (data.project.title || 'storyboard').replace(/[\\/:*?"<>|]/g, '_');
       a.href = url;
-      a.download = `${safeTitle}.json`;
+      a.download = `${safeTitle}_storyboard.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -881,23 +889,36 @@
       }
     },
 
-    async exportProject(p) {
+    async exportProject(p, options = {}) {
       if (!p) return false;
+      if (typeof global !== 'undefined' && global.StoryboardExport) {
+        if (options?.format === 'pdf' && typeof global.StoryboardExport.openPdfSettings === 'function') {
+          return global.StoryboardExport.openPdfSettings({ projectId: p.id, project: p }, options);
+        }
+        if (options?.trigger && typeof global.StoryboardExport.openExportMenu === 'function') {
+          return global.StoryboardExport.openExportMenu(options.trigger, { projectId: p.id, project: p }, options);
+        }
+        if (typeof global.StoryboardExport.exportJson === 'function') {
+          const res = await global.StoryboardExport.exportJson({ projectId: p.id, project: p });
+          return Boolean(res?.ok);
+        }
+      }
+
       const requestEpoch = ProjectStore.resetEpoch;
       const toastFn = typeof global !== 'undefined' && typeof global.showSpaToast === 'function'
         ? global.showSpaToast
         : () => {};
-      toastFn(`正在準備匯出分鏡「${p.title}」...`);
+      toastFn(`正在整理分鏡資料…`);
       try {
         await ProjectsApi.exportProject(p);
         if (requestEpoch !== ProjectStore.resetEpoch) return false;
-        toastFn(`分鏡「${p.title}」已匯出為 JSON 檔。`);
+        toastFn(`JSON 已成功匯出。`);
         return true;
       } catch (err) {
         if (requestEpoch !== ProjectStore.resetEpoch) return false;
         console.error('Failed to export project', err);
         if (typeof global !== 'undefined' && typeof global.alert === 'function') {
-          global.alert('匯出失敗，請稍後再試');
+          global.alert(err?.message || '無法取得完整專案資料，請稍後重試。');
         }
         return false;
       }

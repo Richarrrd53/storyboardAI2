@@ -73,7 +73,7 @@
               </g>
             </svg>
           </span>
-          <span>匯出 JSON</span>
+          <span>匯出分鏡</span>
         </button>
         <div class="morph-divider"></div>
         <button class="morph-item delete" type="button" data-action="delete">
@@ -106,6 +106,16 @@
         if(item.disabled) return;
         if(item.dataset?.imGesturePlayed==='true'){delete item.dataset.imGesturePlayed;}
         else{root.IconMotion?.play?.(item);}
+        if (item.dataset.action === 'export') {
+          const environment = typeof window !== 'undefined' ? window : root;
+          const dialog = environment.StoryboardExportDialog || root.StoryboardExportDialog;
+          if (dialog && typeof dialog.switchMenuToExportFormat === 'function') {
+            dialog.switchMenuToExportFormat(menuContent, { projectId: project.id, project }, {
+              onClose: () => engine().close('action')
+            });
+            return;
+          }
+        }
         engine().close('action',()=>{
           const environment=typeof window!=='undefined'?window:root;
           const fallback=typeof global!=='undefined'?global:{};

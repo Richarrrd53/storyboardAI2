@@ -846,9 +846,14 @@
   // ════════════════════════════════════════════════════════════
   // 7. Helpers & API Connections
   // ════════════════════════════════════════════════════════════
-  function exportStoryboardJson() {
+  function exportStoryboardJson(eventOrTrigger) {
       const task = window.GenerationTask.getState();
       if (!task.input) return;
+      const trigger = eventOrTrigger?.currentTarget || (eventOrTrigger?.nodeType === 1 ? eventOrTrigger : document.getElementById('btn-export-result-menu'));
+      if (trigger && window.StoryboardExport && typeof window.StoryboardExport.openExportMenu === 'function') {
+          window.StoryboardExport.openExportMenu(trigger, { generationTask: task }, { align: 'right' });
+          return;
+      }
       window.TemplateWorkflow.exportJSON(task);
   }
   window.exportStoryboardJson = exportStoryboardJson;
