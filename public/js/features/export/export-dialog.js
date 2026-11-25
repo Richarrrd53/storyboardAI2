@@ -116,36 +116,28 @@
       height: options.height || 86,
       placement: options.placement || 'below',
       align: options.align || 'right',
-      label: '匯出分鏡格式',
-      triggerIconHTML: ICONS.download
+      label: '匯出分鏡格式'
     });
   }
 
   /**
-   * Direct Level-2 Morph from the "匯出分鏡" button inside ProjectOptionMorph:
-   * - No water-droplet phase: morphs directly from the button's rect into the Level-2 panel.
-   * - Original "匯出分鏡" button becomes the Level-2 panel header (no "返回選單" button).
-   * - Level-1 Option Menu recedes (scales down & reduces opacity); clicking anywhere on it
-   *   automatically retracts the Level-2 panel back into the "匯出分鏡" button.
+   * Level-2 Submenu Morph from the "匯出分鏡" button inside ProjectOptionMorph:
+   * Delegated to SurfaceMorph.openSubmenu / closeSubmenu (matching temp/morph with 2nd menu.html).
    */
   function closeSubMorph(immediate = false, closeOpts = {}) {
-    const sub = activeSubMorph;
-    if (!sub) return;
-    sub.close(immediate, undefined, closeOpts);
+    if (closeOpts?.dismissAll) return;
+    if (root.SurfaceMorph?.closeSubmenu) {
+      root.SurfaceMorph.closeSubmenu(immediate);
+    } else if (activeSubMorph) {
+      activeSubMorph.close(immediate);
+    }
   }
 
   function openExportSubMorph(triggerBtn, menuContent, source, options = {}) {
     if (!triggerBtn || !menuContent || !source || typeof document === 'undefined') return false;
-    if (activeSubMorph) {
-      activeSubMorph.close(true);
-    }
+    if (!root.SurfaceMorph?.openSubmenu) return false;
 
     const primarySurface = triggerBtn.closest?.('.surface-morph-surface') || menuContent.closest?.('.surface-morph-surface');
-    const overlay = primarySurface?.parentElement || document.body;
-    const startRect = triggerBtn.getBoundingClientRect();
-    const motion = root.matchMedia?.('(prefers-reduced-motion: reduce)');
-    const reduced = Boolean(motion?.matches);
-
     const panel = document.createElement('div');
     panel.className = 'export-submorph-panel';
     panel.setAttribute('role', 'menu');
@@ -162,7 +154,7 @@
 
     panel.innerHTML = `
       <div class="export-submorph-inner">
-        <button class="morph-item export-submorph-header" type="button" data-export-action="retract" aria-label="收合匯出分鏡選單">
+        <button class="morph-item export-submorph-header" type="button" data-export-action="retract" aria-label="收合匯出分鏡選單" role="menuitem">
           <span class="morph-item-icon">${iconHtml}</span>
           <span class="morph-item-label">${escapeHtml(labelText)}</span>
           <span class="morph-item-chevron" aria-hidden="true">${chevronHtml}</span>
@@ -179,257 +171,22 @@
       </div>
     `;
 
-    // Measure natural expanded target size & compute exact padding/border offsets so header aligns with triggerBtn
-    const vpW = root.innerWidth || document.documentElement.clientWidth || 1024;
-    const vpH = root.innerHeight || document.documentElement.clientHeight || 768;
-    const margin = 12;
+    const disposeHover = root.IconMotion?.bindHoverContainer?.(panel, {
+      itemSelector: '.morph-item',
+      canAnimate: () => panel.classList.contains('interactive') && !panel.inert
+    });
 
-    const innerEl = panel.querySelector('.export-submorph-inner');
-    const innerStyle = innerEl && root.getComputedStyle ? root.getComputedStyle(innerEl) : null;
-    const panelStyle = root.getComputedStyle ? root.getComputedStyle(panel) : null;
-    const padLeft = parseFloat(innerStyle?.paddingLeft) || 7;
-    const padRight = parseFloat(innerStyle?.paddingRight) || 7;
-    const padTop = parseFloat(innerStyle?.paddingTop) || 7;
-    const padBottom = parseFloat(innerStyle?.paddingBottom) || 7;
-    const borderLeft = parseFloat(panelStyle?.borderLeftWidth) || 0;
-    const borderRight = parseFloat(panelStyle?.borderRightWidth) || 0;
-    const borderTop = parseFloat(panelStyle?.borderTopWidth) || 0;
-    const borderBottom = parseFloat(panelStyle?.borderBottomWidth) || 0;
-
-    const surfaceRect = primarySurface?.getBoundingClientRect?.();
-    const minSurfaceW = surfaceRect?.width ? Math.round(surfaceRect.width) : 196;
-    const targetW = Math.min(Math.max(minSurfaceW, Math.round(startRect.width + padLeft + padRight + borderLeft + borderRight)), vpW - margin * 2);
-
-    panel.style.width = `${targetW}px`;
-    panel.style.height = 'auto';
-    panel.style.visibility = 'hidden';
-    overlay.appendChild(panel);
-    const measuredH = Math.ceil(panel.getBoundingClientRect?.().height || 0);
-    const targetH = Math.min(measuredH > 0 ? measuredH : 165, vpH - margin * 2);
-    panel.style.visibility = '';
-
-    // Anchor directly at the button's position (accounting for panel border + inner padding)
-    const rawLeft = startRect.left - padLeft - borderLeft;
-    const rawTop = startRect.top - padTop - borderTop;
-    const targetLeft = Math.max(margin, Math.min(rawLeft, vpW - targetW - margin));
-    const targetTop = Math.max(margin, Math.min(rawTop, vpH - targetH - margin));
-
-    panel.style.left = `${targetLeft}px`;
-    panel.style.top = `${targetTop}px`;
-    panel.style.height = `${targetH}px`;
-
-    // Recede Level-1 Option Menu around the expandable button's center without shifting translate3d
-    const baseTransform = primarySurface?.style?.transform || '';
-    if (primarySurface) {
-      const originX = surfaceRect && surfaceRect.width > 0
-        ? (startRect.left + startRect.width / 2) - surfaceRect.left
-        : 0;
-      const originY = surfaceRect && surfaceRect.height > 0
-        ? (startRect.top + startRect.height / 2) - surfaceRect.top
-        : 0;
-      const translateMatch = baseTransform.match(/translate3d\([^)]+\)/);
-      const baseTranslate = translateMatch ? translateMatch[0] : baseTransform;
-      primarySurface.style.transform = `${baseTranslate} translate(${originX}px, ${originY}px) scale(0.95) translate(${-originX}px, ${-originY}px)`.trim();
-      primarySurface.classList.add('is-submorph-receded');
-    }
-    triggerBtn.classList.add('is-submorph-origin-hidden');
-
-    const animations = [];
-    let closing = false;
-    let disposed = false;
-
-    const optionNodes = Array.from(panel.querySelectorAll('.export-submorph-option, .export-submorph-divider'));
-
-    // Click anywhere on the dimmed Level-1 Option Menu -> automatically retract Level-2 panel
-    const onPrimaryInteract = (event) => {
-      if (disposed) return;
-      event.preventDefault();
-      event.stopPropagation();
-      event.stopImmediatePropagation();
-      if (!closing) close(false);
-    };
-
-    const onKeyDown = (event) => {
-      if (disposed || closing) return;
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        event.stopPropagation();
-        event.stopImmediatePropagation();
-        close(false);
-      }
-    };
-
-    primarySurface?.addEventListener('pointerdown', onPrimaryInteract, true);
-    primarySurface?.addEventListener('click', onPrimaryInteract, true);
-    document.addEventListener('keydown', onKeyDown, true);
-
-    function cleanup() {
-      if (disposed) return;
-      disposed = true;
-      animations.forEach(a => { try { a.cancel(); } catch (_) {} });
-      animations.length = 0;
-      primarySurface?.removeEventListener('pointerdown', onPrimaryInteract, true);
-      primarySurface?.removeEventListener('click', onPrimaryInteract, true);
-      document.removeEventListener('keydown', onKeyDown, true);
-      primarySurface?.classList.remove('is-submorph-receded');
-      if (primarySurface && primarySurface.classList.contains('is-settled')) {
-        primarySurface.style.transform = baseTransform;
-      }
-      const wasHeaderHovered = Boolean(panel.querySelector('.export-submorph-header')?.matches?.(':hover'));
-      const prevTransitionDuration = triggerBtn.style.transitionDuration;
-      triggerBtn.style.transitionDuration = '0s';
-      if (triggerBtn.dataset) triggerBtn.dataset.submorphSkipHover = '1';
-      if (wasHeaderHovered) triggerBtn.classList.add('is-gesture-hover');
-      triggerBtn.classList.remove('is-submorph-origin-hidden');
-      panel.remove();
-      (root.setTimeout || setTimeout)(() => {
-        triggerBtn.classList.remove('is-gesture-hover');
-        if (triggerBtn.style.transitionDuration === '0s') {
-          triggerBtn.style.transitionDuration = prevTransitionDuration || '';
-        }
-        if (triggerBtn.dataset?.submorphSkipHover === '1') {
-          delete triggerBtn.dataset.submorphSkipHover;
-        }
-      }, 60);
-      if (activeSubMorph?.panel === panel) activeSubMorph = null;
-    }
-
-    function close(immediate = false, afterRetract, closeOpts = {}) {
-      if (disposed) {
-        afterRetract?.();
-        return;
-      }
-      if (immediate || reduced || !panel.animate) {
-        cleanup();
-        afterRetract?.();
-        return;
-      }
-      if (closing) return;
-      closing = true;
-
-      const dismissAll = Boolean(closeOpts?.dismissAll);
-      animations.forEach(a => { try { a.cancel(); } catch (_) {} });
-      animations.length = 0;
-
-      if (dismissAll) {
-        optionNodes.forEach(node => {
-          animations.push(node.animate([
-            { opacity: 1 },
-            { opacity: 0 }
-          ], { duration: 120, easing: 'ease-out', fill: 'forwards' }));
-        });
-
-        const fadeOut = panel.animate([
-          {
-            transform: 'scale(1)',
-            boxShadow: 'var(--surface-floating-shadow, 0 18px 42px rgba(15, 23, 42, 0.16)), var(--surface-floating-highlight, inset 0 1px 0 rgba(255, 255, 255, 0.8))',
-            opacity: 1
-          },
-          {
-            transform: 'scale(0.88)',
-            boxShadow: '0 0 0 rgba(15, 23, 42, 0), inset 0 1px 0 rgba(255, 255, 255, 0)',
-            opacity: 0
-          }
-        ], {
-          duration: 200,
-          easing: 'cubic-bezier(.22, 1, .36, 1)',
-          fill: 'forwards'
-        });
-        animations.push(fadeOut);
-
-        fadeOut.finished.then(() => {
-          cleanup();
-          afterRetract?.();
-        }).catch(() => {
-          cleanup();
-          afterRetract?.();
-        });
-        return;
-      }
-
-      // Restore Level-1 panel simultaneously while Level-2 morphs back into the button
-      primarySurface?.classList.remove('is-submorph-receded');
-      if (primarySurface && primarySurface.classList.contains('is-settled')) {
-        primarySurface.style.transform = baseTransform;
-      }
-
-      // Compute exact outer panel rect so .export-submorph-header inside panel's border aligns 1:1 with startRect
-      const returnRect = {
-        left: startRect.left - borderLeft,
-        top: startRect.top - borderTop,
-        width: startRect.width + borderLeft + borderRight,
-        height: startRect.height + borderTop + borderBottom
-      };
-      const curRect = panel.getBoundingClientRect();
-
-      optionNodes.forEach(node => {
-        animations.push(node.animate([
-          { opacity: 1, transform: 'translateY(0)' },
-          { opacity: 0, transform: 'translateY(-3px)' }
-        ], { duration: 130, easing: 'ease-out', fill: 'forwards' }));
-      });
-
-      const morphBack = panel.animate([
-        {
-          left: `${curRect.left}px`,
-          top: `${curRect.top}px`,
-          width: `${curRect.width}px`,
-          height: `${curRect.height}px`,
-          borderRadius: '24px',
-          backgroundColor: 'var(--surface-floating-reading-bg, rgba(255, 255, 255, 0.94))',
-          borderColor: 'var(--color-border-subtle, rgba(15, 23, 42, 0.08))',
-          boxShadow: 'var(--surface-floating-shadow, 0 18px 42px rgba(15, 23, 42, 0.16)), var(--surface-floating-highlight, inset 0 1px 0 rgba(255, 255, 255, 0.8))',
-          backdropFilter: 'var(--surface-floating-blur, blur(22px))',
-          opacity: 1
-        },
-        {
-          left: `${returnRect.left}px`,
-          top: `${returnRect.top}px`,
-          width: `${returnRect.width}px`,
-          height: `${returnRect.height}px`,
-          borderRadius: '22px',
-          backgroundColor: 'rgba(255, 255, 255, 0)',
-          borderColor: 'rgba(15, 23, 42, 0)',
-          boxShadow: '0 0 0 rgba(15, 23, 42, 0), inset 0 1px 0 rgba(255, 255, 255, 0)',
-          backdropFilter: 'blur(0px)',
-          opacity: 1
-        }
-      ], {
-        duration: 280,
-        easing: 'cubic-bezier(.22, 1, .36, 1)',
-        fill: 'forwards'
-      });
-      animations.push(morphBack);
-
-      if (innerEl?.animate) {
-        animations.push(innerEl.animate([
-          { padding: `${padTop}px ${padRight}px ${padBottom}px ${padLeft}px` },
-          { padding: '0px' }
-        ], {
-          duration: 280,
-          easing: 'cubic-bezier(.22, 1, .36, 1)',
-          fill: 'forwards'
-        }));
-      }
-
-      morphBack.finished.then(() => {
-        cleanup();
-        triggerBtn.focus?.({ preventScroll: true });
-        afterRetract?.();
-      }).catch(() => {
-        cleanup();
-        afterRetract?.();
-      });
-    }
-
-    // Bind actions inside Level-2 panel
     panel.querySelectorAll('[data-export-action]').forEach(btn => {
       btn.addEventListener('click', (event) => {
         event.stopPropagation();
-        if (closing || disposed) return;
         const action = btn.dataset.exportAction;
+        if (btn.dataset?.imGesturePlayed === 'true') {
+          delete btn.dataset.imGesturePlayed;
+        } else {
+          root.IconMotion?.play?.(btn);
+        }
         if (action === 'retract') {
-          close(false);
+          root.SurfaceMorph.closeSubmenu(false);
           return;
         }
         const runAction = () => {
@@ -439,7 +196,6 @@
             openPdfDialog(source, { returnFocus: primarySurface });
           }
         };
-        cleanup();
         if (typeof options.onClose === 'function') {
           options.onClose(runAction);
         } else if (root.SurfaceMorph?.isOpen?.()) {
@@ -450,59 +206,18 @@
       });
     });
 
-    // Direct button -> Level-2 panel Morph animation (no water droplet!)
-    if (!reduced && panel.animate) {
-      const morphOpen = panel.animate([
-        {
-          left: `${startRect.left - borderLeft}px`,
-          top: `${startRect.top - borderTop}px`,
-          width: `${startRect.width + borderLeft + borderRight}px`,
-          height: `${startRect.height + borderTop + borderBottom}px`,
-          borderRadius: '22px',
-          boxShadow: '0 2px 8px rgba(15, 23, 42, 0.06)'
-        },
-        {
-          left: `${targetLeft}px`,
-          top: `${targetTop}px`,
-          width: `${targetW}px`,
-          height: `${targetH}px`,
-          borderRadius: '24px',
-          boxShadow: 'var(--surface-floating-shadow, 0 18px 42px rgba(15, 23, 42, 0.16))'
-        }
-      ], {
-        duration: 280,
-        easing: 'cubic-bezier(.16, 1, .3, 1)',
-        fill: 'both'
-      });
-      animations.push(morphOpen);
-
-      if (innerEl?.animate) {
-        animations.push(innerEl.animate([
-          { padding: '0px' },
-          { padding: `${padTop}px ${padRight}px ${padBottom}px ${padLeft}px` }
-        ], {
-          duration: 280,
-          easing: 'cubic-bezier(.16, 1, .3, 1)',
-          fill: 'both'
-        }));
-      }
-
-      optionNodes.forEach((node, idx) => {
-        animations.push(node.animate([
-          { opacity: 0, filter: 'blur(4px)', transform: 'translateY(-4px)' },
-          { opacity: 1, filter: 'blur(0px)', transform: 'translateY(0)' }
-        ], {
-          duration: 210,
-          delay: 65 + idx * 32,
-          easing: 'cubic-bezier(.16, 1, .3, 1)',
-          fill: 'both'
-        }));
-      });
-    }
-
+    const close = (immediate = false) => root.SurfaceMorph.closeSubmenu(immediate);
+    const cleanup = () => {
+      disposeHover?.();
+      root.IconMotion?.cleanup?.(panel);
+      if (activeSubMorph?.panel === panel) activeSubMorph = null;
+    };
     activeSubMorph = { panel, close, cleanup };
-    panel.querySelector('[data-export-action="json"]')?.focus?.({ preventScroll: true });
-    return true;
+
+    return root.SurfaceMorph.openSubmenu(triggerBtn, {
+      layer: panel,
+      onRetract: cleanup
+    });
   }
 
   /**

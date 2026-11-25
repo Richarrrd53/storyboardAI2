@@ -1,4 +1,4 @@
-/** Shared liquid Surface Morph: temp/morph.html SDF geometry, spring and session. */
+/** Shared liquid Surface Morph: temp/morph.html & temp/morph with 2nd menu.html SDF geometry, spring and session. */
 (function(root) {
   'use strict';
   const doc = root.document || document;
@@ -34,6 +34,7 @@
     if(g.active||g.ownsTouch)clickBlock={id:g.id,until:now()+1500};
     if(g.active) {
       g.session?.menu.classList.remove('is-gesture-tracking');
+      g.session?.sub?.layer?.classList?.remove('is-gesture-tracking');
       try {if(g.trigger.hasPointerCapture?.(g.id))g.trigger.releasePointerCapture(g.id);}catch(_){}
     }
     return g;
@@ -41,12 +42,18 @@
   function cancelGesture(dismiss=true) {
     const g=endGesture();if(dismiss&&g?.active&&current===g.session)close('gesture_cancel');
   }
+  function isSubActive(s) {
+    return Boolean(s?.sub && (s.subTargetP > 0.5 || s.subP > 0.25));
+  }
   function isValidItem(s,item) {
-    return !(!item||!s.menu.contains(item)||item.disabled||item.hidden||item.getAttribute?.('aria-disabled')==='true'||item.closest?.('[hidden], [inert]'));
+    const container=isSubActive(s)?s.sub.layer:s.menu;
+    return !(!item||!container?.contains?.(item)||item.disabled||item.hidden||item.getAttribute?.('aria-disabled')==='true'||item.closest?.('[hidden], [inert]'));
   }
   function gestureItemRaw(g) {
     const s=g.session;
-    if(current!==s||s.disposed||s.phase==='closing'||!s.interactive)return null;
+    if(current!==s||s.disposed||s.phase==='closing')return null;
+    if(isSubActive(s)){if(!s.subInteractive)return null;}
+    else if(!s.interactive)return null;
     const target=doc.elementFromPoint?.(g.x,g.y),item=target?.closest?.(itemSelector);
     return isValidItem(s,item)?item:null;
   }
@@ -70,7 +77,8 @@
     if(!item)return;
     item.classList.add('is-gesture-hover');
     if(root.IconMotion&&item.querySelector?.('svg[data-im-icon]'))g.hoverTimer=later(()=>{
-      if(gesture!==g||!g.active||g.hovered!==item||current!==g.session||g.session.disposed||g.session.phase==='closing'||!g.session.interactive)return;
+      if(gesture!==g||!g.active||g.hovered!==item||current!==g.session||g.session.disposed||g.session.phase==='closing')return;
+      if(isSubActive(g.session)?!g.session.subInteractive:!g.session.interactive)return;
       g.hoverPlayedItem=item;
       root.IconMotion?.play?.(item);
     },hoverIconDelay);
@@ -78,6 +86,7 @@
   function trackGesture(g,session,haptic=false) {
     g.active=true;g.session=session;g.startX=g.x;g.startY=g.y;
     session.menu.classList.add('is-gesture-tracking');
+    session.sub?.layer?.classList?.add('is-gesture-tracking');
     const selection=doc.getSelection?.();
     if(selection&&(g.trigger.contains?.(selection.anchorNode)||session.overlay.contains?.(selection.anchorNode)))selection.removeAllRanges();
     if(haptic)try {root.navigator?.vibrate?.(12);}catch(_){}
@@ -91,11 +100,14 @@
     // stacking context and absorbs the complete dismissal transaction.
     if(!gesture)clickBlock=null;
     const s=current;
-    const inSubMorph=Boolean(event.target?.closest?.('.export-submorph-panel'));
-    if(s&&(s.phase==='closing'||(!s.menu.contains?.(event.target)&&!inSubMorph))) {
+    const inSub=Boolean(s?.sub?.layer?.contains?.(event.target)||event.target?.closest?.('.export-submorph-panel'));
+    const inMenu=Boolean(s?.menu.contains?.(event.target));
+    if(s&&(s.phase==='closing'||(!inMenu&&!inSub))) {
       consume(event);blockRelease(event);cancelGesture(false);close('outside_click');return;
     }
-    if(inSubMorph)return;
+    if(isSubActive(s)&&inMenu&&!inSub) {
+      consume(event);blockRelease(event);cancelGesture(false);closeSubmenu();return;
+    }
     if(gesture) {cancelGesture();return;}
     if(event.pointerType!=='touch'||event.isPrimary===false||event.button>0)return;
     if(event.target?.closest?.('input, textarea, select, [contenteditable="true"]'))return;
@@ -103,8 +115,9 @@
     // only its opener requires the hold timer.
     const scrollable=s?.interactive?event.target?.closest?.('.template-tag-grid'):null;
     if(scrollable&&scrollable.scrollHeight>scrollable.clientHeight+1)return;
-    const item=s?.interactive?event.target?.closest?.(itemSelector):null;
-    const trigger=item&&s.menu.contains(item)?item:event.target?.closest?.(triggerSelector);
+    const activeContainer=isSubActive(s)?(s.subInteractive?s.sub.layer:null):(s?.interactive?s.menu:null);
+    const item=activeContainer?event.target?.closest?.(itemSelector):null;
+    const trigger=item&&activeContainer.contains(item)?item:event.target?.closest?.(triggerSelector);
     if(!trigger||trigger.disabled||trigger.getAttribute?.('aria-disabled')==='true')return;
     const g={id:event.pointerId,trigger,x:event.clientX,y:event.clientY,startX:event.clientX,startY:event.clientY,active:false,moved:false};
     consume(event);gesture=g;doc.body.classList.add('is-morph-holding');
@@ -143,13 +156,18 @@
     g.moved ||= Math.hypot(g.x-g.startX,g.y-g.startY)>holdSlop;
     const item=gestureItemRaw(g);
     const alreadyPlayed=!!(item&&g.hoverPlayedItem===item);
+    const s=g.session;
     endGesture(!!item);
     if(item) {
       if(!alreadyPlayed)root.IconMotion?.play?.(item);
       if(item.dataset)item.dataset.imGesturePlayed='true';
       allowGestureClick=true;
       try {item.click?.();}finally {allowGestureClick=false;}
-    } else if(g.moved&&current===g.session)close('gesture_cancel');
+    } else if(g.moved&&current===s) {
+      const ptTarget=doc.elementFromPoint?.(g.x,g.y);
+      if(isSubActive(s)&&s.menu.contains?.(ptTarget))closeSubmenu();
+      else close('gesture_cancel');
+    }
   }
   function onPointerCancel(event) {
     if(clickBlock?.id===event.pointerId)clickBlock.until=now()+1500;
@@ -164,8 +182,11 @@
     if(allowGestureClick)return;
     const blocked=clickBlock&&now()<=clickBlock.until&&(event.pointerId===clickBlock.id||event.detail>0||event.pointerType==='touch');
     if(gesture?.active||blocked){consume(event);clickBlock=null;return;}
-    const inSubMorph=Boolean(event.target?.closest?.('.export-submorph-panel'));
-    if(current&&(current.phase==='closing'||(!current.menu.contains?.(event.target)&&!inSubMorph))){consume(event);close('outside_click');}
+    const s=current;
+    const inSub=Boolean(s?.sub?.layer?.contains?.(event.target)||event.target?.closest?.('.export-submorph-panel'));
+    const inMenu=Boolean(s?.menu.contains?.(event.target));
+    if(s&&(s.phase==='closing'||(!inMenu&&!inSub))){consume(event);close('outside_click');return;}
+    if(isSubActive(s)&&inMenu&&!inSub){consume(event);closeSubmenu();}
   }
   // Delegation handles freshly rendered cards without per-card timers/listeners.
   // Mark any additional opener with data-morph-trigger (data-morph-align also opts in).
@@ -237,11 +258,10 @@
     const style=root.getComputedStyle?.(trigger);
     if(style) for(const key of ['font','color','padding','gap','justifyContent']) icon.style[key]=style[key];
   }
-  // Geometry and spring constants ported from temp/morph.html. One progress value
-  // drives all three SDF blobs, trigger artwork, menu scale and staggered rows.
+  // Geometry and spring constants ported from temp/morph.html & temp/morph with 2nd menu.html.
   const smoothstep=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t);};
   const easeOutCubic=x=>1-Math.pow(1-clamp(x,0,1),3);
-  function computeMorphPrimitives(prog, g, dirMix) {
+  function computeMorphPrimitives(prog, g, dirMix, subP=0, recedeShiftY=10) {
     const btnW = g.btnW;
     const btnH = g.btnH;
     const widthRatio = btnW / Math.max(1, btnH);
@@ -250,12 +270,11 @@
     const minDropH = btnH * (0.52 + 0.10 * Math.tanh((widthRatio - 1.0) * 0.42));
 
     // =========================================================================
-    // 1. 先計算 Blob B (展開選單主體) 的同軸曲線，讓開合位移與寬度變化 100% 同步
+    // 1. Blob B (Level-1 Menu Body)
     // =========================================================================
     const emergeB = smoothstep(0.08, 0.18, prog);
     const expandRaw = clamp((prog - 0.18) / 0.82, 0.0, 1.0);
 
-    // 縱向與橫向展開保持協調同軸比例，避免單邊過長形成倒 L 型
     const openCurveY = 1.0 - Math.pow(1.0 - expandRaw, 2.25);
     const openCurveX = 1.0 - Math.pow(1.0 - expandRaw, 1.85);
 
@@ -268,33 +287,37 @@
     const seedW = minDropW * 0.88;
     const seedH = minDropH * 0.88;
 
-    const wB = lerp(seedW, g.menuW, progX) * emergeB;
-    const hB = lerp(seedH, g.menuH, progY) * emergeB;
+    const wBBase = lerp(seedW, g.menuW, progX) * emergeB;
+    const hBBase = lerp(seedH, g.menuH, progY) * emergeB;
 
     const startBy = g.btnCy + btnH * 0.16;
-    const topEdgeB = lerp(startBy - seedH * 0.5, g.menuTop, progY);
+    const topEdgeBBase = lerp(startBy - seedH * 0.5, g.menuTop, progY);
+    const cyBBase = topEdgeBBase + hBBase * 0.5;
+    const cxBBase = lerp(g.btnCx, g.menuCx, progX);
+    const rBBase = lerp(Math.min(wBBase, hBBase) * 0.5, g.menuR, smoothstep(0.28, 0.90, prog));
+
+    // Level-2 submenu recede: scale down to 0.925 & shift up smoothly
+    const subAmt = clamp(subP, 0.0, 1.0);
+    const recedeScale = lerp(1.0, 0.925, subAmt);
+    const wB = wBBase * recedeScale;
+    const hB = hBBase * recedeScale;
+    const topEdgeB = topEdgeBBase - recedeShiftY * subAmt * smoothstep(0.5, 1.0, prog);
     const cyB = topEdgeB + hB * 0.5;
+    const cxB = cxBBase;
+    const rB = rBBase * recedeScale;
 
-    // 關鍵修復：讓 cxB 與寬度曲線 progX 同步插值，收合縮小至水滴時剛好回到按鈕中心正下方
-    const cxB = lerp(g.btnCx, g.menuCx, progX);
-
-    const rB = lerp(Math.min(wB, hB) * 0.5, g.menuR, smoothstep(0.28, 0.90, prog));
-
-    // 水滴下墜時的自然上窄下寬錐度，展開完成後平滑歸零
     const vTaperB = Math.sin(expandRaw * Math.PI) * (1.0 - smoothstep(0.65, 0.96, prog)) * 0.16;
     const hTaperB = 0.0;
 
     // =========================================================================
-    // 2. Blob A (上方膠囊按鈕)：向中心對稱收縮成小水滴，並與 cxB 同軸銜接不外偏
+    // 2. Blob A (Trigger Capsule Droplet)
     // =========================================================================
     const tShrinkX = easeOutCubic(clamp(prog / 0.21, 0.0, 1.0));
     const tShrinkY = smoothstep(0.0, 0.22, prog);
-    // 在 p = 0.20 -> 0.35 期間完全收縮至 0，徹底消除展開後殘留的白色圓點
     const vanishScaleA = 1.0 - smoothstep(0.20, 0.35, prog);
 
     const wA = lerp(btnW, minDropW, tShrinkX) * vanishScaleA;
     const hA = lerp(btnH, minDropH, tShrinkY) * vanishScaleA;
-    // 在 p <= 0.14 時維持在按鈕中心對稱收縮；進入融合區段時精準對齊 cxB，收合時不再從外側飛入
     const cxA = lerp(g.btnCx, cxB, smoothstep(0.14, 0.28, prog));
     const cyA = lerp(g.btnCy, topEdgeB + Math.min(14.0, hB * 0.28), smoothstep(0.08, 0.34, prog));
     const rA = Math.min(wA, hA) * 0.5;
@@ -302,7 +325,7 @@
     const hTaperA = 0.0;
 
     // =========================================================================
-    // 3. Blob M (中軸過渡液滴)：嚴格約束於 Blob A 與 Blob B 連通包絡線內
+    // 3. Blob M (Neck Bridge Droplet)
     // =========================================================================
     const emergeM = smoothstep(0.02, 0.12, prog);
     const vanishM = 1.0 - smoothstep(0.18, 0.275, prog);
@@ -324,7 +347,7 @@
     const vTaperM = Math.sin(clamp((prog - 0.03) / 0.24, 0.0, 1.0) * Math.PI) * 0.16;
 
     // =========================================================================
-    // 4. 動態融球平滑半徑 k：在分離拉絲階段開啟，展開後完全歸零
+    // 4. Dynamic Smooth-Min Radius k
     // =========================================================================
     const kBase = btnH * (0.35 + 0.10 * Math.tanh((widthRatio - 1.0) * 0.45));
     const envAM = smoothstep(0.02, 0.10, prog) * (1.0 - smoothstep(0.18, 0.27, prog));
@@ -337,6 +360,7 @@
       blobA: { x: cxA, y: cyA, w: wA, h: hA, r: rA, vTaper: vTaperA, hTaper: hTaperA },
       blobM: { x: cxM, y: cyM, w: wM, h: hM, r: rM, vTaper: vTaperM },
       blobB: { x: cxB, y: cyB, w: wB, h: hB, r: rB, vTaper: vTaperB, hTaper: hTaperB },
+      blobBBase: { x: cxBBase, y: cyBBase, w: wBBase, h: hBBase, top: topEdgeBBase },
       kAM: kAM,
       kMB: kMB
     };
@@ -369,15 +393,11 @@
     const finalStyle=root.getComputedStyle?.(s.menu);
     const finalBorder=Math.max(0,parseFloat(finalStyle?.borderTopWidth||finalStyle?.borderWidth)||0);
     s.menu.style.setProperty('--morph-material-border-width',`${finalBorder}px`);
-    // Hand the almost-expanded liquid back to the actual CSS glass material.
-    // Compensate layer opacity to avoid a transparency dip during the crossfade.
     const fadeCanvas=node=>{
       const mix=smoothstep(.72,1,s.p);
       node.style.opacity=String((1-mix)/Math.max(.001,1-target[3]*mix));
     };
     const origin=s.opts.transparentTrigger?readColor(s.trigger,[255,255,255,0]):morphWhite;
-    // Interpolate premultiplied colors so transparent black does not become a
-    // gray/white flash. A transparent opener gains the panel material gradually.
     const material=presence=>{
       if(!s.opts.transparentTrigger)return morphWhite;
       const alpha=lerp(origin[3],morphWhite[3],presence);
@@ -415,6 +435,7 @@
 
       uniform float u_kAM;
       uniform float u_kMB;
+      uniform float u_dimB;
 
       float sdTaperedBox(vec2 p, vec2 c, vec2 b, float r, float vTaper, float hTaper) {
         vec2 lp = p - c;
@@ -464,8 +485,12 @@
         float aa = 0.85 / u_dpr;
         float shapeAlpha = 1.0 - smoothstep(-aa, aa, d);
 
-        vec4 shadowCol = vec4(0.03, 0.05, 0.10, 1.0) * shadowAlpha;
-        vec4 surfaceCol = vec4(u_color.rgb * u_color.a, u_color.a) * shapeAlpha;
+        float dim = clamp(u_dimB, 0.0, 1.0);
+        vec3 baseRgb = mix(u_color.rgb, u_color.rgb * vec3(0.935, 0.945, 0.965), dim);
+        float cardAlpha = shapeAlpha * u_color.a * mix(1.0, 0.94, dim);
+
+        vec4 shadowCol = vec4(0.03, 0.05, 0.10, 1.0) * shadowAlpha * mix(1.0, 0.65, dim);
+        vec4 surfaceCol = vec4(baseRgb * cardAlpha, cardAlpha);
 
         vec4 surfaceAndShadow = surfaceCol + shadowCol * (1.0 - shapeAlpha);
         float innerAlpha = 1.0 - smoothstep(-aa, aa, d + u_borderWidth);
@@ -483,16 +508,14 @@
         gl.useProgram(program);buffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
         gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]),gl.STATIC_DRAW);
         const pos=gl.getAttribLocation(program,'a_pos');gl.enableVertexAttribArray(pos);gl.vertexAttribPointer(pos,2,gl.FLOAT,false,0,0);
-        const names=['u_res','u_dpr','u_active','u_lightTheme','u_shadowPresence','u_color','u_borderColor','u_borderWidth','u_borderPresence','u_blobA','u_blobAExtra','u_blobM','u_blobMExtra','u_blobB','u_blobBExtra','u_kAM','u_kMB'];
+        const names=['u_res','u_dpr','u_active','u_lightTheme','u_shadowPresence','u_color','u_borderColor','u_borderWidth','u_borderPresence','u_blobA','u_blobAExtra','u_blobM','u_blobMExtra','u_blobB','u_blobBExtra','u_kAM','u_kMB','u_dimB'];
         const u=Object.fromEntries(names.map(n=>[n,gl.getUniformLocation(program,n)]));
-        // Only shade the union's travel envelope on large desktop viewports.
         const updateViewport=(vp)=>{sizeCanvas(canvas,vp,dpr);const o=s.origin,b=s.bounds,pad=48,left=Math.max(0,Math.floor((Math.min(o.left,b.left)-pad)*dpr)),top=Math.max(0,Math.floor((Math.min(o.top,b.top)-pad)*dpr)),right=Math.min(canvas.width,Math.ceil((Math.max(o.right,b.left+b.width)+pad)*dpr)),bottom=Math.min(canvas.height,Math.ceil((Math.max(o.bottom,b.top+b.height)+pad)*dpr));gl.enable(gl.SCISSOR_TEST);gl.scissor(left,canvas.height-bottom,Math.max(0,right-left),Math.max(0,bottom-top));gl.viewport(0,0,canvas.width,canvas.height);gl.useProgram(program);gl.uniform2f(u.u_res,canvas.width,canvas.height);};
         updateViewport(v);gl.uniform1f(u.u_dpr,dpr);
         gl.uniform1f(u.u_active,1);gl.uniform1f(u.u_lightTheme,morphWhite[0]+morphWhite[1]+morphWhite[2]>400?1:0);
         gl.uniform1f(u.u_borderWidth,borderWidth);gl.uniform4f(u.u_borderColor,...borderColor.slice(0,3).map(c=>c/255),borderColor[3]);
-        return {resize:updateViewport,draw(prims,shadowPresence,borderPresence){
-
-          fadeCanvas(canvas);gl.useProgram(program);gl.uniform1f(u.u_shadowPresence,shadowPresence);gl.uniform1f(u.u_borderPresence,borderPresence);
+        return {resize:updateViewport,draw(prims,shadowPresence,borderPresence,dimB=0){
+          fadeCanvas(canvas);gl.useProgram(program);gl.uniform1f(u.u_shadowPresence,shadowPresence);gl.uniform1f(u.u_borderPresence,borderPresence);gl.uniform1f(u.u_dimB,clamp(dimB,0,1));
           const fill=material(shadowPresence);gl.uniform4f(u.u_color,...fill.slice(0,3).map(c=>c/255),fill[3]);
           for(const name of ['A','M','B']) {const b=prims['blob'+name];gl.uniform4f(u['u_blob'+name],b.x,b.y,b.w,b.h);
             if(name==='M')gl.uniform2f(u.u_blobMExtra,b.r,b.vTaper);else gl.uniform3f(u['u_blob'+name+'Extra'],b.r,b.vTaper,b.hTaper);}
@@ -501,8 +524,6 @@
         },dispose(){gl.deleteBuffer(buffer);gl.deleteProgram(program);shaders.forEach(sh=>gl.deleteShader(sh));gl.getExtension('WEBGL_lose_context')?.loseContext();}};
       } catch(_) {if(buffer)gl.deleteBuffer(buffer);if(program)gl.deleteProgram(program);shaders.forEach(sh=>gl.deleteShader(sh));canvas.remove?.();}
     }
-    // Software fallback evaluates the same tapered-box SDF and quadratic smooth union.
-    // A replacement canvas is needed after a WebGL context has been allocated.
     const fallback=gl?doc.createElement('canvas'):canvas;
     if(gl){fallback.className='surface-morph-sdf';fallback.setAttribute('aria-hidden','true');s.overlay.appendChild(fallback);}
     sizeCanvas(fallback,v,1);
@@ -516,7 +537,7 @@
       return Math.min(Math.max(qx,qy),0)+Math.hypot(Math.max(qx,0),Math.max(qy,0))-r;
     }
     const union=(a,b,k)=>{if(k<=.001)return Math.min(a,b);const h=clamp(.5+.5*(b-a)/k,0,1);return lerp(b,a,h)-k*h*(1-h);};
-    return {resize(vp){sizeCanvas(fallback,vp,1);},draw(prims,shadowPresence,borderPresence){
+    return {resize(vp){sizeCanvas(fallback,vp,1);},draw(prims,shadowPresence,borderPresence,dimB=0){
       fadeCanvas(fallback);if(!ctx)return;
       const blobs=[prims.blobA,prims.blobM,prims.blobB].filter(b=>b.w>.5&&b.h>.5);
       const pad=32+Math.max(prims.kAM,prims.kMB);
@@ -525,16 +546,17 @@
       const right=Math.min(fallback.width,Math.ceil(Math.max(...blobs.map(b=>b.x+b.w*.6))+pad));
       const bottom=Math.min(fallback.height,Math.ceil(Math.max(...blobs.map(b=>b.y+b.h*.6))+pad+8));
       ctx.clearRect(0,0,fallback.width,fallback.height);if(right<=left||bottom<=top)return;
-      const img=ctx.createImageData(right-left,bottom-top),data=img.data,fill=material(shadowPresence);
+      const img=ctx.createImageData(right-left,bottom-top),data=img.data,fill=material(shadowPresence),dim=clamp(dimB,0,1);
+      const dimFill=[fill[0]*lerp(1,.935,dim),fill[1]*lerp(1,.945,dim),fill[2]*lerp(1,.965,dim),fill[3]*lerp(1,.94,dim)];
       const sdf=(x,y)=>union(union(distance(prims.blobA,x,y),distance(prims.blobM,x,y),prims.kAM),distance(prims.blobB,x,y),prims.kMB);
       for(let y=0;y<img.height;y++)for(let x=0;x<img.width;x++){
         const d=sdf(left+x+.5,top+y+.5);
-        const coverage=1-smoothstep(-.85,.85,d),a=coverage*fill[3];
+        const coverage=1-smoothstep(-.85,.85,d),a=coverage*dimFill[3];
         const inner=1-smoothstep(-.85,.85,d+borderWidth);
         const edge=Math.max(0,coverage-inner)*borderColor[3]*borderPresence;
-        const shadow=(1-smoothstep(-2,26,sdf(left+x+.5,top+y-7.5)))*(morphWhite[0]+morphWhite[1]+morphWhite[2]>400?.13:.34)*shadowPresence*fill[3];
+        const shadow=(1-smoothstep(-2,26,sdf(left+x+.5,top+y-7.5)))*(morphWhite[0]+morphWhite[1]+morphWhite[2]>400?.13:.34)*shadowPresence*dimFill[3]*lerp(1,.65,dim);
         const alpha=edge+(a+shadow*(1-coverage))*(1-edge),i=(y*img.width+x)*4;
-        for(let c=0;c<3;c++)data[i+c]=alpha?(borderColor[c]*edge+(fill[c]*a+[7.65,12.75,25.5][c]*shadow*(1-coverage))*(1-edge))/alpha:0;
+        for(let c=0;c<3;c++)data[i+c]=alpha?(borderColor[c]*edge+(dimFill[c]*a+[7.65,12.75,25.5][c]*shadow*(1-coverage))*(1-edge))/alpha:0;
         data[i+3]=alpha*255;
       }
       ctx.putImageData(img,left,top);
@@ -542,7 +564,9 @@
   }
 
   function frame(s) {
-    const p=s.p,g=s.geometry,bounds=s.bounds,prims=computeMorphPrimitives(p,g,s.dirMix),b=prims.blobB;
+    const p=s.p,g=s.geometry,bounds=s.bounds,subAmt=clamp(s.subP||0,0,1);
+    const recedeShiftY=s.sub?.geom?.recedeShiftY??10;
+    const prims=computeMorphPrimitives(p,g,s.dirMix,subAmt,recedeShiftY),b=prims.blobB;
     s.primitives=prims;
     const menu=s.menu,icon=s.icon;
     menu.style.width=bounds.width+'px';menu.style.height=bounds.height+'px';menu.style.left='0px';menu.style.top='0px';
@@ -550,9 +574,15 @@
     const sx=b.w/bounds.width,sy=b.h/bounds.height;
     menu.style.transform=`translate3d(${b.x-b.w*.5}px, ${b.y-b.h*.5}px, 0) scale(${sx}, ${sy})`;
     s.content.style.borderRadius=`${b.r/Math.max(.01,sx)}px / ${b.r/Math.max(.01,sy)}px`;
-    menu.style.opacity=String(smoothstep(.24,.54,p));
+    const menuAlpha=smoothstep(.24,.54,p);
+    menu.style.opacity=String(menuAlpha);
     menu.style.setProperty('--morph-surface-presence',String(p));
-    menu.style.setProperty('--morph-terminal-material',String(smoothstep(.72,1,p)));menu.classList.toggle('is-terminal-blur',p>=.72);
+    menu.style.setProperty('--morph-terminal-material',String(smoothstep(.72,1,p)));
+    menu.style.setProperty('--morph-sub-dim',String(subAmt));
+    menu.classList.toggle('is-terminal-blur',p>=.72);
+    const isSubVisible=Boolean(s.sub&&s.subP>0.0005);
+    menu.classList.toggle('is-submorph-receded',isSubVisible);
+
     const phase=clamp(p/.21,0,1),scale=lerp(1,.44,easeOutCubic(phase));
     icon.style.transform=`translate3d(${(prims.blobA.x-g.btnCx)*.85}px, ${(prims.blobA.y-g.btnCy)*.92}px, 0) scale(${scale})`;
     icon.style.opacity=String(1-smoothstep(.02,.20,p));icon.style.filter=`blur(${9.5*Math.pow(phase,.85)}px)`;
@@ -564,14 +594,84 @@
     const maxStagger=s.rows.length>7?.27:0;for(const [idx,row] of s.rows.entries()) {
       const isTopSearch=row.classList?.contains('template-tag-search');
       const stagger=maxStagger?(idx/(s.rows.length-1))*maxStagger:idx*.045,start=isTopSearch?.48:.28+stagger,span=isTopSearch?.42:Math.max(.01,.56-stagger*.4),progress=clamp((p-start)/span,0,1),ease=easeOutCubic(progress);
-      row.style.opacity=String(smoothstep(0,.68,progress));row.style.filter=(1-ease)*11>.15?`blur(${(1-ease)*11}px)`:'none';
+      const blurPx=(1-ease)*11+subAmt*0.6;
+      const alpha=smoothstep(0,.68,progress)*lerp(1,0.46,subAmt);
+      if(isSubVisible&&s.sub.triggerRow===row){
+        row.style.opacity='0';row.style.visibility='hidden';
+      }else{
+        row.style.visibility='visible';row.style.opacity=String(alpha);
+      }
+      row.style.filter=blurPx>.15?`blur(${blurPx.toFixed(2)}px)`:'none';
       row.style.transform=`translate3d(0, ${(1-ease)*-8}px, 0)`;
     }
-    // Fade only the shadow with the same reversible progress as the liquid.
-    // No CSS shadow handoff or phase reset when opening reverses into closing.
-    // Reproduce the trigger's physical border only near departure/return.
-    // The shared progress makes this fade continuous even on a reversal.
-    s.renderer?.draw(prims,smoothstep(0,1,p),1-smoothstep(0,.32,p));
+
+    if(s.sub){
+      const sub=s.sub,sg=sub.geom;
+      if(isSubVisible){
+        const t=subAmt;
+        const curLeft=lerp(sg.startLeft,sg.endLeft,t);
+        const curTop=lerp(sg.startTop,sg.endTop,t);
+        const curW=lerp(sg.startW,sg.endW,t);
+        const curH=lerp(sg.startH,sg.endH,t);
+        const curR=lerp(22.0,s.radius,t);
+        const padX=sg.padLeft*t;
+        const padY=sg.padTop*t;
+        const baseB=prims.blobBBase;
+        const baseLeft=baseB.x-baseB.w*0.5;
+        const baseScaleX=baseB.w/Math.max(1,bounds.width);
+        const baseScaleY=baseB.h/Math.max(1,bounds.height);
+        const screenX=baseLeft+(curLeft-bounds.left)*baseScaleX;
+        const screenY=baseB.top+(curTop-bounds.top)*baseScaleY;
+        const shadowStrength=smoothstep(0.0,0.42,t)*menuAlpha;
+
+        sub.layer.style.display='block';
+        sub.layer.style.opacity=menuAlpha.toFixed(3);
+        sub.layer.style.width=curW.toFixed(2)+'px';
+        sub.layer.style.height=curH.toFixed(2)+'px';
+        sub.layer.style.borderRadius=curR.toFixed(2)+'px';
+        sub.layer.style.transform=`translate3d(${screenX.toFixed(2)}px, ${screenY.toFixed(2)}px, 0) scale(${baseScaleX.toFixed(4)}, ${baseScaleY.toFixed(4)})`;
+        sub.layer.style.setProperty('--submorph-shadow-strength',shadowStrength.toFixed(3));
+        if(sub.inner) sub.inner.style.transform=`translate3d(${padX.toFixed(2)}px, ${padY.toFixed(2)}px, 0)`;
+
+        if(sub.headerChevron){
+          const rCol=Math.round(lerp(148,37,t));
+          const gCol=Math.round(lerp(160,99,t));
+          const bCol=Math.round(lerp(184,235,t));
+          sub.headerChevron.style.color=`rgb(${rCol},${gCol},${bCol})`;
+          const svg=sub.headerChevron.querySelector?.('svg');
+          if(svg)svg.style.stroke=`rgb(${rCol},${gCol},${bCol})`;
+        }
+
+        for(const [sIdx,sRow] of sub.optionNodes.entries()){
+          const sStagger=sIdx*0.07;
+          const sProg=clamp((t-(0.08+sStagger))/(0.62-sStagger*0.3),0,1);
+          const sEase=easeOutCubic(sProg);
+          const sBlur=(1-sEase)*5.5;
+          const sAlpha=smoothstep(0,0.72,sProg);
+          const sSlideY=(1-sEase)*-10.0;
+          sRow.style.opacity=sAlpha.toFixed(3);
+          sRow.style.filter=sBlur>0.12?`blur(${sBlur.toFixed(2)}px)`:'none';
+          sRow.style.transform=`translate3d(0, ${sSlideY.toFixed(2)}px, 0)`;
+        }
+
+        const canInteract=t>0.55&&s.subTargetP>0.5&&p>0.85&&s.phase!=='closing';
+        sub.layer.classList.toggle('interactive',canInteract);
+        sub.layer.inert=!canInteract;
+        if(canInteract&&!s.subInteractive){
+          s.subInteractive=true;
+          activateSubmenu(s);
+        }else if(!canInteract){
+          s.subInteractive=false;
+        }
+      }else{
+        sub.layer.style.display='none';
+        sub.layer.classList.remove('interactive');
+        sub.layer.inert=true;
+        s.subInteractive=false;
+      }
+    }
+
+    s.renderer?.draw(prims,smoothstep(0,1,p),1-smoothstep(0,.32,p),subAmt);
     if(s.phase==='opening'&&p>.68)activate(s);
     if(gesture?.session===s)updateGestureHover();
   }
@@ -586,37 +686,185 @@
       const dt=clamp(((typeof time==='number'?time:now())-last)/1000,0,.05);last=typeof time==='number'?time:now();
       const target=s.phase==='closing'?0:1;
       s.dirMix+=(target-s.dirMix)*(1-Math.exp(-dt*18));
-      if(reduced()){s.p=target;s.velocity=0;}else {
+      if(reduced()){
+        s.p=target;s.velocity=0;
+        if(s.sub||s.subP>0){s.subP=s.subTargetP;s.subVelocity=0;}
+      }else {
         const stiffness=target?195:235,damping=target?24.5:27.5;
         for(let i=0;i<4;i++){s.velocity+=(-stiffness*(s.p-target)-damping*s.velocity)*(dt/4);s.p+=s.velocity*(dt/4);}
         if(Math.abs(s.p-target)<.0006&&Math.abs(s.velocity)<.004){s.p=target;s.velocity=0;}
         s.p=clamp(s.p,0,1);
+
+        if(s.sub||s.subP>0){
+          const isClosingAll=target<0.5&&s.subP>0.001;
+          const subStiffness=isClosingAll?340.0:(s.subTargetP>0.5?250.0:285.0);
+          const subDamping=isClosingAll?33.0:(s.subTargetP>0.5?27.5:30.0);
+          for(let i=0;i<4;i++){
+            s.subVelocity+=(-subStiffness*(s.subP-s.subTargetP)-subDamping*s.subVelocity)*(dt/4);
+            s.subP+=s.subVelocity*(dt/4);
+          }
+          if(Math.abs(s.subP-s.subTargetP)<.0006&&Math.abs(s.subVelocity)<.004){
+            s.subP=s.subTargetP;s.subVelocity=0;
+          }
+          s.subP=clamp(s.subP,0,1);
+        }
       }
       frame(s);
       if(current!==s||s.disposed||s.runId!==runId)return;
-      if(s.p===target&&s.velocity===0){if(target)settle(s);else finish(s,s.closeReason,s.closeReason!=='focus_out');}
-      else s.raf=raf(tick);
+      if(s.sub&&s.subP===0&&s.subTargetP===0&&s.subVelocity===0){
+        cleanupSubmenu(s,s.phase!=='closing');
+      }
+      const primaryDone=s.p===target&&s.velocity===0;
+      const subDone=!s.sub||(s.subP===s.subTargetP&&s.subVelocity===0);
+      if(primaryDone&&subDone){
+        if(target)settle(s);
+        else finish(s,s.closeReason,s.closeReason!=='focus_out');
+      }else{
+        s.raf=raf(tick);
+      }
     };
     if(reduced())tick(last);else s.raf=raf(tick);
   }
-  function focusItems(s) {
-    return Array.from(s.menu.querySelectorAll('button, a[href], input, select, textarea, [tabindex]')).filter(el=>!el.disabled&&el.getAttribute?.('aria-disabled')!=='true'&&!el.hidden);
+  function focusItems(container) {
+    return Array.from((container||current?.menu)?.querySelectorAll?.('button, a[href], input, select, textarea, [tabindex]')||[]).filter(el=>!el.disabled&&el.getAttribute?.('aria-disabled')!=='true'&&!el.hidden);
   }
   function activate(s) {
     if(s.interactive)return;
     s.interactive=true;s.menu.inert=false;s.menu.classList.add('is-content-visible');
-    const items=focusItems(s); if(s.opts.keyboard!=='content') items.forEach((el,index)=>{el.tabIndex=index? -1:0;});
-    const first=(s.opts.autoFocus===false||items[0]?.matches?.('input,textarea,select'))?s.menu:(items[0]||s.menu);
-    first.focus?.({preventScroll:true});
+    const items=focusItems(s.menu); if(s.opts.keyboard!=='content') items.forEach((el,index)=>{el.tabIndex=index? -1:0;});
+    if(!isSubActive(s)){
+      const first=(s.opts.autoFocus===false||items[0]?.matches?.('input,textarea,select'))?s.menu:(items[0]||s.menu);
+      first.focus?.({preventScroll:true});
+    }
+  }
+  function activateSubmenu(s) {
+    const sub=s.sub;if(!sub)return;
+    const items=focusItems(sub.layer);
+    items.forEach((el,index)=>{el.tabIndex=index===0?0:-1;});
+    const firstOpt=sub.optionNodes.find(n=>n.matches?.('button, a[href], [role="menuitem"]'));
+    (firstOpt||items[0]||sub.layer).focus?.({preventScroll:true});
   }
   function settle(s) {
-    s.phase='open';activate(s);s.menu.classList.add('is-settled');s.menu.style.willChange='auto';s.content.style.borderRadius='';
-    if(s.opts.keepTrigger) s.trigger.classList.remove('is-hidden-for-morph','surface-morph-trigger-hidden');
-    s.opts.onOpened?.(s.menu);
+    if(s.phase!=='open'){
+      s.phase='open';activate(s);s.menu.classList.add('is-settled');s.menu.style.willChange='auto';s.content.style.borderRadius='';
+      if(s.opts.keepTrigger) s.trigger.classList.remove('is-hidden-for-morph','surface-morph-trigger-hidden');
+      s.opts.onOpened?.(s.menu);
+    }
+  }
+  function computeSubmenuGeometry(s, triggerRow, layer, inner) {
+    const bounds=s.bounds,vp=s.viewport;
+    const innerStyle=inner&&root.getComputedStyle?root.getComputedStyle(inner):null;
+    const layerStyle=root.getComputedStyle?root.getComputedStyle(layer):null;
+    const contentStyle=root.getComputedStyle?root.getComputedStyle(s.content):null;
+    const padLeft=parseFloat(innerStyle?.paddingLeft)||parseFloat(contentStyle?.paddingLeft)||7;
+    const padRight=parseFloat(innerStyle?.paddingRight)||parseFloat(contentStyle?.paddingRight)||7;
+    const padTop=parseFloat(innerStyle?.paddingTop)||parseFloat(contentStyle?.paddingTop)||7;
+    const padBottom=parseFloat(innerStyle?.paddingBottom)||parseFloat(contentStyle?.paddingBottom)||7;
+    const borderLeft=parseFloat(layerStyle?.borderLeftWidth)||0;
+    const borderRight=parseFloat(layerStyle?.borderRightWidth)||0;
+    const borderTop=parseFloat(layerStyle?.borderTopWidth)||0;
+    const borderBottom=parseFloat(layerStyle?.borderBottomWidth)||0;
+
+    const rowRect=triggerRow.getBoundingClientRect?.();
+    const hasOffset=Number.isFinite(triggerRow.offsetTop)&&triggerRow.offsetWidth>0;
+    const startW=hasOffset?triggerRow.offsetWidth:(rowRect?.width||Math.max(1,bounds.width-padLeft-padRight));
+    const startH=hasOffset?triggerRow.offsetHeight:(rowRect?.height||44);
+    const startLeft=hasOffset?(bounds.left+triggerRow.offsetLeft):(rowRect?.left??bounds.left+padLeft);
+    const startTop=hasOffset?(bounds.top+triggerRow.offsetTop):(rowRect?.top??bounds.top+padTop);
+
+    const endW=Math.min(Math.max(bounds.width,Math.round(startW+padLeft+padRight+borderLeft+borderRight)),Math.max(1,vp.width-28));
+    if(inner)inner.style.width=`${Math.max(1,endW-padLeft-padRight-borderLeft-borderRight)}px`;
+
+    const prevDisplay=layer.style.display,prevVis=layer.style.visibility;
+    layer.style.width=`${endW}px`;layer.style.height='auto';layer.style.visibility='hidden';layer.style.display='block';
+    if(!layer.parentNode)s.overlay.appendChild(layer);
+    const measuredInnerH=Math.ceil(inner?.getBoundingClientRect?.().height||layer.getBoundingClientRect?.().height||0);
+    const measuredH=measuredInnerH>0?(measuredInnerH+padTop+padBottom+borderTop+borderBottom):165;
+    const endH=Math.min(measuredH,Math.max(1,vp.height-28));
+    layer.style.visibility=prevVis;layer.style.display=prevDisplay||'none';
+
+    let idealEndTop=startTop-padTop-borderTop;
+    const maxBottom=vp.top+vp.height-14;
+    const maxPeekingOffset=136;
+    if(idealEndTop>bounds.top+maxPeekingOffset)idealEndTop=bounds.top+maxPeekingOffset;
+    if(idealEndTop+endH>maxBottom)idealEndTop=maxBottom-endH;
+
+    const isFirstRow=(startTop-bounds.top)<=(padTop+4);
+    const minTop=!isFirstRow?(bounds.top+36):Math.max(vp.top+14,bounds.top);
+    const endTop=clamp(idealEndTop,minTop,Math.max(minTop,maxBottom-endH));
+    const endLeft=clamp(bounds.left,vp.left+14,Math.max(vp.left+14,vp.left+vp.width-endW-14));
+    const recedeShiftY=isFirstRow?14:10;
+
+    return {startLeft,startTop,startW,startH,endLeft,endTop,endW,endH,padLeft,padRight,padTop,padBottom,borderLeft,borderRight,borderTop,borderBottom,recedeShiftY};
+  }
+  function cleanupSubmenu(s, restoreFocus=false) {
+    const sub=s?.sub;if(!sub)return;
+    s.sub=null;s.subInteractive=false;s.subP=0;s.subVelocity=0;s.subTargetP=0;
+    s.menu.classList.remove('is-submorph-receded');
+    s.menu.style.setProperty('--morph-sub-dim','0');
+    if(s.phase==='open')s.menu.style.willChange='auto';
+    const row=sub.triggerRow;
+    if(row){
+      row.style.visibility='';row.style.opacity='1';
+      row.classList.remove('is-submorph-origin-hidden');
+    }
+    sub.layer.remove?.();
+    if(sub.layer.parentNode?.removeChild)sub.layer.parentNode.removeChild(sub.layer);
+    sub.onRetract?.();
+    if(restoreFocus&&s.phase!=='closing'&&!s.disposed&&row?.isConnected&&!row.closest?.('[inert]')){
+      row.focus?.({preventScroll:true});
+    }
+  }
+  function openSubmenu(triggerRow, subOpts={}) {
+    const s=current;
+    if(!s||s.disposed||s.phase==='closing'||!triggerRow||!s.menu.contains(triggerRow))return false;
+    if(s.sub&&s.sub.triggerRow===triggerRow){
+      if(subOpts.onRetract)s.sub.onRetract=subOpts.onRetract;
+      s.subTargetP=1;
+      if(reduced()){s.subP=1;s.subVelocity=0;frame(s);}else run(s);
+      return true;
+    }
+    if(s.sub)cleanupSubmenu(s,false);
+    const layer=subOpts.layer||doc.createElement('div');
+    if(!subOpts.layer&&subOpts.content)layer.appendChild(subOpts.content);
+    layer.classList.add('surface-morph-submenu','export-submorph-panel');
+    if(!layer.getAttribute('role'))layer.setAttribute('role','menu');
+    layer.style.position='fixed';layer.style.left='0px';layer.style.top='0px';layer.style.transformOrigin='0 0';
+    layer.inert=true;
+    const inner=layer.querySelector?.('.export-submorph-inner, .submenu-inner')||layer.firstElementChild;
+    const headerRow=layer.querySelector?.('.export-submorph-header, .submenu-header-row');
+    const headerChevron=headerRow?.querySelector?.('.morph-item-chevron, .submenu-chevron')||null;
+    const optionNodes=Array.from(layer.querySelectorAll?.('.export-submorph-option, .export-submorph-divider, .submenu-option')||[]);
+    const geom=computeSubmenuGeometry(s,triggerRow,layer,inner);
+    if(!layer.parentNode)s.overlay.appendChild(layer);
+    layer.addEventListener?.('keydown',event=>{
+      const items=focusItems(layer),index=items.indexOf(doc.activeElement);
+      if(['ArrowDown','ArrowUp','Home','End'].includes(event.key)&&items.length){
+        event.preventDefault();event.stopPropagation();
+        const next=event.key==='Home'?0:event.key==='End'?items.length-1:(index+(event.key==='ArrowDown'?1:-1)+items.length)%items.length;
+        items.forEach((el,i)=>{el.tabIndex=i===next?0:-1;});items[next].focus?.();
+      }else if(event.key==='Tab'){
+        event.preventDefault();event.stopPropagation();
+        if(items.length){const next=(index+(event.shiftKey?-1:1)+items.length)%items.length;items.forEach((el,i)=>{el.tabIndex=i===next?0:-1;});items[next].focus?.();}
+      }
+    });
+    s.sub={triggerRow,layer,inner,headerRow,headerChevron,optionNodes,geom,onRetract:subOpts.onRetract};
+    s.menu.style.willChange='transform,opacity';
+    s.subP=0;s.subVelocity=0;s.subTargetP=1;s.subInteractive=false;
+    if(reduced()){s.subP=1;s.subVelocity=0;frame(s);}
+    else{frame(s);run(s);}
+    return true;
+  }
+  function closeSubmenu(immediate=false) {
+    const s=current;if(!s||!s.sub)return;
+    s.subTargetP=0;
+    if(immediate||reduced()){s.subP=0;s.subVelocity=0;frame(s);cleanupSubmenu(s,s.phase!=='closing');}
+    else run(s);
   }
   function finish(s,reason,restore=true) {
     if(!s||s.disposed) return;
     if(gesture?.session===s)endGesture();
+    if(s.sub)cleanupSubmenu(s,false);
     root.IconMotion?.cleanup?.(s.menu);
     s.disposed=true;s.renderer?.dispose(); for(const row of s.rows||[]) {const original=s.rowStyles.get(row);for(const key of ['opacity','filter','transform'])row.style[key]=original[key];} if(s.raf) cancel(s.raf);s.lease?.release(); s.motion?.removeEventListener?.('change',s.onMotion);s.stopResize?.();
     s.trigger.classList?.remove('is-hidden-for-morph','surface-morph-trigger-hidden');s.trigger.setAttribute?.('aria-expanded','false');
@@ -632,15 +880,15 @@
     if(typeof reason==='function') {complete=reason;reason=null;}
     const s=current; if(!s) {complete?.();return;}
     if(complete) s.callbacks.push(complete);
-    // Focus/scroll notifications emitted by inert changes must not cut off a return flight.
-    // A real resize invalidates the cached geometry and must still clean up immediately.
     if(s.phase==='closing'&&['scroll','focus_out','tab'].includes(reason)) return;
     if(immediateReasons.has(reason)||reduced()) {finish(s,reason||'close',!['navigation','unmount','destroy','modal','focus_out','trigger_removed'].includes(reason));return;}
     if(s.phase==='closing') return;
     if(gesture?.session===s)endGesture();
     s.trigger.classList.add('is-hidden-for-morph','surface-morph-trigger-hidden');
     s.phase='closing';s.closeReason=reason||'close';
+    if(s.sub)s.subTargetP=0;
     s.trigger.setAttribute?.('aria-expanded','false');s.menu.inert=true;s.interactive=false;s.menu.classList.remove('is-settled','is-content-visible');
+    if(s.sub)s.sub.layer.inert=true;
     s.opts.onClosing?.(s.closeReason);
     run(s);
   }
@@ -674,17 +922,13 @@
       measure.remove?.();if(measure.parentNode?.removeChild) measure.parentNode.removeChild(measure);
     } catch(_) {}
     height=Math.max(1,Math.min(height,Math.max(1,v.height-28)));
-    // Alignment is supplied by the caller or trigger markup, independent of menu type.
-    // start/center/end align the corresponding trigger and menu edges before clamping.
     const alignment={start:0,center:.5,end:1}[opts.align??trigger.dataset?.morphAlign]??.5;
     const computeBounds=(orig,vp)=>{const left=orig.left+(orig.width-width)*alignment;let top=orig.bottom+10;if(top+height>vp.top+vp.height-14)top=orig.top-height-10;return {left:clamp(left,vp.left+14,Math.max(vp.left+14,vp.left+vp.width-width-14)),top:clamp(top,vp.top+14,Math.max(vp.top+14,vp.top+vp.height-height-14)),width,height};};
-    // Flip above only when the viewport cannot accommodate the downward expansion.
-
 
     const bounds=computeBounds(origin,v);
     let resolve;const closed=new Promise(done=>{resolve=done;});
     const radius=Number.isFinite(Number(opts.radius))?Math.max(0,Number(opts.radius)):24;
-    const s={trigger,opts,origin,bounds,viewport:v,radius,overlay,menu,content,icon,resolve,callbacks:[],phase:'opening',disposed:false,raf:null,interactive:false};
+    const s={trigger,opts,origin,bounds,viewport:v,radius,overlay,menu,content,icon,resolve,callbacks:[],phase:'opening',disposed:false,raf:null,interactive:false,sub:null,subP:0,subVelocity:0,subTargetP:0,subInteractive:false};
     s.handle={closed,close:reason=>{if(current===s)close(reason);},get phase(){return s.phase;},menu};current=s;
     s.p=0;s.velocity=0;s.dirMix=1;s.geometry=geometry(s);
     s.rows=Array.from(content.querySelectorAll('.morph-item, .template-tag-search, .up-btn, .up-header, .up-settings-head'));
@@ -699,22 +943,35 @@
     trigger.setAttribute?.('data-morph-trigger','');
     trigger.classList?.add('is-hidden-for-morph','surface-morph-trigger-hidden');trigger.setAttribute?.('aria-expanded','true');trigger.setAttribute?.('aria-controls',menu.id);trigger.setAttribute?.('aria-haspopup',opts.role==='dialog'?'dialog':'menu');
     content.style.width='100%';content.style.maxHeight='100%';content.style.overflowY='auto';menu.style.willChange='transform,opacity';
-    s.lease=root.OverlayManager.acquirePopover({panel:menu,trigger,signal:opts.signal,watchTriggerResize:opts.watchTriggerResize??opts.role==='dialog',isInside:target=>menu.contains?.(target)||Boolean(target?.closest?.('.export-submorph-panel')),onDismiss:reason=>{if(current===s)close(reason);}});
-    const onViewportResize=()=>{if(current!==s||s.disposed)return;const vp=viewport();s.viewport=vp;s.origin=readRect(s.trigger);s.bounds=computeBounds(s.origin,vp);s.geometry=geometry(s);Object.assign(s.icon.style,{left:s.origin.left+'px',top:s.origin.top+'px',width:s.origin.width+'px',height:s.origin.height+'px'});s.renderer?.resize?.(vp);frame(s);};
+    s.lease=root.OverlayManager.acquirePopover({panel:menu,trigger,signal:opts.signal,watchTriggerResize:opts.watchTriggerResize??opts.role==='dialog',
+      isInside:target=>menu.contains?.(target)||Boolean(s.sub?.layer?.contains?.(target)||target?.closest?.('.export-submorph-panel')),
+      onDismiss:reason=>{
+        if(current!==s)return;
+        if(reason==='escape'&&isSubActive(s)){closeSubmenu();return;}
+        close(reason);
+      }
+    });
+    const onViewportResize=()=>{if(current!==s||s.disposed)return;const vp=viewport();s.viewport=vp;s.origin=readRect(s.trigger);s.bounds=computeBounds(s.origin,vp);s.geometry=geometry(s);if(s.sub){s.sub.geom=computeSubmenuGeometry(s,s.sub.triggerRow,s.sub.layer,s.sub.inner);}Object.assign(s.icon.style,{left:s.origin.left+'px',top:s.origin.top+'px',width:s.origin.width+'px',height:s.origin.height+'px'});s.renderer?.resize?.(vp);frame(s);};
     root.addEventListener?.('resize',onViewportResize,{passive:true});root.visualViewport?.addEventListener?.('resize',onViewportResize,{passive:true});
     s.stopResize=()=>{root.removeEventListener?.('resize',onViewportResize);root.visualViewport?.removeEventListener?.('resize',onViewportResize);};
-    s.motion=root.matchMedia?.('(prefers-reduced-motion: reduce)');s.onMotion=()=>{if(!s.motion.matches||current!==s)return;if(s.phase==='closing')finish(s,s.closeReason);else {if(s.raf)cancel(s.raf);s.p=1;s.velocity=0;frame(s);settle(s);}};s.motion?.addEventListener?.('change',s.onMotion);
-    overlay.addEventListener('pointerdown',event=>{if(!menu.contains?.(event.target)&&!event.target?.closest?.('.export-submorph-panel')){consume(event);blockRelease(event);close('outside_click');}});
-    overlay.addEventListener('click',event=>{if(s.phase==='closing'||(!menu.contains?.(event.target)&&!event.target?.closest?.('.export-submorph-panel'))){consume(event);close('outside_click');}});
+    s.motion=root.matchMedia?.('(prefers-reduced-motion: reduce)');s.onMotion=()=>{if(!s.motion.matches||current!==s)return;if(s.phase==='closing'){if(s.sub)s.subP=0;finish(s,s.closeReason);}else {if(s.raf)cancel(s.raf);s.p=1;s.velocity=0;if(s.sub){s.subP=s.subTargetP;s.subVelocity=0;}frame(s);settle(s);}};s.motion?.addEventListener?.('change',s.onMotion);
+    overlay.addEventListener('pointerdown',event=>{
+      const inSub=Boolean(s.sub?.layer?.contains?.(event.target)||event.target?.closest?.('.export-submorph-panel'));
+      if(!menu.contains?.(event.target)&&!inSub){consume(event);blockRelease(event);close('outside_click');}
+    });
+    overlay.addEventListener('click',event=>{
+      const inSub=Boolean(s.sub?.layer?.contains?.(event.target)||event.target?.closest?.('.export-submorph-panel'));
+      if(s.phase==='closing'||(!menu.contains?.(event.target)&&!inSub)){consume(event);close('outside_click');}
+    });
     menu.addEventListener('keydown',event=>{
-      const items=focusItems(s),index=items.indexOf(doc.activeElement);
+      const items=focusItems(menu),index=items.indexOf(doc.activeElement);
       if(opts.keyboard!=='content'&&['ArrowDown','ArrowUp','Home','End'].includes(event.key)&&items.length){event.preventDefault();const next=event.key==='Home'?0:event.key==='End'?items.length-1:(index+(event.key==='ArrowDown'?1:-1)+items.length)%items.length;items.forEach((el,i)=>{el.tabIndex=i===next?0:-1;});items[next].focus?.();}
       else if(event.key==='Tab'&&(opts.keyboard!=='content'||(event.shiftKey?index<=0:index===items.length-1)))close('tab');
     });
     run(s);
     return s.handle;
   }
-  const api={open,close,isOpen:()=>!!current&&current.phase!=='closing',getState:()=>current?{phase:current.phase,trigger:current.trigger,role:current.opts.role||'menu'}:null,destroy:()=>{cancelGesture(false);close('destroy');}};
+  const api={open,close,openSubmenu,closeSubmenu,isOpen:()=>!!current&&current.phase!=='closing',isSubmenuOpen:()=>Boolean(current?.sub&&current.subTargetP>0.5),getState:()=>current?{phase:current.phase,trigger:current.trigger,role:current.opts.role||'menu'}:null,destroy:()=>{cancelGesture(false);close('destroy');}};
   root.SurfaceMorph=api;
   if(typeof module!=='undefined'&&module.exports)module.exports=api;
 })(typeof window!=='undefined'?window:globalThis);

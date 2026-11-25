@@ -112,7 +112,7 @@
 .project-option-overlay:has(.morph-dropdown-surface) { z-index:var(--layer-overlay); }
 .morph-dropdown-surface .morph-menu-content { overscroll-behavior:contain; }
 
-.morph-icon--trigger > span:first-child { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.morph-icon--trigger > span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .morph-icon--trigger > svg { flex-shrink:0; }
 
 /* Shared engine anatomy; project data remains in the adapter. */
@@ -130,8 +130,7 @@
 .surface-morph-surface.is-settled :is(button, a[href], .up-btn, .morph-item, [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"]):not(:disabled, [aria-disabled="true"]) {
   transition: background 0.12s ease,
               color 0.12s ease,
-              scale 0.3s var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1)),
-              opacity 0.3s var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1));
+              scale 0.3s var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1));
 }
 .surface-morph-surface.is-content-visible :is(button, a[href], .up-btn, .morph-item, [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"]):not(:disabled, [aria-disabled="true"]):active {
   scale: 0.98;
@@ -213,11 +212,11 @@ body.is-morph-holding * { -webkit-touch-callout: none !important; -webkit-user-s
 /* Morph surfaces and their openers use hover feedback only, in every input mode.
    Clear both component outlines and the global two-layer focus box-shadow,
    including the opener after focus is restored when a surface closes. */
-:is(.surface-morph-surface, .surface-morph-surface *, [data-morph-trigger], [data-morph-trigger] *, [data-morph-align], [data-morph-align] *) {
+:is(.surface-morph-surface, .surface-morph-surface *, .surface-morph-submenu, .surface-morph-submenu *, [data-morph-trigger], [data-morph-trigger] *, [data-morph-align], [data-morph-align] *) {
   --focus-ring-shadow: none;
   -webkit-tap-highlight-color: transparent;
 }
-:is(.surface-morph-surface, .surface-morph-surface *, [data-morph-trigger], [data-morph-trigger] *, [data-morph-align], [data-morph-align] *):is(:focus, :focus-visible, :focus-within) {
+:is(.surface-morph-surface, .surface-morph-surface *, .surface-morph-submenu, .surface-morph-submenu *, [data-morph-trigger], [data-morph-trigger] *, [data-morph-align], [data-morph-align] *):is(:focus, :focus-visible, :focus-within) {
   outline: none !important;
   outline-offset: 0 !important;
   box-shadow: none !important;
