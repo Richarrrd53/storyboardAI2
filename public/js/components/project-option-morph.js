@@ -100,9 +100,10 @@
     const items=menuContent.querySelectorAll('.morph-item');
     const disposeHover=root.IconMotion?.bindHoverContainer?.(menuContent,{
       itemSelector:'.morph-item',
-      canAnimate:()=>{
+      canAnimate:(item)=>{
+        if(item?.dataset?.submorphSkipHover==='1') return false;
         const surface=menuContent.closest?.('.surface-morph-surface');
-        return !surface||(surface.classList.contains('is-content-visible')&&!surface.inert);
+        return !surface||(surface.classList.contains('is-content-visible')&&!surface.inert&&!surface.classList.contains('is-submorph-receded'));
       }
     });
     items.forEach(item=>{
@@ -144,6 +145,10 @@
     const onClose=opts.onClose;
     return engine().open(trigger,{...opts,content:menuContent,width:opts.width||196,height:isHistory?112:256,placement:'below',align:opts.align??trigger.dataset?.morphAlign,label:'專案選單',
       triggerIconHTML:`<svg width="${iconSize}" height="${iconSize}" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="5" r="1.5"/><circle cx="8" cy="11" r="1.5"/></svg>`,
+      onClosing:reason=>{
+        const environment = typeof window !== 'undefined' ? window : root;
+        (environment.StoryboardExportDialog || root.StoryboardExportDialog)?.closeSubMorph?.(false, { dismissAll: true, reason });
+      },
       onClose:reason=>{
         const environment = typeof window !== 'undefined' ? window : root;
         (environment.StoryboardExportDialog || root.StoryboardExportDialog)?.closeSubMorph?.(true);

@@ -641,6 +641,7 @@
     s.trigger.classList.add('is-hidden-for-morph','surface-morph-trigger-hidden');
     s.phase='closing';s.closeReason=reason||'close';
     s.trigger.setAttribute?.('aria-expanded','false');s.menu.inert=true;s.interactive=false;s.menu.classList.remove('is-settled','is-content-visible');
+    s.opts.onClosing?.(s.closeReason);
     run(s);
   }
 
