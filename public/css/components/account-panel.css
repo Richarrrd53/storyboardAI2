@@ -42,7 +42,6 @@
 .account-sheet .user-panel-handle { display: block; width: 36px; height: 4px; margin: 0 auto; border-radius: 999px; background: var(--color-border-default); touch-action: none; }
 .account-sheet .up-header { touch-action: pan-x; }
 .account-panel .up-views { position: relative; overflow: hidden; }
-.account-panel [data-up-view] { will-change: transform, opacity; }
 .account-panel [data-up-view].is-leaving { position: absolute; inset: 0 0 auto 0; width: 100%; pointer-events: none; }
 .account-panel .up-settings-head { display: flex; align-items: center; gap: 8px; padding: 8px 0 12px; }
 .account-panel .up-settings-back { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border: 0; border-radius: 50%; background: transparent; color: inherit; cursor: pointer; }

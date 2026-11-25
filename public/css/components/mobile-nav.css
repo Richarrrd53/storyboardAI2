@@ -206,7 +206,6 @@
     -webkit-touch-callout: none;
     touch-action: none;
     transition: color 0.2s ease, transform 0.15s ease;
-    will-change: transform;
   }
 
   .mobile-nav__item:focus-visible {

@@ -476,7 +476,6 @@
 
     host.captureLanding();
 
-    window.addEventListener('resize', updateRailHoles);
     updateRailHoles();
 
     const { page: initialPage, opts: initialOpts = {} } = parseRouteFromLocation(getHistoryHost().location);

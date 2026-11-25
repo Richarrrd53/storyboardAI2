@@ -443,8 +443,62 @@
      SIDEBAR LOGIC & INTERACTIONS
      ========================================================================== */
 
+  let sidebarTransitionTimer = null;
+  let sidebarTransitionEndHandler = null;
+  let sidebarTransitionMainEl = null;
+  let sidebarMotionHandle = null;
+
+  function endSidebarTransition() {
+    if (sidebarTransitionTimer !== null) {
+      clearTimeout(sidebarTransitionTimer);
+      sidebarTransitionTimer = null;
+    }
+    if (sidebarTransitionMainEl && sidebarTransitionEndHandler) {
+      sidebarTransitionMainEl.removeEventListener('transitionend', sidebarTransitionEndHandler);
+    }
+    sidebarTransitionMainEl = null;
+    sidebarTransitionEndHandler = null;
+    document.body.classList.remove('is-sidebar-transitioning');
+    if (sidebarMotionHandle) {
+      sidebarMotionHandle.end();
+      sidebarMotionHandle = null;
+    } else {
+      window.DynamicMaskSystem?.setMotionMode?.('normal');
+    }
+  }
+
+  function beginSidebarTransition() {
+    if (sidebarTransitionTimer !== null) {
+      clearTimeout(sidebarTransitionTimer);
+      sidebarTransitionTimer = null;
+    }
+    document.body.classList.add('is-sidebar-transitioning');
+    if (!sidebarMotionHandle) {
+      if (window.MotionCoordinator) {
+        sidebarMotionHandle = window.MotionCoordinator.begin('sidebar', { maskMode: 'coalesce', pauseDecor: true });
+      } else {
+        window.DynamicMaskSystem?.setMotionMode?.('coalesce');
+      }
+    }
+
+    const pageMain = document.getElementById('page-main');
+    if (pageMain && !sidebarTransitionEndHandler) {
+      sidebarTransitionMainEl = pageMain;
+      sidebarTransitionEndHandler = (e) => {
+        if (e.target === pageMain && (e.propertyName === 'margin-left' || e.propertyName === 'width')) {
+          endSidebarTransition();
+        }
+      };
+      pageMain.addEventListener('transitionend', sidebarTransitionEndHandler);
+    }
+
+    // Failsafe matches the 460ms CSS transition + small buffer; guarantees state never locks
+    sidebarTransitionTimer = setTimeout(endSidebarTransition, 520);
+  }
+
   function expandSidebar(expand = true) {
     if (window.innerWidth <= 1024) {
+      endSidebarTransition();
       document.body.classList.remove('sidebar-open');
       const burger = document.getElementById("burger");
       if (burger) burger.checked = false;
@@ -455,7 +509,13 @@
     const sidebar = document.getElementById('dash-sidebar') || dashboardSidebar;
     if (!burger || !sidebar) return;
 
+    const currentlyOpen = document.body.classList.contains('sidebar-open');
     burger.checked = expand;
+
+    if (currentlyOpen !== expand) {
+      beginSidebarTransition();
+    }
+
     if (expand) {
       document.body.classList.add('sidebar-open');
       sidebar.style.width = '260px';
@@ -1021,20 +1081,40 @@
     // owns its own layers, including the 88px baseline after navigation exits.
     let navigationFrame = null;
     let navigationUntil = 0;
+    let lastPublishedBottomNavEnabled = null;
     function publishNavigation(now) {
       navigationFrame = null;
+      if (!isMobileView()) {
+        if (lastPublishedBottomNavEnabled !== false) {
+          lastPublishedBottomNavEnabled = false;
+          window.ProgressiveEdgeBlurSystem?.setNavigation('bottom', {
+            enabled: false,
+            progress: 0,
+            extent: 152
+          });
+        }
+        return;
+      }
       const rect = mobNav.getBoundingClientRect();
-      const visible = isMobileView() && rect.width > 0 && mobNav.style.opacity !== '0';
+      const enabled = rect.width > 0 && mobNav.style.display !== 'none' && !document.body.classList.contains('workspace-secondary');
+      const visible = rect.width > 0 && mobNav.style.opacity !== '0';
       const viewportBottom = window.visualViewport ? window.visualViewport.offsetTop + window.visualViewport.height : window.innerHeight;
       const progress = visible ? Math.max(0, Math.min(1, (viewportBottom - rect.top) / Math.max(1, rect.height))) : 0;
+      lastPublishedBottomNavEnabled = enabled;
       window.ProgressiveEdgeBlurSystem?.setNavigation('bottom', {
-        enabled: isMobileView() && rect.width > 0 && mobNav.style.display !== 'none' && !document.body.classList.contains('workspace-secondary'),
+        enabled,
         progress,
         extent: Math.max(152, viewportBottom - rect.top + 48)
       });
       if (now < navigationUntil) navigationFrame = requestAnimationFrame(publishNavigation);
     }
     function scheduleNavigation() {
+      if (!isMobileView()) {
+        if (lastPublishedBottomNavEnabled !== false && navigationFrame === null) {
+          navigationFrame = requestAnimationFrame(publishNavigation);
+        }
+        return;
+      }
       navigationUntil = performance.now() + 500;
       if (navigationFrame === null) navigationFrame = requestAnimationFrame(publishNavigation);
     }
@@ -1043,7 +1123,27 @@
       document.body.classList.remove('mobile-nav-compact');
       scheduleNavigation();
     });
-    const navigationObserver = window.MutationObserver ? new MutationObserver(scheduleNavigation) : null;
+    const navRelevantClasses = ['mobile-nav-compact', 'workspace-secondary', 'dashboard-layout', 'auth-layout', 'landing-layout'];
+    const getBodyNavKey = () => navRelevantClasses.map((c) => (document.body.classList.contains(c) ? '1' : '0')).join('');
+    let lastBodyNavKey = getBodyNavKey();
+    const navigationObserver = window.MutationObserver
+      ? new MutationObserver((records) => {
+          let shouldSchedule = false;
+          for (let i = 0; i < records.length; i++) {
+            const target = records[i].target;
+            if (target === mobNav) {
+              if (isMobileView() && !isNavInteracting) shouldSchedule = true;
+            } else if (target === document.body) {
+              const key = getBodyNavKey();
+              if (key !== lastBodyNavKey) {
+                lastBodyNavKey = key;
+                shouldSchedule = true;
+              }
+            }
+          }
+          if (shouldSchedule) scheduleNavigation();
+        })
+      : null;
     navigationObserver?.observe(document.body, { attributes: true, attributeFilter: ['class'] });
     navigationObserver?.observe(mobNav, { attributes: true, attributeFilter: ['style'] });
     const navResizeObserver = window.ResizeObserver ? new ResizeObserver(() => {
@@ -1093,7 +1193,9 @@
       ? Array.from(mobNav.querySelectorAll('.mobile-nav__track--base .mobile-nav__item'))
       : Array.from(mobNav.querySelectorAll('.mobile-nav__item:not(.mobile-nav__item--focus)'));
     const indicator = mobNav.querySelector('.mobile-nav__indicator');
+    const cachedFocusTrack = mobNav.querySelector('.mobile-nav__track--focus');
     const maskedItems = items.filter(item => !item.classList.contains('mobile-nav__item--create') && item.id !== 'mob-nav-generate');
+    let lastInverseMaskKey = null;
 
     addTrackedListener(mobNav, 'dragstart', (e) => e.preventDefault());
     items.forEach(it => it.setAttribute('draggable', 'false'));
@@ -1125,7 +1227,7 @@
 
     function paintIndicator(x, scale = 1.0, isSettling = false, opacity = 1.0, width = indicatorWidth) {
       if (!indicator || !mobNav) return;
-      const focusTrack = mobNav.querySelector('.mobile-nav__track--focus');
+      const focusTrack = cachedFocusTrack || mobNav.querySelector('.mobile-nav__track--focus');
 
       const opacityStr = opacity.toString();
       indicator.style.opacity = opacityStr;
@@ -1183,12 +1285,17 @@
         scaledW <= 0 ||
         scaledH <= 0
       ) {
+        if (lastInverseMaskKey === 'full') return;
+        lastInverseMaskKey = 'full';
         maskedItems.forEach(item => {
           item.style.webkitMaskImage = fullMask;
           item.style.maskImage = fullMask;
         });
         return;
       }
+      const maskKey = `${Math.round(navW)}|${Math.round(navH)}|${(left * 2).toFixed(0)}|${(top * 2).toFixed(0)}|${(scaledW * 2).toFixed(0)}|${(scaledH * 2).toFixed(0)}`;
+      if (lastInverseMaskKey === maskKey) return;
+      lastInverseMaskKey = maskKey;
 
       // 與 Focus 使用相同的幾何資訊
       const svg = `
@@ -1331,13 +1438,25 @@
       }
     }
 
-    function findClosestMetric(clientX) {
-      const rect = mobNav.getBoundingClientRect();
-      const scale = rect.width / cachedNavRect.width || navMetricScale;
-      clientX = cachedNavRect.left + (clientX - rect.left) / scale;
+    function getTransformedNavBounds() {
+      if (!cachedNavRect) {
+        const rect = mobNav.getBoundingClientRect();
+        return { left: rect.left, scale: navMetricScale };
+      }
+      const scale = navMetricScale * (isNavInteracting ? curScaleX : 1);
+      const renderedW = cachedNavRect.width * scale;
+      const baseW = cachedNavRect.width * navMetricScale;
+      const left = cachedNavRect.left + (isNavInteracting ? curDx : 0) - (renderedW - baseW) / 2;
+      return { left, scale: scale || 1 };
+    }
+
+    function findClosestMetric(clientX, boundsOverride) {
+      const bounds = boundsOverride || getTransformedNavBounds();
+      clientX = cachedNavRect.left + (clientX - bounds.left) / bounds.scale;
       let closest = cachedMetrics[0] || null;
       let minXDist = Infinity;
-      for (const m of cachedMetrics) {
+      for (let i = 0; i < cachedMetrics.length; i++) {
+        const m = cachedMetrics[i];
         const d = Math.abs(clientX - m.centerX);
         if (d < minXDist) {
           minXDist = d;
@@ -1394,7 +1513,6 @@
       cacheMetrics();
       const closestMetric = findClosestMetric(e.clientX);
       currentTargetItem = directItem || (closestMetric ? closestMetric.item : null);
-      cacheMetrics();
       lastSnappedItem = currentTargetItem;
       highlightTargetItem(currentTargetItem);
 
@@ -1460,7 +1578,8 @@
           updateMobileBottomNavActive();
         }
       } else {
-        const closestMetric = findClosestMetric(e.clientX);
+        const navBounds = getTransformedNavBounds();
+        const closestMetric = findClosestMetric(e.clientX, navBounds);
         const newTargetItem = closestMetric ? closestMetric.item : null;
 
         if (newTargetItem !== currentTargetItem) {
@@ -1474,15 +1593,13 @@
           highlightTargetItem(currentTargetItem);
         }
 
-        // 跟手磁吸吸附
+        // 跟手磁吸吸附 (uses cached bounds + current transform; zero forced synchronous layout)
         if (indicator && cachedNavRect && closestMetric) {
           if (Math.hypot(rawDx, rawDy) > 4) {
             indicator.classList.remove('is-settling');
           }
           indicatorWidth = Math.max(1, closestMetric.width);
-          const rect = mobNav.getBoundingClientRect();
-          const scale = rect.width / cachedNavRect.width || navMetricScale;
-          const fingerRelX = (e.clientX - rect.left) / scale - indicatorWidth / 2;
+          const fingerRelX = (e.clientX - navBounds.left) / navBounds.scale - indicatorWidth / 2;
           const pressedScale = 0.945;
           const scaledOverhang = indicatorWidth * (pressedScale - 1) / 2;
           curIndicatorX = Math.max(insetX + scaledOverhang, Math.min(cachedNavRect.width - indicatorWidth - insetX - scaledOverhang, fingerRelX));
@@ -2031,6 +2148,15 @@
   }
 
   function destroy() {
+    endSidebarTransition();
+    if (depthTimer) {
+      clearTimeout(depthTimer);
+      depthTimer = null;
+    }
+    if (Array.isArray(upViewAnimations)) {
+      upViewAnimations.forEach(a => { try { a.cancel(); } catch (_) {} });
+      upViewAnimations = [];
+    }
     document.body.classList.remove('motion-suspended');
     disposeUserPanelHover?.(); disposeUserPanelHover = null;
     selectedRoute = null;

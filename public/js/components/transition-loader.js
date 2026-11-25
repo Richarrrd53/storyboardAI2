@@ -25,6 +25,7 @@
   ];
 
   let textCycleInterval = null;
+  let textSwapTimeout = null;
   let currentTextIndex = 0;
   let innerLoaderTimer = null;
   let innerRoseLoaderInstance = null;
@@ -57,9 +58,15 @@
     group.innerHTML = '';
     group.appendChild(path);
 
-    const particles = Array.from({ length: particleCount }, () => {
+    const particles = Array.from({ length: particleCount }, (_, index) => {
       const circle = document.createElementNS(SVG_NS, 'circle');
       circle.setAttribute('fill', 'currentColor');
+      if (!depth) {
+        const tailOffset = index / (particleCount - 1);
+        const fade = Math.pow(1 - tailOffset, 0.56);
+        circle.setAttribute('r', (0.6 + fade * 2.2).toFixed(2));
+        circle.setAttribute('opacity', (0.04 + fade * 0.96).toFixed(3));
+      }
       group.appendChild(circle);
       return circle;
     });
@@ -178,11 +185,13 @@
       };
     }
 
+    const pathParts = new Array(181);
     function buildPath(detailScale, steps = 180) {
-      return Array.from({ length: steps + 1 }, (_, index) => {
+      for (let index = 0; index <= steps; index++) {
         const pt = point(index / steps, detailScale);
-        return `${index === 0 ? 'M' : 'L'} ${pt.x.toFixed(2)} ${pt.y.toFixed(2)}`;
-      }).join(' ');
+        pathParts[index] = `${index === 0 ? 'M' : 'L'} ${pt.x.toFixed(2)} ${pt.y.toFixed(2)}`;
+      }
+      return steps === 180 ? pathParts.join(' ') : pathParts.slice(0, steps + 1).join(' ');
     }
 
     function getParticle(index, progress, detailScale) {
@@ -199,9 +208,18 @@
     }
 
     let animId = null;
+    let lastDetailScale = null;
     const startedAt = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
 
     function render(now) {
+      if (group.isConnected === false) {
+        animId = null;
+        return;
+      }
+      if (typeof document !== 'undefined' && document.hidden) {
+        animId = requestAnimationFrame(render);
+        return;
+      }
       const time = now - startedAt;
       const progress = (time % durationMs) / durationMs;
       const detailScale = getDetailScale(time);
@@ -212,16 +230,19 @@
         return;
       }
 
-      group.setAttribute('transform', `rotate(${getRotation(time)} 50 50)`);
-      path.setAttribute('d', buildPath(detailScale));
+      group.setAttribute('transform', `rotate(${getRotation(time).toFixed(2)} 50 50)`);
+      if (lastDetailScale === null || Math.abs(detailScale - lastDetailScale) > 0.001) {
+        lastDetailScale = detailScale;
+        path.setAttribute('d', buildPath(detailScale));
+      }
 
-      particles.forEach((node, index) => {
-        const p = getParticle(index, progress, detailScale);
-        node.setAttribute('cx', p.x.toFixed(2));
-        node.setAttribute('cy', p.y.toFixed(2));
-        node.setAttribute('r', p.radius.toFixed(2));
-        node.setAttribute('opacity', p.opacity.toFixed(3));
-      });
+      for (let index = 0; index < particles.length; index++) {
+        const tailOffset = index / (particleCount - 1);
+        const pt = point(normalizeProgress(progress - tailOffset * trailSpan), detailScale);
+        const node = particles[index];
+        node.setAttribute('cx', pt.x.toFixed(2));
+        node.setAttribute('cy', pt.y.toFixed(2));
+      }
 
       animId = requestAnimationFrame(render);
     }
@@ -259,7 +280,9 @@
 
     textCycleInterval = setInterval(() => {
       textEl.classList.add('blur-out');
-      setTimeout(() => {
+      if (textSwapTimeout) clearTimeout(textSwapTimeout);
+      textSwapTimeout = setTimeout(() => {
+        textSwapTimeout = null;
         currentTextIndex = (currentTextIndex + 1) % cuteTexts.length;
         textEl.textContent = cuteTexts[currentTextIndex];
         textEl.classList.remove('blur-out');
@@ -268,6 +291,10 @@
   }
 
   function stopTextCycling() {
+    if (textSwapTimeout) {
+      clearTimeout(textSwapTimeout);
+      textSwapTimeout = null;
+    }
     if (textCycleInterval) {
       clearInterval(textCycleInterval);
       textCycleInterval = null;

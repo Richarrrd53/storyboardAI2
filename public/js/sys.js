@@ -25,16 +25,24 @@ const ModalAnimation = {
         const duration = reduced ? 0 : options.duration || this.DURATION;
         const blur = options.blur || '16px';
         const backdropBg = options.backdropBg || 'rgba(15, 23, 42, 0.45)';
+        const blurTarget = overlay.querySelector?.('.sb-dialog-blur') || overlay;
+        const bgTarget = overlay.querySelector?.('.sb-dialog-scrim') || overlay;
 
         overlay.style.display = 'flex';
         overlay.style.pointerEvents = 'none';
         overlay.style.transition = 'none';
-        overlay.style.backdropFilter = 'blur(0px)';
-        if (overlay.style.webkitBackdropFilter !== undefined) {
-            overlay.style.webkitBackdropFilter = 'blur(0px)';
+        blurTarget.style.transition = 'none';
+        blurTarget.style.backdropFilter = 'blur(0px)';
+        if (blurTarget.style.webkitBackdropFilter !== undefined) {
+            blurTarget.style.webkitBackdropFilter = 'blur(0px)';
         }
-        overlay.style.background = options.legacyMotion ? 'rgba(15, 23, 42, 0)' : backdropBg;
-        overlay.style.opacity = options.legacyMotion ? '0' : '1';
+        if (bgTarget === overlay) {
+            overlay.style.background = options.legacyMotion ? 'rgba(15, 23, 42, 0)' : backdropBg;
+            overlay.style.opacity = options.legacyMotion ? '0' : '1';
+        } else {
+            bgTarget.style.background = options.legacyMotion ? 'rgba(15, 23, 42, 0)' : backdropBg;
+            overlay.style.opacity = '1';
+        }
 
         if (panel) {
             panel.style.transition = 'none';
@@ -42,13 +50,24 @@ const ModalAnimation = {
             panel.style.opacity = options.legacyMotion ? '0' : '1';
         }
 
-        // Commit the initial scale before changing it, even for freshly inserted nodes.
-        void overlay.offsetWidth;
-        if (panel) void panel.offsetWidth;
-        overlay.style.transition = `backdrop-filter ${duration}ms ${this.EASING_BACKDROP}, -webkit-backdrop-filter ${duration}ms ${this.EASING_BACKDROP}, background-color ${duration}ms ${this.EASING_BACKDROP}, opacity ${duration}ms ${this.EASING_BACKDROP}`;
+        // Single reflow commit for initial scale/blur before enabling transitions.
+        void (panel || overlay).offsetWidth;
+
+        const blurTransition = `backdrop-filter ${duration}ms ${this.EASING_BACKDROP}, -webkit-backdrop-filter ${duration}ms ${this.EASING_BACKDROP}`;
+        if (blurTarget === overlay) {
+            overlay.style.transition = `${blurTransition}, background-color ${duration}ms ${this.EASING_BACKDROP}, opacity ${duration}ms ${this.EASING_BACKDROP}`;
+        } else {
+            blurTarget.style.transition = blurTransition;
+            if (options.legacyMotion) {
+                bgTarget.style.transition = `background-color ${duration}ms ${this.EASING_BACKDROP}, opacity ${duration}ms ${this.EASING_BACKDROP}`;
+            }
+        }
         if (panel) {
             const enterEase = options.legacyMotion ? this.EASING_CARD_ENTER : this.EASING_DIALOG_ENTER;
             panel.style.transition = `scale ${duration}ms ${enterEase}${options.legacyMotion ? `, opacity ${duration}ms ${enterEase}` : ''}`;
+        }
+        if (!reduced && typeof window !== 'undefined') {
+            window.DynamicMaskSystem?.setMotionMode?.('defer');
         }
         const reveal = () => {
             if (overlay.classList && typeof overlay.classList.add === 'function') {
@@ -56,14 +75,19 @@ const ModalAnimation = {
             }
             overlay.style.pointerEvents = 'auto';
             overlay.style.opacity = '1';
-            overlay.style.background = backdropBg;
-            overlay.style.backdropFilter = `blur(${blur})`;
-            if (overlay.style.webkitBackdropFilter !== undefined) {
-                overlay.style.webkitBackdropFilter = `blur(${blur})`;
+            bgTarget.style.background = backdropBg;
+            blurTarget.style.backdropFilter = `blur(${blur})`;
+            if (blurTarget.style.webkitBackdropFilter !== undefined) {
+                blurTarget.style.webkitBackdropFilter = `blur(${blur})`;
             }
             if (panel) {
                 panel.style.scale = '1';
                 panel.style.opacity = '1';
+            }
+            if (!reduced && typeof window !== 'undefined') {
+                this.schedule(overlay, () => {
+                    window.DynamicMaskSystem?.setMotionMode?.('normal');
+                }, duration + 30);
             }
             if (typeof options.onOpened === 'function') options.onOpened();
         };
@@ -77,6 +101,8 @@ const ModalAnimation = {
         const reduced = !options.legacyMotion && typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
         const duration = reduced ? 0 : options.duration || this.DURATION;
         const onComplete = typeof options === 'function' ? options : (options.onComplete || null);
+        const blurTarget = overlay.querySelector?.('.sb-dialog-blur') || overlay;
+        const bgTarget = overlay.querySelector?.('.sb-dialog-scrim') || overlay;
 
         overlay.style.pointerEvents = 'none';
 
@@ -84,18 +110,29 @@ const ModalAnimation = {
             panel.style.transition = `scale ${duration}ms ${this.EASING_CARD_LEAVE}${options.legacyMotion ? `, opacity ${duration}ms ${this.EASING_CARD_LEAVE}` : ''}`;
         }
         const backdropEase = options.legacyMotion ? this.EASING_BACKDROP : this.EASING_BACKDROP_LEAVE;
-        overlay.style.transition = `backdrop-filter ${duration}ms ${backdropEase}, -webkit-backdrop-filter ${duration}ms ${backdropEase}${options.legacyMotion ? `, background-color ${duration}ms ${backdropEase}` : ''}`;
+        const blurTransition = `backdrop-filter ${duration}ms ${backdropEase}, -webkit-backdrop-filter ${duration}ms ${backdropEase}`;
+        if (blurTarget === overlay) {
+            overlay.style.transition = `${blurTransition}${options.legacyMotion ? `, background-color ${duration}ms ${backdropEase}` : ''}`;
+        } else {
+            blurTarget.style.transition = blurTransition;
+            if (options.legacyMotion) {
+                bgTarget.style.transition = `background-color ${duration}ms ${backdropEase}`;
+            }
+        }
+        if (!reduced && typeof window !== 'undefined') {
+            window.DynamicMaskSystem?.setMotionMode?.('defer');
+        }
 
         this.schedule(overlay, () => {
             if (panel) {
                 panel.style.scale = '0';
                 panel.style.opacity = options.legacyMotion ? '0' : '1';
             }
-            overlay.style.backdropFilter = 'blur(0px)';
-            if (overlay.style.webkitBackdropFilter !== undefined) {
-                overlay.style.webkitBackdropFilter = 'blur(0px)';
+            blurTarget.style.backdropFilter = 'blur(0px)';
+            if (blurTarget.style.webkitBackdropFilter !== undefined) {
+                blurTarget.style.webkitBackdropFilter = 'blur(0px)';
             }
-            if (options.legacyMotion && options.fadeBackdrop === true) overlay.style.background = 'rgba(15, 23, 42, 0)';
+            if (options.legacyMotion && options.fadeBackdrop === true) bgTarget.style.background = 'rgba(15, 23, 42, 0)';
             if (overlay.classList && typeof overlay.classList.remove === 'function') {
                 overlay.classList.remove('active');
             }
@@ -104,6 +141,9 @@ const ModalAnimation = {
         this.schedule(overlay, () => {
             overlay.style.display = 'none';
             this.sessions.delete(overlay);
+            if (typeof window !== 'undefined') {
+                window.DynamicMaskSystem?.setMotionMode?.('normal');
+            }
             if (typeof onComplete === 'function') {
                 onComplete();
             }

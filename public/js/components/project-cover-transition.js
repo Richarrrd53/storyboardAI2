@@ -164,20 +164,25 @@
       secondary.style.transform = 'translateY(20px) scale(0.92)';
     }
 
-    // 3. Spec Section 8: Transition Flying Cover in App-Level Layer
+    // 3. Spec Section 8: Transition Flying Cover in App-Level Layer (FLIP transform-based)
+    const coverMotionHandle = root.MotionCoordinator
+      ? root.MotionCoordinator.begin('cover', { maskMode: 'defer', pauseDecor: true })
+      : null;
+    if (!coverMotionHandle) root.DynamicMaskSystem?.setMotionMode?.('defer');
     const flyingCover = document.createElement('div');
     flyingCover.className = 'project-reveal-curtain transition-cover-shell';
     flyingCover.style.position = 'fixed';
-    flyingCover.style.left = `${startLeft}px`;
-    flyingCover.style.top = `${startTop}px`;
-    flyingCover.style.width = `${startW}px`;
-    flyingCover.style.height = `${startH}px`;
+    flyingCover.style.left = `${targetLeft}px`;
+    flyingCover.style.top = `${targetTop}px`;
+    flyingCover.style.width = `${targetW}px`;
+    flyingCover.style.height = `${targetH}px`;
     flyingCover.style.zIndex = 'var(--layer-transition, 650)';
-    flyingCover.style.borderRadius = coverRadius(14);
-    flyingCover.style.border = '1px solid rgba(255, 255, 255, 0.45)';
+    flyingCover.style.borderRadius = coverRadius(10);
+    flyingCover.style.border = '1px solid rgba(255, 255, 255, 0.35)';
     flyingCover.style.overflow = 'hidden';
-    flyingCover.style.boxShadow = '0 16px 36px rgba(15, 23, 42, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.35)';
-    flyingCover.style.transformOrigin = '45% 100%'; // Spec Section 12
+    flyingCover.style.boxShadow = '0 28px 64px rgba(15, 23, 42, 0.38)';
+    flyingCover.style.contain = 'layout style paint';
+    flyingCover.style.transformOrigin = '0 0';
     flyingCover.style.background = isContain ? '#ffffff' : '#0f172a';
     flyingCover.style.boxSizing = 'border-box';
 
@@ -220,6 +225,8 @@
 
         mainImgClone = document.createElement('img');
         mainImgClone.src = mainImgEl.src;
+        mainImgClone.decoding = 'async';
+        mainImgClone.decode?.().catch(() => {});
         mainImgClone.className = 'cover-main transition-cover-image';
         mainImgClone.style.cssText = 'width: 100%; height: 100%; object-fit: cover; display: block; border-radius: inherit; filter: drop-shadow(0 4px 14px rgba(15, 23, 42, 0.10));';
         mainImgWrap.appendChild(mainImgClone);
@@ -232,6 +239,8 @@
 
         mainImgClone = document.createElement('img');
         mainImgClone.src = mainImgEl.src;
+        mainImgClone.decoding = 'async';
+        mainImgClone.decode?.().catch(() => {});
         mainImgClone.className = 'cover-main transition-cover-image';
         mainImgClone.style.cssText = 'width: 100%; height: 100%; object-fit: cover; display: block; border-radius: inherit;';
         mainImgWrap.appendChild(mainImgClone);
@@ -552,6 +561,8 @@
         removeNode(waitingUI);
         cancelButton.onclick = null;
         this.state = 'complete';
+        if (coverMotionHandle) coverMotionHandle.end();
+        else root.DynamicMaskSystem?.setMotionMode?.('normal');
 
         removeNode(this.scrim);
         this.scrim = null;
@@ -626,52 +637,35 @@
     };
     navTimer = setTimeout(triggerNav, 200);
 
-    // Spec Section 9, 11, 12, 13: Flight Morph Keyframes (0 - 520ms)
+    // Spec Section 9, 11, 12, 13: FLIP Transform-Based Flight Morph Keyframes (0 - 520ms)
     session.state = 'flying';
+    const safeTargetW = Math.max(1, targetW);
+    const safeTargetH = Math.max(1, targetH);
+    const sx0 = startW / safeTargetW;
+    const sy0 = startH / safeTargetH;
+    const dx0 = startLeft - targetLeft;
+    const dy0 = startTop - targetTop;
+    const dx20 = (startLeft + (targetLeft - startLeft) * 0.12) - targetLeft;
+    const dy20 = (startTop - 28) - targetTop;
+    const dx60 = (startLeft + (targetLeft - startLeft) * 0.78) - targetLeft;
+    const dy60 = (Math.min(startTop, targetTop) - 14 + (targetTop - startTop) * 0.65) - targetTop;
+
     const flightKeyframes = [
       {
         offset: 0,
-        left: `${startLeft}px`,
-        top: `${startTop}px`,
-        width: `${startW}px`,
-        height: `${startH}px`,
-        transform: 'rotate(-4.5deg) scale(1)',
-        borderRadius: coverRadius(14),
-        borderWidth: '1px',
-        boxShadow: '0 16px 36px rgba(15, 23, 42, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.35)'
+        transform: `translate3d(${dx0.toFixed(2)}px, ${dy0.toFixed(2)}px, 0) scale(${sx0.toFixed(4)}, ${sy0.toFixed(4)}) rotate(-4.5deg)`
       },
       {
         offset: 0.20,
-        left: `${startLeft + (targetLeft - startLeft) * 0.12}px`,
-        top: `${startTop - 28}px`,
-        width: `${startW}px`,
-        height: `${startH}px`,
-        transform: 'rotate(-3.5deg) scale(1.02)',
-        borderRadius: `calc((${coverRadius(14)} + ${coverRadius(12)}) / 2)`,
-        borderWidth: '1px',
-        boxShadow: '0 24px 52px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.25)'
+        transform: `translate3d(${dx20.toFixed(2)}px, ${dy20.toFixed(2)}px, 0) scale(${(sx0 * 1.02).toFixed(4)}, ${(sy0 * 1.02).toFixed(4)}) rotate(-3.5deg)`
       },
       {
         offset: 0.60,
-        left: `${startLeft + (targetLeft - startLeft) * 0.78}px`,
-        top: `${Math.min(startTop, targetTop) - 14 + (targetTop - startTop) * 0.65}px`,
-        width: `${targetW}px`,
-        height: `${targetH}px`,
-        transform: 'rotate(-0.8deg) scale(1.01)',
-        borderRadius: coverRadius(10),
-        borderWidth: '0.5px',
-        boxShadow: '0 32px 72px rgba(0, 0, 0, 0.42), 0 0 0 1px rgba(255, 255, 255, 0.15)'
+        transform: `translate3d(${dx60.toFixed(2)}px, ${dy60.toFixed(2)}px, 0) scale(1.01, 1.01) rotate(-0.8deg)`
       },
       {
         offset: 1,
-        left: `${targetLeft}px`,
-        top: `${targetTop}px`,
-        width: `${targetW}px`,
-        height: `${targetH}px`,
-        transform: 'rotate(0deg) scale(1)',
-        borderRadius: coverRadius(10),
-        borderWidth: '0px',
-        boxShadow: '0 32px 80px rgba(0, 0, 0, 0.45), 0 0 0 0px rgba(255, 255, 255, 0)'
+        transform: 'translate3d(0px, 0px, 0) scale(1, 1) rotate(0deg)'
       }
     ];
 
@@ -712,16 +706,18 @@
         });
       }
 
-      // Spec Section 15: Main Image Inner Wrap Morph
+      // Spec Section 15: Main Image Inner Wrap Morph (transform-based counter-scale to preserve aspect ratio)
       if (mainImgWrap && isContain && typeof mainImgWrap.animate === 'function') {
         const innerW_start = Math.round(startH * projectRatio * 10) / 10;
-        const innerH_start = startH;
+        const innerSx0 = innerW_start / Math.max(1, startW);
+        mainImgWrap.style.width = `${targetW}px`;
+        mainImgWrap.style.height = `${targetH}px`;
 
         mainImgWrap.animate([
-          { offset: 0, width: `${innerW_start}px`, height: `${innerH_start}px` },
-          { offset: 0.20, width: `${innerW_start}px`, height: `${innerH_start}px` },
-          { offset: 0.60, width: `${targetW}px`, height: `${targetH}px` },
-          { offset: 1, width: `${targetW}px`, height: `${targetH}px` }
+          { offset: 0, transform: `translate(-50%, -50%) scale(${innerSx0.toFixed(4)}, 1)` },
+          { offset: 0.20, transform: `translate(-50%, -50%) scale(${innerSx0.toFixed(4)}, 1)` },
+          { offset: 0.60, transform: 'translate(-50%, -50%) scale(1, 1)' },
+          { offset: 1, transform: 'translate(-50%, -50%) scale(1, 1)' }
         ], {
           duration: 520,
           easing: 'cubic-bezier(.4, 0, .2, 1)',

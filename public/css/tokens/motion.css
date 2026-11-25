@@ -65,7 +65,6 @@ svg[data-im-icon] {
 
 svg[data-im-icon] [data-im-part] {
   transform-box: view-box;
-  will-change: transform;
 }
 
 /* ── Global prefers-reduced-motion Reset ── */

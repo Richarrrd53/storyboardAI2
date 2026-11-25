@@ -152,8 +152,10 @@
     const cancel = node('button', 'sb-dialog-button sb-dialog-cancel sys-btn secondary', opts.cancelText || '取消'); cancel.type = 'button';
     const submit = node('button', 'sb-dialog-button sb-dialog-submit sys-btn primary', opts.confirmText || (kind === 'prompt' ? '儲存名稱' : '確定')); submit.type = 'submit';
     if (opts.danger) submit.dataset.danger = 'true';
+    const blurLayer = node('div', 'sb-dialog-blur');
+    blurLayer.setAttribute('aria-hidden', 'true');
     if (kind !== 'alert') actions.append(cancel);
-    actions.append(submit); form.append(actions); panel.append(form); overlay.append(panel); document.body.append(overlay);
+    actions.append(submit); form.append(actions); panel.append(form); overlay.append(blurLayer, panel); document.body.append(overlay);
     let busy = false, settled = false, timer = null;
     const animations = [];
     // Use the same scale lifecycle as the tag editor; standalone hosts retain a WAAPI fallback.
@@ -165,6 +167,7 @@
     if (input) input.select();
     function dispose(result) {
       clearTimeout(timer); clearTimeout(blurTimer); modalMotion?.cancel(overlay); animations.forEach(a => a.cancel());
+      root.DynamicMaskSystem?.setMotionMode?.('normal');
       entry.signal?.removeEventListener('abort', entry.abort);
       if (input && opts.inputType === 'password') input.value = '';
       overlay.remove(); lease.release({ restoreFocus: result.reason !== 'abort' });
@@ -184,10 +187,10 @@
       }
       const renderedScale = root.getComputedStyle?.(panel)?.scale;
       const currentScale = !renderedScale || renderedScale === 'none' ? '1' : renderedScale;
-      const currentBlur = root.getComputedStyle?.(overlay)?.backdropFilter || 'blur(var(--dialog-backdrop-blur, 50px))';
+      const currentBlur = root.getComputedStyle?.(blurLayer)?.backdropFilter || 'blur(var(--dialog-backdrop-blur, 50px))';
       animations.forEach(a => a.cancel());
       // Keep scrim alpha constant throughout exit; only reverse blur and panel scale.
-      animate(overlay, [{ backdropFilter: currentBlur, webkitBackdropFilter: currentBlur }, { backdropFilter: 'blur(0px)', webkitBackdropFilter: 'blur(0px)' }], duration, 'cubic-bezier(.8,0,.6,1)');
+      animate(blurLayer, [{ backdropFilter: currentBlur, webkitBackdropFilter: currentBlur }, { backdropFilter: 'blur(0px)', webkitBackdropFilter: 'blur(0px)' }], duration, 'cubic-bezier(.8,0,.6,1)');
       animate(panel, [{ scale: currentScale }, { scale: '0' }], duration, exitEase);
       timer = setTimeout(() => dispose(result), duration);
     }
@@ -236,7 +239,7 @@
     if (!motion?.matches && modalMotion) {
       modalMotion.open(overlay, panel, { duration, blur: 'var(--dialog-backdrop-blur, 50px)', backdropBg: 'var(--dialog-backdrop-bg)' });
     } else if (!motion?.matches) {
-      animate(overlay, [{ backdropFilter: 'blur(0px)', webkitBackdropFilter: 'blur(0px)' }, { backdropFilter: 'blur(var(--dialog-backdrop-blur, 50px))', webkitBackdropFilter: 'blur(var(--dialog-backdrop-blur, 50px))' }], duration, 'cubic-bezier(.4,0,.2,1)');
+      animate(blurLayer, [{ backdropFilter: 'blur(0px)', webkitBackdropFilter: 'blur(0px)' }, { backdropFilter: 'blur(var(--dialog-backdrop-blur, 50px))', webkitBackdropFilter: 'blur(var(--dialog-backdrop-blur, 50px))' }], duration, 'cubic-bezier(.4,0,.2,1)');
       animate(panel, [{ scale: '0' }, { scale: '1' }], duration, enterEase);
     }
   }

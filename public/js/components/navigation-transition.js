@@ -238,7 +238,7 @@
             content.style.removeProperty('transition');
             content.style.removeProperty('transform');
           }
-        }, reduced() ? 0 : 300);
+        }, reduced() ? 0 : 390);
       },
       cleanup() {
         if (!valid()) return;

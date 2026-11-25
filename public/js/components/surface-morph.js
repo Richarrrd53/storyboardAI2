@@ -373,194 +373,449 @@
       menuTop:b.top,menuR:s.radius,minDropletW:o.height*(.50+.12*Math.tanh((ratio-1)*.42))};
   }
 
+  const SDF_VS_SOURCE = `
+    attribute vec2 a_pos;
+    void main() {
+      gl_Position = vec4(a_pos, 0.0, 1.0);
+    }
+  `;
+
+  const SDF_FS_SOURCE = `
+    precision highp float;
+    uniform vec2 u_res;
+    uniform vec2 u_offset;
+    uniform float u_dpr;
+    uniform float u_active;
+    uniform float u_lightTheme;
+    uniform float u_shadowPresence;
+    uniform vec4 u_color;
+    uniform vec4 u_borderColor;
+    uniform float u_borderWidth;
+    uniform float u_borderPresence;
+
+    uniform vec4 u_blobA;
+    uniform vec3 u_blobAExtra;
+
+    uniform vec4 u_blobM;
+    uniform vec2 u_blobMExtra;
+
+    uniform vec4 u_blobB;
+    uniform vec3 u_blobBExtra;
+
+    uniform float u_kAM;
+    uniform float u_kMB;
+    uniform float u_dimB;
+
+    float sdTaperedBox(vec2 p, vec2 c, vec2 b, float r, float vTaper, float hTaper) {
+      vec2 lp = p - c;
+      float ny = clamp(lp.y / max(b.y, 1.0), -1.0, 1.0);
+      float nx = clamp(lp.x / max(b.x, 1.0), -1.0, 1.0);
+      float halfW = max(2.0, b.x * (1.0 + vTaper * ny));
+      float halfH = max(2.0, b.y * (1.0 + hTaper * nx));
+      float rad = min(r, min(halfW, halfH));
+      vec2 q = abs(lp) - vec2(halfW, halfH) + vec2(rad);
+      return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - rad;
+    }
+
+    float sminQuad(float a, float b, float k) {
+      if (k <= 0.001) return min(a, b);
+      float h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0);
+      return mix(b, a, h) - k * h * (1.0 - h);
+    }
+
+    float evalSceneSDF(vec2 pos) {
+      float dA = 1000.0;
+      if (u_blobA.z > 0.5 && u_blobA.w > 0.5) {
+        dA = sdTaperedBox(pos, u_blobA.xy, u_blobA.zw * 0.5, u_blobAExtra.x, u_blobAExtra.y, u_blobAExtra.z);
+      }
+      float dM = 1000.0;
+      if (u_blobM.z > 0.5 && u_blobM.w > 0.5) {
+        dM = sdTaperedBox(pos, u_blobM.xy, u_blobM.zw * 0.5, u_blobMExtra.x, u_blobMExtra.y, 0.0);
+      }
+      float dB = 1000.0;
+      if (u_blobB.z > 0.5 && u_blobB.w > 0.5) {
+        dB = sdTaperedBox(pos, u_blobB.xy, u_blobB.zw * 0.5, u_blobBExtra.x, u_blobBExtra.y, u_blobBExtra.z);
+      }
+      float dAM = sminQuad(dA, dM, u_kAM);
+      return sminQuad(dAM, dB, u_kMB);
+    }
+
+    void main() {
+      if (u_active < 0.5) {
+        gl_FragColor = vec4(0.0);
+        return;
+      }
+      vec2 pos = u_offset + vec2(gl_FragCoord.x, u_res.y - gl_FragCoord.y) / u_dpr;
+      float d = evalSceneSDF(pos);
+
+      float dShadow = evalSceneSDF(pos - vec2(0.0, 8.0));
+      float shadowAlpha = (1.0 - smoothstep(-2.0, 26.0, dShadow)) * (u_lightTheme > 0.5 ? 0.13 : 0.34) * u_shadowPresence * u_color.a;
+
+      float aa = 0.85 / u_dpr;
+      float shapeAlpha = 1.0 - smoothstep(-aa, aa, d);
+
+      float dim = clamp(u_dimB, 0.0, 1.0);
+      vec3 baseRgb = mix(u_color.rgb, u_color.rgb * vec3(0.935, 0.945, 0.965), dim);
+      float cardAlpha = shapeAlpha * u_color.a * mix(1.0, 0.94, dim);
+
+      vec4 shadowCol = vec4(0.03, 0.05, 0.10, 1.0) * shadowAlpha * mix(1.0, 0.65, dim);
+      vec4 surfaceCol = vec4(baseRgb * cardAlpha, cardAlpha);
+
+      vec4 surfaceAndShadow = surfaceCol + shadowCol * (1.0 - shapeAlpha);
+      float innerAlpha = 1.0 - smoothstep(-aa, aa, d + u_borderWidth);
+      float borderAlpha = max(0.0, shapeAlpha - innerAlpha) * u_borderColor.a * u_borderPresence;
+      vec4 borderCol = vec4(u_borderColor.rgb * borderAlpha, borderAlpha);
+      gl_FragColor = borderCol + surfaceAndShadow * (1.0 - borderAlpha);
+    }
+  `;
+
+  const SDF_UNIFORM_NAMES = [
+    'u_res','u_offset','u_dpr','u_active','u_lightTheme','u_shadowPresence',
+    'u_color','u_borderColor','u_borderWidth','u_borderPresence',
+    'u_blobA','u_blobAExtra','u_blobM','u_blobMExtra','u_blobB','u_blobBExtra',
+    'u_kAM','u_kMB','u_dimB'
+  ];
+
+  // Persistent shared WebGL renderer pool (singleton across all Morph invocations)
+  let sharedGL = null;
+
+  function initSharedWebGLProgram(state) {
+    const gl = state.gl;
+    if (!gl || state.lost) return false;
+    const shaders = [];
+    let program = null;
+    let buffer = null;
+    try {
+      const compile = (type, source) => {
+        const sh = gl.createShader(type);
+        shaders.push(sh);
+        gl.shaderSource(sh, source);
+        gl.compileShader(sh);
+        if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) throw new Error('SDF shader');
+        return sh;
+      };
+      program = gl.createProgram();
+      gl.attachShader(program, compile(gl.VERTEX_SHADER, SDF_VS_SOURCE));
+      gl.attachShader(program, compile(gl.FRAGMENT_SHADER, SDF_FS_SOURCE));
+      gl.linkProgram(program);
+      if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error('SDF program');
+      gl.useProgram(program);
+      buffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]), gl.STATIC_DRAW);
+      const pos = gl.getAttribLocation(program, 'a_pos');
+      gl.enableVertexAttribArray(pos);
+      gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
+      const u = Object.fromEntries(SDF_UNIFORM_NAMES.map(n => [n, gl.getUniformLocation(program, n)]));
+      state.program = program;
+      state.buffer = buffer;
+      state.shaders = shaders;
+      state.u = u;
+      state.ready = true;
+      return true;
+    } catch (_) {
+      if (buffer) try { gl.deleteBuffer(buffer); } catch {}
+      if (program) try { gl.deleteProgram(program); } catch {}
+      shaders.forEach(sh => { try { gl.deleteShader(sh); } catch {} });
+      state.ready = false;
+      return false;
+    }
+  }
+
+  function acquireSharedWebGL() {
+    if (sharedGL && sharedGL.ready && !sharedGL.lost && !sharedGL.gl?.isContextLost?.()) {
+      return sharedGL;
+    }
+    if (sharedGL && sharedGL.failed) return null;
+    const canvas = doc.createElement('canvas');
+    canvas.className = 'surface-morph-sdf';
+    canvas.setAttribute('aria-hidden', 'true');
+    let gl = null;
+    try {
+      gl = canvas.getContext?.('webgl', { alpha: true, antialias: true, premultipliedAlpha: true });
+    } catch (_) {}
+    if (!gl) {
+      sharedGL = { failed: true };
+      return null;
+    }
+    const state = { canvas, gl, program: null, buffer: null, shaders: [], u: null, ready: false, lost: false, failed: false };
+    canvas.addEventListener?.('webglcontextlost', (e) => {
+      e.preventDefault?.();
+      state.lost = true;
+      state.ready = false;
+    });
+    canvas.addEventListener?.('webglcontextrestored', () => {
+      state.lost = false;
+      initSharedWebGLProgram(state);
+    });
+    if (!initSharedWebGLProgram(state)) {
+      sharedGL = { failed: true };
+      return null;
+    }
+    sharedGL = state;
+    return sharedGL;
+  }
+
+  // Idle prewarm so the very first Morph open pays zero shader-compile cost
+  if (typeof root.requestIdleCallback === 'function') {
+    root.requestIdleCallback(() => {
+      if (!sharedGL && doc.body) {
+        try { acquireSharedWebGL(); } catch (_) {}
+      }
+    }, { timeout: 2500 });
+  } else if (typeof root.setTimeout === 'function' && doc?.createElement) {
+    root.setTimeout(() => {
+      if (!sharedGL && doc.body) {
+        try { acquireSharedWebGL(); } catch (_) {}
+      }
+    }, 1200);
+  }
+
+  function computeLocalRegion(s, vp) {
+    const o = s.origin, b = s.bounds;
+    const pad = 64;
+    const vpLeft = vp.left || 0, vpTop = vp.top || 0;
+    const vpRight = vpLeft + (vp.width || 0), vpBottom = vpTop + (vp.height || 0);
+    const left = Math.max(0, Math.floor(Math.min(o.left, b.left) - pad));
+    const top = Math.max(0, Math.floor(Math.min(o.top, b.top) - pad));
+    const right = Math.min(Math.ceil(vpRight), Math.ceil(Math.max(o.right, b.left + b.width) + pad));
+    const bottom = Math.min(Math.ceil(vpBottom), Math.ceil(Math.max(o.bottom, b.top + b.height) + pad + 16));
+    return {
+      left,
+      top,
+      width: Math.max(1, right - left),
+      height: Math.max(1, bottom - top)
+    };
+  }
+
   function createRenderer(s) {
-    const canvas=doc.createElement('canvas');canvas.className='surface-morph-sdf';
-    canvas.setAttribute('aria-hidden','true');s.overlay.appendChild(canvas);
-    const dpr=Math.min(root.devicePixelRatio||1,2),v=s.viewport;
-    const sizeCanvas=(node,vp,scale)=>{node.width=Math.ceil((vp.left+vp.width)*scale);node.height=Math.ceil((vp.top+vp.height)*scale);node.style.width=Math.ceil(vp.left+vp.width)+'px';node.style.height=Math.ceil(vp.top+vp.height)+'px';};
-    sizeCanvas(canvas,v,dpr);
-    const parseColor=(value,fallback)=>{
-      const values=(value||'').match(/[\d.]+/g)?.map(Number);
-      return values?.length>=3?[...values.slice(0,3),clamp(values[3]??1,0,1)]:fallback;
+    const dpr = Math.min(root.devicePixelRatio || 1, 2), v = s.viewport;
+    const parseColor = (value, fallback) => {
+      const values = (value || '').match(/[\d.]+/g)?.map(Number);
+      return values?.length >= 3 ? [...values.slice(0, 3), clamp(values[3] ?? 1, 0, 1)] : fallback;
     };
-    const readColor=(node,fallback)=>parseColor(root.getComputedStyle?.(node)?.backgroundColor,fallback);
-    const triggerStyle=root.getComputedStyle?.(s.trigger);
-    const borderStyle=triggerStyle?.borderTopStyle||triggerStyle?.borderStyle||'none';
-    const borderWidth=['none','hidden'].includes(borderStyle)?0:Math.max(0,parseFloat(triggerStyle?.borderTopWidth||triggerStyle?.borderWidth)||0);
-    const borderColor=parseColor(triggerStyle?.borderTopColor||triggerStyle?.borderColor||triggerStyle?.color,[0,0,0,0]);
-    const target=readColor(s.menu,[255,255,255,1]);
-    const morphWhite=[255,255,255,1];
-    const finalStyle=root.getComputedStyle?.(s.menu);
-    const finalBorder=Math.max(0,parseFloat(finalStyle?.borderTopWidth||finalStyle?.borderWidth)||0);
-    s.menu.style.setProperty('--morph-material-border-width',`${finalBorder}px`);
-    const fadeCanvas=node=>{
-      const mix=smoothstep(.72,1,s.p);
-      node.style.opacity=String((1-mix)/Math.max(.001,1-target[3]*mix));
+    const readColor = (node, fallback) => parseColor(root.getComputedStyle?.(node)?.backgroundColor, fallback);
+    const triggerStyle = root.getComputedStyle?.(s.trigger);
+    const borderStyle = triggerStyle?.borderTopStyle || triggerStyle?.borderStyle || 'none';
+    const borderWidth = ['none', 'hidden'].includes(borderStyle) ? 0 : Math.max(0, parseFloat(triggerStyle?.borderTopWidth || triggerStyle?.borderWidth) || 0);
+    const borderColor = parseColor(triggerStyle?.borderTopColor || triggerStyle?.borderColor || triggerStyle?.color, [0, 0, 0, 0]);
+    const target = readColor(s.menu, [255, 255, 255, 1]);
+    const morphWhite = [255, 255, 255, 1];
+    const finalStyle = root.getComputedStyle?.(s.menu);
+    const finalBorder = Math.max(0, parseFloat(finalStyle?.borderTopWidth || finalStyle?.borderWidth) || 0);
+    s.menu.style.setProperty('--morph-material-border-width', `${finalBorder}px`);
+
+    let lastCanvasOpacity = '';
+    const fadeCanvas = (node) => {
+      const mix = smoothstep(.72, 1, s.p);
+      const op = ((1 - mix) / Math.max(.001, 1 - target[3] * mix)).toFixed(4);
+      if (op !== lastCanvasOpacity) {
+        lastCanvasOpacity = op;
+        node.style.opacity = op;
+      }
     };
-    const origin=s.opts.transparentTrigger?readColor(s.trigger,[255,255,255,0]):morphWhite;
-    const material=presence=>{
-      if(!s.opts.transparentTrigger)return morphWhite;
-      const alpha=lerp(origin[3],morphWhite[3],presence);
-      return [...morphWhite.slice(0,3).map((channel,i)=>alpha?lerp(origin[i]*origin[3],channel*morphWhite[3],presence)/alpha:channel),alpha];
+    const origin = s.opts.transparentTrigger ? readColor(s.trigger, [255, 255, 255, 0]) : morphWhite;
+    const materialOut = [255, 255, 255, 1];
+    const material = (presence) => {
+      if (!s.opts.transparentTrigger) return morphWhite;
+      const alpha = lerp(origin[3], morphWhite[3], presence);
+      for (let i = 0; i < 3; i++) {
+        materialOut[i] = alpha ? lerp(origin[i] * origin[3], morphWhite[i] * morphWhite[3], presence) / alpha : morphWhite[i];
+      }
+      materialOut[3] = alpha;
+      return materialOut;
     };
-    let gl=null,program=null,buffer=null,shaders=[];
-    try {gl=canvas.getContext?.('webgl',{alpha:true,antialias:true,premultipliedAlpha:true});}catch(_){}
-    const vsSource = `
-      attribute vec2 a_pos;
-      void main() {
-        gl_Position = vec4(a_pos, 0.0, 1.0);
-      }
-    `;
 
-    const fsSource = `
-      precision highp float;
-      uniform vec2 u_res;
-      uniform float u_dpr;
-      uniform float u_active;
-      uniform float u_lightTheme;
-      uniform float u_shadowPresence;
-      uniform vec4 u_color;
-      uniform vec4 u_borderColor;
-      uniform float u_borderWidth;
-      uniform float u_borderPresence;
+    const positionCanvas = (node, reg, scale) => {
+      const targetW = Math.ceil(reg.width * scale);
+      const targetH = Math.ceil(reg.height * scale);
+      if (node.width !== targetW) node.width = targetW;
+      if (node.height !== targetH) node.height = targetH;
+      node.style.position = 'fixed';
+      node.style.left = reg.left + 'px';
+      node.style.top = reg.top + 'px';
+      node.style.width = reg.width + 'px';
+      node.style.height = reg.height + 'px';
+      node.style.inset = 'auto';
+    };
 
-      uniform vec4 u_blobA;
-      uniform vec3 u_blobAExtra;
+    const shared = acquireSharedWebGL();
+    if (shared && shared.ready && !shared.lost) {
+      const { canvas, gl, program, u } = shared;
+      let region = computeLocalRegion(s, v);
+      s.overlay.appendChild(canvas);
+      canvas.style.opacity = '1';
+      lastCanvasOpacity = '1';
 
-      uniform vec4 u_blobM;
-      uniform vec2 u_blobMExtra;
+      const updateViewport = (vp) => {
+        if (shared.lost || gl.isContextLost?.()) return;
+        region = computeLocalRegion(s, vp);
+        positionCanvas(canvas, region, dpr);
+        gl.disable(gl.SCISSOR_TEST);
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        gl.useProgram(program);
+        gl.uniform2f(u.u_res, canvas.width, canvas.height);
+        gl.uniform2f(u.u_offset, region.left, region.top);
+      };
+      updateViewport(v);
+      gl.uniform1f(u.u_dpr, dpr);
+      gl.uniform1f(u.u_active, 1);
+      gl.uniform1f(u.u_lightTheme, morphWhite[0] + morphWhite[1] + morphWhite[2] > 400 ? 1 : 0);
+      gl.uniform1f(u.u_borderWidth, borderWidth);
+      gl.uniform4f(u.u_borderColor, borderColor[0] / 255, borderColor[1] / 255, borderColor[2] / 255, borderColor[3]);
 
-      uniform vec4 u_blobB;
-      uniform vec3 u_blobBExtra;
-
-      uniform float u_kAM;
-      uniform float u_kMB;
-      uniform float u_dimB;
-
-      float sdTaperedBox(vec2 p, vec2 c, vec2 b, float r, float vTaper, float hTaper) {
-        vec2 lp = p - c;
-        float ny = clamp(lp.y / max(b.y, 1.0), -1.0, 1.0);
-        float nx = clamp(lp.x / max(b.x, 1.0), -1.0, 1.0);
-        float halfW = max(2.0, b.x * (1.0 + vTaper * ny));
-        float halfH = max(2.0, b.y * (1.0 + hTaper * nx));
-        float rad = min(r, min(halfW, halfH));
-        vec2 q = abs(lp) - vec2(halfW, halfH) + vec2(rad);
-        return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - rad;
-      }
-
-      float sminQuad(float a, float b, float k) {
-        if (k <= 0.001) return min(a, b);
-        float h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0);
-        return mix(b, a, h) - k * h * (1.0 - h);
-      }
-
-      float evalSceneSDF(vec2 pos) {
-        float dA = 1000.0;
-        if (u_blobA.z > 0.5 && u_blobA.w > 0.5) {
-          dA = sdTaperedBox(pos, u_blobA.xy, u_blobA.zw * 0.5, u_blobAExtra.x, u_blobAExtra.y, u_blobAExtra.z);
+      return {
+        resize: updateViewport,
+        draw(prims, shadowPresence, borderPresence, dimB = 0) {
+          if (shared.lost || gl.isContextLost?.()) return;
+          fadeCanvas(canvas);
+          gl.useProgram(program);
+          gl.uniform1f(u.u_shadowPresence, shadowPresence);
+          gl.uniform1f(u.u_borderPresence, borderPresence);
+          gl.uniform1f(u.u_dimB, clamp(dimB, 0, 1));
+          const fill = material(shadowPresence);
+          gl.uniform4f(u.u_color, fill[0] / 255, fill[1] / 255, fill[2] / 255, fill[3]);
+          const bA = prims.blobA, bM = prims.blobM, bB = prims.blobB;
+          gl.uniform4f(u.u_blobA, bA.x, bA.y, bA.w, bA.h);
+          gl.uniform3f(u.u_blobAExtra, bA.r, bA.vTaper, bA.hTaper);
+          gl.uniform4f(u.u_blobM, bM.x, bM.y, bM.w, bM.h);
+          gl.uniform2f(u.u_blobMExtra, bM.r, bM.vTaper);
+          gl.uniform4f(u.u_blobB, bB.x, bB.y, bB.w, bB.h);
+          gl.uniform3f(u.u_blobBExtra, bB.r, bB.vTaper, bB.hTaper);
+          gl.uniform1f(u.u_kAM, prims.kAM);
+          gl.uniform1f(u.u_kMB, prims.kMB);
+          gl.clearColor(0, 0, 0, 0);
+          gl.clear(gl.COLOR_BUFFER_BIT);
+          gl.drawArrays(gl.TRIANGLES, 0, 6);
+        },
+        dispose() {
+          // Clear framebuffer and detach canvas while keeping persistent WebGL context/program alive
+          if (!shared.lost && !gl.isContextLost?.()) {
+            gl.clearColor(0, 0, 0, 0);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+          }
+          if (canvas.parentNode === s.overlay) {
+            canvas.remove?.();
+            if (canvas.parentNode?.removeChild) canvas.parentNode.removeChild(canvas);
+          }
         }
-        float dM = 1000.0;
-        if (u_blobM.z > 0.5 && u_blobM.w > 0.5) {
-          dM = sdTaperedBox(pos, u_blobM.xy, u_blobM.zw * 0.5, u_blobMExtra.x, u_blobMExtra.y, 0.0);
-        }
-        float dB = 1000.0;
-        if (u_blobB.z > 0.5 && u_blobB.w > 0.5) {
-          dB = sdTaperedBox(pos, u_blobB.xy, u_blobB.zw * 0.5, u_blobBExtra.x, u_blobBExtra.y, u_blobBExtra.z);
-        }
-        float dAM = sminQuad(dA, dM, u_kAM);
-        return sminQuad(dAM, dB, u_kMB);
-      }
-
-      void main() {
-        if (u_active < 0.5) {
-          gl_FragColor = vec4(0.0);
-          return;
-        }
-        vec2 pos = vec2(gl_FragCoord.x, u_res.y - gl_FragCoord.y) / u_dpr;
-        float d = evalSceneSDF(pos);
-
-        float dShadow = evalSceneSDF(pos - vec2(0.0, 8.0));
-        float shadowAlpha = (1.0 - smoothstep(-2.0, 26.0, dShadow)) * (u_lightTheme > 0.5 ? 0.13 : 0.34) * u_shadowPresence * u_color.a;
-
-        float aa = 0.85 / u_dpr;
-        float shapeAlpha = 1.0 - smoothstep(-aa, aa, d);
-
-        float dim = clamp(u_dimB, 0.0, 1.0);
-        vec3 baseRgb = mix(u_color.rgb, u_color.rgb * vec3(0.935, 0.945, 0.965), dim);
-        float cardAlpha = shapeAlpha * u_color.a * mix(1.0, 0.94, dim);
-
-        vec4 shadowCol = vec4(0.03, 0.05, 0.10, 1.0) * shadowAlpha * mix(1.0, 0.65, dim);
-        vec4 surfaceCol = vec4(baseRgb * cardAlpha, cardAlpha);
-
-        vec4 surfaceAndShadow = surfaceCol + shadowCol * (1.0 - shapeAlpha);
-        float innerAlpha = 1.0 - smoothstep(-aa, aa, d + u_borderWidth);
-        float borderAlpha = max(0.0, shapeAlpha - innerAlpha) * u_borderColor.a * u_borderPresence;
-        vec4 borderCol = vec4(u_borderColor.rgb * borderAlpha, borderAlpha);
-        gl_FragColor = borderCol + surfaceAndShadow * (1.0 - borderAlpha);
-      }
-    `;
-
-    if(gl) {
-      try {
-        const compile=(type,source)=>{const sh=gl.createShader(type);shaders.push(sh);gl.shaderSource(sh,source);gl.compileShader(sh);if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS))throw new Error('SDF shader');return sh;};
-        program=gl.createProgram();gl.attachShader(program,compile(gl.VERTEX_SHADER,vsSource));gl.attachShader(program,compile(gl.FRAGMENT_SHADER,fsSource));gl.linkProgram(program);
-        if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw new Error('SDF program');
-        gl.useProgram(program);buffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
-        gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]),gl.STATIC_DRAW);
-        const pos=gl.getAttribLocation(program,'a_pos');gl.enableVertexAttribArray(pos);gl.vertexAttribPointer(pos,2,gl.FLOAT,false,0,0);
-        const names=['u_res','u_dpr','u_active','u_lightTheme','u_shadowPresence','u_color','u_borderColor','u_borderWidth','u_borderPresence','u_blobA','u_blobAExtra','u_blobM','u_blobMExtra','u_blobB','u_blobBExtra','u_kAM','u_kMB','u_dimB'];
-        const u=Object.fromEntries(names.map(n=>[n,gl.getUniformLocation(program,n)]));
-        const updateViewport=(vp)=>{sizeCanvas(canvas,vp,dpr);const o=s.origin,b=s.bounds,pad=48,left=Math.max(0,Math.floor((Math.min(o.left,b.left)-pad)*dpr)),top=Math.max(0,Math.floor((Math.min(o.top,b.top)-pad)*dpr)),right=Math.min(canvas.width,Math.ceil((Math.max(o.right,b.left+b.width)+pad)*dpr)),bottom=Math.min(canvas.height,Math.ceil((Math.max(o.bottom,b.top+b.height)+pad)*dpr));gl.enable(gl.SCISSOR_TEST);gl.scissor(left,canvas.height-bottom,Math.max(0,right-left),Math.max(0,bottom-top));gl.viewport(0,0,canvas.width,canvas.height);gl.useProgram(program);gl.uniform2f(u.u_res,canvas.width,canvas.height);};
-        updateViewport(v);gl.uniform1f(u.u_dpr,dpr);
-        gl.uniform1f(u.u_active,1);gl.uniform1f(u.u_lightTheme,morphWhite[0]+morphWhite[1]+morphWhite[2]>400?1:0);
-        gl.uniform1f(u.u_borderWidth,borderWidth);gl.uniform4f(u.u_borderColor,...borderColor.slice(0,3).map(c=>c/255),borderColor[3]);
-        return {resize:updateViewport,draw(prims,shadowPresence,borderPresence,dimB=0){
-          fadeCanvas(canvas);gl.useProgram(program);gl.uniform1f(u.u_shadowPresence,shadowPresence);gl.uniform1f(u.u_borderPresence,borderPresence);gl.uniform1f(u.u_dimB,clamp(dimB,0,1));
-          const fill=material(shadowPresence);gl.uniform4f(u.u_color,...fill.slice(0,3).map(c=>c/255),fill[3]);
-          for(const name of ['A','M','B']) {const b=prims['blob'+name];gl.uniform4f(u['u_blob'+name],b.x,b.y,b.w,b.h);
-            if(name==='M')gl.uniform2f(u.u_blobMExtra,b.r,b.vTaper);else gl.uniform3f(u['u_blob'+name+'Extra'],b.r,b.vTaper,b.hTaper);}
-          gl.uniform1f(u.u_kAM,prims.kAM);gl.uniform1f(u.u_kMB,prims.kMB);
-          gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);gl.drawArrays(gl.TRIANGLES,0,6);
-        },dispose(){gl.deleteBuffer(buffer);gl.deleteProgram(program);shaders.forEach(sh=>gl.deleteShader(sh));gl.getExtension('WEBGL_lose_context')?.loseContext();}};
-      } catch(_) {if(buffer)gl.deleteBuffer(buffer);if(program)gl.deleteProgram(program);shaders.forEach(sh=>gl.deleteShader(sh));canvas.remove?.();}
+      };
     }
-    const fallback=gl?doc.createElement('canvas'):canvas;
-    if(gl){fallback.className='surface-morph-sdf';fallback.setAttribute('aria-hidden','true');s.overlay.appendChild(fallback);}
-    sizeCanvas(fallback,v,1);
-    const ctx=fallback.getContext?.('2d');
-    function distance(b,x,y) {
-      if(b.w<=.5||b.h<=.5)return 1000;
-      const dx=x-b.x,dy=y-b.y;
-      const hw=Math.max(2,b.w*.5*(1+b.vTaper*clamp(dy/Math.max(b.h*.5,1),-1,1)));
-      const hh=Math.max(2,b.h*.5*(1+(b.hTaper||0)*clamp(dx/Math.max(b.w*.5,1),-1,1)));
-      const r=Math.min(b.r,hw,hh),qx=Math.abs(dx)-hw+r,qy=Math.abs(dy)-hh+r;
-      return Math.min(Math.max(qx,qy),0)+Math.hypot(Math.max(qx,0),Math.max(qy,0))-r;
-    }
-    const union=(a,b,k)=>{if(k<=.001)return Math.min(a,b);const h=clamp(.5+.5*(b-a)/k,0,1);return lerp(b,a,h)-k*h*(1-h);};
-    return {resize(vp){sizeCanvas(fallback,vp,1);},draw(prims,shadowPresence,borderPresence,dimB=0){
-      fadeCanvas(fallback);if(!ctx)return;
-      const blobs=[prims.blobA,prims.blobM,prims.blobB].filter(b=>b.w>.5&&b.h>.5);
-      const pad=32+Math.max(prims.kAM,prims.kMB);
-      const left=Math.max(0,Math.floor(Math.min(...blobs.map(b=>b.x-b.w*.6))-pad));
-      const top=Math.max(0,Math.floor(Math.min(...blobs.map(b=>b.y-b.h*.6))-pad));
-      const right=Math.min(fallback.width,Math.ceil(Math.max(...blobs.map(b=>b.x+b.w*.6))+pad));
-      const bottom=Math.min(fallback.height,Math.ceil(Math.max(...blobs.map(b=>b.y+b.h*.6))+pad+8));
-      ctx.clearRect(0,0,fallback.width,fallback.height);if(right<=left||bottom<=top)return;
-      const img=ctx.createImageData(right-left,bottom-top),data=img.data,fill=material(shadowPresence),dim=clamp(dimB,0,1);
-      const dimFill=[fill[0]*lerp(1,.935,dim),fill[1]*lerp(1,.945,dim),fill[2]*lerp(1,.965,dim),fill[3]*lerp(1,.94,dim)];
-      const sdf=(x,y)=>union(union(distance(prims.blobA,x,y),distance(prims.blobM,x,y),prims.kAM),distance(prims.blobB,x,y),prims.kMB);
-      for(let y=0;y<img.height;y++)for(let x=0;x<img.width;x++){
-        const d=sdf(left+x+.5,top+y+.5);
-        const coverage=1-smoothstep(-.85,.85,d),a=coverage*dimFill[3];
-        const inner=1-smoothstep(-.85,.85,d+borderWidth);
-        const edge=Math.max(0,coverage-inner)*borderColor[3]*borderPresence;
-        const shadow=(1-smoothstep(-2,26,sdf(left+x+.5,top+y-7.5)))*(morphWhite[0]+morphWhite[1]+morphWhite[2]>400?.13:.34)*shadowPresence*dimFill[3]*lerp(1,.65,dim);
-        const alpha=edge+(a+shadow*(1-coverage))*(1-edge),i=(y*img.width+x)*4;
-        for(let c=0;c<3;c++)data[i+c]=alpha?(borderColor[c]*edge+(dimFill[c]*a+[7.65,12.75,25.5][c]*shadow*(1-coverage))*(1-edge))/alpha:0;
-        data[i+3]=alpha*255;
+
+    // Optimized Canvas 2D Fallback: localized region + 0.5x scale + reusable ImageData buffer
+    const fallback = doc.createElement('canvas');
+    fallback.className = 'surface-morph-sdf';
+    fallback.setAttribute('aria-hidden', 'true');
+    s.overlay.appendChild(fallback);
+    const fbScale = 0.5;
+    let region = computeLocalRegion(s, v);
+    positionCanvas(fallback, region, fbScale);
+    const ctx = fallback.getContext?.('2d');
+    let reusableImg = null;
+    const ensureImageData = (w, h) => {
+      if (!ctx || w <= 0 || h <= 0) return null;
+      if (!reusableImg || reusableImg.width !== w || reusableImg.height !== h) {
+        reusableImg = ctx.createImageData(w, h);
       }
-      ctx.putImageData(img,left,top);
-    },dispose(){fallback.remove?.();}};
+      return reusableImg;
+    };
+
+    function distance(b, x, y) {
+      if (b.w <= .5 || b.h <= .5) return 1000;
+      const dx = x - b.x, dy = y - b.y;
+      const hw = Math.max(2, b.w * .5 * (1 + b.vTaper * clamp(dy / Math.max(b.h * .5, 1), -1, 1)));
+      const hh = Math.max(2, b.h * .5 * (1 + (b.hTaper || 0) * clamp(dx / Math.max(b.w * .5, 1), -1, 1)));
+      const r = Math.min(b.r, hw, hh), qx = Math.abs(dx) - hw + r, qy = Math.abs(dy) - hh + r;
+      return Math.min(Math.max(qx, qy), 0) + Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) - r;
+    }
+    const union = (a, b, k) => { if (k <= .001) return Math.min(a, b); const h = clamp(.5 + .5 * (b - a) / k, 0, 1); return lerp(b, a, h) - k * h * (1 - h); };
+    const isLight = morphWhite[0] + morphWhite[1] + morphWhite[2] > 400;
+    const shadowMulBase = isLight ? .13 : .34;
+
+    return {
+      resize(vp) {
+        region = computeLocalRegion(s, vp);
+        positionCanvas(fallback, region, fbScale);
+        reusableImg = null;
+      },
+      draw(prims, shadowPresence, borderPresence, dimB = 0) {
+        fadeCanvas(fallback);
+        if (!ctx) return;
+        const bA = prims.blobA, bM = prims.blobM, bB = prims.blobB;
+        const blobs = [];
+        if (bA.w > .5 && bA.h > .5) blobs.push(bA);
+        if (bM.w > .5 && bM.h > .5) blobs.push(bM);
+        if (bB.w > .5 && bB.h > .5) blobs.push(bB);
+        ctx.clearRect(0, 0, fallback.width, fallback.height);
+        if (!blobs.length) return;
+
+        const pad = 32 + Math.max(prims.kAM, prims.kMB);
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        for (let i = 0; i < blobs.length; i++) {
+          const bl = blobs[i];
+          if (bl.x - bl.w * .6 < minX) minX = bl.x - bl.w * .6;
+          if (bl.y - bl.h * .6 < minY) minY = bl.y - bl.h * .6;
+          if (bl.x + bl.w * .6 > maxX) maxX = bl.x + bl.w * .6;
+          if (bl.y + bl.h * .6 > maxY) maxY = bl.y + bl.h * .6;
+        }
+        const left = Math.max(0, Math.floor((minX - pad - region.left) * fbScale));
+        const top = Math.max(0, Math.floor((minY - pad - region.top) * fbScale));
+        const right = Math.min(fallback.width, Math.ceil((maxX + pad - region.left) * fbScale));
+        const bottom = Math.min(fallback.height, Math.ceil((maxY + pad + 8 - region.top) * fbScale));
+        const rw = right - left, rh = bottom - top;
+        if (rw <= 0 || rh <= 0) return;
+
+        const img = ensureImageData(rw, rh);
+        if (!img) return;
+        const data = img.data;
+        const fill = material(shadowPresence), dim = clamp(dimB, 0, 1);
+        const f0 = fill[0] * lerp(1, .935, dim), f1 = fill[1] * lerp(1, .945, dim), f2 = fill[2] * lerp(1, .965, dim), f3 = fill[3] * lerp(1, .94, dim);
+        const shadowMul = shadowMulBase * shadowPresence * f3 * lerp(1, .65, dim);
+        const invScale = 1 / fbScale;
+        const kAM = prims.kAM, kMB = prims.kMB;
+
+        for (let y = 0; y < rh; y++) {
+          const wy = region.top + (top + y + .5) * invScale;
+          const wyShadow = wy - 8;
+          for (let x = 0; x < rw; x++) {
+            const wx = region.left + (left + x + .5) * invScale;
+            const d = union(union(distance(bA, wx, wy), distance(bM, wx, wy), kAM), distance(bB, wx, wy), kMB);
+            const coverage = 1 - smoothstep(-1.2, 1.2, d);
+            const a = coverage * f3;
+            const inner = 1 - smoothstep(-1.2, 1.2, d + borderWidth);
+            const edge = Math.max(0, coverage - inner) * borderColor[3] * borderPresence;
+            const dS = union(union(distance(bA, wx, wyShadow), distance(bM, wx, wyShadow), kAM), distance(bB, wx, wyShadow), kMB);
+            const shadow = (1 - smoothstep(-2, 26, dS)) * shadowMul;
+            const invCov = 1 - coverage, invEdge = 1 - edge;
+            const alpha = edge + (a + shadow * invCov) * invEdge;
+            const idx = (y * rw + x) * 4;
+            if (alpha > 0.001) {
+              const invA = 1 / alpha;
+              data[idx] = (borderColor[0] * edge + (f0 * a + 7.65 * shadow * invCov) * invEdge) * invA;
+              data[idx + 1] = (borderColor[1] * edge + (f1 * a + 12.75 * shadow * invCov) * invEdge) * invA;
+              data[idx + 2] = (borderColor[2] * edge + (f2 * a + 25.5 * shadow * invCov) * invEdge) * invA;
+              data[idx + 3] = alpha * 255;
+            } else {
+              data[idx] = data[idx + 1] = data[idx + 2] = data[idx + 3] = 0;
+            }
+          }
+        }
+        ctx.putImageData(img, left, top);
+      },
+      dispose() {
+        reusableImg = null;
+        fallback.remove?.();
+      }
+    };
+  }
+
+  function applyStaticMenuBox(s) {
+    const menu = s.menu, bounds = s.bounds;
+    menu.style.width = bounds.width + 'px';
+    menu.style.height = bounds.height + 'px';
+    menu.style.left = '0px';
+    menu.style.top = '0px';
+    menu.style.borderRadius = s.radius + 'px';
   }
 
   function frame(s) {
@@ -569,40 +824,78 @@
     const prims=computeMorphPrimitives(p,g,s.dirMix,subAmt,recedeShiftY),b=prims.blobB;
     s.primitives=prims;
     const menu=s.menu,icon=s.icon;
-    menu.style.width=bounds.width+'px';menu.style.height=bounds.height+'px';menu.style.left='0px';menu.style.top='0px';
-    menu.style.borderRadius=s.radius+'px';
-    const sx=b.w/bounds.width,sy=b.h/bounds.height;
-    menu.style.transform=`translate3d(${b.x-b.w*.5}px, ${b.y-b.h*.5}px, 0) scale(${sx}, ${sy})`;
-    s.content.style.borderRadius=`${b.r/Math.max(.01,sx)}px / ${b.r/Math.max(.01,sy)}px`;
-    const menuAlpha=smoothstep(.24,.54,p);
-    menu.style.opacity=String(menuAlpha);
-    menu.style.setProperty('--morph-surface-presence',String(p));
-    menu.style.setProperty('--morph-terminal-material',String(smoothstep(.72,1,p)));
-    menu.style.setProperty('--morph-sub-dim',String(subAmt));
-    menu.classList.toggle('is-terminal-blur',p>=.72);
-    const isSubVisible=Boolean(s.sub&&s.subP>0.0005);
-    menu.classList.toggle('is-submorph-receded',isSubVisible);
+    const fc=s._frameCache||(s._frameCache={});
 
-    const phase=clamp(p/.21,0,1),scale=lerp(1,.44,easeOutCubic(phase));
-    icon.style.transform=`translate3d(${(prims.blobA.x-g.btnCx)*.85}px, ${(prims.blobA.y-g.btnCy)*.92}px, 0) scale(${scale})`;
-    icon.style.opacity=String(1-smoothstep(.02,.20,p));icon.style.filter=`blur(${9.5*Math.pow(phase,.85)}px)`;
-    for(const {node,position} of s.slots) {
-      const offset=(position-.5)*g.btnW;
-      const local=clamp(p/Math.max(.09,.21-Math.abs(offset)/Math.max(1,g.btnW)*.07),0,1);
-      node.style.transform=`translate3d(${-offset*easeOutCubic(local)*.55}px, 0, 0)`;
-    }
-    const maxStagger=s.rows.length>7?.27:0;for(const [idx,row] of s.rows.entries()) {
-      const isTopSearch=row.classList?.contains('template-tag-search');
-      const stagger=maxStagger?(idx/(s.rows.length-1))*maxStagger:idx*.045,start=isTopSearch?.48:.28+stagger,span=isTopSearch?.42:Math.max(.01,.56-stagger*.4),progress=clamp((p-start)/span,0,1),ease=easeOutCubic(progress);
-      const blurPx=(1-ease)*11+subAmt*0.6;
-      const alpha=smoothstep(0,.68,progress)*lerp(1,0.46,subAmt);
-      if(isSubVisible&&s.sub.triggerRow===row){
-        row.style.opacity='0';row.style.visibility='hidden';
+    const sx=b.w/bounds.width,sy=b.h/bounds.height;
+    menu.style.transform=`translate3d(${(b.x-b.w*.5).toFixed(2)}px, ${(b.y-b.h*.5).toFixed(2)}px, 0) scale(${sx.toFixed(4)}, ${sy.toFixed(4)})`;
+    const contentRadius=`${(b.r/Math.max(.01,sx)).toFixed(2)}px / ${(b.r/Math.max(.01,sy)).toFixed(2)}px`;
+    if(fc.contentRadius!==contentRadius){fc.contentRadius=contentRadius;s.content.style.borderRadius=contentRadius;}
+
+    const menuAlpha=smoothstep(.24,.54,p);
+    const menuAlphaStr=menuAlpha.toFixed(4);
+    if(fc.menuAlpha!==menuAlphaStr){fc.menuAlpha=menuAlphaStr;menu.style.opacity=menuAlphaStr;}
+
+    const presenceStr=p.toFixed(4);
+    if(fc.presence!==presenceStr){fc.presence=presenceStr;menu.style.setProperty('--morph-surface-presence',presenceStr);}
+    const termMatStr=smoothstep(.72,1,p).toFixed(4);
+    if(fc.termMat!==termMatStr){fc.termMat=termMatStr;menu.style.setProperty('--morph-terminal-material',termMatStr);}
+    const subDimStr=subAmt.toFixed(4);
+    if(fc.subDim!==subDimStr){fc.subDim=subDimStr;menu.style.setProperty('--morph-sub-dim',subDimStr);}
+
+    const termBlur=p>=.72;
+    if(fc.termBlur!==termBlur){fc.termBlur=termBlur;menu.classList.toggle('is-terminal-blur',termBlur);}
+    const isSubVisible=Boolean(s.sub&&s.subP>0.0005);
+    if(fc.isSubVisible!==isSubVisible){fc.isSubVisible=isSubVisible;menu.classList.toggle('is-submorph-receded',isSubVisible);}
+
+    const iconAlpha=1-smoothstep(.02,.20,p);
+    if(iconAlpha>0.001||fc.iconHidden!==true){
+      if(iconAlpha<=0.001){
+        fc.iconHidden=true;
+        icon.style.opacity='0';
+        icon.style.filter='none';
       }else{
-        row.style.visibility='visible';row.style.opacity=String(alpha);
+        fc.iconHidden=false;
+        const phase=clamp(p/.21,0,1),scale=lerp(1,.44,easeOutCubic(phase));
+        icon.style.transform=`translate3d(${((prims.blobA.x-g.btnCx)*.85).toFixed(2)}px, ${((prims.blobA.y-g.btnCy)*.92).toFixed(2)}px, 0) scale(${scale.toFixed(4)})`;
+        icon.style.opacity=iconAlpha.toFixed(4);
+        const iconBlur=9.5*Math.pow(phase,.85);
+        icon.style.filter=iconBlur>0.12?`blur(${iconBlur.toFixed(2)}px)`:'none';
+        for(let i=0;i<s.slots.length;i++){
+          const {node,position}=s.slots[i];
+          const offset=(position-.5)*g.btnW;
+          const local=clamp(p/Math.max(.09,.21-Math.abs(offset)/Math.max(1,g.btnW)*.07),0,1);
+          node.style.transform=`translate3d(${(-offset*easeOutCubic(local)*.55).toFixed(2)}px, 0, 0)`;
+        }
       }
-      row.style.filter=blurPx>.15?`blur(${blurPx.toFixed(2)}px)`:'none';
-      row.style.transform=`translate3d(0, ${(1-ease)*-8}px, 0)`;
+    }
+
+    const rowCache=fc.rows||(fc.rows=new Array(s.rows.length));
+    const maxStagger=s.rows.length>7?.27:0;
+    for(let idx=0;idx<s.rows.length;idx++){
+      const row=s.rows[idx];
+      const isTopSearch=row.classList?.contains('template-tag-search');
+      const stagger=maxStagger?(idx/(s.rows.length-1))*maxStagger:idx*.045;
+      const start=isTopSearch?.48:.28+stagger;
+      const span=isTopSearch?.42:Math.max(.01,.56-stagger*.4);
+      const progress=clamp((p-start)/span,0,1);
+      const ease=easeOutCubic(progress);
+      const alpha=smoothstep(0,.68,progress)*lerp(1,0.46,subAmt);
+      const isOriginHidden=isSubVisible&&s.sub.triggerRow===row;
+      const vis=isOriginHidden?'hidden':'visible';
+      const opStr=isOriginHidden?'0':alpha.toFixed(3);
+      // Skip expensive blur filter when row is completely invisible (alpha === 0)
+      const blurPx=(!isOriginHidden&&alpha>0.005)?((1-ease)*11+subAmt*0.6):0;
+      const filterStr=blurPx>.15?`blur(${blurPx.toFixed(2)}px)`:'none';
+      const ty=((1-ease)*-8).toFixed(2);
+      const tfStr=`translate3d(0, ${ty}px, 0)`;
+      const prev=rowCache[idx];
+      if(!prev||prev.vis!==vis||prev.op!==opStr||prev.filter!==filterStr||prev.tf!==tfStr){
+        if(!prev||prev.vis!==vis) row.style.visibility=vis;
+        if(!prev||prev.op!==opStr) row.style.opacity=opStr;
+        if(!prev||prev.filter!==filterStr) row.style.filter=filterStr;
+        if(!prev||prev.tf!==tfStr) row.style.transform=tfStr;
+        rowCache[idx]={vis,op:opStr,filter:filterStr,tf:tfStr};
+      }
     }
 
     if(s.sub){
@@ -624,7 +917,7 @@
         const screenY=baseB.top+(curTop-bounds.top)*baseScaleY;
         const shadowStrength=smoothstep(0.0,0.42,t)*menuAlpha;
 
-        sub.layer.style.display='block';
+        if(sub.layer.style.display!=='block') sub.layer.style.display='block';
         sub.layer.style.opacity=menuAlpha.toFixed(3);
         sub.layer.style.width=curW.toFixed(2)+'px';
         sub.layer.style.height=curH.toFixed(2)+'px';
@@ -637,26 +930,41 @@
           const rCol=Math.round(lerp(148,37,t));
           const gCol=Math.round(lerp(160,99,t));
           const bCol=Math.round(lerp(184,235,t));
-          sub.headerChevron.style.color=`rgb(${rCol},${gCol},${bCol})`;
-          const svg=sub.headerChevron.querySelector?.('svg');
-          if(svg)svg.style.stroke=`rgb(${rCol},${gCol},${bCol})`;
+          const colStr=`rgb(${rCol},${gCol},${bCol})`;
+          if(sub._lastChevronCol!==colStr){
+            sub._lastChevronCol=colStr;
+            sub.headerChevron.style.color=colStr;
+            if(sub.headerChevronSvg) sub.headerChevronSvg.style.stroke=colStr;
+          }
         }
 
-        for(const [sIdx,sRow] of sub.optionNodes.entries()){
+        const subRowCache=sub._rowCache||(sub._rowCache=new Array(sub.optionNodes.length));
+        for(let sIdx=0;sIdx<sub.optionNodes.length;sIdx++){
+          const sRow=sub.optionNodes[sIdx];
           const sStagger=sIdx*0.07;
           const sProg=clamp((t-(0.08+sStagger))/(0.62-sStagger*0.3),0,1);
           const sEase=easeOutCubic(sProg);
-          const sBlur=(1-sEase)*5.5;
           const sAlpha=smoothstep(0,0.72,sProg);
+          const sBlur=sAlpha>0.005?(1-sEase)*5.5:0;
           const sSlideY=(1-sEase)*-10.0;
-          sRow.style.opacity=sAlpha.toFixed(3);
-          sRow.style.filter=sBlur>0.12?`blur(${sBlur.toFixed(2)}px)`:'none';
-          sRow.style.transform=`translate3d(0, ${sSlideY.toFixed(2)}px, 0)`;
+          const sOpStr=sAlpha.toFixed(3);
+          const sFilterStr=sBlur>0.12?`blur(${sBlur.toFixed(2)}px)`:'none';
+          const sTfStr=`translate3d(0, ${sSlideY.toFixed(2)}px, 0)`;
+          const prev=subRowCache[sIdx];
+          if(!prev||prev.op!==sOpStr||prev.filter!==sFilterStr||prev.tf!==sTfStr){
+            if(!prev||prev.op!==sOpStr) sRow.style.opacity=sOpStr;
+            if(!prev||prev.filter!==sFilterStr) sRow.style.filter=sFilterStr;
+            if(!prev||prev.tf!==sTfStr) sRow.style.transform=sTfStr;
+            subRowCache[sIdx]={op:sOpStr,filter:sFilterStr,tf:sTfStr};
+          }
         }
 
         const canInteract=t>0.55&&s.subTargetP>0.5&&p>0.85&&s.phase!=='closing';
-        sub.layer.classList.toggle('interactive',canInteract);
-        sub.layer.inert=!canInteract;
+        if(sub._lastCanInteract!==canInteract){
+          sub._lastCanInteract=canInteract;
+          sub.layer.classList.toggle('interactive',canInteract);
+          sub.layer.inert=!canInteract;
+        }
         if(canInteract&&!s.subInteractive){
           s.subInteractive=true;
           activateSubmenu(s);
@@ -664,9 +972,12 @@
           s.subInteractive=false;
         }
       }else{
-        sub.layer.style.display='none';
-        sub.layer.classList.remove('interactive');
-        sub.layer.inert=true;
+        if(sub.layer.style.display!=='none'){
+          sub.layer.style.display='none';
+          sub.layer.classList.remove('interactive');
+          sub.layer.inert=true;
+          sub._lastCanInteract=false;
+        }
         s.subInteractive=false;
       }
     }
@@ -744,10 +1055,27 @@
     const firstOpt=sub.optionNodes.find(n=>n.matches?.('button, a[href], [role="menuitem"]'));
     (firstOpt||items[0]||sub.layer).focus?.({preventScroll:true});
   }
+  function beginMorphMotion(s) {
+    if (s._motionHandle) return;
+    if (root.MotionCoordinator) {
+      s._motionHandle = root.MotionCoordinator.begin('morph', { maskMode: 'defer', pauseDecor: true });
+    } else {
+      root.DynamicMaskSystem?.setMotionMode?.('defer');
+    }
+  }
+  function endMorphMotion(s) {
+    if (s._motionHandle) {
+      s._motionHandle.end();
+      s._motionHandle = null;
+    } else {
+      root.DynamicMaskSystem?.setMotionMode?.('normal');
+    }
+  }
   function settle(s) {
     if(s.phase!=='open'){
       s.phase='open';activate(s);s.menu.classList.add('is-settled');s.menu.style.willChange='auto';s.content.style.borderRadius='';
       if(s.opts.keepTrigger) s.trigger.classList.remove('is-hidden-for-morph','surface-morph-trigger-hidden');
+      endMorphMotion(s);
       s.opts.onOpened?.(s.menu);
     }
   }
@@ -834,6 +1162,7 @@
     const inner=layer.querySelector?.('.export-submorph-inner, .submenu-inner')||layer.firstElementChild;
     const headerRow=layer.querySelector?.('.export-submorph-header, .submenu-header-row');
     const headerChevron=headerRow?.querySelector?.('.morph-item-chevron, .submenu-chevron')||null;
+    const headerChevronSvg=headerChevron?.querySelector?.('svg')||null;
     const optionNodes=Array.from(layer.querySelectorAll?.('.export-submorph-option, .export-submorph-divider, .submenu-option')||[]);
     const geom=computeSubmenuGeometry(s,triggerRow,layer,inner);
     if(!layer.parentNode)s.overlay.appendChild(layer);
@@ -848,7 +1177,7 @@
         if(items.length){const next=(index+(event.shiftKey?-1:1)+items.length)%items.length;items.forEach((el,i)=>{el.tabIndex=i===next?0:-1;});items[next].focus?.();}
       }
     });
-    s.sub={triggerRow,layer,inner,headerRow,headerChevron,optionNodes,geom,onRetract:subOpts.onRetract};
+    s.sub={triggerRow,layer,inner,headerRow,headerChevron,headerChevronSvg,optionNodes,geom,onRetract:subOpts.onRetract};
     s.menu.style.willChange='transform,opacity';
     s.subP=0;s.subVelocity=0;s.subTargetP=1;s.subInteractive=false;
     if(reduced()){s.subP=1;s.subVelocity=0;frame(s);}
@@ -870,7 +1199,7 @@
     s.trigger.classList?.remove('is-hidden-for-morph','surface-morph-trigger-hidden');s.trigger.setAttribute?.('aria-expanded','false');
     s.menu.style.willChange='auto';s.content.style.willChange='auto';s.icon.style.willChange='auto';s.overlay.remove?.();
     if(s.overlay.parentNode?.removeChild) s.overlay.parentNode.removeChild(s.overlay);
-    if(current===s) current=null;
+    if(current===s) { current=null; endMorphMotion(s); }
     s.opts.onClose?.(reason);
     if(restore&&s.opts.returnFocus!==false&&s.trigger.isConnected!==false&&!s.trigger.closest?.('[inert]')) s.trigger.focus?.({preventScroll:true});
     s.resolve({reason});
@@ -886,6 +1215,7 @@
     if(gesture?.session===s)endGesture();
     s.trigger.classList.add('is-hidden-for-morph','surface-morph-trigger-hidden');
     s.phase='closing';s.closeReason=reason||'close';
+    beginMorphMotion(s);
     if(s.sub)s.subTargetP=0;
     s.trigger.setAttribute?.('aria-expanded','false');s.menu.inert=true;s.interactive=false;s.menu.classList.remove('is-settled','is-content-visible');
     if(s.sub)s.sub.layer.inert=true;
@@ -938,7 +1268,10 @@
     });
     s.rowStyles=new Map(s.rows.map(row=>[row,Object.fromEntries(['opacity','filter','transform'].map(key=>[key,row.style[key]||'']))]));
     Object.assign(icon.style,{position:'fixed',left:origin.left+'px',top:origin.top+'px',width:origin.width+'px',height:origin.height+'px'});
-    menu.inert=true;doc.body.appendChild(overlay);s.renderer=createRenderer(s);
+    applyStaticMenuBox(s);
+    menu.inert=true;doc.body.appendChild(overlay);
+    beginMorphMotion(s);
+    s.renderer=createRenderer(s);
     menu.classList.add('surface-morph-liquid');frame(s);
     trigger.setAttribute?.('data-morph-trigger','');
     trigger.classList?.add('is-hidden-for-morph','surface-morph-trigger-hidden');trigger.setAttribute?.('aria-expanded','true');trigger.setAttribute?.('aria-controls',menu.id);trigger.setAttribute?.('aria-haspopup',opts.role==='dialog'?'dialog':'menu');
@@ -951,7 +1284,7 @@
         close(reason);
       }
     });
-    const onViewportResize=()=>{if(current!==s||s.disposed)return;const vp=viewport();s.viewport=vp;s.origin=readRect(s.trigger);s.bounds=computeBounds(s.origin,vp);s.geometry=geometry(s);if(s.sub){s.sub.geom=computeSubmenuGeometry(s,s.sub.triggerRow,s.sub.layer,s.sub.inner);}Object.assign(s.icon.style,{left:s.origin.left+'px',top:s.origin.top+'px',width:s.origin.width+'px',height:s.origin.height+'px'});s.renderer?.resize?.(vp);frame(s);};
+    const onViewportResize=()=>{if(current!==s||s.disposed)return;const vp=viewport();s.viewport=vp;s.origin=readRect(s.trigger);s.bounds=computeBounds(s.origin,vp);s.geometry=geometry(s);applyStaticMenuBox(s);if(s.sub){s.sub.geom=computeSubmenuGeometry(s,s.sub.triggerRow,s.sub.layer,s.sub.inner);}Object.assign(s.icon.style,{left:s.origin.left+'px',top:s.origin.top+'px',width:s.origin.width+'px',height:s.origin.height+'px'});s.renderer?.resize?.(vp);frame(s);};
     root.addEventListener?.('resize',onViewportResize,{passive:true});root.visualViewport?.addEventListener?.('resize',onViewportResize,{passive:true});
     s.stopResize=()=>{root.removeEventListener?.('resize',onViewportResize);root.visualViewport?.removeEventListener?.('resize',onViewportResize);};
     s.motion=root.matchMedia?.('(prefers-reduced-motion: reduce)');s.onMotion=()=>{if(!s.motion.matches||current!==s)return;if(s.phase==='closing'){if(s.sub)s.subP=0;finish(s,s.closeReason);}else {if(s.raf)cancel(s.raf);s.p=1;s.velocity=0;if(s.sub){s.subP=s.subTargetP;s.subVelocity=0;}frame(s);settle(s);}};s.motion?.addEventListener?.('change',s.onMotion);
