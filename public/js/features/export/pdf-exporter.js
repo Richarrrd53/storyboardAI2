@@ -101,7 +101,8 @@
         for (const [order, entry] of retried.imagesByOrder.entries()) {
           imageLoad.imagesByOrder.set(order, entry);
         }
-        imageLoad.failed = Array.from(imageLoad.imagesByOrder.values()).filter(r => r.status === 'failed');
+        const FAILURE_STATUSES = new Set(['failed', 'download_failed', 'decode_failed', 'unresolved']);
+        imageLoad.failed = Array.from(imageLoad.imagesByOrder.values()).filter(r => FAILURE_STATUSES.has(r.status));
         continue;
       }
       if (decision === 'cancel') {

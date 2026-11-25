@@ -401,10 +401,13 @@
         authToken: getAuthToken(),
         onProgress,
         onImageFailures: callbacks.onImageFailures || (async (failureInfo) => {
+          if (root.StoryboardExportDialog && typeof root.StoryboardExportDialog.askImageFailureDecision === 'function' && typeof document !== 'undefined') {
+            return await root.StoryboardExportDialog.askImageFailureDecision(failureInfo);
+          }
           const confirmed = await showConfirm({
             title: `有 ${failureInfo.failedCount} 張分鏡圖片無法載入`,
             description: `鏡頭 ${failureInfo.failedOrders.join('、')} 的圖片無法下載（可能是連結已過期或網路中斷）。您可以選擇重新嘗試，或以缺失圖片提示繼續匯出 PDF。`,
-            confirmText: '仍要匯出',
+            confirmText: '略過並繼續匯出',
             cancelText: '取消匯出'
           });
           return confirmed ? 'continue' : 'cancel';

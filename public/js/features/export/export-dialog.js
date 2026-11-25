@@ -562,6 +562,64 @@
     return promise;
   }
 
+  function askImageFailureDecision(failureInfo) {
+    if (typeof document === 'undefined' || !document.body) {
+      return Promise.resolve('cancel');
+    }
+    const orders = (failureInfo?.failedOrders || []).map(o => `#${o}`).join('、');
+    const count = failureInfo?.failedCount || 0;
+
+    return new Promise((resolve) => {
+      const overlay = document.createElement('div');
+      overlay.className = 'sb-dialog-overlay sb-dialog-overlay-open';
+      overlay.setAttribute('role', 'dialog');
+      overlay.setAttribute('aria-modal', 'true');
+      overlay.setAttribute('aria-label', '圖片載入失敗處理');
+      overlay.style.zIndex = '10020';
+
+      const panel = document.createElement('div');
+      panel.className = 'sb-dialog sb-dialog-compact';
+      panel.innerHTML = `
+        <div class="sb-dialog-header">
+          <h3 class="sb-dialog-title">有 ${count} 張分鏡圖片無法載入</h3>
+        </div>
+        <div class="sb-dialog-body">
+          <p class="sb-dialog-desc">鏡頭 ${escapeHtml(orders)} 的圖片無法下載或解碼。您可以重試下載失敗圖片、略過並以「圖片無法載入」標記繼續匯出，或取消匯出。</p>
+        </div>
+        <div class="sb-dialog-actions">
+          <button type="button" class="sys-btn sys-btn-ghost" data-decision="cancel">取消匯出</button>
+          <button type="button" class="sys-btn sys-btn-secondary" data-decision="continue">略過失敗圖片並繼續</button>
+          <button type="button" class="sys-btn sys-btn-primary" data-decision="retry">重試失敗圖片</button>
+        </div>
+      `;
+
+      const cleanup = (decision) => {
+        document.removeEventListener('keydown', onKeyDown, true);
+        overlay.remove();
+        resolve(decision);
+      };
+
+      const onKeyDown = (e) => {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          cleanup('cancel');
+        }
+      };
+
+      panel.querySelectorAll('[data-decision]').forEach(btn => {
+        btn.addEventListener('click', () => cleanup(btn.dataset.decision || 'cancel'));
+      });
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) cleanup('cancel');
+      });
+
+      document.addEventListener('keydown', onKeyDown, true);
+      overlay.appendChild(panel);
+      document.body.appendChild(overlay);
+      panel.querySelector('[data-decision="retry"]')?.focus();
+    });
+  }
+
   function closeAll() {
     closeSubMorph(true);
     root.SurfaceMorph?.close?.('immediate');
@@ -576,6 +634,7 @@
     closeSubMorph,
     switchMenuToExportFormat,
     openPdfDialog,
+    askImageFailureDecision,
     closeAll
   };
 

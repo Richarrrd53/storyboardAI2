@@ -9,7 +9,14 @@
   'use strict';
 
   const FORMAT_ID = 'storyboardai.project';
-  const SCHEMA_VERSION = '2.0.0';
+  const SCHEMA_VERSION = '2.1.0';
+  const SUPPORTED_SCHEMA_VERSIONS = new Set(['2.0.0', '2.1.0']);
+
+  function getResolver() {
+    if (root.StoryboardImageAssetResolver) return root.StoryboardImageAssetResolver;
+    if (typeof require === 'function') return require('./image-asset-resolver.js');
+    throw new Error('StoryboardImageAssetResolver 尚未載入');
+  }
 
   const FORBIDDEN_KEYS = new Set([
     'password', 'passwordHash', 'password_hash',
@@ -351,94 +358,66 @@
   }
 
   /**
-   * Asset registry: deduplicates images by permanent storageRef first, then by URL.
+   * Asset registry: deduplicates images by permanent storageRef first, then by URL/API path.
    * Never registers Base64 data URIs, Blob URLs, or error placeholders.
    */
   function createAssetRegistry() {
+    const resolver = getResolver();
     const assets = {};
     const keyToAssetId = new Map();
     let seq = 0;
 
-    function registerImage(candidate) {
-      if (!candidate) return { assetId: null, status: 'missing' };
+    function registerImage(sourceObj, options = {}) {
+      const desc = resolver.resolveImageAssetDescriptor(sourceObj, options);
 
-      const rawUrl = typeof candidate.url === 'string' ? candidate.url.trim() : '';
-      const rawRef = typeof candidate.storageRef === 'string' ? candidate.storageRef.trim() : '';
-      const explicitStatus = candidate.imageStatus || candidate.status || null;
-      const uploadStatus = candidate.uploadStatus || null;
-
-      if (uploadStatus === 'pending_retry') {
-        return { assetId: null, status: 'pending' };
+      if (desc.status === 'unsaved') {
+        return { assetId: null, status: 'unsaved', descriptor: desc };
       }
-      if (explicitStatus === 'failed') {
-        return { assetId: null, status: 'failed' };
+      if (desc.status === 'pending') {
+        return { assetId: null, status: 'pending', descriptor: desc };
       }
-      if (isBase64DataUri(rawUrl) || isBase64DataUri(rawRef)) {
-        return { assetId: null, status: 'unsaved' };
+      if (desc.status === 'failed') {
+        return { assetId: null, status: 'failed', descriptor: desc };
       }
-      if (isBlobUrl(rawUrl) || isBlobUrl(rawRef)) {
-        return { assetId: null, status: 'unsaved' };
-      }
-      if (isPlaceholderImage(rawUrl) || isPlaceholderImage(rawRef)) {
-        return { assetId: null, status: 'missing' };
+      if (!desc.hasSource || desc.status === 'missing') {
+        return { assetId: null, status: 'missing', descriptor: desc };
       }
 
-      const parsedRef = parseStorageRef(rawRef) || parseStorageRef(rawUrl);
-      const canonicalRef = parsedRef ? parsedRef.ref : null;
-      const isHttpUrl = /^https?:\/\//i.test(rawUrl);
-
-      if (!canonicalRef && !isHttpUrl) {
-        return { assetId: null, status: explicitStatus === 'pending' ? 'pending' : 'missing' };
+      const dedupeKey = desc.storageRef || desc.httpUrl || desc.apiUrl;
+      if (!dedupeKey) {
+        return { assetId: null, status: 'missing', descriptor: desc };
       }
 
-      const dedupeKey = canonicalRef || rawUrl;
       if (keyToAssetId.has(dedupeKey)) {
         const existingId = keyToAssetId.get(dedupeKey);
         const existing = assets[existingId];
-        // Enrich existing asset if we now have an HTTP URL or expiresAt
-        if (!existing.url && isHttpUrl) existing.url = rawUrl;
-        if (!existing.expiresAt && candidate.expiresAt) existing.expiresAt = toIsoTimestamp(candidate.expiresAt);
-        return { assetId: existingId, status: 'succeeded' };
+        if (!existing.url && desc.httpUrl) {
+          existing.url = desc.httpUrl;
+          existing.availability = desc.availability;
+        }
+        if (!existing.expiresAt && desc.expiresAt) {
+          existing.expiresAt = desc.expiresAt;
+        }
+        if (!existing.mimeType && desc.mimeType) {
+          existing.mimeType = desc.mimeType;
+        }
+        return { assetId: existingId, status: 'succeeded', descriptor: desc };
       }
 
       const assetId = `asset-${String(++seq).padStart(3, '0')}`;
-      let access = candidate.access || null;
-      if (!access) {
-        if (parsedRef?.kind === 'supabase_url') {
-          access = parsedRef.accessKind;
-        } else if (isHttpUrl && /\/storage\/v1\/object\/sign\//.test(rawUrl)) {
-          access = 'signed';
-        } else if (isHttpUrl && /\/storage\/v1\/object\/public\//.test(rawUrl)) {
-          access = 'public';
-        } else if (isHttpUrl) {
-          access = 'public';
-        } else {
-          access = 'private';
-        }
-      }
-
-      let expiresAt = toIsoTimestamp(candidate.expiresAt);
-      if (access === 'signed' && !expiresAt && isHttpUrl) {
-        expiresAt = decodeJwtExp(rawUrl);
-      }
-      if (access === 'public') {
-        expiresAt = null;
-      }
-
-      const mimeType = inferMimeType(canonicalRef || rawUrl, candidate.mimeType);
-
       const record = {
         type: 'image',
-        url: isHttpUrl ? rawUrl : null,
-        storageRef: canonicalRef,
-        access,
-        expiresAt,
-        mimeType
+        url: desc.httpUrl || null,
+        storageRef: desc.storageRef || null,
+        access: desc.access,
+        availability: desc.availability,
+        expiresAt: desc.expiresAt || null,
+        mimeType: desc.mimeType || null
       };
 
       assets[assetId] = record;
       keyToAssetId.set(dedupeKey, assetId);
-      return { assetId, status: 'succeeded' };
+      return { assetId, status: 'succeeded', descriptor: desc };
     }
 
     return { assets, registerImage };
@@ -529,8 +508,26 @@
     };
   }
 
+  function parseOptionalSourceShot(value) {
+    if (value === null || value === undefined) return null;
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (!trimmed) return null;
+      const n = Number(trimmed);
+      return Number.isFinite(n) && Number.isInteger(n) && n >= 0 ? n : null;
+    }
+    if (typeof value === 'number') {
+      return Number.isFinite(value) && Number.isInteger(value) && value >= 0 ? value : null;
+    }
+    return null;
+  }
+
+  function roundSeconds(val) {
+    return Math.round(val * 100) / 100;
+  }
+
   /**
-   * Main serializer: produces the standardized StoryboardAI Project JSON V2 document
+   * Main serializer: produces the standardized StoryboardAI Project JSON V2.1 document
    * plus non-serialized runtime metadata (for PDF asset loading / warnings).
    */
   function serializeProject(rawProject, options = {}) {
@@ -538,8 +535,10 @@
       throw new Error('無效的專案資料，無法進行序列化。');
     }
 
+    const resolver = getResolver();
     const exportedAt = toIsoTimestamp(options.exportedAt || new Date()) || new Date().toISOString();
     const metadata = isPlainObject(rawProject.metadata) ? rawProject.metadata : {};
+    const projectId = rawProject.id != null ? String(rawProject.id) : null;
     const registry = createAssetRegistry();
 
     const rawShots = Array.isArray(rawProject.shots) ? [...rawProject.shots] : [];
@@ -552,45 +551,54 @@
     const runtimeImages = []; // parallel to serialized shots; used ONLY by PDF exporter (never written to JSON)
     let totalDurationSeconds = 0;
     let durationComplete = rawShots.length > 0;
+    let timelineCursor = 0;
+    let timelineComplete = rawShots.length > 0;
     let hasUnsavedImages = false;
     let hasSignedUrls = false;
     let hasExpiredSignedUrls = false;
 
     const shots = rawShots.map((shot, idx) => {
       const payload = isPlainObject(shot?.payload) ? shot.payload : {};
+      const shotId = shot?.id != null ? String(shot.id) : null;
       const order = Number.isFinite(Number(shot?.order)) ? Number(shot.order) : (idx + 1);
       const durationStr = shot?.duration != null ? String(shot.duration).trim() : '';
       const durationSec = parseDurationSeconds(durationStr);
 
+      let startTimeSeconds = null;
+      let endTimeSeconds = null;
       if (durationSec !== null) {
         totalDurationSeconds += durationSec;
+        if (timelineComplete) {
+          startTimeSeconds = roundSeconds(timelineCursor);
+          endTimeSeconds = roundSeconds(timelineCursor + durationSec);
+          timelineCursor = endTimeSeconds;
+        }
       } else {
         durationComplete = false;
+        timelineComplete = false;
       }
 
-      const mainImageResult = registry.registerImage({
-        url: payload.image,
-        storageRef: payload.imageRef || (payload.imageAsset?.path ? `storage://${payload.imageAsset.bucket || 'storyboard-images'}/${payload.imageAsset.path}` : null),
-        access: payload.imageAccess || null,
-        expiresAt: payload.imageExpiresAt || null,
-        mimeType: payload.imageMimeType || null,
-        imageStatus: payload.imageStatus || null,
-        uploadStatus: payload.uploadStatus || null
-      });
+      const mainImageResult = registry.registerImage(payload, { projectId, shotId });
+      const mainDesc = mainImageResult.descriptor;
 
       if (mainImageResult.status === 'unsaved') {
         hasUnsavedImages = true;
       }
 
-      // Preserve runtime image source for PDF export (including in-memory Base64 for unsaved generation tasks)
+      // Preserve runtime image source for PDF export (including API proxy fallback & in-memory Base64)
       runtimeImages.push({
-        shotId: shot?.id || null,
+        shotId,
         order,
         assetId: mainImageResult.assetId,
         status: mainImageResult.status,
+        access: mainDesc?.access || 'none',
+        availability: mainDesc?.availability || 'unavailable',
+        expiresAt: mainDesc?.expiresAt || null,
         url: mainImageResult.assetId ? registry.assets[mainImageResult.assetId]?.url : null,
         storageRef: mainImageResult.assetId ? registry.assets[mainImageResult.assetId]?.storageRef : null,
-        temporaryDataUri: isBase64DataUri(payload.image) ? payload.image.trim() : null
+        apiUrl: mainDesc?.apiUrl || null,
+        proxyUrl: mainDesc?.proxyUrl || null,
+        temporaryDataUri: mainDesc?.temporaryDataUri || null
       });
 
       const rawHistory = Array.isArray(payload.imageHistory) ? payload.imageHistory : [];
@@ -598,13 +606,7 @@
       for (let hIdx = 0; hIdx < rawHistory.length; hIdx++) {
         const entry = rawHistory[hIdx];
         if (!isPlainObject(entry)) continue;
-        const histReg = registry.registerImage({
-          url: entry.image,
-          storageRef: entry.imageRef,
-          access: entry.access || null,
-          expiresAt: entry.expiresAt || null,
-          mimeType: entry.mimeType || null
-        });
+        const histReg = registry.registerImage(entry, { projectId, shotId, historyIndex: hIdx });
         imageHistory.push({
           version: Number.isFinite(Number(entry.version)) ? Number(entry.version) : (rawHistory.length - hIdx),
           assetId: histReg.assetId,
@@ -615,21 +617,25 @@
       }
 
       const cameraDetails = normalizeCameraDetails(payload);
+      const rawAngle = typeof payload.angle === 'string' ? payload.angle.trim() : '';
+      const detailAngle = typeof cameraDetails.angle === 'string' ? cameraDetails.angle.trim() : '';
+      const resolvedAngle = rawAngle || detailAngle || '';
+
       const dialogueVal = typeof payload.dialogue === 'string'
         ? payload.dialogue
         : (isPlainObject(payload.dialogue) || Array.isArray(payload.dialogue) ? sanitizeValue(payload.dialogue) : '');
 
       return {
-        id: shot?.id != null ? String(shot.id) : null,
+        id: shotId,
         order,
         story: typeof shot?.title === 'string' ? shot.title : (typeof shot?.story === 'string' ? shot.story : ''),
         duration: durationStr,
         durationSeconds: durationSec,
+        startTimeSeconds,
+        endTimeSeconds,
         camera: typeof shot?.camera === 'string' ? shot.camera : '',
         cameraDetails,
-        angle: typeof payload.angle === 'string'
-          ? payload.angle
-          : (typeof cameraDetails.angle === 'string' ? cameraDetails.angle : ''),
+        angle: resolvedAngle,
         emotion: typeof payload.emotion === 'string'
           ? payload.emotion
           : (typeof shot?.emotion === 'string' ? shot.emotion : ''),
@@ -639,8 +645,10 @@
         characters: Array.isArray(payload.characters)
           ? payload.characters.filter(c => typeof c === 'string' && c.trim())
           : [],
-        sourceStructureId: payload.sourceStructureId != null ? String(payload.sourceStructureId) : null,
-        sourceShot: Number.isFinite(Number(payload.sourceShot)) ? Number(payload.sourceShot) : null,
+        sourceStructureId: payload.sourceStructureId != null && String(payload.sourceStructureId).trim() !== ''
+          ? String(payload.sourceStructureId)
+          : null,
+        sourceShot: parseOptionalSourceShot(payload.sourceShot),
         prompts: {
           shotPrompt: typeof payload.shotPrompt === 'string'
             ? payload.shotPrompt
@@ -666,22 +674,33 @@
       }
     }
 
+    const originalStory = typeof metadata.originalStory === 'string' ? metadata.originalStory : '';
     const template = sanitizeTemplate(metadata);
-    const creativeBrief = sanitizeCreativeBrief(metadata.creativeBrief);
+    let creativeBrief = sanitizeCreativeBrief(metadata.creativeBrief);
+    if (creativeBrief && typeof creativeBrief.originalStory === 'string' && originalStory) {
+      if (creativeBrief.originalStory.trim() === originalStory.trim()) {
+        delete creativeBrief.originalStory;
+        if (Object.keys(creativeBrief).length === 0) {
+          creativeBrief = null;
+        }
+      }
+    }
+    const resolvedOriginalStory = originalStory || (typeof creativeBrief?.originalStory === 'string' ? creativeBrief.originalStory : '');
+
     const characters = sanitizeCharacters(rawProject.characters);
     const coverAssetId = shots.length > 0 && shots[0].image?.assetId ? shots[0].image.assetId : null;
     const generationMode = metadata.generationMode === 'template' || Boolean(template) ? 'template' : 'freeform';
     const targetDurationSeconds = parseDurationSeconds(metadata.targetDuration ?? creativeBrief?.duration);
-    const roundedTotal = rawShots.length > 0 && (totalDurationSeconds > 0 || durationComplete)
-      ? Math.round(totalDurationSeconds * 100) / 100
-      : null;
+    const roundedTotal = rawShots.length > 0 && durationComplete
+      ? roundSeconds(totalDurationSeconds)
+      : (rawShots.length > 0 && totalDurationSeconds > 0 ? roundSeconds(totalDurationSeconds) : null);
 
     const documentData = {
       format: FORMAT_ID,
       schemaVersion: SCHEMA_VERSION,
       exportedAt,
       project: {
-        id: rawProject.id != null ? String(rawProject.id) : null,
+        id: projectId,
         title: typeof rawProject.title === 'string' && rawProject.title.trim() ? rawProject.title.trim() : '未命名分鏡',
         style: typeof rawProject.style === 'string' ? rawProject.style : '',
         ratio: typeof rawProject.ratio === 'string' ? rawProject.ratio : '',
@@ -690,7 +709,7 @@
         updatedAt: toIsoTimestamp(rawProject.updatedAt || rawProject.updateAt),
         coverAssetId,
         generationMode,
-        originalStory: typeof metadata.originalStory === 'string' ? metadata.originalStory : ''
+        originalStory: resolvedOriginalStory
       },
       creativeBrief,
       template,
@@ -698,8 +717,9 @@
       storyboard: {
         shotCount: shots.length,
         targetDurationSeconds,
-        totalDurationSeconds: roundedTotal,
+        totalDurationSeconds: durationComplete ? roundedTotal : null,
         durationComplete,
+        timelineComplete,
         shots
       },
       assets: registry.assets
@@ -718,15 +738,20 @@
   }
 
   /**
-   * Validate a serialized JSON V2 document for structural integrity and security.
+   * Validate a serialized JSON V2.0 / V2.1 document for structural integrity, timeline consistency, and security.
+   * Returns { valid, errors, warnings }.
    */
   function validateExportDocument(doc) {
+    const resolver = getResolver();
     const errors = [];
+    const warnings = [];
     if (!isPlainObject(doc)) {
-      return { valid: false, errors: ['匯出文件必須為 JSON 物件'] };
+      return { valid: false, errors: ['匯出文件必須為 JSON 物件'], warnings };
     }
     if (doc.format !== FORMAT_ID) errors.push(`format 必須為 ${FORMAT_ID}`);
-    if (doc.schemaVersion !== SCHEMA_VERSION) errors.push(`schemaVersion 必須為 ${SCHEMA_VERSION}`);
+    if (!SUPPORTED_SCHEMA_VERSIONS.has(doc.schemaVersion)) {
+      errors.push(`schemaVersion 必須為 ${Array.from(SUPPORTED_SCHEMA_VERSIONS).join(' 或 ')}`);
+    }
     if (!toIsoTimestamp(doc.exportedAt)) errors.push('exportedAt 必須為合法 ISO 8601 時間');
 
     if (!isPlainObject(doc.project)) {
@@ -738,13 +763,64 @@
       }
     }
 
+    const characterIds = isPlainObject(doc.characters) ? new Set(Object.keys(doc.characters)) : new Set();
+
     if (!isPlainObject(doc.storyboard) || !Array.isArray(doc.storyboard.shots)) {
       errors.push('缺少 storyboard.shots 陣列');
     } else {
-      if (doc.storyboard.shotCount !== doc.storyboard.shots.length) {
+      const shots = doc.storyboard.shots;
+      if (doc.storyboard.shotCount !== shots.length) {
         errors.push('storyboard.shotCount 與 shots 長度不一致');
       }
-      for (const shot of doc.storyboard.shots) {
+      if (doc.project && shots.length > 0) {
+        const expectedCover = shots[0]?.image?.assetId || null;
+        if (doc.project.coverAssetId !== expectedCover) {
+          errors.push(`project.coverAssetId (${doc.project.coverAssetId}) 與第一鏡資產 (${expectedCover}) 不一致`);
+        }
+      }
+
+      const seenShotIds = new Set();
+      const seenOrders = new Set();
+      let sumDuration = 0;
+      let allDurationsKnown = shots.length > 0;
+      let cursor = 0;
+      let timelineValid = shots.length > 0;
+
+      for (const shot of shots) {
+        if (shot.id != null) {
+          if (seenShotIds.has(shot.id)) errors.push(`發現重複的分鏡 ID：${shot.id}`);
+          seenShotIds.add(shot.id);
+        }
+        if (typeof shot.order !== 'number' || !Number.isFinite(shot.order)) {
+          errors.push(`分鏡 order 必須為有限數值`);
+        } else {
+          if (seenOrders.has(shot.order)) errors.push(`發現重複的分鏡順序 order：${shot.order}`);
+          seenOrders.add(shot.order);
+        }
+
+        if (shot.durationSeconds !== null && shot.durationSeconds !== undefined) {
+          if (typeof shot.durationSeconds !== 'number' || !Number.isFinite(shot.durationSeconds) || shot.durationSeconds < 0) {
+            errors.push(`Shot #${shot.order} 的 durationSeconds 必須為非負數值或 null`);
+          } else {
+            sumDuration += shot.durationSeconds;
+            if (timelineValid && shot.startTimeSeconds != null && shot.endTimeSeconds != null) {
+              const expectedStart = roundSeconds(cursor);
+              const expectedEnd = roundSeconds(cursor + shot.durationSeconds);
+              if (Math.abs(shot.startTimeSeconds - expectedStart) > 0.02 || Math.abs(shot.endTimeSeconds - expectedEnd) > 0.02) {
+                errors.push(`Shot #${shot.order} 的時間軸 startTimeSeconds/endTimeSeconds 計算不一致`);
+              }
+              cursor = expectedEnd;
+            }
+          }
+        } else {
+          allDurationsKnown = false;
+          timelineValid = false;
+        }
+
+        if (typeof shot.story === 'string' && /^\s*\d{1,2}\s*[–—\-~～]\s*\d{1,2}\s*秒[。．.]?/.test(shot.story)) {
+          warnings.push(`Shot #${shot.order} 的畫面描述開頭包含舊時間碼，可能與目前時長設定不同`);
+        }
+
         if (shot.image?.assetId && (!isPlainObject(doc.assets) || !doc.assets[shot.image.assetId])) {
           errors.push(`Shot #${shot.order} 的 image.assetId (${shot.image.assetId}) 未對應 assets`);
         }
@@ -753,12 +829,28 @@
             errors.push(`Shot #${shot.order} 的 imageHistory assetId (${hist.assetId}) 未對應 assets`);
           }
         }
+        for (const cid of (shot.characters || [])) {
+          if (!characterIds.has(cid)) {
+            warnings.push(`Shot #${shot.order} 引用了未定義的角色 ID：${cid}`);
+          }
+        }
+      }
+
+      if (doc.storyboard.durationComplete === true && allDurationsKnown && doc.storyboard.totalDurationSeconds !== null) {
+        if (Math.abs(doc.storyboard.totalDurationSeconds - roundSeconds(sumDuration)) > 0.05) {
+          errors.push('storyboard.totalDurationSeconds 與各分鏡時長加總不一致');
+        }
+      }
+      if (doc.storyboard.targetDurationSeconds && doc.storyboard.totalDurationSeconds &&
+          Math.abs(doc.storyboard.targetDurationSeconds - doc.storyboard.totalDurationSeconds) > 0.5) {
+        warnings.push(`目標時長 (${doc.storyboard.targetDurationSeconds}s) 與實際分鏡總時長 (${doc.storyboard.totalDurationSeconds}s) 不同`);
       }
     }
 
     if (!isPlainObject(doc.assets)) {
       errors.push('缺少 assets 物件');
     } else {
+      const nowMs = Date.now();
       for (const [assetId, asset] of Object.entries(doc.assets)) {
         if (isBase64DataUri(asset?.url) || isBase64DataUri(asset?.storageRef)) {
           errors.push(`資產 ${assetId} 包含禁止的 Base64 資料`);
@@ -769,30 +861,48 @@
         if (isPlaceholderImage(asset?.url)) {
           errors.push(`資產 ${assetId} 包含無效的 Placeholder 圖片`);
         }
+        if (asset?.storageRef && !resolver.parseStorageRef(asset.storageRef)) {
+          errors.push(`資產 ${assetId} 的 storageRef 格式無效`);
+        }
+        if (asset?.url && !/^https?:\/\//i.test(asset.url)) {
+          errors.push(`資產 ${assetId} 的 url 必須為 HTTP(S) 網址或 null`);
+        }
+        if (asset?.access === 'signed' && asset?.expiresAt) {
+          if (resolver.isExpiresSoonOrExpired(asset.expiresAt, 5 * 60 * 1000, nowMs)) {
+            warnings.push(`資產 ${assetId} 的 Signed URL 已過期或即將過期`);
+          }
+        }
+        if (!asset?.url && asset?.storageRef) {
+          warnings.push(`資產 ${assetId} 具有 Storage Reference 但尚未取得可下載的 HTTP URL`);
+        }
       }
     }
 
-    // Security scan: ensure no forbidden keys or Base64 leaked anywhere
+    // Security & numeric scan: ensure no forbidden keys, Base64, NaN, or Infinity
     const serialized = JSON.stringify(doc);
     if (/data:image\/[a-zA-Z0-9.+-]+;base64,/i.test(serialized)) {
       errors.push('偵測到 Base64 圖片資料殘留於 JSON 文件中');
     }
-    const checkForbidden = (obj, path = '') => {
+    const checkObject = (obj, path = '') => {
+      if (typeof obj === 'number' && !Number.isFinite(obj)) {
+        errors.push(`偵測到無效數值 (NaN/Infinity)：${path}`);
+        return;
+      }
       if (!isPlainObject(obj) && !Array.isArray(obj)) return;
       if (Array.isArray(obj)) {
-        obj.forEach((v, i) => checkForbidden(v, `${path}[${i}]`));
+        obj.forEach((v, i) => checkObject(v, `${path}[${i}]`));
         return;
       }
       for (const [k, v] of Object.entries(obj)) {
         if (FORBIDDEN_KEYS.has(k)) {
           errors.push(`偵測到禁止輸出的敏感欄位：${path ? path + '.' : ''}${k}`);
         }
-        checkForbidden(v, path ? `${path}.${k}` : k);
+        checkObject(v, path ? `${path}.${k}` : k);
       }
     };
-    checkForbidden(doc);
+    checkObject(doc);
 
-    return { valid: errors.length === 0, errors };
+    return { valid: errors.length === 0, errors, warnings };
   }
 
   const api = {

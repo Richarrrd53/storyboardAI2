@@ -114,6 +114,27 @@
     return `${yyyy}/${mm}/${dd}`;
   }
 
+  function formatTimecode(seconds) {
+    if (seconds === null || seconds === undefined || !Number.isFinite(seconds) || seconds < 0) return '';
+    const whole = Math.floor(seconds);
+    const frac = Math.round((seconds - whole) * 10);
+    const mins = Math.floor(whole / 60);
+    const secs = whole % 60;
+    const base = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    return frac > 0 ? `${base}.${frac}` : base;
+  }
+
+  function stripLeadingTimecodeForPdf(storyText) {
+    if (typeof storyText !== 'string') return '';
+    const trimmed = storyText.trim();
+    if (!trimmed) return '';
+    const stripped = trimmed.replace(
+      /^\s*(?:\d{1,2}:\d{2}|\d{1,3}(?:\.\d+)?)\s*[–—\-~～]\s*(?:\d{1,2}:\d{2}|\d{1,3}(?:\.\d+)?)\s*(?:秒|s|sec|secs)?[。．.:：,\s]+/i,
+      ''
+    ).trim();
+    return stripped || trimmed;
+  }
+
   function formatDurationLabel(seconds, complete = true) {
     if (seconds === null || seconds === undefined || !Number.isFinite(seconds)) return '未完整計算';
     const rounded = Number(seconds.toFixed(1));
@@ -262,16 +283,27 @@
   }
 
   function buildMissingImageBox(width, height, status) {
-    const label = status === 'failed'
-      ? '圖片無法載入'
-      : status === 'unsaved'
-        ? '圖片尚未儲存'
-        : status === 'generation_failed'
-          ? '圖片尚未生成完成'
-          : '尚無分鏡圖片';
-    const sublabel = status === 'failed' ? '下載失敗或連結已過期' : '請於專案內重新生成或補齊';
+    let label = '尚無分鏡圖片';
+    let sublabel = '請於專案內生成或上傳分鏡圖';
 
-    const boxH = Math.max(68, Math.min(height, 220));
+    if (status === 'failed' || status === 'download_failed') {
+      label = '圖片無法載入';
+      sublabel = '下載失敗或連結已過期';
+    } else if (status === 'decode_failed') {
+      label = '圖片無法載入';
+      sublabel = '圖片格式無效或無法解碼';
+    } else if (status === 'unresolved') {
+      label = '圖片無法載入';
+      sublabel = '圖片儲存位址尚未解析';
+    } else if (status === 'unsaved') {
+      label = '圖片尚未儲存';
+      sublabel = '此為尚未儲存之暫存分鏡';
+    } else if (status === 'generation_failed') {
+      label = '圖片尚未生成完成';
+      sublabel = '請於專案內重新生成';
+    }
+
+    const boxH = Math.max(56, height);
     return {
       table: {
         widths: [width],
@@ -282,7 +314,7 @@
             { text: sublabel, fontSize: 8, color: COLORS.faint, alignment: 'center', margin: [0, 3, 0, 0] }
           ],
           fillColor: COLORS.surfaceAlt,
-          margin: [8, Math.max(12, Math.round((boxH - 30) / 2)), 8, 8]
+          margin: [8, Math.max(10, Math.round((boxH - 30) / 2)), 8, 8]
         }]]
       },
       layout: {
@@ -327,11 +359,10 @@
       };
     }
     const dims = fitContain(fallbackRatio, maxW, maxH);
-    const boxH = Math.max(72, Math.min(dims.height, 200));
     return {
-      node: buildMissingImageBox(dims.width, boxH, imgEntry?.status || 'missing'),
+      node: buildMissingImageBox(dims.width, dims.height, imgEntry?.status || 'missing'),
       width: dims.width,
-      height: boxH
+      height: dims.height
     };
   }
 
@@ -378,14 +409,12 @@
       { label: '視覺風格', value: project.style || '未指定' },
       { label: '畫面比例', value: project.ratio || '未指定' },
       { label: '鏡頭數量', value: `${sb.shotCount} 鏡` },
-      {
-        label: '分鏡總時長',
-        value: sb.targetDurationSeconds
-          ? `${formatDurationLabel(sb.totalDurationSeconds, sb.durationComplete)}（目標 ${sb.targetDurationSeconds} 秒）`
-          : formatDurationLabel(sb.totalDurationSeconds, sb.durationComplete)
-      },
-      { label: '匯出日期', value: formatDateDisplay(doc.exportedAt) }
+      { label: '分鏡總時長', value: formatDurationLabel(sb.totalDurationSeconds, sb.durationComplete) }
     ];
+    if (sb.targetDurationSeconds) {
+      metaItems.push({ label: '目標時長', value: `${sb.targetDurationSeconds} 秒` });
+    }
+    metaItems.push({ label: '匯出日期', value: formatDateDisplay(doc.exportedAt) });
     if (Array.isArray(project.tags) && project.tags.length > 0) {
       metaItems.push({ label: '標籤', value: project.tags.join('、') });
     }
@@ -688,13 +717,21 @@
   function collectShotFields(shot, doc, includePrompts) {
     const fields = [];
     const details = shot.cameraDetails || {};
+    const cameraText = (shot.camera || '').trim();
+    const detailSize = typeof details.size === 'string' ? details.size.trim() : '';
     const cameraParts = [];
-    if (shot.camera) cameraParts.push(shot.camera);
-    if (details.movement && !shot.camera.includes(details.movement)) cameraParts.push(`運鏡：${details.movement}`);
-    if (cameraParts.length > 0) fields.push({ label: '景別與運鏡', value: cameraParts.join(' · ') });
+    if (cameraText) cameraParts.push(cameraText);
+    else if (detailSize) cameraParts.push(detailSize);
+    if (detailSize && cameraText && !cameraText.includes(detailSize)) {
+      cameraParts.push(detailSize);
+    }
+    if (details.movement && !cameraText.includes(details.movement)) {
+      cameraParts.push(`運鏡：${details.movement}`);
+    }
+    if (cameraParts.length > 0) fields.push({ label: '景別與拍攝方式', value: cameraParts.join(' · ') });
 
-    const angle = shot.angle || details.angle || '';
-    if (angle) fields.push({ label: '拍攝角度', value: angle });
+    const angle = (shot.angle || details.angle || '').trim();
+    if (angle && !cameraText.includes(angle)) fields.push({ label: '拍攝角度', value: angle });
 
     if (shot.emotion) fields.push({ label: '情緒氛圍', value: shot.emotion });
     if (shot.purpose) fields.push({ label: '鏡頭目的', value: shot.purpose });
@@ -725,10 +762,14 @@
   }
 
   function buildShotHeaderBar(shotLabel, shot, usableWidth, isContinuation = false) {
-    const metaRight = [
-      shot.duration ? `時長 ${shot.duration}` : '',
-      shot.camera ? shot.camera : ''
-    ].filter(Boolean).join('  ·  ');
+    const startTc = formatTimecode(shot.startTimeSeconds);
+    const endTc = formatTimecode(shot.endTimeSeconds);
+    const timeRange = (startTc && endTc) ? `${startTc} — ${endTc}` : '';
+    const durationText = shot.duration
+      ? shot.duration
+      : (shot.durationSeconds != null ? `${shot.durationSeconds}s` : '');
+    const metaRight = [timeRange, durationText].filter(Boolean).join('    ');
+    const labelColWidth = isContinuation ? 124 : 96;
 
     return {
       table: {
@@ -736,7 +777,7 @@
         body: [[{
           columns: [
             {
-              width: 'auto',
+              width: labelColWidth,
               text: isContinuation ? `${shotLabel}（續）` : shotLabel,
               fontSize: isContinuation ? 10.5 : 12,
               bold: true,
@@ -744,15 +785,16 @@
             },
             {
               width: '*',
-              text: safeWrapText(metaRight, 24),
-              fontSize: 8.5,
+              text: metaRight,
+              fontSize: 9,
+              bold: Boolean(timeRange),
               color: COLORS.subtle,
               alignment: 'right',
-              margin: [8, 2, 0, 0]
+              margin: [8, 1.5, 0, 0]
             }
           ],
           fillColor: isContinuation ? COLORS.surfaceAlt : COLORS.surface,
-          margin: [10, isContinuation ? 4 : 6, 10, isContinuation ? 4 : 6]
+          margin: [10, isContinuation ? 4 : 5, 10, isContinuation ? 4 : 5]
         }]]
       },
       layout: {
@@ -782,7 +824,7 @@
     const useSideBySide = isLandscapePage || !isWideImage;
 
     const fields = collectShotFields(shot, doc, Boolean(options.includePrompts));
-    const storyText = (shot.story || '').trim() || '（未填寫畫面描述）';
+    const storyText = stripLeadingTimecodeForPdf(shot.story) || '（未填寫畫面描述）';
 
     let imageColW, imageMaxH, textColW;
     if (useSideBySide) {
@@ -1166,6 +1208,9 @@
     COLORS,
     safeWrapText,
     fitContain,
+    formatTimecode,
+    stripLeadingTimecodeForPdf,
+    parseAspectRatioFromString,
     estimateTextHeight,
     splitTextIntoChunks,
     buildPdfDocumentDefinition

@@ -130,7 +130,7 @@ test('JSON V2: serializes freeform project with Creative Brief, characters, sign
   assert.equal(validation.valid, true, `Validation failed: ${validation.errors.join('; ')}`);
 
   assert.equal(doc.format, 'storyboardai.project');
-  assert.equal(doc.schemaVersion, '2.0.0');
+  assert.equal(doc.schemaVersion, '2.1.0');
   assert.equal(doc.exportedAt, '2026-11-24T15:00:00.000Z');
   assert.equal(doc.project.generationMode, 'freeform');
   assert.deepEqual(doc.project.tags, ['咖啡', '品牌廣告']);

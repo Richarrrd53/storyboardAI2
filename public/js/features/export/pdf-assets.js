@@ -37,6 +37,12 @@
     return btoa(chunks.join(''));
   }
 
+  function getResolver() {
+    if (root.StoryboardImageAssetResolver) return root.StoryboardImageAssetResolver;
+    if (typeof require === 'function') return require('./image-asset-resolver.js');
+    return null;
+  }
+
   function createAbortError(msg = '匯出已取消') {
     const err = new Error(msg);
     err.name = 'AbortError';
@@ -69,6 +75,58 @@
         clearTimeout(timer);
         externalSignal?.removeEventListener('abort', onExternalAbort);
       });
+  }
+
+  async function fetchImageBlobWithTimeout(url, options = {}, timeoutMs = DEFAULT_TIMEOUT_MS) {
+    const controller = new AbortController();
+    const externalSignal = options.signal;
+    if (externalSignal?.aborted) {
+      throw createAbortError();
+    }
+    const onExternalAbort = () => controller.abort();
+    externalSignal?.addEventListener('abort', onExternalAbort, { once: true });
+
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    const doFetch = options.fetchFn || root.fetch?.bind(root);
+
+    try {
+      const res = await doFetch(url, { ...options, signal: controller.signal });
+      if (!res.ok) {
+        const err = new Error(`HTTP ${res.status}`);
+        err.status = res.status;
+        err.code = 'IMAGE_HTTP_ERROR';
+        throw err;
+      }
+      const contentType = (res.headers?.get?.('content-type') || '').toLowerCase();
+      if (contentType && !contentType.startsWith('image/') && !contentType.includes('octet-stream')) {
+        const err = new Error(`無效的圖片 Content-Type (${contentType})`);
+        err.code = 'INVALID_IMAGE_MIME';
+        throw err;
+      }
+      const blob = await res.blob();
+      if (!blob || blob.size === 0) {
+        const err = new Error('圖片檔案為空');
+        err.code = 'EMPTY_IMAGE_BLOB';
+        throw err;
+      }
+      if (blob.type && !blob.type.toLowerCase().startsWith('image/') && !blob.type.toLowerCase().includes('octet-stream')) {
+        const err = new Error(`無效的圖片格式 (${blob.type})`);
+        err.code = 'INVALID_IMAGE_MIME';
+        throw err;
+      }
+      return blob;
+    } catch (err) {
+      if (externalSignal?.aborted) throw createAbortError();
+      if (err?.name === 'AbortError') {
+        const timeoutErr = new Error('圖片下載逾時');
+        timeoutErr.code = 'IMAGE_TIMEOUT';
+        throw timeoutErr;
+      }
+      throw err;
+    } finally {
+      clearTimeout(timer);
+      externalSignal?.removeEventListener('abort', onExternalAbort);
+    }
   }
 
   /**
@@ -314,70 +372,104 @@
     return { width: 1600, height: 900, mimeType };
   }
 
+  const FAILURE_STATUSES = new Set(['failed', 'download_failed', 'decode_failed', 'unresolved']);
+
+  async function tryDecodeBlob(blob, order, shotId, quality, signal) {
+    try {
+      const decoded = await decodeAndOptimizeImage(blob, quality, signal);
+      return { ok: true, result: { status: 'ok', order, shotId, ...decoded } };
+    } catch (decodeErr) {
+      if (decodeErr?.name === 'AbortError') throw decodeErr;
+      return { ok: false, status: 'decode_failed', error: decodeErr?.message || '圖片解碼失敗' };
+    }
+  }
+
   async function fetchSingleShotImage(item, options = {}) {
-    const { projectId, authToken, quality = 'standard', signal, fetchFn } = options;
+    const { projectId, authToken, quality = 'standard', signal, fetchFn, refreshUrls } = options;
     if (signal?.aborted) throw createAbortError();
+    const resolver = getResolver();
 
     // 1. In-memory temporary Base64 (unsaved generation task)
     if (item.temporaryDataUri) {
-      const decoded = await decodeAndOptimizeImage(item.temporaryDataUri, quality, signal);
-      return { status: 'ok', order: item.order, shotId: item.shotId, ...decoded };
+      const decoded = await tryDecodeBlob(item.temporaryDataUri, item.order, item.shotId, quality, signal);
+      if (decoded.ok) return decoded.result;
+      return { status: 'decode_failed', order: item.order, shotId: item.shotId, error: decoded.error };
     }
 
-    // 2. No image URL and no storageRef -> legitimately missing (not a download failure)
-    if (!item.url && !item.storageRef) {
-      return {
-        status: item.status === 'failed' ? 'generation_failed' : 'missing',
-        order: item.order,
-        shotId: item.shotId
-      };
+    // 2. Explicit non-downloadable lifecycle states
+    if (item.status === 'failed') {
+      return { status: 'generation_failed', order: item.order, shotId: item.shotId };
+    }
+    if (item.status === 'unsaved') {
+      return { status: 'unsaved', order: item.order, shotId: item.shotId };
+    }
+
+    const hasDirectUrl = Boolean(item.url && /^https?:\/\//i.test(item.url));
+    const hasStorageRef = Boolean(item.storageRef);
+    const hasApiPath = Boolean(item.apiUrl || item.proxyUrl);
+
+    // Only classify as missing when we truly have no image source and no project/shot identity to query
+    if (item.status === 'missing' && !hasDirectUrl && !hasStorageRef && !hasApiPath) {
+      return { status: 'missing', order: item.order, shotId: item.shotId };
     }
 
     let lastError = null;
+    let lastFailureStatus = hasStorageRef && !hasDirectUrl ? 'unresolved' : 'download_failed';
 
-    // 3. Try direct URL fetch first (works for Public URLs & CORS-enabled Signed URLs)
-    if (item.url && /^https?:\/\//i.test(item.url)) {
+    // 3. Direct URL fetch (skip if signed URL is already known to be expired)
+    const isExpired = item.access === 'signed' && item.expiresAt && resolver?.isExpiresSoonOrExpired?.(item.expiresAt, 5000);
+    if (hasDirectUrl && !isExpired) {
       try {
-        const res = await fetchWithTimeout(item.url, { signal, mode: 'cors', fetchFn });
-        if (!res.ok) {
-          const err = new Error(`HTTP ${res.status}`);
-          err.status = res.status;
-          throw err;
+        const blob = await fetchImageBlobWithTimeout(item.url, { signal, mode: 'cors', fetchFn });
+        const decoded = await tryDecodeBlob(blob, item.order, item.shotId, quality, signal);
+        if (decoded.ok) return decoded.result;
+        lastFailureStatus = 'decode_failed';
+        lastError = new Error(decoded.error);
+      } catch (err) {
+        if (err?.name === 'AbortError') throw err;
+        lastError = err;
+        lastFailureStatus = 'download_failed';
+      }
+    }
+
+    // 4. Refresh Signed URL via GET /api/projects/:id once if expired or direct fetch failed
+    if (typeof refreshUrls === 'function' && (isExpired || (hasDirectUrl && lastFailureStatus === 'download_failed'))) {
+      try {
+        const refreshedItem = await refreshUrls(item.shotId, item.order);
+        if (refreshedItem?.url && /^https?:\/\//i.test(refreshedItem.url) && refreshedItem.url !== item.url) {
+          const blob = await fetchImageBlobWithTimeout(refreshedItem.url, { signal, mode: 'cors', fetchFn });
+          const decoded = await tryDecodeBlob(blob, item.order, item.shotId, quality, signal);
+          if (decoded.ok) return decoded.result;
+          lastFailureStatus = 'decode_failed';
+          lastError = new Error(decoded.error);
         }
-        const blob = await res.blob();
-        const decoded = await decodeAndOptimizeImage(blob, quality, signal);
-        return { status: 'ok', order: item.order, shotId: item.shotId, ...decoded };
       } catch (err) {
         if (err?.name === 'AbortError') throw err;
         lastError = err;
       }
     }
 
-    // 4. Fallback to authenticated same-origin shot image binary proxy (handles CORS + expired Signed URL)
-    if (projectId && item.shotId && authToken) {
+    // 5. Fallback to authenticated same-origin shot image binary proxy (handles CORS + expired Signed URL + storageRef-only)
+    if (projectId && item.shotId && authToken && lastFailureStatus !== 'decode_failed') {
       try {
-        const proxyUrl = `/api/projects/${encodeURIComponent(projectId)}/shots/${encodeURIComponent(item.shotId)}/image?proxy=1`;
-        const res = await fetchWithTimeout(proxyUrl, {
+        const proxyUrl = item.proxyUrl || `/api/projects/${encodeURIComponent(projectId)}/shots/${encodeURIComponent(item.shotId)}/image?proxy=1`;
+        const blob = await fetchImageBlobWithTimeout(proxyUrl, {
           signal,
           headers: { Authorization: `Bearer ${authToken}` },
           fetchFn
         });
-        if (!res.ok) {
-          const err = new Error(`圖片伺服器回應 HTTP ${res.status}`);
-          err.status = res.status;
-          throw err;
-        }
-        const blob = await res.blob();
-        const decoded = await decodeAndOptimizeImage(blob, quality, signal);
-        return { status: 'ok', order: item.order, shotId: item.shotId, ...decoded };
+        const decoded = await tryDecodeBlob(blob, item.order, item.shotId, quality, signal);
+        if (decoded.ok) return decoded.result;
+        return { status: 'decode_failed', order: item.order, shotId: item.shotId, error: decoded.error };
       } catch (err) {
         if (err?.name === 'AbortError') throw err;
         lastError = err;
+        lastFailureStatus = 'download_failed';
       }
     }
 
     return {
-      status: 'failed',
+      status: lastFailureStatus,
       order: item.order,
       shotId: item.shotId,
       error: lastError?.message || '圖片無法載入'
@@ -385,7 +477,7 @@
   }
 
   /**
-   * Download & prepare all shot images with bounded concurrency and real progress updates.
+   * Download & prepare all shot images with bounded concurrency, deduplication, and real progress updates.
    */
   async function loadShotImages(runtimeImages = [], options = {}) {
     const {
@@ -414,19 +506,67 @@
       message: `正在準備分鏡圖片 0 / ${total}`
     });
 
+    // Shared once-per-export refresh promise so concurrent workers don't spam GET /api/projects/:id
+    let refreshPromise = null;
+    const doFetch = fetchFn || root.fetch?.bind(root);
+    const refreshUrls = (projectId && authToken && typeof doFetch === 'function')
+      ? async (shotId, order) => {
+          if (!refreshPromise) {
+            refreshPromise = (async () => {
+              const res = await fetchWithTimeout(`/api/projects/${encodeURIComponent(projectId)}`, {
+                signal,
+                cache: 'no-store',
+                headers: { Authorization: `Bearer ${authToken}` },
+                fetchFn: doFetch
+              });
+              if (!res.ok) return new Map();
+              const data = await res.json().catch(() => null);
+              const shots = Array.isArray(data?.project?.shots) ? data.project.shots : [];
+              const resolver = getResolver();
+              const map = new Map();
+              for (const s of shots) {
+                const desc = resolver?.resolveImageAssetDescriptor?.(s.payload, { projectId, shotId: s.id });
+                if (desc?.httpUrl) {
+                  map.set(String(s.id || s.order), { url: desc.httpUrl, expiresAt: desc.expiresAt });
+                }
+              }
+              return map;
+            })().catch(() => new Map());
+          }
+          const map = await refreshPromise;
+          return map.get(String(shotId)) || map.get(String(order)) || null;
+        }
+      : null;
+
+    // Deduplicate identical assets within the same export run
+    const inflightByAssetKey = new Map();
+
     const workerCount = Math.min(Math.max(1, concurrency), total);
     const workers = Array.from({ length: workerCount }, async () => {
       while (nextIndex < total) {
         if (signal?.aborted) throw createAbortError();
         const idx = nextIndex++;
         const item = runtimeImages[idx];
-        results[idx] = await fetchSingleShotImage(item, {
-          projectId,
-          authToken,
-          quality,
-          signal,
-          fetchFn
-        });
+        const dedupeKey = item.assetId || item.storageRef || item.url || null;
+
+        let res;
+        if (dedupeKey && inflightByAssetKey.has(dedupeKey)) {
+          const shared = await inflightByAssetKey.get(dedupeKey);
+          res = { ...shared, order: item.order, shotId: item.shotId };
+        } else {
+          const p = fetchSingleShotImage(item, {
+            projectId,
+            authToken,
+            quality,
+            signal,
+            fetchFn,
+            refreshUrls
+          });
+          if (dedupeKey) inflightByAssetKey.set(dedupeKey, p);
+          res = await p;
+        }
+
+        results[idx] = res;
         completed++;
         onProgress?.({
           stage: 'images',
@@ -444,7 +584,7 @@
     for (const r of results) {
       if (!r) continue;
       imagesByOrder.set(r.order, r);
-      if (r.status === 'failed') failed.push(r);
+      if (FAILURE_STATUSES.has(r.status)) failed.push(r);
     }
 
     return { imagesByOrder, failed, results };

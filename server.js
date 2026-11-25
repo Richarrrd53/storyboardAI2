@@ -952,14 +952,32 @@ app.get('/api/projects/:projectId/shots/:shotId/image', async (req, res) => {
             return res.status(404).send('Not Found');
         }
 
-        let imageSource = shot.payload.image;
+        const defaultBucket = storyboardImages.getBucketName();
+        const pickShotImageSource = (obj) => {
+            if (!obj || typeof obj !== 'object') return null;
+            const assetRef = obj.imageAsset?.storageRef
+                || (obj.imageAsset?.path ? `storage://${obj.imageAsset.bucket || defaultBucket}/${String(obj.imageAsset.path).replace(/^\/+/, '')}` : null)
+                || obj.imageAsset?.url
+                || null;
+            const candidates = [obj.imageRef, assetRef, obj.image];
+            for (const c of candidates) {
+                if (typeof c !== 'string') continue;
+                const t = c.trim();
+                if (!t || t === '../icon/error.jpg' || t === '/icon/error.jpg') continue;
+                if (t.startsWith('/api/')) continue;
+                return t;
+            }
+            return null;
+        };
+
+        let imageSource = pickShotImageSource(shot.payload);
         if (req.query.history !== undefined) {
             const idx = Number.parseInt(req.query.history, 10);
             const hist = Array.isArray(shot.payload.imageHistory) ? shot.payload.imageHistory : [];
             if (!Number.isInteger(idx) || idx < 0 || idx >= hist.length) {
                 return res.status(404).send('Not Found');
             }
-            imageSource = hist[idx]?.imageRef || hist[idx]?.image;
+            imageSource = pickShotImageSource(hist[idx]);
         }
 
         if (!imageSource || imageSource === '../icon/error.jpg' || imageSource === '/icon/error.jpg') {
@@ -971,7 +989,8 @@ app.get('/api/projects/:projectId/shots/:shotId/image', async (req, res) => {
             if (matches && matches.length === 3) {
                 const contentType = matches[1];
                 const buffer = Buffer.from(matches[2], 'base64');
-                res.setHeader('Content-Type', contentType);
+                const meta = storyboardImages.validateImageBuffer(buffer, contentType);
+                res.setHeader('Content-Type', meta.mimeType);
                 res.setHeader('Cache-Control', 'private, max-age=300');
                 return res.send(buffer);
             }
@@ -984,12 +1003,16 @@ app.get('/api/projects/:projectId/shots/:shotId/image', async (req, res) => {
             if (!parsed) {
                 return res.status(400).json({ error: '無法解析受信任的圖片儲存引用' });
             }
+            if (!storyboardImages.isObjectPathOwnedByProject(parsed.objectPath, projectId)) {
+                return res.status(403).json({ error: '圖片路徑不屬於此專案' });
+            }
             try {
                 const downloaded = await storyboardImages.downloadStorageObject(parsed.ref, {
                     projectId,
                     storageClient
                 });
-                res.setHeader('Content-Type', downloaded.mimeType);
+                const meta = storyboardImages.validateImageBuffer(downloaded.buffer);
+                res.setHeader('Content-Type', meta.mimeType);
                 res.setHeader('Cache-Control', 'private, max-age=300');
                 return res.send(downloaded.buffer);
             } catch (downloadErr) {
@@ -998,7 +1021,7 @@ app.get('/api/projects/:projectId/shots/:shotId/image', async (req, res) => {
                 if (!freshUrl || !/^https?:\/\//i.test(freshUrl)) {
                     return res.status(downloadErr.status || 404).send('Not Found');
                 }
-                const upstream = await fetch(freshUrl);
+                const upstream = await fetch(freshUrl, { signal: AbortSignal.timeout(15000) });
                 if (!upstream.ok) return res.status(upstream.status === 404 ? 404 : 502).send('Image Fetch Failed');
                 const buf = Buffer.from(await upstream.arrayBuffer());
                 const meta = storyboardImages.validateImageBuffer(buf);
