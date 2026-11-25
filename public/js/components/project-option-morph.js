@@ -73,7 +73,13 @@
               </g>
             </svg>
           </span>
-          <span>匯出分鏡</span>
+          <span class="morph-item-label">匯出分鏡</span>
+          <span class="morph-item-chevron" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m7 15 5 5 5-5"></path>
+              <path d="m7 9 5-5 5 5"></path>
+            </svg>
+          </span>
         </button>
         <div class="morph-divider"></div>
         <button class="morph-item delete" type="button" data-action="delete">
@@ -109,6 +115,12 @@
         if (item.dataset.action === 'export') {
           const environment = typeof window !== 'undefined' ? window : root;
           const dialog = environment.StoryboardExportDialog || root.StoryboardExportDialog;
+          if (dialog && typeof dialog.openExportSubMorph === 'function') {
+            dialog.openExportSubMorph(item, menuContent, { projectId: project.id, project }, {
+              onClose: (done) => engine().close('action', done)
+            });
+            return;
+          }
           if (dialog && typeof dialog.switchMenuToExportFormat === 'function') {
             dialog.switchMenuToExportFormat(menuContent, { projectId: project.id, project }, {
               onClose: () => engine().close('action')
@@ -132,7 +144,11 @@
     const onClose=opts.onClose;
     return engine().open(trigger,{...opts,content:menuContent,width:opts.width||196,height:isHistory?112:256,placement:'below',align:opts.align??trigger.dataset?.morphAlign,label:'專案選單',
       triggerIconHTML:`<svg width="${iconSize}" height="${iconSize}" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="5" r="1.5"/><circle cx="8" cy="11" r="1.5"/></svg>`,
-      onClose:reason=>{disposeHover?.();root.IconMotion?.cleanup?.(menuContent);card?.classList?.remove('is-menu-open');if(!card?.matches?.(':hover'))card?.classList?.remove('is-expanded');onClose?.(reason);}
+      onClose:reason=>{
+        const environment = typeof window !== 'undefined' ? window : root;
+        (environment.StoryboardExportDialog || root.StoryboardExportDialog)?.closeSubMorph?.(true);
+        disposeHover?.();root.IconMotion?.cleanup?.(menuContent);card?.classList?.remove('is-menu-open');if(!card?.matches?.(':hover'))card?.classList?.remove('is-expanded');onClose?.(reason);
+      }
     });
   }
   const api={open,openSurface:(trigger,opts)=>engine().open(trigger,opts),close:(...args)=>engine().close(...args),isOpen:()=>engine().isOpen(),destroy:()=>engine().destroy()};

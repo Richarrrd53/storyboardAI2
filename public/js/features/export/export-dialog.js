@@ -17,6 +17,7 @@
   };
 
   let activePdfDialog = null;
+  let activeSubMorph = null;
 
   function escapeHtml(str) {
     return String(str ?? '')
@@ -121,37 +122,279 @@
   }
 
   /**
-   * Seamlessly transition an already-open ProjectOptionMorph menu in-place into the export format chooser.
+   * Direct Level-2 Morph from the "匯出分鏡" button inside ProjectOptionMorph:
+   * - No water-droplet phase: morphs directly from the button's rect into the Level-2 panel.
+   * - Original "匯出分鏡" button becomes the Level-2 panel header (no "返回選單" button).
+   * - Level-1 Option Menu recedes (scales down & reduces opacity); clicking anywhere on it
+   *   automatically retracts the Level-2 panel back into the "匯出分鏡" button.
    */
-  function switchMenuToExportFormat(menuContent, source, options = {}) {
-    if (!menuContent || !source) return false;
-    const originalNodes = Array.from(menuContent.childNodes);
+  function closeSubMorph(immediate = false) {
+    const sub = activeSubMorph;
+    if (!sub) return;
+    sub.close(immediate);
+  }
 
-    const formatWrap = document.createElement('div');
-    formatWrap.className = 'export-format-subview';
-    formatWrap.innerHTML = buildFormatItemsHtml(true);
+  function openExportSubMorph(triggerBtn, menuContent, source, options = {}) {
+    if (!triggerBtn || !menuContent || !source || typeof document === 'undefined') return false;
+    if (activeSubMorph) {
+      activeSubMorph.close(true);
+    }
 
-    const restoreOriginal = () => {
-      menuContent.innerHTML = '';
-      originalNodes.forEach(n => menuContent.appendChild(n));
+    const primarySurface = triggerBtn.closest?.('.surface-morph-surface') || menuContent.closest?.('.surface-morph-surface');
+    const overlay = primarySurface?.parentElement || document.body;
+    const startRect = triggerBtn.getBoundingClientRect();
+    const motion = root.matchMedia?.('(prefers-reduced-motion: reduce)');
+    const reduced = Boolean(motion?.matches);
+
+    const panel = document.createElement('div');
+    panel.className = 'export-submorph-panel';
+    panel.setAttribute('role', 'menu');
+    panel.setAttribute('aria-label', '匯出分鏡格式');
+
+    const iconHtml = triggerBtn.querySelector?.('.morph-item-icon')?.innerHTML || ICONS.download;
+    const labelText = triggerBtn.querySelector?.('.morph-item-label, span:not(.morph-item-icon):not(.morph-item-chevron)')?.textContent?.trim() || '匯出分鏡';
+    const chevronHtml = triggerBtn.querySelector?.('.morph-item-chevron')?.innerHTML || `
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m7 15 5 5 5-5"></path>
+        <path d="m7 9 5-5 5 5"></path>
+      </svg>
+    `;
+
+    panel.innerHTML = `
+      <div class="export-submorph-inner">
+        <button class="morph-item export-submorph-header" type="button" data-export-action="retract" aria-label="收合匯出分鏡選單">
+          <span class="morph-item-icon">${iconHtml}</span>
+          <span class="morph-item-label">${escapeHtml(labelText)}</span>
+          <span class="morph-item-chevron" aria-hidden="true">${chevronHtml}</span>
+        </button>
+        <div class="morph-divider export-submorph-divider"></div>
+        <button class="morph-item export-format-item export-submorph-option" type="button" data-export-action="json" role="menuitem">
+          <span class="morph-item-icon">${ICONS.json}</span>
+          <span class="export-format-text"><span class="export-format-title">JSON 專案資料</span></span>
+        </button>
+        <button class="morph-item export-format-item export-submorph-option" type="button" data-export-action="pdf" role="menuitem">
+          <span class="morph-item-icon">${ICONS.pdf}</span>
+          <span class="export-format-text"><span class="export-format-title">PDF 分鏡企劃書</span></span>
+        </button>
+      </div>
+    `;
+
+    // Measure natural expanded target size
+    const vpW = root.innerWidth || document.documentElement.clientWidth || 1024;
+    const vpH = root.innerHeight || document.documentElement.clientHeight || 768;
+    const margin = 12;
+    const targetW = Math.min(Math.max(196, Math.round(startRect.width + 14)), vpW - margin * 2);
+
+    panel.style.width = `${targetW}px`;
+    panel.style.height = 'auto';
+    panel.style.visibility = 'hidden';
+    overlay.appendChild(panel);
+    const measuredH = Math.ceil(panel.getBoundingClientRect?.().height || 0);
+    const targetH = Math.min(measuredH > 0 ? measuredH : 165, vpH - margin * 2);
+    panel.style.visibility = '';
+
+    // Anchor directly at the button's position (clamped cleanly inside viewport)
+    const rawLeft = startRect.left - 7;
+    const rawTop = startRect.top - 7;
+    const targetLeft = Math.max(margin, Math.min(rawLeft, vpW - targetW - margin));
+    const targetTop = Math.max(margin, Math.min(rawTop, vpH - targetH - margin));
+
+    panel.style.left = `${targetLeft}px`;
+    panel.style.top = `${targetTop}px`;
+    panel.style.height = `${targetH}px`;
+
+    // Recede Level-1 Option Menu & hide the original button seamlessly as it morphs out
+    triggerBtn.classList.add('is-submorph-origin-hidden');
+    primarySurface?.classList.add('is-submorph-receded');
+
+    const animations = [];
+    let closing = false;
+    let disposed = false;
+
+    const optionNodes = Array.from(panel.querySelectorAll('.export-submorph-option, .export-submorph-divider'));
+
+    // Click anywhere on the dimmed Level-1 Option Menu -> automatically retract Level-2 panel
+    const onPrimaryInteract = (event) => {
+      if (disposed) return;
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      if (!closing) close(false);
     };
 
-    bindFormatMenuActions(formatWrap, source, {
-      onBack: restoreOriginal,
-      onClose: (done) => {
-        if (root.SurfaceMorph?.isOpen?.()) {
-          root.SurfaceMorph.close('action', done);
-        } else {
-          options.onClose?.();
-          done?.();
-        }
+    const onKeyDown = (event) => {
+      if (disposed || closing) return;
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        close(false);
       }
+    };
+
+    primarySurface?.addEventListener('pointerdown', onPrimaryInteract, true);
+    primarySurface?.addEventListener('click', onPrimaryInteract, true);
+    document.addEventListener('keydown', onKeyDown, true);
+
+    function cleanup() {
+      if (disposed) return;
+      disposed = true;
+      animations.forEach(a => { try { a.cancel(); } catch (_) {} });
+      animations.length = 0;
+      primarySurface?.removeEventListener('pointerdown', onPrimaryInteract, true);
+      primarySurface?.removeEventListener('click', onPrimaryInteract, true);
+      document.removeEventListener('keydown', onKeyDown, true);
+      primarySurface?.classList.remove('is-submorph-receded');
+      triggerBtn.classList.remove('is-submorph-origin-hidden');
+      panel.remove();
+      if (activeSubMorph?.panel === panel) activeSubMorph = null;
+    }
+
+    function close(immediate = false, afterRetract) {
+      if (disposed) {
+        afterRetract?.();
+        return;
+      }
+      if (immediate || reduced || !panel.animate) {
+        cleanup();
+        afterRetract?.();
+        return;
+      }
+      if (closing) return;
+      closing = true;
+
+      // Restore Level-1 panel simultaneously while Level-2 morphs back into the button
+      primarySurface?.classList.remove('is-submorph-receded');
+
+      // Compute current button rect after Level-1 starts restoring (fallback to original startRect)
+      const returnRect = startRect;
+      const curRect = panel.getBoundingClientRect();
+
+      animations.forEach(a => { try { a.cancel(); } catch (_) {} });
+      animations.length = 0;
+
+      optionNodes.forEach(node => {
+        animations.push(node.animate([
+          { opacity: 1, transform: 'translateY(0)' },
+          { opacity: 0, transform: 'translateY(-3px)' }
+        ], { duration: 130, easing: 'ease-out', fill: 'forwards' }));
+      });
+
+      const morphBack = panel.animate([
+        {
+          left: `${curRect.left}px`,
+          top: `${curRect.top}px`,
+          width: `${curRect.width}px`,
+          height: `${curRect.height}px`,
+          borderRadius: '24px',
+          opacity: 1
+        },
+        {
+          left: `${returnRect.left}px`,
+          top: `${returnRect.top}px`,
+          width: `${returnRect.width}px`,
+          height: `${returnRect.height}px`,
+          borderRadius: '22px',
+          opacity: 0.92
+        }
+      ], {
+        duration: 240,
+        easing: 'cubic-bezier(.22, 1, .36, 1)',
+        fill: 'forwards'
+      });
+      animations.push(morphBack);
+
+      morphBack.finished.then(() => {
+        cleanup();
+        triggerBtn.focus?.({ preventScroll: true });
+        afterRetract?.();
+      }).catch(() => {
+        cleanup();
+        afterRetract?.();
+      });
+    }
+
+    // Bind actions inside Level-2 panel
+    panel.querySelectorAll('[data-export-action]').forEach(btn => {
+      btn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        if (closing || disposed) return;
+        const action = btn.dataset.exportAction;
+        if (action === 'retract') {
+          close(false);
+          return;
+        }
+        const runAction = () => {
+          if (action === 'json') {
+            root.StoryboardExport?.exportJson(source);
+          } else if (action === 'pdf') {
+            openPdfDialog(source, { returnFocus: primarySurface });
+          }
+        };
+        cleanup();
+        if (typeof options.onClose === 'function') {
+          options.onClose(runAction);
+        } else if (root.SurfaceMorph?.isOpen?.()) {
+          root.SurfaceMorph.close('action', runAction);
+        } else {
+          runAction();
+        }
+      });
     });
 
-    menuContent.innerHTML = '';
-    menuContent.appendChild(formatWrap);
-    formatWrap.querySelector('[data-export-action="json"]')?.focus?.({ preventScroll: true });
+    // Direct button -> Level-2 panel Morph animation (no water droplet!)
+    if (!reduced && panel.animate) {
+      const morphOpen = panel.animate([
+        {
+          left: `${startRect.left}px`,
+          top: `${startRect.top}px`,
+          width: `${startRect.width}px`,
+          height: `${startRect.height}px`,
+          borderRadius: '22px',
+          boxShadow: '0 2px 8px rgba(15, 23, 42, 0.06)'
+        },
+        {
+          left: `${targetLeft}px`,
+          top: `${targetTop}px`,
+          width: `${targetW}px`,
+          height: `${targetH}px`,
+          borderRadius: '24px',
+          boxShadow: 'var(--surface-floating-shadow, 0 18px 42px rgba(15, 23, 42, 0.16))'
+        }
+      ], {
+        duration: 280,
+        easing: 'cubic-bezier(.16, 1, .3, 1)',
+        fill: 'both'
+      });
+      animations.push(morphOpen);
+
+      optionNodes.forEach((node, idx) => {
+        animations.push(node.animate([
+          { opacity: 0, filter: 'blur(4px)', transform: 'translateY(-4px)' },
+          { opacity: 1, filter: 'blur(0px)', transform: 'translateY(0)' }
+        ], {
+          duration: 210,
+          delay: 65 + idx * 32,
+          easing: 'cubic-bezier(.16, 1, .3, 1)',
+          fill: 'both'
+        }));
+      });
+    }
+
+    activeSubMorph = { panel, close, cleanup };
+    panel.querySelector('[data-export-action="json"]')?.focus?.({ preventScroll: true });
     return true;
+  }
+
+  /**
+   * Backwards-compatible alias for openExportSubMorph.
+   */
+  function switchMenuToExportFormat(menuContent, source, options = {}) {
+    const triggerBtn = menuContent?.querySelector?.('[data-action="export"]');
+    if (triggerBtn) {
+      return openExportSubMorph(triggerBtn, menuContent, source, options);
+    }
+    return false;
   }
 
   /**
@@ -486,6 +729,7 @@
   }
 
   function closeAll() {
+    closeSubMorph(true);
     root.SurfaceMorph?.close?.('immediate');
     activePdfDialog?.close?.({ exported: false, reason: 'abort' }, true);
   }
@@ -494,6 +738,8 @@
 
   const api = {
     openFormatMenu,
+    openExportSubMorph,
+    closeSubMorph,
     switchMenuToExportFormat,
     openPdfDialog,
     closeAll

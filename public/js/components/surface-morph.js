@@ -91,9 +91,11 @@
     // stacking context and absorbs the complete dismissal transaction.
     if(!gesture)clickBlock=null;
     const s=current;
-    if(s&&(s.phase==='closing'||!s.menu.contains?.(event.target))) {
+    const inSubMorph=Boolean(event.target?.closest?.('.export-submorph-panel'));
+    if(s&&(s.phase==='closing'||(!s.menu.contains?.(event.target)&&!inSubMorph))) {
       consume(event);blockRelease(event);cancelGesture(false);close('outside_click');return;
     }
+    if(inSubMorph)return;
     if(gesture) {cancelGesture();return;}
     if(event.pointerType!=='touch'||event.isPrimary===false||event.button>0)return;
     if(event.target?.closest?.('input, textarea, select, [contenteditable="true"]'))return;
@@ -162,7 +164,8 @@
     if(allowGestureClick)return;
     const blocked=clickBlock&&now()<=clickBlock.until&&(event.pointerId===clickBlock.id||event.detail>0||event.pointerType==='touch');
     if(gesture?.active||blocked){consume(event);clickBlock=null;return;}
-    if(current&&(current.phase==='closing'||!current.menu.contains?.(event.target))){consume(event);close('outside_click');}
+    const inSubMorph=Boolean(event.target?.closest?.('.export-submorph-panel'));
+    if(current&&(current.phase==='closing'||(!current.menu.contains?.(event.target)&&!inSubMorph))){consume(event);close('outside_click');}
   }
   // Delegation handles freshly rendered cards without per-card timers/listeners.
   // Mark any additional opener with data-morph-trigger (data-morph-align also opts in).
@@ -695,13 +698,13 @@
     trigger.setAttribute?.('data-morph-trigger','');
     trigger.classList?.add('is-hidden-for-morph','surface-morph-trigger-hidden');trigger.setAttribute?.('aria-expanded','true');trigger.setAttribute?.('aria-controls',menu.id);trigger.setAttribute?.('aria-haspopup',opts.role==='dialog'?'dialog':'menu');
     content.style.width='100%';content.style.maxHeight='100%';content.style.overflowY='auto';menu.style.willChange='transform,opacity';
-    s.lease=root.OverlayManager.acquirePopover({panel:menu,trigger,signal:opts.signal,watchTriggerResize:opts.watchTriggerResize??opts.role==='dialog',onDismiss:reason=>{if(current===s)close(reason);}});
+    s.lease=root.OverlayManager.acquirePopover({panel:menu,trigger,signal:opts.signal,watchTriggerResize:opts.watchTriggerResize??opts.role==='dialog',isInside:target=>menu.contains?.(target)||Boolean(target?.closest?.('.export-submorph-panel')),onDismiss:reason=>{if(current===s)close(reason);}});
     const onViewportResize=()=>{if(current!==s||s.disposed)return;const vp=viewport();s.viewport=vp;s.origin=readRect(s.trigger);s.bounds=computeBounds(s.origin,vp);s.geometry=geometry(s);Object.assign(s.icon.style,{left:s.origin.left+'px',top:s.origin.top+'px',width:s.origin.width+'px',height:s.origin.height+'px'});s.renderer?.resize?.(vp);frame(s);};
     root.addEventListener?.('resize',onViewportResize,{passive:true});root.visualViewport?.addEventListener?.('resize',onViewportResize,{passive:true});
     s.stopResize=()=>{root.removeEventListener?.('resize',onViewportResize);root.visualViewport?.removeEventListener?.('resize',onViewportResize);};
     s.motion=root.matchMedia?.('(prefers-reduced-motion: reduce)');s.onMotion=()=>{if(!s.motion.matches||current!==s)return;if(s.phase==='closing')finish(s,s.closeReason);else {if(s.raf)cancel(s.raf);s.p=1;s.velocity=0;frame(s);settle(s);}};s.motion?.addEventListener?.('change',s.onMotion);
-    overlay.addEventListener('pointerdown',event=>{if(!menu.contains?.(event.target)){consume(event);blockRelease(event);close('outside_click');}});
-    overlay.addEventListener('click',event=>{if(s.phase==='closing'||!menu.contains?.(event.target)){consume(event);close('outside_click');}});
+    overlay.addEventListener('pointerdown',event=>{if(!menu.contains?.(event.target)&&!event.target?.closest?.('.export-submorph-panel')){consume(event);blockRelease(event);close('outside_click');}});
+    overlay.addEventListener('click',event=>{if(s.phase==='closing'||(!menu.contains?.(event.target)&&!event.target?.closest?.('.export-submorph-panel'))){consume(event);close('outside_click');}});
     menu.addEventListener('keydown',event=>{
       const items=focusItems(s),index=items.indexOf(doc.activeElement);
       if(opts.keyboard!=='content'&&['ArrowDown','ArrowUp','Home','End'].includes(event.key)&&items.length){event.preventDefault();const next=event.key==='Home'?0:event.key==='End'?items.length-1:(index+(event.key==='ArrowDown'?1:-1)+items.length)%items.length;items.forEach((el,i)=>{el.tabIndex=i===next?0:-1;});items[next].focus?.();}

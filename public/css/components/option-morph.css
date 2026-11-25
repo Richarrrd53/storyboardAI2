@@ -167,6 +167,8 @@
 /* Remove the inline SVG baseline gap so icon and label share a vertical center. */
 .project-actions-content .morph-item-icon { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 20px; width: 20px; height: 24px; line-height: 0; }
 .project-actions-content .morph-item-icon svg { display: block; }
+.project-actions-content .morph-item-chevron { display: inline-flex; align-items: center; justify-content: center; margin-left: auto; flex-shrink: 0; color: var(--color-text-tertiary); line-height: 0; }
+.project-actions-content .morph-item-chevron svg { width: 16px; height: 16px; display: block; }
 
 /* temp/morph.html: one SDF material under the independently scaled DOM layer. */
 .surface-morph-sdf { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }

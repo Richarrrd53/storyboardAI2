@@ -79,7 +79,7 @@
     if (top && !top.panel.contains(event.target)) (focusables(top.panel)[0] || top.panel).focus();
   }
   // Non-modal surfaces share dismissal/observer ownership without locking the page.
-  function acquirePopover({ panel, trigger, onDismiss, signal, watchTriggerResize = false }) {
+  function acquirePopover({ panel, trigger, onDismiss, signal, watchTriggerResize = false, isInside }) {
     const listeners = [];
     const listen = (target, type, handler, options) => {
       if (!target?.addEventListener) return;
@@ -87,13 +87,14 @@
       listeners.push(() => target.removeEventListener(type, handler, options));
     };
     const inside = (container, target) => !!target && !!container?.contains?.(target);
-    const isEditingInside = () => { const active = (root.document || document).activeElement; return inside(panel, active) && !!active?.matches?.('input, textarea, select, [contenteditable="true"]'); };
+    const inPanel = target => inside(panel, target) || Boolean(isInside?.(target));
+    const isEditingInside = () => { const active = (root.document || document).activeElement; return inPanel(active) && !!active?.matches?.('input, textarea, select, [contenteditable="true"]'); };
     let lastWidth = root.innerWidth;
     const openedAt = Date.now();
     const isKeyboardTransition = () => root.innerWidth === lastWidth && (isEditingInside() || (Date.now() - openedAt) < 800);
     const entry = { dismiss: reason => onDismiss(reason) };
     popovers.add(entry);
-    listen(root, 'scroll', event => { if (!inside(panel, event?.target)) entry.dismiss('scroll'); }, { capture: true, passive: true });
+    listen(root, 'scroll', event => { if (!inPanel(event?.target)) entry.dismiss('scroll'); }, { capture: true, passive: true });
     listen(root, 'resize', () => { if (isKeyboardTransition()) return; lastWidth = root.innerWidth; entry.dismiss('resize'); }, { passive: true });
     listen(root, 'orientationchange', () => entry.dismiss('resize'), { passive: true });
     listen(root, 'keydown', event => {
@@ -102,10 +103,10 @@
       }
     });
     listen(root.document || document, 'pointerdown', event => {
-      if (!stack.length && !inside(panel, event.target) && !inside(trigger, event.target)) entry.dismiss('outside_click');
+      if (!stack.length && !inPanel(event.target) && !inside(trigger, event.target)) entry.dismiss('outside_click');
     }, true);
     listen(root.document || document, 'focusin', event => {
-      if (!stack.length && !inside(panel, event.target) && !inside(trigger, event.target)) entry.dismiss('focus_out');
+      if (!stack.length && !inPanel(event.target) && !inside(trigger, event.target)) entry.dismiss('focus_out');
     });
     listen(root.visualViewport, 'resize', () => { if (!isKeyboardTransition()) { lastWidth = root.innerWidth; entry.dismiss('resize'); } }, { passive: true });
     listen(root.visualViewport, 'scroll', () => { if (!isKeyboardTransition()) entry.dismiss('scroll'); }, { passive: true });
