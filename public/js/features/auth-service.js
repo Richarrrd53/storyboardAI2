@@ -135,6 +135,7 @@
       const layer = document.getElementById('ai-creation-layer');
       if (layer) layer.remove();
       document.body.classList.remove('dashboard-layout');
+      window.NavigationTransition?.setNextMaskWhite?.(true);
       return window.spaNavigate('landing', { force: true });
     },
     invalidateUser,

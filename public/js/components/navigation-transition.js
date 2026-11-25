@@ -6,7 +6,7 @@
       position: relative;
     }
     #page-content {
-      transition: opacity 280ms cubic-bezier(.4,0,.2,1), filter 280ms cubic-bezier(.4,0,.2,1), transform 280ms cubic-bezier(.4,0,.2,1);
+      transition: opacity 320ms cubic-bezier(.4,0,.2,1), filter 320ms cubic-bezier(.4,0,.2,1), transform 320ms cubic-bezier(.4,0,.2,1);
     }
     #page-inner-loader {
       position: absolute !important;
@@ -14,19 +14,23 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(255, 255, 255, 0.55);
-      backdrop-filter: blur(15px);
-      -webkit-backdrop-filter: blur(15px);
+      background: rgba(255, 255, 255, 0);
+      backdrop-filter: blur(0px) saturate(100%);
+      -webkit-backdrop-filter: blur(0px) saturate(100%);
       display: flex;
       align-items: center;
       justify-content: center;
       z-index: var(--layer-transition) !important;
-      opacity: 0;
+      opacity: 1;
       pointer-events: none;
-      transition: opacity 0.3s ease;
+      transition: background-color 0.35s cubic-bezier(.4,0,.2,1),
+                  backdrop-filter 0.35s cubic-bezier(.4,0,.2,1),
+                  -webkit-backdrop-filter 0.35s cubic-bezier(.4,0,.2,1);
     }
     #page-inner-loader.active {
-      opacity: 1 !important;
+      background: rgba(255, 255, 255, 0.45) !important;
+      backdrop-filter: blur(16px) saturate(170%) !important;
+      -webkit-backdrop-filter: blur(16px) saturate(170%) !important;
       pointer-events: auto !important;
     }
   `;
@@ -62,50 +66,68 @@
   const landingNav = () => document.querySelector('.nav');
   const loader = window.TransitionLoader;
   let active = null;
+  let nextMaskWhite = false;
   const reduced = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
 
+  function setNextMaskWhite(flag = true) {
+    nextMaskWhite = Boolean(flag);
+  }
+
   function maskClose(valid = () => true) {
+    const topTarget = nextMaskWhite ? 'rgba(255, 255, 255, 1)' : 'rgba(255, 255, 255, 0.45)';
+    const botTarget = nextMaskWhite ? 'rgba(255, 255, 255, 1)' : 'rgba(248, 250, 252, 0.2)';
     if (reduced()) {
-      if (valid()) [maskTop(), maskBot()].forEach(mask => { if (mask) Object.assign(mask.style, { transition: 'none', opacity: '1', pointerEvents: 'auto' }); });
+      if (valid()) {
+        if (maskTop()) Object.assign(maskTop().style, { transition: 'none', opacity: '1', backgroundColor: topTarget, pointerEvents: 'auto' });
+        if (maskBot()) Object.assign(maskBot().style, { transition: 'none', opacity: '1', backgroundColor: botTarget, pointerEvents: 'auto' });
+      }
       return Promise.resolve();
     }
     return new Promise(resolve => {
       const easing = 'cubic-bezier(.4,0,.2,1)';
       requestAnimationFrame(() => {
         if (!valid() || !maskTop() || !maskBot()) { resolve(); return; }
-        maskTop().style.transition = `opacity 0.4s ${easing}, backdrop-filter 0.4s ${easing}`;
-        maskBot().style.transition = `opacity 0.4s ${easing}`;
+        maskTop().style.transition = `background-color 0.4s ${easing}, backdrop-filter 0.4s ${easing}, -webkit-backdrop-filter 0.4s ${easing}`;
+        maskBot().style.transition = `background-color 0.4s ${easing}`;
 
         maskTop().style.pointerEvents = 'auto';
         maskBot().style.pointerEvents = 'auto';
 
         maskTop().style.opacity = '1';
-        maskTop().style.backdropFilter = 'blur(50px)';
-        maskTop().style.webkitBackdropFilter = 'blur(50px)';
+        maskTop().style.backgroundColor = topTarget;
+        maskTop().style.backdropFilter = 'blur(24px) saturate(170%)';
+        maskTop().style.webkitBackdropFilter = 'blur(24px) saturate(170%)';
 
         maskBot().style.opacity = '1';
+        maskBot().style.backgroundColor = botTarget;
         rafDelay(400).then(resolve);
       });
     });
   }
 
   function maskOpen(valid = () => true) {
+    nextMaskWhite = false;
     if (reduced()) {
-      if (valid()) [maskTop(), maskBot()].forEach(mask => { if (mask) Object.assign(mask.style, { transition: 'none', opacity: '0', pointerEvents: 'none', backdropFilter: 'blur(0px)', webkitBackdropFilter: 'blur(0px)' }); });
+      if (valid()) {
+        if (maskTop()) Object.assign(maskTop().style, { transition: 'none', opacity: '1', backgroundColor: 'rgba(255, 255, 255, 0)', pointerEvents: 'none', backdropFilter: 'blur(0px) saturate(100%)', webkitBackdropFilter: 'blur(0px) saturate(100%)' });
+        if (maskBot()) Object.assign(maskBot().style, { transition: 'none', opacity: '1', backgroundColor: 'rgba(248, 250, 252, 0)', pointerEvents: 'none' });
+      }
       return Promise.resolve();
     }
     return new Promise(resolve => {
       const easing = 'cubic-bezier(.4,0,.2,1)';
       requestAnimationFrame(() => {
         if (!valid() || !maskTop() || !maskBot()) { resolve(); return; }
-        maskTop().style.transition = `opacity 0.4s ${easing}, backdrop-filter 0.4s ${easing}`;
-        maskBot().style.transition = `opacity 0.4s ${easing}`;
+        maskTop().style.transition = `background-color 0.4s ${easing}, backdrop-filter 0.4s ${easing}, -webkit-backdrop-filter 0.4s ${easing}`;
+        maskBot().style.transition = `background-color 0.4s ${easing}`;
 
-        maskTop().style.opacity = '0';
-        maskTop().style.backdropFilter = 'blur(0px)';
-        maskTop().style.webkitBackdropFilter = 'blur(0px)';
+        maskTop().style.opacity = '1';
+        maskTop().style.backgroundColor = 'rgba(255, 255, 255, 0)';
+        maskTop().style.backdropFilter = 'blur(0px) saturate(100%)';
+        maskTop().style.webkitBackdropFilter = 'blur(0px) saturate(100%)';
 
-        maskBot().style.opacity = '0';
+        maskBot().style.opacity = '1';
+        maskBot().style.backgroundColor = 'rgba(248, 250, 252, 0)';
 
         rafDelay(400).then(() => {
           if (!valid()) { resolve(); return; }
@@ -142,9 +164,11 @@
       maskTop().style.pointerEvents = 'auto';
       maskBot().style.pointerEvents = 'auto';
       maskTop().style.opacity = '1';
-      maskTop().style.backdropFilter = 'blur(15px)';
-      maskTop().style.webkitBackdropFilter = 'blur(15px)';
+      maskTop().style.backgroundColor = 'rgba(255, 255, 255, 0.45)';
+      maskTop().style.backdropFilter = 'blur(16px) saturate(170%)';
+      maskTop().style.webkitBackdropFilter = 'blur(16px) saturate(170%)';
       maskBot().style.opacity = '1';
+      maskBot().style.backgroundColor = 'rgba(248, 250, 252, 0.2)';
     }
   }
   function setLayout(page, dashboard, opts) {
@@ -179,9 +203,9 @@
         if (!valid()) return;
         content.inert = true;
         if (internal) {
-          apply({ transition: reduced() ? 'none' : 'opacity 180ms ease, filter 180ms ease, transform 180ms ease', opacity: '0', filter: reduced() ? '' : 'blur(5px)', transform: reduced() || fromQC ? '' : 'translateY(-5px)', visibility: fromQC ? 'hidden' : '' });
+          apply({ transition: reduced() ? 'none' : 'opacity 320ms cubic-bezier(.4,0,.2,1), filter 320ms cubic-bezier(.4,0,.2,1), transform 320ms cubic-bezier(.4,0,.2,1)', opacity: '0', filter: reduced() ? '' : 'blur(22px)', transform: reduced() || fromQC ? '' : 'scale(0.97)', visibility: fromQC ? 'hidden' : '' });
           loader.showInnerLoader();
-          if (!fromQC && !reduced()) await rafDelay(180);
+          if (!fromQC && !reduced()) await rafDelay(240);
           if (!valid()) return;
 
         } else {
@@ -200,12 +224,12 @@
       async complete() {
         if (!valid()) return;
         loader.hideInnerLoader();
-        if (internal && !fromQC && !reduced()) apply({ transition: 'none', opacity: '0', filter: 'blur(5px)', transform: 'translateY(7px)' });
+        if (!fromQC && !reduced()) apply({ transition: 'none', opacity: '0', filter: 'blur(22px)', transform: 'scale(0.98)' });
         if (!reduced() && !fromQC) await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
         if (!valid()) return;
         cleanLoaders();
         content.inert = false;
-        apply({ transition: reduced() || fromQC ? 'none' : 'opacity 280ms ease, filter 280ms ease, transform 280ms ease', opacity: '1', visibility: fromQC ? 'visible' : '', filter: 'blur(0px)', transform: 'translateY(0)' });
+        apply({ transition: reduced() || fromQC ? 'none' : 'opacity 380ms cubic-bezier(.22,1,.36,1), filter 380ms cubic-bezier(.22,1,.36,1), transform 380ms cubic-bezier(.22,1,.36,1)', opacity: '1', visibility: fromQC ? 'visible' : '', filter: 'blur(0px)', transform: 'scale(1)' });
         if (!internal) await maskOpen(valid);
         if (!valid()) return;
         cleanupTimer = setTimeout(() => {
@@ -242,7 +266,7 @@
     signal.addEventListener('abort', session.cancel, { once: true });
     return session;
   }
-  window.NavigationTransition = { initialize, create, setLayout, leaveLanding, open: maskOpen };
+  window.NavigationTransition = { initialize, create, setLayout, leaveLanding, open: maskOpen, setNextMaskWhite };
   window.spaMaskClose = maskClose;
   window.spaMaskOpen = maskOpen;
 })();

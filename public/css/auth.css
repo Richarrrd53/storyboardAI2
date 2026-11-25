@@ -75,16 +75,205 @@ body.auth-layout #page-content {
   line-height: 1.2;
 }
 
+.auth-stage-card {
+  position: relative;
+  width: min(1140px, calc(100% - 32px));
+  margin: auto;
+  background: var(--color-surface-primary, #ffffff);
+  border: none;
+  border-radius: var(--radius-continuous-2xl, 44px);
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.06);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-origin: center center;
+  transition: width 500ms var(--motion-ease-spring, cubic-bezier(.33, 1.53, .69, .99)),
+              height 500ms var(--motion-ease-spring, cubic-bezier(.33, 1.53, .69, .99)),
+              border-radius 500ms var(--dialog-exit-ease, cubic-bezier(.31, .01, .66, -.59)),
+              background-color 400ms var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1)),
+              box-shadow 450ms var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1)),
+              transform 500ms var(--motion-ease-spring, cubic-bezier(.33, 1.53, .69, .99));
+  flex-shrink: 0;
+}
+
+@supports (corner-shape: squircle) {
+  .auth-stage-card {
+    corner-shape: squircle;
+  }
+}
+
+.auth-stage-card.is-flying-in {
+  position: fixed;
+  left: 0 !important;
+  top: 0 !important;
+  margin: 0 !important;
+  z-index: var(--layer-modal, 950);
+  width: 100vw !important;
+  height: 100dvh !important;
+  max-width: none;
+  border-radius: 0;
+  border-color: transparent;
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0);
+  transition: left 500ms var(--dialog-exit-ease, cubic-bezier(.31, .01, .66, -.59)),
+              top 500ms var(--dialog-exit-ease, cubic-bezier(.31, .01, .66, -.59)),
+              width 500ms var(--dialog-exit-ease, cubic-bezier(.31, .01, .66, -.59)),
+              height 500ms var(--dialog-exit-ease, cubic-bezier(.31, .01, .66, -.59)),
+              border-radius 500ms var(--dialog-exit-ease, cubic-bezier(.31, .01, .66, -.59)),
+              box-shadow 500ms var(--dialog-exit-ease, cubic-bezier(.31, .01, .66, -.59));
+}
+
+.auth-stage-grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 40px;
+  padding: 44px 56px;
+  opacity: 1;
+  scale: 1;
+  filter: blur(0);
+  transition: opacity 450ms var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1)),
+              scale 500ms var(--motion-ease-spring, cubic-bezier(.33, 1.53, .69, .99)),
+              filter 450ms var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1));
+}
+
+.auth-visual-col {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+
+.loginItems {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loginImg {
+  position: absolute;
+  max-width: 100%;
+  max-height: 100%;
+  width: 100% !important;
+  height: 100% !important;
+  opacity: 0;
+  transform: scale(0);
+  pointer-events: none;
+  transition: transform 240ms var(--dialog-exit-ease, cubic-bezier(.31, .01, .66, -.59)),
+              opacity 200ms var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1));
+}
+
+.loginImg.is-active {
+  opacity: 1;
+  transform: scale(1);
+  transition: transform 520ms var(--motion-ease-spring, cubic-bezier(.33, 1.53, .69, .99)),
+              opacity 260ms var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1));
+}
+
+.loginImg.is-active.is-shrinking {
+  opacity: 0;
+  transform: scale(0);
+  transition: transform 220ms var(--dialog-exit-ease, cubic-bezier(.31, .01, .66, -.59)),
+              opacity 180ms var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1));
+}
+
+.auth-form-col {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+
+@media (max-width: 860px) {
+  .auth-stage-card {
+    width: min(480px, calc(100% - 16px));
+  }
+
+  .auth-stage-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+    padding: 24px 20px;
+  }
+
+  .auth-visual-col {
+    display: none;
+  }
+}
+
 @media (max-width: 600px) {
-  .auth-container {
-    padding-top: 56px;
+  .auth-topbar {
+    display: none;
+  }
+
+  .auth-main,
+  #page-main.auth-main,
+  #page-main.page-auth,
+  body.auth-layout #page-main {
+    padding: 0 !important;
+  }
+
+  .auth-stage-card {
+    width: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
+    background: rgba(255, 255, 255, 0);
+    box-shadow: 0 18px 50px rgba(15, 23, 42, 0);
+    border-radius: 0;
+  }
+
+  .auth-stage-card.is-verifying {
+    min-height: 0;
+    background: var(--color-surface-primary, #ffffff);
+    box-shadow: 0 18px 50px rgba(15, 23, 42, 0.06);
+    border-radius: var(--radius-continuous-xl, 32px);
+  }
+
+  .auth-stage-card.is-flying-in {
+    background: var(--color-surface-primary, #ffffff);
+    border-radius: 0;
+    box-shadow: 0 18px 50px rgba(15, 23, 42, 0);
+  }
+
+  .auth-stage-grid {
+    padding: 20px 16px;
+  }
+
+  .auth-content {
+    padding: 20px 16px;
+  }
+
+  .auth-verify-rose-svg {
+    width: 84px;
+    height: 84px;
+  }
+
+  .verification-container-img {
+    width: 108px;
+    height: 108px;
+  }
+
+  .auth-verify-text {
+    font-size: 1.15rem;
+  }
+
+  .auth-verify-text.is-success-text {
+    font-size: 1.25rem;
+  }
+
+  .auth-verify-text.is-error-text {
+    font-size: 1.1rem;
   }
 }
 
 .auth-container {
   width: 100%;
   max-width: 440px;
-  margin: auto;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -638,6 +827,111 @@ body.auth-layout #page-content {
   font-size: 0.95rem;
   font-weight: 700;
   border-radius: 50px;
+}
+
+.auth-inline-error {
+  width: 100%;
+  min-height: 0;
+  margin: 0;
+  font-size: var(--font-size-xs, 0.75rem);
+  font-weight: var(--font-weight-semibold, 600);
+  color: var(--color-text-danger, #dc2626);
+  text-align: left;
+  line-height: 1.4;
+  display: none;
+}
+
+.auth-inline-error.is-visible {
+  display: block;
+}
+
+/* --- Unified Stage Panels (Loading & Verification inside #auth-stage-card) --- */
+.auth-stage-panel {
+  position: absolute;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 28px;
+  gap: 18px;
+  text-align: center;
+  opacity: 0;
+  scale: 0;
+  filter: blur(30px);
+  transition: opacity 450ms var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1)),
+              scale 500ms var(--motion-ease-spring, cubic-bezier(.33, 1.53, .69, .99)),
+              filter 450ms var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1));
+}
+
+.auth-verification-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  scale: 1;
+  opacity: 1;
+  filter: blur(0);
+  transition: scale 500ms var(--dialog-exit-ease, cubic-bezier(.31, .01, .66, -.59)),
+              opacity 450ms var(--dialog-exit-ease, cubic-bezier(.31, .01, .66, -.59)),
+              filter 500ms var(--dialog-exit-ease, cubic-bezier(.31, .01, .66, -.59));
+}
+
+.auth-stage-card.is-flying-in .auth-verification-group {
+  scale: 3;
+  opacity: 0;
+  filter: blur(30px);
+}
+
+.auth-verify-rose-svg {
+  width: 104px;
+  height: 104px;
+  color: var(--color-brand-primary, #2563eb);
+}
+
+.verification-container-img {
+  width: 128px;
+  height: 128px;
+}
+
+.auth-verify-error-icon {
+  width: 68px;
+  height: 68px;
+  color: var(--color-status-error, #ef4444);
+}
+
+.auth-verify-text {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: var(--font-weight-bold, 700);
+  color: var(--color-text-primary, #0f172a);
+  letter-spacing: -0.01em;
+  line-height: 1.45;
+}
+
+.auth-verify-text.is-success-text {
+  font-size: 1.45rem;
+  color: var(--color-status-success, #10b981);
+}
+
+.auth-verify-text.is-error-text {
+  font-size: 1.25rem;
+  color: var(--color-status-error, #ef4444);
+}
+
+.auth-whiteout-curtain {
+  position: fixed;
+  inset: 0;
+  z-index: var(--layer-modal, 950);
+  background: var(--color-surface-primary, #ffffff);
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 320ms var(--motion-ease-standard, cubic-bezier(.4, 0, .2, 1));
+}
+
+.auth-whiteout-curtain.is-fading {
+  opacity: 0;
 }
 
 /* Persistent labels live outside the clipped pill, shared by both filmstrip faces. */

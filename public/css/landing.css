@@ -128,9 +128,9 @@ body:not(.dashboard-layout):not(.auth-layout) #page-main.page-landing #page-cont
 .lp-footer .lp-footer-brand { font-family: var(--font-family-brand); color: var(--lp-ink); font-size: 22px; font-weight: 700; }
 .lp-footer p { font-size: 13px; }
 .lp-footer > a:last-child { margin-left: auto; }
-.black-mask { position: fixed; inset: 0; width: 100%; height: 100%; z-index: var(--layer-overlay, 600); opacity: 0; pointer-events: none; }
-#black-mask-top { background: var(--lp-mask); }
-#black-mask-bottom { background: var(--color-surface-selected); }
+.black-mask { position: fixed; inset: 0; width: 100%; height: 100%; z-index: var(--layer-overlay, 600); opacity: 1; pointer-events: none; backdrop-filter: blur(0px) saturate(100%); -webkit-backdrop-filter: blur(0px) saturate(100%); }
+#black-mask-top { background-color: rgba(255, 255, 255, 0); }
+#black-mask-bottom { background-color: rgba(248, 250, 252, 0); }
 @supports (corner-shape: squircle) { .lp-hero-surface, .lp-product-image img, .lp-shot-sheet, .lp-cta-surface { corner-shape: squircle; } }
 @media (min-width: 1600px) { .lp-nav { padding-inline: max(var(--lp-gutter), calc((100% - var(--lp-width)) / 2)); } }
 @media (max-width: 1100px) {

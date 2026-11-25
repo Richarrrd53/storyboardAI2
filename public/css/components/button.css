@@ -29,7 +29,11 @@
               color var(--motion-duration-fast, 160ms) var(--motion-ease-standard, cubic-bezier(0.2, 0, 0, 1));
 }
 
-.btn:active {
+.btn:where(:not(:disabled):not([aria-disabled="true"])):hover {
+  transform: scale(1.02);
+}
+
+.btn:where(:not(:disabled):not([aria-disabled="true"])):active {
   transform: scale(0.97);
 }
 
@@ -41,20 +45,19 @@
 
 /* ── Primary Button ── */
 .btn-primary {
-  background: var(--button-primary-bg);
+  background-color: var(--color-action-primary-default);
+  background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.08));
   color: var(--white, #ffffff);
   box-shadow: 0 1px 3px rgba(37, 99, 235, 0.2);
   border-color: transparent;
 }
 
 .btn-primary:hover {
-  background: var(--color-action-primary-hover);
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
-  transform: translateY(-1px);
+  background-color: var(--color-action-primary-hover);
 }
 
 .btn-primary:active {
-  transform: translateY(0) scale(0.97);
+  background-color: var(--color-action-primary-active);
 }
 
 /* ── Secondary Button ── */
@@ -103,7 +106,6 @@
 
 .btn-danger:hover {
   background: var(--color-action-danger-hover, #dc2626);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
 
 /* ── Icon Button ── */

@@ -30,6 +30,7 @@
   let innerRoseLoaderInstance = null;
   let showLoaderTimer = null;
   let loaderShowing = false;
+  let nextOverlayDelayMs = null;
 
   /**
    * Pure mathematical rose curve particle & SVG path animation engine
@@ -340,6 +341,7 @@
         if (dashLoader) dashLoader.classList.add('active');
       }, 120);
     } else {
+      const delayMs = nextOverlayDelayMs !== null ? nextOverlayDelayMs : 120;
       showLoaderTimer = setTimeout(() => {
         loaderShowing = true;
         const overlay = document.getElementById('transition-loader-overlay');
@@ -350,8 +352,12 @@
           root.spaTransitionLoader.start();
         }
         startTextCycling();
-      }, 120);
+      }, delayMs);
     }
+  }
+
+  function setNextOverlayDelay(ms) {
+    nextOverlayDelayMs = Number.isFinite(ms) && ms >= 0 ? ms : null;
   }
 
   // Preparation finished before the threshold: do not flash a loader merely
@@ -368,6 +374,7 @@
       clearTimeout(showLoaderTimer);
       showLoaderTimer = null;
     }
+    nextOverlayDelayMs = null;
     loaderShowing = false;
     const overlay = document.getElementById('transition-loader-overlay');
     if (overlay) overlay.classList.remove('active');
@@ -378,7 +385,7 @@
       if (!loaderShowing && root.spaTransitionLoader) {
         root.spaTransitionLoader.stop();
       }
-    }, 300);
+    }, 420);
   }
 
   function ensureInnerLoader(main) {
@@ -412,6 +419,7 @@
     showInnerLoader,
     hideInnerLoader,
     pausePending,
+    setNextOverlayDelay,
     startLoaderTimer,
     cleanup,
     get isShowing() { return loaderShowing; }

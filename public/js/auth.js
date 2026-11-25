@@ -42,6 +42,37 @@
       window.addEventListener('resize', syncHeights);
       cleanup.push(() => window.removeEventListener('resize', syncHeights));
     }
+    const enterFlows = [
+      {
+        fields: ['#login-email', '#login-password'],
+        submit: '#panel-login .btn-primary',
+      },
+      {
+        fields: ['#register-username', '#register-email', '#register-password', '#register-password-2'],
+        submit: '#panel-register .btn-primary',
+      },
+    ];
+
+    enterFlows.forEach(({ fields, submit }) => {
+      const inputs = fields.map((sel) => root.querySelector(sel));
+      const submitBtn = root.querySelector(submit);
+      inputs.forEach((input, idx) => {
+        if (!input) return;
+        const onKeyDown = (e) => {
+          if (e.key !== 'Enter' || e.isComposing || e.keyCode === 229) return;
+          e.preventDefault();
+          const next = inputs.slice(idx + 1).find((el) => el && !el.disabled);
+          if (next) {
+            next.focus();
+          } else {
+            submitBtn?.click();
+          }
+        };
+        input.addEventListener('keydown', onKeyDown);
+        cleanup.push(() => input.removeEventListener('keydown', onKeyDown));
+      });
+    });
+
     return () => cleanup.forEach(off => off());
   }
   window.AuthEffects = { mount };
