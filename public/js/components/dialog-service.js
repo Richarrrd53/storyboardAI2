@@ -167,7 +167,6 @@
     if (input) input.select();
     function dispose(result) {
       clearTimeout(timer); clearTimeout(blurTimer); modalMotion?.cancel(overlay); animations.forEach(a => a.cancel());
-      root.DynamicMaskSystem?.setMotionMode?.('normal');
       entry.signal?.removeEventListener('abort', entry.abort);
       if (input && opts.inputType === 'password') input.value = '';
       overlay.remove(); lease.release({ restoreFocus: result.reason !== 'abort' });
@@ -187,10 +186,11 @@
       }
       const renderedScale = root.getComputedStyle?.(panel)?.scale;
       const currentScale = !renderedScale || renderedScale === 'none' ? '1' : renderedScale;
-      const currentBg = root.getComputedStyle?.(blurLayer)?.backgroundColor || 'var(--dialog-backdrop-bg)';
+      const renderedOpacity = parseFloat(root.getComputedStyle?.(blurLayer)?.opacity);
+      const currentOpacity = Number.isFinite(renderedOpacity) ? renderedOpacity : 1;
       animations.forEach(a => a.cancel());
-      // Pure semi-transparent scrim; fade backgroundColor without opacity or blur.
-      animate(blurLayer, [{ backgroundColor: currentBg }, { backgroundColor: 'transparent' }], duration, 'cubic-bezier(.8,0,.6,1)');
+      // Independent scrim opacity fade (GPU-composited) without affecting panel opacity.
+      animate(blurLayer, [{ opacity: currentOpacity }, { opacity: 0 }], duration, 'cubic-bezier(.8,0,.6,1)');
       animate(panel, [{ scale: currentScale }, { scale: '0' }], duration, exitEase);
       timer = setTimeout(() => dispose(result), duration);
     }
@@ -239,8 +239,11 @@
     if (!motion?.matches && modalMotion) {
       modalMotion.open(overlay, panel, { duration, backdropBg: 'var(--dialog-backdrop-bg)' });
     } else if (!motion?.matches) {
-      animate(blurLayer, [{ backgroundColor: 'transparent' }, { backgroundColor: 'var(--dialog-backdrop-bg)' }], duration, 'cubic-bezier(.4,0,.2,1)');
+      blurLayer.style.background = 'var(--dialog-backdrop-bg)';
+      animate(blurLayer, [{ opacity: 0 }, { opacity: 1 }], duration, 'cubic-bezier(.4,0,.2,1)');
       animate(panel, [{ scale: '0' }, { scale: '1' }], duration, enterEase);
+    } else {
+      blurLayer.style.opacity = '1';
     }
   }
   root.DialogService = {

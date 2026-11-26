@@ -109,7 +109,7 @@ test('reduced motion settles ordinary central modals immediately while keeping t
   try {
     const overlay = createMockNode(), panel = createMockNode();
     ModalAnimation.open(overlay, panel);
-    assert.equal(panel.style.scale, '1'); assert.ok(panel.style.transition.includes('0ms'));
+    assert.equal(panel.style.scale, '1'); assert.equal(panel.style.transition, 'none');
     const legacyOverlay = createMockNode(), legacyPanel = createMockNode();
     ModalAnimation.open(legacyOverlay, legacyPanel, { legacyMotion: true });
     assert.equal(legacyPanel.style.scale, '0'); assert.ok(legacyPanel.style.transition.includes('400ms'));

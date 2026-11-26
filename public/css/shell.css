@@ -214,6 +214,12 @@ body.dashboard-layout.sidebar-open #page-main,
   margin-left: calc(clamp(12px, 1.8vh, 16px) + var(--sidebar-expanded-width, 260px)) !important;
 }
 
+/* Phase 6 FLIP: commit final workspace layout once and animate via GPU transform/clip-path */
+body.is-sidebar-flip-animating #page-main,
+body.is-sidebar-flip-animating .page-shell {
+  transition: none !important;
+}
+
 /* ── 4. Unified Page Header Family ── */
 .page-header,
 .content-header {

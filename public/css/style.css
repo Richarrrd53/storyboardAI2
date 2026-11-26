@@ -183,10 +183,10 @@ main{
     width: 100vw;
     height: 100vh;
     background: transparent;
+    opacity: 1;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     display: none; flex-direction: column; align-items: center; justify-content: center;
-    transition: background-color 0.4s cubic-bezier(.4, 0, .2, 1);
 }
 
 .sys-bg.active {
@@ -194,14 +194,17 @@ main{
 }
 
 .sys-window {
+    position: relative;
+    z-index: 2;
     padding: var(--space-6);
     border-radius: var(--radius-continuous-2xl);
     background-color: var(--color-surface-elevated);
     box-shadow: var(--elevation-overlay);
     border: var(--border-width-thin) solid var(--color-border-subtle);
     scale: 0;
-    transition: scale 0.4s cubic-bezier(.33, 1.53, .69, .99);
+    opacity: 1;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
+    contain: layout style;
 }
 
 .sys-content{

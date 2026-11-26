@@ -1598,16 +1598,22 @@ body.dashboard-layout .spa-discovery-wrap > * {
 .project-tags-modal-overlay.active {
     display: flex;
     pointer-events: auto;
-    background: var(--dialog-backdrop-bg);
+    background: transparent;
 }
 
 .project-tags-modal-backdrop {
-    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: var(--dialog-backdrop-bg, rgba(15, 23, 42, 0.45));
+    opacity: 0;
+    contain: strict;
 }
 
 .project-tags-modal-panel {
     position: relative;
-    z-index: 1;
+    z-index: 2;
     background: var(--color-surface-elevated);
     border-radius: var(--radius-continuous-2xl);
     border: 1px solid var(--color-border-subtle, #e2e8f0);
@@ -4142,7 +4148,6 @@ body.dashboard-layout .spa-discovery-wrap > * {
 #page-main {
     box-sizing: border-box;
     contain: paint;
-    will-change: width, margin-right;
     transition: width 460ms var(--motion-ease-decelerate, cubic-bezier(0.16, 1, 0.3, 1)),
         max-width 460ms var(--motion-ease-decelerate, cubic-bezier(0.16, 1, 0.3, 1)),
         margin-left 460ms var(--motion-ease-decelerate, cubic-bezier(0.16, 1, 0.3, 1)),

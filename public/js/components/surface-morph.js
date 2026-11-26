@@ -589,7 +589,9 @@
   }
 
   function createRenderer(s) {
-    const dpr = Math.min(root.devicePixelRatio || 1, 2), v = s.viewport;
+    const tier = root.MotionCoordinator?.getQualityTier?.() || 'full';
+    const maxDpr = tier === 'lightweight' ? 1.25 : (tier === 'balanced' ? 1.5 : 2);
+    const dpr = Math.min(root.devicePixelRatio || 1, maxDpr), v = s.viewport;
     const parseColor = (value, fallback) => {
       const values = (value || '').match(/[\d.]+/g)?.map(Number);
       return values?.length >= 3 ? [...values.slice(0, 3), clamp(values[3] ?? 1, 0, 1)] : fallback;

@@ -447,18 +447,29 @@
   let sidebarTransitionEndHandler = null;
   let sidebarTransitionMainEl = null;
   let sidebarMotionHandle = null;
+  let sidebarWorkspaceAnim = null;
 
   function endSidebarTransition() {
     if (sidebarTransitionTimer !== null) {
       clearTimeout(sidebarTransitionTimer);
       sidebarTransitionTimer = null;
     }
-    if (sidebarTransitionMainEl && sidebarTransitionEndHandler) {
-      sidebarTransitionMainEl.removeEventListener('transitionend', sidebarTransitionEndHandler);
+    if (sidebarWorkspaceAnim) {
+      try { sidebarWorkspaceAnim.cancel(); } catch (_) {}
+      sidebarWorkspaceAnim = null;
+    }
+    const pageMain = sidebarTransitionMainEl || document.getElementById('page-main');
+    if (pageMain) {
+      if (sidebarTransitionEndHandler) {
+        pageMain.removeEventListener('transitionend', sidebarTransitionEndHandler);
+      }
+      pageMain.style.transform = '';
+      pageMain.style.clipPath = '';
+      pageMain.style.willChange = '';
     }
     sidebarTransitionMainEl = null;
     sidebarTransitionEndHandler = null;
-    document.body.classList.remove('is-sidebar-transitioning');
+    document.body.classList.remove('is-sidebar-transitioning', 'is-sidebar-flip-animating');
     if (sidebarMotionHandle) {
       sidebarMotionHandle.end();
       sidebarMotionHandle = null;
@@ -467,7 +478,7 @@
     }
   }
 
-  function beginSidebarTransition() {
+  function beginSidebarTransition(useFlip = false) {
     if (sidebarTransitionTimer !== null) {
       clearTimeout(sidebarTransitionTimer);
       sidebarTransitionTimer = null;
@@ -475,14 +486,18 @@
     document.body.classList.add('is-sidebar-transitioning');
     if (!sidebarMotionHandle) {
       if (window.MotionCoordinator) {
-        sidebarMotionHandle = window.MotionCoordinator.begin('sidebar', { maskMode: 'coalesce', pauseDecor: true });
+        sidebarMotionHandle = window.MotionCoordinator.begin('sidebar', {
+          maskMode: useFlip ? 'defer' : 'coalesce',
+          pauseDecor: true,
+          timeoutMs: 560
+        });
       } else {
-        window.DynamicMaskSystem?.setMotionMode?.('coalesce');
+        window.DynamicMaskSystem?.setMotionMode?.(useFlip ? 'defer' : 'coalesce');
       }
     }
 
     const pageMain = document.getElementById('page-main');
-    if (pageMain && !sidebarTransitionEndHandler) {
+    if (!useFlip && pageMain && !sidebarTransitionEndHandler) {
       sidebarTransitionMainEl = pageMain;
       sidebarTransitionEndHandler = (e) => {
         if (e.target === pageMain && (e.propertyName === 'margin-left' || e.propertyName === 'width')) {
@@ -492,7 +507,7 @@
       pageMain.addEventListener('transitionend', sidebarTransitionEndHandler);
     }
 
-    // Failsafe matches the 460ms CSS transition + small buffer; guarantees state never locks
+    // Failsafe matches the 460ms animation + small buffer; guarantees state never locks
     sidebarTransitionTimer = setTimeout(endSidebarTransition, 520);
   }
 
@@ -512,8 +527,76 @@
     const currentlyOpen = document.body.classList.contains('sidebar-open');
     burger.checked = expand;
 
+    const pageMain = document.getElementById('page-main');
+    const reduced = Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches);
+    const canFlip = Boolean(
+      currentlyOpen !== expand &&
+      !reduced &&
+      pageMain &&
+      typeof pageMain.getBoundingClientRect === 'function' &&
+      typeof pageMain.animate === 'function'
+    );
+
+    if (canFlip) {
+      // 1. Measure current visual edge (works seamlessly even mid-reversal!)
+      const firstRect = pageMain.getBoundingClientRect();
+      if (sidebarWorkspaceAnim) {
+        try { sidebarWorkspaceAnim.cancel(); } catch (_) {}
+        sidebarWorkspaceAnim = null;
+      }
+      pageMain.style.transform = '';
+      pageMain.style.clipPath = '';
+
+      // 2. Commit final layout ONCE (zero per-frame width/margin reflow!)
+      document.body.classList.add('is-sidebar-flip-animating');
+      if (expand) {
+        document.body.classList.add('sidebar-open');
+        sidebar.style.width = '260px';
+        sidebar.classList.add('open');
+      } else {
+        document.body.classList.remove('sidebar-open');
+        sidebar.style.width = '60px';
+        sidebar.classList.remove('open');
+      }
+
+      const lastRect = pageMain.getBoundingClientRect();
+      const dx = Math.round((firstRect.left - lastRect.left) * 100) / 100;
+
+      if (Math.abs(dx) > 0.5) {
+        sidebarTransitionMainEl = pageMain;
+        beginSidebarTransition(true);
+        pageMain.style.willChange = 'transform';
+
+        const frames = dx < 0
+          ? [
+              { transform: `translate3d(${dx}px, 0, 0)` },
+              { transform: 'translate3d(0, 0, 0)' }
+            ]
+          : [
+              { transform: `translate3d(${dx}px, 0, 0)`, clipPath: `inset(0 ${dx}px 0 0 round var(--radius-xl, 28px))` },
+              { transform: 'translate3d(0, 0, 0)', clipPath: 'inset(0 0px 0 0 round var(--radius-xl, 28px))' }
+            ];
+
+        const anim = pageMain.animate(frames, {
+          duration: 460,
+          easing: 'cubic-bezier(0.16, 1, 0.3, 1)',
+          fill: 'none'
+        });
+        sidebarWorkspaceAnim = anim;
+        anim.finished?.then(() => {
+          if (sidebarWorkspaceAnim === anim) {
+            endSidebarTransition();
+          }
+        }, () => {});
+        return;
+      } else {
+        document.body.classList.remove('is-sidebar-flip-animating');
+        return;
+      }
+    }
+
     if (currentlyOpen !== expand) {
-      beginSidebarTransition();
+      beginSidebarTransition(false);
     }
 
     if (expand) {

@@ -4,22 +4,41 @@
   const stack = [];
   let observer = null;
   let originalOverflow = '';
+  let didLockBodyOverflow = false;
   const inertBefore = new Map();
   const popovers = new Set();
+  const NON_INTERACTIVE_TAGS = new Set(['SCRIPT', 'STYLE', 'LINK', 'META', 'TEMPLATE', 'NOSCRIPT']);
+  const DECORATIVE_IDS = new Set(['transition-layer', 'black-mask-top', 'black-mask-bottom', 'BG']);
+  function shouldSkipInert(node) {
+    if (!node) return true;
+    const tag = String(node.tagName || '').toUpperCase();
+    return NON_INTERACTIVE_TAGS.has(tag) || Boolean(node.id && DECORATIVE_IDS.has(node.id));
+  }
   function syncInert() {
     const top = stack[stack.length - 1];
     if (!top) return;
     for (const node of document.body.children) {
-      if (!inertBefore.has(node)) inertBefore.set(node, node.inert);
-      node.inert = node !== top.overlay;
+      if (shouldSkipInert(node)) continue;
+      if (!inertBefore.has(node)) inertBefore.set(node, Boolean(node.inert));
+      const nextInert = node !== top.overlay;
+      if (Boolean(node.inert) !== nextInert) node.inert = nextInert;
     }
   }
   function acquire({ overlay, panel, initialFocus, returnFocus, onEscape }) {
     if (!stack.length) for (const entry of [...popovers]) entry.dismiss('modal');
     const lease = { overlay, panel, initialFocus, returnFocus, onEscape };
     if (!stack.length) {
-      originalOverflow = document.body.style.overflow;
-      document.body.style.overflow = 'hidden';
+      const isDashboardFixed = Boolean(document.body.classList?.contains?.('dashboard-layout'));
+      const computedOverflow = isDashboardFixed && typeof root.getComputedStyle === 'function'
+        ? root.getComputedStyle(document.body)?.overflow
+        : '';
+      if (!isDashboardFixed || computedOverflow !== 'hidden') {
+        originalOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        didLockBodyOverflow = true;
+      } else {
+        didLockBodyOverflow = false;
+      }
       observer = new MutationObserver(syncInert);
       observer.observe(document.body, { childList: true });
       document.addEventListener('keydown', onKey, true);
@@ -40,9 +59,14 @@
           observer.disconnect(); observer = null;
           document.removeEventListener('keydown', onKey, true);
           document.removeEventListener('focusin', onFocus, true);
-          for (const [node, inert] of inertBefore) node.inert = inert;
+          for (const [node, inert] of inertBefore) {
+            if (Boolean(node.inert) !== Boolean(inert)) node.inert = inert;
+          }
           inertBefore.clear();
-          document.body.style.overflow = originalOverflow;
+          if (didLockBodyOverflow) {
+            document.body.style.overflow = originalOverflow;
+            didLockBodyOverflow = false;
+          }
         }
         if (!restoreFocus || !wasTop) return;
         const previous = stack[stack.length - 1];

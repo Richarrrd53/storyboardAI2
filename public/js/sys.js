@@ -6,116 +6,371 @@ const ModalAnimation = {
     EASING_BACKDROP_LEAVE: 'cubic-bezier(.8,0,.6,1)',
     EASING_CARD_LEAVE: 'cubic-bezier(.31, .01, .66, -0.59)',
     DURATION: 400,
+    // Configurable scrim blur policy ('none' | 'blur(10px)' | 'blur(20px)' | 'progressive:20px')
+    scrimBlur: 'none',
+
+    ensureScrim(overlay, panel) {
+        if (!overlay) return null;
+        let scrim = overlay.querySelector?.('.modal-scrim, .sb-dialog-blur, .project-tags-modal-backdrop') || null;
+        if (!scrim && typeof document !== 'undefined' && typeof document.createElement === 'function' && typeof overlay.insertBefore === 'function') {
+            scrim = document.createElement('div');
+            scrim.className = 'modal-scrim';
+            scrim.setAttribute('aria-hidden', 'true');
+            if (panel && panel.parentNode === overlay) {
+                overlay.insertBefore(scrim, panel);
+            } else {
+                overlay.insertBefore(scrim, overlay.firstChild || null);
+            }
+        }
+        return scrim;
+    },
+
+    _releaseMotion(session) {
+        if (!session) return;
+        if (session.motionHandle) {
+            try { session.motionHandle.end(); } catch (_) {}
+            session.motionHandle = null;
+        } else if (session.usedMaskFallback && typeof window !== 'undefined') {
+            window.DynamicMaskSystem?.setMotionMode?.('normal');
+            session.usedMaskFallback = false;
+        }
+    },
+
+    _acquireMotion(session, duration) {
+        if (typeof window === 'undefined') return;
+        if (window.MotionCoordinator && typeof window.MotionCoordinator.begin === 'function') {
+            session.motionHandle = window.MotionCoordinator.begin('dialog', {
+                maskMode: 'defer',
+                pauseDecor: true,
+                timeoutMs: Math.max(200, duration + 180)
+            });
+        } else {
+            window.DynamicMaskSystem?.setMotionMode?.('defer');
+            session.usedMaskFallback = true;
+        }
+    },
+
+    _readOpacity(el, fallback) {
+        if (!el) return fallback;
+        try {
+            if (typeof window !== 'undefined' && typeof window.getComputedStyle === 'function') {
+                const v = parseFloat(window.getComputedStyle(el).opacity);
+                if (Number.isFinite(v)) return v;
+            }
+        } catch (_) {}
+        const inline = parseFloat(el.style?.opacity);
+        return Number.isFinite(inline) ? inline : fallback;
+    },
+
+    _readScale(el, fallback) {
+        if (!el) return fallback;
+        try {
+            if (typeof window !== 'undefined' && typeof window.getComputedStyle === 'function') {
+                const s = window.getComputedStyle(el).scale;
+                if (s && s !== 'none') return s;
+            }
+        } catch (_) {}
+        if (el.style?.scale && el.style.scale !== 'none') return String(el.style.scale);
+        return fallback;
+    },
+
+    _applyScrimBlur(scrim, blurMode) {
+        if (!scrim || !scrim.style) return;
+        const val = (!blurMode || blurMode === 'none' || String(blurMode).startsWith('progressive:')) ? 'none' : blurMode;
+        scrim.style.backdropFilter = val;
+        if (scrim.style.webkitBackdropFilter !== undefined) {
+            scrim.style.webkitBackdropFilter = val;
+        }
+    },
 
     cancel(overlay) {
-        const timers = this.sessions.get(overlay) || [];
-        timers.forEach(clearTimeout);
+        const session = this.sessions.get(overlay);
+        if (!session) return;
+        session.state = 'cancelled';
+        session.timers.forEach(clearTimeout);
+        session.timers.length = 0;
+        session.animations.forEach(anim => { try { anim.cancel(); } catch (_) {} });
+        session.animations.length = 0;
+        if (session.scrim?.style) session.scrim.style.willChange = '';
+        if (session.panel?.style) session.panel.style.willChange = '';
+        this._releaseMotion(session);
         this.sessions.delete(overlay);
     },
+
     schedule(overlay, callback, delay) {
-        const timers = this.sessions.get(overlay) || [];
-        timers.push(setTimeout(callback, delay));
-        this.sessions.set(overlay, timers);
+        let session = this.sessions.get(overlay);
+        if (!session) {
+            session = { state: 'idle', timers: [], animations: [], motionHandle: null, usedMaskFallback: false, scrim: null, panel: null };
+            this.sessions.set(overlay, session);
+        }
+        const id = setTimeout(callback, delay);
+        session.timers.push(id);
+        return id;
     },
 
     open(overlay, panel, options = {}) {
         if (!overlay) return;
+        const prevSession = this.sessions.get(overlay);
+        const scrim = this.ensureScrim(overlay, panel);
+        const fromOpacity = prevSession ? this._readOpacity(scrim, 0) : 0;
+        const fromScale = prevSession ? this._readScale(panel, '0') : '0';
         this.cancel(overlay);
+
         const reduced = !options.legacyMotion && typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
         const duration = reduced ? 0 : options.duration || this.DURATION;
-        const backdropBg = options.backdropBg || 'rgba(15, 23, 42, 0.45)';
-        const backdropTarget = overlay.querySelector?.('.sb-dialog-blur') || overlay;
+        const backdropBg = options.backdropBg || 'var(--dialog-backdrop-bg, rgba(15, 23, 42, 0.45))';
+        const blurMode = options.scrimBlur !== undefined ? options.scrimBlur : this.scrimBlur;
+        const enterEase = options.legacyMotion ? this.EASING_CARD_ENTER : this.EASING_DIALOG_ENTER;
 
+        const session = {
+            state: 'opening',
+            timers: [],
+            animations: [],
+            motionHandle: null,
+            usedMaskFallback: false,
+            scrim,
+            panel
+        };
+        this.sessions.set(overlay, session);
+
+        // Overlay root ALWAYS stays transparent and opacity: 1 so Panel never inherits backdrop opacity.
         overlay.style.display = 'flex';
-        overlay.style.pointerEvents = 'none';
-        overlay.style.transition = 'none';
-        backdropTarget.style.transition = 'none';
-        backdropTarget.style.backdropFilter = 'none';
-        if (backdropTarget.style.webkitBackdropFilter !== undefined) {
-            backdropTarget.style.webkitBackdropFilter = 'none';
-        }
-        backdropTarget.style.background = 'transparent';
+        overlay.style.pointerEvents = 'auto';
+        overlay.style.background = 'transparent';
         overlay.style.opacity = '1';
-        if (backdropTarget !== overlay) {
-            backdropTarget.style.opacity = '1';
+        overlay.style.transition = 'none';
+        if (overlay.classList && typeof overlay.classList.add === 'function') {
+            overlay.classList.add('active');
+        }
+
+        if (scrim) {
+            scrim.style.transition = 'none';
+            scrim.style.background = backdropBg;
+            this._applyScrimBlur(scrim, blurMode);
+            scrim.style.opacity = reduced ? '1' : String(fromOpacity);
         }
 
         if (panel) {
             panel.style.transition = 'none';
-            panel.style.scale = '0';
+            panel.style.pointerEvents = 'auto';
             panel.style.opacity = '1';
+            panel.style.scale = reduced ? '1' : fromScale;
         }
 
-        // Single reflow commit for initial scale/background before enabling transitions.
-        void (panel || overlay).offsetWidth;
+        if (reduced) {
+            session.state = 'open';
+            if (typeof options.onOpened === 'function') options.onOpened();
+            return;
+        }
 
-        backdropTarget.style.transition = `background-color ${duration}ms ${this.EASING_BACKDROP}`;
+        this._acquireMotion(session, duration);
+
+        const canWaapi = Boolean(
+            (scrim && typeof scrim.animate === 'function') ||
+            (panel && typeof panel.animate === 'function')
+        );
+
+        if (canWaapi) {
+            if (scrim?.style) scrim.style.willChange = 'opacity';
+            if (panel?.style) panel.style.willChange = 'scale';
+
+            if (scrim && typeof scrim.animate === 'function') {
+                const isProgressive = typeof blurMode === 'string' && blurMode.startsWith('progressive:');
+                const targetBlur = isProgressive ? blurMode.slice('progressive:'.length) : null;
+                const frames = isProgressive
+                    ? [{ opacity: fromOpacity, backdropFilter: 'blur(0px)' }, { opacity: 1, backdropFilter: `blur(${targetBlur})` }]
+                    : [{ opacity: fromOpacity }, { opacity: 1 }];
+                session.animations.push(scrim.animate(frames, {
+                    duration,
+                    easing: this.EASING_BACKDROP,
+                    fill: 'both'
+                }));
+            }
+            if (panel && typeof panel.animate === 'function') {
+                session.animations.push(panel.animate(
+                    [{ scale: fromScale }, { scale: '1' }],
+                    { duration, easing: enterEase, fill: 'both' }
+                ));
+            }
+
+            let settled = false;
+            const finishOpen = () => {
+                if (settled || session.state !== 'opening') return;
+                settled = true;
+                session.state = 'open';
+                if (scrim?.style) {
+                    scrim.style.opacity = '1';
+                    if (typeof blurMode === 'string' && blurMode.startsWith('progressive:')) {
+                        const blurPx = `blur(${blurMode.slice('progressive:'.length)})`;
+                        scrim.style.backdropFilter = blurPx;
+                        if (scrim.style.webkitBackdropFilter !== undefined) scrim.style.webkitBackdropFilter = blurPx;
+                    }
+                    scrim.style.willChange = '';
+                }
+                if (panel?.style) {
+                    panel.style.scale = '1';
+                    panel.style.opacity = '1';
+                    panel.style.willChange = '';
+                }
+                session.animations.splice(0).forEach(a => { try { a.cancel(); } catch (_) {} });
+                this._releaseMotion(session);
+                if (typeof options.onOpened === 'function') options.onOpened();
+            };
+
+            const finishedPromises = session.animations.map(a => a.finished).filter(Boolean);
+            if (finishedPromises.length) {
+                Promise.allSettled(finishedPromises).then(finishOpen);
+            }
+            this.schedule(overlay, finishOpen, duration + 30);
+            return;
+        }
+
+        // Mock / non-WAAPI environment fallback (uses CSS opacity on scrim + scale on panel, no offsetWidth)
+        const target = scrim || overlay;
+        if (scrim) {
+            scrim.style.transition = `opacity ${duration}ms ${this.EASING_BACKDROP}`;
+        } else {
+            target.style.background = 'transparent';
+            target.style.backdropFilter = 'none';
+            target.style.transition = `background-color ${duration}ms ${this.EASING_BACKDROP}`;
+        }
         if (panel) {
-            const enterEase = options.legacyMotion ? this.EASING_CARD_ENTER : this.EASING_DIALOG_ENTER;
             panel.style.transition = `scale ${duration}ms ${enterEase}`;
         }
-        if (!reduced && typeof window !== 'undefined') {
-            window.DynamicMaskSystem?.setMotionMode?.('defer');
-        }
-        const reveal = () => {
-            if (overlay.classList && typeof overlay.classList.add === 'function') {
-                overlay.classList.add('active');
-            }
-            overlay.style.pointerEvents = 'auto';
-            backdropTarget.style.background = backdropBg;
-            if (panel) {
-                panel.style.scale = '1';
-            }
-            if (!reduced && typeof window !== 'undefined') {
-                this.schedule(overlay, () => {
-                    window.DynamicMaskSystem?.setMotionMode?.('normal');
-                }, duration + 30);
-            }
+        this.schedule(overlay, () => {
+            if (session.state !== 'opening') return;
+            if (scrim) scrim.style.opacity = '1';
+            else target.style.background = backdropBg;
+            if (panel) panel.style.scale = '1';
+            this.schedule(overlay, () => {
+                if (session.state !== 'opening') return;
+                session.state = 'open';
+                this._releaseMotion(session);
+            }, duration + 30);
             if (typeof options.onOpened === 'function') options.onOpened();
-        };
-        if (reduced) reveal();
-        else this.schedule(overlay, reveal, 10);
+        }, 10);
     },
 
     close(overlay, panel, options = {}) {
         if (!overlay) return;
+        const prevSession = this.sessions.get(overlay);
+        const scrim = prevSession?.scrim || this.ensureScrim(overlay, panel);
+        const fromOpacity = this._readOpacity(scrim, 1);
+        const fromScale = this._readScale(panel, '1');
         this.cancel(overlay);
+
         const reduced = !options.legacyMotion && typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
         const duration = reduced ? 0 : options.duration || this.DURATION;
         const onComplete = typeof options === 'function' ? options : (options.onComplete || null);
-        const backdropTarget = overlay.querySelector?.('.sb-dialog-blur') || overlay;
+        const backdropEase = options.legacyMotion ? this.EASING_BACKDROP : this.EASING_BACKDROP_LEAVE;
+        const blurMode = options.scrimBlur !== undefined ? options.scrimBlur : this.scrimBlur;
 
-        overlay.style.pointerEvents = 'none';
+        const session = {
+            state: 'closing',
+            timers: [],
+            animations: [],
+            motionHandle: null,
+            usedMaskFallback: false,
+            scrim,
+            panel
+        };
+        this.sessions.set(overlay, session);
 
+        // Keep overlay blocking background clicks during exit (prevent click-through) while disabling panel interactions.
+        overlay.style.pointerEvents = 'auto';
+        if (panel?.style) panel.style.pointerEvents = 'none';
+
+        const finishClose = () => {
+            if (session.state !== 'closing') return;
+            session.state = 'disposed';
+            session.timers.forEach(clearTimeout);
+            session.timers.length = 0;
+            session.animations.splice(0).forEach(a => { try { a.cancel(); } catch (_) {} });
+            if (scrim?.style) {
+                scrim.style.opacity = '0';
+                scrim.style.willChange = '';
+            }
+            if (panel?.style) {
+                panel.style.scale = '0';
+                panel.style.pointerEvents = '';
+                panel.style.willChange = '';
+            }
+            overlay.style.pointerEvents = 'none';
+            overlay.style.display = 'none';
+            if (overlay.classList && typeof overlay.classList.remove === 'function') {
+                overlay.classList.remove('active');
+            }
+            this._releaseMotion(session);
+            this.sessions.delete(overlay);
+            if (typeof onComplete === 'function') {
+                onComplete();
+            }
+        };
+
+        if (reduced) {
+            finishClose();
+            return;
+        }
+
+        this._acquireMotion(session, duration);
+
+        const canWaapi = Boolean(
+            (scrim && typeof scrim.animate === 'function') ||
+            (panel && typeof panel.animate === 'function')
+        );
+
+        if (canWaapi) {
+            if (scrim?.style) scrim.style.willChange = 'opacity';
+            if (panel?.style) panel.style.willChange = 'scale';
+
+            if (scrim && typeof scrim.animate === 'function') {
+                const isProgressive = typeof blurMode === 'string' && blurMode.startsWith('progressive:');
+                const targetBlur = isProgressive ? blurMode.slice('progressive:'.length) : null;
+                const frames = isProgressive
+                    ? [{ opacity: fromOpacity, backdropFilter: `blur(${targetBlur})` }, { opacity: 0, backdropFilter: 'blur(0px)' }]
+                    : [{ opacity: fromOpacity }, { opacity: 0 }];
+                session.animations.push(scrim.animate(frames, {
+                    duration,
+                    easing: backdropEase,
+                    fill: 'both'
+                }));
+            }
+            if (panel && typeof panel.animate === 'function') {
+                session.animations.push(panel.animate(
+                    [{ scale: fromScale }, { scale: '0' }],
+                    { duration, easing: this.EASING_CARD_LEAVE, fill: 'both' }
+                ));
+            }
+
+            const finishedPromises = session.animations.map(a => a.finished).filter(Boolean);
+            if (finishedPromises.length) {
+                Promise.allSettled(finishedPromises).then(finishClose);
+            }
+            this.schedule(overlay, finishClose, duration + 30);
+            return;
+        }
+
+        // Mock / non-WAAPI environment fallback
         if (panel) {
             panel.style.transition = `scale ${duration}ms ${this.EASING_CARD_LEAVE}`;
         }
-        const backdropEase = options.legacyMotion ? this.EASING_BACKDROP : this.EASING_BACKDROP_LEAVE;
-        backdropTarget.style.transition = `background-color ${duration}ms ${backdropEase}`;
-        if (!reduced && typeof window !== 'undefined') {
-            window.DynamicMaskSystem?.setMotionMode?.('defer');
+        if (scrim) {
+            scrim.style.transition = `opacity ${duration}ms ${backdropEase}`;
+        } else {
+            overlay.style.transition = `background-color ${duration}ms ${backdropEase}`;
         }
 
         this.schedule(overlay, () => {
-            if (panel) {
-                panel.style.scale = '0';
-            }
-            backdropTarget.style.background = 'transparent';
+            if (session.state !== 'closing') return;
+            if (panel) panel.style.scale = '0';
+            if (scrim) scrim.style.opacity = '0';
+            else overlay.style.background = 'transparent';
             if (overlay.classList && typeof overlay.classList.remove === 'function') {
                 overlay.classList.remove('active');
             }
         }, 10);
 
-        this.schedule(overlay, () => {
-            overlay.style.display = 'none';
-            this.sessions.delete(overlay);
-            if (typeof window !== 'undefined') {
-                window.DynamicMaskSystem?.setMotionMode?.('normal');
-            }
-            if (typeof onComplete === 'function') {
-                onComplete();
-            }
-        }, duration + 50);
+        this.schedule(overlay, finishClose, duration + 50);
     }
 };
 
@@ -169,6 +424,11 @@ function legacyDeleteConfirm(message, description, type = 'default', btnText, pr
         const settle = value => { if (!completed) { completed = true; resolve(value); } };
         const bg = document.createElement("div");
         bg.classList.add("sys-bg");
+
+        const scrimEl = document.createElement("div");
+        scrimEl.classList.add("modal-scrim");
+        scrimEl.setAttribute('aria-hidden', 'true');
+        bg.appendChild(scrimEl);
         
         const windowEl = document.createElement("div");
         windowEl.classList.add("sys-window");

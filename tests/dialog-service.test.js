@@ -100,13 +100,12 @@ test('confirm returns explicit false, defaults description safely and resolves o
   assert.equal(e.panel(), null);
 });
 
-test('central dialogs match delete scale signature with pure semi-transparent backdrop fade (no blur or opacity)', async () => {
+test('central dialogs match delete scale signature with independent scrim opacity fade', async () => {
   const e = environment(false, false); const result = e.service.confirm({ title: 'motion' });
   const blurLayer = e.document.querySelector('.sb-dialog-blur');
-  assert.equal(blurLayer.style.backdropFilter, undefined);
-  assert.equal(e.animations[0].frames[0].backgroundColor, 'transparent');
-  assert.equal(e.animations[0].frames[1].backgroundColor, 'var(--dialog-backdrop-bg)');
-  assert.ok(e.animations[0].frames.every(frame => !('opacity' in frame) && !('backdropFilter' in frame)));
+  assert.equal(blurLayer.style.background, 'var(--dialog-backdrop-bg)');
+  assert.equal(e.animations[0].frames[0].opacity, 0);
+  assert.equal(e.animations[0].frames[1].opacity, 1);
   assert.equal(e.animations[1].frames[0].scale, '0');
   assert.equal(e.animations[1].options.easing, 'cubic-bezier(.34,1.59,.69,.99)');
   assert.equal(e.animations[1].options.duration, 400);
@@ -114,8 +113,7 @@ test('central dialogs match delete scale signature with pure semi-transparent ba
   const exit = e.animations.slice(-2);
   assert.equal(exit[1].frames[1].scale, '0');
   assert.equal(exit[1].options.easing, 'cubic-bezier(.31,.01,.66,-.59)');
-  assert.equal(exit[0].frames[1].backgroundColor, 'transparent');
-  assert.ok(exit[0].frames.every(frame => !('opacity' in frame) && !('backdropFilter' in frame)));
+  assert.equal(exit[0].frames[1].opacity, 0);
   e.advance(450); assert.equal((await result).confirmed, false);
 });
 
@@ -226,23 +224,33 @@ test('all central dialog kinds exit from scale 1 to 0 with the approved anticipa
   const [backdrop,panel]=e.animations.slice(-2);
   assert.equal(panel.frames[0].scale,'1');assert.equal(panel.frames[1].scale,'0');
   assert.equal(panel.options.easing,'cubic-bezier(.31,.01,.66,-.59)');
-  assert.equal(backdrop.frames[1].backgroundColor,'transparent');
-  assert.ok(backdrop.frames.every(frame=>!('opacity' in frame) && !('backdropFilter' in frame)));
+  assert.equal(backdrop.frames[1].opacity,0);
   e.advance(450);await done;
  }
 });
 
-// Exercise the actual sys.js motion owner, not just animation descriptors in the fallback.
-test('rename, logout, restore and alert use the tag-editor scale lifecycle until exit completes',async()=>{
+// Exercise the actual sys.js motion owner (WAAPI independent scrim opacity + panel scale).
+test('rename, logout, restore and alert use the shared 3-layer WAAPI scale lifecycle until exit completes',async()=>{
  for(const [kind,title] of [['prompt','重新命名'],['confirm','登出'],['confirm','還原'],['alert','提示']]) {
   const e=environment();const done=e.service[kind]({title});const panel=e.panel();
-  assert.equal(panel.style.scale,'0');e.advance(410);assert.equal(panel.style.scale,'1');
-  assert.equal(e.animations.length,0);
+  const overlay=e.document.querySelector('.sb-dialog-overlay');
+  assert.equal(overlay.style.opacity,'1');
+  assert.equal(overlay.style.background,'transparent');
+  assert.equal(panel.style.opacity,'1');
+  assert.equal(panel.style.scale,'0');
+  assert.equal(e.animations.length,2);
+  assert.equal(e.animations[0].frames[0].opacity,0);
+  assert.equal(e.animations[0].frames[1].opacity,1);
+  assert.equal(e.animations[1].frames[0].scale,'0');
+  assert.equal(e.animations[1].frames[1].scale,'1');
+  e.advance(440);assert.equal(panel.style.scale,'1');
   if(kind==='alert'){e.submit();await e.tick();}else e.click('.sb-dialog-cancel');
-  assert.match(panel.style.transition,/scale 400ms cubic-bezier\(\.31, \.01, \.66, -0\.59\)/);
-  e.advance(10);assert.equal(panel.style.scale,'0');
-  assert.equal(e.document.querySelector('.sb-dialog-overlay').style.opacity,'1');
-  e.advance(399);assert.equal(e.panel(),panel);e.advance(41);await done;assert.equal(e.panel(),null);
+  const exit=e.animations.slice(-2);
+  assert.equal(exit[0].frames[1].opacity,0);
+  assert.equal(exit[1].frames[1].scale,'0');
+  assert.equal(exit[1].options.easing,'cubic-bezier(.31, .01, .66, -0.59)');
+  assert.equal(overlay.style.opacity,'1');
+  e.advance(400);assert.equal(e.panel(),panel);e.advance(40);await done;assert.equal(e.panel(),null);
  }
 });
 
@@ -272,15 +280,16 @@ test('backdrop dismisses central dialogs but clicks inside do not', async () => 
 });
 
 
-test('shared modal commits its hidden entry state before the delayed reveal', async () => {
+test('shared modal establishes hidden entry state at frame 0 and commits final style after WAAPI completes', async () => {
   const e = environment();
   const result = e.service.confirm({ title: 'entry' });
   const panel = e.panel();
+  const scrim = e.document.querySelector('.sb-dialog-blur');
   assert.equal(panel.style.scale, '0');
-  e.advance(9);
-  assert.equal(panel.style.scale, '0');
-  e.advance(1);
+  assert.equal(scrim.style.opacity, '0');
+  e.advance(440);
   assert.equal(panel.style.scale, '1');
+  assert.equal(scrim.style.opacity, '1');
   e.click('.sb-dialog-cancel');
   e.advance(450);
   assert.equal((await result).confirmed, false);

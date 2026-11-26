@@ -145,3 +145,78 @@ test('MotionCoordinator: deferDuringMotion coalesces by key and flushes after mo
   await new Promise(r => setTimeout(r, 40));
   assert.deepEqual(runs, ['latest'], 'Only latest coalesced task should run after motion ends');
 });
+
+test('ModalAnimation: 3-layer scrim separation and MotionCoordinator handle lifecycle', async () => {
+  const { ModalAnimation } = require('../public/js/sys');
+  const prevWin = global.window;
+  const prevDoc = global.document;
+  const anims = [];
+  const makeEl = (tag) => {
+    const children = [];
+    const attrs = {};
+    const el = {
+      tagName: tag.toUpperCase(),
+      className: '',
+      style: {},
+      children,
+      parentNode: null,
+      get firstChild() { return children[0] || null; },
+      setAttribute(k, v) { attrs[k] = v; },
+      getAttribute(k) { return attrs[k] ?? null; },
+      classList: { add() {}, remove() {}, contains() { return false; } },
+      querySelector(sel) {
+        if (sel.includes('.modal-scrim')) return children.find(c => c.className.includes('modal-scrim')) || null;
+        return null;
+      },
+      insertBefore(node, ref) {
+        node.parentNode = this;
+        const idx = ref ? children.indexOf(ref) : -1;
+        if (idx >= 0) children.splice(idx, 0, node);
+        else children.push(node);
+        return node;
+      },
+      animate(frames, opts) {
+        const a = { frames, opts, cancelled: false, finished: Promise.resolve(), cancel() { this.cancelled = true; } };
+        anims.push(a);
+        return a;
+      }
+    };
+    return el;
+  };
+  global.document = { createElement: makeEl };
+  global.window = { MotionCoordinator, matchMedia: () => ({ matches: false }) };
+
+  try {
+    const overlay = makeEl('div');
+    const panel = makeEl('section');
+    overlay.insertBefore(panel, null);
+
+    ModalAnimation.open(overlay, panel, { duration: 40 });
+    const scrim = overlay.querySelector('.modal-scrim');
+    assert.ok(scrim, 'ensureScrim must create independent sibling scrim');
+    assert.equal(overlay.children[0], scrim, 'Scrim must sit before panel');
+    assert.equal(overlay.style.opacity, '1', 'Overlay root opacity must remain 1');
+    assert.equal(overlay.style.background, 'transparent', 'Overlay root background must stay transparent');
+    assert.equal(panel.style.opacity, '1', 'Panel opacity must remain 1');
+    assert.equal(MotionCoordinator.isActive('dialog'), true, 'MotionCoordinator dialog handle must be active during open');
+    assert.equal(anims[0].frames[0].opacity, 0);
+    assert.equal(anims[0].frames[1].opacity, 1);
+    assert.equal(anims[1].frames[0].scale, '0');
+    assert.equal(anims[1].frames[1].scale, '1');
+
+    await new Promise(r => setTimeout(r, 80));
+    assert.equal(MotionCoordinator.isActive('dialog'), false, 'MotionCoordinator handle must release after open finishes');
+    assert.equal(scrim.style.opacity, '1');
+    assert.equal(panel.style.scale, '1');
+
+    ModalAnimation.close(overlay, panel, { duration: 40 });
+    assert.equal(overlay.style.pointerEvents, 'auto', 'Overlay blocks click-through during close');
+    assert.equal(panel.style.pointerEvents, 'none', 'Panel disables interactions during close');
+    await new Promise(r => setTimeout(r, 90));
+    assert.equal(overlay.style.display, 'none');
+    assert.equal(MotionCoordinator.isActive('dialog'), false, 'MotionCoordinator handle must release after close finishes');
+  } finally {
+    global.window = prevWin;
+    global.document = prevDoc;
+  }
+});
