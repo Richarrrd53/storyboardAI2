@@ -267,12 +267,27 @@
       }, selectionController);
     }
 
-    // 1. 畫面首載：快取優先 (Stale-While-Revalidate)
+    // 1. 先訂閱 ProjectStore 狀態更新（僅監聽 list/session 範圍）
+    let hasCommittedProjects = false;
+    let unsubscribeStore = null;
+    if (global.ProjectStore && typeof global.ProjectStore.subscribe === 'function') {
+      unsubscribeStore = global.ProjectStore.subscribe((projects, event) => {
+        if (!isMounted) return;
+        if (event && event.scope === 'detail') return;
+        if (event && event.type === 'detail_prefetched') return;
+        if (event && event.changed === false && hasCommittedProjects) return;
+        hasCommittedProjects = true;
+        updateView();
+      }, { scopes: ['list', 'session'], ignorePrefetch: true });
+    }
+
+    // 2. 畫面首載：快取優先 (Stale-While-Revalidate)
     const cached = global.ProjectStore && typeof global.ProjectStore.getProjects === 'function'
       ? global.ProjectStore.getProjects()
       : null;
 
     if (cached) {
+      hasCommittedProjects = true;
       updateView();
       if (global.ProjectStore && typeof global.ProjectStore.fetchProjects === 'function') {
         global.ProjectStore.fetchProjects({ signal, force: false }).catch(() => {});
@@ -281,8 +296,11 @@
       projectsGrid.innerHTML = SKELETON_CARDS_HTML;
       if (global.ProjectStore && typeof global.ProjectStore.fetchProjects === 'function') {
         global.ProjectStore.fetchProjects({ signal, force: false })
-          .then(() => {
-            if (isMounted) updateView();
+          .then((resolved) => {
+            if (isMounted && !hasCommittedProjects && Array.isArray(resolved) && global.ProjectStore.getProjects()) {
+              hasCommittedProjects = true;
+              updateView();
+            }
           })
           .catch(() => {
             if (isMounted && !global.ProjectStore.getProjects()) {
@@ -290,15 +308,6 @@
             }
           });
       }
-    }
-
-    // 2. 訂閱 ProjectStore 狀態更新
-    let unsubscribeStore = null;
-    if (global.ProjectStore && typeof global.ProjectStore.subscribe === 'function') {
-      unsubscribeStore = global.ProjectStore.subscribe((projects, event) => {
-        if (!isMounted) return;
-        updateView();
-      });
     }
 
     // 3. 接入 Dynamic Gradient Mask

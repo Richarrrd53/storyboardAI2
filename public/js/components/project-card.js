@@ -403,8 +403,126 @@
     projectData.set(card,p);return card;
   }
 
+  function getCardSignature(p, options = {}) {
+    if (!p) return '';
+    const variant = options.variant || (options.isCompact ? 'compact' : 'default');
+    const isHistory = Boolean(options.isHistory || p.is_deleted);
+    const shotsCount = p.shotCount || p.shotsCount || (Array.isArray(p.shots) ? p.shots.length : 0);
+    const rawTags = Array.isArray(p.tags) ? p.tags : p.metadata?.tags;
+    const tags = Array.isArray(rawTags)
+      ? Array.from(new Set(rawTags.filter(t => typeof t === 'string').map(t => t.trim()).filter(Boolean)))
+      : [];
+    const timeKey = isHistory ? formatTrashRetentionText(p) : formatRelativeTime(p.updateAt || p.updatedAt || p.createAt);
+    return `${p.id}|${variant}|${isHistory ? 1 : 0}|${p.title || ''}|${normalizeRatio(p.ratio)}|${shotsCount}|${timeKey}|${tags.join(',')}|${p.cover || ''}`;
+  }
+
+  function patchCardElement(card, p, options = {}) {
+    if (!card || !p || typeof card.querySelector !== 'function') return false;
+    const contentEl = card.querySelector('.project-folder-content');
+    if (!contentEl) return false;
+
+    const variant = options.variant || (options.isCompact ? 'compact' : (card.dataset?.variant || 'default'));
+    const isHistory = Boolean(options.isHistory || p.is_deleted);
+    const shotsCount = p.shotCount || p.shotsCount || (Array.isArray(p.shots) ? p.shots.length : 0);
+    const cleanRatio = normalizeRatio(p.ratio);
+    const ratioText = formatRatioText(p.ratio);
+    const titleText = p.title || '未命名分鏡';
+    const timeText = isHistory ? formatTrashRetentionText(p) : formatRelativeTime(p.updateAt || p.updatedAt || p.createAt);
+
+    // 1. Title text & attributes (preserve element identity)
+    const titleEl = contentEl.querySelector('.project-title');
+    if (titleEl) {
+      if (titleEl.textContent !== titleText) titleEl.textContent = titleText;
+      if (titleEl.getAttribute?.('title') !== titleText) titleEl.setAttribute?.('title', titleText);
+      if (titleEl.tagName === 'A') {
+        const nextHref = `/project/${encodeURIComponent(p.id)}`;
+        if (titleEl.getAttribute?.('href') !== nextHref) titleEl.setAttribute?.('href', nextHref);
+      }
+    }
+
+    // 2. Updated / retention time
+    const updatedEl = contentEl.querySelector('.project-updated');
+    if (updatedEl) {
+      if (updatedEl.textContent !== timeText) updatedEl.textContent = timeText;
+      updatedEl.classList?.toggle?.('project-retention-label', isHistory);
+    }
+
+    // 3. Shot count & ratio pills
+    const shotPill = contentEl.querySelector('.project-meta-shot');
+    if (shotPill) {
+      const nextShotText = `${shotsCount} 鏡頭`;
+      if (shotPill.textContent !== nextShotText) shotPill.textContent = nextShotText;
+    }
+    const ratioPill = contentEl.querySelector('.project-meta-ratio');
+    if (ratioPill) {
+      if (ratioPill.textContent !== ratioText) ratioPill.textContent = ratioText;
+    }
+
+    // 4. Tags row (incremental update without touching .project-option-btn)
+    const rawTags = Array.isArray(p.tags) ? p.tags : p.metadata?.tags;
+    const tags = Array.isArray(rawTags)
+      ? Array.from(new Set(rawTags.filter(t => typeof t === 'string').map(t => t.trim()).filter(Boolean)))
+      : [];
+    const displayTags = variant === 'compact' ? tags.slice(0, 2) : tags;
+    const extraCount = variant === 'compact' && tags.length > 2 ? tags.length - 2 : 0;
+    const tagsSig = `${displayTags.join('\u0001')}|${extraCount}`;
+    let tagsRow = contentEl.querySelector('.project-tags-row');
+
+    if (tags.length === 0) {
+      if (tagsRow) tagsRow.remove?.();
+    } else if (!tagsRow || tagsRow.dataset?.tagsSig !== tagsSig) {
+      const doc = card.ownerDocument || (typeof document !== 'undefined' ? document : null);
+      if (doc) {
+        if (!tagsRow) {
+          tagsRow = doc.createElement('div');
+          tagsRow.className = `project-tags-row${variant === 'compact' ? ' project-tags-row-compact' : ''}`;
+          tagsRow.setAttribute?.('aria-label', '專案標籤');
+          const metaEl = contentEl.querySelector('.project-meta');
+          if (metaEl && typeof contentEl.insertBefore === 'function') {
+            contentEl.insertBefore(tagsRow, metaEl);
+          } else {
+            contentEl.appendChild(tagsRow);
+          }
+        }
+        tagsRow.dataset.tagsSig = tagsSig;
+        tagsRow.innerHTML = displayTags.map(t => {
+          const tagEsc = escapeHtml(t);
+          return `<button type="button" class="project-tag-pill" data-tag="${tagEsc}" data-delegated-tag="1" title="標籤：${tagEsc}">#${tagEsc}</button>`;
+        }).join('') + (extraCount > 0 ? `<span class="project-tag-pill project-tag-pill-more">+${extraCount}</span>` : '');
+      }
+    }
+
+    // 5. Secondary preview card (stack indicator for > 1 shots)
+    const stack = card.querySelector('.project-folder-preview-stack');
+    if (stack) {
+      if (stack.dataset) stack.dataset.ratio = cleanRatio;
+      const secondary = stack.querySelector('.project-preview-secondary');
+      const hasSecondary = shotsCount > 1;
+      if (hasSecondary && !secondary) {
+        const doc = card.ownerDocument || (typeof document !== 'undefined' ? document : null);
+        if (doc) {
+          const sec = doc.createElement('div');
+          sec.className = 'project-preview-secondary';
+          sec.setAttribute?.('aria-hidden', 'true');
+          const primary = stack.querySelector('.project-preview-primary');
+          if (primary && typeof stack.insertBefore === 'function') stack.insertBefore(sec, primary);
+          else stack.appendChild(sec);
+        }
+      } else if (!hasSecondary && secondary) {
+        secondary.remove?.();
+      }
+    }
+
+    // 6. Update project data reference (no stale closures!)
+    projectData.set(card, p);
+    global.ProjectCardInteractions?.updateProject?.(card, p);
+    return true;
+  }
+
   const ProjectCard = {
     register:(card, project)=>projectData.set(card,project),
+    getCardSignature,
+    patchCardElement,
     resolveFolderGeometry, captureGeometry, createPreview,
     escapeHtml,
     formatRatioBadge,

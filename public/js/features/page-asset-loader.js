@@ -10,9 +10,130 @@
 (function (root) {
   'use strict';
 
-  // In-memory HTML document cache
+  // In-memory HTML document cache (bounded LRU)
+  const MAX_HTML_CACHE_ENTRIES = 6;
+  const htmlCacheOrder = [];
   if (!root.htmlMemoryCache) {
     root.htmlMemoryCache = {};
+  }
+  const ASSET_VERSION = root.__STORYBOARD_ASSET_VERSION__ || '20261126';
+
+  // Prefetch Queue & Hover Intent state
+  const MAX_PREFETCH_CONCURRENCY = 2;
+  const HOVER_INTENT_MS = 140;
+  let activePrefetches = 0;
+  const prefetchQueue = []; // { key, priority, run, epoch }
+  const prefetchQueuedKeys = new Set();
+  const hoverIntentTimers = new Map(); // intentKey -> { timer, key }
+  const prefetchStats = {
+    queued: 0,
+    executed: 0,
+    cancelled: 0,
+    deduped: 0,
+    deferredByMotion: 0
+  };
+  let motionResumeBound = false;
+
+  function ensureMotionResumeHook() {
+    if (motionResumeBound || !root.MotionCoordinator?.subscribe) return;
+    motionResumeBound = true;
+    root.MotionCoordinator.subscribe((summary) => {
+      if (summary && summary.count === 0 && prefetchQueue.length > 0) {
+        drainPrefetchQueue();
+      }
+    });
+  }
+
+  function drainPrefetchQueue() {
+    ensureMotionResumeHook();
+    if (prefetchQueue.length === 0) return;
+    if (activePrefetches >= MAX_PREFETCH_CONCURRENCY) return;
+    if (root.MotionCoordinator?.isActive?.()) {
+      prefetchStats.deferredByMotion++;
+      return;
+    }
+
+    // Sort by priority (lower number = higher priority)
+    prefetchQueue.sort((a, b) => a.priority - b.priority);
+
+    while (activePrefetches < MAX_PREFETCH_CONCURRENCY && prefetchQueue.length > 0) {
+      if (root.MotionCoordinator?.isActive?.()) {
+        prefetchStats.deferredByMotion++;
+        break;
+      }
+      const task = prefetchQueue.shift();
+      prefetchQueuedKeys.delete(task.key);
+      if (task.epoch !== cacheEpoch) {
+        prefetchStats.cancelled++;
+        continue;
+      }
+      activePrefetches++;
+      prefetchStats.executed++;
+      Promise.resolve()
+        .then(() => task.run())
+        .catch(() => {})
+        .finally(() => {
+          activePrefetches = Math.max(0, activePrefetches - 1);
+          drainPrefetchQueue();
+        });
+    }
+  }
+
+  function enqueuePrefetch(key, run, priority = 3) {
+    if (prefetchQueuedKeys.has(key)) {
+      prefetchStats.deduped++;
+      return;
+    }
+    prefetchQueuedKeys.add(key);
+    prefetchStats.queued++;
+    prefetchQueue.push({ key, priority, run, epoch: cacheEpoch });
+    drainPrefetchQueue();
+  }
+
+  function cancelPrefetchIntent(intentKey) {
+    if (!intentKey) return false;
+    const entry = hoverIntentTimers.get(intentKey);
+    if (!entry) return false;
+    clearTimeout(entry.timer);
+    hoverIntentTimers.delete(intentKey);
+    prefetchStats.cancelled++;
+    // Also remove if still waiting in queue
+    const idx = prefetchQueue.findIndex(t => t.key === entry.key);
+    if (idx !== -1) {
+      prefetchQueue.splice(idx, 1);
+      prefetchQueuedKeys.delete(entry.key);
+    }
+    return true;
+  }
+
+  function pruneParsedDoc(doc) {
+    if (!doc || typeof doc.querySelectorAll !== 'function') return doc;
+    try {
+      // Strip scripts/styles/meta/title from cached template doc to reduce retained DOM nodes
+      doc.querySelectorAll('script, style, link, meta, title').forEach(el => el.remove?.());
+    } catch (_) {}
+    return doc;
+  }
+
+  function storeHtmlCache(url, doc) {
+    root.htmlMemoryCache[url] = doc;
+    const idx = htmlCacheOrder.indexOf(url);
+    if (idx !== -1) htmlCacheOrder.splice(idx, 1);
+    htmlCacheOrder.push(url);
+    while (htmlCacheOrder.length > MAX_HTML_CACHE_ENTRIES) {
+      const oldest = htmlCacheOrder.shift();
+      if (oldest && oldest !== url) {
+        delete root.htmlMemoryCache[oldest];
+      }
+    }
+  }
+
+  function touchHtmlCache(url) {
+    const idx = htmlCacheOrder.indexOf(url);
+    if (idx !== -1) {
+      htmlCacheOrder.splice(idx, 1);
+      htmlCacheOrder.push(url);
+    }
   }
 
   // Purge any stale page caches from localStorage to ensure always up-to-date HTML
@@ -161,16 +282,20 @@
 
   async function fetchPageDoc(url, signal) {
     if (signal?.aborted) throw abortError();
-    if (root.htmlMemoryCache[url]) return root.htmlMemoryCache[url];
+    if (root.htmlMemoryCache[url]) {
+      touchHtmlCache(url);
+      return root.htmlMemoryCache[url];
+    }
     if (!pendingDocs.has(url)) {
       const epoch = cacheEpoch;
       const promise = (async () => {
-        const res = await fetch(url + '?v=' + Date.now(), { signal: cacheController.signal });
+        const sep = url.includes('?') ? '&' : '?';
+        const res = await fetch(`${url}${sep}v=${ASSET_VERSION}`, { signal: cacheController.signal });
         if (!res.ok) throw new Error(`Page request failed: ${res.status}`);
         const html = await res.text();
         if (epoch !== cacheEpoch) throw abortError();
-        const doc = new DOMParser().parseFromString(html, 'text/html');
-        root.htmlMemoryCache[url] = doc;
+        const doc = pruneParsedDoc(new DOMParser().parseFromString(html, 'text/html'));
+        storeHtmlCache(url, doc);
         return doc;
       })();
       pendingDocs.set(url, promise);
@@ -237,8 +362,8 @@
     if (templateDetails.size >= 20) templateDetails.delete(templateDetails.keys().next().value);
     templateDetails.set(id, { item, expires: Date.now() + 60000 }); return item;
   }
-  function fetchProjectDetail(projectId, signal) {
-    return root.ProjectStore.fetchProjectDetail(projectId, { signal });
+  function fetchProjectDetail(projectId, signal, options = {}) {
+    return root.ProjectStore.fetchProjectDetail(projectId, { signal, ...options });
   }
 
   async function prefetchPage(page, opts = {}) {
@@ -252,20 +377,42 @@
     else if (page === 'discovery') htmlUrl = '/html/discovery.html';
     else if (page === 'discovery-settings') htmlUrl = '/html/discovery-settings.html';
 
-    if (htmlUrl) {
+    // Lightweight HTML template prefetch remains immediate (cached after first fetch)
+    if (htmlUrl && !root.htmlMemoryCache[htmlUrl]) {
       fetchPageDoc(htmlUrl).catch(() => {});
     }
 
     const auth = root.spaAuth;
     if (auth && typeof auth.isLoggedIn === 'function' && auth.isLoggedIn()) {
       if (page === 'dashboard' || page === 'projects' || page === 'history') {
-        if (typeof auth.fetchProjects === 'function') {
-          auth.fetchProjects().catch(() => {});
+        if (typeof auth.fetchProjects === 'function' && !root.ProjectStore?.getProjects?.()) {
+          enqueuePrefetch('api:projects', () => auth.fetchProjects(), 2);
         }
       } else if (page === 'template') {
-        fetchTemplateIndex().catch(() => {});
+        if (!Array.isArray(cacheTemplatesList) && !(indexCache?.expires > Date.now())) {
+          enqueuePrefetch('api:templates:index', () => fetchTemplateIndex(), 3);
+        }
       } else if (page === 'project' && opts.id) {
-        fetchProjectDetail(opts.id).catch(() => {});
+        const pid = String(opts.id);
+        // Skip if already cached or in-flight
+        if (root.ProjectStore?.getProjectDetail?.(pid) || root.ProjectStore?.inFlightDetailsPromises?.[pid]) {
+          prefetchStats.deduped++;
+          return;
+        }
+        const taskKey = `api:project:${pid}`;
+        const scheduleDetail = () => {
+          enqueuePrefetch(taskKey, () => fetchProjectDetail(pid, undefined, { prefetch: true, source: 'prefetch' }), 3);
+        };
+        if (opts.intentKey) {
+          cancelPrefetchIntent(opts.intentKey);
+          const timer = setTimeout(() => {
+            hoverIntentTimers.delete(opts.intentKey);
+            scheduleDetail();
+          }, HOVER_INTENT_MS);
+          hoverIntentTimers.set(opts.intentKey, { timer, key: taskKey });
+        } else {
+          scheduleDetail();
+        }
       }
     }
   }
@@ -286,11 +433,29 @@
     cacheController.abort();
     cacheController = new AbortController();
     root.htmlMemoryCache = {};
+    htmlCacheOrder.length = 0;
     cacheTemplatesList = null;
     pendingTemplatesPromise = null;
     indexCache = null; pendingIndex = null; templateDetails.clear();
     pendingDocs.clear();
+    // Cancel pending hover intents and queued prefetches on session reset
+    for (const entry of hoverIntentTimers.values()) {
+      clearTimeout(entry.timer);
+    }
+    hoverIntentTimers.clear();
+    prefetchQueue.length = 0;
+    prefetchQueuedKeys.clear();
     // CSS/JS registrations survive session cache invalidation.
+  }
+
+  function getPrefetchStats() {
+    return {
+      ...prefetchStats,
+      activePrefetches,
+      queuedLength: prefetchQueue.length,
+      pendingHoverIntents: hoverIntentTimers.size,
+      htmlCacheEntries: htmlCacheOrder.length
+    };
   }
 
   const PageAssetLoader = {
@@ -301,6 +466,8 @@
     removePageScripts,
     fetchPageDoc,
     prefetchPage,
+    cancelPrefetchIntent,
+    getPrefetchStats,
     prefetchAuthResources,
     fetchTemplates,
     fetchTemplateIndex, fetchTemplateDetail,

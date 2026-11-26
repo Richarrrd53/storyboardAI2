@@ -18,6 +18,29 @@
 
   // WeakMap 追蹤卡片綁定狀態與清理回呼
   const cardCleanups = new WeakMap();
+  // WeakMap 保存最新專案參考，讓增量更新保留 DOM 與事件綁定且不產生 stale closure
+  const cardProjectRef = new WeakMap();
+
+  function updateProject(card, project) {
+    if (!card || !project) return;
+    cardProjectRef.set(card, project);
+    global.ProjectCard?.register?.(card, project);
+    if (card.dataset && project.id !== undefined) {
+      card.dataset.id = project.id;
+    }
+  }
+
+  function resolveCurrentProject(card, fallbackProject) {
+    const ref = cardProjectRef.get(card) || fallbackProject;
+    if (ref?.id && global.ProjectStore?.getProjects) {
+      const list = global.ProjectStore.getProjects();
+      if (Array.isArray(list)) {
+        const fresh = list.find(item => String(item.id) === String(ref.id));
+        if (fresh) return fresh;
+      }
+    }
+    return ref;
+  }
 
   /**
    * 解除單一卡片的所有互動監聽與定時器
@@ -36,6 +59,7 @@
     }
 
     cardCleanups.delete(card);
+    cardProjectRef.delete(card);
     delete card._pciCleanup;
     delete card.dataset?.interactionsBound;
   }
@@ -76,8 +100,10 @@
 
     // 1. 冪等性防護：若該卡片已綁定過，先清理舊監聽與定時器
     unbind(card);
+    cardProjectRef.set(card, project);
     global.ProjectCard?.register?.(card, project);
 
+    const getCurrentProject = () => resolveCurrentProject(card, project);
     const isDeleted = Boolean(project.is_deleted || opts.isHistoryPage || opts.isHistory);
     const variant = opts.variant || card.dataset?.variant || 'default';
     if (card.dataset) {
@@ -105,15 +131,16 @@
         if (e && typeof e.stopPropagation === 'function') {
           e.stopPropagation();
         }
+        const currentProject = getCurrentProject();
         const selCtrl = getSelectionController();
         if (selCtrl?.isActive?.()) {
-          selCtrl.handleCardClick?.(project.id, e);
+          selCtrl.handleCardClick?.(currentProject.id, e);
           return;
         }
         if (typeof opts.openOptionMorph === 'function') {
-          opts.openOptionMorph(optionBtn, project, card, isDeleted, opts.refreshCallback);
+          opts.openOptionMorph(optionBtn, currentProject, card, isDeleted, opts.refreshCallback);
         } else if (typeof global.openGlobalOptionMorph === 'function') {
-          global.openGlobalOptionMorph(optionBtn, project, card, isDeleted, opts.refreshCallback);
+          global.openGlobalOptionMorph(optionBtn, currentProject, card, isDeleted, opts.refreshCallback);
         }
       };
 
@@ -123,28 +150,30 @@
       });
     }
 
-    // 2.5 標籤點擊事件防冒泡與篩選委派
+    // 2.5 標籤點擊事件防冒泡與篩選委派（支援增量更新標籤 DOM）
+    const handleTagPillClick = (e, tagBtn) => {
+      if (e && typeof e.stopPropagation === 'function') {
+        e.stopPropagation();
+      }
+      const currentProject = getCurrentProject();
+      const selCtrl = getSelectionController();
+      if (selCtrl?.isActive?.()) {
+        selCtrl.handleCardClick?.(currentProject.id, e);
+        return;
+      }
+      const tag = tagBtn.dataset ? tagBtn.dataset.tag : tagBtn.getAttribute?.('data-tag');
+      if (tag) {
+        if (typeof opts.onTagClick === 'function') {
+          opts.onTagClick(tag, currentProject);
+        } else if (typeof global.onProjectCardTagClick === 'function') {
+          global.onProjectCardTagClick(tag, currentProject);
+        }
+      }
+    };
     const tagPills = card.querySelectorAll ? card.querySelectorAll('.project-tag-pill') : [];
     if (tagPills.length > 0) {
       tagPills.forEach(tagBtn => {
-        const onTagClick = (e) => {
-          if (e && typeof e.stopPropagation === 'function') {
-            e.stopPropagation();
-          }
-          const selCtrl = getSelectionController();
-          if (selCtrl?.isActive?.()) {
-            selCtrl.handleCardClick?.(project.id, e);
-            return;
-          }
-          const tag = tagBtn.dataset ? tagBtn.dataset.tag : tagBtn.getAttribute?.('data-tag');
-          if (tag) {
-            if (typeof opts.onTagClick === 'function') {
-              opts.onTagClick(tag, project);
-            } else if (typeof global.onProjectCardTagClick === 'function') {
-              global.onProjectCardTagClick(tag, project);
-            }
-          }
-        };
+        const onTagClick = (e) => handleTagPillClick(e, tagBtn);
         tagBtn.addEventListener('click', onTagClick);
         cleanupFns.push(() => {
           tagBtn.removeEventListener('click', onTagClick);
@@ -210,14 +239,17 @@
       if (event?.pointerType === 'touch') return;
       if (isDeleted || getSelectionController()?.isActive?.()) return;
       card.classList?.add('is-expanded');
+      const currentProject = getCurrentProject();
+      const prefetchOpts = { id: currentProject.id, intentKey: card };
       if (typeof opts.prefetchPage === 'function') {
-        opts.prefetchPage('project', { id: project.id });
+        opts.prefetchPage('project', prefetchOpts);
       } else if (typeof global.prefetchPage === 'function') {
-        global.prefetchPage('project', { id: project.id });
+        global.prefetchPage('project', prefetchOpts);
       }
     };
 
     const onCardLeave = () => {
+      global.PageAssetLoader?.cancelPrefetchIntent?.(card);
       if (card.classList?.contains('is-menu-open')) return;
       card.classList?.remove('is-expanded');
     };
@@ -226,6 +258,7 @@
     card.addEventListener('pointerleave', onCardLeave);
 
     cleanupFns.push(() => {
+      global.PageAssetLoader?.cancelPrefetchIntent?.(card);
       card.removeEventListener('pointerenter', onCardEnter);
       card.removeEventListener('pointerleave', onCardLeave);
     });
@@ -235,9 +268,10 @@
     let lastClickTime = 0;
 
     const onCardClick = (e) => {
+      const currentProject = getCurrentProject();
       const selCtrl = getSelectionController();
       if (selCtrl?.isActive?.()) {
-        if (selCtrl.handleCardClick?.(project.id, e)) {
+        if (selCtrl.handleCardClick?.(currentProject.id, e)) {
           return;
         }
       }
@@ -247,9 +281,16 @@
         return;
       }
 
+      // 委派處理動態增量更新後的標籤 pill 點擊
+      const dynamicTagPill = e?.target?.closest?.('button.project-tag-pill[data-tag]');
+      if (dynamicTagPill && dynamicTagPill.dataset?.delegatedTag === '1') {
+        handleTagPillClick(e, dynamicTagPill);
+        return;
+      }
+
       // 多選模式 / 修飾鍵 / 長按抑制：優先交給 ProjectSelectionController 處理
       if (selCtrl && typeof selCtrl.handleCardClick === 'function') {
-        if (selCtrl.handleCardClick(project.id, e)) {
+        if (selCtrl.handleCardClick(currentProject.id, e)) {
           return;
         }
       }
@@ -282,7 +323,7 @@
         const restore = [opts.restoreProject, global.restoreProject, global.ProjectActions?.restoreProject]
           .find(action => typeof action === 'function');
         if (typeof restore === 'function') {
-          Promise.resolve(restore(project, card, onRestored)).catch(error => {
+          Promise.resolve(restore(currentProject, card, onRestored)).catch(error => {
             console.error('Project restore failed', error);
           });
         }
@@ -292,30 +333,30 @@
       // (B) 正常專案點擊：檢查 prefers-reduced-motion
       if (global.matchMedia && global.matchMedia('(prefers-reduced-motion: reduce)').matches) {
         if (typeof opts.onNavigate === 'function') {
-          opts.onNavigate('project', { id: project.id });
+          opts.onNavigate('project', { id: currentProject.id });
         } else if (typeof global.navigate === 'function') {
-          global.navigate('project', { id: project.id });
+          global.navigate('project', { id: currentProject.id });
         } else if (typeof global.spaNavigate === 'function') {
-          global.spaNavigate('project', { id: project.id });
+          global.spaNavigate('project', { id: currentProject.id });
         } else if (global.location) {
-          global.location.hash = `#/project/${encodeURIComponent(project.id)}`;
+          global.location.hash = `#/project/${encodeURIComponent(currentProject.id)}`;
         }
         return;
       }
 
       // (C) 正常專案點擊：觸發 Cover Transition (Project Reveal)
       if (typeof opts.launchRevealTransition === 'function') {
-        opts.launchRevealTransition(card, project);
+        opts.launchRevealTransition(card, currentProject);
       } else if (typeof global.launchProjectRevealTransition === 'function') {
-        global.launchProjectRevealTransition(card, project);
+        global.launchProjectRevealTransition(card, currentProject);
       } else if (typeof opts.onNavigate === 'function') {
-        opts.onNavigate('project', { id: project.id });
+        opts.onNavigate('project', { id: currentProject.id });
       } else if (typeof global.navigate === 'function') {
-        global.navigate('project', { id: project.id });
+        global.navigate('project', { id: currentProject.id });
       } else if (typeof global.spaNavigate === 'function') {
-        global.spaNavigate('project', { id: project.id });
+        global.spaNavigate('project', { id: currentProject.id });
       } else if (global.location) {
-        global.location.hash = `#/project/${encodeURIComponent(project.id)}`;
+        global.location.hash = `#/project/${encodeURIComponent(currentProject.id)}`;
       }
     };
 
@@ -378,6 +419,7 @@
   const ProjectCardInteractions = {
     bind,
     bindAll,
+    updateProject,
     unbind,
     destroyWithin
   };

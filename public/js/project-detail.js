@@ -53,10 +53,29 @@
       this._updateProjectStats();
     },
 
+    // ── 背景資料同步（保留編輯狀態、捲動位置與檢視模式）──
+    syncProject(nextProject) {
+      if (!nextProject) return;
+      this._project = nextProject;
+      this._updateProjectStats();
+      // 若目前開啟中的鏡頭已被伺服器移除且沒有未儲存編輯，安全關閉抽屜
+      if (this._selectedShotId && this._editorEl) {
+        const stillExists = Array.isArray(nextProject.shots) && nextProject.shots.some(s => String(s.id) === String(this._selectedShotId));
+        if (!stillExists && !this._editorDirty) {
+          this.closeEditor(false);
+        }
+      }
+    },
+
+    isEditingDirty() {
+      return Boolean(this._editorEl && this._editorDirty);
+    },
+
     // ── 銷毀清理 ──
     destroy() {
       this.closeEditor(false);
       this._filmstripCleanup?.();this._filmstripCleanup = null;
+      this._selectionCleanup?.();this._selectionCleanup = null;
       if (this._keyHandler && typeof document !== 'undefined') {
         document.removeEventListener('keydown', this._keyHandler);
         this._keyHandler = null;
@@ -224,40 +243,75 @@
       };
     },
 
-    // ── 鏡頭選取事件 (表格列與膠捲影格) ──
+    // ── 鏡頭選取事件 (委派處理，支援增量更新鏡頭列與膠捲影格) ──
     _bindShotSelection() {
       const root = this._root;
       if (!root) return;
+      this._selectionCleanup?.();
 
-      // 表格列點擊
-      root.querySelectorAll('.project-shot-row').forEach(row => {
-        row.addEventListener('click', (e) => {
-          const shotId = row.dataset.shotId;
-          if (shotId) this.openEditor(shotId);
-        });
-      });
-
-      // 表格內編輯按鈕
-      root.querySelectorAll('.shot-cell-edit-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const shotId = btn.dataset.shotId;
-          if (shotId) this.openEditor(shotId);
-        });
-      });
-
-      // 膠捲影格點擊
+      const cleanups = [];
+      const tableView = root.querySelector('#pd-table-view');
+      const filmView = root.querySelector('#pd-film-view');
       const scrollContainer = root.querySelector('.project-filmstrip-scroll');
-      root.querySelectorAll('.project-film-frame').forEach(frame => {
-        frame.addEventListener('keydown', event => {
-          if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); if (frame.dataset.shotId) this.openEditor(frame.dataset.shotId); }
+
+      if (tableView && typeof tableView.addEventListener === 'function') {
+        const onTableClick = (e) => {
+          const editBtn = e.target?.closest?.('.shot-cell-edit-btn');
+          if (editBtn) {
+            e.stopPropagation();
+            const shotId = editBtn.dataset?.shotId;
+            if (shotId) this.openEditor(shotId);
+            return;
+          }
+          const row = e.target?.closest?.('.project-shot-row');
+          if (row && row.dataset?.shotId) {
+            this.openEditor(row.dataset.shotId);
+          }
+        };
+        tableView.addEventListener('click', onTableClick);
+        cleanups.push(() => tableView.removeEventListener('click', onTableClick));
+      } else {
+        // Fallback for minimal mock DOMs in unit tests
+        root.querySelectorAll('.project-shot-row').forEach(row => {
+          const onRowClick = () => { if (row.dataset.shotId) this.openEditor(row.dataset.shotId); };
+          row.addEventListener('click', onRowClick);
+          cleanups.push(() => row.removeEventListener('click', onRowClick));
         });
-        frame.addEventListener('click', () => {
+        root.querySelectorAll('.shot-cell-edit-btn').forEach(btn => {
+          const onBtnClick = (e) => { e.stopPropagation(); if (btn.dataset.shotId) this.openEditor(btn.dataset.shotId); };
+          btn.addEventListener('click', onBtnClick);
+          cleanups.push(() => btn.removeEventListener('click', onBtnClick));
+        });
+      }
+
+      if (filmView && typeof filmView.addEventListener === 'function') {
+        const onFilmClick = (e) => {
           if (scrollContainer && scrollContainer._didDrag && scrollContainer._didDrag()) return;
-          const shotId = frame.dataset.shotId;
-          if (shotId) this.openEditor(shotId);
+          const frame = e.target?.closest?.('.project-film-frame');
+          if (frame && frame.dataset?.shotId) {
+            this.openEditor(frame.dataset.shotId);
+          }
+        };
+        const onFilmKeydown = (e) => {
+          if (e.key !== 'Enter' && e.key !== ' ') return;
+          const frame = e.target?.closest?.('.project-film-frame');
+          if (frame && frame.dataset?.shotId) {
+            e.preventDefault();
+            this.openEditor(frame.dataset.shotId);
+          }
+        };
+        filmView.addEventListener('click', onFilmClick);
+        filmView.addEventListener('keydown', onFilmKeydown);
+        cleanups.push(() => {
+          filmView.removeEventListener('click', onFilmClick);
+          filmView.removeEventListener('keydown', onFilmKeydown);
         });
-      });
+      }
+
+      this._selectionCleanup = () => {
+        cleanups.forEach(fn => { try { fn(); } catch (_) {} });
+        cleanups.length = 0;
+      };
     },
 
     // ── 鍵盤快捷鍵 (Escape 關閉抽屜) ──
@@ -1004,7 +1058,9 @@
       if (idx !== -1) {
         this._project.shots[idx] = { ...this._project.shots[idx], ...updatedShot };
       }
-      if (typeof window.spaSeedProjectCache === 'function') {
+      if (window.ProjectStore && typeof window.ProjectStore.seedProjectDetail === 'function') {
+        window.ProjectStore.seedProjectDetail(this._projectId, this._project, { source: 'local_edit' });
+      } else if (typeof window.spaSeedProjectCache === 'function') {
         window.spaSeedProjectCache(this._projectId, this._project);
       }
     },

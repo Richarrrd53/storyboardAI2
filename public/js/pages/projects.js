@@ -176,28 +176,55 @@
       return;
     }
     projectsGrid.querySelectorAll?.('.projects-empty').forEach(element => element.remove());
-    activeProjects.forEach(project => {
+    let createdAny = false;
+    activeProjects.forEach((project, idx) => {
       const id = String(project.id);
-      const signature = JSON.stringify(project);
+      const signature = global.ProjectCard?.getCardSignature
+        ? global.ProjectCard.getCardSignature(project, { variant: 'default', isHistory: false })
+        : `${project.id}|${project.title || ''}|${project.updateAt || ''}|${(project.tags || []).join(',')}`;
       let entry = state.get(id);
-      if (!entry) { entry = {card:document.createElement('div')}; state.set(id, entry); }
+      if (!entry) {
+        entry = { card: document.createElement('div'), signature: null };
+        state.set(id, entry);
+      }
       const card = entry.card;
       if (card.parentNode !== projectsGrid) {
         // Undo can reattach a cached card after the delete animation. Its
         // transient opacity/transform must never survive into the visible grid.
         card.style.opacity = ''; card.style.transform = ''; card.style.transition = '';
       }
-      if (entry.signature !== signature) {
+      if (entry.signature === null) {
         global.ProjectCardInteractions?.unbind?.(card);
         card.innerHTML = global.ProjectCard?.buildLightFilmCardHTML?.(project) || global.buildLightFilmCardHTML?.(project) || '';
-        if (global.ProjectCardInteractions?.bind) global.ProjectCardInteractions.bind(card, project, {isDeleted:false, refreshCallback:onCardMutate, onTagClick});
+        if (global.ProjectCardInteractions?.bind) global.ProjectCardInteractions.bind(card, project, { isDeleted: false, refreshCallback: onCardMutate, onTagClick });
         else global.setupProjectCardEvents?.(card, project, false, onCardMutate);
         entry.signature = signature;
+        createdAny = true;
+      } else if (entry.signature !== signature) {
+        const patched = global.ProjectCard?.patchCardElement?.(card, project, { variant: 'default', isHistory: false });
+        if (!patched) {
+          global.ProjectCardInteractions?.unbind?.(card);
+          card.innerHTML = global.ProjectCard?.buildLightFilmCardHTML?.(project) || global.buildLightFilmCardHTML?.(project) || '';
+          if (global.ProjectCardInteractions?.bind) global.ProjectCardInteractions.bind(card, project, { isDeleted: false, refreshCallback: onCardMutate, onTagClick });
+          else global.setupProjectCardEvents?.(card, project, false, onCardMutate);
+          createdAny = true;
+        }
+        entry.signature = signature;
+      } else {
+        global.ProjectCardInteractions?.updateProject?.(card, project);
       }
-      projectsGrid.appendChild(card);
+
+      const currentAtIdx = projectsGrid.children ? projectsGrid.children[idx] : null;
+      if (currentAtIdx !== card) {
+        if (currentAtIdx && typeof projectsGrid.insertBefore === 'function') {
+          projectsGrid.insertBefore(card, currentAtIdx);
+        } else {
+          projectsGrid.appendChild(card);
+        }
+      }
     });
 
-    if (typeof global.lazyLoadProjectThumbs === 'function') {
+    if (createdAny && typeof global.lazyLoadProjectThumbs === 'function') {
       global.lazyLoadProjectThumbs(projectsGrid);
     }
   }
@@ -881,12 +908,27 @@
       selectionController?.syncItems?.(currentFilteredIds);
     }
 
-    // 1. 畫面首載：快取優先 (Stale-While-Revalidate)
+    // 1. 先訂閱 ProjectStore 狀態更新（僅監聽 list/session 範圍，避免無關 detail prefetch 觸發重繪）
+    let hasCommittedProjects = false;
+    let unsubscribeStore = null;
+    if (global.ProjectStore && typeof global.ProjectStore.subscribe === 'function') {
+      unsubscribeStore = global.ProjectStore.subscribe((projects, event) => {
+        if (!isMounted) return;
+        if (event && event.scope === 'detail') return;
+        if (event && event.type === 'detail_prefetched') return;
+        if (event && event.changed === false && hasCommittedProjects) return;
+        hasCommittedProjects = true;
+        updateView();
+      }, { scopes: ['list', 'session'], ignorePrefetch: true });
+    }
+
+    // 2. 畫面首載：快取優先 (Stale-While-Revalidate)
     const cached = global.ProjectStore && typeof global.ProjectStore.getProjects === 'function'
       ? global.ProjectStore.getProjects()
       : null;
 
     if (cached) {
+      hasCommittedProjects = true;
       updateView();
       if (global.ProjectStore && typeof global.ProjectStore.fetchProjects === 'function') {
         global.ProjectStore.fetchProjects({ signal, force: false }).catch(() => {});
@@ -895,8 +937,11 @@
       projectsGrid.innerHTML = SKELETON_CARDS_HTML;
       if (global.ProjectStore && typeof global.ProjectStore.fetchProjects === 'function') {
         global.ProjectStore.fetchProjects({ signal, force: false })
-          .then(() => {
-            if (isMounted) updateView();
+          .then((resolved) => {
+            if (isMounted && !hasCommittedProjects && Array.isArray(resolved) && global.ProjectStore.getProjects()) {
+              hasCommittedProjects = true;
+              updateView();
+            }
           })
           .catch(() => {
             if (isMounted && !global.ProjectStore.getProjects()) {
@@ -904,15 +949,6 @@
             }
           });
       }
-    }
-
-    // 2. 訂閱 ProjectStore 狀態更新
-    let unsubscribeStore = null;
-    if (global.ProjectStore && typeof global.ProjectStore.subscribe === 'function') {
-      unsubscribeStore = global.ProjectStore.subscribe((projects, event) => {
-        if (!isMounted) return;
-        updateView();
-      });
     }
 
     // 3. 接入 Dynamic Gradient Mask

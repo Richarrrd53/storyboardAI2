@@ -125,7 +125,10 @@
     let isMounted = true;
     let contentBodyEl = null;
     let unsubscribeStore = null;
-    let hasRenderedWorkspace = false;
+    let isWorkspaceMounted = false;
+    let mountedProject = null;
+    let workspaceRenderSeq = 0;
+    const unpinDetail = global.ProjectStore?.pinProjectDetail?.(projectId) || null;
 
     // ── 生命週期卸載契約 (Unmount Contract) ───────────────────
     function unmount() {
@@ -139,6 +142,10 @@
       if (unsubscribeStore) {
         unsubscribeStore();
         unsubscribeStore = null;
+      }
+
+      if (typeof unpinDetail === 'function') {
+        try { unpinDetail(); } catch (_) {}
       }
 
       // 清理子模組 ProjectDetailController
@@ -157,11 +164,187 @@
         global.DynamicMaskSystem.detach(contentBodyEl);
         contentBodyEl = null;
       }
+      mountedProject = null;
     }
 
-    // ── 渲染分鏡工作區 DOM ──
-    async function renderWorkspace(p) {
-      if (!isMounted || !root) return;
+    // 立即綁定 abort 監聽，確保任何 await 期間被中斷都會完整釋放訂閱與 pin
+    if (signal) {
+      if (signal.aborted) {
+        unmount();
+        return { unmount };
+      }
+      signal.addEventListener('abort', unmount, { once: true });
+    }
+
+    function escapeText(value) {
+      return global.ProjectCard?.escapeHtml ? global.ProjectCard.escapeHtml(value) : String(value ?? '');
+    }
+
+    function computeAspectRatio(p) {
+      const ratioMatch = p?.ratio ? p.ratio.match(/\d+[:/]\d+/) : null;
+      const cleanRatio = ratioMatch ? ratioMatch[0] : '16:9';
+      return cleanRatio.replace(':', ' / ');
+    }
+
+    function normalizeShotsSync(p) {
+      const shots = Array.isArray(p?.shots) ? p.shots : (p?.shots ? [p.shots] : []);
+      return shots
+        .map((s, index) => {
+          const payload = s.payload || {};
+          return {
+            id: String(s.id ?? index),
+            rawId: s.id,
+            order: s.order ?? (index + 1),
+            title: s.title || '未命名鏡頭',
+            camera: s.camera || '未設定',
+            duration: s.duration || '0s',
+            emotion: payload.emotion || s.emotion || '',
+            imageUrl: payload.image || ''
+          };
+        })
+        .sort((a, b) => a.order - b.order);
+    }
+
+    function computeTotalDuration(shots) {
+      let totalSeconds = 0;
+      for (let i = 0; i < shots.length; i++) {
+        const match = (shots[i].duration || '').match(/(\d+(\.\d+)?)/);
+        if (match) totalSeconds += parseFloat(match[1]);
+      }
+      return totalSeconds.toFixed(1).replace(/\.0$/, '');
+    }
+
+    function loadShotThumb(wrap) {
+      if (!wrap) return;
+      const src = wrap.dataset?.src;
+      if (!src) return;
+      const isTarget = wrap.classList?.contains('is-transition-target');
+      const img = typeof Image !== 'undefined' ? new Image() : (typeof document !== 'undefined' ? document.createElement('img') : null);
+      if (!img) return;
+
+      let handled = false;
+      const handleSuccess = async () => {
+        if (handled || !isMounted) return;
+        handled = true;
+        if (img.decode) {
+          try { await img.decode(); } catch (e) {}
+        }
+        if (!isMounted) return;
+        img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+        img.alt = 'Shot';
+        wrap.innerHTML = '';
+        wrap.appendChild(img);
+
+        const currentTrans = getActiveTransition(projectId);
+        if (isTarget && currentTrans) {
+          currentTrans.onFirstShotReady(wrap, img);
+        } else {
+          img.style.opacity = '0';
+          img.style.transition = 'opacity .35s';
+          if (typeof requestAnimationFrame === 'function') {
+            requestAnimationFrame(() => { img.style.opacity = '1'; });
+          } else {
+            img.style.opacity = '1';
+          }
+        }
+      };
+
+      const handleFailure = () => {
+        if (handled || !isMounted) return;
+        handled = true;
+        wrap.innerHTML = '<div style="width:100%;height:100%;background:#e2e8f0;"></div>';
+        const currentTrans = getActiveTransition(projectId);
+        if (isTarget && currentTrans) {
+          currentTrans.fallbackDismiss?.();
+        }
+      };
+
+      // 事件監聽必須在指定 src 前綁定
+      img.onload = handleSuccess;
+      img.onerror = handleFailure;
+      img.src = src;
+
+      // Browser Cache 支援：若瀏覽器已快取圖片完成，立即呼叫 handleSuccess
+      if (img.complete) {
+        if (img.naturalWidth > 0) {
+          handleSuccess();
+        } else if (img.naturalWidth === 0 && img.naturalHeight === 0 && img.src) {
+          if (typeof img.decode === 'function') {
+            img.decode().then(handleSuccess).catch(handleFailure);
+          }
+        }
+      }
+    }
+
+    function buildTableRowHTML(s, aspectRatio, isTarget) {
+      const targetClass = isTarget ? ' is-transition-target' : '';
+      const thumbHtml = s.imageUrl
+        ? `<div class="shot-cell-thumb-wrap${targetClass}" style="aspect-ratio:${aspectRatio};" data-src="${s.imageUrl}"><div class="project-shot-thumb-skeleton" style="width:140px;aspect-ratio:${aspectRatio};"></div></div>`
+        : `<div class="shot-cell-thumb-wrap" style="aspect-ratio:${aspectRatio};background:#e2e8f0;width:140px;"></div>`;
+      return `
+        <tr class="project-shot-row" data-shot-id="${s.id}">
+          <td class="shot-cell-num">
+            <div class="shot-cell-controls">
+              <span>${String(s.order).padStart(2, '0')}</span>
+              <button type="button" class="shot-cell-edit-btn" data-shot-id="${s.id}" aria-label="編輯鏡頭 ${s.order}">${icon('edit')}<span>編輯</span></button>
+            </div>
+          </td>
+          <td>${thumbHtml}</td>
+          <td>
+            <div class="shot-cell-story-box">
+              <div class="shot-cell-story-title">${s.title}</div>
+              <div class="shot-cell-camera-tags">
+                <span class="shot-pill-tag">${s.camera}</span>
+              </div>
+            </div>
+          </td>
+          <td class="shot-cell-time">${s.duration}</td>
+          <td>
+            <div class="shot-cell-note-text">${s.emotion || '—'}</div>
+          </td>
+        </tr>
+      `;
+    }
+
+    function buildFilmFrameHTML(s, aspectRatio) {
+      const imgHtml = s.imageUrl
+        ? `<img src="${s.imageUrl}" alt="Shot ${s.order}" loading="lazy">`
+        : `<div style="width:100%;aspect-ratio:${aspectRatio};background:#1c1917;"></div>`;
+      return `
+        <div class="project-film-frame" data-shot-id="${s.id}" role="button" tabindex="0" aria-label="編輯鏡頭 ${s.order}">
+          <div class="film-sprocket-header">
+            <div class="film-sprocket-dot"></div>
+            <div class="film-sprocket-dot"></div>
+            <div class="film-sprocket-dot"></div>
+            <span class="film-frame-number">鏡頭 ${String(s.order).padStart(2, '0')}</span>
+          </div>
+          <div class="film-media-wrap" style="aspect-ratio:${aspectRatio};">${imgHtml}<span class="film-frame-edit">${icon('edit')}<span>編輯</span></span></div>
+          <div class="film-info-caption">
+            <div class="film-caption-story">${s.title}</div>
+            <div class="film-caption-meta">
+              <span class="film-cam-badge">${s.camera}</span>
+              <span class="film-time-badge">${s.duration}</span>
+            </div>
+          </div>
+          <div class="film-sprocket-header">
+            <div class="film-sprocket-dot"></div>
+            <div class="film-sprocket-dot"></div>
+            <div class="film-sprocket-dot"></div>
+          </div>
+        </div>
+      `;
+    }
+
+    function createElementFromHTML(html, containerTag = 'div') {
+      const tmp = document.createElement(containerTag);
+      tmp.innerHTML = html.trim();
+      return tmp.firstElementChild || tmp.children?.[0] || null;
+    }
+
+    // ── 初次建立分鏡工作區 DOM (Mount) ────────────────────────
+    async function mountWorkspace(p) {
+      if (!isMounted || !root || !p) return;
+      const mySeq = ++workspaceRenderSeq;
 
       const shots = Array.isArray(p.shots) ? p.shots : (p.shots ? [p.shots] : []);
       const safeTranslate = typeof global.translatePromptText === 'function'
@@ -180,7 +363,7 @@
         const imageUrl = payload.image || '';
         const order = s.order ?? (index + 1);
         return {
-          id: s.id,
+          id: String(s.id ?? index),
           order,
           title: s.title || '未命名鏡頭',
           camera: s.camera || '未設定',
@@ -191,53 +374,19 @@
         };
       }));
 
-      if (!isMounted || signal?.aborted) return;
+      if (!isMounted || signal?.aborted || mySeq !== workspaceRenderSeq) return;
 
-      // 依序排列鏡頭
       processedShots.sort((a, b) => a.order - b.order);
-
-      const ratioMatch = p.ratio ? p.ratio.match(/\d+[:/]\d+/) : null;
-      const cleanRatio = ratioMatch ? ratioMatch[0] : '16:9';
-      const aspectRatio = cleanRatio.replace(':', ' / ');
-
-      // 檢查是否處於封面過渡期間
+      const aspectRatio = computeAspectRatio(p);
       const activeTrans = getActiveTransition(projectId);
       const isTransitionActive = Boolean(activeTrans);
 
-      // ── Table Rows ──────────────────────────────────────────
       let tableRowsHtml = '';
       processedShots.forEach((s, idx) => {
         const isTarget = isTransitionActive && idx === 0 && Boolean(s.imageUrl);
-        const targetClass = isTarget ? ' is-transition-target' : '';
-        const thumbHtml = s.imageUrl
-          ? `<div class="shot-cell-thumb-wrap${targetClass}" style="aspect-ratio:${aspectRatio};" data-src="${s.imageUrl}"><div class="project-shot-thumb-skeleton" style="width:140px;aspect-ratio:${aspectRatio};"></div></div>`
-          : `<div class="shot-cell-thumb-wrap" style="aspect-ratio:${aspectRatio};background:#e2e8f0;width:140px;"></div>`;
-        tableRowsHtml += `
-          <tr class="project-shot-row" data-shot-id="${s.id}">
-            <td class="shot-cell-num">
-              <div class="shot-cell-controls">
-                <span>${String(s.order).padStart(2, '0')}</span>
-                <button type="button" class="shot-cell-edit-btn" data-shot-id="${s.id}" aria-label="編輯鏡頭 ${s.order}">${icon('edit')}<span>編輯</span></button>
-              </div>
-            </td>
-            <td>${thumbHtml}</td>
-            <td>
-              <div class="shot-cell-story-box">
-                <div class="shot-cell-story-title">${s.title}</div>
-                <div class="shot-cell-camera-tags">
-                  <span class="shot-pill-tag">${s.camera}</span>
-                </div>
-              </div>
-            </td>
-            <td class="shot-cell-time">${s.duration}</td>
-            <td>
-              <div class="shot-cell-note-text">${s.emotion || '—'}</div>
-            </td>
-          </tr>
-        `;
+        tableRowsHtml += buildTableRowHTML(s, aspectRatio, isTarget);
       });
 
-      // ── Film Frames ─────────────────────────────────────────
       const holeCount = Math.max(processedShots.length * 3, 24);
       let railHolesHtml = '';
       for (let i = 0; i < holeCount; i++) {
@@ -246,44 +395,12 @@
 
       let filmFramesHtml = '';
       processedShots.forEach(s => {
-        const imgHtml = s.imageUrl
-          ? `<img src="${s.imageUrl}" alt="Shot ${s.order}" loading="lazy">`
-          : `<div style="width:100%;aspect-ratio:${aspectRatio};background:#1c1917;"></div>`;
-        filmFramesHtml += `
-          <div class="project-film-frame" data-shot-id="${s.id}" role="button" tabindex="0" aria-label="編輯鏡頭 ${s.order}">
-            <div class="film-sprocket-header">
-              <div class="film-sprocket-dot"></div>
-              <div class="film-sprocket-dot"></div>
-              <div class="film-sprocket-dot"></div>
-              <span class="film-frame-number">鏡頭 ${String(s.order).padStart(2, '0')}</span>
-            </div>
-            <div class="film-media-wrap" style="aspect-ratio:${aspectRatio};">${imgHtml}<span class="film-frame-edit">${icon('edit')}<span>編輯</span></span></div>
-            <div class="film-info-caption">
-              <div class="film-caption-story">${s.title}</div>
-              <div class="film-caption-meta">
-                <span class="film-cam-badge">${s.camera}</span>
-                <span class="film-time-badge">${s.duration}</span>
-              </div>
-            </div>
-            <div class="film-sprocket-header">
-              <div class="film-sprocket-dot"></div>
-              <div class="film-sprocket-dot"></div>
-              <div class="film-sprocket-dot"></div>
-            </div>
-          </div>
-        `;
+        filmFramesHtml += buildFilmFrameHTML(s, aspectRatio);
       });
 
-      // ── Compute total duration ──────────────────────────────
-      let totalSeconds = 0;
-      processedShots.forEach(s => {
-        const match = (s.duration || '').match(/(\d+(\.\d+)?)/);
-        if (match) totalSeconds += parseFloat(match[1]);
-      });
+      const totalDurStr = computeTotalDuration(processedShots);
 
-      // ── Full workspace HTML ─────────────────────────────────
-      // 銷毀前一次的子控制器與動態遮罩，確保不殘留孤兒 DOM 或重複監聽 (僅在非初次渲染時執行)
-      if (hasRenderedWorkspace) {
+      if (isWorkspaceMounted) {
         if (global.ProjectDetailController && typeof global.ProjectDetailController.destroy === 'function') {
           global.ProjectDetailController.destroy();
         }
@@ -292,20 +409,20 @@
           contentBodyEl = null;
         }
       }
-      hasRenderedWorkspace = true;
+      isWorkspaceMounted = true;
+      mountedProject = p;
 
       root.innerHTML = `
         <div class="project-workspace">
           <div class="content-header project-workspace-header">
             <div class="project-workspace-topline">
               <button class="project-back-btn" id="pd-back-btn" type="button" aria-label="返回所有專案">${icon('back')}</button>
-              <h1 class="project-workspace-title">${global.ProjectCard?.escapeHtml ? global.ProjectCard.escapeHtml(p.title) : p.title}</h1>
+              <h1 class="project-workspace-title">${escapeText(p.title)}</h1>
               <button class="project-workspace-btn" id="pd-export-json-btn" type="button" aria-label="匯出分鏡" aria-haspopup="menu">${icon('export')}<span>匯出分鏡</span></button>
             </div>
             <div class="project-workspace-header-top">
               <div class="project-workspace-title-area">
                 <div class="project-workspace-title-box">
-
                   <div class="project-workspace-meta" id="pd-updated-at">最後編輯：${p.updatedAt ? new Date(p.updatedAt).toLocaleString('zh-TW') : (p.createAt ? new Date(p.createAt).toLocaleString('zh-TW') : '')}</div>
                 </div>
               </div>
@@ -319,10 +436,10 @@
 
             <div class="project-workspace-header-sub">
               <div class="project-workspace-attrs">
-                <span class="project-attr-badge">風格：${p.style || '未指定'}</span>
-                <span class="project-attr-badge">比例：${p.ratio || '16:9'}</span>
+                <span class="project-attr-badge" id="pd-style-badge">風格：${p.style || '未指定'}</span>
+                <span class="project-attr-badge" id="pd-ratio-badge">比例：${p.ratio || '16:9'}</span>
                 <span class="project-attr-badge highlight" id="pd-shot-count">${processedShots.length} 鏡頭</span>
-                <span class="project-attr-badge highlight" id="pd-total-duration">總長 ${totalSeconds.toFixed(1).replace(/\.0$/, '')}s</span>
+                <span class="project-attr-badge highlight" id="pd-total-duration">總長 ${totalDurStr}s</span>
               </div>
             </div>
           </div>
@@ -341,7 +458,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  ${tableRowsHtml || '<tr><td colspan="5" style="text-align:center;padding:32px;color:#a8a29e;">尚無鏡頭資料</td></tr>'}
+                  ${tableRowsHtml || '<tr class="project-empty-row"><td colspan="5" style="text-align:center;padding:32px;color:#a8a29e;">尚無鏡頭資料</td></tr>'}
                 </tbody>
               </table>
             </div>
@@ -351,7 +468,7 @@
               <div class="project-filmstrip-rail">${railHolesHtml}</div>
               <div class="project-filmstrip-scroll">
                 <div class="project-filmstrip-track">
-                  ${filmFramesHtml || '<div style="padding:32px;color:#71717a;">尚無鏡頭資料</div>'}
+                  ${filmFramesHtml || '<div class="project-empty-film" style="padding:32px;color:#71717a;">尚無鏡頭資料</div>'}
                 </div>
               </div>
               <div class="project-filmstrip-rail">${railHolesHtml}</div>
@@ -362,67 +479,9 @@
 
       // ── Lazy load thumbnails & Transition Handoff ───────────
       root.querySelectorAll('.shot-cell-thumb-wrap[data-src]').forEach(wrap => {
-        const src = wrap.dataset.src;
-        if (!src) return;
-        const isTarget = wrap.classList.contains('is-transition-target');
-        const img = typeof Image !== 'undefined' ? new Image() : (typeof document !== 'undefined' ? document.createElement('img') : null);
-        if (!img) return;
-
-        let handled = false;
-        const handleSuccess = async () => {
-          if (handled || !isMounted) return;
-          handled = true;
-          if (img.decode) {
-            try { await img.decode(); } catch (e) {}
-          }
-          if (!isMounted) return;
-          img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
-          img.alt = 'Shot';
-          wrap.innerHTML = '';
-          wrap.appendChild(img);
-
-          const currentTrans = getActiveTransition(projectId);
-          if (isTarget && currentTrans) {
-            currentTrans.onFirstShotReady(wrap, img);
-          } else {
-            img.style.opacity = '0';
-            img.style.transition = 'opacity .35s';
-            if (typeof requestAnimationFrame === 'function') {
-              requestAnimationFrame(() => { img.style.opacity = '1'; });
-            } else {
-              img.style.opacity = '1';
-            }
-          }
-        };
-
-        const handleFailure = () => {
-          if (handled || !isMounted) return;
-          handled = true;
-          wrap.innerHTML = '<div style="width:100%;height:100%;background:#e2e8f0;"></div>';
-          const currentTrans = getActiveTransition(projectId);
-          if (isTarget && currentTrans) {
-            currentTrans.fallbackDismiss?.();
-          }
-        };
-
-        // 事件監聽必須在指定 src 前綁定
-        img.onload = handleSuccess;
-        img.onerror = handleFailure;
-        img.src = src;
-
-        // Browser Cache 支援：若瀏覽器已快取圖片完成，立即呼叫 handleSuccess
-        if (img.complete) {
-          if (img.naturalWidth > 0) {
-            handleSuccess();
-          } else if (img.naturalWidth === 0 && img.naturalHeight === 0 && img.src) {
-            if (typeof img.decode === 'function') {
-              img.decode().then(handleSuccess).catch(handleFailure);
-            }
-          }
-        }
+        loadShotThumb(wrap);
       });
 
-      // 封面過渡保護：若處於過渡中但第 1 鏡無圖（或無鏡頭），立即 fallback 結束過渡，不可永久停留在 waiting-project
       const hasTargetShot = isTransitionActive && processedShots[0] && Boolean(processedShots[0].imageUrl);
       if (isTransitionActive && !hasTargetShot) {
         const currentTrans = getActiveTransition(projectId);
@@ -441,24 +500,215 @@
       }
     }
 
+    // ── 增量更新已掛載的分鏡工作區 (Update：保留捲動、編輯狀態與 DOM Identity) ──
+    function updateWorkspace(p, precomputedDiff = null) {
+      if (!isMounted || !root || !p) return;
+      if (!isWorkspaceMounted) {
+        mountWorkspace(p);
+        return;
+      }
+
+      const diff = precomputedDiff || (global.ProjectsFeature?.diffProjectDetail
+        ? global.ProjectsFeature.diffProjectDetail(mountedProject, p)
+        : { changed: true, headerChanged: true, shotsChanged: true, addedShotIds: [], removedShotIds: [], updatedShotIds: [], reordered: true });
+
+      mountedProject = p;
+
+      if (!diff.changed) {
+        global.ProjectDetailController?.syncProject?.(p);
+        return;
+      }
+
+      const shots = normalizeShotsSync(p);
+      const aspectRatio = computeAspectRatio(p);
+
+      // 1. 增量更新 Header 欄位
+      if (diff.headerChanged) {
+        const titleEl = root.querySelector('.project-workspace-title');
+        if (titleEl && titleEl.textContent !== (p.title || '')) {
+          titleEl.textContent = p.title || '';
+        }
+        const updatedEl = root.querySelector('#pd-updated-at');
+        if (updatedEl) {
+          const nextTime = `最後編輯：${p.updatedAt ? new Date(p.updatedAt).toLocaleString('zh-TW') : (p.createAt ? new Date(p.createAt).toLocaleString('zh-TW') : '')}`;
+          if (updatedEl.textContent !== nextTime) updatedEl.textContent = nextTime;
+        }
+        const styleBadge = root.querySelector('#pd-style-badge');
+        if (styleBadge) {
+          const nextStyle = `風格：${p.style || '未指定'}`;
+          if (styleBadge.textContent !== nextStyle) styleBadge.textContent = nextStyle;
+        }
+        const ratioBadge = root.querySelector('#pd-ratio-badge');
+        if (ratioBadge) {
+          const nextRatio = `比例：${p.ratio || '16:9'}`;
+          if (ratioBadge.textContent !== nextRatio) ratioBadge.textContent = nextRatio;
+        }
+      }
+
+      // 2. 增量更新鏡頭表格與膠捲影格（以 shot.id 作為穩定 Key，絕不重建 Scroll Container）
+      if (diff.shotsChanged) {
+        const countEl = root.querySelector('#pd-shot-count');
+        if (countEl) countEl.textContent = `${shots.length} 鏡頭`;
+        const durEl = root.querySelector('#pd-total-duration');
+        if (durEl) durEl.textContent = `總長 ${computeTotalDuration(shots)}s`;
+
+        const updatedSet = new Set((diff.updatedShotIds || []).map(String));
+        const tbody = root.querySelector('#pd-table-view tbody');
+        if (tbody) {
+          if (shots.length === 0) {
+            tbody.innerHTML = '<tr class="project-empty-row"><td colspan="5" style="text-align:center;padding:32px;color:#a8a29e;">尚無鏡頭資料</td></tr>';
+          } else {
+            tbody.querySelector('.project-empty-row')?.remove?.();
+            const existingRows = new Map();
+            tbody.querySelectorAll('.project-shot-row').forEach(row => {
+              if (row.dataset?.shotId) existingRows.set(String(row.dataset.shotId), row);
+            });
+            const nextIdSet = new Set(shots.map(s => s.id));
+            for (const [id, row] of existingRows.entries()) {
+              if (!nextIdSet.has(id)) {
+                row.remove?.();
+                existingRows.delete(id);
+              }
+            }
+
+            shots.forEach((s, idx) => {
+              let row = existingRows.get(s.id);
+              if (!row) {
+                row = createElementFromHTML(buildTableRowHTML(s, aspectRatio, false), 'tbody');
+                if (row) {
+                  const thumbWrap = row.querySelector('.shot-cell-thumb-wrap[data-src]');
+                  if (thumbWrap) loadShotThumb(thumbWrap);
+                }
+              } else if (updatedSet.has(s.id) || !precomputedDiff) {
+                const orderSpan = row.querySelector('.shot-cell-controls span');
+                const orderText = String(s.order).padStart(2, '0');
+                if (orderSpan && orderSpan.textContent !== orderText) orderSpan.textContent = orderText;
+                const titleEl = row.querySelector('.shot-cell-story-title');
+                if (titleEl && titleEl.textContent !== s.title) titleEl.textContent = s.title;
+                const camEl = row.querySelector('.shot-pill-tag');
+                if (camEl && camEl.textContent !== s.camera) camEl.textContent = s.camera;
+                const timeEl = row.querySelector('.shot-cell-time');
+                if (timeEl && timeEl.textContent !== s.duration) timeEl.textContent = s.duration;
+                const noteEl = row.querySelector('.shot-cell-note-text');
+                const noteText = s.emotion || '—';
+                if (noteEl && noteEl.textContent !== noteText) noteEl.textContent = noteText;
+
+                const thumbWrap = row.querySelector('.shot-cell-thumb-wrap');
+                if (thumbWrap && s.imageUrl && thumbWrap.dataset?.src !== s.imageUrl) {
+                  thumbWrap.dataset.src = s.imageUrl;
+                  loadShotThumb(thumbWrap);
+                }
+              }
+
+              if (row) {
+                const currentAtIdx = tbody.children ? tbody.children[idx] : null;
+                if (currentAtIdx !== row) {
+                  if (currentAtIdx && typeof tbody.insertBefore === 'function') {
+                    tbody.insertBefore(row, currentAtIdx);
+                  } else {
+                    tbody.appendChild(row);
+                  }
+                }
+              }
+            });
+          }
+        }
+
+        const filmTrack = root.querySelector('.project-filmstrip-track');
+        if (filmTrack) {
+          if (shots.length === 0) {
+            filmTrack.innerHTML = '<div class="project-empty-film" style="padding:32px;color:#71717a;">尚無鏡頭資料</div>';
+          } else {
+            filmTrack.querySelector('.project-empty-film')?.remove?.();
+            const existingFrames = new Map();
+            filmTrack.querySelectorAll('.project-film-frame').forEach(frame => {
+              if (frame.dataset?.shotId) existingFrames.set(String(frame.dataset.shotId), frame);
+            });
+            const nextIdSet = new Set(shots.map(s => s.id));
+            for (const [id, frame] of existingFrames.entries()) {
+              if (!nextIdSet.has(id)) {
+                frame.remove?.();
+                existingFrames.delete(id);
+              }
+            }
+
+            shots.forEach((s, idx) => {
+              let frame = existingFrames.get(s.id);
+              if (!frame) {
+                frame = createElementFromHTML(buildFilmFrameHTML(s, aspectRatio), 'div');
+              } else if (updatedSet.has(s.id) || !precomputedDiff) {
+                const numEl = frame.querySelector('.film-frame-number');
+                const numText = `鏡頭 ${String(s.order).padStart(2, '0')}`;
+                if (numEl && numEl.textContent !== numText) numEl.textContent = numText;
+                const storyEl = frame.querySelector('.film-caption-story');
+                if (storyEl && storyEl.textContent !== s.title) storyEl.textContent = s.title;
+                const camEl = frame.querySelector('.film-cam-badge');
+                if (camEl && camEl.textContent !== s.camera) camEl.textContent = s.camera;
+                const timeEl = frame.querySelector('.film-time-badge');
+                if (timeEl && timeEl.textContent !== s.duration) timeEl.textContent = s.duration;
+                const imgEl = frame.querySelector('.film-media-wrap img');
+                if (imgEl && s.imageUrl && imgEl.getAttribute('src') !== s.imageUrl) {
+                  imgEl.src = s.imageUrl;
+                }
+              }
+
+              if (frame) {
+                const currentAtIdx = filmTrack.children ? filmTrack.children[idx] : null;
+                if (currentAtIdx !== frame) {
+                  if (currentAtIdx && typeof filmTrack.insertBefore === 'function') {
+                    filmTrack.insertBefore(frame, currentAtIdx);
+                  } else {
+                    filmTrack.appendChild(frame);
+                  }
+                }
+              }
+            });
+          }
+        }
+
+        if (contentBodyEl && global.DynamicMaskSystem && typeof global.DynamicMaskSystem.update === 'function') {
+          global.DynamicMaskSystem.update(contentBodyEl);
+        }
+      }
+
+      // 3. 同步更新 Controller 資料參考（不銷毀、不關閉抽屜、不清除未儲存草稿）
+      if (global.ProjectDetailController && typeof global.ProjectDetailController.syncProject === 'function') {
+        global.ProjectDetailController.syncProject(p);
+      }
+    }
+
+    // ── 訂閱 ProjectStore 狀態變更（僅限本專案、單一資料提交通道）──
+    if (global.ProjectStore && typeof global.ProjectStore.subscribe === 'function') {
+      unsubscribeStore = global.ProjectStore.subscribe((projects, event) => {
+        if (!isMounted || !event) return;
+        if (event.scope !== 'detail') return;
+        if (String(event.projectId ?? event.id) !== String(projectId)) return;
+        if (event.type === 'evict_detail' || event.type === 'invalidate_detail') return;
+        if (event.source === 'local_edit') return;
+        const incoming = event.project || event.data;
+        if (!incoming) return;
+        if (!isWorkspaceMounted) {
+          mountWorkspace(incoming);
+        } else if (event.changed !== false) {
+          updateWorkspace(incoming, event.diff || null);
+        } else {
+          // 相同資料僅同步最新參考，不執行任何 DOM 操作
+          mountedProject = incoming;
+          global.ProjectDetailController?.syncProject?.(incoming);
+        }
+      }, { scopes: ['detail'], projectId, ignorePrefetch: true, ignoreEviction: true });
+    }
+
     // ── SWR 資料取得策略 ──────────────────────────────────────
     const cachedDetail = global.ProjectStore && typeof global.ProjectStore.getProjectDetail === 'function'
       ? global.ProjectStore.getProjectDetail(projectId)
       : null;
 
     if (cachedDetail) {
-      await renderWorkspace(cachedDetail);
-      // 背景重新整理
+      await mountWorkspace(cachedDetail);
+      // 背景重新驗證：由 Store Subscription 作為單一提交點，避免 Promise + Subscription 雙重渲染
       if (global.ProjectStore && typeof global.ProjectStore.fetchProjectDetail === 'function') {
-        global.ProjectStore.fetchProjectDetail(projectId, { signal, force: true })
-          .then(fresh => {
-            if (!isMounted || signal?.aborted || !fresh) return;
-            const currentJSON = JSON.stringify(cachedDetail);
-            const freshJSON = JSON.stringify(fresh);
-            if (currentJSON !== freshJSON) {
-              renderWorkspace(fresh);
-            }
-          })
+        global.ProjectStore.fetchProjectDetail(projectId, { signal, force: true, source: 'swr' })
           .catch(() => {});
       }
     } else {
@@ -477,7 +727,9 @@
             return { unmount };
           }
 
-          await renderWorkspace(p);
+          if (!isWorkspaceMounted) {
+            await mountWorkspace(p);
+          }
         }
       } catch (err) {
         if (!isMounted || signal?.aborted || err.name === 'AbortError') return { unmount };
@@ -488,24 +740,6 @@
         const activeTrans = getActiveTransition(projectId);
         if (activeTrans) activeTrans.cancel?.();
       }
-    }
-
-    // ── 訂閱 ProjectStore 狀態變更 ────────────────────────────
-    if (global.ProjectStore && typeof global.ProjectStore.subscribe === 'function') {
-      unsubscribeStore = global.ProjectStore.subscribe((projects, event) => {
-        if (!isMounted) return;
-        if (event && (event.type === 'detail_loaded' || event.type === 'detail_seed') && event.id === projectId && event.project) {
-          renderWorkspace(event.project);
-        }
-      });
-    }
-
-    if (signal) {
-      if (signal.aborted) {
-        unmount();
-        return { unmount };
-      }
-      signal.addEventListener('abort', unmount, { once: true });
     }
 
     return {

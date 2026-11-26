@@ -377,6 +377,7 @@ test('ProjectDetailPage: SWR Lifecycle & Duplicate Listener Guard — cached ren
   let viewSwitchFired = 0;
   let initCalls = 0;
   let destroyCalls = 0;
+  let syncCalls = 0;
 
   global.ProjectDetailController = {
     init({ root: r, projectId, project }) {
@@ -389,6 +390,9 @@ test('ProjectDetailPage: SWR Lifecycle & Duplicate Listener Guard — cached ren
       r.querySelectorAll('.shot-cell-edit-btn').forEach(b => {
         b.addEventListener('click', () => { editClickFired++; });
       });
+    },
+    syncProject(project) {
+      syncCalls++;
     },
     destroy() {
       destroyCalls++;
@@ -415,12 +419,13 @@ test('ProjectDetailPage: SWR Lifecycle & Duplicate Listener Guard — cached ren
   ProjectStore.seedProjectDetail('p-swr-event-test', freshProject);
   ProjectStore.notify({ type: 'detail_loaded', id: 'p-swr-event-test', project: freshProject });
 
-  // 等待非同步 renderWorkspace (包含 Promise.all 鏡頭翻譯處理) 完成
+  // 等待非同步處理完成
   await new Promise(r => setTimeout(r, 20));
 
-  // Verify safe lifecycle: previous controller destroyed, new controller initialized
-  assert.equal(destroyCalls, 1);
-  assert.equal(initCalls, 2);
+  // Phase 3 lifecycle: incremental update preserves controller & DOM without destroy/re-init
+  assert.equal(destroyCalls, 0);
+  assert.equal(initCalls, 1);
+  assert.ok(syncCalls >= 1);
 
   // Now trigger events on the newly rendered DOM
   const newFilmBtn = root.querySelector('#pd-view-film');
@@ -437,7 +442,7 @@ test('ProjectDetailPage: SWR Lifecycle & Duplicate Listener Guard — cached ren
   assert.equal(editClickFired, 1, 'Edit button should fire exactly once after DOM update');
 
   instance.unmount();
-  assert.equal(destroyCalls, 2);
+  assert.equal(destroyCalls, 1);
   global.ProjectDetailController = null;
 });
 

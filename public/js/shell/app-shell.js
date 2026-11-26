@@ -718,7 +718,35 @@
     updateMobileBottomNavActive(page);
   }
 
-  function updateSidebarProjects() {
+  function cleanupElementListeners(el) {
+    for (let i = registeredListeners.length - 1; i >= 0; i--) {
+      const item = registeredListeners[i];
+      if (item && item.target === el) {
+        try { item.target.removeEventListener(item.event, item.handler, item.options); } catch (_) {}
+        registeredListeners.splice(i, 1);
+      }
+    }
+  }
+
+  function cleanupSidebarListListeners(sidebarList) {
+    for (let i = registeredListeners.length - 1; i >= 0; i--) {
+      const item = registeredListeners[i];
+      if (!item || !item.target) continue;
+      const isDomNode = (typeof Node !== 'undefined' && item.target instanceof Node) ||
+                        (typeof window !== 'undefined' && window.Node && item.target instanceof window.Node) ||
+                        Boolean(item.target && typeof item.target.nodeType === 'number');
+      if (!isDomNode) continue;
+      const isChild = typeof sidebarList.contains === 'function'
+        ? sidebarList.contains(item.target)
+        : Boolean(item.target.parentElement === sidebarList || item.target.closest?.('#sidebar-projects-list'));
+      if (isChild) {
+        try { item.target.removeEventListener(item.event, item.handler, item.options); } catch (_) {}
+        registeredListeners.splice(i, 1);
+      }
+    }
+  }
+
+  function updateSidebarProjects(options = {}) {
     const sidebar = document.getElementById('dash-sidebar') || dashboardSidebar;
     if (!sidebar) return;
     const sidebarList = sidebar.querySelector('#sidebar-projects-list');
@@ -733,59 +761,82 @@
     }
 
     const activeProjects = (projects || []).filter(p => !p.is_deleted && !(window.ProjectDeleteQueue?.isPending(p.id)));
-    const currentJSON = JSON.stringify(activeProjects.map(p => ({ id: p.id, title: p.title })));
+    const currentSignature = activeProjects.map(p => `${p.id}\u0001${p.title || ''}`).join('\u0002');
+    const listChanged = currentSignature !== lastRenderedProjectsJSON;
 
-    if (currentJSON !== lastRenderedProjectsJSON) {
-      lastRenderedProjectsJSON = currentJSON;
-
-      // Clean up previous tracked listeners belonging to sidebarList's children
-      for (let i = registeredListeners.length - 1; i >= 0; i--) {
-        const item = registeredListeners[i];
-        if (!item || !item.target) continue;
-
-        // Node type guard: parameter 1 of Node.contains must be a DOM Node (exclude window or non-nodes)
-        const isDomNode = (typeof Node !== 'undefined' && item.target instanceof Node) ||
-                          (typeof window !== 'undefined' && window.Node && item.target instanceof window.Node) ||
-                          Boolean(item.target && typeof item.target.nodeType === 'number');
-
-        if (!isDomNode) continue;
-
-        const isChild = typeof sidebarList.contains === 'function'
-          ? sidebarList.contains(item.target)
-          : Boolean(item.target.parentElement === sidebarList || item.target.closest?.('#sidebar-projects-list'));
-
-        if (isChild) {
-          item.target.removeEventListener(item.event, item.handler, item.options);
-          registeredListeners.splice(i, 1);
-        }
-      }
-
-      sidebarList.innerHTML = '';
+    if (listChanged) {
+      lastRenderedProjectsJSON = currentSignature;
 
       if (activeProjects.length === 0) {
+        cleanupSidebarListListeners(sidebarList);
+        sidebarList.innerHTML = '';
         const emptyEl = document.createElement('p');
         emptyEl.className = 'side-sub-empty';
         emptyEl.textContent = '目前沒有任何分鏡...';
         sidebarList.appendChild(emptyEl);
       } else {
-        activeProjects.forEach(p => {
-          const a = document.createElement('a');
-          a.href = `../project/${p.id}`;
-          a.className = 'sub-link project-sub-link';
-          a.dataset.id = p.id;
-          a.title = p.title;
-          a.innerHTML = `<span class="sub-text">${p.title}</span><div class="link-glow"></div>`;
-          sidebarList.appendChild(a);
+        sidebarList.querySelector?.('.side-sub-empty')?.remove?.();
+
+        const existingMap = new Map();
+        const existingLinks = sidebarList.querySelectorAll ? sidebarList.querySelectorAll('.project-sub-link') : [];
+        existingLinks.forEach(a => {
+          if (a.dataset?.id) existingMap.set(String(a.dataset.id), a);
+        });
+        const retainedIds = new Set(activeProjects.map(p => String(p.id)));
+
+        for (const [id, linkEl] of existingMap.entries()) {
+          if (!retainedIds.has(id)) {
+            cleanupElementListeners(linkEl);
+            linkEl.remove?.();
+            existingMap.delete(id);
+          }
+        }
+
+        let createdAny = false;
+        activeProjects.forEach((p, idx) => {
+          const id = String(p.id);
+          let a = existingMap.get(id);
+          if (!a) {
+            a = document.createElement('a');
+            a.href = `../project/${p.id}`;
+            a.className = 'sub-link project-sub-link';
+            a.dataset.id = id;
+            a.title = p.title || '';
+            const span = document.createElement('span');
+            span.className = 'sub-text';
+            span.textContent = p.title || '';
+            a.appendChild(span);
+            createdAny = true;
+          } else {
+            if (a.title !== (p.title || '')) a.title = p.title || '';
+            const span = a.querySelector?.('.sub-text');
+            if (span && span.textContent !== (p.title || '')) {
+              span.textContent = p.title || '';
+            }
+          }
+
+          const currentAtIdx = sidebarList.children ? sidebarList.children[idx] : null;
+          if (currentAtIdx !== a) {
+            if (currentAtIdx && typeof sidebarList.insertBefore === 'function') {
+              sidebarList.insertBefore(a, currentAtIdx);
+            } else {
+              sidebarList.appendChild(a);
+            }
+          }
         });
 
-        bindSidebarSubLinks(sidebarList);
+        if (createdAny) {
+          bindSidebarSubLinks(sidebarList);
+        }
       }
     }
 
-    highlightActiveSidebarProject(sidebarList);
+    highlightActiveSidebarProject(sidebarList, { allowScrollIntoView: options.allowScrollIntoView !== false && !options.fromBackground });
     if (window.DynamicMaskSystem) {
       window.DynamicMaskSystem.attach?.(sidebarList, { maskSize: 24, direction: 'vertical', keepMaskOnFocus: true });
-      window.DynamicMaskSystem.update?.(sidebarList);
+      if (listChanged) {
+        window.DynamicMaskSystem.update?.(sidebarList);
+      }
     }
   }
 
@@ -807,9 +858,19 @@
         const onProjClick = (e) => {
           e.preventDefault();
           if (e.detail > 0) a.blur?.();
+          window.PageAssetLoader?.cancelPrefetchIntent?.(a);
           shellOptions.navigate('project', { id });
         };
+        const onProjEnter = (e) => {
+          if (e?.pointerType === 'touch') return;
+          window.PageAssetLoader?.prefetchPage?.('project', { id, intentKey: a });
+        };
+        const onProjLeave = () => {
+          window.PageAssetLoader?.cancelPrefetchIntent?.(a);
+        };
         addTrackedListener(a, 'click', onProjClick);
+        addTrackedListener(a, 'pointerenter', onProjEnter);
+        addTrackedListener(a, 'pointerleave', onProjLeave);
       }
     });
   }
@@ -828,23 +889,26 @@
     return null;
   }
 
-  function highlightActiveSidebarProject(sidebarList) {
+  function highlightActiveSidebarProject(sidebarList, options = {}) {
     if (!sidebarList) return;
-    sidebarList.querySelectorAll('.sub-link').forEach(l => l.classList.remove('active'));
-
+    const allowScrollIntoView = options.allowScrollIntoView !== false;
     const activeId = (selectedRoute === 'project' && selectedProjectId)
       ? String(selectedProjectId)
       : (selectedRoute === null || selectedRoute === 'project' ? getProjectIdFromLocation() : null);
 
-    if (activeId) {
-      const activeLink = Array.from(sidebarList.querySelectorAll('.project-sub-link'))
-        .find(l => l.dataset.id === String(activeId));
-      if (activeLink) {
-        activeLink.classList.add('active');
-        if (sidebarList.classList.contains('expanded') && typeof activeLink.scrollIntoView === 'function') {
-          activeLink.scrollIntoView({ block: 'nearest' });
-        }
+    let activeLink = null;
+    sidebarList.querySelectorAll('.sub-link').forEach(l => {
+      const shouldBeActive = Boolean(activeId && l.classList?.contains('project-sub-link') && l.dataset?.id === String(activeId));
+      if (shouldBeActive) {
+        activeLink = l;
+        if (!l.classList.contains('active')) l.classList.add('active');
+      } else if (l.classList.contains('active')) {
+        l.classList.remove('active');
       }
+    });
+
+    if (activeLink && allowScrollIntoView && sidebarList.classList.contains('expanded') && typeof activeLink.scrollIntoView === 'function') {
+      activeLink.scrollIntoView({ block: 'nearest' });
     }
   }
 
@@ -1031,6 +1095,9 @@
 
       if (result && result.user && panel) {
         const user = result.user;
+        const userSig = `${user.id || ''}|${user.name || ''}|${user.email || ''}|${user.image || ''}|${user.plan || ''}`;
+        if (lastSyncedUserSignature === userSig) return;
+        lastSyncedUserSignature = userSig;
         const name = user.name || '帳戶';
         const drawAvatar = target => {
           if (!target) return;
@@ -1991,9 +2058,12 @@
       return;
     }
     if (window.ProjectStore && typeof window.ProjectStore.subscribe === 'function') {
-      storeUnsubscribe = window.ProjectStore.subscribe(() => {
-        updateSidebarProjects();
-      });
+      storeUnsubscribe = window.ProjectStore.subscribe((projects, event) => {
+        if (event && event.scope === 'detail') return;
+        if (event && event.type === 'detail_prefetched') return;
+        if (event && event.changed === false && lastRenderedProjectsJSON !== null) return;
+        updateSidebarProjects({ fromBackground: true, allowScrollIntoView: false });
+      }, { scopes: ['list', 'session'], ignorePrefetch: true });
     }
   }
 
@@ -2041,22 +2111,39 @@
      PUBLIC API
      ========================================================================== */
 
+  let lastSyncedUserSignature = null;
+
   async function init(options = {}) {
     shellOptions = {
       ...shellOptions,
       ...options
     };
 
-    await ensureShellDOM(options.signal, options.fetchDoc);
+    const alreadyMounted = Boolean(
+      (dashboardSidebar && dashboardSidebar.isConnected) &&
+      (dashboardTopbar && dashboardTopbar.isConnected) &&
+      (dashboardUserPanel && dashboardUserPanel.isConnected) &&
+      (mobileBottomNav && mobileBottomNav.isConnected)
+    );
+
+    if (!alreadyMounted) {
+      await ensureShellDOM(options.signal, options.fetchDoc);
+      bindSidebarLinks();
+      bindGlobalListeners();
+      subscribeProjectStore();
+    } else {
+      subscribeProjectStore();
+    }
+
     accountController?.bindPage(options.signal);
-    bindSidebarLinks();
-    bindGlobalListeners();
-    subscribeProjectStore();
+
     if (window.ProjectStore && typeof window.ProjectStore.fetchProjects === 'function' && !window.ProjectStore.getProjects()) {
       Promise.resolve(window.ProjectStore.fetchProjects()).catch(() => {});
     }
     void syncUserProfile(options.signal);
-    updateSidebarProjects();
+    if (!alreadyMounted) {
+      updateSidebarProjects();
+    }
 
     return {
       destroy
@@ -2236,6 +2323,7 @@
     });
 
     lastRenderedProjectsJSON = null;
+    lastSyncedUserSignature = null;
     dashboardSidebar = null;
     dashboardTopbar = null;
     dashboardUserPanel = null;

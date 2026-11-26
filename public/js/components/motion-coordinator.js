@@ -59,6 +59,55 @@
     flushRafId = root.requestAnimationFrame(flushFrame);
   }
 
+  // Coalesced deferred background work queue (runs once active motion settles, with failsafe maxWait)
+  const deferredTasks = new Map(); // key -> { fn, timer }
+  let deferredDrainScheduled = false;
+
+  function runDeferredTask(key) {
+    const entry = deferredTasks.get(key);
+    if (!entry) return;
+    deferredTasks.delete(key);
+    if (entry.timer !== null) clearTimeout(entry.timer);
+    try { entry.fn(); } catch (_) {}
+  }
+
+  function flushDeferredTasks() {
+    deferredDrainScheduled = false;
+    if (activeTokens.size > 0 || deferredTasks.size === 0) return;
+    const keys = Array.from(deferredTasks.keys());
+    const batch = keys.slice(0, 3);
+    for (let i = 0; i < batch.length; i++) {
+      runDeferredTask(batch[i]);
+    }
+    if (deferredTasks.size > 0 && activeTokens.size === 0) {
+      scheduleDeferredFlush();
+    }
+  }
+
+  function scheduleDeferredFlush() {
+    if (deferredDrainScheduled || deferredTasks.size === 0) return;
+    deferredDrainScheduled = true;
+    if (typeof root.requestIdleCallback === 'function') {
+      root.requestIdleCallback(flushDeferredTasks, { timeout: 120 });
+    } else {
+      setTimeout(flushDeferredTasks, 16);
+    }
+  }
+
+  function deferDuringMotion(key, fn, opts = {}) {
+    if (typeof fn !== 'function') return;
+    const taskKey = String(key || `anon-${++tokenSeq}`);
+    if (activeTokens.size === 0) {
+      try { fn(); } catch (_) {}
+      return;
+    }
+    const existing = deferredTasks.get(taskKey);
+    if (existing && existing.timer !== null) clearTimeout(existing.timer);
+    const maxWaitMs = Number(opts.maxWaitMs) > 0 ? Number(opts.maxWaitMs) : 1200;
+    const timer = setTimeout(() => runDeferredTask(taskKey), maxWaitMs);
+    deferredTasks.set(taskKey, { fn, timer });
+  }
+
   // Adaptive quality state (sample-based with hysteresis; never switches mid-animation)
   let qualityTier = 'full'; // 'full' | 'balanced' | 'lightweight'
   const recentAvgFrameSamples = [];
@@ -101,6 +150,9 @@
       participants.forEach((p) => {
         try { p.onStateChange?.(snapshot); } catch (_) {}
       });
+    }
+    if (activeTokens.size === 0 && deferredTasks.size > 0) {
+      scheduleDeferredFlush();
     }
   }
 
@@ -249,6 +301,8 @@
       writeQueue.push(fn);
       scheduleFlush();
     },
+    deferDuringMotion,
+    getDeferredCount: () => deferredTasks.size,
     recordAnimationSample,
     getQualityTier: () => qualityTier
   };

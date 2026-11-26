@@ -72,10 +72,29 @@
       .slice(0, 4);
   }
 
+  const recentCardStates = new WeakMap();
+
+  function getRecentCardSignature(p) {
+    if (global.ProjectCard && typeof global.ProjectCard.getCardSignature === 'function') {
+      return global.ProjectCard.getCardSignature(p, { variant: 'compact' });
+    }
+    const tags = Array.isArray(p?.tags) ? p.tags.join(',') : '';
+    const shotsCount = p?.shotCount || p?.shotsCount || (Array.isArray(p?.shots) ? p.shots.length : 0);
+    return `${p?.id}|${p?.title || ''}|${p?.ratio || ''}|${shotsCount}|${p?.updateAt || p?.updatedAt || ''}|${tags}|${p?.cover || ''}`;
+  }
+
   function renderRecentProjectsList(recentGrid, recentProjects, onCardMutate) {
     if (!recentGrid) return;
-    recentGrid.innerHTML = '';
+    let state = recentCardStates.get(recentGrid);
+    if (!state) {
+      state = new Map();
+      recentCardStates.set(recentGrid, state);
+    }
+
     if (recentProjects.length === 0) {
+      state.forEach(entry => global.ProjectCardInteractions?.unbind?.(entry.card));
+      state.clear();
+      recentGrid.innerHTML = '';
       renderEmptyRecentState(recentGrid, () => {
         if (global.AICreationController) {
           global.AICreationController.openQuickCompose();
@@ -86,24 +105,84 @@
       return;
     }
 
-    recentProjects.forEach(p => {
-      const card = document.createElement('div');
-      if (global.ProjectCard && typeof global.ProjectCard.buildHomeRecentCardHTML === 'function') {
-        card.innerHTML = global.ProjectCard.buildHomeRecentCardHTML(p);
-      } else if (typeof global.buildHomeRecentCardHTML === 'function') {
-        card.innerHTML = global.buildHomeRecentCardHTML(p);
+    // Remove skeleton or empty placeholders if transitioning from skeleton/empty
+    const hasSkeletonOrEmpty = recentGrid.querySelector?.('.skeleton, .home-empty-recent-card');
+    if (hasSkeletonOrEmpty || (!state.size && recentGrid.children?.length > 0)) {
+      if (state.size === 0) {
+        recentGrid.innerHTML = '';
+      } else {
+        recentGrid.querySelectorAll?.('.skeleton, .home-empty-recent-card')?.forEach(el => el.remove?.());
+      }
+    }
+
+    const retainedIds = new Set(recentProjects.map(p => String(p.id)));
+    for (const [id, entry] of state.entries()) {
+      if (!retainedIds.has(id)) {
+        global.ProjectCardInteractions?.unbind?.(entry.card);
+        if (entry.card.parentNode === recentGrid || typeof entry.card.remove === 'function') {
+          entry.card.remove?.();
+        }
+        state.delete(id);
+      }
+    }
+
+    let createdAny = false;
+    recentProjects.forEach((p, idx) => {
+      const id = String(p.id);
+      const signature = getRecentCardSignature(p);
+      let entry = state.get(id);
+
+      if (!entry) {
+        const card = document.createElement('div');
+        if (global.ProjectCard && typeof global.ProjectCard.buildHomeRecentCardHTML === 'function') {
+          card.innerHTML = global.ProjectCard.buildHomeRecentCardHTML(p);
+        } else if (typeof global.buildHomeRecentCardHTML === 'function') {
+          card.innerHTML = global.buildHomeRecentCardHTML(p);
+        }
+        card.dataset.variant = 'compact';
+        if (typeof global.setupProjectCardEvents === 'function') {
+          global.setupProjectCardEvents(card, p, false, () => {
+            if (typeof onCardMutate === 'function') onCardMutate();
+          });
+        }
+        entry = { card, signature };
+        state.set(id, entry);
+        createdAny = true;
+      } else if (entry.signature !== signature) {
+        const patched = global.ProjectCard?.patchCardElement?.(entry.card, p, { variant: 'compact' });
+        if (!patched) {
+          // Fallback only if mock DOM lacks querySelector support
+          global.ProjectCardInteractions?.unbind?.(entry.card);
+          if (global.ProjectCard && typeof global.ProjectCard.buildHomeRecentCardHTML === 'function') {
+            entry.card.innerHTML = global.ProjectCard.buildHomeRecentCardHTML(p);
+          } else if (typeof global.buildHomeRecentCardHTML === 'function') {
+            entry.card.innerHTML = global.buildHomeRecentCardHTML(p);
+          }
+          if (typeof global.setupProjectCardEvents === 'function') {
+            global.setupProjectCardEvents(entry.card, p, false, () => {
+              if (typeof onCardMutate === 'function') onCardMutate();
+            });
+          }
+          createdAny = true;
+        }
+        entry.signature = signature;
+      } else {
+        // Keep latest project reference without touching DOM
+        global.ProjectCardInteractions?.updateProject?.(entry.card, p);
       }
 
-      card.dataset.variant = 'compact';
-      if (typeof global.setupProjectCardEvents === 'function') {
-        global.setupProjectCardEvents(card, p, false, () => {
-          if (typeof onCardMutate === 'function') onCardMutate();
-        });
+      // Preserve exact DOM position without unnecessary detach/re-insert
+      const currentAtIdx = recentGrid.children ? recentGrid.children[idx] : null;
+      if (currentAtIdx !== entry.card) {
+        if (currentAtIdx && typeof recentGrid.insertBefore === 'function') {
+          recentGrid.insertBefore(entry.card, currentAtIdx);
+        } else if (typeof recentGrid.insertBefore === 'function' || !Array.isArray(recentGrid.children) || !recentGrid.children.includes(entry.card)) {
+          recentGrid.appendChild(entry.card);
+        }
       }
-      recentGrid.appendChild(card);
     });
 
-    if (typeof global.lazyLoadProjectThumbs === 'function') {
+    if (createdAny && typeof global.lazyLoadProjectThumbs === 'function') {
       global.lazyLoadProjectThumbs(recentGrid);
     }
   }
@@ -167,12 +246,23 @@
     const hero = find('home-hero-card'), title = find('workspace-hero-title'), context = find('workspace-hero-context');
     if (!hero || !title || !context) return;
     const model = buildHeroModel(projects, failed);
+    const recentProject = Array.isArray(projects) ? (getRecentProjects(projects)[0] || null) : null;
+    const coverUrl = model.images[0] || (model.state === 'project' && model.id ? `/api/projects/${encodeURIComponent(model.id)}/cover` : '');
+    const heroSignature = `${model.state}|${model.id || ''}|${model.title}|${coverUrl}|${recentProject?.ratio || ''}`;
+
+    // Keep latest project ref for resume transition without rebuilding hero DOM
+    hero._latestRecentProject = recentProject;
+    if (hero._lastHeroSignature === heroSignature) {
+      return;
+    }
+    hero._lastHeroSignature = heroSignature;
+
     hero.dataset.state = model.state;
     title.textContent = '靈感，一鍵轉換';
     context.textContent = '讓靈感成為看得見的故事，探索模板、案例與短影音創作靈感。';
-    const recentProject = Array.isArray(projects) ? (getRecentProjects(projects)[0] || null) : null;
     const resume = find('workspace-hero-resume');
     const resumeDock = find('workspace-hero-resume-dock');
+    const frames = find('workspace-hero-frames');
     if (resumeDock) resumeDock.hidden = model.state !== 'project';
     if (resume) {
       resume.hidden = model.state !== 'project';
@@ -180,9 +270,10 @@
       resume.onclick = event => {
         if (event.button > 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
         event.preventDefault();
+        const latestProj = hero._latestRecentProject || recentProject;
         const coverFrame = frames?.querySelector?.('.workspace-frame-cover') || frames?.querySelector?.('.workspace-frame');
         const hasCoverImg = Boolean(coverFrame?.querySelector?.('img')?.src);
-        if (global.ProjectCoverTransition && typeof global.ProjectCoverTransition.launch === 'function' && recentProject && coverFrame && hasCoverImg) {
+        if (global.ProjectCoverTransition && typeof global.ProjectCoverTransition.launch === 'function' && latestProj && coverFrame && hasCoverImg) {
           if (hero.classList?.contains('is-navigating')) return;
           const fadeTargets = [
             hero.querySelector?.('.workspace-hero-backdrop'),
@@ -214,14 +305,13 @@
               return hero.querySelector?.(sel) || null;
             }
           };
-          global.ProjectCoverTransition.launch(proxyCard, recentProject, { navigate, onCleanup: restoreHero });
+          global.ProjectCoverTransition.launch(proxyCard, latestProj, { navigate, onCleanup: restoreHero });
           return;
         }
         navigate('project', { id: model.id });
       };
     }
     const bgImg = find('workspace-hero-bg-img');
-    const coverUrl = model.images[0] || (model.state === 'project' && model.id ? `/api/projects/${encodeURIComponent(model.id)}/cover` : '');
 
     if (bgImg) {
       if (coverUrl) {
@@ -230,14 +320,15 @@
           bgImg.hidden = true;
           bgImg.removeAttribute('src');
         };
-        bgImg.src = coverUrl;
+        if (bgImg.getAttribute?.('src') !== coverUrl) {
+          bgImg.src = coverUrl;
+        }
       } else {
         bgImg.hidden = true;
         bgImg.removeAttribute('src');
       }
     }
 
-    const frames = find('workspace-hero-frames');
     if (!frames) return;
     frames.textContent = '';
     frames.classList?.remove('is-tall', 'is-landscape');
@@ -367,6 +458,10 @@
 
     if (!listEl) return;
     const milestones = buildMilestones(active, totalShots);
+    const milestoneSig = milestones.map(m => `${m.icon}|${m.title}|${m.meta}`).join(';');
+    if (listEl._lastMilestoneSig === milestoneSig) return;
+    listEl._lastMilestoneSig = milestoneSig;
+
     if (!milestones.length) {
       listEl.innerHTML = `
         <div class="home-milestone-goal">
@@ -653,8 +748,9 @@
       }
     }
 
-    // 3. 最近分鏡區塊 (Recent Projects) SWR 讀取
+    // 3. 最近分鏡區塊 (Recent Projects) SWR 讀取 + 單一資料提交通道
     const recentProjectsGrid = (root ? root.querySelector('#recent-projects-grid') : null) || document.getElementById('recent-projects-grid');
+    let hasCommittedProjects = false;
 
     function updateRecentView() {
       if (!isMounted || !recentProjectsGrid) return;
@@ -665,10 +761,16 @@
       renderHero(root, list, navFn);
       renderActivityRail(root, list, navFn);
       if (!list) {
+        const state = recentCardStates.get(recentProjectsGrid);
+        if (state) {
+          state.forEach(entry => global.ProjectCardInteractions?.unbind?.(entry.card));
+          state.clear();
+        }
         recentProjectsGrid.innerHTML = SKELETON_RECENT_CARDS_HTML;
         return;
       }
 
+      hasCommittedProjects = true;
       const recentProjects = getRecentProjects(list);
       renderRecentProjectsList(recentProjectsGrid, recentProjects, () => {
         updateRecentView();
@@ -676,6 +778,18 @@
           global.updateSidebarProjects();
         }
       });
+    }
+
+    // 4. 先訂閱 ProjectStore (僅監聽 list 與 session 範圍，忽略無關的 detail prefetch/load)
+    let unsubscribeStore = null;
+    if (global.ProjectStore && typeof global.ProjectStore.subscribe === 'function') {
+      unsubscribeStore = global.ProjectStore.subscribe((projects, event) => {
+        if (!isMounted) return;
+        if (event && event.scope === 'detail') return;
+        if (event && event.type === 'detail_prefetched') return;
+        if (event && event.changed === false && hasCommittedProjects) return;
+        updateRecentView();
+      }, { scopes: ['list', 'session'], ignorePrefetch: true });
     }
 
     if (recentProjectsGrid) {
@@ -693,8 +807,11 @@
         recentProjectsGrid.innerHTML = SKELETON_RECENT_CARDS_HTML;
         if (global.ProjectStore && typeof global.ProjectStore.fetchProjects === 'function') {
           global.ProjectStore.fetchProjects({ signal, force: false })
-            .then(() => {
-              if (isMounted) updateRecentView();
+            .then((resolved) => {
+              // 若 fetchProjects 期間 Store 已透過 subscription 提交則不重複渲染
+              if (isMounted && !hasCommittedProjects && Array.isArray(resolved) && global.ProjectStore.getProjects()) {
+                updateRecentView();
+              }
             })
             .catch(() => {
               if (isMounted && !global.ProjectStore.getProjects()) {
@@ -711,15 +828,6 @@
             });
         }
       }
-    }
-
-    // 4. 訂閱 ProjectStore 狀態更新
-    let unsubscribeStore = null;
-    if (global.ProjectStore && typeof global.ProjectStore.subscribe === 'function') {
-      unsubscribeStore = global.ProjectStore.subscribe((projects, event) => {
-        if (!isMounted) return;
-        updateRecentView();
-      });
     }
 
     // 4.5 熱門模板 (Top Collection - Single Row)
@@ -785,6 +893,15 @@
       if (unsubscribeStore) {
         unsubscribeStore();
         unsubscribeStore = null;
+      }
+      if (recentProjectsGrid) {
+        const state = recentCardStates.get(recentProjectsGrid);
+        if (state) {
+          state.forEach(entry => global.ProjectCardInteractions?.unbind?.(entry.card));
+          state.clear();
+          recentCardStates.delete(recentProjectsGrid);
+        }
+        global.ProjectCardInteractions?.destroyWithin?.(recentProjectsGrid);
       }
       if (contentBody && global.DynamicMaskSystem && typeof global.DynamicMaskSystem.detach === 'function') {
         global.DynamicMaskSystem.detach(contentBody);
