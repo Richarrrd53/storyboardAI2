@@ -603,7 +603,7 @@
       const settle = () => {
         editor.style.removeProperty('transform');
         editor.style.removeProperty('transition');
-        backdrop.style.removeProperty('opacity');
+        backdrop.style.removeProperty('background-color');
         document.body.classList.remove('project-editor-dragging');
         document.body.style.setProperty('--editor-depth-progress', '1');
       };
@@ -624,7 +624,7 @@
         if (drag.dy > 5) suppressClick = true;
         editor.style.transform = `translate3d(0, ${drag.dy}px, 0)`;
         const progress = Math.max(0, 1 - drag.dy / editor.clientHeight);
-        backdrop.style.opacity = String(progress);
+        backdrop.style.backgroundColor = `rgba(15, 23, 42, ${(0.45 * progress).toFixed(3)})`;
         document.body.style.setProperty('--editor-depth-progress', String(progress));
       }, { signal });
       const end = (event, cancelled = false) => {

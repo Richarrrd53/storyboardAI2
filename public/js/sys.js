@@ -295,7 +295,7 @@ function legacyDeleteConfirm(message, description, type = 'default', btnText, pr
         ModalAnimation.open(bg, windowEl, {
             duration: 400,
             legacyMotion: true,
-            backdropBg: 'var(--primary-soft)'
+            backdropBg: 'var(--dialog-backdrop-bg, rgba(15, 23, 42, 0.45))'
         });
         lease = window.OverlayManager.acquire({ overlay: bg, panel: windowEl,
             initialFocus: btn1, returnFocus,
