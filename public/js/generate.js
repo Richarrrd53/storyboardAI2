@@ -957,7 +957,7 @@
       if (summary) summary.innerHTML = task.stage === 'images' ? '' : window.AIActivity?.summaryMarkup(task.activity?.thoughtSummaries) || '';
       if (task.status === 'completed' && CreationSessionStore.currentPhase === 4) {
           if (task.save.status === 'saved' && task.projectId && typeof window.navigate === 'function') {
-              window.navigate('project', { id: task.projectId });
+              window.navigate('project', { id: task.projectId, skipLeaveGuard: true });
               return;
           }
           renderResults(task);

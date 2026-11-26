@@ -1587,8 +1587,11 @@ app.patch('/api/projects/:projectId/shots/:shotId', async (req, res) => {
             }
 
             storyboardImages.assertNoBase64InShotPayload(patchedPayload);
-            updateData.payload = patchedPayload;
+            updateData.payload = stripNullBytes(patchedPayload);
         }
+        if (updateData.title !== undefined) updateData.title = stripNullBytes(updateData.title);
+        if (updateData.camera !== undefined) updateData.camera = stripNullBytes(updateData.camera);
+        if (updateData.duration !== undefined) updateData.duration = stripNullBytes(updateData.duration);
 
         const updatedShot = await prisma.shot.update({
             where: { id: shotId },
@@ -1868,6 +1871,19 @@ app.get('/api/projects/:id', async (req, res) => {
     }
 });
 
+function stripNullBytes(value) {
+    if (typeof value === 'string') return value.replace(/\u0000/g, '');
+    if (Array.isArray(value)) return value.map(stripNullBytes);
+    if (value && typeof value === 'object') {
+        const cleaned = {};
+        for (const [key, val] of Object.entries(value)) {
+            cleaned[key.replace(/\u0000/g, '')] = stripNullBytes(val);
+        }
+        return cleaned;
+    }
+    return value;
+}
+
 function generateShortId() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-';
     let result = '';
@@ -1918,19 +1934,19 @@ app.post('/api/projects', async (req, res) => {
                 ...(generationId ? { id: generationId } : {}),
                 shortId,
                 authorId: decoded.id,
-                title,
-                style: style || '',
-                ratio: ratio || '',
+                title: stripNullBytes(title),
+                style: stripNullBytes(style || ''),
+                ratio: stripNullBytes(ratio || ''),
                 cover: null,
-                metadata: metadata || {},
-                characters: characters || {},
+                metadata: stripNullBytes(metadata || {}),
+                characters: stripNullBytes(characters || {}),
                 shots: {
                     create: incomingShots.map((shot) => ({
                         order: shot.order,
-                        title: shot.title || '',
-                        camera: shot.camera || '',
-                        duration: shot.duration || '3s',
-                        payload: shot.payload || {}
+                        title: stripNullBytes(shot.title || ''),
+                        camera: stripNullBytes(shot.camera || ''),
+                        duration: stripNullBytes(shot.duration || '3s'),
+                        payload: stripNullBytes(shot.payload || {})
                     }))
                 }
             },

@@ -297,19 +297,20 @@
             if (cached?.source === imageRef && cached?.storageRef) {
               imageRef = cached.storageRef;
             } else {
-              const match = /^data:(image\/(?:png|jpeg|webp));base64,([\s\S]+)$/.exec(imageRef);
+              const match = /^data:(image\/(?:png|jpe?g|webp));base64,([\s\S]+)$/i.exec(imageRef);
               if (!match) {
                 shot.payload.uploadStatus = 'pending_retry';
                 shot.payload.uploadError = '不支援的圖片格式，無法儲存。';
                 uploadFailures.push(shot.order);
                 continue;
               }
+              const contentType = match[1].toLowerCase().replace('image/jpg', 'image/jpeg');
               try {
                 const upload = await requestJSON(run, controller, `/api/projects/${encodeURIComponent(run.projectId)}/shots/${encodeURIComponent(shotId)}/image-upload`, {
-                  method: 'POST', headers, body: JSON.stringify({ contentType: match[1] })
+                  method: 'POST', headers, body: JSON.stringify({ contentType })
                 });
                 const bytes = Uint8Array.from(atob(match[2]), char => char.charCodeAt(0));
-                const response = await fetch(upload.uploadUrl, { method: 'PUT', headers: { 'Content-Type': match[1], 'x-upsert': 'false' }, body: bytes, signal: controller.signal });
+                const response = await fetch(upload.uploadUrl, { method: 'PUT', headers: { 'Content-Type': contentType, 'x-upsert': 'false' }, body: bytes, signal: controller.signal });
                 assertRun(run, controller);
                 if (!response.ok) throw new Error('圖片上傳至儲存空間失敗，請重試儲存。');
                 const permanentRef = upload.storageRef || upload.publicUrl;
@@ -606,13 +607,24 @@
         return data;
     }
 
+    function stripNulls(value) {
+        if (typeof value === 'string') return value.replace(/\u0000/g, '');
+        if (Array.isArray(value)) return value.map(stripNulls);
+        if (value && typeof value === 'object') {
+            const out = {};
+            for (const [k, v] of Object.entries(value)) out[k] = stripNulls(v);
+            return out;
+        }
+        return value;
+    }
+
     function safeParseJson(text) {
         try {
             const cleaned = text.replace(/```json/g, '').replace(/```/g, '').trim();
             const s = cleaned.indexOf('{');
             const e = cleaned.lastIndexOf('}');
             if (s === -1 || e === -1) return null;
-            return JSON.parse(cleaned.slice(s, e + 1));
+            return stripNulls(JSON.parse(cleaned.slice(s, e + 1)));
         } catch (e) {
             return null;
         }
