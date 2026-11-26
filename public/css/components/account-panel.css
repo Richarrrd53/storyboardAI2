@@ -36,7 +36,7 @@
 .account-panel .user-panel-handle { display: none; }
 .account-row:focus-visible, .account-panel :is(button,a):focus-visible { outline: 2px solid var(--color-border-focus); outline-offset: 2px; }
 .surface-morph-account .morph-menu-content { padding: 0; }
-.account-sheet-overlay { position: fixed; inset: 0; z-index: var(--layer-sheet); display: flex; align-items: flex-end; justify-content: center; background: var(--color-surface-overlay); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+.account-sheet-overlay { position: fixed; inset: 0; z-index: var(--layer-sheet); display: flex; align-items: flex-end; justify-content: center; background: var(--color-surface-overlay); }
 .account-sheet { width: 100%; max-width: 540px; max-height: calc(100dvh - 24px); overflow-y: auto; overscroll-behavior: contain; border: var(--surface-floating-border); border-radius: 28px 28px 0 0; background: var(--surface-floating-reading-bg); box-shadow: var(--surface-floating-shadow); backdrop-filter: var(--surface-floating-blur); -webkit-backdrop-filter: var(--surface-floating-blur); }
 .account-sheet .account-panel { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
 .account-sheet .user-panel-handle { display: block; width: 36px; height: 4px; margin: 0 auto; border-radius: 999px; background: var(--color-border-default); touch-action: none; }

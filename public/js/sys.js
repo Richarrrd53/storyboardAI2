@@ -23,38 +23,36 @@ const ModalAnimation = {
         this.cancel(overlay);
         const reduced = !options.legacyMotion && typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
         const duration = reduced ? 0 : options.duration || this.DURATION;
-        const blur = options.blur || 'var(--dialog-backdrop-blur, 20px)';
         const backdropBg = options.backdropBg || 'rgba(15, 23, 42, 0.45)';
-        const blurTarget = overlay.querySelector?.('.sb-dialog-blur') || overlay;
+        const backdropTarget = overlay.querySelector?.('.sb-dialog-blur') || overlay;
 
         overlay.style.display = 'flex';
         overlay.style.pointerEvents = 'none';
         overlay.style.transition = 'none';
-        blurTarget.style.transition = 'none';
-        // Fixed blur radius + compositor-only opacity fade (avoids per-frame blur recomputation)
-        blurTarget.style.backdropFilter = `blur(${blur})`;
-        if (blurTarget.style.webkitBackdropFilter !== undefined) {
-            blurTarget.style.webkitBackdropFilter = `blur(${blur})`;
+        backdropTarget.style.transition = 'none';
+        backdropTarget.style.backdropFilter = 'none';
+        if (backdropTarget.style.webkitBackdropFilter !== undefined) {
+            backdropTarget.style.webkitBackdropFilter = 'none';
         }
-        blurTarget.style.background = backdropBg;
-        blurTarget.style.opacity = '0';
-        if (blurTarget !== overlay) {
-            overlay.style.opacity = '1';
+        backdropTarget.style.background = 'transparent';
+        overlay.style.opacity = '1';
+        if (backdropTarget !== overlay) {
+            backdropTarget.style.opacity = '1';
         }
 
         if (panel) {
             panel.style.transition = 'none';
             panel.style.scale = '0';
-            panel.style.opacity = options.legacyMotion ? '0' : '1';
+            panel.style.opacity = '1';
         }
 
-        // Single reflow commit for initial scale/opacity before enabling transitions.
+        // Single reflow commit for initial scale/background before enabling transitions.
         void (panel || overlay).offsetWidth;
 
-        blurTarget.style.transition = `opacity ${duration}ms ${this.EASING_BACKDROP}`;
+        backdropTarget.style.transition = `background-color ${duration}ms ${this.EASING_BACKDROP}`;
         if (panel) {
             const enterEase = options.legacyMotion ? this.EASING_CARD_ENTER : this.EASING_DIALOG_ENTER;
-            panel.style.transition = `scale ${duration}ms ${enterEase}${options.legacyMotion ? `, opacity ${duration}ms ${enterEase}` : ''}`;
+            panel.style.transition = `scale ${duration}ms ${enterEase}`;
         }
         if (!reduced && typeof window !== 'undefined') {
             window.DynamicMaskSystem?.setMotionMode?.('defer');
@@ -64,11 +62,9 @@ const ModalAnimation = {
                 overlay.classList.add('active');
             }
             overlay.style.pointerEvents = 'auto';
-            overlay.style.opacity = '1';
-            blurTarget.style.opacity = '1';
+            backdropTarget.style.background = backdropBg;
             if (panel) {
                 panel.style.scale = '1';
-                panel.style.opacity = '1';
             }
             if (!reduced && typeof window !== 'undefined') {
                 this.schedule(overlay, () => {
@@ -87,15 +83,15 @@ const ModalAnimation = {
         const reduced = !options.legacyMotion && typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
         const duration = reduced ? 0 : options.duration || this.DURATION;
         const onComplete = typeof options === 'function' ? options : (options.onComplete || null);
-        const blurTarget = overlay.querySelector?.('.sb-dialog-blur') || overlay;
+        const backdropTarget = overlay.querySelector?.('.sb-dialog-blur') || overlay;
 
         overlay.style.pointerEvents = 'none';
 
         if (panel) {
-            panel.style.transition = `scale ${duration}ms ${this.EASING_CARD_LEAVE}${options.legacyMotion ? `, opacity ${duration}ms ${this.EASING_CARD_LEAVE}` : ''}`;
+            panel.style.transition = `scale ${duration}ms ${this.EASING_CARD_LEAVE}`;
         }
         const backdropEase = options.legacyMotion ? this.EASING_BACKDROP : this.EASING_BACKDROP_LEAVE;
-        blurTarget.style.transition = `opacity ${duration}ms ${backdropEase}`;
+        backdropTarget.style.transition = `background-color ${duration}ms ${backdropEase}`;
         if (!reduced && typeof window !== 'undefined') {
             window.DynamicMaskSystem?.setMotionMode?.('defer');
         }
@@ -103,9 +99,8 @@ const ModalAnimation = {
         this.schedule(overlay, () => {
             if (panel) {
                 panel.style.scale = '0';
-                panel.style.opacity = options.legacyMotion ? '0' : '1';
             }
-            blurTarget.style.opacity = '0';
+            backdropTarget.style.background = 'transparent';
             if (overlay.classList && typeof overlay.classList.remove === 'function') {
                 overlay.classList.remove('active');
             }
@@ -300,7 +295,6 @@ function legacyDeleteConfirm(message, description, type = 'default', btnText, pr
         ModalAnimation.open(bg, windowEl, {
             duration: 400,
             legacyMotion: true,
-            blur: '50px',
             backdropBg: 'var(--primary-soft)'
         });
         lease = window.OverlayManager.acquire({ overlay: bg, panel: windowEl,

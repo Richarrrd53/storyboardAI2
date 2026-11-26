@@ -90,9 +90,7 @@
       panel.style.removeProperty('transition');
       if (backdrop) {
         backdrop.classList.remove('active');
-        backdrop.style.removeProperty('opacity');
-        backdrop.style.removeProperty('backdrop-filter');
-        backdrop.style.removeProperty('-webkit-backdrop-filter');
+        backdrop.style.removeProperty('background-color');
       }
       if (shouldOpen) {
         panel.classList.add('active');
@@ -115,9 +113,7 @@
       if (backdrop) {
         backdrop.style.removeProperty('display');
         backdrop.classList.add('active');
-        backdrop.style.opacity = '';
-        backdrop.style.backdropFilter = '';
-        backdrop.style.webkitBackdropFilter = '';
+        backdrop.style.removeProperty('background-color');
         backdrop.style.transition = '';
       }
       animateBackgroundDepth(true, 0.35);
@@ -129,9 +125,7 @@
       panel.style.transition = '';
       if (backdrop) {
         backdrop.classList.remove('active');
-        backdrop.style.opacity = '';
-        backdrop.style.backdropFilter = '';
-        backdrop.style.webkitBackdropFilter = '';
+        backdrop.style.removeProperty('background-color');
         backdrop.style.transition = '';
       }
       animateBackgroundDepth(false, 0.32);
@@ -213,10 +207,7 @@
       const progress = Math.max(0, 1 - ratio);
 
       if (backdrop) {
-        backdrop.style.setProperty('opacity', progress.toFixed(3), 'important');
-        const blurVal = (progress * 4).toFixed(2);
-        backdrop.style.setProperty('backdrop-filter', `blur(${blurVal}px)`, 'important');
-        backdrop.style.setProperty('-webkit-backdrop-filter', `blur(${blurVal}px)`, 'important');
+        backdrop.style.setProperty('background-color', `rgba(15, 23, 42, ${(progress * 0.45).toFixed(3)})`, 'important');
       }
 
       // 1:1 即時跟手縮放背景層級空間感
@@ -253,10 +244,8 @@
         panel.style.setProperty('transform', 'translate3d(0, 100%, 0)', 'important');
 
         if (backdrop) {
-          backdrop.style.setProperty('transition', `opacity ${duration.toFixed(2)}s ease, backdrop-filter ${duration.toFixed(2)}s ease, -webkit-backdrop-filter ${duration.toFixed(2)}s ease`, 'important');
-          backdrop.style.setProperty('opacity', '0', 'important');
-          backdrop.style.setProperty('backdrop-filter', 'blur(0px)', 'important');
-          backdrop.style.setProperty('-webkit-backdrop-filter', 'blur(0px)', 'important');
+          backdrop.style.setProperty('transition', `background-color ${duration.toFixed(2)}s ease`, 'important');
+          backdrop.style.setProperty('background-color', 'rgba(15, 23, 42, 0)', 'important');
         }
 
         animateBackgroundDepth(false, duration);
@@ -269,10 +258,8 @@
         panel.style.setProperty('transform', 'translate3d(0, 0, 0)', 'important');
 
         if (backdrop) {
-          backdrop.style.setProperty('transition', 'opacity 0.26s ease, backdrop-filter 0.26s ease, -webkit-backdrop-filter 0.26s ease', 'important');
-          backdrop.style.opacity = '1';
-          backdrop.style.backdropFilter = 'blur(4px)';
-          backdrop.style.webkitBackdropFilter = 'blur(4px)';
+          backdrop.style.setProperty('transition', 'background-color 0.26s ease', 'important');
+          backdrop.style.setProperty('background-color', 'rgba(15, 23, 42, 0.45)', 'important');
         }
 
         animateBackgroundDepth(true, 0.26);
@@ -281,8 +268,7 @@
           panel.style.removeProperty('transition');
           if (backdrop) {
             backdrop.style.removeProperty('transition');
-            backdrop.style.removeProperty('backdrop-filter');
-            backdrop.style.removeProperty('-webkit-backdrop-filter');
+            backdrop.style.removeProperty('background-color');
           }
         }, 260);
       }

@@ -264,8 +264,6 @@
 
     if (!motion?.matches) {
       panel.style.scale = '0';
-      overlay.style.backdropFilter = 'blur(0px)';
-      overlay.style.webkitBackdropFilter = 'blur(0px)';
     }
 
     panel.innerHTML = `
@@ -550,13 +548,11 @@
     if (!motion?.matches && modalMotion && typeof modalMotion.open === 'function') {
       modalMotion.open(overlay, panel, {
         duration,
-        blur: 'var(--dialog-backdrop-blur, 50px)',
         backdropBg: 'var(--dialog-backdrop-bg)'
       });
     } else {
       panel.style.scale = '1';
-      overlay.style.backdropFilter = 'blur(var(--dialog-backdrop-blur, 50px))';
-      overlay.style.webkitBackdropFilter = 'blur(var(--dialog-backdrop-blur, 50px))';
+      overlay.style.background = 'var(--dialog-backdrop-bg)';
     }
 
     return promise;

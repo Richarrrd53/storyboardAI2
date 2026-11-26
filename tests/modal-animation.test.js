@@ -24,34 +24,37 @@ function createMockNode() {
   };
 }
 
-test('ModalAnimation: open sets fixed blur & opacity 0 / scale 0, then transitions to opacity 1 and scale 1 in 10ms', async () => {
+test('ModalAnimation: open sets transparent background & scale 0 (no blur/opacity), then transitions to backdropBg and scale 1 in 10ms', async () => {
   const overlay = createMockNode();
   const panel = createMockNode();
 
-  ModalAnimation.open(overlay, panel, { blur: '20px', backdropBg: 'rgba(0,0,0,0.5)' });
+  ModalAnimation.open(overlay, panel, { backdropBg: 'rgba(0,0,0,0.5)' });
 
   // Initial state right after open()
   assert.equal(overlay.style.display, 'flex');
-  assert.equal(overlay.style.backdropFilter, 'blur(20px)');
-  assert.equal(overlay.style.opacity, '0');
+  assert.equal(overlay.style.backdropFilter, 'none');
+  assert.equal(overlay.style.background, 'transparent');
+  assert.equal(overlay.style.opacity, '1');
   assert.equal(panel.style.scale, '0');
-  assert.ok(overlay.style.transition.includes('opacity') && overlay.style.transition.includes('cubic-bezier(.4,0,.2,1)'));
+  assert.ok(overlay.style.transition.includes('background-color') && overlay.style.transition.includes('cubic-bezier(.4,0,.2,1)'));
+  assert.ok(!overlay.style.transition.includes('opacity'));
   assert.ok(panel.style.transition.includes('cubic-bezier(.34,1.59,.69,.99)'));
 
   // After 20ms timeout
   await new Promise(r => setTimeout(r, 25));
 
   assert.ok(overlay.classList.contains('active'));
-  assert.equal(overlay.style.backdropFilter, 'blur(20px)');
+  assert.equal(overlay.style.backdropFilter, 'none');
+  assert.equal(overlay.style.background, 'rgba(0,0,0,0.5)');
   assert.equal(panel.style.scale, '1');
   assert.equal(overlay.style.opacity, '1');
 });
 
-test('ModalAnimation: close keeps fixed blur, fades opacity to 0 and scale to 0 in 10ms, then display none', async () => {
+test('ModalAnimation: close fades background to transparent and scale to 0 without opacity/blur, then display none', async () => {
   const overlay = createMockNode();
   const panel = createMockNode();
 
-  ModalAnimation.open(overlay, panel, { blur: '16px' });
+  ModalAnimation.open(overlay, panel, { backdropBg: 'rgba(0,0,0,0.5)' });
   await new Promise(r => setTimeout(r, 25));
 
   let closedCompleted = false;
@@ -64,12 +67,15 @@ test('ModalAnimation: close keeps fixed blur, fades opacity to 0 and scale to 0 
 
   // Step 1: Immediate easing curve change
   assert.ok(panel.style.transition.includes('cubic-bezier(.31, .01, .66, -0.59)'));
+  assert.ok(overlay.style.transition.includes('background-color'));
+  assert.ok(!overlay.style.transition.includes('opacity'));
 
-  // Step 2: After 20ms timeout, scale drops to 0 and opacity drops to 0 while blur stays fixed
+  // Step 2: After 20ms timeout, scale drops to 0 and background returns to transparent while opacity stays 1
   await new Promise(r => setTimeout(r, 25));
   assert.equal(panel.style.scale, '0');
-  assert.equal(overlay.style.opacity, '0');
-  assert.equal(overlay.style.backdropFilter, 'blur(16px)');
+  assert.equal(overlay.style.background, 'transparent');
+  assert.equal(overlay.style.opacity, '1');
+  assert.equal(overlay.style.backdropFilter, 'none');
 
   // Step 3: After duration + 50ms, display becomes none and onComplete fires
   await new Promise(r => setTimeout(r, 150));
@@ -77,13 +83,15 @@ test('ModalAnimation: close keeps fixed blur, fades opacity to 0 and scale to 0 
   assert.equal(closedCompleted, true);
 });
 
-test('legacy delete fades backdrop opacity cleanly without dynamic blur recomputation', async () => {
+test('legacy delete fades backdrop background-color cleanly without opacity or blur', async () => {
   const overlay = createMockNode(); const panel = createMockNode();
   ModalAnimation.open(overlay, panel); await new Promise(r => setTimeout(r, 25));
   ModalAnimation.close(overlay, panel, { duration: 20, fadeBackdrop: true, legacyMotion: true });
-  assert.ok(overlay.style.transition.includes('opacity'), 'legacy delete fades backdrop via compositor opacity');
+  assert.ok(overlay.style.transition.includes('background-color'), 'legacy delete fades backdrop via background-color');
+  assert.ok(!overlay.style.transition.includes('opacity'));
   await new Promise(r => setTimeout(r, 25));
-  assert.equal(overlay.style.opacity, '0');
+  assert.equal(overlay.style.background, 'transparent');
+  assert.equal(overlay.style.opacity, '1');
 });
 
 test('reopening a central modal cancels the previous exit completion', async () => {

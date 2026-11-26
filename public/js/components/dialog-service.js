@@ -60,7 +60,7 @@
     const overlay = node('div', 'sb-dialog-overlay');
     const panel = node('section', 'sb-dialog');
     // Establish the hidden starting state before inserting or focusing the dialog.
-    if (!motion?.matches) { panel.style.scale = '0'; overlay.style.backdropFilter = 'blur(0px)'; overlay.style.webkitBackdropFilter = 'blur(0px)'; }
+    if (!motion?.matches) { panel.style.scale = '0'; }
     panel.dataset.kind = kind; panel.tabIndex = -1;
     panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-modal', 'true');
     const mark = node('span', 'sb-dialog-mark');
@@ -187,10 +187,10 @@
       }
       const renderedScale = root.getComputedStyle?.(panel)?.scale;
       const currentScale = !renderedScale || renderedScale === 'none' ? '1' : renderedScale;
-      const currentOpacity = root.getComputedStyle?.(blurLayer)?.opacity || '1';
+      const currentBg = root.getComputedStyle?.(blurLayer)?.backgroundColor || 'var(--dialog-backdrop-bg)';
       animations.forEach(a => a.cancel());
-      // Fixed blur radius; fade backdrop opacity cleanly on the compositor.
-      animate(blurLayer, [{ opacity: currentOpacity }, { opacity: '0' }], duration, 'cubic-bezier(.8,0,.6,1)');
+      // Pure semi-transparent scrim; fade backgroundColor without opacity or blur.
+      animate(blurLayer, [{ backgroundColor: currentBg }, { backgroundColor: 'transparent' }], duration, 'cubic-bezier(.8,0,.6,1)');
       animate(panel, [{ scale: currentScale }, { scale: '0' }], duration, exitEase);
       timer = setTimeout(() => dispose(result), duration);
     }
@@ -237,11 +237,9 @@
     });
     input?.addEventListener('input', () => { error.textContent = ''; input.removeAttribute('aria-invalid'); });
     if (!motion?.matches && modalMotion) {
-      modalMotion.open(overlay, panel, { duration, blur: 'var(--dialog-backdrop-blur, 20px)', backdropBg: 'var(--dialog-backdrop-bg)' });
+      modalMotion.open(overlay, panel, { duration, backdropBg: 'var(--dialog-backdrop-bg)' });
     } else if (!motion?.matches) {
-      blurLayer.style.backdropFilter = 'blur(var(--dialog-backdrop-blur, 20px))';
-      if (blurLayer.style.webkitBackdropFilter !== undefined) blurLayer.style.webkitBackdropFilter = 'blur(var(--dialog-backdrop-blur, 20px))';
-      animate(blurLayer, [{ opacity: '0' }, { opacity: '1' }], duration, 'cubic-bezier(.4,0,.2,1)');
+      animate(blurLayer, [{ backgroundColor: 'transparent' }, { backgroundColor: 'var(--dialog-backdrop-bg)' }], duration, 'cubic-bezier(.4,0,.2,1)');
       animate(panel, [{ scale: '0' }, { scale: '1' }], duration, enterEase);
     }
   }

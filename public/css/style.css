@@ -182,11 +182,9 @@ main{
     position: fixed; top: 0; left: 0; z-index: var(--layer-modal, 700) !important;
     width: 100vw;
     height: 100vh;
-    background: rgba(15, 23, 42, 0);
-    backdrop-filter: blur(0px);
-    -webkit-backdrop-filter: blur(0px);
+    background: transparent;
     display: none; flex-direction: column; align-items: center; justify-content: center;
-    transition: all 0.4s cubic-bezier(.4, 0, .2, 1);
+    transition: background-color 0.4s cubic-bezier(.4, 0, .2, 1);
 }
 
 .sys-bg.active {
@@ -199,9 +197,8 @@ main{
     background-color: var(--color-surface-elevated);
     box-shadow: var(--elevation-overlay);
     border: var(--border-width-thin) solid var(--color-border-subtle);
-    opacity: 0;
     scale: 0;
-    transition: all 0.4s cubic-bezier(.33, 1.53, .69, .99);
+    transition: scale 0.4s cubic-bezier(.33, 1.53, .69, .99);
     display: flex; flex-direction: column; align-items: center; justify-content: center;
 }
 

@@ -1627,21 +1627,15 @@ body.dashboard-layout .spa-discovery-wrap > * {
     display: none;
     align-items: center;
     justify-content: center;
-    opacity: 0;
     pointer-events: none;
     background: transparent;
-    backdrop-filter: blur(0px);
-    -webkit-backdrop-filter: blur(0px);
-    transition: backdrop-filter var(--dialog-duration) var(--motion-ease-standard), opacity var(--dialog-duration) var(--motion-ease-standard);
+    transition: background-color var(--dialog-duration) var(--motion-ease-standard);
 }
 
 .project-tags-modal-overlay.active {
     display: flex;
-    opacity: 1;
     pointer-events: auto;
     background: var(--dialog-backdrop-bg);
-    backdrop-filter: blur(var(--dialog-backdrop-blur));
-    -webkit-backdrop-filter: blur(var(--dialog-backdrop-blur));
 }
 
 .project-tags-modal-backdrop {
@@ -1660,8 +1654,7 @@ body.dashboard-layout .spa-discovery-wrap > * {
     padding: var(--space-6, 24px);
     box-sizing: border-box;
     scale: 0;
-    opacity: 0;
-    transition: scale var(--dialog-duration) var(--dialog-enter-ease), opacity var(--dialog-duration) var(--dialog-enter-ease);
+    transition: scale var(--dialog-duration) var(--dialog-enter-ease);
 }
 
 .project-tags-modal-overlay.active .project-tags-modal-panel {
@@ -5354,17 +5347,14 @@ body.is-navigating #global-create-capsule .ai-pill-btn-glow-rotator,
         display: block !important;
         position: fixed !important;
         inset: 0 !important;
-        background: rgba(15, 23, 42, 0.45) !important;
-        backdrop-filter: blur(4px) !important;
-        -webkit-backdrop-filter: blur(4px) !important;
-        opacity: 0;
+        background: rgba(15, 23, 42, 0) !important;
         pointer-events: none;
-        transition: opacity 0.3s var(--motion-ease-decelerate, cubic-bezier(0.16, 1, 0.3, 1)) !important;
+        transition: background-color 0.3s var(--motion-ease-decelerate, cubic-bezier(0.16, 1, 0.3, 1)) !important;
         z-index: var(--layer-sheet-backdrop) !important; /* Sheet backdrop stays below its panel. */
     }
 
     .user-panel-backdrop.active {
-        opacity: 1 !important;
+        background: rgba(15, 23, 42, 0.45) !important;
         pointer-events: auto !important;
     }
 

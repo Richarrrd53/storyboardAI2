@@ -403,8 +403,6 @@ body.dashboard-layout #page-content.spa-discovery-settings-wrap > .settings-shel
         justify-content: center;
         padding: 0;
         background: var(--color-surface-overlay);
-        backdrop-filter: blur(4px);
-        -webkit-backdrop-filter: blur(4px);
     }
     .sb-dialog.api-settings-dialog {
         width: 100%;

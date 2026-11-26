@@ -25,10 +25,11 @@ function modalFixture(reduced){
  const time=clock(),context={setTimeout:time.setTimeout,clearTimeout:time.clearTimeout,matchMedia:()=>({matches:reduced})};context.window=context;vm.createContext(context);vm.runInContext(fs.readFileSync('public/js/sys.js','utf8'),context);
  const element=()=>({style:{webkitBackdropFilter:''},classList:{add(){},remove(){}}});return{time,owner:context.ModalAnimation,overlay:element(),panel:element()};
 }
-test('Phase7 reduced modal close still completes exactly once and keeps backdrop alpha',async()=>{
+test('Phase7 reduced modal close still completes exactly once and clears backdrop without blur',async()=>{
  const f=modalFixture(true);let completed=0;f.owner.open(f.overlay,f.panel);const background=f.overlay.style.background;
- assert.equal(f.panel.style.scale,'1');f.owner.close(f.overlay,f.panel,{onComplete(){completed++;}});await f.time.advance(10);
- assert.equal(f.panel.style.scale,'0');assert.equal(f.overlay.style.webkitBackdropFilter,'blur(0px)');assert.equal(f.overlay.style.background,background);
+ assert.equal(f.panel.style.scale,'1');assert.notEqual(background,'transparent');
+ f.owner.close(f.overlay,f.panel,{onComplete(){completed++;}});await f.time.advance(10);
+ assert.equal(f.panel.style.scale,'0');assert.equal(f.overlay.style.webkitBackdropFilter,'none');assert.equal(f.overlay.style.background,'transparent');
  await f.time.advance(40);assert.equal(completed,1);assert.equal(f.overlay.style.display,'none');await f.time.advance(5000);assert.equal(completed,1);
 });
 test('Phase7 re-entry during close retires the old completion without hiding the successor',async()=>{

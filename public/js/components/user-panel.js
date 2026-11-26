@@ -20,10 +20,10 @@
     function animate(element,frames,duration,easing='cubic-bezier(.16,1,.3,1)') {
       if(!reduced()&&element?.animate) animations.push(element.animate(frames,{duration,easing,fill:'both'}));
     }
-    const overlayFrame=(color,blur)=>({backgroundColor:color,backdropFilter:blur,webkitBackdropFilter:blur});
+    const overlayFrame=color=>({backgroundColor:color});
     function currentOverlay() {
       const style=root.getComputedStyle?.(host);
-      return overlayFrame(style?.backgroundColor||host.style.backgroundColor||'var(--color-surface-overlay)',style?.backdropFilter||host.style.backdropFilter||'blur(4px)');
+      return overlayFrame(style?.backgroundColor||host.style.backgroundColor||'var(--color-surface-overlay)');
     }
     function park() {
       panel.hidden=true;panel.style.display='none';doc.body.appendChild(panel);
@@ -53,7 +53,7 @@
       lease=root.OverlayManager.acquire({overlay:host,panel:sheet,initialFocus:sheet,returnFocus:opener,onEscape:()=>close('escape')});
       const settle=()=>{phase='open';stopMotion();if(sheet)sheet.style.transform='translate3d(0,0,0)';};
       animate(sheet,[{transform:'translate3d(0,100%,0)'},{transform:'translate3d(0,0,0)'}],350);
-      animate(host,[overlayFrame('transparent','blur(0px)'),overlayFrame('var(--color-surface-overlay)','blur(4px)')],350);
+      animate(host,[overlayFrame('transparent'),overlayFrame('var(--color-surface-overlay)')],350);
       animateDepth?.(true,reduced()?0:.35);
       if(reduced())settle();else timer=setTimeout(settle,350);
       host.onpointerdown=event=>{if(event.target===host)close('outside_click');};
@@ -68,8 +68,8 @@
         // Preserve the same sheet/lease during a reversal instead of removing/recreating it.
         const from=root.getComputedStyle?.(sheet)?.transform||sheet.style.transform||'translate3d(0,0,0)', overlayFrom=currentOverlay();stopMotion();
         phase='opening';publish(true);animate(sheet,[{transform:from},{transform:'translate3d(0,0,0)'}],280);
-        host.style.backgroundColor='';host.style.backdropFilter='';host.style.webkitBackdropFilter='';
-        animate(host,[overlayFrom,overlayFrame('var(--color-surface-overlay)','blur(4px)')],280);
+        host.style.backgroundColor='';
+        animate(host,[overlayFrom,overlayFrame('var(--color-surface-overlay)')],280);
         animateDepth?.(true,reduced()?0:.28);
         if(reduced()){phase='open';sheet.style.transform='translate3d(0,0,0)';}
         else timer=setTimeout(()=>{stopMotion();phase='open';sheet.style.transform='translate3d(0,0,0)';},280);
@@ -85,7 +85,7 @@
       if(phase==='closing')return;
       const from=root.getComputedStyle?.(sheet)?.transform||sheet.style.transform||'translate3d(0,0,0)', overlayFrom=currentOverlay();stopMotion();endPointer();phase='closing';
       animate(sheet,[{transform:from},{transform:'translate3d(0,100%,0)'}],260);
-      animate(host,[overlayFrom,overlayFrame('transparent','blur(0px)')],260);
+      animate(host,[overlayFrom,overlayFrame('transparent')],260);
       animateDepth?.(false,.26);timer=setTimeout(()=>cleanupSheet(reason),260);
     }
     function endPointer() {
@@ -109,13 +109,13 @@
       if(!pointer.moved){pointer.moved=true;try{panel.setPointerCapture?.(pointer.id);}catch(_){}}
       event.preventDefault?.();const stamp=Date.now();pointer.velocity=(event.clientY-pointer.last)/Math.max(1,stamp-pointer.time);pointer.last=event.clientY;pointer.time=stamp;
       pointer.dy=Math.max(0,pointer.offset+delta);sheet.style.transform=`translate3d(0,${pointer.dy}px,0)`;
-      const progress=Math.max(0,1-pointer.dy/pointer.height);host.style.backgroundColor=`rgba(15,23,42,${.45*progress})`;host.style.backdropFilter=`blur(${4*progress}px)`;host.style.webkitBackdropFilter=`blur(${4*progress}px)`;onDepth?.(progress);
+      const progress=Math.max(0,1-pointer.dy/pointer.height);host.style.backgroundColor=`rgba(15,23,42,${.45*progress})`;onDepth?.(progress);
     }
     function snapBack() {
       if(!sheet)return;
       const from=sheet.style.transform||'translate3d(0,0,0)', overlayFrom=currentOverlay();stopMotion();phase='opening';
-      animate(sheet,[{transform:from},{transform:'translate3d(0,0,0)'}],260);host.style.backgroundColor='';host.style.backdropFilter='';host.style.webkitBackdropFilter='';
-      animate(host,[overlayFrom,overlayFrame('var(--color-surface-overlay)','blur(4px)')],260);animateDepth?.(true,reduced()?0:.26);
+      animate(sheet,[{transform:from},{transform:'translate3d(0,0,0)'}],260);host.style.backgroundColor='';
+      animate(host,[overlayFrom,overlayFrame('var(--color-surface-overlay)')],260);animateDepth?.(true,reduced()?0:.26);
       if(reduced()){phase='open';sheet.style.transform='translate3d(0,0,0)';}
       else timer=setTimeout(()=>{stopMotion();phase='open';sheet.style.transform='translate3d(0,0,0)';},260);
     }

@@ -579,21 +579,16 @@
 .project-editor-backdrop {
   position: fixed;
   inset: 0;
-  background: var(--color-surface-overlay, rgba(15, 23, 42, 0.45));
-  backdrop-filter: blur(0px);
-  -webkit-backdrop-filter: blur(0px);
+  background: transparent;
   /* Editor and scrim share the modal role, above floating navigation. */
   z-index: calc(var(--layer-modal) - 1);
-  opacity: 0;
   pointer-events: none;
-  transition: opacity 0.25s cubic-bezier(.4, 0, .2, 1), backdrop-filter 0.25s cubic-bezier(.4, 0, .2, 1), -webkit-backdrop-filter 0.25s cubic-bezier(.4, 0, .2, 1);
+  transition: background-color 0.25s cubic-bezier(.4, 0, .2, 1);
 }
 
 .project-editor-backdrop.visible {
-  opacity: 1;
+  background: var(--color-surface-overlay, rgba(15, 23, 42, 0.45));
   pointer-events: auto;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
 }
 
 .project-shot-editor {

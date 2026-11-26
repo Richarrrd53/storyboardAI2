@@ -211,17 +211,16 @@
     open(overlay, panel, options = {}) {
       if (!overlay) return;
       const duration = options.duration || this.DURATION;
-      const blur = options.blur || '16px';
       const backdropBg = options.backdropBg || 'rgba(15, 23, 42, 0.45)';
 
       overlay.style.display = 'flex';
       overlay.style.pointerEvents = 'none';
-      overlay.style.transition = `backdrop-filter ${duration}ms ${this.EASING_BACKDROP}`;
-      overlay.style.backdropFilter = 'blur(0px)';
+      overlay.style.transition = `background-color ${duration}ms ${this.EASING_BACKDROP}`;
+      overlay.style.backdropFilter = 'none';
       if (overlay.style.webkitBackdropFilter !== undefined) {
-        overlay.style.webkitBackdropFilter = 'blur(0px)';
+        overlay.style.webkitBackdropFilter = 'none';
       }
-      overlay.style.background = backdropBg;
+      overlay.style.background = 'transparent';
       overlay.style.opacity = '1';
 
       if (panel) {
@@ -239,10 +238,6 @@
         overlay.style.pointerEvents = 'auto';
         overlay.style.opacity = '1';
         overlay.style.background = backdropBg;
-        overlay.style.backdropFilter = `blur(${blur})`;
-        if (overlay.style.webkitBackdropFilter !== undefined) {
-          overlay.style.webkitBackdropFilter = `blur(${blur})`;
-        }
         if (panel) {
           panel.style.scale = '1';
           panel.style.opacity = '1';
@@ -261,18 +256,14 @@
       if (panel) {
         panel.style.transition = `scale ${duration}ms ${this.EASING_CARD_LEAVE}`;
       }
-      overlay.style.transition = `backdrop-filter ${duration}ms cubic-bezier(.8,0,.6,1)`;
+      overlay.style.transition = `background-color ${duration}ms cubic-bezier(.8,0,.6,1)`;
 
       setTimeout(() => {
         if (panel) {
           panel.style.scale = '0';
           panel.style.opacity = '1';
         }
-        overlay.style.backdropFilter = 'blur(0px)';
-        if (overlay.style.webkitBackdropFilter !== undefined) {
-          overlay.style.webkitBackdropFilter = 'blur(0px)';
-        }
-        // Keep the backdrop alpha; only reverse blur and panel scale.
+        overlay.style.background = 'transparent';
         if (overlay.classList && typeof overlay.classList.remove === 'function') {
           overlay.classList.remove('active');
         } else if (typeof overlay.className === 'string') {
@@ -357,7 +348,7 @@
     document.body.appendChild(overlay);
 
     const panel = overlay.querySelector('.project-tags-modal-panel');
-    ModalAnimation.open(overlay, panel, { blur: 'var(--dialog-backdrop-blur, 50px)', backdropBg: 'rgba(15, 23, 42, 0.45)' });
+    ModalAnimation.open(overlay, panel, { backdropBg: 'rgba(15, 23, 42, 0.45)' });
 
     const chipsWrap = overlay.querySelector('#modal-chips-wrap');
     const suggestionsWrap = overlay.querySelector('#modal-suggestions-wrap');

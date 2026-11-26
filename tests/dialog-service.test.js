@@ -100,12 +100,13 @@ test('confirm returns explicit false, defaults description safely and resolves o
   assert.equal(e.panel(), null);
 });
 
-test('central dialogs match delete scale signature with fixed blur + opacity backdrop fade', async () => {
+test('central dialogs match delete scale signature with pure semi-transparent backdrop fade (no blur or opacity)', async () => {
   const e = environment(false, false); const result = e.service.confirm({ title: 'motion' });
   const blurLayer = e.document.querySelector('.sb-dialog-blur');
-  assert.equal(blurLayer.style.backdropFilter, 'blur(var(--dialog-backdrop-blur, 20px))');
-  assert.equal(e.animations[0].frames[0].opacity, '0');
-  assert.equal(e.animations[0].frames[1].opacity, '1');
+  assert.equal(blurLayer.style.backdropFilter, undefined);
+  assert.equal(e.animations[0].frames[0].backgroundColor, 'transparent');
+  assert.equal(e.animations[0].frames[1].backgroundColor, 'var(--dialog-backdrop-bg)');
+  assert.ok(e.animations[0].frames.every(frame => !('opacity' in frame) && !('backdropFilter' in frame)));
   assert.equal(e.animations[1].frames[0].scale, '0');
   assert.equal(e.animations[1].options.easing, 'cubic-bezier(.34,1.59,.69,.99)');
   assert.equal(e.animations[1].options.duration, 400);
@@ -113,8 +114,8 @@ test('central dialogs match delete scale signature with fixed blur + opacity bac
   const exit = e.animations.slice(-2);
   assert.equal(exit[1].frames[1].scale, '0');
   assert.equal(exit[1].options.easing, 'cubic-bezier(.31,.01,.66,-.59)');
-  assert.equal(exit[0].frames[1].opacity, '0');
-  assert.ok(exit[0].frames.every(frame => !('backdropFilter' in frame)));
+  assert.equal(exit[0].frames[1].backgroundColor, 'transparent');
+  assert.ok(exit[0].frames.every(frame => !('opacity' in frame) && !('backdropFilter' in frame)));
   e.advance(450); assert.equal((await result).confirmed, false);
 });
 
@@ -225,8 +226,8 @@ test('all central dialog kinds exit from scale 1 to 0 with the approved anticipa
   const [backdrop,panel]=e.animations.slice(-2);
   assert.equal(panel.frames[0].scale,'1');assert.equal(panel.frames[1].scale,'0');
   assert.equal(panel.options.easing,'cubic-bezier(.31,.01,.66,-.59)');
-  assert.equal(backdrop.frames[1].opacity,'0');
-  assert.ok(backdrop.frames.every(frame=>!('backdropFilter' in frame)));
+  assert.equal(backdrop.frames[1].backgroundColor,'transparent');
+  assert.ok(backdrop.frames.every(frame=>!('opacity' in frame) && !('backdropFilter' in frame)));
   e.advance(450);await done;
  }
 });

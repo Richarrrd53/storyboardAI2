@@ -716,8 +716,6 @@
 
         if (!motion?.matches && !mobileSheet) {
             panel.style.scale = '0';
-            overlay.style.backdropFilter = 'blur(0px)';
-            overlay.style.webkitBackdropFilter = 'blur(0px)';
         }
 
         panel.innerHTML = buildDialogFormMarkup();
@@ -739,13 +737,10 @@
             timer = null;
             animations.splice(0).forEach(a => a.cancel());
         };
-        const overlayFrame = (color, blur) => ({ backgroundColor: color, backdropFilter: blur, webkitBackdropFilter: blur });
+        const overlayFrame = color => ({ backgroundColor: color });
         const currentOverlay = () => {
             const style = window.getComputedStyle?.(overlay);
-            return overlayFrame(
-                style?.backgroundColor || overlay.style.backgroundColor || 'var(--color-surface-overlay)',
-                style?.backdropFilter || overlay.style.backdropFilter || 'blur(4px)'
-            );
+            return overlayFrame(style?.backgroundColor || overlay.style.backgroundColor || 'var(--color-surface-overlay)');
         };
 
         let resolvePromise;
@@ -809,8 +804,6 @@
             panel.style.transform = `translate3d(0,${pointer.dy}px,0)`;
             const progress = Math.max(0, 1 - pointer.dy / pointer.height);
             overlay.style.backgroundColor = `rgba(15,23,42,${0.45 * progress})`;
-            overlay.style.backdropFilter = `blur(${4 * progress}px)`;
-            overlay.style.webkitBackdropFilter = `blur(${4 * progress}px)`;
             depth?.setProgress?.(progress);
         }
 
@@ -822,10 +815,8 @@
             const duration = 260;
             const easing = 'cubic-bezier(.16,1,.3,1)';
             overlay.style.backgroundColor = '';
-            overlay.style.backdropFilter = '';
-            overlay.style.webkitBackdropFilter = '';
             if (!motion?.matches && overlay.animate) {
-                animations.push(overlay.animate([overlayFrom, overlayFrame('var(--color-surface-overlay)', 'blur(4px)')], { duration, easing, fill: 'both' }));
+                animations.push(overlay.animate([overlayFrom, overlayFrame('var(--color-surface-overlay)')], { duration, easing, fill: 'both' }));
             }
             if (!motion?.matches && panel.animate) {
                 animations.push(panel.animate([{ transform: from }, { transform: 'translate3d(0,0,0)' }], { duration, easing, fill: 'both' }));
@@ -896,7 +887,7 @@
                     animations.push(overlay.animate(
                         [
                             overlayFrom,
-                            overlayFrame('transparent', 'blur(0px)')
+                            overlayFrame('transparent')
                         ],
                         { duration, easing, fill: 'both' }
                     ));
@@ -914,7 +905,7 @@
             const duration = 300;
             if (overlay.animate) {
                 animations.push(overlay.animate(
-                    [{ backdropFilter: 'blur(var(--dialog-backdrop-blur, 50px))' }, { backdropFilter: 'blur(0px)' }],
+                    [{ backgroundColor: 'var(--dialog-backdrop-bg)' }, { backgroundColor: 'transparent' }],
                     { duration, easing: 'cubic-bezier(.8,0,.6,1)', fill: 'both' }
                 ));
             }
@@ -940,14 +931,14 @@
         panel.addEventListener('pointerdown', onPointerDown);
 
         if (!motion?.matches && modalMotion) {
-            modalMotion.open(overlay, panel, { blur: 'var(--dialog-backdrop-blur, 50px)', backdropBg: 'var(--dialog-backdrop-bg)' });
+            modalMotion.open(overlay, panel, { backdropBg: 'var(--dialog-backdrop-bg)' });
         } else if (mobileSheet) {
             if (!motion?.matches && panel.animate) {
                 const easing = 'cubic-bezier(.16,1,.3,1)';
                 animations.push(overlay.animate(
                     [
-                        overlayFrame('transparent', 'blur(0px)'),
-                        overlayFrame('var(--color-surface-overlay)', 'blur(4px)')
+                        overlayFrame('transparent'),
+                        overlayFrame('var(--color-surface-overlay)')
                     ],
                     { duration: 350, easing, fill: 'both' }
                 ));
@@ -963,7 +954,7 @@
             depth?.animate?.(true, motion?.matches ? 0 : 0.35);
         } else if (!motion?.matches && panel.animate) {
             animations.push(overlay.animate(
-                [{ backdropFilter: 'blur(0px)' }, { backdropFilter: 'blur(var(--dialog-backdrop-blur, 50px))' }],
+                [{ backgroundColor: 'transparent' }, { backgroundColor: 'var(--dialog-backdrop-bg)' }],
                 { duration: 300, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'both' }
             ));
             animations.push(panel.animate(

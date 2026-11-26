@@ -860,7 +860,7 @@ function initSourceInfoModal(template) {
     closing = false;
     if (modal.parentNode !== document.body) document.body.appendChild(modal);
     modal.hidden = false;
-    window.ModalAnimation?.open(modal, panel, { blur: 'var(--dialog-backdrop-blur, 50px)', backdropBg: 'var(--dialog-backdrop-bg)' });
+    window.ModalAnimation?.open(modal, panel, { backdropBg: 'var(--dialog-backdrop-bg)' });
     lease ||= window.OverlayManager?.acquire({ overlay: modal, panel, initialFocus: closeBtn, returnFocus: openBtn, onEscape: () => closeModal() });
     if (!lease) closeBtn?.focus();
   };

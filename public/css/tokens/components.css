@@ -56,7 +56,7 @@
   --surface-composer-bg:         linear-gradient(180deg, rgba(255,255,255,.60), rgba(243,246,252,.44));
   --surface-composer-blur:       blur(12px) saturate(125%) brightness(1.03);
   --dialog-backdrop-bg:          var(--color-surface-overlay);
-  --dialog-backdrop-blur:        var(--blur-nav);
+  --dialog-backdrop-blur:        0px;
   --dialog-enter-ease:           cubic-bezier(.34,1.59,.69,.99);
   --dialog-exit-ease:            cubic-bezier(.31,.01,.66,-.59);
   --dialog-duration:             400ms;

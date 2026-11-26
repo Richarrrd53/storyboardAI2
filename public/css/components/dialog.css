@@ -8,27 +8,21 @@
 .template-modal-overlay {
   position: fixed;
   inset: 0;
-  background: var(--color-surface-overlay, rgba(15, 23, 42, 0.45));
-  backdrop-filter: blur(var(--blur-base, 12px));
-  -webkit-backdrop-filter: blur(var(--blur-base, 12px));
+  background: transparent;
   z-index: var(--layer-modal, 950);
   display: none;
   align-items: center;
   justify-content: center;
-  opacity: 0;
   pointer-events: none;
-  transition: opacity var(--dialog-duration) var(--motion-ease-standard);
+  transition: background-color var(--dialog-duration) var(--motion-ease-standard);
 }
 
 .dialog-overlay.active,
 .modal-overlay.active,
 .template-modal-overlay.active {
   display: flex;
-  opacity: 1;
   pointer-events: auto;
   background: var(--color-surface-overlay, rgba(15, 23, 42, 0.45));
-  backdrop-filter: blur(var(--blur-base, 12px));
-  -webkit-backdrop-filter: blur(var(--blur-base, 12px));
 }
 
 .dialog-panel,
@@ -43,15 +37,13 @@
   padding: var(--space-6, 24px);
   box-sizing: border-box;
   scale: 0;
-  opacity: 0;
-  transition: scale var(--dialog-duration) var(--dialog-enter-ease), opacity var(--dialog-duration) var(--dialog-enter-ease);
+  transition: scale var(--dialog-duration) var(--dialog-enter-ease);
 }
 
 .dialog-overlay.active .dialog-panel,
 .modal-overlay.active .modal-panel,
 .template-modal-overlay.active .template-modal-panel {
   scale: 1;
-  opacity: 1;
 }
 
 .dialog-header {
@@ -91,8 +83,6 @@
 .sb-dialog-blur {
   position: fixed; inset: 0; z-index: 0; pointer-events: none;
   background: var(--dialog-backdrop-bg);
-  backdrop-filter: blur(var(--dialog-backdrop-blur, 20px));
-  -webkit-backdrop-filter: blur(var(--dialog-backdrop-blur, 20px));
 }
 .sb-dialog {
   position: relative; z-index: 2;

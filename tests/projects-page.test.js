@@ -570,8 +570,8 @@ test('ProjectsPage: openProjectTagModal opens dialog, allows adding/removing tag
   const panel = overlay.querySelector('.project-tags-modal-panel');
   assert.ok(panel);
   assert.equal(panel.style.scale, '1');
-  assert.equal(overlay.style.backdropFilter, 'blur(var(--dialog-backdrop-blur, 50px))');
-  assert.ok(overlay.style.transition.includes('cubic-bezier(.4, 0, .2, 1)') || overlay.style.transition.includes('cubic-bezier(.4,0,.2,1)'));
+  assert.equal(overlay.style.backdropFilter, 'none');
+  assert.ok(overlay.style.transition.includes('background-color') && (overlay.style.transition.includes('cubic-bezier(.4, 0, .2, 1)') || overlay.style.transition.includes('cubic-bezier(.4,0,.2,1)')));
 
   // Verify title
   assert.ok(overlay.innerHTML.includes('標籤彈窗測試'));
@@ -609,9 +609,10 @@ test('ProjectsPage: openProjectTagModal opens dialog, allows adding/removing tag
   assert.deepEqual(savedTags, ['短影音']);
   assert.ok(panel.style.transition.includes('cubic-bezier(.31, .01, .66, -0.59)') || panel.style.transition.includes('cubic-bezier(.31,.01,.66,-0.59)'));
   assert.equal(panel.style.scale, '0');
-  assert.equal(overlay.style.backdropFilter, 'blur(0px)');
+  assert.equal(overlay.style.backdropFilter, 'none');
   assert.equal(overlay.style.opacity, '1');
-  assert.equal(overlay.style.background, backgroundBeforeClose);
+  assert.equal(overlay.style.background, 'transparent');
+  assert.notEqual(backgroundBeforeClose, 'transparent');
 
   // Wait for complete close animation (duration + 50ms)
   await new Promise(r => setTimeout(r, 550));
