@@ -187,10 +187,10 @@
       }
       const renderedScale = root.getComputedStyle?.(panel)?.scale;
       const currentScale = !renderedScale || renderedScale === 'none' ? '1' : renderedScale;
-      const currentBlur = root.getComputedStyle?.(blurLayer)?.backdropFilter || 'blur(var(--dialog-backdrop-blur, 50px))';
+      const currentOpacity = root.getComputedStyle?.(blurLayer)?.opacity || '1';
       animations.forEach(a => a.cancel());
-      // Keep scrim alpha constant throughout exit; only reverse blur and panel scale.
-      animate(blurLayer, [{ backdropFilter: currentBlur, webkitBackdropFilter: currentBlur }, { backdropFilter: 'blur(0px)', webkitBackdropFilter: 'blur(0px)' }], duration, 'cubic-bezier(.8,0,.6,1)');
+      // Fixed blur radius; fade backdrop opacity cleanly on the compositor.
+      animate(blurLayer, [{ opacity: currentOpacity }, { opacity: '0' }], duration, 'cubic-bezier(.8,0,.6,1)');
       animate(panel, [{ scale: currentScale }, { scale: '0' }], duration, exitEase);
       timer = setTimeout(() => dispose(result), duration);
     }
@@ -237,9 +237,11 @@
     });
     input?.addEventListener('input', () => { error.textContent = ''; input.removeAttribute('aria-invalid'); });
     if (!motion?.matches && modalMotion) {
-      modalMotion.open(overlay, panel, { duration, blur: 'var(--dialog-backdrop-blur, 50px)', backdropBg: 'var(--dialog-backdrop-bg)' });
+      modalMotion.open(overlay, panel, { duration, blur: 'var(--dialog-backdrop-blur, 20px)', backdropBg: 'var(--dialog-backdrop-bg)' });
     } else if (!motion?.matches) {
-      animate(blurLayer, [{ backdropFilter: 'blur(0px)', webkitBackdropFilter: 'blur(0px)' }, { backdropFilter: 'blur(var(--dialog-backdrop-blur, 50px))', webkitBackdropFilter: 'blur(var(--dialog-backdrop-blur, 50px))' }], duration, 'cubic-bezier(.4,0,.2,1)');
+      blurLayer.style.backdropFilter = 'blur(var(--dialog-backdrop-blur, 20px))';
+      if (blurLayer.style.webkitBackdropFilter !== undefined) blurLayer.style.webkitBackdropFilter = 'blur(var(--dialog-backdrop-blur, 20px))';
+      animate(blurLayer, [{ opacity: '0' }, { opacity: '1' }], duration, 'cubic-bezier(.4,0,.2,1)');
       animate(panel, [{ scale: '0' }, { scale: '1' }], duration, enterEase);
     }
   }

@@ -707,13 +707,14 @@
       }
 
       // Spec Section 15: Main Image Inner Wrap Morph (transform-based counter-scale to preserve aspect ratio)
+      let mainImgWrapAnim = null;
       if (mainImgWrap && isContain && typeof mainImgWrap.animate === 'function') {
         const innerW_start = Math.round(startH * projectRatio * 10) / 10;
         const innerSx0 = innerW_start / Math.max(1, startW);
         mainImgWrap.style.width = `${targetW}px`;
         mainImgWrap.style.height = `${targetH}px`;
 
-        mainImgWrap.animate([
+        mainImgWrapAnim = mainImgWrap.animate([
           { offset: 0, transform: `translate(-50%, -50%) scale(${innerSx0.toFixed(4)}, 1)` },
           { offset: 0.20, transform: `translate(-50%, -50%) scale(${innerSx0.toFixed(4)}, 1)` },
           { offset: 0.60, transform: 'translate(-50%, -50%) scale(1, 1)' },
@@ -730,6 +731,10 @@
         triggerNav(); // Safety fallback
 
         if (session.state === 'complete' || session.cancelled) return;
+
+        // Release WAAPI fill:forwards locks before committing normalized Center Hold styles
+        try { anim.cancel(); } catch (_) {}
+        try { mainImgWrapAnim?.cancel?.(); } catch (_) {}
 
         // Settle fixed in center with true project ratio
         flyingCover.style.left = `${targetLeft}px`;
