@@ -64,6 +64,44 @@ test('interrupting project opening aborts its mount and restores the source rout
   assert.deepEqual(f.errors, []);
 });
 
+test('interrupting project opening while auth fetch is pending aborts navigation without unmounting or entering project', async () => {
+  const f = routerFixture('/projects');
+  await f.events.DOMContentLoaded(); await settle();
+  let resolveAuth, authSignal;
+  f.window.spaAuth.fetchUser = signal => {
+    authSignal = signal;
+    return new Promise(resolve => { resolveAuth = resolve; });
+  };
+  const cover = { projectId: 'slow-auth', cancelled: false, cancel() {} };
+  f.window.currentCoverTransition = cover;
+  const pending = f.window.spaNavigate('project', { id: 'slow-auth' });
+  await settle();
+  assert.equal(authSignal.aborted, false);
+  assert.equal(typeof cover.cancelOpening, 'function');
+  cover.cancelled = true;
+  cover.cancelOpening();
+  await settle();
+  assert.equal(authSignal.aborted, true);
+  assert.deepEqual(f.unmounts, []);
+  resolveAuth({ valid: true, user: { id: 'fixture' } });
+  await pending;
+  assert.equal(f.mounts.filter(m => m.page === 'project').length, 0);
+  assert.equal(f.window.spaRouter.currentPage, 'projects');
+  assert.deepEqual(f.errors, []);
+});
+
+test('navigating to project with an already-cancelled cover transition aborts immediately', async () => {
+  const f = routerFixture('/projects');
+  await f.events.DOMContentLoaded(); await settle();
+  const cover = { projectId: 'already-cancelled', cancelled: true, cancel() {} };
+  f.window.currentCoverTransition = cover;
+  await f.window.spaNavigate('project', { id: 'already-cancelled' });
+  assert.equal(f.mounts.filter(m => m.page === 'project').length, 0);
+  assert.deepEqual(f.unmounts, []);
+  assert.equal(f.window.spaRouter.currentPage, 'projects');
+  assert.deepEqual(f.errors, []);
+});
+
 test('route transitions finish the old page exit before teardown and layout changes', async () => {
   const f = routerFixture('/dashboard');
   await f.events.DOMContentLoaded(); await settle();

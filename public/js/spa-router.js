@@ -250,11 +250,37 @@
     let animation = null;
     let mounted = null;
     let committed = false;
+    let didUnmount = false;
+    const attachCoverCancel = cover => {
+      if (!cover || page !== 'project' || String(opts.id) !== String(cover.projectId)) return false;
+      if (cover.cancelled) {
+        controller.abort();
+        return true;
+      }
+      if (!cover.cancelOpening) {
+        const originPage = currentPage;
+        const originOpts = { ...currentOpts, browseState: browse };
+        const historyHost = getHistoryHost();
+        const originState = historyHost.history.state;
+        const originUrl = historyHost.location.href;
+        cover.cancelOpening = () => {
+          // Abort fetches and invalidate this mount before restoring the source route.
+          if (mySeq !== navSeq) return;
+          controller.abort();
+          historyHost.history.replaceState(originState, '', originUrl);
+          if (didUnmount) {
+            navigate(originPage, { ...originOpts, force: true, noHistory: true, noOpenQC: true });
+          }
+        };
+      }
+      return false;
+    };
     const trace = { page, request: now(), phases: {} };
     const phase = (name, start) => { trace.phases[name] = now() - start; };
     window.AppShell.setPendingRoute?.(page, { id: opts.id });
     requestAnimationFrame(() => { trace.feedback = now() - trace.request; });
     try {
+      if (attachCoverCancel(window.currentCoverTransition || window._activeProjectTransition)) return;
       animation = transition.create({ signal, internal, fromQC: !!opts.fromQC, routeUpdate: !!reuse });
       trace.transitionStart = now() - trace.request;
       const leaving = animation.start();
@@ -296,20 +322,7 @@
       window.ProjectsPage.closeTagModal({ immediate: true, restoreFocus: false });
       const cover = window.currentCoverTransition || window._activeProjectTransition;
       if (cover && !(page === 'project' && String(opts.id) === String(cover.projectId))) cover.cancel();
-      if (cover && !cover.cancelled && page === 'project' && String(opts.id) === String(cover.projectId)) {
-        const originPage = currentPage;
-        const originOpts = { ...currentOpts, browseState: browse };
-        const historyHost = getHistoryHost();
-        const originState = historyHost.history.state;
-        const originUrl = historyHost.location.href;
-        cover.cancelOpening = () => {
-          // Abort fetches and invalidate this mount before restoring the source route.
-          if (mySeq !== navSeq) return;
-          controller.abort();
-          historyHost.history.replaceState(originState, '', originUrl);
-          navigate(originPage, { ...originOpts, force: true, noHistory: true, noOpenQC: true });
-        };
-      }
+      if (attachCoverCancel(cover)) return;
 
       if ((currentPage === 'login' || currentPage === 'register') && isDashboardPage(page) && localStorage.getItem('sidebar_projects_expanded') === 'true') window.AppShell.collapseProjectsGroup();
 
@@ -323,6 +336,7 @@
       if (!reuse) {
         if (pageController) pageController.abort();
         pageController = controller;
+        didUnmount = true;
         unmountPage(activePageInstance);
         activePageInstance = null;
         currentRouteMounted = false;
