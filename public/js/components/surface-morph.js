@@ -573,13 +573,13 @@
 
   function computeLocalRegion(s, vp) {
     const o = s.origin, b = s.bounds;
-    const pad = 64;
+    const pad = 72;
     const vpLeft = vp.left || 0, vpTop = vp.top || 0;
     const vpRight = vpLeft + (vp.width || 0), vpBottom = vpTop + (vp.height || 0);
-    const left = Math.max(0, Math.floor(Math.min(o.left, b.left) - pad));
-    const top = Math.max(0, Math.floor(Math.min(o.top, b.top) - pad));
+    const left = Math.max(Math.floor(vpLeft), Math.floor(Math.min(o.left, b.left) - pad));
+    const top = Math.max(Math.floor(vpTop), Math.floor(Math.min(o.top, b.top) - pad));
     const right = Math.min(Math.ceil(vpRight), Math.ceil(Math.max(o.right, b.left + b.width) + pad));
-    const bottom = Math.min(Math.ceil(vpBottom), Math.ceil(Math.max(o.bottom, b.top + b.height) + pad + 16));
+    const bottom = Math.min(Math.ceil(vpBottom), Math.ceil(Math.max(o.bottom, b.top + b.height) + pad + 24));
     return {
       left,
       top,
@@ -608,7 +608,8 @@
     let lastCanvasOpacity = '';
     const fadeCanvas = (node) => {
       const mix = smoothstep(.72, 1, s.p);
-      const op = ((1 - mix) / Math.max(.001, 1 - target[3] * mix)).toFixed(4);
+      const raw = (1 - mix) / Math.max(.001, 1 - target[3] * mix);
+      const op = raw <= 0.0005 ? '0' : raw.toFixed(4);
       if (op !== lastCanvasOpacity) {
         lastCanvasOpacity = op;
         node.style.opacity = op;
@@ -627,28 +628,32 @@
     };
 
     const positionCanvas = (node, reg, scale) => {
-      const targetW = Math.ceil(reg.width * scale);
-      const targetH = Math.ceil(reg.height * scale);
+      const targetW = Math.max(1, Math.ceil(reg.width * scale));
+      const targetH = Math.max(1, Math.ceil(reg.height * scale));
       if (node.width !== targetW) node.width = targetW;
       if (node.height !== targetH) node.height = targetH;
+      // Clear shorthand inset FIRST so subsequent left/top/width/height are never overwritten.
+      node.style.inset = 'auto';
+      node.style.right = 'auto';
+      node.style.bottom = 'auto';
       node.style.position = 'fixed';
       node.style.left = reg.left + 'px';
       node.style.top = reg.top + 'px';
-      node.style.width = reg.width + 'px';
-      node.style.height = reg.height + 'px';
-      node.style.inset = 'auto';
+      node.style.width = (targetW / scale) + 'px';
+      node.style.height = (targetH / scale) + 'px';
     };
 
     const shared = acquireSharedWebGL();
     if (shared && shared.ready && !shared.lost) {
       const { canvas, gl, program, u } = shared;
+      shared.owner = s;
       let region = computeLocalRegion(s, v);
       s.overlay.appendChild(canvas);
       canvas.style.opacity = '1';
       lastCanvasOpacity = '1';
 
       const updateViewport = (vp) => {
-        if (shared.lost || gl.isContextLost?.()) return;
+        if (shared.owner !== s || shared.lost || gl.isContextLost?.()) return;
         region = computeLocalRegion(s, vp);
         positionCanvas(canvas, region, dpr);
         gl.disable(gl.SCISSOR_TEST);
@@ -663,11 +668,14 @@
       gl.uniform1f(u.u_lightTheme, morphWhite[0] + morphWhite[1] + morphWhite[2] > 400 ? 1 : 0);
       gl.uniform1f(u.u_borderWidth, borderWidth);
       gl.uniform4f(u.u_borderColor, borderColor[0] / 255, borderColor[1] / 255, borderColor[2] / 255, borderColor[3]);
+      gl.uniform1f(u.u_dimB, 0);
+      gl.clearColor(0, 0, 0, 0);
+      gl.clear(gl.COLOR_BUFFER_BIT);
 
       return {
         resize: updateViewport,
         draw(prims, shadowPresence, borderPresence, dimB = 0) {
-          if (shared.lost || gl.isContextLost?.()) return;
+          if (shared.owner !== s || shared.lost || gl.isContextLost?.()) return;
           fadeCanvas(canvas);
           gl.useProgram(program);
           gl.uniform1f(u.u_shadowPresence, shadowPresence);
@@ -689,11 +697,14 @@
           gl.drawArrays(gl.TRIANGLES, 0, 6);
         },
         dispose() {
-          // Clear framebuffer and detach canvas while keeping persistent WebGL context/program alive
+          // Only release shared GPU surface if this session still owns it
+          if (shared.owner !== s) return;
+          shared.owner = null;
           if (!shared.lost && !gl.isContextLost?.()) {
             gl.clearColor(0, 0, 0, 0);
             gl.clear(gl.COLOR_BUFFER_BIT);
           }
+          canvas.style.opacity = '0';
           if (canvas.parentNode === s.overlay) {
             canvas.remove?.();
             if (canvas.parentNode?.removeChild) canvas.parentNode.removeChild(canvas);
