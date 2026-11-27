@@ -1,3 +1,3 @@
 # Product UI captures
 
-Captured 2026-11-11 from the current local source at localhost:3000 by analysis/landing-round2/capture-product.cjs. Actual product HTML/CSS/JS, unmodified. Isolated browser-only QA auth response and empty project/template lists; no production login, customer data, generated content or backend writes. These show the current empty workspace and initial composer, not a live account or successful AI generation.
+Captured 2026-11-27 from the current local source at `127.0.0.1:3000` using headless Chrome (1440x900 desktop and 390x844 mobile viewports) logged in with the local test account (`test001@example.com`). Actual product HTML/CSS/JS, unmodified, showing `/dashboard`, `/generate`, and `/projects` after data and transition overlays settled.
